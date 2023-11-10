@@ -1,26 +1,73 @@
-import os from 'os'
+import crypto from 'crypto'
 
 import {SpanTags} from '../../helpers/interfaces'
+import {
+  GIT_BRANCH,
+  GIT_COMMIT_AUTHOR_EMAIL,
+  GIT_COMMIT_AUTHOR_NAME,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+} from '../../helpers/tags'
 
-import {Bom} from './protobuf/bom-1.4'
-import {SBOMEntity, SBOMPayload, SBOMSourceType} from './protobuf/sbom_intake'
-import {SbomPayloadData} from './types'
+import {getLanguageFromComponent} from './language'
+import {getLicensesFromComponent} from './license'
+import {Dependency, ScaRequest} from './types'
 
-export const generatePayload = (payloadData: SbomPayloadData, service: string, tags: SpanTags): SBOMPayload => {
-  const spanTagsAsStringArray = Object.keys(tags).map((key) => `${key}:${tags[key as keyof SpanTags]}`)
+// Generate the payload we send to the API
+// jsonContent is the SBOM file content read from disk
+// tags are the list of tags we retrieved
+export const generatePayload = (jsonContent: any, tags: SpanTags): ScaRequest | undefined => {
+  if (
+    !tags[GIT_COMMIT_AUTHOR_EMAIL] ||
+    !tags[GIT_COMMIT_AUTHOR_NAME] ||
+    !tags[GIT_SHA] ||
+    !tags[GIT_BRANCH] ||
+    !tags[GIT_REPOSITORY_URL]
+  ) {
+    return undefined
+  }
 
-  return SBOMPayload.create({
-    host: os.hostname(),
-    source: 'CI',
-    entities: [
-      SBOMEntity.create({
-        id: service,
-        type: SBOMSourceType.CI_PIPELINE,
-        inUse: true,
-        generatedAt: new Date(),
-        ddTags: spanTagsAsStringArray,
-        cyclonedx: Bom.fromJSON(payloadData.content),
-      }),
-    ],
-  })
+  const dependencies: Dependency[] = []
+
+  if (jsonContent) {
+    if (jsonContent['components']) {
+      for (const component of jsonContent['components']) {
+        if (!component['type'] || !component['name'] || !component['version']) {
+          continue
+        }
+        if (component['type'] !== 'library') {
+          continue
+        }
+
+        const lang = getLanguageFromComponent(component)
+
+        if (!lang) {
+          continue
+        }
+
+        const dependency: Dependency = {
+          name: component['name'],
+          version: component['version'],
+          language: lang,
+          licenses: getLicensesFromComponent(component),
+        }
+        dependencies.push(dependency)
+      }
+    }
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    commit: {
+      author_name: tags[GIT_COMMIT_AUTHOR_NAME],
+      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL],
+      sha: tags[GIT_SHA],
+      branch: tags[GIT_BRANCH],
+    },
+    repository: {
+      url: tags[GIT_REPOSITORY_URL],
+    },
+    tags,
+    dependencies,
+  }
 }

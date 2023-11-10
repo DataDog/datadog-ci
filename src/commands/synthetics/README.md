@@ -114,7 +114,7 @@ As the [`proxy-agent` library][2] is used to configure the proxy, the supported 
 
 For example: 
 
-```json
+```jsonc
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -176,7 +176,7 @@ By default, `datadog-ci` runs at the root of the working directory and finds `{,
 
 For example:
 
-```json
+```jsonc
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
@@ -290,7 +290,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -v PA
 
 Your test files must be named with a `.synthetics.json` suffix. 
 
-```json
+```jsonc
 // myTest.synthetics.json
 {
   "tests": [
@@ -419,7 +419,7 @@ You can also see the outcome of test executions directly in your CI as your test
   yarn datadog-ci synthetics run-tests --config synthetics.global.json
   yarn run v1.22.4
   $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config synthetics.global.json
-  Finding files in /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
+  Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
 
   Got test files:
     - user.synthetics.json
@@ -441,27 +441,38 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Upload Application Command
 
-To upload a new version to an **existing application**, you can use the `synthetics upload-application` command. To use it:
+This command uploads a new version to an **existing application**.
 
-`--mobileApplicationId` - string - the ID of the application you want to upload the new version to
-`--mobileApplicationVersionFilePath` - string - path to the mobile app (.apk/.ipa)
-`--versionName` - string - name of the new version. It has to be unique.
-`--latest` - bool - if present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run 
+### Command line options
+
+`--mobileApplicationId`
+: The ID of the application you want to upload the new version to.
+
+`--mobileApplicationVersionFilePath`
+: The path to your mobile application (`.apk` or `.ipa`).
+
+`--versionName`
+: The name of the new version. It has to be unique.
+
+`--latest`
+: If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
  
 Example:
-```
-datadog-ci synthetics upload-application              \
---mobileApplicationId '123-123-123'                   \
---mobileApplicationVersionFilePath example/test.apk   \
---versionName 'example 1.0'                           \
---latest
+```bash
+datadog-ci synthetics upload-application                \
+  --mobileApplicationId '123-123-123'                   \
+  --mobileApplicationVersionFilePath example/test.apk   \
+  --versionName 'example 1.0'                           \
+  --latest
 ```   
 
-You can also pass these options in a configuration file
-```
+### Using the global configuration file
+
+You can also pass these options in a configuration file:
+```json
 {
-  "apiKey": <DATADOG_API_KEY>,
-  "appKey": <DATADOG_APPLICATION_KEY>,
+  "apiKey": "<DATADOG_API_KEY>",
+  "appKey": "<DATADOG_APPLICATION_KEY>",
   "mobileApplicationVersionFilePath": "example_path/example_app.apk",
   "mobileApplicationId": "example-abc",
   "versionName": "example",
@@ -469,8 +480,8 @@ You can also pass these options in a configuration file
 }
 ```
 
-And pass it to the command with the `--config` flag, example:
-```
+And pass it to the command with the `--config` flag:
+```bash
 datadog-ci synthetics upload-application --config global.config.json
 ```
 

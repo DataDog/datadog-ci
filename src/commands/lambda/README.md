@@ -21,16 +21,19 @@ Run `datadog-ci lambda instrument` to apply Datadog instrumentation to a Lambda.
 
 ```bash
 # Instrument multiple functions specified by names
-datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10
+datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 81 -e 49
+
+# Instrument multiple functions specified by full ARNs
+datadog-ci lambda instrument -f <lambda-arn> -f <another-lambda-arn> -f <a-third-lambda-arn> -v 81 -e 49
 
 # Instrument function(s) in interactive mode
 datadog-ci lambda instrument -i
 
 # Instrument multiple functions that match a regex pattern
-datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 46 -e 10
+datadog-ci lambda instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 81 -e 49
 
 # Dry run of all updates
-datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 46 -e 10 --dry-run
+datadog-ci lambda instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 81 -e 49 --dry-run
 ```
 
 ### `uninstrument`

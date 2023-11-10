@@ -1,3 +1,4 @@
+import {LogLevel} from '@aws-sdk/client-sfn'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {InstrumentStepFunctionsCommand} from '../instrument'
@@ -104,7 +105,7 @@ describe('stepfunctions instrument test', () => {
   describe('stepfunctions command overall test', () => {
     test('all aws commands are called when log level is OFF', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
@@ -139,7 +140,7 @@ describe('stepfunctions instrument test', () => {
 
     test('all aws commands are called the same times when as log-level-off state machines', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
@@ -285,7 +286,7 @@ describe('stepfunctions instrument test', () => {
   describe('step function logging disabled', () => {
     test('creates step function log group, subscribes it to forwarder, and adds it to step function logging config', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const stepFunction = describeStateMachineFixture({loggingConfiguration})
@@ -343,7 +344,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is not ALL, should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'DEBUG',
+        level: LogLevel.FATAL,
         includeExecutionData: true,
         destinations: [
           {
@@ -382,7 +383,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'ALL',
+        level: LogLevel.ALL,
         includeExecutionData: false,
         destinations: [
           {
@@ -421,7 +422,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is not ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'FATAL',
+        level: LogLevel.FATAL,
         includeExecutionData: false,
         destinations: [
           {

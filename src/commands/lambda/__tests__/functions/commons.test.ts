@@ -5,7 +5,7 @@ jest.mock('../../renderers/instrument-uninstrument-renderer')
 import * as fs from 'fs'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
+import {Architecture, LambdaClient, Runtime, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -25,7 +25,6 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
-  Runtime,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
@@ -90,9 +89,9 @@ describe('commons', () => {
     })
 
     test('swaps layers if architecture is arm64', () => {
-      const runtime: Runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       let layerARNs = [
@@ -460,7 +459,7 @@ describe('commons', () => {
 
     test('gets sa-east-1 arm64 Lambda Extension layer ARN', async () => {
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -487,7 +486,7 @@ describe('commons', () => {
 
     test('gets us-gov-1 gov cloud arm64 Lambda Extension layer ARN', async () => {
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -503,7 +502,7 @@ describe('commons', () => {
     })
 
     test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
-      const runtime = 'nodejs12.x'
+      const runtime = Runtime.nodejs12x
       const config = {
         Runtime: runtime,
       }
@@ -519,9 +518,9 @@ describe('commons', () => {
     })
 
     test('gets sa-east-1 Python39 arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       const settings = {
@@ -535,7 +534,7 @@ describe('commons', () => {
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
     test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
-      const runtime = 'python3.7'
+      const runtime = Runtime.python37
       const config = {
         Runtime: runtime,
       }
@@ -550,9 +549,9 @@ describe('commons', () => {
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
     })
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       const settings = {
@@ -568,10 +567,10 @@ describe('commons', () => {
       )
     })
     test('gets dotnet6 arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'dotnet6'
+      const runtime = Runtime.dotnet6
       const config = {
         Runtime: runtime,
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -673,7 +672,7 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: Runtime.nodejs12x,
           },
           lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
           updateFunctionConfigurationCommandInput: {

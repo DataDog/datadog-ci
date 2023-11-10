@@ -21,6 +21,7 @@ import {
   DescribeStateMachineCommandOutput,
   ListTagsForResourceCommand,
   ListTagsForResourceCommandOutput,
+  LogLevel,
   Tag,
   TagResourceCommand,
   TagResourceCommandOutput,
@@ -235,7 +236,7 @@ export const enableStepFunctionLogs = async (
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
       destinations: [{cloudWatchLogsLogGroup: {logGroupArn}}],
-      level: 'ALL',
+      level: LogLevel.ALL,
       includeExecutionData: true,
     },
   }

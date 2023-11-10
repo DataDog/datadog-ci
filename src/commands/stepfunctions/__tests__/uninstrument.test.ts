@@ -1,4 +1,4 @@
-import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'
@@ -77,7 +77,7 @@ describe('stepfunctions uninstrument', () => {
   describe('step function logging disabled', () => {
     test('creates step function log group, subscribes it to forwarder, and adds it to step function logging config', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const stepFunction = describeStateMachineFixture({loggingConfiguration})

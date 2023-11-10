@@ -13,6 +13,7 @@ import {
   UpdateStateMachineCommand,
   SFNClient,
   DescribeStateMachineCommandOutput,
+  LogLevel,
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
 
@@ -226,7 +227,7 @@ describe('awsCommands test', () => {
       stateMachineArn: fakeStepFunctionArn,
       loggingConfiguration: {
         destinations: [{cloudWatchLogsLogGroup: {logGroupArn: fakeLogGroupArn}}],
-        level: 'ALL',
+        level: LogLevel.ALL,
         includeExecutionData: true,
       },
     }

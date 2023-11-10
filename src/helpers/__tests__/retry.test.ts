@@ -1,4 +1,4 @@
-import {AxiosPromise} from 'axios'
+import type {AxiosPromise, AxiosResponseHeaders, InternalAxiosRequestConfig} from 'axios'
 
 import {retryRequest} from '../retry'
 
@@ -11,9 +11,9 @@ describe('retry', () => {
       i = i + 1
       if (errors[i] === undefined) {
         return Promise.resolve({
-          config: {},
+          config: {} as InternalAxiosRequestConfig,
           data: {},
-          headers: undefined,
+          headers: {} as AxiosResponseHeaders,
           status: 200,
           statusText: '',
         })

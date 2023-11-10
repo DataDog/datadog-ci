@@ -1,6 +1,6 @@
 import {Writable} from 'stream'
 
-import {AxiosPromise} from 'axios'
+import type {AxiosPromise} from 'axios'
 
 import {SpanTags} from '../../helpers/interfaces'
 

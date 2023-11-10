@@ -1,4 +1,4 @@
-import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
 
 import {
   buildArn,
@@ -150,7 +150,7 @@ describe('stepfunctions command helpers tests', () => {
 
     test('returns undefined when step function logging is off', () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const stepFunction = describeStateMachineFixture({loggingConfiguration})

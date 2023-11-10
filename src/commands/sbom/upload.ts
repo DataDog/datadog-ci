@@ -1,8 +1,9 @@
 import fs from 'fs'
 import process from 'process'
 
+import type {AxiosPromise, AxiosResponse} from 'axios'
+
 import Ajv from 'ajv'
-import {AxiosPromise, AxiosResponse} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -10,8 +11,7 @@ import {getSpanTags} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
-import {SBOMPayload} from './protobuf/sbom_intake'
-import {SbomPayloadData} from './types'
+import {ScaRequest} from './types'
 import {getValidator, validateSbomFile} from './validation'
 
 export class UploadSbomCommand extends Command {
@@ -33,6 +33,7 @@ export class UploadSbomCommand extends Command {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY || '',
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
   }
@@ -70,9 +71,13 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    const api: (sbomPayload: SBOMPayload) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
+    // Get the API helper to send the payload
+    const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(
+      this.config.apiKey,
+      this.config.appKey
+    )
 
-    const spanTags = await getSpanTags(this.config, this.tags)
+    const tags = await getSpanTags(this.config, this.tags)
 
     const validator: Ajv = getValidator()
     for (const basePath of this.basePaths) {
@@ -81,27 +86,25 @@ export class UploadSbomCommand extends Command {
       }
 
       if (validateSbomFile(basePath, validator, !!this.debug)) {
-        // Get the payload to upload
-        const payloadData: SbomPayloadData = {
-          filePath: basePath,
-          content: JSON.parse(fs.readFileSync(basePath).toString('utf8')),
-        }
-
-        // If debug mode is activated, we write the payload in a file
-        if (this.debug) {
-          const debugFilePath = `${basePath}.payload.pbytes`
-          this.context.stdout.write(`Writing payload for debugging in: ${debugFilePath}\n`)
-          const payloadBytes = SBOMPayload.toJSON(generatePayload(payloadData, service, spanTags))
-          fs.writeFileSync(debugFilePath, JSON.stringify(payloadBytes))
-        }
+        const filePath = basePath
+        const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
 
         // Upload content
         try {
-          const response = await api(generatePayload(payloadData, service, spanTags))
+          const scaPayload = generatePayload(jsonContent, tags)
+          if (!scaPayload) {
+            console.log(`Cannot generate payload for file ${filePath}`)
+            continue
+          }
+
+          const startTimeMs = Date.now()
+          const response = await api(scaPayload)
+          const endTimeMs = Date.now()
           if (this.debug) {
             this.context.stdout.write(`Upload done, status: ${response.status}\n`)
           }
-          this.context.stdout.write(`File ${basePath} successfully uploaded\n`)
+          const apiTimeMs = endTimeMs - startTimeMs
+          this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
         } catch (error) {
           process.stderr.write(`Error while writing the payload: ${error.message}\n`)
           if (error.response) {

@@ -1,6 +1,7 @@
 import {stringify} from 'querystring'
 
-import {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
+
 import FormData from 'form-data'
 
 import {getRequestBuilder} from '../../helpers/utils'
@@ -40,7 +41,7 @@ export class EndpointError extends Error {
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
   if (requestError.response?.data?.errors) {
-    const serverHead = `query on ${requestError.config.baseURL}${requestError.config.url} returned:`
+    const serverHead = `query on ${requestError.config?.baseURL}${requestError.config?.url} returned:`
     const errors = requestError.response.data.errors
     if (errors.length > 1) {
       const formattedErrors = errors.map((message: string) => `  - ${message}`)
@@ -49,11 +50,11 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
     } else if (errors.length) {
       return `${serverHead} "${errors[0]}"`
     } else {
-      return `error querying ${requestError.config.baseURL}${requestError.config.url}`
+      return `error querying ${requestError.config?.baseURL}${requestError.config?.url}`
     }
   }
 
-  return `could not query ${requestError.config.baseURL}${requestError.config.url}\n${requestError.message}`
+  return `could not query ${requestError.config?.baseURL}${requestError.config?.url}\n${requestError.message}`
 }
 
 const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {

@@ -48,7 +48,6 @@ js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 prettier,dev,MIT,Copyright © James Long and contributors
-protobufjs,import,BSD-3-Clause,Copyright (c) 2023 Google LLC and other contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,import,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
@@ -61,7 +60,6 @@ terminal-link,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (h
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
-ts-proto,import,Apache-2.0,Copyright Stephen Haberman
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
 uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors

@@ -1,4 +1,4 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
+import type {AxiosPromise, AxiosResponse} from 'axios'
 
 import {SpanTags} from '../../helpers/interfaces'
 
