@@ -1,4 +1,6 @@
-import chalk from 'chalk'
+import {AxiosError} from 'axios'
+
+import {DeploymentEvent, GitInfo} from './interfaces'
 
 const ICONS = {
   FAILED: '❌',
@@ -6,20 +8,22 @@ const ICONS = {
   WARNING: '⚠️',
 }
 
-export const renderFailedRequest = (service: string, errorMessage: string) => {
-  return chalk.red(`${ICONS.FAILED} Failed to send DORA deployment event for service: ${service}: ${errorMessage}\n`)
-}
+export const renderFailedRequest = (service: string, error: AxiosError) =>
+  `${ICONS.FAILED} Failed to send DORA deployment event for service: ${service}: ` +
+  (error.response ? JSON.stringify(error.response.data, undefined, 2) : '')
 
-export const renderRetriedRequest = (service: string, errorMessage: string, attempt: number) => {
-  return chalk.yellow(
-    `[attempt ${attempt}] Retrying to send DORA deployment event for service: ${service}: ${errorMessage}\n`
-  )
-}
+export const renderRetriedRequest = (service: string, error: Error, attempt: number) =>
+  `[attempt ${attempt}] Retrying to send DORA deployment event for service: ${service}: ${error.message}`
 
-export const renderSuccessfulRequest = (service: string) => {
-  return chalk.green(`${ICONS.SUCCESS} Successfuly sent DORA deployment event for service: ${service}`)
-}
+export const renderSuccessfulRequest = (service: string) =>
+  `${ICONS.SUCCESS} Successfuly sent DORA deployment event for service: ${service}`
 
-export const renderDryRun = (service: string): string => `[DRYRUN] ${renderRequest(service)}`
+export const renderDryRun = (deployment: DeploymentEvent): string =>
+  `[DRYRUN] ${renderRequest(deployment.service)}\n data: ` + JSON.stringify(deployment, undefined, 2)
 
 export const renderRequest = (service: string): string => `Sending DORA deployment event for service: ${service}`
+
+export const renderGitWarning = (git: GitInfo): string =>
+  `${ICONS.WARNING} --git-repository-url or --git-commit-sha not provided.\n` +
+  `Assuming deployment from current git checkout: ${git.repoURL} ${git.commitSHA}\n` +
+  `This warning can be disabled with --skip-git but git data is required for Change Lead Time.`

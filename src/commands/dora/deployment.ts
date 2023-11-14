@@ -1,15 +1,19 @@
+import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+import simpleGit from 'simple-git'
+import * as t from 'typanion'
 
+import {gitRepositoryURL, gitHash} from '../../helpers/git/get-git-data'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {isInteger} from '../../helpers/validation'
 
 import {apiConstructor} from './api'
-import {APIHelper, DeploymentEvent} from './interfaces'
+import {APIHelper, DeploymentEvent, GitInfo} from './interfaces'
 import {
   renderDryRun,
   renderFailedRequest,
+  renderGitWarning,
   renderRequest,
   renderRetriedRequest,
   renderSuccessfulRequest,
@@ -32,10 +36,13 @@ export class SendDeploymentEvent extends Command {
 
   private service = Option.String('--service', {required: true, env: 'DD_SERVICE'})
   private env = Option.String('--env', {env: 'DD_ENV'})
-  private gitRepositoryURL = Option.String('--repository-url')
-  private gitCommitSha = Option.String('--commit-sha')
-  private startedAt = Option.String('--started-at', {required: true, validator: isInteger()})
-  private finishedAt = Option.String('--finished-at', {required: true, validator: isInteger()})
+  private gitInfo? = {
+    repoURL: Option.String('--git-repository-url'),
+    commitSHA: Option.String('--git-commit-sha'),
+  }
+  private skipGit = Option.Boolean('--skip-git', false)
+  private startedAt = Option.String('--started-at', {required: true, validator: t.isDate()})
+  private finishedAt = Option.String('--finished-at', {validator: t.isDate()})
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
 
@@ -50,12 +57,31 @@ export class SendDeploymentEvent extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
+    if (this.skipGit) {
+      this.gitInfo = undefined
+    } else if (this.gitInfo && (!!this.gitInfo.repoURL || !!this.gitInfo.commitSHA)) {
+      this.gitInfo = await this.getGitInfo()
+      this.logger.warn(renderGitWarning(this.gitInfo as GitInfo))
+    }
+
     const api = this.getApiHelper()
     await this.sendDeploymentEvent(api, this.buildDeploymentEvent())
 
     if (!this.dryRun) {
       this.logger.info(renderSuccessfulRequest(this.service))
     }
+  }
+
+  private async getGitInfo(): Promise<GitInfo> {
+    const git = simpleGit({
+      baseDir: process.cwd(),
+      binary: 'git',
+      // We are invoking at most 5 git commands at the same time.
+      maxConcurrentProcesses: 5,
+    })
+    const [repoURL, commitSHA] = await Promise.all([gitRepositoryURL(git), gitHash(git)])
+
+    return {repoURL, commitSHA}
   }
 
   private getApiHelper(): APIHelper {
@@ -70,15 +96,24 @@ export class SendDeploymentEvent extends Command {
   }
 
   private buildDeploymentEvent(): DeploymentEvent {
-    // TODO:
-    return {
-      service: 'test-service',
+    const deployment: DeploymentEvent = {
+      service: this.service,
+      startedAt: this.startedAt,
+      finishedAt: this.finishedAt || new Date(),
     }
+    if (this.env) {
+      deployment.env = this.env
+    }
+    if (this.gitInfo) {
+      deployment.git = this.gitInfo as GitInfo
+    }
+
+    return deployment
   }
 
   private async sendDeploymentEvent(api: APIHelper, deployment: DeploymentEvent) {
     if (this.dryRun) {
-      this.logger.info(renderDryRun(this.service))
+      this.logger.info(renderDryRun(deployment))
 
       return
     }
@@ -87,12 +122,12 @@ export class SendDeploymentEvent extends Command {
       this.logger.info(renderRequest(this.service))
       await retryRequest(() => api.sendDeploymentEvent(deployment), {
         onRetry: (e, attempt) => {
-          this.context.stderr.write(renderRetriedRequest(this.service, e.message, attempt))
+          this.logger.warn(renderRetriedRequest(this.service, e, attempt))
         },
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(renderFailedRequest(this.service, error))
+      this.logger.error(renderFailedRequest(this.service, error as AxiosError))
       if (error.response) {
         // If it's an axios error
         if (!nonRetriableErrorCodes.includes(error.response.status)) {

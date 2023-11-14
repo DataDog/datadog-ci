@@ -59,4 +59,5 @@ export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => g
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.show(['-s', '--format=%an,%ae,%aI,%cn,%ce,%cI'])
 
-export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> => git.listRemote(['--get-url'])
+export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
+  git.listRemote(['--get-url']).then((url) => url.trim())
