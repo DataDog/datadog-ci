@@ -150,11 +150,12 @@ describe('execute', () => {
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })
-    test('timestamps in future are rejected', async () => {
+    test('started-at after finished-at is rejected', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
         '--dry-run', '--skip-git',
         '--service', 'test-service',
+        '--started-at', '2099-11-14T11:17:28Z',
       ])
       /* eslint-enable prettier/prettier */
       expect(code).not.toBe(0)

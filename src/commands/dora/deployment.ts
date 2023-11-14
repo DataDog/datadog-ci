@@ -104,6 +104,12 @@ export class SendDeploymentEvent extends Command {
       return 1
     }
 
+    if (this.startedAt > (this.finishedAt || new Date())) {
+      this.logger.error('--started-at cannot be after --finished-at')
+
+      return 1
+    }
+
     if (this.skipGit) {
       this.gitInfo = undefined
     } else if (this.gitRepoURL && this.gitCommitSHA) {
