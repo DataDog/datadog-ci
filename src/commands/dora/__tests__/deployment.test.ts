@@ -73,7 +73,8 @@ describe('execute', () => {
     test('with minimal parameters provided', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
-        '--dry-run', '--skip-git',
+        '--dry-run',
+        '--skip-git',
         '--service', 'test-service',
         '--started-at', '1699960648',
       ])
@@ -92,7 +93,8 @@ describe('execute', () => {
       }
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
-        '--dry-run', '--skip-git',
+        '--dry-run',
+        '--skip-git',
         '--started-at', '1699960648',
       ], envVars)
       /* eslint-enable prettier/prettier */
@@ -133,7 +135,8 @@ describe('execute', () => {
     test('service is required', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
-        '--dry-run', '--skip-git',
+        '--dry-run',
+        '--skip-git',
         '--started-at', '1699960648',
       ])
       /* eslint-enable prettier/prettier */
@@ -143,7 +146,8 @@ describe('execute', () => {
     test('started-at is required', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
-        '--dry-run', '--skip-git',
+        '--dry-run',
+        '--skip-git',
         '--service', 'test-service',
       ])
       /* eslint-enable prettier/prettier */
@@ -153,7 +157,8 @@ describe('execute', () => {
     test('started-at after finished-at is rejected', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
-        '--dry-run', '--skip-git',
+        '--dry-run',
+        '--skip-git',
         '--service', 'test-service',
         '--started-at', '2099-11-14T11:17:28Z',
       ])
