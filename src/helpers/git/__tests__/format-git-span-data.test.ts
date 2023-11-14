@@ -21,7 +21,7 @@ describe('getGitMetadata', () => {
   it('reads git metadata successfully', async () => {
     ;(simpleGit as any).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
-      listRemote: () => 'repository_url',
+      listRemote: async (git: any): Promise<string> => 'repository_url',
       revparse: () => 'commitSHA',
       show: (input: string[]) => {
         if (input[1] === '--format=%s') {
