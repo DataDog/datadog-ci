@@ -296,7 +296,7 @@ const waitForBatchToFinish = async (
   const maxPollingDate = Date.now() + maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
 
-  do {
+  while (true) {
     const current = await getBatch(api, trigger)
     const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
 
@@ -325,17 +325,17 @@ const waitForBatchToFinish = async (
 
     reportRemainingTests(trigger, current, resultDisplayInfo, reporter)
 
-    if (shouldContinuePolling) {
-      await wait(POLLING_INTERVAL)
-      continue
+    if (!shouldContinuePolling) {
+      // Break the loop and report any residual results.
+      reportResidualResults(pollResultMap, current, emittedResultIndexes, resultDisplayInfo, reporter)
+
+      return current.results.map((r) =>
+        getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
+      )
     }
 
-    reportResidualResults(pollResultMap, current, emittedResultIndexes, resultDisplayInfo, reporter)
-
-    return current.results.map((r) =>
-      getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
-    )
-  } while (true)
+    await wait(POLLING_INTERVAL)
+  }
 }
 
 const reportReceivedResults = (currentBatchState: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
