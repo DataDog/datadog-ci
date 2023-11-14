@@ -65,11 +65,11 @@ export class SendDeploymentEvent extends Command {
   private startedAt = Option.String('--started-at', {
     required: true,
     validator: t.isDate(),
-    description: 'In Unix seconds or ISO86001 (Examples: 1699960648, 2023-11-14T11:17:28Z)',
+    description: 'In Unix seconds or ISO8601 (Examples: 1699960648, 2023-11-14T11:17:28Z)',
   })
   private finishedAt = Option.String('--finished-at', {
     validator: t.isDate(),
-    description: 'In Unix seconds or ISO86001 (Examples: 1699961048, 2023-11-14T11:24:08Z)',
+    description: 'In Unix seconds or ISO8601 (Examples: 1699961048, 2023-11-14T11:24:08Z)',
   })
 
   private gitInfo?: GitInfo
