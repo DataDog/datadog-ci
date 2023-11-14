@@ -25,8 +25,6 @@ export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => Axios
     }
   }
 
-  console.log(attrs)
-
   return request({
     method: 'POST',
     url: 'api/v2/dora/deployment',

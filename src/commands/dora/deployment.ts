@@ -34,21 +34,23 @@ export class SendDeploymentEvent extends Command {
     examples: [['TODO', 'datadog-ci dora deployment --service my-service ']],
   })
 
-  private service = Option.String('--service', {required: true, env: 'DD_SERVICE'})
+  private serviceParam = Option.String('--service', {env: 'DD_SERVICE'})
+  private service!: string
   private env = Option.String('--env', {env: 'DD_ENV'})
-  private gitInfo? = {
-    repoURL: Option.String('--git-repository-url'),
-    commitSHA: Option.String('--git-commit-sha'),
-  }
-  private skipGit = Option.Boolean('--skip-git', false)
+
   private startedAt = Option.String('--started-at', {required: true, validator: t.isDate()})
   private finishedAt = Option.String('--finished-at', {validator: t.isDate()})
+
+  private gitInfo?: GitInfo
+  private gitRepoURL = Option.String('--git-repository-url')
+  private gitCommitSHA = Option.String('--git-commit-sha')
+  private skipGit = Option.Boolean('--skip-git', false)
+
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    env: process.env.DD_ENV,
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
@@ -57,11 +59,21 @@ export class SendDeploymentEvent extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
+    if (this.serviceParam) {
+      this.service = this.serviceParam
+    } else {
+      this.logger.error('Missing service. It must be provided with --service or the DD_SERVICE env var')
+
+      return 1
+    }
+
     if (this.skipGit) {
       this.gitInfo = undefined
-    } else if (this.gitInfo && (!!this.gitInfo.repoURL || !!this.gitInfo.commitSHA)) {
+    } else if (this.gitRepoURL && this.gitCommitSHA) {
+      this.gitInfo = {repoURL: this.gitRepoURL, commitSHA: this.gitCommitSHA}
+    } else {
       this.gitInfo = await this.getGitInfo()
-      this.logger.warn(renderGitWarning(this.gitInfo as GitInfo))
+      this.logger.warn(renderGitWarning(this.gitInfo))
     }
 
     const api = this.getApiHelper()
@@ -105,7 +117,7 @@ export class SendDeploymentEvent extends Command {
       deployment.env = this.env
     }
     if (this.gitInfo) {
-      deployment.git = this.gitInfo as GitInfo
+      deployment.git = this.gitInfo
     }
 
     return deployment
