@@ -1,4 +1,3 @@
-// import {default as axios} from 'axios'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'

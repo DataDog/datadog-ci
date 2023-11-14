@@ -4,7 +4,7 @@ import {getRequestBuilder} from '../../helpers/utils'
 
 import {DeploymentEvent} from './interfaces'
 
-export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+export const datadogSite = process.env.DD_SITE || 'datadoghq.com'
 export const apiUrl = `https://api.${datadogSite}`
 
 export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
@@ -12,8 +12,8 @@ export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => Axios
 ) => {
   const attrs: Record<string, any> = {
     service: deployment.service,
-    started_at: deployment.startedAt.getTime() * 1000000, // ms to ns
-    finished_at: deployment.finishedAt.getTime() * 1000000, // ms to ns
+    started_at: deployment.startedAt.getTime() * 1e6, // ms to ns
+    finished_at: deployment.finishedAt.getTime() * 1e6, // ms to ns
   }
   if (deployment.env) {
     attrs.env = deployment.env
