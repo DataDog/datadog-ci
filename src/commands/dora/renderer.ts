@@ -25,5 +25,5 @@ export const renderRequest = (service: string): string => `Sending DORA deployme
 
 export const renderGitWarning = (git: GitInfo): string =>
   `${ICONS.WARNING} --git-repository-url or --git-commit-sha not provided.\n` +
-  `Assuming deployment from current git checkout: ${git.repoURL} ${git.commitSHA}\n` +
+  `Assuming deployment of the current HEAD commit: ${git.repoURL} ${git.commitSHA}\n` +
   `This warning can be disabled with --skip-git but git data is required for Change Lead Time.`

@@ -38,7 +38,7 @@ describe('execute', () => {
     return {context, code}
   }
   describe('dry-run', () => {
-    const fakeCurrentDate = new Date(1699960651)
+    const fakeCurrentDate = new Date(1699960651000)
     beforeAll(() => {
       jest.useFakeTimers()
       jest.setSystemTime(fakeCurrentDate)
@@ -141,6 +141,16 @@ describe('execute', () => {
       expect(context.stdout.toString()).toContain('--service')
     })
     test('started-at is required', async () => {
+      /* eslint-disable prettier/prettier */
+      const {context, code} = await runCLI([
+        '--dry-run', '--skip-git',
+        '--service', 'test-service',
+      ])
+      /* eslint-enable prettier/prettier */
+      expect(code).not.toBe(0)
+      expect(context.stdout.toString()).toContain('--started-at')
+    })
+    test('timestamps in future are rejected', async () => {
       /* eslint-disable prettier/prettier */
       const {context, code} = await runCLI([
         '--dry-run', '--skip-git',

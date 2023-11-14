@@ -28,25 +28,62 @@ export class SendDeploymentEvent extends Command {
     category: 'CI Visibility',
     description: 'Send a new Deployment event for DORA Metrics to Datadog.',
     details: `
-      This command will send details about a service Deployment to Datadog.\n
-      See README for details.
+      This command will send details about a finished Deployment to Datadog for DORA Metrics.\n
+      See README for more details.
     `,
-    examples: [['TODO', 'datadog-ci dora deployment --service my-service ']],
+    examples: [
+      [
+        'Send a DORA deployment event for a service to the prod environment',
+        'datadog-ci dora deployment --service my-service --env prod \\\n' +
+          '    --started-at 1699960648 --finished-at 1699961048 \\\n' +
+          '    --git-repository-url https://github.com/my-organization/my-repository \\\n' +
+          '    --git-commit-sha 102836a25f5477e571c73d489b3f0f183687068e',
+      ],
+      [
+        'Send a DORA deployment event with automatically extracted Git info (for deployments triggered from CI in the same repository as the application). The deployment is assumed to target the current HEAD commit',
+        'datadog-ci dora deployment --service my-service --started-at $deploy_start --finished-at `date +%s`',
+      ],
+      [
+        'Send a DORA deployment event to the datadoghq.eu site',
+        'DD_SITE=datadoghq.eu datadog-ci dora deployment --service my-service --started-at $deploy_start',
+      ],
+      [
+        'Send a DORA deployment event with the minimal parameters. Change Lead Time is not available without Git info. The deployment finished-at is set to the current time',
+        'datadog-ci dora deployment --service my-service --started-at $deploy_start --skip-git',
+      ],
+      [
+        'Send a DORA deployment event providing the service name and env through environment vars',
+        'DD_SERVICE=my-service DD_ENV=prod datadog-ci dora deployment --started-at $deploy_start',
+      ],
+    ],
   })
 
   private serviceParam = Option.String('--service', {env: 'DD_SERVICE'})
   private service!: string
   private env = Option.String('--env', {env: 'DD_ENV'})
 
-  private startedAt = Option.String('--started-at', {required: true, validator: t.isDate()})
-  private finishedAt = Option.String('--finished-at', {validator: t.isDate()})
+  private startedAt = Option.String('--started-at', {
+    required: true,
+    validator: t.isDate(),
+    description: 'In Unix seconds or ISO86001 (Examples: 1699960648, 2023-11-14T11:17:28Z)',
+  })
+  private finishedAt = Option.String('--finished-at', {
+    validator: t.isDate(),
+    description: 'In Unix seconds or ISO86001 (Examples: 1699961048, 2023-11-14T11:24:08Z)',
+  })
 
   private gitInfo?: GitInfo
-  private gitRepoURL = Option.String('--git-repository-url')
-  private gitCommitSHA = Option.String('--git-commit-sha')
-  private skipGit = Option.Boolean('--skip-git', false)
+  private gitRepoURL = Option.String('--git-repository-url', {
+    description: 'Example: https://github.com/DataDog/datadog-ci.git',
+  })
+  private gitCommitSHA = Option.String('--git-commit-sha', {
+    description: 'Example: 102836a25f5477e571c73d489b3f0f183687068e',
+  })
+  private skipGit = Option.Boolean('--skip-git', false, {
+    description: 'Disables git info attributes. Change Lead Time will not be available',
+  })
 
-  private verbose = Option.Boolean('--verbose', false)
+  private verbose = Option.Boolean('--verbose', false, {hidden: true})
   private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
