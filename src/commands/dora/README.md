@@ -8,7 +8,7 @@ Send deployment events for DORA Metrics from CI.
 
 #### `deployment`
 
-This command sends a deployment event for a given `service` and `env` to Datadog.
+This command sends details to Datadog about a deployment of a `service`.
 
 ```bash
 $ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]

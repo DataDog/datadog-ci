@@ -28,8 +28,8 @@ export class SendDeploymentEvent extends Command {
     category: 'CI Visibility',
     description: 'Send a new Deployment event for DORA Metrics to Datadog.',
     details: `
-      This command will send details about a finished Deployment to Datadog for DORA Metrics.\n
-      See README for more details.
+    This command sends details to Datadog about a deployment of a \`service\`.\n
+    See README for more details.
     `,
     examples: [
       [
@@ -48,7 +48,7 @@ export class SendDeploymentEvent extends Command {
         'DD_SITE=datadoghq.eu datadog-ci dora deployment --service my-service --started-at $deploy_start',
       ],
       [
-        'Send a DORA deployment event with the minimal parameters. Change Lead Time is not available without Git info. The deployment finished-at is set to the current time',
+        'Send a DORA deployment event without git info. Change Lead Time is not available without Git info. The deployment finished-at is set to the current time',
         'datadog-ci dora deployment --service my-service --started-at $deploy_start --skip-git',
       ],
       [
