@@ -1,6 +1,6 @@
 # DORA Metrics
 
-Send deployment events for DORA Metrics from CI
+Send deployment events for DORA Metrics from CI.
 
 ## Usage
 
@@ -8,7 +8,7 @@ Send deployment events for DORA Metrics from CI
 
 #### `deployment`
 
-This command will send a deployment event for a given service and env to Datadog.
+This command sends a deployment event for a given `service` and `env` to Datadog.
 
 ```bash
 $ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
@@ -32,24 +32,24 @@ datadog-ci dora deployment --service my-service --env prod \
 ```
 
 - `--service` (or `DD_SERVICE`) and `--started-at` are always required and `--git-repository-url` and `--git-commit-sha` are necessary for Change Lead Time.
-- `--service` (default: `DD_SERVICE` env var) should be set as the name of the service that was deployed
-- `--env` (default: `DD_ENV` env var) is a string that represents the environment that was targetted by the deployment.
-- `--started-at` (required) timestamp in Unix seconds or ISO8601 when the deployment started.
-- `--finished-at` (default: current timestamp) timestamp in Unix seconds or ISO8601 when the deployment finished.
+- `--service` (default: `DD_SERVICE` env var) should be set as the name of the service that was deployed.
+- `--env` (default: `DD_ENV` env var) is a string that represents the environment that was targeted by the deployment.
+- `--started-at` (required) is the timestamp in Unix seconds or ISO8601 when the deployment started.
+- `--finished-at` (default: current timestamp) is the timestamp in Unix seconds or ISO8601 when the deployment finished.
 - `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--git-commit-sha` is a string with the git commit SHA that has been deployed. If this is missing, the current HEAD is retrieved from the local git repository.
-- `--skip-git` (default: `false`): if you do not want to provide git info. Change Lead Time will not work without git info
-- `--dry-run` (default: `false`): it will run the command without actually sending the event. All other checks are still performed.
+- `--skip-git` (default: `false`): Set to `true` if you do not want to provide git info. Change Lead Time does not work without git info.
+- `--dry-run` (default: `false`): It runs the command without actually sending the event. All other checks are still performed.
 
 
 #### Environment variables
 
-Additionally you might configure the `deployment` command with environment variables:
+Additionally, you can configure the `deployment` command with environment variables:
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_ENV`: you may choose the environment you that the deployment has targetted
-- `DD_SERVICE`: if you haven't specified a service through `--service` you might do it with this env var.
-- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_SERVICE`: If you haven't specified a service through `--service` you can set it with this env var.
+- `DD_SITE`: Set to you your Datadog site. For example, `datadoghq.com` or `datadoghq.eu`.
 
 
 ### Optional dependencies
@@ -66,7 +66,7 @@ export DD_API_KEY='<API key>'
 yarn launch dora deployment --service test-service --started-at `date +%s` --dry-run
 ```
 
-Successful output should look like this:
+This is an example of a successful output:
 
 ```bash
 ⚠️ --git-repository-url or --git-commit-sha not provided.
