@@ -28,7 +28,7 @@ export class SendDeploymentEvent extends Command {
     category: 'CI Visibility',
     description: 'Send a new Deployment event for DORA Metrics to Datadog.',
     details: `
-    This command sends details to Datadog about a deployment of a \`service\`.\n
+    This command sends details to Datadog about a deployment of a service.\n
     See README for more details.
     `,
     examples: [

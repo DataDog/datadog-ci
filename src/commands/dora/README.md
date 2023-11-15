@@ -10,7 +10,7 @@ Send deployment events for DORA Metrics from CI.
 
 **Warning:** The `dora deployment` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
 
-This command sends details to Datadog about a deployment of a `service`.
+This command sends details to Datadog about a deployment of a service.
 
 ```bash
 $ DD_BETA_COMMANDS_ENABLED=1 datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
