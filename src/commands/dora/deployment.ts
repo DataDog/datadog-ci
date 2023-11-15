@@ -80,7 +80,7 @@ export class SendDeploymentEvent extends Command {
     description: 'Example: 102836a25f5477e571c73d489b3f0f183687068e',
   })
   private skipGit = Option.Boolean('--skip-git', false, {
-    description: 'Disables git info attributes. Change Lead Time will not be available',
+    description: 'Disables sending git URL and SHA. Change Lead Time will not be available',
   })
 
   private verbose = Option.Boolean('--verbose', false, {hidden: true})

@@ -21,7 +21,7 @@ $ DD_BETA_COMMANDS_ENABLED=1 datadog-ci dora deployment [--service #0] [--env #0
   --finished-at #0           In Unix seconds or ISO8601. (Examples: 1699961048, 2023-11-14T11:24:08Z)
   --git-repository-url #0    Example: https://github.com/DataDog/datadog-ci.git
   --git-commit-sha #0        Example: 102836a25f5477e571c73d489b3f0f183687068e
-  --skip-git                 Disables git info attributes. Change Lead Time will not be available
+  --skip-git                 Disables sending git URL and SHA. Change Lead Time will not be available
 ```
 
 For example:
@@ -35,14 +35,15 @@ datadog-ci dora deployment --service my-service --env prod \
     --git-commit-sha 102836a25f5477e571c73d489b3f0f183687068e
 ```
 
-- `--service` (or `DD_SERVICE`) and `--started-at` are always required and `--git-repository-url` and `--git-commit-sha` are necessary for Change Lead Time.
+`--service` (or `DD_SERVICE`) and `--started-at` are always required and `--git-repository-url` and `--git-commit-sha` are necessary for Change Lead Time.
+
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service that was deployed.
 - `--env` (default: `DD_ENV` env var) is a string that represents the environment that was targeted by the deployment.
 - `--started-at` (required) is the timestamp in Unix seconds or ISO8601 when the deployment started.
 - `--finished-at` (default: current timestamp) is the timestamp in Unix seconds or ISO8601 when the deployment finished.
-- `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
+- `--git-repository-url` is a string with the repository URL for the deployed service. If this is missing, the URL is retrieved from the local git repository.
 - `--git-commit-sha` is a string with the git commit SHA that has been deployed. If this is missing, the current HEAD is retrieved from the local git repository.
-- `--skip-git` (default: `false`): Set to `true` if you do not want to provide git info. Change Lead Time does not work without git info.
+- `--skip-git` (default: `false`): Disables sending git URL and SHA. Change Lead Time will not be available
 - `--dry-run` (default: `false`): It runs the command without actually sending the event. All other checks are still performed.
 
 
@@ -58,7 +59,7 @@ Additionally, you can configure the `deployment` command with environment variab
 
 ### Optional dependencies
 
-- [`git`](https://git-scm.com/downloads) is used for extracting repository metadata automatically.
+- [`git`](https://git-scm.com/downloads) is used for extracting repository URL and commit SHA automatically.
 
 ### End-to-end testing process
 
