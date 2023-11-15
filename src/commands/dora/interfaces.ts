@@ -1,4 +1,4 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
+import type {AxiosPromise, AxiosResponse} from 'axios'
 
 export interface DeploymentEvent {
   service: string
