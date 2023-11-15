@@ -427,14 +427,14 @@ const getResultFromBatch = (
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(
       pollResult.result,
-      hasTimedOut,
+      !!hasTimedOut,
       options.failOnCriticalErrors ?? false,
       options.failOnTimeout ?? false
     ),
     result: pollResult.result,
     resultId: resultInBatch.result_id,
     test: deepExtend({}, test, pollResult.check),
-    timedOut: hasTimedOut,
+    timedOut: !!hasTimedOut,
     timestamp: pollResult.timestamp,
   }
 }

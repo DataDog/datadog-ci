@@ -973,7 +973,8 @@ describe('utils', () => {
         getBatchImplementation: async () => ({
           results: [
             {...batch.results[0]},
-            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: undefined},
+            // eslint-disable-next-line no-null/no-null -- our backend can return null
+            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
           ],
           status: 'in_progress',
         }),
@@ -1020,7 +1021,8 @@ describe('utils', () => {
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
         getBatchImplementation: async () => ({
-          results: [{...batch.results[0], timed_out: undefined}],
+          // eslint-disable-next-line no-null/no-null -- our backend can return null
+          results: [{...batch.results[0], timed_out: null}],
           status: 'in_progress',
         }),
         pollResultsImplementation: async () => [
