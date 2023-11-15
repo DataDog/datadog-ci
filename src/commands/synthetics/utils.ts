@@ -330,7 +330,14 @@ const waitForBatchToFinish = async (
       continue
     }
 
-    reportResidualResults(pollResultMap, current, emittedResultIndexes, resultDisplayInfo, reporter)
+    reportResidualResults(
+      pollResultMap,
+      current,
+      emittedResultIndexes,
+      resultDisplayInfo,
+      hasBatchExceededMaxPollingDate,
+      reporter
+    )
 
     return current.results.map((r) =>
       getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
@@ -393,6 +400,7 @@ const reportResidualResults = (
   batch: Batch,
   emittedResultIndexes: Set<number>,
   resultDisplayInfo: ResultDisplayInfo,
+  hasBatchExceededMaxPollingDate: boolean,
   reporter: MainReporter
 ) => {
   const notEmitted = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
@@ -402,7 +410,7 @@ const reportResidualResults = (
 
   const notEmittedResultIds = notEmitted.map((r) => r.result_id)
 
-  reportResults(pollResultMap, notEmittedResultIds, batch, resultDisplayInfo, false, reporter)
+  reportResults(pollResultMap, notEmittedResultIds, batch, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 }
 
 const getResultFromBatch = (
