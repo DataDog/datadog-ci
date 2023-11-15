@@ -1,4 +1,4 @@
-# DORA Metrics (beta)
+# DORA Metrics
 
 Send deployment events for DORA Metrics from CI.
 
@@ -8,10 +8,12 @@ Send deployment events for DORA Metrics from CI.
 
 #### `deployment`
 
+**Warning:** The `dora deployment` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
+
 This command sends details to Datadog about a deployment of a `service`.
 
 ```bash
-$ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
+$ DD_BETA_COMMANDS_ENABLED=1 datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
 
 ━━━ Options ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -25,6 +27,8 @@ $ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
 For example:
 
 ```bash
+export DD_BETA_COMMANDS_ENABLED=1
+
 datadog-ci dora deployment --service my-service --env prod \
     --started-at 1699960648 --finished-at 1699961048 \
     --git-repository-url https://github.com/my-organization/my-repository \
@@ -62,6 +66,7 @@ To verify this command works as expected, you can use `--dry-run`:
 
 ```bash
 export DD_API_KEY='<API key>'
+export DD_BETA_COMMANDS_ENABLED=1
 
 yarn launch dora deployment --service test-service --started-at `date +%s` --dry-run
 ```
