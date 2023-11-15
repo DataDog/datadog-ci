@@ -984,6 +984,17 @@ describe('utils', () => {
         ],
       })
 
+      const expectedTimeoutResult = {
+        ...result,
+        result: {
+          ...result.result,
+          failure: {code: 'TIMEOUT', message: 'Result timed out'},
+          passed: false,
+        },
+        resultId: '3',
+        timedOut: true,
+      }
+
       expect(
         await utils.waitForResults(
           api,
@@ -997,23 +1008,14 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).toEqual([
-        result,
-        {
-          ...result,
-          result: {
-            ...result.result,
-            failure: {code: 'TIMEOUT', message: 'Result timed out'},
-            passed: false,
-          },
-          resultId: '3',
-          timedOut: true,
-        },
-      ])
+      ).toEqual([result, expectedTimeoutResult])
 
       // Residual results are never 'received': we force-end them.
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
-      expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
+
+      // `resultEnd` should return the same data as `waitForResults`
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
     })
 
     test('results failure should ignore if timed-out', async () => {
