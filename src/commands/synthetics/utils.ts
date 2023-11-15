@@ -413,7 +413,7 @@ const getResultFromBatch = (
 ): Result => {
   const {getLocation, options, tests} = resultDisplayInfo
 
-  const hasTimedOut = resultInBatch.timed_out !== undefined ? resultInBatch.timed_out : hasBatchExceededMaxPollingDate
+  const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
 
   if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
@@ -427,14 +427,14 @@ const getResultFromBatch = (
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(
       pollResult.result,
-      !!hasTimedOut,
+      hasTimedOut,
       options.failOnCriticalErrors ?? false,
       options.failOnTimeout ?? false
     ),
     result: pollResult.result,
     resultId: resultInBatch.result_id,
     test: deepExtend({}, test, pollResult.check),
-    timedOut: !!hasTimedOut,
+    timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
   }
 }
