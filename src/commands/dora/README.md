@@ -1,4 +1,4 @@
-# DORA Metrics
+# DORA Metrics (beta)
 
 Send deployment events for DORA Metrics from CI.
 
