@@ -34,7 +34,7 @@ import {
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LayerKey,
   LAYER_LOOKUP,
-  RETRY_STRATEGY,
+  EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
@@ -144,7 +144,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = LAYER_LOOKUP[layer]
   let foundLatestVersion = false
-  const lambdaClient = new LambdaClient({region, retryStrategy: RETRY_STRATEGY})
+  const lambdaClient = new LambdaClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
   while (!foundLatestVersion) {
     try {
       // Search next version

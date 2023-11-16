@@ -36,7 +36,7 @@ import {
   FRAMEWORK_FILES_MAPPING,
   DeploymentFrameworks,
   LAMBDA_PROJECT_FILES,
-  RETRY_STRATEGY,
+  EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
 } from './constants'
 import {
   getAWSCredentials,
@@ -168,7 +168,7 @@ export class LambdaFlareCommand extends Command {
     const lambdaClientConfig: LambdaClientConfig = {
       region,
       credentials: this.credentials,
-      retryStrategy: RETRY_STRATEGY,
+      retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
     }
     const lambdaClient = new LambdaClient(lambdaClientConfig)
     let config: FunctionConfiguration
@@ -539,7 +539,7 @@ export const getLogEvents = async (
  */
 export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
   const logs = new Map<string, OutputLogEvent[]>()
-  const cwlClient = new CloudWatchLogsClient({region, retryStrategy: RETRY_STRATEGY})
+  const cwlClient = new CloudWatchLogsClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
   if (functionName.startsWith('arn:aws')) {
     functionName = functionName.split(':')[6]
   }
