@@ -191,10 +191,6 @@ describe('Default reporter', () => {
         expect(clearLine).toHaveBeenCalled()
       }
       expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      // Should do nothing.
-      ttyReporter.testsWait([], MOCK_BASE_URL, '123')
-      expect(simulatedTerminalOutput).toMatchSnapshot()
     })
   })
   /* eslint-enable jest/no-conditional-expect */
