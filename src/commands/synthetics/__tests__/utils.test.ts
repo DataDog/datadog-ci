@@ -973,7 +973,7 @@ describe('utils', () => {
         getBatchImplementation: async () => ({
           results: [
             {...batch.results[0]},
-            // eslint-disable-next-line no-null/no-null -- our backend can return null
+            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
             {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
           ],
           status: 'in_progress',
@@ -1023,7 +1023,7 @@ describe('utils', () => {
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
         getBatchImplementation: async () => ({
-          // eslint-disable-next-line no-null/no-null -- our backend can return null
+          // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
           results: [{...batch.results[0], timed_out: null}],
           status: 'in_progress',
         }),
