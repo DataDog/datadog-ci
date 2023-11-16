@@ -167,4 +167,7 @@ export const LAMBDA_PROJECT_FILES = [...FLARE_PROJECT_FILES, ...FRAMEWORK_FILES_
 
 // Configures max number of attempts and exponential backoff function for AWS requests
 // First retry is attempt 1
-export const EXPONENTIAL_BACKOFF_RETRY_STRATEGY = new ConfiguredRetryStrategy(4, (attempt: number) => 1000 * 2 ** (attempt - 1))
+export const EXPONENTIAL_BACKOFF_RETRY_STRATEGY = new ConfiguredRetryStrategy(
+  4,
+  (attempt: number) => 1000 * 2 ** (attempt - 1)
+)

@@ -175,7 +175,10 @@ export class UninstrumentCommand extends Command {
 
       const spinner = instrumentRenderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
 
         const lambdaClientConfig: LambdaClientConfig = {
           region,
@@ -223,7 +226,10 @@ export class UninstrumentCommand extends Command {
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
         try {
           const configs = await getUninstrumentedFunctionConfigs(
             lambdaClient,
