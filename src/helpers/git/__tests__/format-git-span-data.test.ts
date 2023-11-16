@@ -21,7 +21,7 @@ describe('getGitMetadata', () => {
   it('reads git metadata successfully', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
-      listRemote: () => 'repository_url',
+      listRemote: async (git: any): Promise<string> => 'repository_url',
       revparse: () => 'commitSHA',
       show: (input: string[]) => {
         if (input[1] === '--format=%s') {
@@ -66,7 +66,8 @@ describe('getGitMetadata', () => {
   it('scrubs credentials from https repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
-      listRemote: () => 'https://x-oauth-basic:ghp_safe_characters@github.com/datadog/safe-repository.git',
+      listRemote: async (git: any): Promise<string> =>
+        'https://x-oauth-basic:ghp_safe_characters@github.com/datadog/safe-repository.git',
       revparse: () => 'commitSHA',
       show: (input: string[]) => {
         if (input[1] === '--format=%s') {
@@ -93,7 +94,7 @@ describe('getGitMetadata', () => {
   it('scrubs credentials from ssh repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
-      listRemote: () => 'ssh://username@host.xz:port/path/to/repo.git/',
+      listRemote: async (git: any): Promise<string> => 'ssh://username@host.xz:port/path/to/repo.git/',
       revparse: () => 'commitSHA',
       show: (input: string[]) => {
         if (input[1] === '--format=%s') {
