@@ -935,8 +935,8 @@ describe('utils', () => {
         result_id: 'rid-3',
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL)
-      // Now waiting for 0 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [], MOCK_BASE_URL, trigger.batch_id)
+      // Do not report when there are no tests to wait anymore
+      expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
     })
 
     test('object in each result should be different even if they share the same public ID (config overrides)', async () => {

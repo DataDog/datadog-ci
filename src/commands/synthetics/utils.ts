@@ -318,13 +318,13 @@ const waitForBatchToFinish = async (
 
     reportResults(pollResultMap, resultIdsToReport, batch, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 
-    reportRemainingTests(trigger, batch, resultDisplayInfo, reporter)
-
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
         getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
       )
     }
+
+    reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
 
     await wait(POLLING_INTERVAL)
   }
@@ -363,7 +363,7 @@ const reportResults = (
   }
 }
 
-const reportRemainingTests = (
+const reportWaitingTests = (
   trigger: Trigger,
   currentBatchState: Batch,
   resultDisplayInfo: ResultDisplayInfo,

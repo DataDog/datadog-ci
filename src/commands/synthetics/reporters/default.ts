@@ -362,10 +362,6 @@ export class DefaultReporter implements MainReporter {
   }
 
   public testsWait(tests: Test[], baseUrl: string, batchId: string) {
-    if (tests.length === 0) {
-      return
-    }
-
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
