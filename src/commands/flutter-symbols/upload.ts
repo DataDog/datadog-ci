@@ -349,7 +349,7 @@ export class UploadCommand extends Command {
     if (status === UploadStatus.Success) {
       this.context.stdout.write('Mapping upload finished\n')
     } else {
-      this.context.stdout.write(`Mapping upload failed (exit code: ${status}\n`)
+      this.context.stdout.write(`Mapping upload failed\n`)
     }
 
     return status
