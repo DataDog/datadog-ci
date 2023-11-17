@@ -223,6 +223,32 @@ describe('upload', () => {
       expect(firstFile.logsEnabled).toBe(true)
       expect(secondFile.logsEnabled).toBe(true)
     })
+    test('should show different error on no test report', async () => {
+      process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['./src/commands/junit/__tests__/fixtures/subfolder/invalid-no-tests.xml'],
+          config: {},
+          context,
+          logs: true,
+          service: 'service',
+        },
+        {},
+        {},
+        {},
+        {},
+        {}
+      )
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        renderInvalidFile(
+          './src/commands/junit/__tests__/fixtures/subfolder/invalid-no-tests.xml',
+          'The junit report file is empty, there are no <testcase> elements.'
+        )
+      )
+    })
   })
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
