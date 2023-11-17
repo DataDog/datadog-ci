@@ -329,7 +329,7 @@ export class UploadCommand extends Command {
       payload.content.set('repository', this.getGitDataPayload(this.gitData))
     }
 
-    const result = await uploadMultipartHelper(requestBuilder, payload, {
+    const status = await uploadMultipartHelper(requestBuilder, payload, {
       apiKeyValidator,
       onError: (e) => {
         this.context.stdout.write(renderFailedUpload(this.androidMappingLocation!, e.message))
@@ -345,9 +345,14 @@ export class UploadCommand extends Command {
       retries: 5,
       useGzip: true,
     })
-    this.context.stdout.write(`Mapping upload finished: ${result}\n`)
 
-    return result
+    if (status === UploadStatus.Success) {
+      this.context.stdout.write('Mapping upload finished\n')
+    } else {
+      this.context.stdout.write(`Mapping upload failed (exit code: ${status}\n`)
+    }
+
+    return status
   }
 
   private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
