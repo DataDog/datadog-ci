@@ -935,8 +935,8 @@ describe('utils', () => {
         result_id: 'rid-3',
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL)
-      // Now waiting for 0 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [], MOCK_BASE_URL, trigger.batch_id)
+      // Do not report when there are no tests to wait anymore
+      expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
     })
 
     test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
@@ -973,7 +973,8 @@ describe('utils', () => {
         getBatchImplementation: async () => ({
           results: [
             {...batch.results[0]},
-            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: undefined},
+            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
+            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
           ],
           status: 'in_progress',
         }),
@@ -982,6 +983,17 @@ describe('utils', () => {
           {...pollResult, result: {...pollResult.result}, resultID: '3'},
         ],
       })
+
+      const expectedTimeoutResult = {
+        ...result,
+        result: {
+          ...result.result,
+          failure: {code: 'TIMEOUT', message: 'Result timed out'},
+          passed: false,
+        },
+        resultId: '3',
+        timedOut: true,
+      }
 
       expect(
         await utils.waitForResults(
@@ -996,23 +1008,14 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).toEqual([
-        result,
-        {
-          ...result,
-          result: {
-            ...result.result,
-            failure: {code: 'TIMEOUT', message: 'Result timed out'},
-            passed: false,
-          },
-          resultId: '3',
-          timedOut: true,
-        },
-      ])
+      ).toEqual([result, expectedTimeoutResult])
 
       // Residual results are never 'received': we force-end them.
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
-      expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
+
+      // `resultEnd` should return the same data as `waitForResults`
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
     })
 
     test('results failure should ignore if timed-out', async () => {
@@ -1020,7 +1023,8 @@ describe('utils', () => {
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
         getBatchImplementation: async () => ({
-          results: [{...batch.results[0], timed_out: undefined}],
+          // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
+          results: [{...batch.results[0], timed_out: null}],
           status: 'in_progress',
         }),
         pollResultsImplementation: async () => [

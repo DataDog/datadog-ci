@@ -297,51 +297,43 @@ const waitForBatchToFinish = async (
   const emittedResultIndexes = new Set<number>()
 
   while (true) {
-    const current = await getBatch(api, trigger)
+    const batch = await getBatch(api, trigger)
     const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
 
-    // The backend is expected to handle the time out of the batch, and change its status to `failed` eventually.
-    // But as a safety in case it fails to do that, we also use `hasBatchExceededMaxPollingDate`.
-    const shouldContinuePolling = current.status === 'in_progress' && !hasBatchExceededMaxPollingDate
+    // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
+    // But `hasBatchExceededMaxPollingDate` is a safety in case it fails to do that.
+    const shouldContinuePolling = batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate
 
-    const receivedResults = reportReceivedResults(current, emittedResultIndexes, reporter)
+    const receivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
+    const residualResults = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
 
-    const resultIdsToFetch = shouldContinuePolling
-      ? receivedResults.map((r) => r.result_id)
-      : current.results.map((r) => r.result_id) // Get the full up-to-date data.
-
-    const resultIdsToReport = receivedResults.map((r) => r.result_id)
+    // For the last iteration, the full up-to-date data has to be fetched to compute this function's return value,
+    // while only the [received + residual] results have to be reported.
+    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).map((r) => r.result_id)
+    const resultIdsToReport = receivedResults
+      .concat(shouldContinuePolling ? [] : residualResults)
+      .map((r) => r.result_id)
 
     const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
 
-    reportResults(
-      pollResultMap,
-      resultIdsToReport,
-      current,
-      resultDisplayInfo,
-      hasBatchExceededMaxPollingDate,
-      reporter
-    )
-
-    reportRemainingTests(trigger, current, resultDisplayInfo, reporter)
+    reportResults(pollResultMap, resultIdsToReport, batch, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 
     if (!shouldContinuePolling) {
-      // Break the loop and report any residual results.
-      reportResidualResults(pollResultMap, current, emittedResultIndexes, resultDisplayInfo, reporter)
-
-      return current.results.map((r) =>
+      return batch.results.map((r) =>
         getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
       )
     }
+
+    reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
 
     await wait(POLLING_INTERVAL)
   }
 }
 
-const reportReceivedResults = (currentBatchState: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
+const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
   const receivedResults: ResultInBatch[] = []
 
-  for (const [index, result] of currentBatchState.results.entries()) {
+  for (const [index, result] of batch.results.entries()) {
     if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
       emittedResultIndexes.add(index)
       reporter.resultReceived(result)
@@ -371,7 +363,7 @@ const reportResults = (
   }
 }
 
-const reportRemainingTests = (
+const reportWaitingTests = (
   trigger: Trigger,
   currentBatchState: Batch,
   resultDisplayInfo: ResultDisplayInfo,
@@ -388,23 +380,6 @@ const reportRemainingTests = (
   reporter.testsWait(remainingTests, baseUrl, trigger.batch_id)
 }
 
-const reportResidualResults = (
-  pollResultMap: PollResultMap,
-  batch: Batch,
-  emittedResultIndexes: Set<number>,
-  resultDisplayInfo: ResultDisplayInfo,
-  reporter: MainReporter
-) => {
-  const notEmitted = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
-  if (notEmitted.length === 0) {
-    return
-  }
-
-  const notEmittedResultIds = notEmitted.map((r) => r.result_id)
-
-  reportResults(pollResultMap, notEmittedResultIds, batch, resultDisplayInfo, false, reporter)
-}
-
 const getResultFromBatch = (
   resultInBatch: ResultInBatch,
   pollResult: PollResult,
@@ -413,7 +388,7 @@ const getResultFromBatch = (
 ): Result => {
   const {getLocation, options, tests} = resultDisplayInfo
 
-  const hasTimedOut = resultInBatch.timed_out !== undefined ? resultInBatch.timed_out : hasBatchExceededMaxPollingDate
+  const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
 
   if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}

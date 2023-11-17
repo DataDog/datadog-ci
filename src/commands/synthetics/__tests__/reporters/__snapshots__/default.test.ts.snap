@@ -208,16 +208,6 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 "
 `;
 
-exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: false) 4`] = `
-"View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
-[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&from_ci=true[39m[22m 
-  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
-
- [36m⠙[39m Waiting for [1m[36m1[39m[22m test [90m(aaa-aaa-aaa)[39m…
-"
-`;
-
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: true) 1`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 
@@ -239,22 +229,6 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 `;
 
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: true) 3`] = `
-"View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
-
-- Waiting for [1m[36m2[39m[22m tests [90m(aaa-aaa-aaa, bbb-bbb-bbb)[39m…
-
-[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  ⎋ Total duration: 123 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&from_ci=true[39m[22m 
-  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
-
-- Waiting for [1m[36m1[39m[22m test [90m(aaa-aaa-aaa)[39m…
-
-
- [36m⠋[39m Waiting for [1m[36m1[39m[22m test [90m(aaa-aaa-aaa)[39m…
-"
-`;
-
-exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: true) 4`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 
 - Waiting for [1m[36m2[39m[22m tests [90m(aaa-aaa-aaa, bbb-bbb-bbb)[39m…
