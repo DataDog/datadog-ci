@@ -34,7 +34,7 @@ import {
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LayerKey,
   LAYER_LOOKUP,
-  LIST_FUNCTIONS_MAX_RETRY_COUNT,
+  EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
@@ -144,7 +144,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = LAYER_LOOKUP[layer]
   let foundLatestVersion = false
-  const lambdaClient = new LambdaClient({region})
+  const lambdaClient = new LambdaClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
   while (!foundLatestVersion) {
     try {
       // Search next version
@@ -281,25 +281,16 @@ export const getLambdaFunctionConfigsFromRegex = async (
 ): Promise<LFunctionConfiguration[]> => {
   const regEx = new RegExp(pattern)
   const matchedFunctions: LFunctionConfiguration[] = []
-  let retryCount = 0
   let response: ListFunctionsCommandOutput
   let nextMarker: string | undefined
 
   while (true) {
-    try {
-      const command = new ListFunctionsCommand({Marker: nextMarker})
-      response = await lambdaClient.send(command)
-      response.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
-      nextMarker = response.NextMarker
-      if (!nextMarker) {
-        break
-      }
-      retryCount = 0
-    } catch (e) {
-      retryCount++
-      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-        throw Error(`Max retry count exceeded. ${e}`)
-      }
+    const command = new ListFunctionsCommand({Marker: nextMarker})
+    response = await lambdaClient.send(command)
+    response.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+    nextMarker = response.NextMarker
+    if (!nextMarker) {
+      break
     }
   }
 

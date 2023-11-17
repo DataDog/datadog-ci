@@ -8,7 +8,7 @@ import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
-import {AWS_DEFAULT_REGION_ENV_VAR} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
@@ -110,6 +110,7 @@ export class UninstrumentCommand extends Command {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
             credentials: this.credentials,
+            retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
           }
 
           const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -174,11 +175,15 @@ export class UninstrumentCommand extends Command {
 
       const spinner = instrumentRenderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
 
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -217,10 +222,14 @@ export class UninstrumentCommand extends Command {
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
         try {
           const configs = await getUninstrumentedFunctionConfigs(
             lambdaClient,
