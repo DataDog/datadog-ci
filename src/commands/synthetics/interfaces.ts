@@ -400,6 +400,8 @@ export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
   criticalErrors: number
+  // Number of results expected by datadog-ci, prior to any selective re-run.
+  expected: number
   failed: number
   failedNonBlocking: number
   passed: number

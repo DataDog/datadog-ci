@@ -68,16 +68,17 @@ exports[`Default reporter runEnd Case where some outcomes are empty or missing 1
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m3[22m passed[39m, [31m[1m0[22m failed[39m, [33m[1m1[22m failed (non-blocking)[39m ([31m[1m1[22m critical errors[39m)
-Total Duration: 9m 28s"
+• Test Results: [32m[1m3[22m passed[39m, [31m[1m0[22m failed[39m, [33m[1m1[22m failed (non-blocking)[39m ([31m[1m1[22m critical errors[39m)
+• Total Duration: 9m 28s"
 `;
 
-exports[`Default reporter runEnd Case with 2 passed results, of which 2 come from previous CI run 1`] = `
+exports[`Default reporter runEnd Case with 2 passed results, of which 1 comes from previous CI run 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m0[22m failed[39m
-Total Duration: 9m 28s"
+• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m0[22m failed[39m
+• Selective re-run: ran 0 out of 1 tests
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd Complex case with all the tests and results outcomes possible 1`] = `
@@ -85,25 +86,26 @@ exports[`Default reporter runEnd Complex case with all the tests and results out
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
-Total Duration: 9m 28s"
+• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
+• Selective re-run: ran 5 out of 6 tests
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd Simple case with 1 test with 1 result (passed) 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Total Duration: 9m 28s"
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd communicates 2 tests parallelization 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Max parallelization configured: 2 tests running at the same time
-Total Duration: 9m 28s
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Max parallelization configured: 2 tests running at the same time
+• Total Duration: 9m 28s
 
 Increase your parallelization to reduce your total duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
@@ -113,9 +115,9 @@ exports[`Default reporter runEnd communicates no parallelization (1 test at a ti
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Max parallelization configured: 1 test running at the same time
-Total Duration: 9m 28s
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Max parallelization configured: 1 test running at the same time
+• Total Duration: 9m 28s
 
 Increase your parallelization to reduce your total duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
@@ -125,8 +127,8 @@ exports[`Default reporter runEnd does not communicate for uncapped orgs 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Total Duration: 9m 28s"
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter testTrigger Blocking test, with 1 config override 1`] = `

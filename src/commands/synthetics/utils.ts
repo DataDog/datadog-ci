@@ -536,6 +536,7 @@ export type InitialSummary = Omit<Summary, 'batchId'>
 
 export const createInitialSummary = (): InitialSummary => ({
   criticalErrors: 0,
+  expected: 0,
   failed: 0,
   failedNonBlocking: 0,
   passed: 0,
@@ -932,6 +933,10 @@ export const renderResults = ({
   }
 
   for (const result of results) {
+    if (result.executionRule !== ExecutionRule.SKIPPED) {
+      summary.expected++
+    }
+
     if (!config.failOnTimeout && result.timedOut) {
       summary.timedOut++
     }
@@ -945,6 +950,7 @@ export const renderResults = ({
     if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
       summary.passed++
     } else if (resultOutcome === ResultOutcome.PreviouslyPassed) {
+      summary.expected++
       summary.passed++
       summary.previouslyPassed++
     } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {

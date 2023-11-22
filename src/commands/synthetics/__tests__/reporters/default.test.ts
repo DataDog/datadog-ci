@@ -329,6 +329,7 @@ describe('Default reporter', () => {
     const complexSummary: Summary = {
       batchId: 'batch-id',
       criticalErrors: 2,
+      expected: 6,
       failed: 1,
       failedNonBlocking: 3,
       passed: 2,
@@ -358,9 +359,10 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: 'Case with 2 passed results, of which 2 come from previous CI run',
+        description: 'Case with 2 passed results, of which 1 comes from previous CI run',
         summary: {
           ...baseSummary,
+          expected: 1,
           passed: 2,
           previouslyPassed: 1,
         },

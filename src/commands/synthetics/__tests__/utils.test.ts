@@ -339,6 +339,7 @@ describe('utils', () => {
 
       const expectedSummary: utils.InitialSummary = {
         criticalErrors: 0,
+        expected: 0,
         failed: 0,
         failedNonBlocking: 0,
         passed: 0,
@@ -1423,7 +1424,7 @@ describe('utils', () => {
         description: '1 API test with 1 config override, 1 result (passed)',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1},
+          summary: {...emptySummary, expected: 1, passed: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -1435,7 +1436,7 @@ describe('utils', () => {
           '1 API test with 1 config override, 1 result (failed timeout), no fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1, timedOut: 1},
+          summary: {...emptySummary, expected: 1, passed: 1, timedOut: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -1447,7 +1448,7 @@ describe('utils', () => {
           '1 API test with 1 config override, 1 result (failed timeout), fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 1,
-          summary: {...emptySummary, failed: 1},
+          summary: {...emptySummary, expected: 1, failed: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
@@ -1459,7 +1460,7 @@ describe('utils', () => {
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, no fail on critical errors',
         expected: {
           exitCode: 0,
-          summary: {...emptySummary, passed: 1, criticalErrors: 1},
+          summary: {...emptySummary, expected: 1, passed: 1, criticalErrors: 1},
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
@@ -1471,7 +1472,7 @@ describe('utils', () => {
           '1 API test with 1 config override, 1 result (failed critical error), no fail on timeout, fail on critical errors',
         expected: {
           exitCode: 1,
-          summary: {...emptySummary, criticalErrors: 0, failed: 1},
+          summary: {...emptySummary, expected: 1, criticalErrors: 0, failed: 1},
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
@@ -1485,6 +1486,7 @@ describe('utils', () => {
           exitCode: 1,
           summary: {
             ...emptySummary,
+            expected: 3,
             failed: 1,
             failedNonBlocking: 1,
             passed: 1,
@@ -1503,6 +1505,7 @@ describe('utils', () => {
           exitCode: 0,
           summary: {
             ...emptySummary,
+            expected: 3,
             failedNonBlocking: 2,
             passed: 1,
             skipped: 1,
@@ -1529,6 +1532,7 @@ describe('utils', () => {
           exitCode: 1,
           summary: {
             ...emptySummary,
+            expected: 3,
             failed: 1,
             failedNonBlocking: 1,
             passed: 1,
@@ -1545,6 +1549,7 @@ describe('utils', () => {
           exitCode: 0,
           summary: {
             ...emptySummary,
+            expected: 2,
             passed: 2,
             previouslyPassed: 1,
             skipped: 1,

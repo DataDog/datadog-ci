@@ -363,13 +363,19 @@ export class DefaultReporter implements MainReporter {
       lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`\n${b('Continuous Testing Summary:')}`)
-    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
+    lines.push(`• Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
 
     if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
+        `• Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
           orgSettings.onDemandConcurrencyCap > 1 ? 's' : ''
         } running at the same time`
+      )
+    }
+
+    if (summary.previouslyPassed) {
+      lines.push(
+        `• Selective re-run: ran ${summary.expected - summary.previouslyPassed} out of ${summary.expected} tests`
       )
     }
 
@@ -377,7 +383,7 @@ export class DefaultReporter implements MainReporter {
       const min = Math.floor(this.totalDuration / (60 * 1000))
       const sec = Math.round((this.totalDuration % (60 * 1000)) / 1000)
       lines.push(
-        `Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
+        `• Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
       )
     }
 
