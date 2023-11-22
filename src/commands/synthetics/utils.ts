@@ -394,19 +394,38 @@ const reportResults = (
 
 const reportWaitingTests = (
   trigger: Trigger,
-  currentBatchState: Batch,
+  batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
   const {tests} = resultDisplayInfo
 
-  const inProgressPublicIds = new Set(
-    currentBatchState.results.flatMap((r) => (r.status === 'in_progress' ? r.test_public_id : []))
-  )
-  const remainingTests = tests.filter((t) => inProgressPublicIds.has(t.public_id))
+  const inProgressPublicIds = new Set()
+  const skippedBySelectiveRerunPublicIds = new Set()
 
-  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id)
+  for (const result of batch.results) {
+    if (result.status === 'in_progress') {
+      inProgressPublicIds.add(result.test_public_id)
+    }
+    if (isResultInBatchSkippedBySelectiveRerun(result)) {
+      skippedBySelectiveRerunPublicIds.add(result.test_public_id)
+    }
+  }
+
+  const remainingTests = []
+  let skippedCount = 0
+
+  for (const test of tests) {
+    if (inProgressPublicIds.has(test.public_id)) {
+      remainingTests.push(test)
+    }
+    if (skippedBySelectiveRerunPublicIds.has(test.public_id)) {
+      skippedCount++
+    }
+  }
+
+  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id, skippedCount)
 }
 
 const getResultFromBatch = (
@@ -601,10 +620,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testsWait: (tests, baseUrl, batchId) => {
+  testsWait: (tests, baseUrl, batchId, skippedCount) => {
     for (const reporter of reporters) {
       if (typeof reporter.testsWait === 'function') {
-        reporter.testsWait(tests, baseUrl, batchId)
+        reporter.testsWait(tests, baseUrl, batchId, skippedCount)
       }
     }
   },

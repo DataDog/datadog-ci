@@ -135,6 +135,12 @@ describe('Default reporter', () => {
       expect(output).toMatchSnapshot()
     })
 
+    test('outputs triggered tests with skipped count', async () => {
+      reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123', 3)
+      const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+      expect(output).toMatchSnapshot()
+    })
+
     /* eslint-disable jest/no-conditional-expect */
     test.each([false, true])('the spinner text is updated and cleared at the end (in CI: %s)', async (inCI) => {
       let simulatedTerminalOutput = ''

@@ -392,7 +392,7 @@ export class DefaultReporter implements MainReporter {
     this.write(lines.join('\n'))
   }
 
-  public testsWait(tests: Test[], baseUrl: string, batchId: string) {
+  public testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number) {
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
@@ -400,7 +400,10 @@ export class DefaultReporter implements MainReporter {
     }
 
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
-    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${pluralize('test', tests.length)} ${testsDisplay}…\n`
+    const testCountText = pluralize('test', tests.length)
+    const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
+
+    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
 
     if (this.testWaitSpinner) {
       // Only refresh the spinner when the text changes.

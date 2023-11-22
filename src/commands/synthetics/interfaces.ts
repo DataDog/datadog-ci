@@ -13,7 +13,7 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
-  testsWait(tests: Test[], baseUrl: string, batchId: string): void
+  testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }

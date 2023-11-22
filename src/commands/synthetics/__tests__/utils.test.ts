@@ -855,7 +855,13 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).not.toHaveBeenCalled()
       expect(mockReporter.resultEnd).not.toHaveBeenCalled()
       // Still waiting for the 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
+        2,
+        [tests[0], tests[1]],
+        MOCK_BASE_URL,
+        trigger.batch_id,
+        0
+      )
 
       // Second ('in_progress')
       waiter.start()
@@ -887,7 +893,13 @@ describe('utils', () => {
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL)
       // Still waiting for 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
+        3,
+        [tests[0], tests[1]],
+        MOCK_BASE_URL,
+        trigger.batch_id,
+        0
+      )
 
       // Third ('in_progress')
       waiter.start()
@@ -918,7 +930,7 @@ describe('utils', () => {
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL)
       // Now waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id)
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
       // Last ('passed')
       mockApi({

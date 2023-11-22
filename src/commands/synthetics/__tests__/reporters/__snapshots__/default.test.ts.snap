@@ -200,6 +200,12 @@ exports[`Default reporter testsWait outputs triggered tests 1`] = `
 "
 `;
 
+exports[`Default reporter testsWait outputs triggered tests with skipped count 1`] = `
+"- Waiting for [1m[36m11[39m[22m tests (skipping [1m[36m3[39m[22m already successful) [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
+
+"
+`;
+
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: false) 1`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 
