@@ -17,6 +17,7 @@ import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundE
 import {CiError, CriticalError} from './errors'
 import {
   APIHelperConfig,
+  BaseResult,
   Batch,
   BrowserServerResult,
   ExecutionRule,
@@ -30,6 +31,8 @@ import {
   Result,
   ResultDisplayInfo,
   ResultInBatch,
+  ResultInBatchSkippedBySelectiveRerun,
+  ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
   Suite,
@@ -155,12 +158,12 @@ export const isTestSupportedByTunnel = (test: Test) => {
 }
 
 export const hasResultPassed = (
-  result: ServerResult,
+  serverResult: ServerResult,
   hasTimedOut: boolean,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ): boolean => {
-  if (result.unhealthy && !failOnCriticalErrors) {
+  if (serverResult.unhealthy && !failOnCriticalErrors) {
     return true
   }
 
@@ -168,11 +171,11 @@ export const hasResultPassed = (
     return true
   }
 
-  if (typeof result.passed !== 'undefined') {
-    return result.passed
+  if (typeof serverResult.passed !== 'undefined') {
+    return serverResult.passed
   }
 
-  if (typeof result.failure !== 'undefined') {
+  if (typeof serverResult.failure !== 'undefined') {
     return false
   }
 
@@ -181,12 +184,17 @@ export const hasResultPassed = (
 
 export const enum ResultOutcome {
   Passed = 'passed',
+  PreviouslyPassed = 'previously-passed',
   PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
   Failed = 'failed',
   FailedNonBlocking = 'failed-non-blocking',
 }
 
 export const getResultOutcome = (result: Result): ResultOutcome => {
+  if (isResultSkippedBySelectiveRerun(result)) {
+    return ResultOutcome.PreviouslyPassed
+  }
+
   const executionRule = result.executionRule
 
   if (result.passed) {
@@ -259,7 +267,6 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
 }
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
-const getResultByResultId = (id: string, batch: Batch): ResultInBatch => batch.results.find((r) => r.result_id === id)!
 
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
@@ -309,18 +316,23 @@ const waitForBatchToFinish = async (
 
     // For the last iteration, the full up-to-date data has to be fetched to compute this function's return value,
     // while only the [received + residual] results have to be reported.
-    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).map((r) => r.result_id)
-    const resultIdsToReport = receivedResults
-      .concat(shouldContinuePolling ? [] : residualResults)
-      .map((r) => r.result_id)
+    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).flatMap((r) =>
+      isResultInBatchSkippedBySelectiveRerun(r) ? [] : [r.result_id]
+    )
+    const resultsToReport = receivedResults.concat(shouldContinuePolling ? [] : residualResults)
 
     const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
 
-    reportResults(pollResultMap, resultIdsToReport, batch, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
-        getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
+        getResultFromBatch(
+          r,
+          isResultInBatchSkippedBySelectiveRerun(r) ? undefined : pollResultMap[r.result_id],
+          resultDisplayInfo,
+          hasBatchExceededMaxPollingDate
+        )
       )
     }
 
@@ -328,6 +340,20 @@ const waitForBatchToFinish = async (
 
     await wait(POLLING_INTERVAL)
   }
+}
+
+export const hasResult = (result: Result): result is BaseResult => {
+  return !isResultSkippedBySelectiveRerun(result)
+}
+
+export const isResultSkippedBySelectiveRerun = (result: Result): result is ResultSkippedBySelectiveRerun => {
+  return result.selectiveRerun?.decision === 'skip'
+}
+
+export const isResultInBatchSkippedBySelectiveRerun = (
+  result: ResultInBatch
+): result is ResultInBatchSkippedBySelectiveRerun => {
+  return result.selective_rerun?.decision === 'skip'
 }
 
 const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
@@ -345,19 +371,22 @@ const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, 
 }
 
 const reportResults = (
+  results: ResultInBatch[],
   pollResultMap: PollResultMap,
-  resultIds: string[],
-  batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   hasBatchExceededMaxPollingDate: boolean,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
-  for (const resultId of resultIds) {
-    const batchResult = getResultByResultId(resultId, batch)
+  for (const result of results) {
     reporter.resultEnd(
-      getResultFromBatch(batchResult, pollResultMap[resultId], resultDisplayInfo, hasBatchExceededMaxPollingDate),
+      getResultFromBatch(
+        result,
+        isResultInBatchSkippedBySelectiveRerun(result) ? undefined : pollResultMap[result.result_id],
+        resultDisplayInfo,
+        hasBatchExceededMaxPollingDate
+      ),
       baseUrl
     )
   }
@@ -382,7 +411,7 @@ const reportWaitingTests = (
 
 const getResultFromBatch = (
   resultInBatch: ResultInBatch,
-  pollResult: PollResult,
+  pollResult: PollResult | undefined,
   resultDisplayInfo: ResultDisplayInfo,
   hasBatchExceededMaxPollingDate: boolean
 ): Result => {
@@ -390,28 +419,52 @@ const getResultFromBatch = (
 
   const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
 
+  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
+
+  if (isResultInBatchSkippedBySelectiveRerun(resultInBatch)) {
+    return {
+      executionRule: resultInBatch.execution_rule,
+      passed: true,
+      resultId: getResultIdOrLinkedResultId(resultInBatch),
+      test,
+      timedOut: hasTimedOut,
+      selectiveRerun: resultInBatch.selective_rerun,
+    }
+  }
+
+  if (!pollResult) {
+    throw new CriticalError('POLL_RESULTS_FAILED', 'Missing poll result for a test which was not skipped')
+  }
+
   if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
     pollResult.result.passed = false
   }
 
-  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
-
   return {
     executionRule: resultInBatch.execution_rule,
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(
-      pollResult.result,
+      pollResult?.result,
       hasTimedOut,
       options.failOnCriticalErrors ?? false,
       options.failOnTimeout ?? false
     ),
     result: pollResult.result,
-    resultId: resultInBatch.result_id,
-    test: deepExtend({}, test, pollResult.check),
+    resultId: getResultIdOrLinkedResultId(resultInBatch),
+    test: deepExtend({}, test, pollResult?.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
+    selectiveRerun: resultInBatch.selective_rerun,
   }
+}
+
+const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
+  if (isResultInBatchSkippedBySelectiveRerun(result)) {
+    return result.selective_rerun.linked_result_id
+  }
+
+  return result.result_id
 }
 
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
@@ -467,6 +520,7 @@ export const createInitialSummary = (): InitialSummary => ({
   failed: 0,
   failedNonBlocking: 0,
   passed: 0,
+  previouslyPassed: 0,
   skipped: 0,
   testsNotFound: new Set(),
   timedOut: 0,
@@ -829,23 +883,6 @@ export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
 }
 
-/**
- * Sort results with the following rules:
- * - Passed results come first
- * - Then non-blocking failed results
- * - And finally failed results
- */
-export const sortResultsByOutcome = () => {
-  const outcomeWeight = {
-    [ResultOutcome.PassedNonBlocking]: 1,
-    [ResultOutcome.Passed]: 2,
-    [ResultOutcome.FailedNonBlocking]: 3,
-    [ResultOutcome.Failed]: 4,
-  }
-
-  return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
-}
-
 export const renderResults = ({
   config,
   orgSettings,
@@ -875,14 +912,12 @@ export const renderResults = ({
     }
   }
 
-  const sortedResults = results.sort(sortResultsByOutcome())
-
-  for (const result of sortedResults) {
+  for (const result of results) {
     if (!config.failOnTimeout && result.timedOut) {
       summary.timedOut++
     }
 
-    if (result.result.unhealthy && !config.failOnCriticalErrors) {
+    if (hasResult(result) && result.result.unhealthy && !config.failOnCriticalErrors) {
       summary.criticalErrors++
     }
 
@@ -890,6 +925,9 @@ export const renderResults = ({
 
     if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
       summary.passed++
+    } else if (resultOutcome === ResultOutcome.PreviouslyPassed) {
+      summary.passed++
+      summary.previouslyPassed++
     } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
       summary.failedNonBlocking++
     } else {

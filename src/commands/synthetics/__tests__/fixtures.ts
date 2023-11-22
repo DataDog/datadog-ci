@@ -11,6 +11,7 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 import {apiConstructor} from '../api'
 import {
   ApiServerResult,
+  BaseResult,
   Batch,
   BrowserServerResult,
   ExecutionRule,
@@ -22,6 +23,7 @@ import {
   PresignedUrlResponse,
   Result,
   RunTestsCommandConfig,
+  SelectiveRerunDecision,
   Step,
   Suite,
   Summary,
@@ -179,7 +181,7 @@ export const getSummary = (): Summary => ({
   batchId: BATCH_ID,
 })
 
-const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
+const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'> => ({
   executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
   passed: true,
@@ -193,12 +195,12 @@ export const getBrowserResult = (
   resultId: string,
   test: Test,
   resultOpts: Partial<BrowserServerResult> = {}
-): Result => ({
+): BaseResult => ({
   ...getBaseResult(resultId, test),
   result: getBrowserServerResult(resultOpts),
 })
 
-export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<ApiServerResult> = {}): Result => ({
+export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<ApiServerResult> = {}): BaseResult => ({
   ...getBaseResult(resultId, test),
   result: getApiServerResult(resultOpts),
 })
@@ -446,6 +448,7 @@ export interface RenderResultsTestCase {
 interface ResultFixtures {
   executionRule?: ExecutionRule
   passed?: boolean
+  selectiveRerun?: SelectiveRerunDecision
   testExecutionRule?: ExecutionRule
   timedOut?: boolean
   unhealthy?: boolean
@@ -455,7 +458,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
   const results: Result[] = []
 
   for (const [index, resultFixtures] of resultsFixtures.entries()) {
-    const {executionRule, passed, testExecutionRule, timedOut, unhealthy} = resultFixtures
+    const {executionRule, passed, selectiveRerun, testExecutionRule, timedOut, unhealthy} = resultFixtures
     const test = getApiTest()
     if (testExecutionRule) {
       test.options.ci = {executionRule: testExecutionRule}
@@ -469,6 +472,10 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
     if (timedOut) {
       result.timedOut = true
       result.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+    }
+
+    if (selectiveRerun) {
+      result.selectiveRerun = selectiveRerun
     }
 
     results.push(result)

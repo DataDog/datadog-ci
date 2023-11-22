@@ -55,10 +55,14 @@ import * as ciUtils from '../../../helpers/utils'
 import {apiConstructor, APIHelper} from '../api'
 import {CiError} from '../errors'
 import {
+  BaseResult,
+  BaseResultInBatch,
   Batch,
   ExecutionRule,
   PollResult,
   Result,
+  ResultInBatch,
+  SelectiveRerunDecision,
   ServerResult,
   SyntheticsCIConfig,
   Test,
@@ -338,6 +342,7 @@ describe('utils', () => {
         failed: 0,
         failedNonBlocking: 0,
         passed: 0,
+        previouslyPassed: 0,
         skipped: 1,
         testsNotFound: new Set(['987-654-321']),
         timedOut: 0,
@@ -709,20 +714,28 @@ describe('utils', () => {
   })
 
   describe('getResultOutcome', () => {
-    const cases: [boolean, ExecutionRule, utils.ResultOutcome][] = [
-      [true, ExecutionRule.BLOCKING, utils.ResultOutcome.Passed],
-      [true, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.PassedNonBlocking],
-      [false, ExecutionRule.BLOCKING, utils.ResultOutcome.Failed],
-      [false, ExecutionRule.NON_BLOCKING, utils.ResultOutcome.FailedNonBlocking],
+    const cases: [boolean, ExecutionRule, SelectiveRerunDecision | undefined, utils.ResultOutcome][] = [
+      [true, ExecutionRule.BLOCKING, undefined, utils.ResultOutcome.Passed],
+      [
+        true,
+        ExecutionRule.SKIPPED,
+        {decision: 'skip', reason: 'passed', linked_result_id: ''},
+        utils.ResultOutcome.PreviouslyPassed,
+      ],
+      [true, ExecutionRule.NON_BLOCKING, undefined, utils.ResultOutcome.PassedNonBlocking],
+      [false, ExecutionRule.BLOCKING, undefined, utils.ResultOutcome.Failed],
+      [false, ExecutionRule.NON_BLOCKING, undefined, utils.ResultOutcome.FailedNonBlocking],
     ]
+
     test.each(cases)(
       'Result passed: %s, execution rule: %s. Expected outcome: %s',
-      (resultPassed, resultRule, expectedOutcome) => {
+      (passed, resultRule, selectiveRerun, expectedOutcome) => {
         jest.spyOn(utils, 'getExecutionRule').mockReturnValue(resultRule)
         const test = getApiTest('abc-def-ghi')
         const result = getApiResult('1', test)
         result.executionRule = resultRule
-        result.passed = resultPassed
+        result.passed = passed
+        result.selectiveRerun = selectiveRerun
 
         expect(utils.getResultOutcome(result)).toEqual(expectedOutcome)
       }
@@ -737,7 +750,8 @@ describe('utils', () => {
       location: mockLocation.display_name,
       passed: true,
       result: getBrowserServerResult({passed: true}),
-      resultId: batch.results[0].result_id,
+      resultId: (batch.results[0] as BaseResultInBatch).result_id,
+      selectiveRerun: undefined,
       test: apiTest,
       timedOut: false,
       timestamp: 0,
@@ -815,7 +829,7 @@ describe('utils', () => {
             {...batch.results[0], status: 'in_progress', result_id: 'rid-2'},
             // Second test
             {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
+          ] as ResultInBatch[],
         }),
       })
 
@@ -854,7 +868,7 @@ describe('utils', () => {
             {...batch.results[0], status: 'passed', result_id: 'rid-2'},
             // Second test
             {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
+          ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -886,7 +900,7 @@ describe('utils', () => {
             {...batch.results[0], status: 'passed', result_id: 'rid-2'},
             // Second test
             {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
+          ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -916,7 +930,7 @@ describe('utils', () => {
             {...batch.results[0], status: 'passed', result_id: 'rid-2'},
             // Second test
             {...batch.results[0], status: 'passed', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
+          ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -971,12 +985,12 @@ describe('utils', () => {
     test('results should be timed out if global pollingTimeout is exceeded', async () => {
       mockApi({
         getBatchImplementation: async () => ({
+          status: 'in_progress',
           results: [
             {...batch.results[0]},
             // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
             {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
-          ],
-          status: 'in_progress',
+          ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           {...pollResult, result: {...pollResult.result}},
@@ -1065,7 +1079,7 @@ describe('utils', () => {
     test('results should be timed out if batch result is timed out', async () => {
       const batchWithTimeoutResult: Batch = {
         ...batch,
-        results: [{...batch.results[0], status: 'failed', timed_out: true}],
+        results: [{...batch.results[0], status: 'failed', timed_out: true}] as ResultInBatch[],
       }
 
       mockApi({getBatchImplementation: async () => batchWithTimeoutResult})
@@ -1131,7 +1145,7 @@ describe('utils', () => {
         results: [
           batch.results[0],
           {...batch.results[0], status: 'failed', timed_out: true, result_id: pollTimeoutResult.resultID},
-        ],
+        ] as ResultInBatch[],
       }
 
       mockApi({
@@ -1225,7 +1239,7 @@ describe('utils', () => {
         mockReporter,
         mockTunnel
       )
-      expect(results[0].location).toBe('Tunneled')
+      expect((results[0] as BaseResult).location).toBe('Tunneled')
 
       const newTest = {...result.test}
       newTest.type = 'api'
@@ -1243,7 +1257,7 @@ describe('utils', () => {
         mockReporter,
         mockTunnel
       )
-      expect(results[0].location).toBe('Tunneled')
+      expect((results[0] as BaseResult).location).toBe('Tunneled')
 
       newTest.type = 'api'
       newTest.subtype = 'ssl'
@@ -1260,7 +1274,7 @@ describe('utils', () => {
         mockReporter,
         mockTunnel
       )
-      expect(results[0].location).toBe('Frankfurt (AWS)')
+      expect((results[0] as BaseResult).location).toBe('Frankfurt (AWS)')
     })
 
     test('pollResults throws', async () => {
@@ -1389,21 +1403,6 @@ describe('utils', () => {
     expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
   })
 
-  describe('sortResultsByOutcome', () => {
-    const results: Result[] = getResults([
-      {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
-      {executionRule: ExecutionRule.BLOCKING, passed: true},
-      {executionRule: ExecutionRule.BLOCKING, passed: false},
-      {executionRule: ExecutionRule.NON_BLOCKING, passed: true},
-    ])
-
-    test('should sort tests with success, non_blocking failures then failures', async () => {
-      const sortedResults = [...results]
-      sortedResults.sort(utils.sortResultsByOutcome())
-      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '0', '2'])
-    })
-  })
-
   describe('Render results', () => {
     const emptySummary = getSummary()
 
@@ -1528,12 +1527,34 @@ describe('utils', () => {
         results: getResults([{}, {passed: true}, {executionRule: ExecutionRule.NON_BLOCKING}]),
         summary: {...emptySummary},
       },
+      {
+        description: '4 API tests, 3 results (2 passed, of which 1 comes from previous CI run, 1 skipped)',
+        expected: {
+          exitCode: 0,
+          summary: {
+            ...emptySummary,
+            passed: 2,
+            previouslyPassed: 1,
+            skipped: 1,
+          },
+        },
+        failOnCriticalErrors: false,
+        failOnTimeout: false,
+        results: getResults([
+          {passed: true},
+          {
+            executionRule: ExecutionRule.SKIPPED,
+            selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: ''},
+          },
+        ]),
+        summary: {...emptySummary, skipped: 1},
+      },
     ]
 
     test.each(cases)('$description', async (testCase) => {
       testCase.results.forEach((result) => {
         result.passed = utils.hasResultPassed(
-          result.result,
+          (result as BaseResult).result,
           result.timedOut,
           testCase.failOnCriticalErrors,
           testCase.failOnTimeout

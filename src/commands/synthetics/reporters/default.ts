@@ -24,7 +24,9 @@ import {
   getResultDuration,
   getResultOutcome,
   getResultUrl,
+  hasResult,
   isDeviceIdSet,
+  isResultSkippedBySelectiveRerun,
   pluralize,
   readableOperation,
   ResultOutcome,
@@ -54,6 +56,8 @@ const ICONS = {
   SKIPPED: chalk.bold.yellow('⇢'),
   SUCCESS: chalk.bold.green('✓'),
 }
+
+const PASSED_RESULT_OUTCOMES = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking, ResultOutcome.PreviouslyPassed]
 
 const renderStepIcon = (step: Step) => {
   if (step.error) {
@@ -201,25 +205,24 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
-  const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
+  const {executionRule, test: overriddenTest, resultId, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
+  const executionRuleText = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
 
   const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
-  const location = setColor(`location: ${chalk.bold(execution.location)}`)
-  const device = isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
-  const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
+  const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
+  const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (!result.unhealthy) {
-    const duration = getResultDuration(result)
+  if (hasResult(execution) && !execution.result.unhealthy) {
+    const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId)
@@ -229,16 +232,36 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     outputLines.push(resultInfo)
   }
 
-  const resultOutcomeText = renderResultOutcome(result, overriddenTest || test, icon, setColor)
-  if (resultOutcomeText) {
-    outputLines.push(resultOutcomeText)
+  if (isResultSkippedBySelectiveRerun(execution)) {
+    const resultUrl = getResultUrl(baseUrl, test, resultId)
+
+    const resultInfo = `  ${setColor('◂')} Successful result from previous CI run: ${chalk.dim.cyan(resultUrl)}`
+    outputLines.push(resultInfo)
+  } else {
+    const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
+
+    if (resultOutcomeText) {
+      outputLines.push(resultOutcomeText)
+    }
   }
 
   return outputLines.join('\n')
 }
 
+const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
+  if (hasResult(execution)) {
+    const {result} = execution
+    const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
+    const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+
+    return ` - ${location}${device}`
+  }
+
+  return ''
+}
+
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
-  if (resultOutcome === ResultOutcome.Passed || resultOutcome === ResultOutcome.PassedNonBlocking) {
+  if (PASSED_RESULT_OUTCOMES.includes(resultOutcome)) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 
@@ -299,7 +322,15 @@ export class DefaultReporter implements MainReporter {
 
     const lines: string[] = []
 
-    const runSummary = [green(`${b(summary.passed)} passed`), red(`${b(summary.failed)} failed`)]
+    const runSummary = []
+
+    if (summary.previouslyPassed) {
+      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in previous CI run)`))
+    } else {
+      runSummary.push(green(`${b(summary.passed)} passed`))
+    }
+
+    runSummary.push(red(`${b(summary.failed)} failed`))
 
     if (summary.failedNonBlocking) {
       runSummary.push(yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`))

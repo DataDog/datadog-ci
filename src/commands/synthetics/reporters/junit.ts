@@ -11,6 +11,7 @@ import type {CommandContext} from '../../../helpers/interfaces'
 import {
   ApiServerResult,
   Assertion,
+  BaseResult,
   ExecutionRule,
   MultiStep,
   Reporter,
@@ -26,6 +27,7 @@ import {
   getResultDuration,
   getResultOutcome,
   getResultUrl,
+  hasResult,
   isDeviceIdSet,
   pluralize,
   readableOperation,
@@ -67,6 +69,8 @@ interface XMLTestCaseProperties extends TestCaseStats {
   time: number | undefined
   timestamp: string
 }
+
+// TODO: support selective rerun skipped and add reason
 
 export interface XMLTestCase {
   $: XMLTestCaseProperties
@@ -191,6 +195,10 @@ export class JUnitReporter implements Reporter {
   }
 
   public resultEnd(result: Result, baseUrl: string) {
+    if (!hasResult(result)) {
+      return
+    }
+
     const suite = this.getSuiteByName(result.test.suite)
     const testCase = this.getTestCase(result, baseUrl)
 
@@ -305,7 +313,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getApiTestErrors(result: Result): {errors: XMLError[]} {
+  private getApiTestErrors(result: BaseResult): {errors: XMLError[]} {
     const errors = []
 
     if (result.result.failure) {
@@ -451,10 +459,12 @@ export class JUnitReporter implements Reporter {
     return existingSuite
   }
 
-  private getTestCase(result: Result, baseUrl: string): XMLTestCase {
+  private getTestCase(result: BaseResult, baseUrl: string): XMLTestCase {
     const test = result.test
     const resultOutcome = getResultOutcome(result)
     const resultUrl = getResultUrl(baseUrl, test, result.resultId)
+
+    // TODO: PreviouslyPassed
     const passed = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
 
     const id = `id: ${test.public_id}`
@@ -508,7 +518,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getTestCaseStats(result: Result): TestCaseStats {
+  private getTestCaseStats(result: BaseResult): TestCaseStats {
     let stepsStats: TestCaseStats[] = []
     if ('stepDetails' in result.result) {
       // It's a browser test.

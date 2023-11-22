@@ -484,8 +484,8 @@ describe('GitLab test report compatibility', () => {
 
     reporter['testTrigger'](globalTestMock, '', ExecutionRule.SKIPPED, {})
 
-    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.BLOCKING}, '')
-    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.NON_BLOCKING}, '')
+    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.BLOCKING} as Result, '')
+    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.NON_BLOCKING} as Result, '')
     reporter['resultEnd']({...getBrowserResult('', globalTestMock), executionRule: ExecutionRule.BLOCKING}, '')
 
     const [testCaseSkipped, testCaseBlocking, testCaseNonBlocking, testCasePassed] = reporter[

@@ -121,7 +121,7 @@ const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: Ser
   const serverBatch = resp.data.data
 
   return {
-    results: serverBatch.results.filter((r) => r.status !== 'skipped') as Batch['results'],
+    results: serverBatch.results.filter((r) => r.status !== 'skipped' || r.selective_rerun) as Batch['results'],
     status: serverBatch.status,
   }
 }
