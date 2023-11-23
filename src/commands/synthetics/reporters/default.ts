@@ -27,6 +27,7 @@ import {
   hasResult,
   isDeviceIdSet,
   isResultSkippedBySelectiveRerun,
+  PASSED_RESULT_OUTCOMES,
   pluralize,
   readableOperation,
   ResultOutcome,
@@ -56,8 +57,6 @@ const ICONS = {
   SKIPPED: chalk.bold.yellow('⇢'),
   SUCCESS: chalk.bold.green('✓'),
 }
-
-const PASSED_RESULT_OUTCOMES = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking, ResultOutcome.PreviouslyPassed]
 
 const renderStepIcon = (step: Step) => {
   if (step.error) {

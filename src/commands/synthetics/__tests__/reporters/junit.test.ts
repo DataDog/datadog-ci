@@ -165,6 +165,8 @@ describe('Junit reporter', () => {
 
     it('should add stats to the run', () => {
       reporter.resultEnd({...globalResultMock, test: {...globalTestMock, suite: 'suite 1'}}, '')
+
+      reporter.testTrigger({...globalTestMock, suite: 'suite 2'}, '', ExecutionRule.SKIPPED, {})
       reporter.resultEnd(
         {
           ...globalResultMock,
@@ -174,6 +176,20 @@ describe('Junit reporter', () => {
             ...globalTestMock,
             suite: 'suite 2',
           },
+        },
+        ''
+      )
+      reporter.resultEnd(
+        {
+          executionRule: ExecutionRule.SKIPPED,
+          passed: true,
+          resultId: '123',
+          selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: '123'},
+          test: {
+            ...globalTestMock,
+            suite: 'suite 2',
+          },
+          timedOut: false,
         },
         ''
       )
@@ -188,8 +204,8 @@ describe('Junit reporter', () => {
         ...getDefaultSuiteStats(),
         errors: 0,
         failures: 1,
-        skipped: 0,
-        tests: 1,
+        skipped: 1, // not 2 because skipped by selective re-run counts as passed
+        tests: 3,
       })
     })
 

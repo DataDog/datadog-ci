@@ -190,6 +190,12 @@ export const enum ResultOutcome {
   FailedNonBlocking = 'failed-non-blocking',
 }
 
+export const PASSED_RESULT_OUTCOMES = [
+  ResultOutcome.Passed,
+  ResultOutcome.PassedNonBlocking,
+  ResultOutcome.PreviouslyPassed,
+]
+
 export const getResultOutcome = (result: Result): ResultOutcome => {
   if (isResultSkippedBySelectiveRerun(result)) {
     return ResultOutcome.PreviouslyPassed
