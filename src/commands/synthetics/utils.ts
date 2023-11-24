@@ -185,7 +185,7 @@ export const hasResultPassed = (
 export const enum ResultOutcome {
   Passed = 'passed',
   PreviouslyPassed = 'previously-passed',
-  PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
+  PassedNonBlocking = 'passed-non-blocking',
   Failed = 'failed',
   FailedNonBlocking = 'failed-non-blocking',
 }
@@ -451,9 +451,9 @@ const getResultFromBatch = (
       executionRule: resultInBatch.execution_rule,
       passed: true,
       resultId: getResultIdOrLinkedResultId(resultInBatch),
+      selectiveRerun: resultInBatch.selective_rerun,
       test,
       timedOut: hasTimedOut,
-      selectiveRerun: resultInBatch.selective_rerun,
     }
   }
 
@@ -477,10 +477,10 @@ const getResultFromBatch = (
     ),
     result: pollResult.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
+    selectiveRerun: resultInBatch.selective_rerun,
     test: deepExtend({}, test, pollResult?.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
-    selectiveRerun: resultInBatch.selective_rerun,
   }
 }
 

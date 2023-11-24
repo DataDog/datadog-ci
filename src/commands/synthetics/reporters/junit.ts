@@ -72,8 +72,6 @@ interface XMLTestCaseProperties extends TestCaseStats {
   timestamp: string
 }
 
-// TODO: support selective rerun skipped and add reason
-
 export interface XMLTestCase {
   $: XMLTestCaseProperties
   // These are singular for a better display in the XML format of the report.
