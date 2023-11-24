@@ -302,6 +302,15 @@ describe('Default reporter', () => {
               },
               apiTest
             ),
+            createApiResult(
+              '1003',
+              {
+                executionRule: ExecutionRule.BLOCKING,
+                passed: true,
+                selectiveRerun: {decision: 'run', reason: 'edited'}, // was re-run because edited, then it passed
+              },
+              apiTest
+            ),
           ],
         },
       },

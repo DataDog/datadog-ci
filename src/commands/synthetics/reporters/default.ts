@@ -208,11 +208,16 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
+  const editedText =
+    execution.selectiveRerun?.decision === 'run' && execution.selectiveRerun.reason === 'edited'
+      ? chalk.dim('(edited) ')
+      : ''
+
   const executionRuleText = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
 
-  const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
+  const testLabel = `${editedText}${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
   const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
   const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
