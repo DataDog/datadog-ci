@@ -72,20 +72,18 @@ const template = (st: string, context: any): string =>
 
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
-export const getOverriddenConfig = (
-  test: Test,
-  publicId: string,
-  reporter: MainReporter,
-  config?: UserConfigOverride
-): TestPayload => {
-  const executionRule = getExecutionRule(test, config)
+export const getOverriddenConfig = (test: Test, publicId: string, config?: UserConfigOverride): TestPayload => {
   let overriddenConfig: TestPayload = {
-    executionRule,
     public_id: publicId,
   }
 
   if (!config || !Object.keys(config).length) {
     return overriddenConfig
+  }
+
+  const executionRule = getExecutionRule(test, config)
+  if (executionRule) {
+    overriddenConfig.executionRule = executionRule
   }
 
   overriddenConfig = {
@@ -122,12 +120,10 @@ export const setCiTriggerApp = (source: string): void => {
   ciTriggerApp = source
 }
 
-export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule => {
-  if (configOverride && configOverride.executionRule) {
+export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule | undefined => {
+  if (configOverride?.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }
-
-  return test?.options?.ci?.executionRule || ExecutionRule.BLOCKING
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -597,10 +593,12 @@ export const getTestAndOverrideConfig = async (
   }
 
   const {test} = testResult
-  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, config)
+  const testExecutionRule = test?.options?.ci?.executionRule
+  const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 
-  reporter.testTrigger(test, normalizedId, overriddenConfig.executionRule, config)
-  if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
+  reporter.testTrigger(test, normalizedId, executionRule, config)
+  if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 
     return {overriddenConfig}

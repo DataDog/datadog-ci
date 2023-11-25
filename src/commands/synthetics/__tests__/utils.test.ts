@@ -328,10 +328,7 @@ describe('utils', () => {
       )
 
       expect(tests).toStrictEqual([fakeTests['123-456-789']])
-      expect(overriddenTestsToTrigger).toStrictEqual([
-        {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
-        {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
-      ])
+      expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789'}, {public_id: 'ski-ppe-d01'}])
 
       const expectedSummary: utils.InitialSummary = {
         criticalErrors: 0,
@@ -506,15 +503,14 @@ describe('utils', () => {
   describe('getOverriddenConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
-        executionRule: ExecutionRule.BLOCKING,
+      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId)).toEqual({
         public_id: publicId,
       })
     })
 
-    test('strictest executionRule is forwarded', () => {
+    test('strictest executionRule is forwarded when it has to be', () => {
       const expectHandledConfigToBe = (
-        expectedExecutionRule: ExecutionRule,
+        expectedExecutionRule: ExecutionRule | undefined,
         configExecutionRule?: ExecutionRule,
         testExecutionRule?: ExecutionRule
       ) => {
@@ -533,7 +529,7 @@ describe('utils', () => {
 
         expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
 
-        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, configOverride)
 
         expect(overriddenConfig.public_id).toBe(publicId)
         expect(overriddenConfig.executionRule).toBe(expectedExecutionRule)
@@ -543,18 +539,18 @@ describe('utils', () => {
       const NON_BLOCKING = ExecutionRule.NON_BLOCKING
       const SKIPPED = ExecutionRule.SKIPPED
 
-      // No override => BLOCKING
-      expectHandledConfigToBe(BLOCKING)
+      // No override => nothing, let the backend decide
+      expectHandledConfigToBe(undefined)
 
       // CI config overrides only
       expectHandledConfigToBe(BLOCKING, BLOCKING)
       expectHandledConfigToBe(NON_BLOCKING, NON_BLOCKING)
       expectHandledConfigToBe(SKIPPED, SKIPPED)
 
-      // Test config only
-      expectHandledConfigToBe(BLOCKING, undefined, BLOCKING)
-      expectHandledConfigToBe(NON_BLOCKING, undefined, NON_BLOCKING)
-      expectHandledConfigToBe(SKIPPED, undefined, SKIPPED)
+      // Test config only => nothing, let the backend decide
+      expectHandledConfigToBe(undefined, undefined, BLOCKING)
+      expectHandledConfigToBe(undefined, undefined, NON_BLOCKING)
+      expectHandledConfigToBe(undefined, undefined, SKIPPED)
 
       // Strictest executionRule is forwarded
       expectHandledConfigToBe(NON_BLOCKING, BLOCKING, NON_BLOCKING)
@@ -576,7 +572,7 @@ describe('utils', () => {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, configOverride)
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)
@@ -611,7 +607,7 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
+      expect(utils.getOverriddenConfig(fakeTest, publicId, configOverride)).toEqual({
         ...configOverride,
         public_id: publicId,
       })
@@ -681,14 +677,14 @@ describe('utils', () => {
   })
 
   describe('getExecutionRule', () => {
-    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
-      [undefined, undefined, ExecutionRule.BLOCKING],
+    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule | undefined][] = [
+      [undefined, undefined, undefined],
       [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
-      [ExecutionRule.BLOCKING, undefined, ExecutionRule.BLOCKING],
+      [ExecutionRule.BLOCKING, undefined, undefined],
       [ExecutionRule.BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
       [ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
-      [ExecutionRule.NON_BLOCKING, undefined, ExecutionRule.NON_BLOCKING],
+      [ExecutionRule.NON_BLOCKING, undefined, undefined],
       [ExecutionRule.NON_BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING],
       [ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
     ]
