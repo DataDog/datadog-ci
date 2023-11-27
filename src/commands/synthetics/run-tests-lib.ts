@@ -232,7 +232,7 @@ export const getTestsList = async (
   return testsToTrigger
 }
 
-export const execute = async (
+export const executeWithDetails = async (
   runConfig: WrapperConfig,
   {
     jUnitReport,
@@ -245,7 +245,11 @@ export const execute = async (
     runId?: string
     suites?: Suite[]
   }
-): Promise<0 | 1> => {
+): Promise<{
+  results: Result[]
+  summary: Summary
+  exitCode: 0 | 1
+}> => {
   const startTime = Date.now()
   const localConfig = {
     ...DEFAULT_COMMAND_CONFIG,
@@ -300,5 +304,33 @@ export const execute = async (
 
   reportExitLogs(mainReporter, localConfig, {results})
 
-  return toExitCode(getExitReason(localConfig, {results}))
+  const exitCode = toExitCode(getExitReason(localConfig, {results}))
+
+  return {
+    results,
+    summary,
+    exitCode,
+  }
+}
+
+export const execute = async (
+  runConfig: WrapperConfig,
+  {
+    jUnitReport,
+    reporters,
+    runId,
+    suites,
+  }: {
+    jUnitReport?: string
+    reporters?: (SupportedReporter | Reporter)[]
+    runId?: string
+    suites?: Suite[]
+  }
+): Promise<0 | 1> => {
+  return executeWithDetails(runConfig, {
+    jUnitReport,
+    reporters,
+    runId,
+    suites,
+  }).then((value) => value.exitCode)
 }
