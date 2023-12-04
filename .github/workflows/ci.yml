@@ -35,7 +35,7 @@ jobs:
             exit 1
           fi
       - run: yarn no-only-in-tests
-      
+
       - run: yarn test
         env:
           CI: true
@@ -107,7 +107,6 @@ jobs:
       - name: Run sbom upload test
         run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
         env:
-          DD_SITE: datad0g.com
           DD_BETA_COMMANDS_ENABLED: 1
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
