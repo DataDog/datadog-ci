@@ -53,7 +53,7 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
-import {CiError} from '../errors'
+import {CiError, CiErrorCode, CriticalError} from '../errors'
 import {
   Batch,
   ExecutionRule,
@@ -1577,24 +1577,52 @@ describe('utils', () => {
   })
 
   describe('getExitReason', () => {
-    test('should return missing-tests when no tests to run if failOnMissingTests flag is on', () => {
-      const config = {
-        ...DEFAULT_COMMAND_CONFIG,
-        failOnMissingTests: true,
-      }
-      const error = new CiError('NO_TESTS_TO_RUN')
+    test('should return failing-tests if any tests have failed', () => {
+      const config = DEFAULT_COMMAND_CONFIG
+      const results = getResults([{passed: false}])
 
-      expect(utils.getExitReason(config, {error})).toBe('missing-tests')
+      expect(utils.getExitReason(config, {results})).toBe('failing-tests')
     })
 
-    test('should return passed when no tests to run if failOnMissingTests flag is off', () => {
-      const config = {
-        ...DEFAULT_COMMAND_CONFIG,
-        failOnMissingTests: false,
-      }
-      const error = new CiError('NO_TESTS_TO_RUN')
+    test.each([
+      {failOnMissingTestsFlag: true, errorCode: 'NO_TESTS_TO_RUN', exitReason: 'missing-tests'},
+      {failOnMissingTestsFlag: true, errorCode: 'MISSING_TESTS', exitReason: 'missing-tests'},
+      {failOnMissingTestsFlag: false, errorCode: 'NO_TESTS_TO_RUN', exitReason: 'passed'},
+      {failOnMissingTestsFlag: false, errorCode: 'MISSING_TESTS', exitReason: 'passed'},
+    ])(
+      'should return $exitReason when $errorCode if failOnMissingTests flag is $failOnMissingTestsFlag',
+      ({failOnMissingTestsFlag, errorCode, exitReason}) => {
+        const config = {
+          ...DEFAULT_COMMAND_CONFIG,
+          failOnMissingTests: failOnMissingTestsFlag,
+        }
+        const error = new CiError(errorCode as CiErrorCode)
 
-      expect(utils.getExitReason(config, {error})).toBe('passed')
+        expect(utils.getExitReason(config, {error})).toBe(exitReason)
+      }
+    )
+
+    test.each([
+      {failOnCriticalErrorsFlag: true, exitReason: 'critical-error'},
+      {failOnCriticalErrorsFlag: false, exitReason: 'passed'},
+    ])(
+      'should return $exitReason when failOnCriticalErrors flag is $failOnCriticalErrorsFlag',
+      ({failOnCriticalErrorsFlag, exitReason}) => {
+        const config = {
+          ...DEFAULT_COMMAND_CONFIG,
+          failOnCriticalErrors: failOnCriticalErrorsFlag,
+        }
+        const error = new CriticalError('AUTHORIZATION_ERROR')
+
+        expect(utils.getExitReason(config, {error})).toBe(exitReason)
+      }
+    )
+
+    test('should return passed if all tests have passed and there were no errors', () => {
+      const config = DEFAULT_COMMAND_CONFIG
+      const results = getResults([{passed: true}])
+
+      expect(utils.getExitReason(config, {results})).toBe('passed')
     })
   })
 
@@ -1656,8 +1684,27 @@ describe('utils', () => {
   })
 
   describe('reportCiError', () => {
-    test('should report NO_TESTS_TO_RUN error', async () => {
-      const error = new CiError('NO_TESTS_TO_RUN')
+    test.each([
+      'NO_TESTS_TO_RUN',
+      'MISSING_TESTS',
+      'AUTHORIZATION_ERROR',
+      'INVALID_CONFIG',
+      'MISSING_APP_KEY',
+      'MISSING_API_KEY',
+      'POLL_RESULTS_FAILED',
+      'TUNNEL_START_FAILED',
+      'TOO_MANY_TESTS_TO_TRIGGER',
+      'TRIGGER_TESTS_FAILED',
+      'UNAVAILABLE_TEST_CONFIG',
+      'UNAVAILABLE_TUNNEL_CONFIG',
+    ])('should report %s error', async (errorCode) => {
+      const error = new CiError(errorCode as CiErrorCode)
+      utils.reportCiError(error, mockReporter)
+      expect(mockReporter.error).toMatchSnapshot()
+    })
+
+    test('should report default Error if it no other CiError was matched', async () => {
+      const error = new CiError('ERROR' as CiErrorCode)
       utils.reportCiError(error, mockReporter)
       expect(mockReporter.error).toMatchSnapshot()
     })
