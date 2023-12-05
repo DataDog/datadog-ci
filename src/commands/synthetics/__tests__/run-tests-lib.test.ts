@@ -470,6 +470,13 @@ describe('run-test', () => {
       )
     })
 
+    test('should return values returned by executeTests, and an exitCode', async () => {
+      const returnValue = await runTests.executeWithDetails({}, {})
+      expect(returnValue.results).toBeDefined()
+      expect(returnValue.summary).toBeDefined()
+      expect(returnValue.exitCode).toBeDefined()
+    })
+
     describe('reporters', () => {
       beforeEach(() => {
         jest.spyOn(utils, 'getReporter').mockImplementation(jest.fn())
