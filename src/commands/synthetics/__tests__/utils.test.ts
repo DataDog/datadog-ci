@@ -1576,6 +1576,28 @@ describe('utils', () => {
     })
   })
 
+  describe('getExitReason', () => {
+    test('should return missing-tests when no tests to run if failOnMissingTests flag is on', () => {
+      const config = {
+        ...DEFAULT_COMMAND_CONFIG,
+        failOnMissingTests: true,
+      }
+      const error = new CiError('NO_TESTS_TO_RUN')
+
+      expect(utils.getExitReason(config, {error})).toBe('missing-tests')
+    })
+
+    test('should return passed when no tests to run if failOnMissingTests flag is off', () => {
+      const config = {
+        ...DEFAULT_COMMAND_CONFIG,
+        failOnMissingTests: false,
+      }
+      const error = new CiError('NO_TESTS_TO_RUN')
+
+      expect(utils.getExitReason(config, {error})).toBe('passed')
+    })
+  })
+
   describe('getDatadogHost', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
@@ -1630,6 +1652,14 @@ describe('utils', () => {
 
       const config = (apiConfiguration as unknown) as SyntheticsCIConfig
       expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    })
+  })
+
+  describe('reportCiError', () => {
+    test('should report NO_TESTS_TO_RUN error', async () => {
+      const error = new CiError('NO_TESTS_TO_RUN')
+      utils.reportCiError(error, mockReporter)
+      expect(mockReporter.error).toMatchSnapshot()
     })
   })
 })
