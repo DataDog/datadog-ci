@@ -937,7 +937,8 @@ export const getExitReason = (
   }
 
   if (error instanceof CiError) {
-    if (config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+    // Ensure the command fails if search query starts returning no results
+    if (config.failOnMissingTests && ['MISSING_TESTS', 'NO_TESTS_TO_RUN'].includes(error.code)) {
       return 'missing-tests'
     }
 
