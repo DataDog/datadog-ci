@@ -35,6 +35,13 @@ import {
   reportExitLogs,
 } from './utils'
 
+type ExecuteOptions = {
+  jUnitReport?: string
+  reporters?: (SupportedReporter | Reporter)[]
+  runId?: string
+  suites?: Suite[]
+}
+
 export const executeTests = async (
   reporter: MainReporter,
   config: RunTestsCommandConfig,
@@ -234,17 +241,7 @@ export const getTestsList = async (
 
 export const executeWithDetails = async (
   runConfig: WrapperConfig,
-  {
-    jUnitReport,
-    reporters,
-    runId,
-    suites,
-  }: {
-    jUnitReport?: string
-    reporters?: (SupportedReporter | Reporter)[]
-    runId?: string
-    suites?: Suite[]
-  }
+  {jUnitReport, reporters, runId, suites}: ExecuteOptions
 ): Promise<{
   results: Result[]
   summary: Summary
@@ -313,24 +310,8 @@ export const executeWithDetails = async (
   }
 }
 
-export const execute = async (
-  runConfig: WrapperConfig,
-  {
-    jUnitReport,
-    reporters,
-    runId,
-    suites,
-  }: {
-    jUnitReport?: string
-    reporters?: (SupportedReporter | Reporter)[]
-    runId?: string
-    suites?: Suite[]
-  }
-): Promise<0 | 1> => {
-  return executeWithDetails(runConfig, {
-    jUnitReport,
-    reporters,
-    runId,
-    suites,
-  }).then((value) => value.exitCode)
+export const execute = async (runConfig: WrapperConfig, executeOptions: ExecuteOptions): Promise<0 | 1> => {
+  const {exitCode} = await executeWithDetails(runConfig, executeOptions)
+
+  return exitCode
 }
