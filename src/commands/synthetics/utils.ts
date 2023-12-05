@@ -983,7 +983,7 @@ export const pluralize = (word: string, count: number): string => (count === 1 ?
 export const reportCiError = (error: CiError, reporter: MainReporter) => {
   switch (error.code) {
     case 'NO_TESTS_TO_RUN':
-      reporter.log('No test to run.\n')
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: No tests to run ')}\n${error.message}\n\n`)
       break
     case 'MISSING_TESTS':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
