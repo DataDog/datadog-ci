@@ -54,7 +54,7 @@ export class UploadSbomCommand extends Command {
     const environment: string | undefined = this.env || this.config.env
     this.config.env = environment
 
-    if (!this.config.env) {
+    if (!environment) {
       this.context.stderr.write('Missing env\n')
 
       return 1
