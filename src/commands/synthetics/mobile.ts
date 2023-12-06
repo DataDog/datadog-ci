@@ -4,22 +4,43 @@ import fs from 'fs'
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {CiError} from './errors'
 import {
+  MobileApplicationUploadPart,
+  MobileApplicationUploadPartResponse,
   MobileApplicationVersion,
-  PresignedUrlResponse,
+  MultipartPresignedUrlsResponse,
   Test,
   TestPayload,
   UploadApplicationCommandConfig,
   UserConfigOverride,
 } from './interfaces'
 
-export const getSizeAndMD5HashFromFile = async (filePath: string): Promise<{appSize: number; md5: string}> => {
-  const hash = crypto.createHash('md5')
-  const fileStream = fs.createReadStream(filePath)
+const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024
+
+export const getSizeAndPartsFromFile = async (
+  filePath: string
+): Promise<{appSize: number; parts: MobileApplicationUploadPart[]}> => {
+  const readStreamOptions = {
+    // this oddly-named parameter will cause chunks to be no more than the given size
+    // https://nodejs.org/api/stream.html#buffering
+    highWaterMark: UPLOAD_FILE_MAX_PART_SIZE,
+  }
+  const fileStream = fs.createReadStream(filePath, readStreamOptions)
+  const parts: MobileApplicationUploadPart[] = []
   for await (const chunk of fileStream) {
-    hash.update(chunk)
+    parts.push({
+      md5: crypto
+        .createHash('md5')
+        .update(chunk as Buffer)
+        .digest('base64'),
+      partNumber: parts.length + 1,
+      blob: chunk as Buffer,
+    })
   }
 
-  return {appSize: fileStream.bytesRead, md5: hash.digest('base64')}
+  return {
+    appSize: fileStream.bytesRead,
+    parts,
+  }
 }
 
 export const uploadMobileApplications = async (
@@ -27,23 +48,36 @@ export const uploadMobileApplications = async (
   applicationPathToUpload: string,
   mobileApplicationId: string
 ): Promise<string> => {
-  const {appSize, md5} = await getSizeAndMD5HashFromFile(applicationPathToUpload)
+  const {appSize, parts} = await getSizeAndPartsFromFile(applicationPathToUpload)
 
-  let presignedUrlResponse: PresignedUrlResponse
+  let multipartPresignedUrlsResponse: MultipartPresignedUrlsResponse
   try {
-    presignedUrlResponse = await api.getMobileApplicationPresignedURL(mobileApplicationId, appSize, md5)
+    multipartPresignedUrlsResponse = await api.getMobileApplicationPresignedURLs(mobileApplicationId, appSize, parts)
   } catch (e) {
     throw new EndpointError(`Failed to get presigned URL: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
 
-  const fileBuffer = await fs.promises.readFile(applicationPathToUpload)
+  let uploadPartResponses: MobileApplicationUploadPartResponse[]
   try {
-    await api.uploadMobileApplication(fileBuffer, presignedUrlResponse.presigned_url_params)
+    uploadPartResponses = await api.uploadMobileApplicationPart(
+      parts,
+      multipartPresignedUrlsResponse.multipart_presigned_urls_params
+    )
   } catch (e) {
     throw new EndpointError(`Failed to upload mobile application: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
 
-  return presignedUrlResponse.file_name
+  const {upload_id: uploadId, key} = multipartPresignedUrlsResponse.multipart_presigned_urls_params
+  try {
+    await api.completeMultipartMobileApplicationUpload(mobileApplicationId, uploadId, key, uploadPartResponses)
+  } catch (e) {
+    throw new EndpointError(
+      `Failed to complete upload mobile application: ${formatBackendErrors(e)}\n`,
+      e.response?.status
+    )
+  }
+
+  return multipartPresignedUrlsResponse.file_name
 }
 
 export const uploadApplication = async (

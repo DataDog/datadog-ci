@@ -417,13 +417,26 @@ export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   versionName?: string
   latest?: boolean
 }
-export interface PresignedUrlResponse {
+
+export interface MobileApplicationUploadPart {
+  partNumber: number
+  md5: string
+  blob: Buffer
+}
+
+export interface MobileApplicationUploadPartResponse {
+  PartNumber: number
+  ETag: string
+}
+
+export interface MultipartPresignedUrlsResponse {
   file_name: string
-  presigned_url_params: {
-    fields: {
+  multipart_presigned_urls_params: {
+    key: string
+    upload_id: string
+    urls: {
       [key: string]: string
     }
-    url: string
   }
 }
 
