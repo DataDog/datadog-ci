@@ -16,7 +16,12 @@ import {Dependency, ScaRequest} from './types'
 // Generate the payload we send to the API
 // jsonContent is the SBOM file content read from disk
 // tags are the list of tags we retrieved
-export const generatePayload = (jsonContent: any, tags: SpanTags): ScaRequest | undefined => {
+export const generatePayload = (
+  jsonContent: any,
+  tags: SpanTags,
+  service: string,
+  env: string
+): ScaRequest | undefined => {
   if (
     !tags[GIT_COMMIT_AUTHOR_EMAIL] ||
     !tags[GIT_COMMIT_AUTHOR_NAME] ||
@@ -69,5 +74,7 @@ export const generatePayload = (jsonContent: any, tags: SpanTags): ScaRequest | 
     },
     tags,
     dependencies,
+    service,
+    env,
   }
 }

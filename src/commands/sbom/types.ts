@@ -71,5 +71,7 @@ export interface ScaRequest {
   commit: CommitInformation
   repository: RepositoryInformation
   dependencies: Dependency[]
+  service: string
+  env: string
   tags: Record<string, string>
 }
