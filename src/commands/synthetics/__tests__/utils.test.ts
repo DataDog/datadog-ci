@@ -1585,18 +1585,18 @@ describe('utils', () => {
     })
 
     test.each([
-      {failOnMissingTestsFlag: true, errorCode: 'NO_TESTS_TO_RUN', exitReason: 'missing-tests'},
-      {failOnMissingTestsFlag: true, errorCode: 'MISSING_TESTS', exitReason: 'missing-tests'},
-      {failOnMissingTestsFlag: false, errorCode: 'NO_TESTS_TO_RUN', exitReason: 'passed'},
-      {failOnMissingTestsFlag: false, errorCode: 'MISSING_TESTS', exitReason: 'passed'},
+      {failOnMissingTests: true, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'missing-tests'} as const,
+      {failOnMissingTests: true, errorCode: 'MISSING_TESTS', expectedExitReason: 'missing-tests'} as const,
+      {failOnMissingTests: false, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'passed'} as const,
+      {failOnMissingTests: false, errorCode: 'MISSING_TESTS', expectedExitReason: 'passed'} as const,
     ])(
-      'should return $exitReason when $errorCode if failOnMissingTests flag is $failOnMissingTestsFlag',
-      ({failOnMissingTestsFlag, errorCode, exitReason}) => {
+      'should return $expectedExitReason when $errorCode if failOnMissingTests flag is $failOnMissingTests',
+      ({failOnMissingTests, errorCode, expectedExitReason: exitReason}) => {
         const config = {
           ...DEFAULT_COMMAND_CONFIG,
-          failOnMissingTests: failOnMissingTestsFlag,
+          failOnMissingTests,
         }
-        const error = new CiError(errorCode as CiErrorCode)
+        const error = new CiError(errorCode)
 
         expect(utils.getExitReason(config, {error})).toBe(exitReason)
       }
@@ -1697,13 +1697,13 @@ describe('utils', () => {
       'TRIGGER_TESTS_FAILED',
       'UNAVAILABLE_TEST_CONFIG',
       'UNAVAILABLE_TUNNEL_CONFIG',
-    ])('should report %s error', async (errorCode) => {
-      const error = new CiError(errorCode as CiErrorCode)
+    ] as const)('should report %s error', async (errorCode) => {
+      const error = new CiError(errorCode)
       utils.reportCiError(error, mockReporter)
       expect(mockReporter.error).toMatchSnapshot()
     })
 
-    test('should report default Error if it no other CiError was matched', async () => {
+    test('should report default Error if no CiError was matched', async () => {
       const error = new CiError('ERROR' as CiErrorCode)
       utils.reportCiError(error, mockReporter)
       expect(mockReporter.error).toMatchSnapshot()

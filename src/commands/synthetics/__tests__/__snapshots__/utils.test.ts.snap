@@ -253,7 +253,7 @@ exports[`utils reportCiError should report UNAVAILABLE_TUNNEL_CONFIG error 1`] =
 }
 `;
 
-exports[`utils reportCiError should report default Error if it no other CiError was matched 1`] = `
+exports[`utils reportCiError should report default Error if no CiError was matched 1`] = `
 [MockFunction] {
   "calls": [
     [
