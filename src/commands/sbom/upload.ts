@@ -85,34 +85,39 @@ export class UploadSbomCommand extends Command {
         this.context.stdout.write(`Processing file ${basePath}\n`)
       }
 
-      if (validateSbomFile(basePath, validator, !!this.debug)) {
-        const filePath = basePath
-        const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
-
-        // Upload content
-        try {
-          const scaPayload = generatePayload(jsonContent, tags)
-          if (!scaPayload) {
-            console.log(`Cannot generate payload for file ${filePath}`)
-            continue
-          }
-
-          const startTimeMs = Date.now()
-          const response = await api(scaPayload)
-          const endTimeMs = Date.now()
-          if (this.debug) {
-            this.context.stdout.write(`Upload done, status: ${response.status}\n`)
-          }
-          const apiTimeMs = endTimeMs - startTimeMs
-          this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
-        } catch (error) {
-          process.stderr.write(`Error while writing the payload: ${error.message}\n`)
-          if (error.response) {
-            process.stderr.write(`API status: ${error.response.status}\n`)
-          }
-        }
-      } else {
+      if (!validateSbomFile(basePath, validator, !!this.debug)) {
         this.context.stdout.write(`File ${chalk.red.bold(basePath)} is not a valid SBOM file.\n`)
+
+        return 1
+      }
+
+      const filePath = basePath
+      const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
+
+      // Upload content
+      try {
+        const scaPayload = generatePayload(jsonContent, tags)
+        if (!scaPayload) {
+          console.log(`Cannot generate payload for file ${filePath}`)
+          continue
+        }
+
+        const startTimeMs = Date.now()
+        const response = await api(scaPayload)
+        const endTimeMs = Date.now()
+        if (this.debug) {
+          this.context.stdout.write(`Upload done, status: ${response.status}\n`)
+        }
+
+        const apiTimeMs = endTimeMs - startTimeMs
+        this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
+      } catch (error) {
+        process.stderr.write(`Error while writing the payload: ${error.message}\n`)
+        if (error.response) {
+          process.stderr.write(`API status: ${error.response.status}\n`)
+        }
+
+        return 1
       }
     }
 
