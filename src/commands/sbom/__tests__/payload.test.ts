@@ -22,7 +22,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
 
@@ -49,7 +49,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
 
@@ -75,7 +75,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(305)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
@@ -104,7 +104,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(64)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
@@ -125,7 +125,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(89)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
@@ -150,7 +150,7 @@ describe('generation of payload', () => {
     }
     const tags = await getSpanTags(config, [])
 
-    const payload = generatePayload(sbomContent, tags)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(19)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
