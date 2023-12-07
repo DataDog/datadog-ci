@@ -199,7 +199,7 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
           'Content-MD5': parts[Number(partNumber) - 1].md5,
           // Presigned URL *requires* unset content-type since it's used for signature
           // We can clear axios default by setting to null
-          // https://github.com/axios/axios/issues/382
+          // https://github.com/axios/axios/pull/1845
           // eslint-disable-next-line no-null/no-null
           'Content-Type': null,
         },
