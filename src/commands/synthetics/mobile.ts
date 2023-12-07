@@ -20,7 +20,7 @@ export const getSizeAndPartsFromFile = async (
   filePath: string
 ): Promise<{appSize: number; parts: MobileApplicationUploadPart[]}> => {
   const readStreamOptions = {
-    // this oddly-named parameter will cause chunks to be no more than the given size
+    // Limit the chunk size for the stream
     // https://nodejs.org/api/stream.html#buffering
     highWaterMark: UPLOAD_FILE_MAX_PART_SIZE,
   }
