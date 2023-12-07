@@ -937,7 +937,8 @@ export const getExitReason = (
   }
 
   if (error instanceof CiError) {
-    if (config.failOnMissingTests && error.code === 'MISSING_TESTS') {
+    // Ensure the command fails if search query starts returning no results
+    if (config.failOnMissingTests && ['MISSING_TESTS', 'NO_TESTS_TO_RUN'].includes(error.code)) {
       return 'missing-tests'
     }
 
@@ -982,7 +983,7 @@ export const pluralize = (word: string, count: number): string => (count === 1 ?
 export const reportCiError = (error: CiError, reporter: MainReporter) => {
   switch (error.code) {
     case 'NO_TESTS_TO_RUN':
-      reporter.log('No test to run.\n')
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: No tests to run ')}\n${error.message}\n\n`)
       break
     case 'MISSING_TESTS':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)

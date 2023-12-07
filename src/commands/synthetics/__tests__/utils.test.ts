@@ -53,7 +53,7 @@ import {Metadata} from '../../../helpers/interfaces'
 import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../api'
-import {CiError} from '../errors'
+import {CiError, CiErrorCode, CriticalError} from '../errors'
 import {
   Batch,
   ExecutionRule,
@@ -1576,6 +1576,56 @@ describe('utils', () => {
     })
   })
 
+  describe('getExitReason', () => {
+    test('should return failing-tests if any tests have failed', () => {
+      const config = DEFAULT_COMMAND_CONFIG
+      const results = getResults([{passed: false}])
+
+      expect(utils.getExitReason(config, {results})).toBe('failing-tests')
+    })
+
+    test.each([
+      {failOnMissingTests: true, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'missing-tests'},
+      {failOnMissingTests: true, errorCode: 'MISSING_TESTS', expectedExitReason: 'missing-tests'},
+      {failOnMissingTests: false, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'passed'},
+      {failOnMissingTests: false, errorCode: 'MISSING_TESTS', expectedExitReason: 'passed'},
+    ] as const)(
+      'should return $expectedExitReason when $errorCode if failOnMissingTests flag is $failOnMissingTests',
+      ({failOnMissingTests, errorCode, expectedExitReason: exitReason}) => {
+        const config = {
+          ...DEFAULT_COMMAND_CONFIG,
+          failOnMissingTests,
+        }
+        const error = new CiError(errorCode)
+
+        expect(utils.getExitReason(config, {error})).toBe(exitReason)
+      }
+    )
+
+    test.each([
+      {failOnCriticalErrorsFlag: true, exitReason: 'critical-error'},
+      {failOnCriticalErrorsFlag: false, exitReason: 'passed'},
+    ])(
+      'should return $exitReason when failOnCriticalErrors flag is $failOnCriticalErrorsFlag',
+      ({failOnCriticalErrorsFlag, exitReason}) => {
+        const config = {
+          ...DEFAULT_COMMAND_CONFIG,
+          failOnCriticalErrors: failOnCriticalErrorsFlag,
+        }
+        const error = new CriticalError('AUTHORIZATION_ERROR')
+
+        expect(utils.getExitReason(config, {error})).toBe(exitReason)
+      }
+    )
+
+    test('should return passed if all tests have passed and there were no errors', () => {
+      const config = DEFAULT_COMMAND_CONFIG
+      const results = getResults([{passed: true}])
+
+      expect(utils.getExitReason(config, {results})).toBe('passed')
+    })
+  })
+
   describe('getDatadogHost', () => {
     test('should default to datadog us api', async () => {
       process.env = {}
@@ -1630,6 +1680,33 @@ describe('utils', () => {
 
       const config = (apiConfiguration as unknown) as SyntheticsCIConfig
       expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+    })
+  })
+
+  describe('reportCiError', () => {
+    test.each([
+      'NO_TESTS_TO_RUN',
+      'MISSING_TESTS',
+      'AUTHORIZATION_ERROR',
+      'INVALID_CONFIG',
+      'MISSING_APP_KEY',
+      'MISSING_API_KEY',
+      'POLL_RESULTS_FAILED',
+      'TUNNEL_START_FAILED',
+      'TOO_MANY_TESTS_TO_TRIGGER',
+      'TRIGGER_TESTS_FAILED',
+      'UNAVAILABLE_TEST_CONFIG',
+      'UNAVAILABLE_TUNNEL_CONFIG',
+    ] as const)('should report %s error', async (errorCode) => {
+      const error = new CiError(errorCode)
+      utils.reportCiError(error, mockReporter)
+      expect(mockReporter.error).toMatchSnapshot()
+    })
+
+    test('should report default Error if no CiError was matched', async () => {
+      const error = new CiError('ERROR' as CiErrorCode)
+      utils.reportCiError(error, mockReporter)
+      expect(mockReporter.error).toMatchSnapshot()
     })
   })
 })
