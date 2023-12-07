@@ -27,13 +27,15 @@ export const getSizeAndPartsFromFile = async (
   const fileStream = fs.createReadStream(filePath, readStreamOptions)
   const parts: MobileApplicationUploadPart[] = []
   for await (const chunk of fileStream) {
+    if (!(chunk instanceof Buffer)) {
+      // this should never happen, but for-await-of creates an any that we don't want
+      throw new Error('Unexpected chunk type from file stream')
+    }
+
     parts.push({
-      md5: crypto
-        .createHash('md5')
-        .update(chunk as Buffer)
-        .digest('base64'),
+      md5: crypto.createHash('md5').update(chunk).digest('base64'),
       partNumber: parts.length + 1,
-      blob: chunk as Buffer,
+      blob: chunk,
     })
   }
 
