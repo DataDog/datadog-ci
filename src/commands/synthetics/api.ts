@@ -22,7 +22,7 @@ import {
   Trigger,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {ciTriggerApp, getDatadogHost, retry} from './utils'
+import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms

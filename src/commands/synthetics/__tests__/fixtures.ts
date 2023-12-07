@@ -31,7 +31,7 @@ import {
   UploadApplicationCommandConfig,
   User,
 } from '../interfaces'
-import {createInitialSummary} from '../utils'
+import {createInitialSummary} from '../utils/public'
 
 const mockUser: User = {
   email: '',

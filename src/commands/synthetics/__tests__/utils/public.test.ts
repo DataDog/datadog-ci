@@ -48,12 +48,12 @@ import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
-import * as ciHelpers from '../../../helpers/ci'
-import {Metadata} from '../../../helpers/interfaces'
-import * as ciUtils from '../../../helpers/utils'
+import * as ciHelpers from '../../../../helpers/ci'
+import {Metadata} from '../../../../helpers/interfaces'
+import * as ciUtils from '../../../../helpers/utils'
 
-import {apiConstructor, APIHelper} from '../api'
-import {CiError, CiErrorCode, CriticalError} from '../errors'
+import {apiConstructor, APIHelper} from '../../api'
+import {CiError, CiErrorCode, CriticalError} from '../../errors'
 import {
   Batch,
   ExecutionRule,
@@ -64,10 +64,10 @@ import {
   Test,
   Trigger,
   UserConfigOverride,
-} from '../interfaces'
-import * as mobile from '../mobile'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import * as utils from '../utils'
+} from '../../interfaces'
+import * as mobile from '../../mobile'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import * as utils from '../../utils/public'
 
 import {
   ciConfig,
@@ -83,7 +83,7 @@ import {
   mockLocation,
   mockReporter,
   RenderResultsTestCase,
-} from './fixtures'
+} from '../fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -503,7 +503,7 @@ describe('utils', () => {
   describe('getOverriddenConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId)).toEqual({
+      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
         public_id: publicId,
       })
     })
@@ -527,9 +527,7 @@ describe('utils', () => {
 
         const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
-
-        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, configOverride)
+        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
         expect(overriddenConfig.public_id).toBe(publicId)
         expect(overriddenConfig.executionRule).toBe(expectedExecutionRule)
@@ -572,7 +570,7 @@ describe('utils', () => {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, configOverride)
+      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)
@@ -607,7 +605,7 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.getOverriddenConfig(fakeTest, publicId, configOverride)).toEqual({
+      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
         ...configOverride,
         public_id: publicId,
       })
@@ -677,14 +675,14 @@ describe('utils', () => {
   })
 
   describe('getExecutionRule', () => {
-    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule | undefined][] = [
-      [undefined, undefined, undefined],
+    const cases: [ExecutionRule | undefined, ExecutionRule | undefined, ExecutionRule][] = [
+      [undefined, undefined, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
       [undefined, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
-      [ExecutionRule.BLOCKING, undefined, undefined],
+      [ExecutionRule.BLOCKING, undefined, ExecutionRule.BLOCKING],
       [ExecutionRule.BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.BLOCKING],
       [ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
-      [ExecutionRule.NON_BLOCKING, undefined, undefined],
+      [ExecutionRule.NON_BLOCKING, undefined, ExecutionRule.NON_BLOCKING],
       [ExecutionRule.NON_BLOCKING, ExecutionRule.BLOCKING, ExecutionRule.NON_BLOCKING],
       [ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING, ExecutionRule.NON_BLOCKING],
     ]

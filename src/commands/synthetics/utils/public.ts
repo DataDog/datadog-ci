@@ -8,13 +8,13 @@ import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 import glob from 'glob'
 
-import {getCommonAppBaseURL} from '../../helpers/app'
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
-import {pick} from '../../helpers/utils'
+import {getCommonAppBaseURL} from '../../../helpers/app'
+import {getCIMetadata} from '../../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
+import {pick} from '../../../helpers/utils'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {CiError, CriticalError} from './errors'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from '../api'
+import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
   Batch,
@@ -41,10 +41,12 @@ import {
   Trigger,
   TriggerConfig,
   UserConfigOverride,
-} from './interfaces'
-import {uploadApplicationAndOverrideConfig} from './mobile'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {Tunnel} from './tunnel'
+} from '../interfaces'
+import {uploadApplicationAndOverrideConfig} from '../mobile'
+import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {Tunnel} from '../tunnel'
+
+import {getOverriddenExecutionRule} from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -72,7 +74,12 @@ const template = (st: string, context: any): string =>
 
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
-export const getOverriddenConfig = (test: Test, publicId: string, config?: UserConfigOverride): TestPayload => {
+export const getOverriddenConfig = (
+  test: Test,
+  publicId: string,
+  reporter: MainReporter,
+  config?: UserConfigOverride
+): TestPayload => {
   let overriddenConfig: TestPayload = {
     public_id: publicId,
   }
@@ -81,7 +88,7 @@ export const getOverriddenConfig = (test: Test, publicId: string, config?: UserC
     return overriddenConfig
   }
 
-  const executionRule = getExecutionRule(test, config)
+  const executionRule = getOverriddenExecutionRule(test, config)
   if (executionRule) {
     overriddenConfig.executionRule = executionRule
   }
@@ -120,10 +127,12 @@ export const setCiTriggerApp = (source: string): void => {
   ciTriggerApp = source
 }
 
-export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule | undefined => {
-  if (configOverride?.executionRule) {
+export const getExecutionRule = (test?: Test, configOverride?: UserConfigOverride): ExecutionRule => {
+  if (configOverride && configOverride.executionRule) {
     return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
   }
+
+  return test?.options?.ci?.executionRule || ExecutionRule.BLOCKING
 }
 
 export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: ExecutionRule): ExecutionRule => {
@@ -593,7 +602,7 @@ export const getTestAndOverrideConfig = async (
   }
 
   const {test} = testResult
-  const overriddenConfig = getOverriddenConfig(test, normalizedId, config)
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
   const testExecutionRule = test?.options?.ci?.executionRule
   const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 

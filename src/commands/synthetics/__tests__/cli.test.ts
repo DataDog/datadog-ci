@@ -7,7 +7,7 @@ import * as api from '../api'
 import {UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import * as utils from '../utils'
+import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
