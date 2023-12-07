@@ -48,12 +48,12 @@ import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
-import * as ciHelpers from '../../../helpers/ci'
-import {Metadata} from '../../../helpers/interfaces'
-import * as ciUtils from '../../../helpers/utils'
+import * as ciHelpers from '../../../../helpers/ci'
+import {Metadata} from '../../../../helpers/interfaces'
+import * as ciUtils from '../../../../helpers/utils'
 
-import {apiConstructor, APIHelper} from '../api'
-import {CiError, CiErrorCode, CriticalError} from '../errors'
+import {apiConstructor, APIHelper} from '../../api'
+import {CiError, CiErrorCode, CriticalError} from '../../errors'
 import {
   Batch,
   ExecutionRule,
@@ -64,10 +64,10 @@ import {
   Test,
   Trigger,
   UserConfigOverride,
-} from '../interfaces'
-import * as mobile from '../mobile'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import * as utils from '../utils'
+} from '../../interfaces'
+import * as mobile from '../../mobile'
+import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import * as utils from '../../utils/public'
 
 import {
   ciConfig,
@@ -83,7 +83,7 @@ import {
   mockLocation,
   mockReporter,
   RenderResultsTestCase,
-} from './fixtures'
+} from '../fixtures'
 
 describe('utils', () => {
   const apiConfiguration = {
@@ -328,10 +328,7 @@ describe('utils', () => {
       )
 
       expect(tests).toStrictEqual([fakeTests['123-456-789']])
-      expect(overriddenTestsToTrigger).toStrictEqual([
-        {executionRule: ExecutionRule.BLOCKING, public_id: '123-456-789'},
-        {executionRule: ExecutionRule.SKIPPED, public_id: 'ski-ppe-d01'},
-      ])
+      expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789'}, {public_id: 'ski-ppe-d01'}])
 
       const expectedSummary: utils.InitialSummary = {
         criticalErrors: 0,
@@ -507,14 +504,13 @@ describe('utils', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
       expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
-        executionRule: ExecutionRule.BLOCKING,
         public_id: publicId,
       })
     })
 
-    test('strictest executionRule is forwarded', () => {
+    test('strictest executionRule is forwarded when it has to be', () => {
       const expectHandledConfigToBe = (
-        expectedExecutionRule: ExecutionRule,
+        expectedExecutionRule: ExecutionRule | undefined,
         configExecutionRule?: ExecutionRule,
         testExecutionRule?: ExecutionRule
       ) => {
@@ -531,8 +527,6 @@ describe('utils', () => {
 
         const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        expect(utils.getExecutionRule(fakeTest, configOverride)).toBe(expectedExecutionRule)
-
         const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
 
         expect(overriddenConfig.public_id).toBe(publicId)
@@ -543,18 +537,18 @@ describe('utils', () => {
       const NON_BLOCKING = ExecutionRule.NON_BLOCKING
       const SKIPPED = ExecutionRule.SKIPPED
 
-      // No override => BLOCKING
-      expectHandledConfigToBe(BLOCKING)
+      // No override => nothing, let the backend decide
+      expectHandledConfigToBe(undefined)
 
       // CI config overrides only
       expectHandledConfigToBe(BLOCKING, BLOCKING)
       expectHandledConfigToBe(NON_BLOCKING, NON_BLOCKING)
       expectHandledConfigToBe(SKIPPED, SKIPPED)
 
-      // Test config only
-      expectHandledConfigToBe(BLOCKING, undefined, BLOCKING)
-      expectHandledConfigToBe(NON_BLOCKING, undefined, NON_BLOCKING)
-      expectHandledConfigToBe(SKIPPED, undefined, SKIPPED)
+      // Test config only => nothing, let the backend decide
+      expectHandledConfigToBe(undefined, undefined, BLOCKING)
+      expectHandledConfigToBe(undefined, undefined, NON_BLOCKING)
+      expectHandledConfigToBe(undefined, undefined, SKIPPED)
 
       // Strictest executionRule is forwarded
       expectHandledConfigToBe(NON_BLOCKING, BLOCKING, NON_BLOCKING)

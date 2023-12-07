@@ -33,7 +33,7 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
-} from './utils'
+} from './utils/public'
 
 type ExecuteOptions = {
   jUnitReport?: string

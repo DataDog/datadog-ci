@@ -11,7 +11,7 @@ import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
 import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import * as utils from '../utils'
+import * as utils from '../utils/public'
 
 import {
   ciConfig,

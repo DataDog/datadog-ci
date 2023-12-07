@@ -20,7 +20,7 @@ import {
   reportCiError,
   toExitCode,
   reportExitLogs,
-} from './utils'
+} from './utils/public'
 
 export const MAX_TESTS_TO_TRIGGER = 100
 

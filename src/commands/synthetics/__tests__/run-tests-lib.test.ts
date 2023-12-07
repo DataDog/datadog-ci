@@ -10,7 +10,7 @@ import {JUnitReporter} from '../reporters/junit'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as runTests from '../run-tests-lib'
 import {Tunnel} from '../tunnel'
-import * as utils from '../utils'
+import * as utils from '../utils/public'
 
 import {
   ciConfig,

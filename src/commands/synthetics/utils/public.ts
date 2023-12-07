@@ -8,13 +8,13 @@ import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 import glob from 'glob'
 
-import {getCommonAppBaseURL} from '../../helpers/app'
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
-import {pick} from '../../helpers/utils'
+import {getCommonAppBaseURL} from '../../../helpers/app'
+import {getCIMetadata} from '../../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
+import {pick} from '../../../helpers/utils'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from './api'
-import {CiError, CriticalError} from './errors'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from '../api'
+import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
   Batch,
@@ -41,10 +41,12 @@ import {
   Trigger,
   TriggerConfig,
   UserConfigOverride,
-} from './interfaces'
-import {uploadApplicationAndOverrideConfig} from './mobile'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
-import {Tunnel} from './tunnel'
+} from '../interfaces'
+import {uploadApplicationAndOverrideConfig} from '../mobile'
+import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {Tunnel} from '../tunnel'
+
+import {getOverriddenExecutionRule} from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -78,14 +80,17 @@ export const getOverriddenConfig = (
   reporter: MainReporter,
   config?: UserConfigOverride
 ): TestPayload => {
-  const executionRule = getExecutionRule(test, config)
   let overriddenConfig: TestPayload = {
-    executionRule,
     public_id: publicId,
   }
 
   if (!config || !Object.keys(config).length) {
     return overriddenConfig
+  }
+
+  const executionRule = getOverriddenExecutionRule(test, config)
+  if (executionRule) {
+    overriddenConfig.executionRule = executionRule
   }
 
   overriddenConfig = {
@@ -598,9 +603,11 @@ export const getTestAndOverrideConfig = async (
 
   const {test} = testResult
   const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
+  const testExecutionRule = test?.options?.ci?.executionRule
+  const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 
-  reporter.testTrigger(test, normalizedId, overriddenConfig.executionRule, config)
-  if (overriddenConfig.executionRule === ExecutionRule.SKIPPED) {
+  reporter.testTrigger(test, normalizedId, executionRule, config)
+  if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 
     return {overriddenConfig}
