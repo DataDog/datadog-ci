@@ -8,8 +8,8 @@ import addFormats from 'ajv-formats'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
@@ -136,7 +136,7 @@ export class UploadSarifReportCommand extends Command {
 
     const initialTime = new Date().getTime()
 
-    await asyncPool(this.maxConcurrency, payloads, upload)
+    await doWithMaxConcurrency(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.context.stdout.write(

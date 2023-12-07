@@ -4,9 +4,9 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
-import asyncPool from 'tiny-async-pool'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -365,7 +365,7 @@ export class UploadCommand extends Command {
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     try {
-      const results = await asyncPool(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
+      const results = await doWithMaxConcurrency(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
           renderFailedUpload(
             fileMetadata.filename,

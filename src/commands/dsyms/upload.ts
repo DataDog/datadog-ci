@@ -4,9 +4,9 @@ import path from 'path'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
@@ -124,7 +124,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, compressedDSYMs, uploadDSYM)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, compressedDSYMs, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
