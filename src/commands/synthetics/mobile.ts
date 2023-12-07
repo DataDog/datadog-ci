@@ -14,7 +14,7 @@ import {
   UserConfigOverride,
 } from './interfaces'
 
-const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024
+const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
 
 export const getSizeAndPartsFromFile = async (
   filePath: string
