@@ -53,6 +53,7 @@ export interface Dependency {
   version: string
   language: DependencyLanguage
   licenses: DependencyLicense[]
+  purl: string
 }
 
 export interface CommitInformation {

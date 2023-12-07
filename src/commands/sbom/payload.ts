@@ -1,3 +1,4 @@
+import * as console from 'console'
 import crypto from 'crypto'
 
 import {SpanTags} from '../../helpers/interfaces'
@@ -50,11 +51,19 @@ export const generatePayload = (
           continue
         }
 
+        const purl: string | undefined = component['purl']
+
+        if (!purl) {
+          console.error(`cannot find purl for component ${component['name']}`)
+          continue
+        }
+
         const dependency: Dependency = {
           name: component['name'],
           version: component['version'],
           language: lang,
           licenses: getLicensesFromComponent(component),
+          purl,
         }
         dependencies.push(dependency)
       }
