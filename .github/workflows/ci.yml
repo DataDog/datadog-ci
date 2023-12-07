@@ -171,6 +171,24 @@ jobs:
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
+  datadog-static-analyzer:
+    runs-on: ubuntu-latest
+    name: Datadog Static Analyzer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run Datadog static analyzer
+        id: datadog-static-analysis
+        uses: DataDog/datadog-static-analyzer-github-action@v1
+        with:
+          dd_app_key: ${{ secrets.DATADOG_APP_KEY_E2E }}
+          dd_api_key: ${{ secrets.DATADOG_API_KEY_E2E }}
+          dd_service: "datadog-ci"
+          dd_env: "ci"
+          cpu_count: 2
+          enable_performance_statistics: true
+          sca_enabled: true
+
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
