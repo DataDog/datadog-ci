@@ -429,7 +429,7 @@ describe('run-test', () => {
     })
   })
 
-  describe('execute', () => {
+  describe('executeWithDetails', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
       jest.spyOn(api, 'getApiHelper').mockImplementation(
@@ -445,14 +445,14 @@ describe('run-test', () => {
     })
 
     test('should call executeTests and renderResults', async () => {
-      await runTests.execute({}, {})
+      await runTests.executeWithDetails({}, {})
       expect(runTests.executeTests).toHaveBeenCalled()
       expect(utils.renderResults).toHaveBeenCalled()
     })
 
     test('should extend config', async () => {
       const runConfig = {apiKey: 'apiKey', appKey: 'appKey'}
-      await runTests.execute(runConfig, {})
+      await runTests.executeWithDetails(runConfig, {})
       expect(runTests.executeTests).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining(runConfig),
@@ -462,12 +462,19 @@ describe('run-test', () => {
 
     test('should bypass files if suite is passed', async () => {
       const suites = [{content: {tests: []}}]
-      await runTests.execute({}, {suites})
+      await runTests.executeWithDetails({}, {suites})
       expect(runTests.executeTests).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({files: []}),
         suites
       )
+    })
+
+    test('should return values returned by executeTests, and an exitCode', async () => {
+      const returnValue = await runTests.executeWithDetails({}, {})
+      expect(returnValue.results).toBeDefined()
+      expect(returnValue.summary).toBeDefined()
+      expect(returnValue.exitCode).toBeDefined()
     })
 
     describe('reporters', () => {
@@ -476,17 +483,36 @@ describe('run-test', () => {
       })
 
       test('should use default reporter with empty config', async () => {
-        await runTests.execute({}, {})
+        await runTests.executeWithDetails({}, {})
         expect(utils.getReporter).toHaveBeenCalledWith(expect.arrayContaining([expect.any(DefaultReporter)]))
       })
 
       test('should use custom reporters', async () => {
         const CustomReporter = {}
-        await runTests.execute({}, {reporters: ['junit', CustomReporter]})
+        await runTests.executeWithDetails({}, {reporters: ['junit', CustomReporter]})
         expect(utils.getReporter).toHaveBeenCalledWith(
           expect.arrayContaining([expect.any(JUnitReporter), CustomReporter])
         )
       })
+    })
+  })
+
+  describe('execute', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks()
+      jest
+        .spyOn(runTests, 'executeWithDetails')
+        .mockReturnValue(Promise.resolve({results: [], summary: {} as Summary, exitCode: 0}))
+    })
+
+    test('should call executeWithDetails', async () => {
+      await runTests.execute({}, {})
+      expect(runTests.executeWithDetails).toHaveBeenCalled()
+    })
+
+    test('should return the exitCode returned by executeWithDetails', async () => {
+      const returnValue = await runTests.execute({}, {})
+      expect(returnValue).toBe(0)
     })
   })
 
