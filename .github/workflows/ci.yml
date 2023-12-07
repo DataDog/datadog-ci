@@ -181,8 +181,8 @@ jobs:
         id: datadog-static-analysis
         uses: DataDog/datadog-static-analyzer-github-action@main
         with:
-          dd_app_key: ${{ secrets.DATADOG_APP_KEY_E2E }}
-          dd_api_key: ${{ secrets.DATADOG_API_KEY_E2E }}
+          dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           dd_service: "datadog-ci"
           dd_env: "ci"
           cpu_count: 2
