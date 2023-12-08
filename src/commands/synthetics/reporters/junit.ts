@@ -23,12 +23,12 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
+import {hasResult} from '../utils/internal'
 import {
   getBatchUrl,
   getResultDuration,
   getResultOutcome,
   getResultUrl,
-  hasResult,
   isDeviceIdSet,
   isResultSkippedBySelectiveRerun,
   PASSED_RESULT_OUTCOMES,

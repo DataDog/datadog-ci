@@ -17,7 +17,6 @@ import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundE
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
-  BaseResult,
   Batch,
   BrowserServerResult,
   ExecutionRule,
@@ -31,7 +30,6 @@ import {
   Result,
   ResultDisplayInfo,
   ResultInBatch,
-  ResultInBatchSkippedBySelectiveRerun,
   ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
@@ -49,7 +47,12 @@ import {uploadApplicationAndOverrideConfig} from '../mobile'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule} from './internal'
+import {
+  getOverriddenExecutionRule,
+  getResultIdOrLinkedResultId,
+  hasResult,
+  isResultInBatchSkippedBySelectiveRerun,
+} from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -353,18 +356,8 @@ const waitForBatchToFinish = async (
   }
 }
 
-export const hasResult = (result: Result): result is BaseResult => {
-  return !isResultSkippedBySelectiveRerun(result)
-}
-
 export const isResultSkippedBySelectiveRerun = (result: Result): result is ResultSkippedBySelectiveRerun => {
   return result.selectiveRerun?.decision === 'skip'
-}
-
-export const isResultInBatchSkippedBySelectiveRerun = (
-  result: ResultInBatch
-): result is ResultInBatchSkippedBySelectiveRerun => {
-  return result.selective_rerun?.decision === 'skip'
 }
 
 const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
@@ -487,14 +480,6 @@ const getResultFromBatch = (
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
   }
-}
-
-const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
-  if (isResultInBatchSkippedBySelectiveRerun(result)) {
-    return result.selective_rerun.linked_result_id
-  }
-
-  return result.result_id
 }
 
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
@@ -914,6 +899,24 @@ export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
   }
 
   return `${testDetailUrl}?resultId=${resultId}&${ciQueryParam}`
+}
+
+/**
+ * Sort results with the following rules:
+ * - Passed results come first
+ * - Then non-blocking failed results
+ * - And finally failed results
+ */
+export const sortResultsByOutcome = () => {
+  const outcomeWeight = {
+    [ResultOutcome.PreviouslyPassed]: 1,
+    [ResultOutcome.PassedNonBlocking]: 2,
+    [ResultOutcome.Passed]: 3,
+    [ResultOutcome.FailedNonBlocking]: 4,
+    [ResultOutcome.Failed]: 5,
+  }
+
+  return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
 }
 
 export const renderResults = ({
