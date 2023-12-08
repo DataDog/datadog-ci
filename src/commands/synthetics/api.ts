@@ -2,8 +2,6 @@ import {stringify} from 'querystring'
 
 import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
-import FormData from 'form-data'
-
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {CriticalError} from './errors'
@@ -11,10 +9,12 @@ import {
   APIConfiguration,
   APIHelperConfig,
   Batch,
+  MobileApplicationUploadPart,
+  MobileApplicationUploadPartResponse,
   MobileApplicationVersion,
   Payload,
   PollResult,
-  PresignedUrlResponse,
+  MultipartPresignedUrlsResponse,
   ServerBatch,
   ServerTest,
   SyntheticsOrgSettings,
@@ -160,14 +160,26 @@ const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromi
   return resp.data
 }
 
-const getMobileApplicationPresignedURL = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<PresignedUrlResponse>
-) => async (applicationId: string, appSize: number, md5: string) => {
+const getMobileApplicationPresignedURLs = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<MultipartPresignedUrlsResponse>
+) => async (
+  applicationId: string,
+  appSize: number,
+  parts: MobileApplicationUploadPart[]
+): Promise<MultipartPresignedUrlsResponse> => {
+  const partForRequest = (part: MobileApplicationUploadPart) => ({
+    md5: part.md5,
+    partNumber: part.partNumber,
+  })
+
   const resp = await retryRequest(
     {
-      data: {appSize, md5},
+      data: {
+        appSize,
+        parts: parts.map(partForRequest),
+      },
       method: 'POST',
-      url: `/synthetics/mobile/applications/${applicationId}/presigned-url`,
+      url: `/synthetics/mobile/applications/${applicationId}/multipart-presigned-urls`,
     },
     request
   )
@@ -175,24 +187,58 @@ const getMobileApplicationPresignedURL = (
   return resp.data
 }
 
-const uploadMobileApplication = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
-  fileBuffer: Buffer,
-  presignedUrlParams: PresignedUrlResponse['presigned_url_params']
-) => {
-  const form = new FormData()
-  Object.entries(presignedUrlParams.fields).forEach(([key, value]) => {
-    form.append(key, value)
-  })
-  form.append('file', fileBuffer)
+const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
+  parts: MobileApplicationUploadPart[],
+  multipartPresignedUrlsParams: MultipartPresignedUrlsResponse['multipart_presigned_urls_params']
+): Promise<MobileApplicationUploadPartResponse[]> => {
+  const promises = Object.entries(multipartPresignedUrlsParams.urls).map(async ([partNumber, presignedUrl]) => {
+    const resp = await retryRequest(
+      {
+        data: parts[Number(partNumber) - 1].blob,
+        headers: {
+          'Content-MD5': parts[Number(partNumber) - 1].md5,
+          // Presigned URL *requires* unset content-type since it's used for signature
+          // We can clear axios default by setting to null
+          // https://github.com/axios/axios/pull/1845
+          // eslint-disable-next-line no-null/no-null
+          'Content-Type': null,
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+        method: 'PUT',
+        url: presignedUrl,
+      },
+      request
+    )
 
+    const quotedEtag = resp.headers.etag as string
+
+    return {
+      ETag: quotedEtag.replace(/"/g, ''),
+      PartNumber: Number(partNumber),
+    }
+  })
+
+  return Promise.all(promises)
+}
+
+export const completeMultipartMobileApplicationUpload = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<void>
+) => async (
+  applicationId: string,
+  uploadId: string,
+  key: string,
+  uploadPartResponses: MobileApplicationUploadPartResponse[]
+) => {
   await retryRequest(
     {
-      data: form,
-      headers: {...form.getHeaders(), 'Content-Length': form.getLengthSync()},
-      maxBodyLength: Infinity,
-      maxContentLength: Infinity,
+      data: {
+        key,
+        parts: uploadPartResponses,
+        uploadId,
+      },
       method: 'POST',
-      url: presignedUrlParams.url,
+      url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
     },
     request
   )
@@ -267,14 +313,15 @@ export const apiConstructor = (configuration: APIConfiguration) => {
 
   return {
     getBatch: getBatch(request),
-    getMobileApplicationPresignedURL: getMobileApplicationPresignedURL(requestUnstable),
+    getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
-    uploadMobileApplication: uploadMobileApplication(request),
+    uploadMobileApplicationPart: uploadMobileApplicationPart(request),
+    completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     createMobileVersion: createMobileVersion(requestUnstable),
   }
 }

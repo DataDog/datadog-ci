@@ -19,7 +19,8 @@ import {
   MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
-  PresignedUrlResponse,
+  MobileApplicationUploadPart,
+  MultipartPresignedUrlsResponse,
   Result,
   RunTestsCommandConfig,
   Step,
@@ -41,11 +42,6 @@ const mockUser: User = {
 }
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
-
-export const MOBILE_PRESIGNED_URL_PAYLOAD: PresignedUrlResponse = {
-  file_name: 'fileNameUuid',
-  presigned_url_params: {url: 'https://www.presigned.url', fields: {}},
-}
 
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
@@ -572,3 +568,20 @@ export const uploadCommandConfig: UploadApplicationCommandConfig = {
   versionName: 'new version',
   latest: true,
 }
+
+export const MOBILE_PRESIGNED_URLS_PAYLOAD: MultipartPresignedUrlsResponse = {
+  file_name: 'fileNameUuid',
+  multipart_presigned_urls_params: {
+    urls: {
+      1: 'https://www.1.presigned.url',
+      2: 'https://www.2.presigned.url',
+    },
+    key: 'fakeKey',
+    upload_id: 'fakeUploadId',
+  },
+}
+
+export const MOBILE_PRESIGNED_UPLOAD_PARTS: MobileApplicationUploadPart[] = [
+  {partNumber: 1, md5: 'md5', blob: Buffer.from('content1')},
+  {partNumber: 2, md5: 'md5', blob: Buffer.from('content2')},
+]

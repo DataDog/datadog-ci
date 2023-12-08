@@ -18,7 +18,8 @@ import {
   getApiTest,
   getAxiosHttpError,
   getSyntheticsProxy,
-  MOBILE_PRESIGNED_URL_PAYLOAD,
+  MOBILE_PRESIGNED_URLS_PAYLOAD,
+  MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
   mockTestTriggerResponse,
 } from './fixtures'
@@ -110,7 +111,8 @@ describe('dd-api', () => {
         shouldBeRetriedOn5xx: true,
       },
       {
-        makeApiRequest: () => api.getMobileApplicationPresignedURL('applicationId', 1025, 'md5'),
+        makeApiRequest: () =>
+          api.getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
         shouldBeRetriedOn5xx: true,
@@ -219,11 +221,11 @@ describe('dd-api', () => {
   test('should get a mobile application presigned URL from api', async () => {
     const spy = jest
       .spyOn(axios, 'create')
-      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
+      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URLS_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
-    const {getMobileApplicationPresignedURL} = api
-    const result = await getMobileApplicationPresignedURL('applicationId', 1025, 'md5')
-    expect(result).toEqual(MOBILE_PRESIGNED_URL_PAYLOAD)
+    const {getMobileApplicationPresignedURLs} = api
+    const result = await getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS)
+    expect(result).toEqual(MOBILE_PRESIGNED_URLS_PAYLOAD)
     spy.mockRestore()
   })
 
@@ -238,13 +240,43 @@ describe('dd-api', () => {
 
   test('should upload a mobile application with a presigned URL', async () => {
     const mockRequest = jest.fn()
+    mockRequest.mockReturnValue({status: 200, headers: {etag: '"123"'}})
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
     const api = apiConstructor(apiConfiguration)
-    const {uploadMobileApplication} = api
-    await uploadMobileApplication(Buffer.from('Mobile'), MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params)
+    const {uploadMobileApplicationPart} = api
+    await uploadMobileApplicationPart(
+      MOBILE_PRESIGNED_UPLOAD_PARTS,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
 
     const callArg = mockRequest.mock.calls[0][0]
-    expect(callArg.url).toBe(MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params.url)
+    expect(callArg.url).toBe(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls[1])
+    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+    spy.mockRestore()
+  })
+
+  test('should complete presigned mobile application upload', async () => {
+    const mockRequest = jest.fn()
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {completeMultipartMobileApplicationUpload} = api
+
+    const appId = 'appId123'
+    const partUploadResponses = Object.keys(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls).map(
+      (partNumber) => ({
+        PartNumber: Number(partNumber),
+        ETag: 'etag',
+      })
+    )
+
+    await completeMultipartMobileApplicationUpload(
+      appId,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
+      partUploadResponses
+    )
+
+    expect(mockRequest).toHaveBeenCalled()
     spy.mockRestore()
   })
 

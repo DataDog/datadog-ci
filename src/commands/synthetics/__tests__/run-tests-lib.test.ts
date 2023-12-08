@@ -18,7 +18,7 @@ import {
   getApiTest,
   getAxiosHttpError,
   getMobileTest,
-  MOBILE_PRESIGNED_URL_PAYLOAD,
+  MOBILE_PRESIGNED_URLS_PAYLOAD,
   mockReporter,
   mockTestTriggerResponse,
 } from './fixtures'
@@ -282,7 +282,7 @@ describe('run-test', () => {
       ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
-    test('getMobileApplicationPresignedURL throws', async () => {
+    test('getMobileApplicationPresignedURLs throws', async () => {
       const mobileTest = getMobileTest()
       jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
@@ -296,7 +296,7 @@ describe('run-test', () => {
       jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
 
       const apiHelper = {
-        getMobileApplicationPresignedURL: jest.fn(() => {
+        getMobileApplicationPresignedURLs: jest.fn(() => {
           throw getAxiosHttpError(502, {message: 'Server Error'})
         }),
       }
@@ -311,7 +311,7 @@ describe('run-test', () => {
       ).rejects.toThrow('Failed to get presigned URL: could not query https://app.datadoghq.com/example')
     })
 
-    test('uploadMobileApplication throws', async () => {
+    test('uploadMobileApplicationPart throws', async () => {
       const mobileTest = getMobileTest()
       jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
@@ -327,8 +327,8 @@ describe('run-test', () => {
       jest.spyOn(fs.promises, 'readFile').mockImplementation(async () => Buffer.from('aa'))
 
       const apiHelper = {
-        getMobileApplicationPresignedURL: jest.fn(() => MOBILE_PRESIGNED_URL_PAYLOAD),
-        uploadMobileApplication: jest.fn(() => {
+        getMobileApplicationPresignedURLs: jest.fn(() => MOBILE_PRESIGNED_URLS_PAYLOAD),
+        uploadMobileApplicationPart: jest.fn(() => {
           throw getAxiosHttpError(502, {message: 'Server Error'})
         }),
       }
