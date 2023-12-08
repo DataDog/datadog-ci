@@ -1410,6 +1410,21 @@ describe('utils', () => {
     expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
   })
 
+  describe('sortResultsByOutcome', () => {
+    const results: Result[] = getResults([
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
+      {executionRule: ExecutionRule.BLOCKING, passed: true},
+      {executionRule: ExecutionRule.BLOCKING, passed: false},
+      {executionRule: ExecutionRule.NON_BLOCKING, passed: true},
+    ])
+
+    test('should sort tests with success, non_blocking failures then failures', async () => {
+      const sortedResults = [...results]
+      sortedResults.sort(utils.sortResultsByOutcome())
+      expect(sortedResults.map((r) => r.resultId)).toStrictEqual(['3', '1', '0', '2'])
+    })
+  })
+
   describe('Render results', () => {
     const emptySummary = getSummary()
 
