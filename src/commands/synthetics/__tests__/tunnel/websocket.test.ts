@@ -1,9 +1,8 @@
 import {createCommand} from '../../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../../helpers/utils'
 
-import {ExecutionRule} from '../../interfaces'
 import {DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../../run-tests-command'
-import * as utils from '../../utils'
+import * as utils from '../../utils/public'
 
 import {getSyntheticsProxy} from '../fixtures'
 
@@ -54,7 +53,6 @@ describe('Proxy configuration', () => {
         expect.objectContaining({
           tests: [
             {
-              executionRule: ExecutionRule.BLOCKING,
               pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
@@ -85,7 +83,6 @@ describe('Proxy configuration', () => {
         expect.objectContaining({
           tests: [
             {
-              executionRule: ExecutionRule.BLOCKING,
               pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),

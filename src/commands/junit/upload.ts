@@ -6,10 +6,10 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
@@ -180,7 +180,7 @@ export class UploadJUnitXMLCommand extends Command {
 
     const initialTime = new Date().getTime()
 
-    await asyncPool(this.maxConcurrency, payloads, upload)
+    await doWithMaxConcurrency(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))

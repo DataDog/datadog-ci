@@ -4,10 +4,10 @@ import {URL} from 'url'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {RequestBuilder} from '../../helpers/interfaces'
@@ -126,7 +126,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)

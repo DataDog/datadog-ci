@@ -719,6 +719,7 @@ describe('lambda', () => {
 
       test('instrument multiple functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
@@ -752,10 +753,18 @@ describe('lambda', () => {
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4': {
             config: {
-              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4',
               FunctionName: 'lambda-hello-world-4',
               Handler: 'index.handler',
               Runtime: 'nodejs18.x',
+            },
+          },
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5',
+              FunctionName: 'lambda-hello-world-5',
+              Handler: 'index.handler',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -774,6 +783,10 @@ describe('lambda', () => {
           },
           [`${node18LibraryLayer}:1`]: {
             LayerName: `${node18LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node20LibraryLayer}:1`]: {
+            LayerName: `${node20LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {

@@ -34,7 +34,7 @@ import {
   PASSED_RESULT_OUTCOMES,
   pluralize,
   readableOperation,
-} from '../utils'
+} from '../utils/public'
 
 interface SuiteStats {
   errors: number

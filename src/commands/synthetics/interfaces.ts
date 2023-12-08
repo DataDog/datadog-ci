@@ -369,7 +369,7 @@ export interface Payload {
 }
 
 export interface TestPayload extends ServerConfigOverride {
-  executionRule: ExecutionRule
+  executionRule?: ExecutionRule
   public_id: string
 }
 

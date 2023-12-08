@@ -4,9 +4,9 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
-import asyncPool from 'tiny-async-pool'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -329,7 +329,7 @@ export class UploadCommand extends Command {
       payload.content.set('repository', this.getGitDataPayload(this.gitData))
     }
 
-    const result = await uploadMultipartHelper(requestBuilder, payload, {
+    const status = await uploadMultipartHelper(requestBuilder, payload, {
       apiKeyValidator,
       onError: (e) => {
         this.context.stdout.write(renderFailedUpload(this.androidMappingLocation!, e.message))
@@ -345,9 +345,14 @@ export class UploadCommand extends Command {
       retries: 5,
       useGzip: true,
     })
-    this.context.stdout.write(`Mapping upload finished: ${result}\n`)
 
-    return result
+    if (status === UploadStatus.Success) {
+      this.context.stdout.write('Mapping upload finished\n')
+    } else {
+      this.context.stdout.write(`Mapping upload failed\n`)
+    }
+
+    return status
   }
 
   private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
@@ -360,7 +365,7 @@ export class UploadCommand extends Command {
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     try {
-      const results = await asyncPool(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
+      const results = await doWithMaxConcurrency(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
           renderFailedUpload(
             fileMetadata.filename,

@@ -53,6 +53,7 @@ export interface Dependency {
   version: string
   language: DependencyLanguage
   licenses: DependencyLicense[]
+  purl: string
 }
 
 export interface CommitInformation {
@@ -71,5 +72,7 @@ export interface ScaRequest {
   commit: CommitInformation
   repository: RepositoryInformation
   dependencies: Dependency[]
+  service: string
+  env: string
   tags: Record<string, string>
 }
