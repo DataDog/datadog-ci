@@ -4,12 +4,13 @@
 # Commands (grouped by product)
 
 ## CI Visibility
-src/commands/junit   @DataDog/ci-app-libraries
-src/commands/gate    @DataDog/ci-app-libraries
-src/commands/metric  @DataDog/ci-app-libraries
-src/commands/tag     @DataDog/ci-app-libraries
-src/commands/trace   @DataDog/ci-app-libraries
-src/commands/dora    @DataDog/ci-app-libraries
+src/commands/junit         @DataDog/ci-app-libraries
+src/commands/gate          @DataDog/ci-app-libraries
+src/commands/metric        @DataDog/ci-app-libraries
+src/commands/tag           @DataDog/ci-app-libraries
+src/commands/trace         @DataDog/ci-app-libraries
+src/commands/dora          @DataDog/ci-app-libraries
+src/commands/deployment    @DataDog/ci-app-libraries
 
 ## Static Analysis
 src/commands/sarif   @DataDog/static-analysis-core

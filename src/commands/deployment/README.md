@@ -1,0 +1,34 @@
+# Deployment command
+
+Marks a CI job as a deployment. This command uses the datadog-ci tag command by generating specific tags that are
+used to mark jobs as deployments.
+
+## Usage
+
+### Commands
+
+#### `mark`
+
+The mark command specifies that a CI Job executes a deployment.
+
+```bash
+datadog-ci deployment mark [--env] [--revision] [--is-rollback] [--tags] [--no-fail]
+```
+
+For example:
+
+```bash
+datadog-ci deployment mark --env prod --revision v1.1.0 --tags team:backend --no-fail
+```
+
+- `--env` is the environment to which this deployment is performed. For example, `prod`.
+- `--revision` is the revision/version that this deployment is performing. For example, `1.0.0` or `v123-456`.
+- `--is-rollback` specifies that the deployment is a rollback.
+- `--tags` is an array of key value pairs of the shape `key:value`. These tags will be added to the deployment event.
+- `--no-fail` (default: `false`) will prevent the tag command from failing if there are issues submitting the data.
+
+### Environment variables
+
+- `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+

@@ -134,4 +134,16 @@ export class TagCommand extends Command {
 
     return 0
   }
+
+  public setLevel(level: string) {
+    this.level = level
+  }
+
+  public setTags(tags: string[]) {
+    this.tags = tags
+  }
+
+  public setNoFail(noFail: boolean) {
+    this.noFail = noFail
+  }
 }
