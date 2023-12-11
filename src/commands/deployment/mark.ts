@@ -1,5 +1,6 @@
-import {Command, Option} from "clipanion";
-import {TagCommand} from "../tag/tag";
+import {Command, Option} from 'clipanion'
+
+import {TagCommand} from '../tag/tag'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI Jobs
@@ -23,12 +24,12 @@ export class DeploymentMarkCommand extends Command {
     ],
   })
 
-  private cdVisPrefix = "datadog_cd_visibility."
-  private deploymentJobTag = this.cdVisPrefix + "enabled:true"
-  private envTag = this.cdVisPrefix + "env:"
-  private revisionTag = this.cdVisPrefix + "revision:"
-  private isRollbackTag = this.cdVisPrefix + "is_rollback:true"
-  private customTagsTag = this.cdVisPrefix + "custom_tags:"
+  private cdVisPrefix = 'datadog_cd_visibility.'
+  private deploymentJobTag = this.cdVisPrefix + 'enabled:true'
+  private envTag = this.cdVisPrefix + 'env:'
+  private revisionTag = this.cdVisPrefix + 'revision:'
+  private isRollbackTag = this.cdVisPrefix + 'is_rollback:true'
+  private customTagsTag = this.cdVisPrefix + 'custom_tags:'
 
   private noFail = Option.Boolean('--no-fail')
   private isRollback = Option.Boolean('--is-rollback', false)
@@ -40,8 +41,8 @@ export class DeploymentMarkCommand extends Command {
   })
   private tags = Option.Array('--tags')
 
-  execute(): Promise<number | void> {
-    let tagCommand = new TagCommand()
+  public async execute() {
+    const tagCommand = new TagCommand()
     tagCommand.setLevel('job')
     tagCommand.setTags(this.createDeploymentTags())
     tagCommand.context = this.context
@@ -54,7 +55,7 @@ export class DeploymentMarkCommand extends Command {
   }
 
   public createDeploymentTags(): string[] {
-    let tags = [this.deploymentJobTag]
+    const tags = [this.deploymentJobTag]
 
     if (this.env) {
       tags.push(this.envTag + this.env)
@@ -69,7 +70,7 @@ export class DeploymentMarkCommand extends Command {
     }
 
     if (this.tags) {
-      tags.push(this.customTagsTag + this.tags)
+      tags.push(this.customTagsTag + this.tags.join(','))
     }
 
     return tags

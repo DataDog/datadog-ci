@@ -31,6 +31,18 @@ export class TagCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
 
+  public setLevel(level: string) {
+    this.level = level
+  }
+
+  public setTags(tags: string[]) {
+    this.tags = tags
+  }
+
+  public setNoFail(noFail: boolean) {
+    this.noFail = noFail
+  }
+
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
@@ -133,17 +145,5 @@ export class TagCommand extends Command {
     }
 
     return 0
-  }
-
-  public setLevel(level: string) {
-    this.level = level
-  }
-
-  public setTags(tags: string[]) {
-    this.tags = tags
-  }
-
-  public setNoFail(noFail: boolean) {
-    this.noFail = noFail
   }
 }
