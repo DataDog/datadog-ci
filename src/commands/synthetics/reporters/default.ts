@@ -352,7 +352,7 @@ export class DefaultReporter implements MainReporter {
 
     if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(
+        `\nIncrease your parallelization to reduce the test batch duration: ${chalk.dim.cyan(
           baseUrl + 'synthetics/settings/continuous-testing'
         )}\n`
       )
