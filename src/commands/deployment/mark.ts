@@ -44,6 +44,7 @@ export class DeploymentMarkCommand extends Command {
     let tagCommand = new TagCommand()
     tagCommand.setLevel('job')
     tagCommand.setTags(this.createDeploymentTags())
+    tagCommand.context = this.context
 
     if (this.noFail) {
       tagCommand.setNoFail(true)
