@@ -337,14 +337,15 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
-      criticalErrors: 2,
-      expected: 6,
+      testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
+      expected: 6, // `.failed` + `.failedNonBlocking` + `.passed`
       failed: 1,
       failedNonBlocking: 3,
       passed: 2,
+      // The following fields are additional information, so they do not add to `.expected`.
+      criticalErrors: 2,
       previouslyPassed: 1,
       skipped: 1,
-      testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
       timedOut: 1,
     }
 
@@ -371,7 +372,7 @@ describe('Default reporter', () => {
         description: 'Case with 2 passed results, of which 1 comes from previous CI run',
         summary: {
           ...baseSummary,
-          expected: 1,
+          expected: 2,
           passed: 2,
           previouslyPassed: 1,
         },
