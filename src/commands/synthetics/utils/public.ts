@@ -24,7 +24,6 @@ import {
   MainReporter,
   Operator,
   Payload,
-  PollResult,
   PollResultMap,
   Reporter,
   Result,
@@ -341,12 +340,7 @@ const waitForBatchToFinish = async (
 
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
-        getResultFromBatch(
-          r,
-          isResultInBatchSkippedBySelectiveRerun(r) ? undefined : pollResultMap[r.result_id],
-          resultDisplayInfo,
-          hasBatchExceededMaxPollingDate
-        )
+        getResultFromBatch(r, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate)
       )
     }
 
@@ -385,12 +379,7 @@ const reportResults = (
 
   for (const result of results) {
     reporter.resultEnd(
-      getResultFromBatch(
-        result,
-        isResultInBatchSkippedBySelectiveRerun(result) ? undefined : pollResultMap[result.result_id],
-        resultDisplayInfo,
-        hasBatchExceededMaxPollingDate
-      ),
+      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
       baseUrl
     )
   }
@@ -434,7 +423,7 @@ const reportWaitingTests = (
 
 const getResultFromBatch = (
   resultInBatch: ResultInBatch,
-  pollResult: PollResult | undefined,
+  pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
   hasBatchExceededMaxPollingDate: boolean
 ): Result => {
@@ -455,9 +444,7 @@ const getResultFromBatch = (
     }
   }
 
-  if (!pollResult) {
-    throw new CriticalError('POLL_RESULTS_FAILED', 'Missing poll result for a test which was not skipped')
-  }
+  const pollResult = pollResultMap[resultInBatch.result_id]
 
   if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
@@ -468,7 +455,7 @@ const getResultFromBatch = (
     executionRule: resultInBatch.execution_rule,
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(
-      pollResult?.result,
+      pollResult.result,
       hasTimedOut,
       options.failOnCriticalErrors ?? false,
       options.failOnTimeout ?? false
@@ -476,7 +463,7 @@ const getResultFromBatch = (
     result: pollResult.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
     selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult?.check),
+    test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
   }
@@ -949,10 +936,6 @@ export const renderResults = ({
   }
 
   for (const result of results) {
-    if (result.executionRule !== ExecutionRule.SKIPPED) {
-      summary.expected++
-    }
-
     if (!config.failOnTimeout && result.timedOut) {
       summary.timedOut++
     }
@@ -963,10 +946,13 @@ export const renderResults = ({
 
     const resultOutcome = getResultOutcome(result)
 
+    if (result.executionRule !== ExecutionRule.SKIPPED || resultOutcome === ResultOutcome.PreviouslyPassed) {
+      summary.expected++
+    }
+
     if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
       summary.passed++
     } else if (resultOutcome === ResultOutcome.PreviouslyPassed) {
-      summary.expected++
       summary.passed++
       summary.previouslyPassed++
     } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
