@@ -13,7 +13,7 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string): void
   resultReceived(result: Batch['results'][0]): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
-  testsWait(tests: Test[], baseUrl: string, batchId: string): void
+  testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
 }
@@ -102,43 +102,85 @@ export type ResultDisplayInfo = {
   tests: Test[]
 }
 
-export interface Result {
+export type SelectiveRerunDecision =
+  | {
+      decision: 'run'
+      reason: 'in_progress'
+    }
+  | {
+      decision: 'run'
+      reason: 'failed'
+      linked_result_id: string
+    }
+  | {
+      decision: 'run'
+      reason: 'edited'
+    }
+  | {
+      decision: 'run'
+      reason: 'new'
+    }
+  | {
+      decision: 'skip'
+      reason: 'passed'
+      linked_result_id: string
+    }
+
+export interface BaseResult {
   executionRule: ExecutionRule
   location: string
   // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
   passed: boolean
   result: ServerResult
   resultId: string
+  selectiveRerun?: SelectiveRerunDecision
   // Original test for this result, including overrides if any.
   test: Test
   timedOut: boolean
   timestamp: number
 }
 
-type Status = 'passed' | 'failed' | 'in_progress'
+// Inside this type, `.resultId` is a linked result ID from a previous batch.
+export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'timestamp'> & {
+  executionRule: ExecutionRule.SKIPPED
+  selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
+}
 
-export interface ResultInBatch {
+export type Result = BaseResult | ResultSkippedBySelectiveRerun
+
+type Status = 'passed' | 'failed' | 'in_progress' | 'skipped'
+
+export interface BaseResultInBatch {
   execution_rule: ExecutionRule
   location: string
   result_id: string
+  selective_rerun?: SelectiveRerunDecision
   status: Status
   test_public_id: string
   timed_out: boolean | null
 }
+
+type SkippedResultInBatch = Omit<BaseResultInBatch, 'location' | 'result_id'> & {
+  execution_rule: ExecutionRule.SKIPPED
+  status: 'skipped'
+}
+
+export type ResultInBatchSkippedBySelectiveRerun = SkippedResultInBatch & {
+  selective_rerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
+}
+
+export type ResultInBatch = BaseResultInBatch | ResultInBatchSkippedBySelectiveRerun
 
 export interface Batch {
   results: ResultInBatch[]
   status: Status
 }
 
-interface SkippedResultInBatch extends Omit<ResultInBatch, 'result_id' | 'status'> {
-  status: 'skipped'
-}
-type ServerResultInBatch = SkippedResultInBatch | ResultInBatch
+type ServerResultInBatch = BaseResultInBatch | SkippedResultInBatch
 
 export interface ServerBatch {
   // The batch from the server contains skipped results, which we're going to remove since we don't
-  // care about skipped results internally.
+  // care about skipped results internally (except when they are skipped by a selective re-run).
   results: ServerResultInBatch[]
   status: Status
 }
@@ -358,9 +400,12 @@ export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
   criticalErrors: number
+  // Number of results expected by datadog-ci, prior to any selective re-run.
+  expected: number
   failed: number
   failedNonBlocking: number
   passed: number
+  previouslyPassed: number
   skipped: number
   testsNotFound: Set<string>
   timedOut: number

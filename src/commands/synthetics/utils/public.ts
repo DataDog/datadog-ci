@@ -24,12 +24,12 @@ import {
   MainReporter,
   Operator,
   Payload,
-  PollResult,
   PollResultMap,
   Reporter,
   Result,
   ResultDisplayInfo,
   ResultInBatch,
+  ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
   Suite,
@@ -46,7 +46,12 @@ import {uploadApplicationAndOverrideConfig} from '../mobile'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule} from './internal'
+import {
+  getOverriddenExecutionRule,
+  getResultIdOrLinkedResultId,
+  hasResult,
+  isResultInBatchSkippedBySelectiveRerun,
+} from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
 const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
@@ -160,12 +165,12 @@ export const isTestSupportedByTunnel = (test: Test) => {
 }
 
 export const hasResultPassed = (
-  result: ServerResult,
+  serverResult: ServerResult,
   hasTimedOut: boolean,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ): boolean => {
-  if (result.unhealthy && !failOnCriticalErrors) {
+  if (serverResult.unhealthy && !failOnCriticalErrors) {
     return true
   }
 
@@ -173,11 +178,11 @@ export const hasResultPassed = (
     return true
   }
 
-  if (typeof result.passed !== 'undefined') {
-    return result.passed
+  if (typeof serverResult.passed !== 'undefined') {
+    return serverResult.passed
   }
 
-  if (typeof result.failure !== 'undefined') {
+  if (typeof serverResult.failure !== 'undefined') {
     return false
   }
 
@@ -186,12 +191,23 @@ export const hasResultPassed = (
 
 export const enum ResultOutcome {
   Passed = 'passed',
-  PassedNonBlocking = 'passed-non-blocking', // Mainly used for sorting tests when rendering results
+  PreviouslyPassed = 'previously-passed',
+  PassedNonBlocking = 'passed-non-blocking',
   Failed = 'failed',
   FailedNonBlocking = 'failed-non-blocking',
 }
 
+export const PASSED_RESULT_OUTCOMES = [
+  ResultOutcome.Passed,
+  ResultOutcome.PassedNonBlocking,
+  ResultOutcome.PreviouslyPassed,
+]
+
 export const getResultOutcome = (result: Result): ResultOutcome => {
+  if (isResultSkippedBySelectiveRerun(result)) {
+    return ResultOutcome.PreviouslyPassed
+  }
+
   const executionRule = result.executionRule
 
   if (result.passed) {
@@ -264,7 +280,6 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
 }
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
-const getResultByResultId = (id: string, batch: Batch): ResultInBatch => batch.results.find((r) => r.result_id === id)!
 
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
@@ -314,18 +329,18 @@ const waitForBatchToFinish = async (
 
     // For the last iteration, the full up-to-date data has to be fetched to compute this function's return value,
     // while only the [received + residual] results have to be reported.
-    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).map((r) => r.result_id)
-    const resultIdsToReport = receivedResults
-      .concat(shouldContinuePolling ? [] : residualResults)
-      .map((r) => r.result_id)
+    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).flatMap((r) =>
+      isResultInBatchSkippedBySelectiveRerun(r) ? [] : [r.result_id]
+    )
+    const resultsToReport = receivedResults.concat(shouldContinuePolling ? [] : residualResults)
 
     const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
 
-    reportResults(pollResultMap, resultIdsToReport, batch, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
-        getResultFromBatch(r, pollResultMap[r.result_id], resultDisplayInfo, hasBatchExceededMaxPollingDate)
+        getResultFromBatch(r, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate)
       )
     }
 
@@ -333,6 +348,10 @@ const waitForBatchToFinish = async (
 
     await wait(POLLING_INTERVAL)
   }
+}
+
+export const isResultSkippedBySelectiveRerun = (result: Result): result is ResultSkippedBySelectiveRerun => {
+  return result.selectiveRerun?.decision === 'skip'
 }
 
 const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
@@ -350,19 +369,17 @@ const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, 
 }
 
 const reportResults = (
+  results: ResultInBatch[],
   pollResultMap: PollResultMap,
-  resultIds: string[],
-  batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   hasBatchExceededMaxPollingDate: boolean,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
-  for (const resultId of resultIds) {
-    const batchResult = getResultByResultId(resultId, batch)
+  for (const result of results) {
     reporter.resultEnd(
-      getResultFromBatch(batchResult, pollResultMap[resultId], resultDisplayInfo, hasBatchExceededMaxPollingDate),
+      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
       baseUrl
     )
   }
@@ -370,24 +387,43 @@ const reportResults = (
 
 const reportWaitingTests = (
   trigger: Trigger,
-  currentBatchState: Batch,
+  batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
   const {tests} = resultDisplayInfo
 
-  const inProgressPublicIds = new Set(
-    currentBatchState.results.flatMap((r) => (r.status === 'in_progress' ? r.test_public_id : []))
-  )
-  const remainingTests = tests.filter((t) => inProgressPublicIds.has(t.public_id))
+  const inProgressPublicIds = new Set()
+  const skippedBySelectiveRerunPublicIds = new Set()
 
-  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id)
+  for (const result of batch.results) {
+    if (result.status === 'in_progress') {
+      inProgressPublicIds.add(result.test_public_id)
+    }
+    if (isResultInBatchSkippedBySelectiveRerun(result)) {
+      skippedBySelectiveRerunPublicIds.add(result.test_public_id)
+    }
+  }
+
+  const remainingTests = []
+  let skippedCount = 0
+
+  for (const test of tests) {
+    if (inProgressPublicIds.has(test.public_id)) {
+      remainingTests.push(test)
+    }
+    if (skippedBySelectiveRerunPublicIds.has(test.public_id)) {
+      skippedCount++
+    }
+  }
+
+  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id, skippedCount)
 }
 
 const getResultFromBatch = (
   resultInBatch: ResultInBatch,
-  pollResult: PollResult,
+  pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
   hasBatchExceededMaxPollingDate: boolean
 ): Result => {
@@ -395,12 +431,25 @@ const getResultFromBatch = (
 
   const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
 
+  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
+
+  if (isResultInBatchSkippedBySelectiveRerun(resultInBatch)) {
+    return {
+      executionRule: resultInBatch.execution_rule,
+      passed: true,
+      resultId: getResultIdOrLinkedResultId(resultInBatch),
+      selectiveRerun: resultInBatch.selective_rerun,
+      test,
+      timedOut: hasTimedOut,
+    }
+  }
+
+  const pollResult = pollResultMap[resultInBatch.result_id]
+
   if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
     pollResult.result.passed = false
   }
-
-  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
   return {
     executionRule: resultInBatch.execution_rule,
@@ -412,7 +461,8 @@ const getResultFromBatch = (
       options.failOnTimeout ?? false
     ),
     result: pollResult.result,
-    resultId: resultInBatch.result_id,
+    resultId: getResultIdOrLinkedResultId(resultInBatch),
+    selectiveRerun: resultInBatch.selective_rerun,
     test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
@@ -469,9 +519,11 @@ export type InitialSummary = Omit<Summary, 'batchId'>
 
 export const createInitialSummary = (): InitialSummary => ({
   criticalErrors: 0,
+  expected: 0,
   failed: 0,
   failedNonBlocking: 0,
   passed: 0,
+  previouslyPassed: 0,
   skipped: 0,
   testsNotFound: new Set(),
   timedOut: 0,
@@ -552,10 +604,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testsWait: (tests, baseUrl, batchId) => {
+  testsWait: (tests, baseUrl, batchId, skippedCount) => {
     for (const reporter of reporters) {
       if (typeof reporter.testsWait === 'function') {
-        reporter.testsWait(tests, baseUrl, batchId)
+        reporter.testsWait(tests, baseUrl, batchId, skippedCount)
       }
     }
   },
@@ -844,10 +896,11 @@ export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
  */
 export const sortResultsByOutcome = () => {
   const outcomeWeight = {
-    [ResultOutcome.PassedNonBlocking]: 1,
-    [ResultOutcome.Passed]: 2,
-    [ResultOutcome.FailedNonBlocking]: 3,
-    [ResultOutcome.Failed]: 4,
+    [ResultOutcome.PreviouslyPassed]: 1,
+    [ResultOutcome.PassedNonBlocking]: 2,
+    [ResultOutcome.Passed]: 3,
+    [ResultOutcome.FailedNonBlocking]: 4,
+    [ResultOutcome.Failed]: 5,
   }
 
   return (r1: Result, r2: Result) => outcomeWeight[getResultOutcome(r1)] - outcomeWeight[getResultOutcome(r2)]
@@ -882,21 +935,26 @@ export const renderResults = ({
     }
   }
 
-  const sortedResults = results.sort(sortResultsByOutcome())
-
-  for (const result of sortedResults) {
+  for (const result of results) {
     if (!config.failOnTimeout && result.timedOut) {
       summary.timedOut++
     }
 
-    if (result.result.unhealthy && !config.failOnCriticalErrors) {
+    if (hasResult(result) && result.result.unhealthy && !config.failOnCriticalErrors) {
       summary.criticalErrors++
     }
 
     const resultOutcome = getResultOutcome(result)
 
+    if (result.executionRule !== ExecutionRule.SKIPPED || resultOutcome === ResultOutcome.PreviouslyPassed) {
+      summary.expected++
+    }
+
     if ([ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)) {
       summary.passed++
+    } else if (resultOutcome === ResultOutcome.PreviouslyPassed) {
+      summary.passed++
+      summary.previouslyPassed++
     } else if (resultOutcome === ResultOutcome.FailedNonBlocking) {
       summary.failedNonBlocking++
     } else {

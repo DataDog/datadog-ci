@@ -28,6 +28,21 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, 
 "
 `;
 
+exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI run) 1`] = `
+"[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  ⎋ Total duration: 123 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1001&from_ci=true[39m[22m 
+  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
+
+[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m
+  [1m[32m◂[39m[22m Successful result from previous CI run: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0002&from_ci=true[39m[22m
+
+[1m[32m✓[39m[22m [2m(edited) [22m[[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  ⎋ Total duration: 123 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1003&from_ci=true[39m[22m 
+  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
+
+"
+`;
+
 exports[`Default reporter resultEnd 3 Browser test: failed blocking, timed out, global failure 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
   ⎋ Total duration: 20000 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?from_ci=true[39m[22m 
@@ -57,8 +72,17 @@ exports[`Default reporter runEnd Case where some outcomes are empty or missing 1
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m3[22m passed[39m, [31m[1m0[22m failed[39m, [33m[1m1[22m failed (non-blocking)[39m ([31m[1m1[22m critical errors[39m)
-Total Duration: 9m 28s"
+• Test Results: [32m[1m3[22m passed[39m, [31m[1m0[22m failed[39m, [33m[1m1[22m failed (non-blocking)[39m ([31m[1m1[22m critical errors[39m)
+• Total Duration: 9m 28s"
+`;
+
+exports[`Default reporter runEnd Case with 2 passed results, of which 1 comes from previous CI run 1`] = `
+"View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
+
+[1mContinuous Testing Summary:[22m
+• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m0[22m failed[39m
+• Selective re-run: ran 1 out of 2 tests
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd Complex case with all the tests and results outcomes possible 1`] = `
@@ -66,25 +90,26 @@ exports[`Default reporter runEnd Complex case with all the tests and results out
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m2[22m passed[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
-Total Duration: 9m 28s"
+• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
+• Selective re-run: ran 5 out of 6 tests
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd Simple case with 1 test with 1 result (passed) 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Total Duration: 9m 28s"
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter runEnd communicates 2 tests parallelization 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Max parallelization configured: 2 tests running at the same time
-Total Duration: 9m 28s
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Max parallelization configured: 2 tests running at the same time
+• Total Duration: 9m 28s
 
 Increase your parallelization to reduce the test batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
@@ -94,9 +119,9 @@ exports[`Default reporter runEnd communicates no parallelization (1 test at a ti
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Max parallelization configured: 1 test running at the same time
-Total Duration: 9m 28s
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Max parallelization configured: 1 test running at the same time
+• Total Duration: 9m 28s
 
 Increase your parallelization to reduce the test batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
@@ -106,8 +131,8 @@ exports[`Default reporter runEnd does not communicate for uncapped orgs 1`] = `
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
-Total Duration: 9m 28s"
+• Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
+• Total Duration: 9m 28s"
 `;
 
 exports[`Default reporter testTrigger Blocking test, with 1 config override 1`] = `
@@ -177,6 +202,12 @@ exports[`Default reporter testTrigger Skipped test, with 2 config overrides 1`] 
 
 exports[`Default reporter testsWait outputs triggered tests 1`] = `
 "- Waiting for [1m[36m11[39m[22m tests [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
+
+"
+`;
+
+exports[`Default reporter testsWait outputs triggered tests with skipped count 1`] = `
+"- Waiting for [1m[36m11[39m[22m tests (skipping [1m[36m3[39m[22m already successful) [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
 
 "
 `;

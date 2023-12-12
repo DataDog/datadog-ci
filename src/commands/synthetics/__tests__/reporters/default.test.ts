@@ -2,7 +2,15 @@ jest.unmock('chalk')
 
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {ExecutionRule, MainReporter, Result, Summary, Test, UserConfigOverride} from '../../interfaces'
+import {
+  ExecutionRule,
+  MainReporter,
+  Result,
+  SelectiveRerunDecision,
+  Summary,
+  Test,
+  UserConfigOverride,
+} from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
 
 import {
@@ -127,6 +135,12 @@ describe('Default reporter', () => {
       expect(output).toMatchSnapshot()
     })
 
+    test('outputs triggered tests with skipped count', async () => {
+      reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123', 3)
+      const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
+      expect(output).toMatchSnapshot()
+    })
+
     /* eslint-disable jest/no-conditional-expect */
     test.each([false, true])('the spinner text is updated and cleared at the end (in CI: %s)', async (inCI) => {
       let simulatedTerminalOutput = ''
@@ -198,8 +212,11 @@ describe('Default reporter', () => {
   describe('resultEnd', () => {
     const createApiResult = (
       resultId: string,
-      passed: boolean,
-      executionRule = ExecutionRule.BLOCKING,
+      opts: {
+        executionRule: ExecutionRule
+        passed?: boolean
+        selectiveRerun?: SelectiveRerunDecision
+      },
       test: Test
     ): Result => {
       const errorMessage = JSON.stringify([
@@ -212,11 +229,21 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      const result = getApiResult(resultId, test)
+      const {executionRule, passed, selectiveRerun} = opts
 
+      const result = getApiResult(resultId, test)
       result.executionRule = executionRule
-      result.passed = passed
-      result.result = {...result.result, ...(passed ? {} : {failure}), passed}
+
+      if (passed !== undefined) {
+        result.passed = passed
+        result.result = {...result.result, ...(passed ? {} : {failure}), passed}
+      } else if (executionRule === ExecutionRule.SKIPPED) {
+        delete (result as {result?: unknown}).result
+      }
+
+      if (selectiveRerun) {
+        result.selectiveRerun = selectiveRerun
+      }
 
       return result
     }
@@ -235,9 +262,9 @@ describe('Default reporter', () => {
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
-            createApiResult('1', true, ExecutionRule.BLOCKING, apiTest),
-            createApiResult('2', false, ExecutionRule.NON_BLOCKING, apiTest),
-            createApiResult('3', false, ExecutionRule.BLOCKING, apiTest),
+            createApiResult('1', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
+            createApiResult('2', {executionRule: ExecutionRule.NON_BLOCKING, passed: false}, apiTest),
+            createApiResult('3', {executionRule: ExecutionRule.BLOCKING, passed: false}, apiTest),
           ],
         },
       },
@@ -258,6 +285,32 @@ describe('Default reporter', () => {
               },
               timedOut: false,
             },
+          ],
+        },
+      },
+      {
+        description: '3 API tests, 2 passed (1 from previous CI run)',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            createApiResult('1001', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
+            createApiResult(
+              '0002',
+              {
+                executionRule: ExecutionRule.SKIPPED,
+                selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: '0002'},
+              },
+              apiTest
+            ),
+            createApiResult(
+              '1003',
+              {
+                executionRule: ExecutionRule.BLOCKING,
+                passed: true,
+                selectiveRerun: {decision: 'run', reason: 'edited'}, // was re-run because edited, then it passed
+              },
+              apiTest
+            ),
           ],
         },
       },
@@ -284,12 +337,15 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
-      criticalErrors: 2,
+      testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
+      expected: 6, // `.failed` + `.failedNonBlocking` + `.passed`
       failed: 1,
       failedNonBlocking: 3,
       passed: 2,
+      // The following fields are additional information, so they do not add to `.expected`.
+      criticalErrors: 2,
+      previouslyPassed: 1,
       skipped: 1,
-      testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
       timedOut: 1,
     }
 
@@ -310,6 +366,15 @@ describe('Default reporter', () => {
           failedNonBlocking: 1,
           passed: 3,
           testsNotFound: new Set(['bbb-bbb-bbb']),
+        },
+      },
+      {
+        description: 'Case with 2 passed results, of which 1 comes from previous CI run',
+        summary: {
+          ...baseSummary,
+          expected: 2,
+          passed: 2,
+          previouslyPassed: 1,
         },
       },
     ]

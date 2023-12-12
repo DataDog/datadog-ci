@@ -19,12 +19,15 @@ import {
   UserConfigOverride,
   Batch,
 } from '../interfaces'
+import {hasResult} from '../utils/internal'
 import {
   getBatchUrl,
   getResultDuration,
   getResultOutcome,
   getResultUrl,
   isDeviceIdSet,
+  isResultSkippedBySelectiveRerun,
+  PASSED_RESULT_OUTCOMES,
   pluralize,
   readableOperation,
   ResultOutcome,
@@ -201,25 +204,29 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
-  const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
+  const {executionRule, test: overriddenTest, resultId, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
+  const editedText =
+    execution.selectiveRerun?.decision === 'run' && execution.selectiveRerun.reason === 'edited'
+      ? chalk.dim('(edited) ')
+      : ''
+
+  const executionRuleText = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
 
-  const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
+  const testLabel = `${editedText}${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
 
-  const location = setColor(`location: ${chalk.bold(execution.location)}`)
-  const device = isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
-  const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
+  const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
+  const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (!result.unhealthy) {
-    const duration = getResultDuration(result)
+  if (hasResult(execution) && !execution.result.unhealthy) {
+    const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId)
@@ -229,16 +236,36 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     outputLines.push(resultInfo)
   }
 
-  const resultOutcomeText = renderResultOutcome(result, overriddenTest || test, icon, setColor)
-  if (resultOutcomeText) {
-    outputLines.push(resultOutcomeText)
+  if (isResultSkippedBySelectiveRerun(execution)) {
+    const resultUrl = getResultUrl(baseUrl, test, resultId)
+
+    const resultInfo = `  ${setColor('◂')} Successful result from previous CI run: ${chalk.dim.cyan(resultUrl)}`
+    outputLines.push(resultInfo)
+  } else {
+    const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
+
+    if (resultOutcomeText) {
+      outputLines.push(resultOutcomeText)
+    }
   }
 
   return outputLines.join('\n')
 }
 
+const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
+  if (hasResult(execution)) {
+    const {result} = execution
+    const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
+    const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+
+    return ` - ${location}${device}`
+  }
+
+  return ''
+}
+
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
-  if (resultOutcome === ResultOutcome.Passed || resultOutcome === ResultOutcome.PassedNonBlocking) {
+  if (PASSED_RESULT_OUTCOMES.includes(resultOutcome)) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 
@@ -299,7 +326,15 @@ export class DefaultReporter implements MainReporter {
 
     const lines: string[] = []
 
-    const runSummary = [green(`${b(summary.passed)} passed`), red(`${b(summary.failed)} failed`)]
+    const runSummary = []
+
+    if (summary.previouslyPassed) {
+      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in previous CI run)`))
+    } else {
+      runSummary.push(green(`${b(summary.passed)} passed`))
+    }
+
+    runSummary.push(red(`${b(summary.failed)} failed`))
 
     if (summary.failedNonBlocking) {
       runSummary.push(yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`))
@@ -332,13 +367,19 @@ export class DefaultReporter implements MainReporter {
       lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`\n${b('Continuous Testing Summary:')}`)
-    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
+    lines.push(`• Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
 
     if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
+        `• Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
           orgSettings.onDemandConcurrencyCap > 1 ? 's' : ''
         } running at the same time`
+      )
+    }
+
+    if (summary.previouslyPassed) {
+      lines.push(
+        `• Selective re-run: ran ${summary.expected - summary.previouslyPassed} out of ${summary.expected} tests`
       )
     }
 
@@ -346,7 +387,7 @@ export class DefaultReporter implements MainReporter {
       const min = Math.floor(this.totalDuration / (60 * 1000))
       const sec = Math.round((this.totalDuration % (60 * 1000)) / 1000)
       lines.push(
-        `Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
+        `• Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
       )
     }
 
@@ -361,7 +402,7 @@ export class DefaultReporter implements MainReporter {
     this.write(lines.join('\n'))
   }
 
-  public testsWait(tests: Test[], baseUrl: string, batchId: string) {
+  public testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number) {
     const testsList = tests.map((t) => t.public_id)
     if (testsList.length > 10) {
       testsList.splice(10)
@@ -369,7 +410,10 @@ export class DefaultReporter implements MainReporter {
     }
 
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
-    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${pluralize('test', tests.length)} ${testsDisplay}…\n`
+    const testCountText = pluralize('test', tests.length)
+    const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
+
+    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
 
     if (this.testWaitSpinner) {
       // Only refresh the spinner when the text changes.
