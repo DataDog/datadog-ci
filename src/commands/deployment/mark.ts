@@ -31,7 +31,7 @@ export class DeploymentMarkCommand extends Command {
   private isRollbackTag = this.cdVisPrefix + 'is_rollback:true'
   private customTagsTag = this.cdVisPrefix + 'custom_tags:'
 
-  private noFail = Option.Boolean('--no-fail')
+  private noFail = Option.Boolean('--no-fail', false)
   private isRollback = Option.Boolean('--is-rollback', false)
   private env = Option.String('--env', {
     description: 'Example: prod',
