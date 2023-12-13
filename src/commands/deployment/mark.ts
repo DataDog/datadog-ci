@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 
 import {TagCommand} from '../tag/tag'
+import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG} from "./constants";
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI Jobs
@@ -23,13 +24,6 @@ export class DeploymentMarkCommand extends Command {
       ['Mark a job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
     ],
   })
-
-  private cdVisPrefix = 'datadog_cd_visibility.'
-  private deploymentJobTag = this.cdVisPrefix + 'enabled:true'
-  private envTag = this.cdVisPrefix + 'env:'
-  private revisionTag = this.cdVisPrefix + 'revision:'
-  private isRollbackTag = this.cdVisPrefix + 'is_rollback:true'
-  private customTagsTag = this.cdVisPrefix + 'custom_tags:'
 
   private noFail = Option.Boolean('--no-fail', false)
   private isRollback = Option.Boolean('--is-rollback', false)
@@ -55,22 +49,22 @@ export class DeploymentMarkCommand extends Command {
   }
 
   public createDeploymentTags(): string[] {
-    const tags = [this.deploymentJobTag]
+    const tags = [IS_DEPLOYMENT_TAG]
 
     if (this.env) {
-      tags.push(this.envTag + this.env)
+      tags.push(ENV_TAG + this.env)
     }
 
     if (this.revision) {
-      tags.push(this.revisionTag + this.revision)
+      tags.push(REVISION_TAG + this.revision)
     }
 
     if (this.isRollback) {
-      tags.push(this.isRollbackTag)
+      tags.push(IS_ROLLBACK_TAG)
     }
 
     if (this.tags) {
-      tags.push(this.customTagsTag + this.tags.join(','))
+      tags.push(CUSTOM_TAGS_TAG + this.tags.join(','))
     }
 
     return tags
