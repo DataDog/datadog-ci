@@ -305,6 +305,22 @@ export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
   steps: [],
 })
 
+export const getFailedMultiStepsTestLevelServerResult = (): MultiStepsServerResult => ({
+  duration: 2000,
+  failure: {code: 'TEST_TIMEOUT', message: 'Error: Maximum test execution time reached: 2 seconds.'},
+  passed: false,
+  steps: [
+    {
+      ...getMultiStep(),
+      passed: true,
+    },
+    {
+      ...getMultiStep(),
+      skipped: true,
+    },
+  ],
+})
+
 export const getFailedMultiStepsServerResult = (): MultiStepsServerResult => ({
   duration: 123,
   failure: {code: 'INCORRECT_ASSERTION', message: 'incorrect assertion'},
