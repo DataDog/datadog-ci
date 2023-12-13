@@ -1,7 +1,8 @@
 import {Command, Option} from 'clipanion'
 
 import {TagCommand} from '../tag/tag'
-import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG} from "./constants";
+
+import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG} from './constants'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI Jobs
