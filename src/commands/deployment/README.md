@@ -29,5 +29,5 @@ datadog-ci deployment mark --env prod --revision v1.1.0 --tags team:backend --no
 ### Environment variables
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_SITE`: choose your Datadog site. For example, datadoghq.com or datadoghq.eu.
 
