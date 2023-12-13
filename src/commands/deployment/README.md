@@ -8,7 +8,7 @@ Marks a CI job as a deployment.
 
 #### `mark`
 
-The mark command specifies that a CI Job executes a deployment.
+The `mark` command specifies that a CI job executes a deployment.
 
 ```bash
 datadog-ci deployment mark [--env] [--revision] [--is-rollback] [--tags] [--no-fail]
