@@ -5,7 +5,7 @@ import {TagCommand} from '../tag/tag'
 import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG} from './constants'
 
 /**
- * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI Jobs
+ * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
  * as deployments and setting specific properties, like the environment or the revision in a simple way.
  */
 export class DeploymentMarkCommand extends Command {
