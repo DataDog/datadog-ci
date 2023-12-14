@@ -144,24 +144,24 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
+    const lines: string[] = []
+
+    if (result.failure) {
+      lines.push(chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`))
+    }
+
     // We render the step only if the test hasn't passed to avoid cluttering the output.
     if (!result.passed && 'stepDetails' in result) {
       const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
-      const stepsDisplay = result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep)
+      lines.push(...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep))
 
       const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
       if (skippedStepDisplay) {
-        stepsDisplay.push(skippedStepDisplay)
+        lines.push(skippedStepDisplay)
       }
-
-      return stepsDisplay.join('\n')
     }
 
-    if (result.failure) {
-      return chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`)
-    }
-
-    return ''
+    return lines.join('\n')
   }
 }
 

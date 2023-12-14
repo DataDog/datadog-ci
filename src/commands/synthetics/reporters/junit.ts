@@ -231,13 +231,6 @@ export class JUnitReporter implements Reporter {
         ? testCase.error // ❗️
         : testCase.failure // ❌
 
-    // Timeout errors are only reported at the top level.
-    if (result.timedOut) {
-      errorOrFailure.push({
-        $: {type: 'timeout'},
-        _: String(result.result.failure?.message),
-      })
-    }
     if ('stepDetails' in result.result) {
       // It's a browser test.
       for (const stepDetail of result.result.stepDetails) {
@@ -258,6 +251,20 @@ export class JUnitReporter implements Reporter {
       // It's an api test.
       const {errors} = this.getApiTestErrors(result)
       errorOrFailure.push(...errors)
+    }
+
+    if (result.timedOut) {
+      // Timeout errors are manually reported by the CLI at the test level. ('Result timed out')
+      errorOrFailure.push({
+        $: {type: 'timeout'},
+        _: String(result.result.failure?.message),
+      })
+    } else if (errorOrFailure.length === 0 && result.result.failure) {
+      // Fall back to any failure reported at the test level if nothing was reported at the step level.
+      errorOrFailure.push({
+        $: {type: 'test_failure'},
+        _: `[${result.result.failure.code}] - ${result.result.failure.message}`,
+      })
     }
 
     this.addTestCaseToSuite(suite, testCase)

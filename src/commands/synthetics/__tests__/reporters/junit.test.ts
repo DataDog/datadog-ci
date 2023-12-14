@@ -18,6 +18,7 @@ import {
   getBrowserTest,
   getFailedBrowserResult,
   getFailedMultiStepsServerResult,
+  getFailedMultiStepsTestLevelServerResult,
   getMultiStep,
   getMultiStepsServerResult,
   getStep,
@@ -206,6 +207,30 @@ describe('Junit reporter', () => {
         failures: 1,
         skipped: 1, // not 2 because skipped by selective re-run counts as passed
         tests: 3,
+      })
+    })
+
+    it('should fall back to a test level failure', () => {
+      reporter.resultEnd(
+        {
+          ...globalResultMock,
+          passed: false,
+          result: getFailedMultiStepsTestLevelServerResult(),
+          test: {
+            ...globalTestMock,
+            suite: 'suite 1',
+          },
+        },
+        ''
+      )
+
+      const [suiteFailed] = reporter['json'].testsuites.testsuite
+
+      expect(suiteFailed.$).toMatchObject({
+        ...getDefaultSuiteStats(),
+        errors: 0,
+        failures: 1,
+        tests: 1,
       })
     })
 
