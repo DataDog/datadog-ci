@@ -13,7 +13,7 @@ export class DeploymentMarkCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Mark a job as a deployment',
+    description: 'Mark a job as a deployment.',
     details: `
       This command will mark a job as a deployment.\n
       See README for details.

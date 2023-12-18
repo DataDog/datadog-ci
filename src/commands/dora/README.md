@@ -89,3 +89,11 @@ This warning can be disabled with --skip-git but git data is required for Change
   }
 }
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about DORA Metrics][1]
+
+[1]: https://docs.datadoghq.com/dora_metrics/

@@ -71,6 +71,16 @@ The following values are available for each `<command>` and `<subcommand>`. See 
 - `tag`: Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/).
 - `trace`: Add [custom commands](src/commands/trace) to a CI Visibility Pipeline in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/).
 
+The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
+- `deployment`:
+  - `mark`: Mark a CI job as a [deployment](src/commands/deployment). See [documentation](https://docs.datadoghq.com/continuous_delivery/).
+- `dora`:
+  - `deployment`: Send a new Deployment event for [DORA Metrics](src/commands/dora) to Datadog. See [documentation](https://docs.datadoghq.com/dora_metrics/).
+- `gate`:
+  - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. See [documentation](https://docs.datadoghq.com/quality_gates/).
+- `sbom`:
+  - `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. See [documentation](https://docs.datadoghq.com/static_analysis/).
+
 ## More ways to install the CLI
 
 ### Standalone binary (**beta**)
