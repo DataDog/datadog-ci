@@ -67,8 +67,8 @@ See each command's corresponding README for more details, or click on 🔗 to se
 - `sourcemaps`:
   - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/browser/)
 - `stepfunctions`:
-  - `instrument`: Subscribe [AWS Step Function](src/commands/stepfunctions) log groups to a Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
-  - `uninstrument`: Unsubscribe a [AWS Step Function](src/commands/stepfunctions) log group from the specified Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
+  - `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
+  - `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
 - `synthetics`:
   - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [🔗](https://docs.datadoghq.com/continuous_testing/)
   - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [🔗](https://docs.datadoghq.com/mobile_app_testing/)
