@@ -1,4 +1,4 @@
-import type {AxiosResponse, AxiosRequestConfig} from 'axios'
+import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 
@@ -194,7 +194,7 @@ describe('evaluate', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as AxiosRequestConfig,
+        config: {} as InternalAxiosRequestConfig,
         data: {
           data: {
             attributes: {
@@ -212,7 +212,7 @@ describe('evaluate', () => {
       status: 200,
       statusText: 'OK',
       headers: {},
-      config: {} as AxiosRequestConfig,
+      config: {} as InternalAxiosRequestConfig,
       data: {
         data: {
           attributes: {
