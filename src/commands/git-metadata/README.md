@@ -34,9 +34,9 @@ datadog-ci git-metadata upload
 #### Limitations
 
 The repository URL is inferred from the remote named `origin` (or the first remote if none are named `origin`). The value can be overridden by using the `--repository-url` flag.
-For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
+For example: The remote `git@github.com:Datadog/example.git` will create links that point to `https://github.com/Datadog/example`.
 
-The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows DataDog to create proper URLs such as:
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows Datadog to create proper URLs such as:
 
 | Provider        | URL                                                                                                                                                 |
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |

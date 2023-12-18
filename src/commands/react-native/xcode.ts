@@ -48,7 +48,7 @@ export class XCodeCommand extends Command {
     category: 'RUM',
     description: 'Bundle React Native code and images in XCode and send sourcemaps to Datadog.',
     details: `
-      This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
     `,
     examples: [

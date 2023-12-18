@@ -1,6 +1,6 @@
 # Sourcemaps command
 
-Upload JS sourcemaps to Datadog to un-minify your errors.
+Upload JavaScript sourcemaps to Datadog to un-minify your errors.
 
 ## Setup
 
@@ -19,7 +19,7 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 ### `upload`
 
-This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+This command will upload all JavaScript sourcemaps and their corresponding JavaScript file to Datadog in order to un-minify front-end stack traces received by Datadog.
 
 To upload the sourcemaps in the build folder, this command should be run:
 

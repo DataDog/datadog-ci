@@ -11,7 +11,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Remove Step Functions log groups subscription filter created by datadog-ci.',
+    description: 'Remove Step Function log groups subscription filter created by datadog-ci.',
     details: '--stepfunction expects a Step Function ARN',
     examples: [
       [

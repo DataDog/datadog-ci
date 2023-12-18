@@ -1,4 +1,4 @@
-<div class="alert alert-info">This page is about configuring Continuous Testing tests for your continuous integration (CI) and continuous delivery (CD) pipelines. If you want to bring your CI/CD metrics and data into Datadog dashboards, see the <a href="https://docs.datadoghq.com/continuous_integration/" target="_blank">CI Visibility</a> section.</div>
+<div class="alert alert-info">This page is about configuring Continuous Testing tests for your Continuous Integration (CI) and Continuous Delivery (CD) pipelines. If you want to bring your CI/CD metrics and data into Datadog dashboards, see the <a href="https://docs.datadoghq.com/continuous_integration/" target="_blank">CI Visibility</a> section.</div>
 
 ## Overview
 
@@ -441,7 +441,7 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Upload Application Command
 
-This command uploads a new version to an **existing application**.
+This command uploads a new version to an **existing** mobile application.
 
 ### Command line options
 
