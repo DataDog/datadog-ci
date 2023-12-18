@@ -54,9 +54,9 @@ See each command's corresponding README for more details, or click on 🔗 to se
 - `junit`:
   - `upload`: Upload [JUnit test reports](src/commands/junit). [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)
 - `lambda`:
-  - `flare`: Troubleshoot your issues with Datadog monitoring on your [AWS Lambda functions](src/commands/lambda).
-  - `instrument`: Instrument [AWS Lambda functions](src/commands/lambda).
-  - `uninstrument`: Uninstrument [AWS Lambda functions](src/commands/lambda).
+  - `flare`: Troubleshoot your issues with Datadog instrumentation on your [AWS Lambda functions](src/commands/lambda).
+  - `instrument`: Apply Datadog instrumentation to the given [AWS Lambda functions](src/commands/lambda).
+  - `uninstrument`: Revert Datadog instrumentation to the given [AWS Lambda functions](src/commands/lambda).
 - `metric`: Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
 - `react-native`:
   - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setupcodepush/)
