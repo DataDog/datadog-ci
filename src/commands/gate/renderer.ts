@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
-import {getStatus, is5xxError, isBadRequestError, isTimeout} from './utils'
+import {getStatus, is5xxError, isBadRequestError, isTimeout, getBaseUrl} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -53,11 +53,14 @@ export const renderStatus = (result: string): string => {
   return result.toLowerCase()
 }
 
+export const renderRuleUrl = (ruleId: string): string => {
+  return `${getBaseUrl()}ci/quality-gates/rule/${ruleId}`
+}
+
 export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => {
-  // TODO add URL here once we have it
   let fullStr = ''
-  fullStr += `Rule ID: ${ruleEvaluation.rule_id}\n`
   fullStr += `Rule Name: ${ruleEvaluation.rule_name}\n`
+  fullStr += `Rule URL: ${renderRuleUrl(ruleEvaluation.rule_id)}\n`
   fullStr += `Status: ${renderStatus(ruleEvaluation.status)}\n`
   if (ruleEvaluation.status.toLowerCase() === 'failed') {
     fullStr += `${chalk.red.bold('Failure reason')}: ${ruleEvaluation.failure_reason}\n`
