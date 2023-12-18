@@ -19,8 +19,6 @@ It is possible to configure the tool to use Datadog EU by defining the `DATADOG_
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_DSYM_INTAKE_URL` environment variable.
 
-
-
 ### Commands
 
 #### `upload`
@@ -75,3 +73,11 @@ Command summary:
 ✅ Uploaded 5 dSYMs in 8.281 seconds.
 ✨  Done in 10.71s.
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about iOS Crash Reporting and Error Tracking][1]
+
+[1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/

@@ -81,11 +81,11 @@ For example, if your repository contains a file at `src/foo/example.js`, then:
 
 The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows Datadog to create proper URLs such as:
 
-| Provider  | URL |
-| --- | --- |
-| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
-| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
-| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
+| Provider        | URL                                                                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub / GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>                                                                     |
+| Bitbucket       | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>                                                                 |
+| Azure DevOps    | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ## End-to-end testing process
 
@@ -112,3 +112,11 @@ version: 0.0.1 service: test_datadog-ci project path:
 Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https//fake.website/fake.js
 ✅ Uploaded 1 files in 0.68 seconds.
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Uploading JavaScript Source Maps][1]
+
+[1]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/

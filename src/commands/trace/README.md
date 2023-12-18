@@ -47,3 +47,11 @@ Successful output should look like this:
 ```bash
 Hello World
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Adding Custom Commands to Pipeline Traces][1]
+
+[1]: https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/
