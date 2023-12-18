@@ -55,7 +55,9 @@ describe('evaluate', () => {
         rule_evaluations: [ruleEvaluation],
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
-      expect(write.mock.calls[0][0]).toContain('Rule URL: https://app.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
+      expect(write.mock.calls[0][0]).toContain(
+        'Rule URL: https://app.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
+      )
       expect(write.mock.calls[0][0]).toContain('Rule Name: No new flaky tests')
     })
     test('should render the rule URL for datad0g', () => {
@@ -68,7 +70,9 @@ describe('evaluate', () => {
         rule_evaluations: [ruleEvaluation],
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
-      expect(write.mock.calls[0][0]).toContain('Rule URL: https://dd.datad0g.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
+      expect(write.mock.calls[0][0]).toContain(
+        'Rule URL: https://dd.datad0g.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
+      )
     })
     test('should render the rule URL for ap1.datadoghq.com', () => {
       process.env = {DD_SITE: 'ap1.datadoghq.com'}
@@ -80,7 +84,9 @@ describe('evaluate', () => {
         rule_evaluations: [ruleEvaluation],
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
-      expect(write.mock.calls[0][0]).toContain('Rule URL: https://ap1.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
+      expect(write.mock.calls[0][0]).toContain(
+        'Rule URL: https://ap1.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
+      )
     })
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
