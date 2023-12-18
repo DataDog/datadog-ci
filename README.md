@@ -57,7 +57,9 @@ The following values are available for each `<command>` and `<subcommand>`. See 
   - `uninstrument`: Uninstrument [AWS Lambda functions](src/commands/lambda).
 - `metric`: Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/).
 - `react-native`:
-  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/).
+  - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/).
+  - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/).
+  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/).
 - `sarif`:
   - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. See [documentation](https://docs.datadoghq.com/static_analysis/).
 - `sourcemaps`:
