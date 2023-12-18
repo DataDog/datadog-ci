@@ -39,49 +39,51 @@ For more ways to install the CLI, see [this section](#more-ways-to-install-the-c
 Usage: datadog-ci <command> <subcommand> [options]
 ```
 
-The following values are available for each `<command>` and `<subcommand>`. See the corresponding documentation for more details:
+The following values are available for each `<command>` and `<subcommand>`.
+
+See each command's corresponding README for more details, or click on 🔗 to see the related documentation page.
 
 - `cloud-run`:
-  - `flare`: Troubleshoot your issues with [Cloud Run service](src/commands/cloud-run) configuration. See [documentation](https://docs.datadoghq.com/serverless/google_cloud_run).
+  - `flare`: Troubleshoot your issues with [Cloud Run service](src/commands/cloud-run) configuration. [🔗](https://docs.datadoghq.com/serverless/google_cloud_run)
 - `dsyms`:
-  - `upload`: Upload [iOS dSYM files](src/commands/dsyms) for Error Tracking (macOS only). See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/).
+  - `upload`: Upload [iOS dSYM files](src/commands/dsyms) for Error Tracking (macOS only). [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)
 - `flutter-symbols`:
-  - `upload`: Upload [Flutter symbols](src/commands/flutter-symbols) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/).
+  - `upload`: Upload [Flutter symbols](src/commands/flutter-symbols) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)
 - `git-metadata`:
-  - `upload`: Upload [Git metadata](src/commands/git-metadata). See [documentation](https://docs.datadoghq.com/integrations/guide/source-code-integration/).
+  - `upload`: Upload [Git metadata](src/commands/git-metadata). [🔗](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 - `junit`:
-  - `upload`: Upload [JUnit test reports](src/commands/junit). See [documentation](https://docs.datadoghq.com/tests/setup/junit_xml/).
+  - `upload`: Upload [JUnit test reports](src/commands/junit). [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)
 - `lambda`:
   - `flare`: Troubleshoot your issues with Datadog monitoring on your [AWS Lambda functions](src/commands/lambda).
   - `instrument`: Instrument [AWS Lambda functions](src/commands/lambda).
   - `uninstrument`: Uninstrument [AWS Lambda functions](src/commands/lambda).
-- `metric`: Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/).
+- `metric`: Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
 - `react-native`:
-  - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/).
-  - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/).
-  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. See [documentation](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/).
+  - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setupcodepush/).
+  - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
+  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_trackingreactnative/).
 - `sarif`:
-  - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. See [documentation](https://docs.datadoghq.com/static_analysis/).
+  - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [🔗](https://docs.datadoghq.com/static_analysis/)
 - `sourcemaps`:
-  - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. See [documentation](https://docs.datadoghq.com/real_user_monitoring/browser/).
+  - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/browser/)
 - `stepfunctions`:
-  - `instrument`: Subscribe [AWS Step Function](src/commands/stepfunctions) log groups to a Datadog Forwarder. See [documentation](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli).
+  - `instrument`: Subscribe [AWS Step Function](src/commands/stepfunctions) log groups to a Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli).
   - `uninstrument`: Unsubscribe a [AWS Step Function](src/commands/stepfunctions) log group from the specified Datadog Forwarder.
 - `synthetics`:
-  - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. See [documentation](https://docs.datadoghq.com/continuous_testing/).
-  - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. See [documentation](https://docs.datadoghq.com/mobile_app_testing/).
-- `tag`: Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/).
-- `trace`: Add [custom commands](src/commands/trace) to a CI Visibility Pipeline in Datadog. See [documentation](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/).
+  - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [🔗](https://docs.datadoghq.com/continuous_testing/)
+  - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [🔗](https://docs.datadoghq.com/mobile_app_testing/)
+- `tag`: Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
+- `trace`: Add [custom commands](src/commands/trace) to a CI Visibility Pipeline in Datadog. [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
 
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
 - `deployment`:
-  - `mark`: Mark a CI job as a [deployment](src/commands/deployment). See [documentation](https://docs.datadoghq.com/continuous_delivery/).
+  - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [🔗](https://docs.datadoghq.com/continuous_delivery/)
 - `dora`:
-  - `deployment`: Send a new Deployment event for [DORA Metrics](src/commands/dora) to Datadog. See [documentation](https://docs.datadoghq.com/dora_metrics/).
+  - `deployment`: Send a new Deployment event for [DORA Metrics](src/commands/dora) to Datadog. [🔗](https://docs.datadoghq.com/dora_metrics/)
 - `gate`:
-  - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. See [documentation](https://docs.datadoghq.com/quality_gates/).
+  - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [🔗](https://docs.datadoghq.com/quality_gates/)
 - `sbom`:
-  - `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. See [documentation](https://docs.datadoghq.com/static_analysis/).
+  - `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. [🔗](https://docs.datadoghq.com/static_analysis/)
 
 ## More ways to install the CLI
 
