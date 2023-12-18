@@ -59,16 +59,16 @@ See each command's corresponding README for more details, or click on 🔗 to se
   - `uninstrument`: Uninstrument [AWS Lambda functions](src/commands/lambda).
 - `metric`: Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
 - `react-native`:
-  - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setupcodepush/).
+  - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setupcodepush/)
   - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
-  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_trackingreactnative/).
+  - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_trackingreactnative/)
 - `sarif`:
   - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [🔗](https://docs.datadoghq.com/static_analysis/)
 - `sourcemaps`:
   - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/browser/)
 - `stepfunctions`:
-  - `instrument`: Subscribe [AWS Step Function](src/commands/stepfunctions) log groups to a Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli).
-  - `uninstrument`: Unsubscribe a [AWS Step Function](src/commands/stepfunctions) log group from the specified Datadog Forwarder.
+  - `instrument`: Subscribe [AWS Step Function](src/commands/stepfunctions) log groups to a Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
+  - `uninstrument`: Unsubscribe a [AWS Step Function](src/commands/stepfunctions) log group from the specified Datadog Forwarder. [🔗](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
 - `synthetics`:
   - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [🔗](https://docs.datadoghq.com/continuous_testing/)
   - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [🔗](https://docs.datadoghq.com/mobile_app_testing/)
