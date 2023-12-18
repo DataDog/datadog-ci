@@ -50,7 +50,7 @@ See each command's corresponding README for more details, or click on 🔗 to se
 - `flutter-symbols`:
   - `upload`: Upload [Flutter symbols](src/commands/flutter-symbols) for Error Tracking. [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)
 - `git-metadata`:
-  - `upload`: Upload [Git metadata](src/commands/git-metadata). [🔗](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
+  - `upload`: Upload [Git metadata](src/commands/git-metadata) for Source Code Integration. [🔗](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 - `junit`:
   - `upload`: Upload [JUnit test reports](src/commands/junit). [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)
 - `lambda`:
