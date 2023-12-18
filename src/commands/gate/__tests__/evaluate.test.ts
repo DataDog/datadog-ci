@@ -1,4 +1,4 @@
-import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
+import type {AxiosResponse, AxiosRequestConfig} from 'axios'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 
@@ -45,6 +45,42 @@ describe('evaluate', () => {
         rule_evaluations: [],
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+    })
+    test('should render the rule URL and rule name', () => {
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
+
+      const response: EvaluationResponse = {
+        status: 'passed',
+        rule_evaluations: [ruleEvaluation],
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+      expect(write.mock.calls[0][0]).toContain('Rule URL: https://app.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
+      expect(write.mock.calls[0][0]).toContain('Rule Name: No new flaky tests')
+    })
+    test('should render the rule URL for datad0g', () => {
+      process.env = {DD_SITE: 'datad0g.com', DD_SUBDOMAIN: 'dd'}
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
+
+      const response: EvaluationResponse = {
+        status: 'passed',
+        rule_evaluations: [ruleEvaluation],
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+      expect(write.mock.calls[0][0]).toContain('Rule URL: https://dd.datad0g.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
+    })
+    test('should render the rule URL for ap1.datadoghq.com', () => {
+      process.env = {DD_SITE: 'ap1.datadoghq.com'}
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
+
+      const response: EvaluationResponse = {
+        status: 'passed',
+        rule_evaluations: [ruleEvaluation],
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+      expect(write.mock.calls[0][0]).toContain('Rule URL: https://ap1.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493')
     })
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
@@ -158,7 +194,7 @@ describe('evaluate', () => {
         status: 200,
         statusText: 'OK',
         headers: {},
-        config: {} as InternalAxiosRequestConfig,
+        config: {} as AxiosRequestConfig,
         data: {
           data: {
             attributes: {
@@ -176,7 +212,7 @@ describe('evaluate', () => {
       status: 200,
       statusText: 'OK',
       headers: {},
-      config: {} as InternalAxiosRequestConfig,
+      config: {} as AxiosRequestConfig,
       data: {
         data: {
           attributes: {
@@ -310,6 +346,15 @@ describe('evaluate', () => {
     })
   })
 })
+
+const ruleEvaluation = {
+  rule_id: '943d0eb8-907e-48cf-8178-3498900fe493',
+  rule_name: 'No new flaky tests',
+  status: 'Passed',
+  is_blocking: true,
+  failure_reason: '',
+  details_url: '',
+}
 
 const createError = (statusCode: number, message: string): any => {
   return {
