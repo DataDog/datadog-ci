@@ -52,7 +52,7 @@ See each command's corresponding README for more details, or click on 🔗 to se
 - `git-metadata`:
   - `upload`: Upload [Git metadata](src/commands/git-metadata) for Source Code Integration. [🔗](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 - `junit`:
-  - `upload`: Upload [JUnit test reports](src/commands/junit). [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)
+  - `upload`: Upload [JUnit test reports](src/commands/junit) for Test Visibility. [🔗](https://docs.datadoghq.com/tests/setup/junit_xml/)
 - `lambda`:
   - `flare`: Troubleshoot your issues with Datadog instrumentation on your [AWS Lambda functions](src/commands/lambda).
   - `instrument`: Apply Datadog instrumentation to the given [AWS Lambda functions](src/commands/lambda).
