@@ -69,9 +69,6 @@ dist
 # JetBrains files
 .idea
 
-# VSC files
-.vscode
-
 # Test generated files
 src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content
 
