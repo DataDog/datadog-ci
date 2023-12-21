@@ -14,7 +14,6 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
     case 'apache 2':
     case 'apache license, version 2.0':
     case 'the apache software license, version 2.0':
-    case 'apache License, version 2.0':
     case 'apache license 2.0':
     case 'apache public license 2.0':
     case 'the apache license, version 2.0':
