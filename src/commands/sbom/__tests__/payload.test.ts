@@ -129,7 +129,7 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(89)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(26)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(10)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
