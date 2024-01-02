@@ -11,8 +11,13 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
     case '0bsd':
       return DependencyLicense.ZEROBSD
     case 'apache-2.0':
+    case 'apache 2':
     case 'apache license, version 2.0':
     case 'the apache software license, version 2.0':
+    case 'apache license 2.0':
+    case 'apache public license 2.0':
+    case 'the apache license, version 2.0':
+    case 'apache license version 2.0':
       return DependencyLicense.APACHE2
     case 'bsd-2-clause':
       return DependencyLicense.BSD2CLAUSE
@@ -20,7 +25,17 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
       return DependencyLicense.BSD3CLAUSE
     case 'bsl-1.0':
       return DependencyLicense.BSL1
+    case 'cc0':
+      return DependencyLicense.CC0_1_0
+    case 'epl 1.0':
+    case 'eclipse public license 1.0':
+    case 'eclipse public license, version 1.0':
+      return DependencyLicense.EPL1_0
+    case 'eclipse public license - v 2.0':
+    case 'eclipse public license v2.0':
+      return DependencyLicense.EPL2_0
     case 'gpl v2':
+    case 'gnu general public license, version 2 (gpl2)':
       return DependencyLicense.GPL2_0
     case 'gpl v3':
       return DependencyLicense.GPL3_0
@@ -28,14 +43,18 @@ const getLicenseFromString = (s: string): DependencyLicense | undefined => {
       return DependencyLicense.ISC
     case 'mit':
     case 'the mit license':
+    case 'mit license':
       return DependencyLicense.MIT
+    case 'mpl-2.0':
+    case 'mozilla public license, version 2.0':
+      return DependencyLicense.MPL_2_0
     case 'unlicense':
       return DependencyLicense.UNLICENSE
     case 'zlib':
       return DependencyLicense.ZLIB
   }
 
-  console.debug(`license ${s} not recognized`)
+  console.debug(`license |${s}| not recognized`)
 
   return undefined
 }
