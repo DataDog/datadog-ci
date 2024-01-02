@@ -65,7 +65,7 @@ See each command's linked README for more details, or click on [📚](https://do
 - `sarif`:
   - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/static_analysis/)
 - `sourcemaps`:
-  - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/browser/)
+  - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps)
 - `stepfunctions`:
   - `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [📚](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
   - `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
