@@ -58,13 +58,10 @@ The tests can then be launched through the `yarn test` command, it will find all
 
 ### Continuous Integration tests
 
-The CI performs tests to avoid regressions by building the project, running unit tests and running one end-to-end test.
+The CI performs tests to avoid regressions by building the project, running unit tests and running end-to-end tests.
 
-The end-to-end test installs the package in a new project, configures it by using files in the `.github/workflows/e2e` folder, and runs a `synthetics run-tests` command in a Datadog org (such as `Synthetics E2E Testing Org`) to verify the command is able to perform a test.
-
-The Synthetic tests that are run include a browser test (with a test ID of `neg-qw9-eut`) and an API test (with a test ID of `v5u-56k-hgk`). Both tests load a page which outputs the headers of the request and verifies the `X-Fake-Header` header is present. This header is configured as an override in the `.github/workflows/e2e/test.synthetics.json` file. The API and application keys used by the command are stored in GitHub Secrets named `datadog_api_key` and `datadog_app_key`.
-
-The goal of this test is to verify the command is able to run tests and wait for their results as expected as well as handling configuration overrides.
+For the end-to-end tests (defined in `.github/workflows/ci.yml` inside the `e2e-test` job), the `datadog-ci` package is installed in a new project with a `.tgz` artifact and configured with files in the `.github/workflows/e2e` folder.
+Then a suite of commands are tested to ensure they work as expected. Each command generally uses a dedicated Datadog org (e.g. `Synthetics E2E Testing Org` for Synthetics tests).
 
 ### Workflow
 
