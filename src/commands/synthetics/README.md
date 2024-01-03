@@ -1,4 +1,4 @@
-<div class="alert alert-info">This page is about configuring Continuous Testing tests for your continuous integration (CI) and continuous delivery (CD) pipelines. If you want to bring your CI/CD metrics and data into Datadog dashboards, see the <a href="https://docs.datadoghq.com/continuous_integration/" target="_blank">CI Visibility</a> section.</div>
+<div class="alert alert-info">This page is about configuring Continuous Testing tests for your Continuous Integration (CI) and Continuous Delivery (CD) pipelines. If you want to bring your CI/CD metrics and data into Datadog dashboards, see the <a href="https://docs.datadoghq.com/continuous_integration/" target="_blank">CI Visibility</a> section.</div>
 
 ## Overview
 
@@ -441,7 +441,7 @@ You can also see the outcome of test executions directly in your CI as your test
 
 ## Upload Application Command
 
-This command uploads a new version to an **existing application**.
+This command uploads a new version to an **existing** mobile application.
 
 ### Command line options
 
@@ -491,6 +491,7 @@ Additional helpful documentation, links, and articles:
 
 - [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
 - [Learn about Continuous Testing and CI/CD][7]
+- [Learn about Mobile Application Testing][10]
 - [Learn about the Continuous Testing Explorer][8]
 - [Learn about the Continuous Testing Tunnel][3]
 
@@ -503,3 +504,9 @@ Additional helpful documentation, links, and articles:
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
+[10]: https://docs.datadoghq.com/mobile_app_testing/
+
+<!--
+  This page is single-sourced:
+  https://github.com/DataDog/documentation/blob/7007931530baf7da59310e7224a26dc9a71c53c5/local/bin/py/build/configurations/pull_config_preview.yaml#L315
+->

@@ -96,11 +96,11 @@ The supported repository URLs are ones whose host contains `github`, `gitlab`, `
 
 This allows Datadog to create proper URLs such as:
 
-| Provider         | URL                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| GitHub or GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>     |
-| Bitbucket        | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\> |
-| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
+| Provider         | URL                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub or GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>                                                                     |
+| Bitbucket        | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>                                                                 |
+| Azure DevOps     | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ### `codepush`
 
@@ -255,3 +255,12 @@ cp /path/to/datadog-ci/dist/cli.js /path/to/project/node_modules/.bin/datadog-ci
 ```
 
 Then, follow the usual installation steps.
+
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about React Native Crash Reporting and Error Tracking][1]
+
+[1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/

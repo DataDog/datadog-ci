@@ -34,15 +34,15 @@ datadog-ci git-metadata upload
 #### Limitations
 
 The repository URL is inferred from the remote named `origin` (or the first remote if none are named `origin`). The value can be overridden by using the `--repository-url` flag.
-For example: The remote `git@github.com:DataDog/example.git` will create links that point to `https://github.com/DataDog/example`.
+For example: The remote `git@github.com:Datadog/example.git` will create links that point to `https://github.com/Datadog/example`.
 
-The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows DataDog to create proper URLs such as:
+The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows Datadog to create proper URLs such as:
 
-| Provider  | URL |
-| --- | --- |
-| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
-| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
-| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
+| Provider        | URL                                                                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub / GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>                                                                     |
+| Bitbucket       | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>                                                                 |
+| Azure DevOps    | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ### End-to-end testing process
 
@@ -61,3 +61,12 @@ Reporting commit fceed94376fc50dea8ba6d6310002dcf1efcc06e from repository git@gi
 ✅ Uploaded in 0.736 seconds.
 ✨  Done in 4.27s
 ```
+
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Source Code Integration][1]
+
+[1]: https://docs.datadoghq.com/integrations/guide/source-code-integration/

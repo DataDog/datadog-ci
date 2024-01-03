@@ -31,7 +31,7 @@ export class UploadApplicationCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Synthetics',
-    description: 'Upload a new version to an existing application in Datadog.',
+    description: 'Upload a new version to an existing mobile application in Datadog.',
     details: `
       This command will upload a \`.apk\` or \`.ipa\` file as a new version for a given application, which already exists in Datadog.\n
       https://docs.datadoghq.com/mobile_app_testing/mobile_app_tests

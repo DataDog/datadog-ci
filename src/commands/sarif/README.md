@@ -62,3 +62,11 @@ service: example-upload
 [DRYRUN] Uploading SARIF report in src/commands/sarif/__tests__/fixtures/valid-results.sarif
 ✅ Uploaded 1 files in 0 seconds.
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Static Analysis][1]
+
+[1]: https://docs.datadoghq.com/static_analysis/

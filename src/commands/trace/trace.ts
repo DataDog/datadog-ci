@@ -140,7 +140,7 @@ export class TraceCommand extends Command {
         this.context.stdout.write(
           `${chalk.yellow.bold(
             '[WARNING]'
-          )} Your Jenkins instance does not seem to be instrumented with the DataDog plugin.\n`
+          )} Your Jenkins instance does not seem to be instrumented with the Datadog plugin.\n`
         )
         this.context.stdout.write(
           'Please follow the instructions at https://docs.datadoghq.com/continuous_integration/setup_pipelines/jenkins/\n'

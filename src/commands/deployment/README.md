@@ -31,3 +31,10 @@ datadog-ci deployment mark --env prod --revision v1.1.0 --tags team:backend --no
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_SITE`: choose your Datadog site. For example, datadoghq.com or datadoghq.eu.
 
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Continuous Delivery][1]
+
+[1]: https://docs.datadoghq.com/continuous_delivery/

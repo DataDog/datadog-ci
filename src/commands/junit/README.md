@@ -77,3 +77,12 @@ service: example-upload
 [DRYRUN] Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/java-report.xml
 ✅ Uploaded 1 files in 0 seconds.
 ```
+
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Uploading JUnit test report files to Datadog][1]
+
+[1]: https://docs.datadoghq.com/tests/setup/junit_xml/

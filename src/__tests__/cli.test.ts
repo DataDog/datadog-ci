@@ -1,6 +1,9 @@
 import {Builtins, CommandClass} from 'clipanion'
 
-import {cli} from '../cli'
+// Test all commands, including beta ones.
+process.env.DD_BETA_COMMANDS_ENABLED = '1'
+
+import {cli, BETA_COMMANDS} from '../cli'
 
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
@@ -11,7 +14,8 @@ describe('cli', () => {
 
     const cases: [string, [string, CommandClass][]][] = Object.entries(
       userDefinedCommands.reduce((acc, command) => {
-        const commandName = command.paths?.[0][0] || 'unknown' // e.g. synthetics
+        const commandRootPath = command.paths?.[0][0] || 'unknown' // e.g. synthetics
+        const commandName = BETA_COMMANDS.includes(commandRootPath) ? `${commandRootPath} (beta)` : commandRootPath
         const subcommandName = command.paths?.[0].slice(1).join(' ') || '<root>' // e.g. run-tests
         const newCase: [string, CommandClass] = [subcommandName, command]
 

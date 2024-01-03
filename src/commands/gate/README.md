@@ -63,3 +63,11 @@ team: backend
 
 Dry run mode is enabled. Not evaluating the rules.
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Quality Gates][1]
+
+[1]: https://docs.datadoghq.com/quality_gates/

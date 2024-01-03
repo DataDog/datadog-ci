@@ -18,6 +18,7 @@ export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
 
   public static usage = Command.Usage({
+    category: 'Static Analysis',
     description: 'Upload SBOM files to Datadog.',
     details: `
       This command uploads SBOM files to Datadog for dependency tracking.

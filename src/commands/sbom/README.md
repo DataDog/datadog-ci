@@ -1,4 +1,4 @@
-# SBOM uploader
+# SBOM command
 
 <div class="alert alert-warning"><strong>Warning:</strong> The <code>SBOM upload</code> command is in beta. It requires you to set <code>DD_BETA_COMMANDS_ENABLED=1</code>, and should not be used in production.</div>
 
@@ -32,3 +32,11 @@ When developing software, you can try with the following command:
 ```bash
 DD_BETA_COMMANDS_ENABLED=1 yarn launch sbom upload --service <your-service> --env <your-environment> /path/to/sbom.json
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Static Analysis][1]
+
+[1]: https://docs.datadoghq.com/static_analysis

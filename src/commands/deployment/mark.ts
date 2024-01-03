@@ -13,16 +13,16 @@ export class DeploymentMarkCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Mark a job as a deployment',
+    description: 'Mark a CI job as a deployment.',
     details: `
-      This command will mark a job as a deployment.\n
+      This command will mark a CI job as a deployment.\n
       See README for details.
     `,
     examples: [
-      ['Mark a job as a deployment', 'datadog-ci deployment mark'],
-      ['Mark a job as a deployment to the staging environment', 'datadog-ci deployment mark --env:staging'],
-      ['Mark a job as a rollback deployment', 'datadog-ci deployment mark --is-rollback'],
-      ['Mark a job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
+      ['Mark a CI job as a deployment', 'datadog-ci deployment mark'],
+      ['Mark a CI job as a deployment to the staging environment', 'datadog-ci deployment mark --env:staging'],
+      ['Mark a CI job as a rollback deployment', 'datadog-ci deployment mark --is-rollback'],
+      ['Mark a CI job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
     ],
   })
 

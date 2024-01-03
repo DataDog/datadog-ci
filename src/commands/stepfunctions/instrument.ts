@@ -33,7 +33,7 @@ export class InstrumentStepFunctionsCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Subscribe Step Function Log Groups to a Datadog Forwarder.',
+    description: 'Subscribe Step Function log groups to a Datadog Forwarder.',
     details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
     examples: [
       [
