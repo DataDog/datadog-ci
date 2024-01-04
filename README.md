@@ -68,9 +68,9 @@ See each command's linked README for more details, or click on [📚](https://do
 - Add [metrics](src/commands/metric) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
 
 #### `react-native`
-- `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setupcodepush/)
+- `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
 - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
-- `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [📚](https://docs.datadoghq.com/real_user_monitoring/error_trackingreactnative/)
+- `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
 
 #### `sarif`
 - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/static_analysis/)
@@ -79,8 +79,8 @@ See each command's linked README for more details, or click on [📚](https://do
 - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps)
 
 #### `stepfunctions`
-- `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [📚](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
-- `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/tab=datadogcli)
+- `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
+- `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
 
 #### `synthetics`
 - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [📚](https://docs.datadoghq.com/continuous_testing/)
