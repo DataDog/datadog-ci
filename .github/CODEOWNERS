@@ -19,6 +19,7 @@ src/commands/sbom    @DataDog/static-analysis-core
 ## RUM
 src/commands/dsyms            @DataDog/rum-mobile
 src/commands/flutter-symbols  @DataDog/rum-mobile
+src/commands/unity-symbols    @Datadog/rum-mobile
 src/commands/react-native     @DataDog/rum-mobile
 src/commands/sourcemaps       @DataDog/rum-browser
 
