@@ -91,7 +91,7 @@ describe('unity-symbols upload', () => {
 
       expect(performSubCommand).toHaveBeenCalledWith(
         dsyms.UploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency 20'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20'],
         expect.anything()
       )
     })
@@ -105,7 +105,7 @@ describe('unity-symbols upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         dsyms.UploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency 20', '--dry-run'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20', '--dry-run'],
         expect.anything()
       )
     })
@@ -119,7 +119,7 @@ describe('unity-symbols upload', () => {
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
         dsyms.UploadCommand,
-        ['dsyms', 'upload', symbolsLocation, '--max-concurrency 12'],
+        ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '12'],
         expect.anything()
       )
     })

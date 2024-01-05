@@ -18,7 +18,10 @@ import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
 import {IL2CPP_MAPPING_FILE_NAME, MappingMetadata, TYPE_IL2CPP_MAPPING, VALUE_NAME_IL2CPP_MAPPING} from './interfaces'
 import {
   renderArgumentMissingError,
+  renderCommandInfo,
+  renderCommandSummary,
   renderFailedUpload,
+  renderGeneralizedError,
   renderGitWarning,
   renderMissingBuildId,
   renderMissingIL2CPPMappingFile as renderMissingIl2CppMappingFile,
@@ -36,12 +39,7 @@ export class UploadCommand extends Command {
             This command will upload all iOS symbol files for Unity applications in order to symbolicate errors and
             crash reports received by Datadog. This includes uploading dSYMs and IL2CPP mapping files.
         `,
-    examples: [
-      [
-        'Upload all symbol files from the default location',
-        'datadog-ci unity-symbols upload --service-name com.datadog.example',
-      ],
-    ],
+    examples: [['Upload all symbol files from the default location', 'datadog-ci unity-symbols upload']],
   })
 
   private disableGit = Option.Boolean('--disable-git', false)
@@ -63,6 +61,10 @@ export class UploadCommand extends Command {
       return 1
     }
 
+    const initialTime = Date.now()
+
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.buildId!, this.symbolsLocation))
+
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
@@ -82,8 +84,19 @@ export class UploadCommand extends Command {
       this.gitData = await this.getGitMetadata()
     }
 
-    await this.performDsymUpload()
-    await this.performIl2CppMappingUpload()
+    const callResults: UploadStatus[] = []
+    try {
+      callResults.push(await this.performDsymUpload())
+      callResults.push(await this.performIl2CppMappingUpload())
+
+      const totalTime = (Date.now() - initialTime) / 1000
+
+      this.context.stdout.write(renderCommandSummary(callResults, totalTime, this.dryRun))
+    } catch (e) {
+      this.context.stderr.write(renderGeneralizedError(e))
+
+      return 1
+    }
 
     return 0
   }
@@ -148,7 +161,8 @@ export class UploadCommand extends Command {
 
   private async performDsymUpload() {
     const dsymUploadCommand = ['dsyms', 'upload', this.symbolsLocation]
-    dsymUploadCommand.push(`--max-concurrency ${this.maxConcurrency}`)
+    dsymUploadCommand.push('--max-concurrency')
+    dsymUploadCommand.push(`${this.maxConcurrency}`)
     if (this.dryRun) {
       dsymUploadCommand.push('--dry-run')
     }
@@ -179,7 +193,7 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  private async performIl2CppMappingUpload(): Promise<number> {
+  private async performIl2CppMappingUpload(): Promise<UploadStatus> {
     const il2cppMappingPath = path.join(this.symbolsLocation, 'LineNumberMappings.json')
     if (!fs.existsSync(il2cppMappingPath)) {
       this.context.stderr.write(renderMissingIl2CppMappingFile(il2cppMappingPath))
@@ -194,7 +208,7 @@ export class UploadCommand extends Command {
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('IL2CPP Mapping File', il2cppMappingPath)}`)
 
-      return 0
+      return UploadStatus.Skipped
     }
 
     const metadata = this.getMappingMetadata()

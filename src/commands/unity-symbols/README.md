@@ -29,13 +29,13 @@ To override the full URL for the intake endpoint, define the `DATADOG_SOURCEMAP_
 ### `upload`
 
 This command uploads your IL2CPP mapping file and iOS dSYMs to Datadog in order to deobfuscate and symbolicate your application's stack traces on iOS. Note that
-Android symbol files, Proguard mapping files, and IL2CPP mapping are handled by the [Datadog Android Gradle Plugin](https://github.com/DataDog/dd-sdk-android-gradle-plugin).
+Android NDK symbol files, Proguard mapping files, and IL2CPP mapping are handled by the [Datadog Android Gradle Plugin](https://github.com/DataDog/dd-sdk-android-gradle-plugin).
 
-After performing an iOS build, the Datadog Unity SDK copies all required files to you build output directory under `datadogSymbols`. You are then able to
+After performing an iOS build, the Datadog Unity SDK copies all required files to your build output directory under `datadogSymbols`. You are then able to
 run the following command to upload all the necessary files:
 
 ```bash
-datadog-ci unity-symbols upload --service-name com.companyname.application --symbols-locaion datadogSymbols
+datadog-ci unity-symbols upload --symbols-location datadogSymbols
 ```
 
 | Parameter | Condition | Description |

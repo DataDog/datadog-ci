@@ -52,6 +52,9 @@ See each command's linked README for more details, or click on [📚](https://do
 #### `flutter-symbols`
 - `upload`: Upload [Flutter symbols](src/commands/flutter-symbols) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)
 
+#### `unity-symbols`
+- `upload`: Upload [Unity symbols](src/commands/unity-symbols) for Error Tracking.
+
 #### `git-metadata`
 - `upload`: Upload [Git metadata](src/commands/git-metadata) for Source Code Integration. [📚](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 

@@ -10,13 +10,7 @@ export interface UploadInfo {
   platform: string
 }
 
-export const renderCommandInfo = (
-  dryRun: boolean,
-  version: string,
-  service: string,
-  flavor: string,
-  uploadInfo: UploadInfo[]
-) => {
+export const renderCommandInfo = (dryRun: boolean, buildId: string, symbolsLocation: string) => {
   let fullString = ''
   if (dryRun) {
     fullString += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SOURCEMAPS\n`)
@@ -24,15 +18,9 @@ export const renderCommandInfo = (
   const startStr = chalk.green('Starting upload. \n')
 
   fullString += startStr
-  uploadInfo.forEach((ui) => {
-    fullString += chalk.green(`Uploading ${ui.platform} ${ui.fileType} at location ${ui.location}\n`)
-  })
-  const serviceVersionProjectPathStr = chalk.green(`  version: ${version} service: ${service} flavor: ${flavor}\n`)
+  fullString += chalk.green(`Uploading symobls at location ${symbolsLocation}\n`)
+  const serviceVersionProjectPathStr = chalk.green(`  buildId: ${buildId}\n`)
   fullString += serviceVersionProjectPathStr
-
-  fullString += chalk.green(
-    `Please ensure you use the same values during SDK initialization to guarantee the success of the symbolication process.\n`
-  )
 
   fullString += chalk.green(
     `After upload is successful symbol files will be processed and ready to use within the next 5 minutes.\n`

@@ -14,7 +14,7 @@ export const getUnityRequestBuilder = (apiKey: string, cliVersion: string, site:
     overrideUrl: 'api/v2/srcmap',
   })
 
-// This function exists partially just to make mocking networkc calls easier.
+// This function exists partially just to make mocking network calls easier.
 export const uploadMultipartHelper = async (
   requestBuilder: RequestBuilder,
   payload: MultipartPayload,
