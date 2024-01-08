@@ -112,7 +112,7 @@ export class RunTestsCommand extends Command {
     validator: validation.isInteger(),
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
-  private selectiveRerun = Option.Boolean('--selectiveRerun', false, {
+  private selectiveRerun = Option.Boolean('--selectiveRerun', {
     description:
       'A boolean flag to only run the tests which failed in the previous test batches. Use `--no-selectiveRerun` to force a full run if your configuration enables it by default.',
   })
