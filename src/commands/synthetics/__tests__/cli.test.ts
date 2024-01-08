@@ -4,7 +4,7 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {UserConfigOverride} from '../interfaces'
+import {RunTestsCommandConfig, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils/public'
@@ -71,7 +71,7 @@ describe('run-test', () => {
     })
 
     test('override from config file', async () => {
-      const overrideConfigFile = {
+      const overrideConfigFile: RunTestsCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
@@ -81,15 +81,17 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {
-          locations: [],
+          locations: ['us-east-1'],
           pollingTimeout: 2,
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
         locations: [],
         pollingTimeout: 1,
-        proxy: {protocol: 'https'},
+        proxy: {
+          protocol: 'https',
+        },
         publicIds: ['ran-dom-id'],
-        selectiveRerun: false,
+        selectiveRerun: true,
         subdomain: 'ppa',
         tunnel: true,
         variableStrings: [],
@@ -103,7 +105,7 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      const overrideCLI = {
+      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -112,11 +114,15 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        locations: ['us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application.apk',
+        pollingTimeout: 1,
         publicIds: ['ran-dom-id'],
+        selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        variableStrings: ['key=value'],
       }
 
       const command = createCommand(RunTestsCommand)
@@ -513,7 +519,7 @@ describe('upload-application', () => {
     })
 
     test('override from config file', async () => {
-      const overrideConfigFile = {
+      const overrideConfigFile: UploadApplicationCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json',
@@ -533,7 +539,7 @@ describe('upload-application', () => {
     })
 
     test('override from CLI', async () => {
-      const overrideCLI = {
+      const overrideCLI: Omit<UploadApplicationCommandConfig, 'proxy'> = {
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',

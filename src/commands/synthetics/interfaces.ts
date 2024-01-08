@@ -444,6 +444,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   files: string[]
   global: UserConfigOverride
   locations: string[]
+  mobileApplicationVersionFilePath?: string
   pollingTimeout: number
   publicIds: string[]
   selectiveRerun: boolean
