@@ -102,22 +102,25 @@ describe('utils', () => {
 
     describe('proxy configuration', () => {
       test('should have a ProxyAgent by default', async () => {
-        jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-        const requestOptions = {
-          apiKey: 'apiKey',
-          appKey: 'applicationKey',
-          baseUrl: 'http://fake-base.url/',
-        }
-        const request = ciUtils.getRequestBuilder(requestOptions)
-        const fakeEndpoint = fakeEndpointBuilder(request)
-        const httpsAgent = await fakeEndpoint()
+        const httpsAgent = await getHttpAgentForProxyOptions()
         expect(httpsAgent).toBeDefined()
         expect(httpsAgent).toBeInstanceOf(ProxyAgent)
       })
 
       test('should add proxy configuration when explicitly defined', async () => {
+        const httpsAgent = await getHttpAgentForProxyOptions({protocol: 'http', host: '1.2.3.4', port: 1234})
+        expect(httpsAgent).toBeDefined()
+        expect((httpsAgent as any).getProxyForUrl()).toBe('http://1.2.3.4:1234')
+      })
+
+      test('should re-use the same proxy agent for the same proxy options', async () => {
+        const httpsAgent1 = await getHttpAgentForProxyOptions({protocol: 'http', host: '1.2.3.4', port: 1234})
+        const httpsAgent2 = await getHttpAgentForProxyOptions({protocol: 'http', host: '1.2.3.4', port: 1234})
+        expect(httpsAgent1).toBe(httpsAgent2)
+      })
+
+      const getHttpAgentForProxyOptions = async (proxyOpts?: ciUtils.ProxyConfiguration) => {
         jest.spyOn(axios, 'create').mockImplementation((() => (args: AxiosRequestConfig) => args.httpsAgent) as any)
-        const proxyOpts: ciUtils.ProxyConfiguration = {protocol: 'http', host: '1.2.3.4', port: 1234}
         const requestOptions = {
           apiKey: 'apiKey',
           appKey: 'applicationKey',
@@ -126,10 +129,9 @@ describe('utils', () => {
         }
         const request = ciUtils.getRequestBuilder(requestOptions)
         const fakeEndpoint = fakeEndpointBuilder(request)
-        const httpsAgent = await fakeEndpoint()
-        expect(httpsAgent).toBeDefined()
-        expect((httpsAgent as any).getProxyForUrl()).toBe('http://1.2.3.4:1234')
-      })
+
+        return fakeEndpoint()
+      }
     })
 
     test('should accept overrideUrl', async () => {
