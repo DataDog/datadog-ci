@@ -209,9 +209,22 @@ export const getRequestBuilder = (options: RequestOptions) => {
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
+const proxyAgentCache = new Map<string, ProxyAgent>()
+
 export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
-  if (!proxyOpts || proxyUrlFromConfiguration === '') {
+
+  let proxyAgent = proxyAgentCache.get(proxyUrlFromConfiguration)
+  if (!proxyAgent) {
+    proxyAgent = createProxyAgentForUrl(proxyUrlFromConfiguration)
+    proxyAgentCache.set(proxyUrlFromConfiguration, proxyAgent)
+  }
+
+  return proxyAgent
+}
+
+const createProxyAgentForUrl = (proxyUrl: string) => {
+  if (!proxyUrl) {
     // Let the default proxy agent discover environment variables.
     return new ProxyAgent()
   }
@@ -223,7 +236,7 @@ export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
         return ''
       }
 
-      return proxyUrlFromConfiguration
+      return proxyUrl
     },
   })
 }
