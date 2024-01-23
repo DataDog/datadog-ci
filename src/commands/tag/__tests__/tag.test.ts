@@ -71,15 +71,14 @@ describe('execute', () => {
     )
   })
 
-  test('should fail if provider is GitHub and level is job', async () => {
+  test('should fail if provider is BuddyWorks and level is job', async () => {
     const {context, code} = await runCLI('job', ['key:value'], {
-      GITHUB_ACTIONS: 'true',
-      GITHUB_REPOSITORY: 'example/example',
-      GITHUB_RUN_ATTEMPT: '10',
-      GITHUB_RUN_ID: '40',
-      GITHUB_SERVER_URL: 'github.com',
+      BUDDY: 'true',
+      BUDDY_PIPELINE_ID: 'example/example',
+      BUDDY_EXECUTION_ID: '10',
+      BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
     })
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Cannot use level "job" for GitHub Actions.')
+    expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
   })
 })

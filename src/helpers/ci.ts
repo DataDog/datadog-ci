@@ -713,7 +713,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_JOB']),
       provider: 'github',
     }
   }
