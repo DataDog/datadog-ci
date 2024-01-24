@@ -48,6 +48,10 @@ export const PROVIDER_TO_DISPLAY_NAME = {
   buddy: 'Buddy',
 }
 
+// DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
+// to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
+const envAllowedToBeMissing  = ['DD_GITHUB_JOB_NAME']
+
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
 const parseEmailAndName = (emailAndName: string | undefined) => {
@@ -713,7 +717,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_JOB']),
+      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_JOB', 'DD_GITHUB_JOB_NAME']),
       provider: 'github',
     }
   }
@@ -760,20 +764,20 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
 const filterEnv = (values: string[]): Record<string, string> => {
   const ciEnvs: Record<string, string> = {}
-  const missing: string[] = []
+  const requiredMissing: string[] = []
 
   values.forEach((envKey) => {
     const envValue = process.env[envKey]
     if (envValue) {
       ciEnvs[envKey] = envValue
-    } else {
-      missing.push(envKey)
+    } else if (!envAllowedToBeMissing.includes(envKey)) {
+      requiredMissing.push(envKey)
     }
   })
 
-  if (missing.length > 0) {
+  if (requiredMissing.length > 0) {
     // Get the missing values for better error
-    throw new Error(`Missing environment variables [${missing.toString()}]`)
+    throw new Error(`Missing environment variables [${requiredMissing.toString()}]`)
   }
 
   return ciEnvs
