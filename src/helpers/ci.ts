@@ -50,7 +50,7 @@ export const PROVIDER_TO_DISPLAY_NAME = {
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
 // to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
-const envAllowedToBeMissing  = ['DD_GITHUB_JOB_NAME']
+const envAllowedToBeMissing = ['DD_GITHUB_JOB_NAME']
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
@@ -717,7 +717,14 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_JOB', 'DD_GITHUB_JOB_NAME']),
+      ciEnv: filterEnv([
+        'GITHUB_SERVER_URL',
+        'GITHUB_REPOSITORY',
+        'GITHUB_RUN_ID',
+        'GITHUB_RUN_ATTEMPT',
+        'GITHUB_JOB',
+        'DD_GITHUB_JOB_NAME',
+      ]),
       provider: 'github',
     }
   }
