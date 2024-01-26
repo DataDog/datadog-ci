@@ -28,7 +28,7 @@ datadog-ci metric --level job --metrics binary.size:1024
 
 ### Supported providers
 
-The metric command only works for the following CI providers: [Buildkite, CircleCI, GitHub, GitLab, AzurePipelines, Jenkins]. If used in
+The metric command only works for the following CI providers: Buildkite, CircleCI, GitHub, GitLab, Azure Pipelines and Jenkins. If used in
 any other provider it will fail.
 
 ### End-to-end testing process
