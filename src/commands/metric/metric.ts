@@ -63,8 +63,8 @@ export class MetricCommand extends Command {
     try {
       const metrics = parseMetrics(this.metrics)
       const {provider, ciEnv} = getCIEnv()
-      // For GitHub and Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
-      if ((provider === 'github' || provider === 'buddy') && this.level === 'job') {
+      // For Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
+      if (provider === 'buddy' && this.level === 'job') {
         this.context.stderr.write(
           `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
         )
