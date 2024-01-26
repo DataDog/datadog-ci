@@ -29,7 +29,7 @@ datadog-ci tag --level job --tags "go.version:`go version`"
 
 ### Supported providers
 
-The tag command only works for the following CI providers: [Buildkite, CircleCI, GitHub, GitLab, AzurePipelines, Jenkins]. If used in
+The tag command only works for the following CI providers: Buildkite, CircleCI, GitHub, GitLab, Azure Pipelines and Jenkins. If used in
 any other provider it will fail.
 
 ### End-to-end testing process
