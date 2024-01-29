@@ -1009,7 +1009,7 @@ describe('utils', () => {
         ...result,
         result: {
           ...result.result,
-          failure: {code: 'TIMEOUT', message: 'Result timed out'},
+          failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
           passed: false,
         },
         resultId: '3',
@@ -1077,7 +1077,11 @@ describe('utils', () => {
       ).toStrictEqual([
         {
           ...result,
-          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
+          result: {
+            ...result.result,
+            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+            passed: false,
+          },
           timedOut: true,
         },
       ])
@@ -1107,7 +1111,11 @@ describe('utils', () => {
       ).toEqual([
         {
           ...result,
-          result: {...result.result, failure: {code: 'TIMEOUT', message: 'Result timed out'}, passed: false},
+          result: {
+            ...result.result,
+            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+            passed: false,
+          },
           timedOut: true,
         },
       ])
@@ -1189,7 +1197,7 @@ describe('utils', () => {
             ...result.result,
             failure: {
               code: 'TIMEOUT',
-              message: 'Result timed out',
+              message: 'The batch timed out before receiving the result.',
             },
             passed: false,
           },

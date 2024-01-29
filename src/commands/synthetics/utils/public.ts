@@ -447,7 +447,7 @@ const getResultFromBatch = (
   const pollResult = pollResultMap[resultInBatch.result_id]
 
   if (hasTimedOut) {
-    pollResult.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+    pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
     pollResult.result.passed = false
   }
 

@@ -216,7 +216,7 @@ export const getTimedOutBrowserResult = (): Result => ({
   passed: false,
   result: {
     duration: 0,
-    failure: {code: 'TIMEOUT', message: 'Result timed out'},
+    failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
     passed: false,
     steps: [],
   },
@@ -483,7 +483,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
 
     if (timedOut) {
       result.timedOut = true
-      result.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+      result.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
     }
 
     if (selectiveRerun) {
