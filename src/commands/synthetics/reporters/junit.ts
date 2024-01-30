@@ -254,7 +254,7 @@ export class JUnitReporter implements Reporter {
     }
 
     if (result.timedOut) {
-      // Timeout errors are manually reported by the CLI at the test level. ('Result timed out')
+      // Timeout errors are manually reported by the CLI at the test level. ('The batch timed out before receiving the result.')
       errorOrFailure.push({
         $: {type: 'timeout'},
         _: String(result.result.failure?.message),

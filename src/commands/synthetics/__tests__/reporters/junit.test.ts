@@ -273,7 +273,10 @@ describe('Junit reporter', () => {
       }
       const browserResult3: Result = {
         ...globalResultMock,
-        result: {...getBrowserServerResult(), failure: {code: 'TIMEOUT', message: 'Result timed out'}},
+        result: {
+          ...getBrowserServerResult(),
+          failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+        },
         timedOut: true,
       }
       const apiResult: Result = {
