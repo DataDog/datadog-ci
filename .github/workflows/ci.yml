@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [14, 16, 18]
+        version: [14, 16, 18, 20]
 
     name: Build and test
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
   e2e-test:
     strategy:
       matrix:
-        version: [14, 16, 18]
+        version: [14, 16, 18, 20]
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
@@ -183,8 +183,8 @@ jobs:
         with:
           dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-          dd_service: "datadog-ci"
-          dd_env: "ci"
+          dd_service: 'datadog-ci'
+          dd_env: 'ci'
           cpu_count: 2
           enable_performance_statistics: true
           sca_enabled: true
