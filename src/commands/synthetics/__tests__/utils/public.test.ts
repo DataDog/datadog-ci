@@ -420,6 +420,27 @@ describe('utils', () => {
       ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
     })
 
+    test('Passes when public ID is valid', async () => {
+      const axiosMock = jest.spyOn(axios, 'create')
+      axiosMock.mockImplementation((() => (e: any) => {
+        return {data: {subtype: 'http', public_id: '123-456-789'}}
+      }) as any)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
+        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
+      )
+    })
+
+    test('Fails when public ID is NOT valid', async () => {
+      const expectedError = new CiError('INVALID_CONFIG', `No valid public ID found in: \`a123-456-789\``)
+
+      const triggerConfig = {suite: 'Suite 1', config: {}, id: 'a123-456-789'}
+      await expect(utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
+        expectedError
+      )
+    })
+
     test('Passes when the tunnel is enabled for HTTP test', async () => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
