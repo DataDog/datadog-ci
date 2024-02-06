@@ -646,7 +646,7 @@ export const getTestAndOverrideConfig = async (
 ): Promise<NotFound | Skipped | TestWithOverride> => {
   const normalizedId = id.match(PUBLIC_ID_REGEX)?.[0]
 
-  if (normalizedId === undefined) {
+  if (!normalizedId) {
     throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)
   }
 
