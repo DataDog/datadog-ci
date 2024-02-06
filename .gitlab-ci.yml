@@ -7,7 +7,6 @@ variables:
 
 build-docker-image-amd64:
   stage: build
-  only: ['tags']
   when: manual
   allow_failure: false
   tags: ['arch:amd64']
@@ -18,7 +17,6 @@ build-docker-image-amd64:
 
 build-docker-image-arm64:
   stage: build
-  only: ['tags']
   when: manual
   allow_failure: false
   tags: ['arch:arm64']
