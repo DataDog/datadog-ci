@@ -162,4 +162,30 @@ describe('generation of payload', () => {
     const dependenciesWithPython = payload?.dependencies.filter((d) => d.language === DependencyLanguage.PYTHON)
     expect(dependenciesWithPython?.length).toStrictEqual(19)
   })
+
+  test('SBOM generated from Trivy 4.9 with group', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/trivy-4.9.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(433)
+    const dependencies = payload?.dependencies
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(433)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+    const dependenciesWithNode = payload?.dependencies.filter((d) => d.language === DependencyLanguage.NPM)
+    expect(dependenciesWithNode?.length).toStrictEqual(433)
+    expect(dependencies?.filter((d) => d.group !== undefined).length).toBeGreaterThan(0)
+    expect(dependencies && dependencies[10].group).toStrictEqual('@aws-sdk')
+  })
 })

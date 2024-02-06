@@ -20,4 +20,8 @@ describe('validation of sbom file', () => {
       validateSbomFile('./src/commands/sbom/__tests__/fixtures/sbom.1.4.invalid.json', validator, false)
     ).toBeFalsy()
   })
+  test('should validate SBOM file from trivy 4.9', () => {
+    // type and name of the "component" have been removed from the valid file.
+    expect(validateSbomFile('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', validator, true)).toBeTruthy()
+  })
 })

@@ -60,6 +60,7 @@ export const generatePayload = (
 
         const dependency: Dependency = {
           name: component['name'],
+          group: component['group'] || undefined,
           version: component['version'],
           language: lang,
           licenses: getLicensesFromComponent(component),
