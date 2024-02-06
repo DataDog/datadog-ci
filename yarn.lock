@@ -2015,7 +2015,7 @@ __metadata:
     chalk: 3.0.0
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
-    dd-trace: 3.41.0
+    dd-trace: ^3.47.0
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^7.32.0
@@ -2063,23 +2063,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/native-appsec@npm:4.0.0":
-  version: 4.0.0
-  resolution: "@datadog/native-appsec@npm:4.0.0"
+"@datadog/native-appsec@npm:7.0.0":
+  version: 7.0.0
+  resolution: "@datadog/native-appsec@npm:7.0.0"
   dependencies:
     node-gyp: latest
     node-gyp-build: ^3.9.0
-  checksum: 15817d52c68f989ad21b0b3c03ce7090c8cebbd6f66f7dd17d49c29f290953adef160ab926f41c61f2da20bdfd7531970f875d6a9f5966a26b8f512e12eefe2a
+  checksum: 642041b499d56b381a93bd4755e280b345c8872eec37f73b0a5e84edf3c078a875882941930dd4657175dbe63e64770c1e40830bc86f67c6784d21d1e9d645fd
   languageName: node
   linkType: hard
 
-"@datadog/native-iast-rewriter@npm:2.2.1":
-  version: 2.2.1
-  resolution: "@datadog/native-iast-rewriter@npm:2.2.1"
+"@datadog/native-iast-rewriter@npm:2.2.2":
+  version: 2.2.2
+  resolution: "@datadog/native-iast-rewriter@npm:2.2.2"
   dependencies:
     lru-cache: ^7.14.0
     node-gyp-build: ^4.5.0
-  checksum: d0ac1d603b12e708721b1cbcc1040c22e284c7e2a2790633d8d0907d4659467fcc89fb6c7c68332f751e950ca1ccf3eb6832238c1df2fa6a070b7b52199c50b7
+  checksum: c3aea33ebef2cc0d7536a8268b924ce93b345cf2189e435d824e5e0d45fef8f3a6b728858bb589f1a905f99fc9ce80675e9fbffe8041b05427ee664dec3c459b
   languageName: node
   linkType: hard
 
@@ -2104,9 +2104,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:4.0.1":
-  version: 4.0.1
-  resolution: "@datadog/pprof@npm:4.0.1"
+"@datadog/pprof@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@datadog/pprof@npm:5.0.0"
   dependencies:
     delay: ^5.0.0
     node-gyp: latest
@@ -2114,7 +2114,7 @@ __metadata:
     p-limit: ^3.1.0
     pprof-format: ^2.0.7
     source-map: ^0.7.4
-  checksum: 0cc46d110da0fdd9c2bc794f951894118576057a2e222c34abd85cdc1970d477d7edad8c4ab88285b8a8e8618c8d79393a37f676c8c61720fbf72ba718028b5e
+  checksum: 461935b1050228032e3104fc8dae7f6b313ea39bb16c6c54aba4906a5d139a6de40731e93cbe4e0394e63ae5f73b660638fc6f014e4c1aa9feda091c2813029c
   languageName: node
   linkType: hard
 
@@ -5172,32 +5172,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:3.41.0":
-  version: 3.41.0
-  resolution: "dd-trace@npm:3.41.0"
+"dd-trace@npm:^3.47.0":
+  version: 3.47.0
+  resolution: "dd-trace@npm:3.47.0"
   dependencies:
-    "@datadog/native-appsec": 4.0.0
-    "@datadog/native-iast-rewriter": 2.2.1
+    "@datadog/native-appsec": 7.0.0
+    "@datadog/native-iast-rewriter": 2.2.2
     "@datadog/native-iast-taint-tracking": 1.6.4
     "@datadog/native-metrics": ^2.0.0
-    "@datadog/pprof": 4.0.1
+    "@datadog/pprof": 5.0.0
     "@datadog/sketches-js": ^2.1.0
     "@opentelemetry/api": ^1.0.0
     "@opentelemetry/core": ^1.14.0
     crypto-randomuuid: ^1.0.0
     dc-polyfill: ^0.1.2
     ignore: ^5.2.4
-    import-in-the-middle: ^1.4.2
+    import-in-the-middle: ^1.7.3
     int64-buffer: ^0.1.9
     ipaddr.js: ^2.1.0
     istanbul-lib-coverage: 3.2.0
     jest-docblock: ^29.7.0
     koalas: ^1.0.2
-    limiter: ^1.1.4
-    lodash.kebabcase: ^4.1.1
-    lodash.pick: ^4.4.0
+    limiter: 1.1.5
     lodash.sortby: ^4.7.0
-    lodash.uniq: ^4.5.0
     lru-cache: ^7.14.0
     methods: ^1.1.2
     module-details-from-path: ^1.0.3
@@ -5206,10 +5203,11 @@ __metadata:
     opentracing: ">=0.12.1"
     path-to-regexp: ^0.1.2
     pprof-format: ^2.0.7
-    protobufjs: ^7.2.4
+    protobufjs: ^7.2.5
     retry: ^0.13.1
     semver: ^7.5.4
-  checksum: 458e3be9c616bae925d70071df760dbec88c79160dc778fff32aa86ecaa3ffc21cd0c3cc768ca61da5355cd6a0d668b918ace28d9644a3e4bffce0f5b71943cb
+    tlhunter-sorted-set: ^0.1.0
+  checksum: 5ef29ee16f381e16a104bdba2571787d3d545fc96a978b9b7613788d0d21762e042d831c3db9aa355eb1ad3ad55f00437db031dc11bb1490e23115ea794da29b
   languageName: node
   linkType: hard
 
@@ -7083,15 +7081,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"import-in-the-middle@npm:^1.4.2":
-  version: 1.4.2
-  resolution: "import-in-the-middle@npm:1.4.2"
+"import-in-the-middle@npm:^1.7.3":
+  version: 1.7.3
+  resolution: "import-in-the-middle@npm:1.7.3"
   dependencies:
     acorn: ^8.8.2
     acorn-import-assertions: ^1.9.0
     cjs-module-lexer: ^1.2.2
     module-details-from-path: ^1.0.3
-  checksum: 52971f821e9a3c94834cd5cf0ab5178321c07d4f4babd547b3cb24c4de21670d05b42ca1523890e7e90525c3bba6b7db7e54cf45421919b0b2712a34faa96ea5
+  checksum: ea4415ad6861bef79b815810518cb0bdb0b0a2c6d5c49205732e0e724e842f87794612b0a75f1e312dfaad6cc3e2fb855c9832ba6594c1f534679063cca0e73c
   languageName: node
   linkType: hard
 
@@ -8375,7 +8373,7 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"limiter@npm:^1.1.4":
+"limiter@npm:1.1.5":
   version: 1.1.5
   resolution: "limiter@npm:1.1.5"
   checksum: 2d51d3a8bef131aada820b76530f8223380a0079aa0fffdfd3ec47ac2f65763225cb4c62a2f22347f4898c5eeb248edfec991c4a4f5b608dfca0aaa37ac48071
@@ -8430,13 +8428,6 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"lodash.kebabcase@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "lodash.kebabcase@npm:4.1.1"
-  checksum: 5a6c59161914e1bae23438a298c7433e83d935e0f59853fa862e691164696bc07f6dfa4c313d499fbf41ba8d53314e9850416502376705a357d24ee6ca33af78
-  languageName: node
-  linkType: hard
-
 "lodash.memoize@npm:4.x":
   version: 4.1.2
   resolution: "lodash.memoize@npm:4.1.2"
@@ -8451,13 +8442,6 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"lodash.pick@npm:^4.4.0":
-  version: 4.4.0
-  resolution: "lodash.pick@npm:4.4.0"
-  checksum: 2c36cab7da6b999a20bd3373b40e31a3ef81fa264f34a6979c852c5bc8ac039379686b27380f0cb8e3781610844fafec6949c6fbbebc059c98f8fa8570e3675f
-  languageName: node
-  linkType: hard
-
 "lodash.sortby@npm:^4.7.0":
   version: 4.7.0
   resolution: "lodash.sortby@npm:4.7.0"
@@ -8469,13 +8453,6 @@ jschardet@latest:
   version: 4.4.2
   resolution: "lodash.truncate@npm:4.4.2"
   checksum: b463d8a382cfb5f0e71c504dcb6f807a7bd379ff1ea216669aa42c52fc28c54e404bfbd96791aa09e6df0de2c1d7b8f1b7f4b1a61f324d38fe98bc535aeee4f5
-  languageName: node
-  linkType: hard
-
-"lodash.uniq@npm:^4.5.0":
-  version: 4.5.0
-  resolution: "lodash.uniq@npm:4.5.0"
-  checksum: a4779b57a8d0f3c441af13d9afe7ecff22dd1b8ce1129849f71d9bbc8e8ee4e46dfb4b7c28f7ad3d67481edd6e51126e4e2a6ee276e25906d10f7140187c392d
   languageName: node
   linkType: hard
 
@@ -9743,6 +9720,26 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
+"protobufjs@npm:^7.2.5":
+  version: 7.2.6
+  resolution: "protobufjs@npm:7.2.6"
+  dependencies:
+    "@protobufjs/aspromise": ^1.1.2
+    "@protobufjs/base64": ^1.1.2
+    "@protobufjs/codegen": ^2.0.4
+    "@protobufjs/eventemitter": ^1.1.0
+    "@protobufjs/fetch": ^1.1.0
+    "@protobufjs/float": ^1.0.2
+    "@protobufjs/inquire": ^1.1.0
+    "@protobufjs/path": ^1.1.2
+    "@protobufjs/pool": ^1.1.0
+    "@protobufjs/utf8": ^1.1.0
+    "@types/node": ">=13.7.0"
+    long: ^5.0.0
+  checksum: 3c62e48f7d50017ac3b0dcd2a58e617cf858f9fba56a488bd48b9aa3482893a75540052dbcb3c12dfbaab42b1d04964611175faf06bdadcd33a4ebac982a511e
+  languageName: node
+  linkType: hard
+
 "proxy-agent@npm:6.3.0":
   version: 6.3.0
   resolution: "proxy-agent@npm:6.3.0"
@@ -10825,6 +10822,13 @@ jschardet@latest:
   version: 2.1.0
   resolution: "tiny-async-pool@npm:2.1.0"
   checksum: 8891326f30e587590f94c5e1f8cab59c9aa305e442fc5b9f7ea997f8611d805a797aae2ea93cd00b42b494ef749353df38b4555e2a769d6fff31a3db7add7208
+  languageName: node
+  linkType: hard
+
+"tlhunter-sorted-set@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "tlhunter-sorted-set@npm:0.1.0"
+  checksum: e87bb43bb43e06cf533d14037bbf5decd4b4efa4cd4681c7e3ac10e035864732b38e5c35f89b76884d5ca4edd285188a219b4d128289db4f6b8f96dc2f3423d3
   languageName: node
   linkType: hard
 
