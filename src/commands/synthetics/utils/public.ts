@@ -54,7 +54,7 @@ import {
 } from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
-const PUBLIC_ID_REGEX = /\b[\d\w]{3}-[\d\w]{3}-[\d\w]{3}\b/
+const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 
 export const readableOperation: {[key in Operator]: string} = {
