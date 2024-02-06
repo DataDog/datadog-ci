@@ -102,7 +102,7 @@
     "rimraf": "^3.0.2",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
-    "ssh2": "1.14.0",
+    "ssh2": "^1.15.0",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
     "terminal-link": "2.1.1",
