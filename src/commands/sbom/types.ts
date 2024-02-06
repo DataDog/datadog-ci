@@ -51,6 +51,7 @@ export enum DependencyLicense {
 export interface Dependency {
   name: string
   version: string
+  group: undefined | string
   language: DependencyLanguage
   licenses: DependencyLicense[]
   purl: string
