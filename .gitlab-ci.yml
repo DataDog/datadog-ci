@@ -7,23 +7,25 @@ variables:
 
 build-docker-image-amd64:
   stage: build
+  only: ['tags']
   when: manual
   allow_failure: false
   tags: ['arch:amd64']
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
-    - docker buildx build --build-arg "VERSION=${CI_COMMIT_TAG}" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-amd64" .
+    - docker buildx build --build-arg "VERSION=${CI_COMMIT_TAG}" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-amd64" --push .
 
 build-docker-image-arm64:
   stage: build
+  only: ['tags']
   when: manual
   allow_failure: false
   tags: ['arch:arm64']
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:20.10
   script:
     - cd container
-    - docker buildx build --build-arg "VERSION=${CI_COMMIT_TAG}" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-arm64" .
+    - docker buildx build --build-arg "VERSION=${CI_COMMIT_TAG}" --tag "${INTERNAL_REGISTRY}/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}-arm64" --push .
 
 publish-docker-image:
   stage: release
