@@ -66,6 +66,17 @@ describe('upload', () => {
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
 
+      const getInvalidJsonUnexpectedTokenErrorMessage = () => {
+        try {
+          JSON.parse('this is an invalid sarif report')
+        } catch (e) {
+          // This error message is different in Node.js >=20
+          return (e as SyntaxError).message
+        }
+
+        throw Error('unreachable')
+      }
+
       const output = context.stdout.toString()
       expect(output).toContain(
         renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', 'Unexpected end of JSON input')
@@ -73,7 +84,7 @@ describe('upload', () => {
       expect(output).toContain(
         renderInvalidFile(
           './src/commands/sarif/__tests__/fixtures/invalid.sarif',
-          'Unexpected token h in JSON at position 1'
+          getInvalidJsonUnexpectedTokenErrorMessage()
         )
       )
       expect(output).toContain(
