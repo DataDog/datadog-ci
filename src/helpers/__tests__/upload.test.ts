@@ -1,3 +1,8 @@
+import fs from 'fs'
+import {Readable} from 'stream'
+
+import type {AxiosRequestConfig} from 'axios'
+
 import {default as axios} from 'axios'
 
 import {upload, UploadStatus} from '../upload'
@@ -9,7 +14,7 @@ describe('upload', () => {
     const retryCallback = jest.fn()
     const uploadCallback = jest.fn()
     const verifyKey = jest.fn()
-    const mockAxiosResponse = (responses: (() => Promise<any>)[]) => {
+    const mockAxiosResponse = (responses: ((request: AxiosRequestConfig) => Promise<any>)[]) => {
       let mock = jest.spyOn(axios, 'create')
       responses.forEach((response) => {
         mock = mock.mockImplementationOnce((() => response) as any)
@@ -71,6 +76,47 @@ describe('upload', () => {
       expect(errorCallback).toHaveBeenCalledTimes(0)
       expect(retryCallback).toHaveBeenCalledTimes(1)
       expect(result).toStrictEqual(UploadStatus.Success)
+    })
+
+    it('should send the files content on each retry', async () => {
+      let firstRequestBody = ''
+      let secondRequestBody = ''
+
+      mockAxiosResponse([
+        async (options) => {
+          firstRequestBody = await readStream(options.data)
+
+          return Promise.reject({
+            response: {
+              status: 500,
+            },
+          })
+        },
+        async (options) => {
+          secondRequestBody = await readStream(options.data)
+
+          return {}
+        },
+      ])
+
+      const request = ciUtils.getRequestBuilder({apiKey: '', baseUrl: ''})
+
+      await upload(request)(
+        {
+          content: new Map([
+            ['file', {value: fs.createReadStream(`${__dirname}/upload-fixtures/file.txt`), options: {}}],
+          ]),
+        },
+        {
+          onError: errorCallback,
+          onRetry: retryCallback,
+          onUpload: uploadCallback,
+          retries: 5,
+        }
+      )
+
+      expect(firstRequestBody).toContain('some data to upload')
+      expect(secondRequestBody).toContain('some data to upload')
     })
 
     test('should not retry some clients failures', async () => {
@@ -190,3 +236,17 @@ describe('upload', () => {
     })
   })
 })
+
+const readStream = (stream: Readable) => {
+  return new Promise<string>((resolve, reject) => {
+    const chunks: string[] = []
+    stream.on('data', (chunk: Buffer | string) => {
+      chunks.push(typeof chunk === 'string' ? chunk : chunk.toString())
+    })
+    stream.on('end', () => {
+      resolve(chunks.join(''))
+    })
+    stream.on('error', reject)
+    stream.resume()
+  })
+}
