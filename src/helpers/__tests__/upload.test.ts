@@ -1,4 +1,3 @@
-import fs from 'fs'
 import {Readable} from 'stream'
 
 import type {AxiosRequestConfig} from 'axios'
@@ -103,9 +102,7 @@ describe('upload', () => {
 
       await upload(request)(
         {
-          content: new Map([
-            ['file', {value: fs.createReadStream(`${__dirname}/upload-fixtures/file.txt`), options: {}}],
-          ]),
+          content: new Map([['file', {type: 'file', path: `${__dirname}/upload-fixtures/file.txt`, options: {}}]]),
         },
         {
           onError: errorCallback,

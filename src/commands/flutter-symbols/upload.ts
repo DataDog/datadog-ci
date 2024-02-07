@@ -218,6 +218,7 @@ export class UploadCommand extends Command {
     }
 
     return {
+      type: 'string',
       options: {filename: 'repository', contentType: 'application/json'},
       value: JSON.stringify(repoPayload),
     }
@@ -318,10 +319,17 @@ export class UploadCommand extends Command {
 
     const payload = {
       content: new Map<string, MultipartValue>([
-        ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+        [
+          'event',
+          {
+            type: 'string',
+            value: JSON.stringify(metadata),
+            options: {filename: 'event', contentType: 'application/json'},
+          },
+        ],
         [
           VALUE_NAME_JVM_MAPPING,
-          {value: fs.createReadStream(this.androidMappingLocation!), options: {filename: JVM_MAPPING_FILE_NAME}},
+          {type: 'file', path: this.androidMappingLocation!, options: {filename: JVM_MAPPING_FILE_NAME}},
         ],
       ]),
     }
@@ -384,10 +392,21 @@ export class UploadCommand extends Command {
         const metadata = this.getFlutterMetadata(fileMetadata.platform, fileMetadata.arch)
         const payload = {
           content: new Map<string, MultipartValue>([
-            ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+            [
+              'event',
+              {
+                type: 'string',
+                value: JSON.stringify(metadata),
+                options: {filename: 'event', contentType: 'application/json'},
+              },
+            ],
             [
               VALUE_NAME_DART_MAPPING,
-              {value: fs.createReadStream(fileMetadata.filename), options: {filename: DART_SYMBOL_FILE_NAME}},
+              {
+                type: 'file',
+                path: fileMetadata.filename,
+                options: {filename: DART_SYMBOL_FILE_NAME},
+              },
             ],
           ]),
         }

@@ -123,6 +123,7 @@ export class UploadCommand extends Command {
     }
 
     return {
+      type: 'string',
       options: {filename: 'repository', contentType: 'application/json'},
       value: JSON.stringify(repoPayload),
     }
@@ -215,10 +216,17 @@ export class UploadCommand extends Command {
 
     const payload = {
       content: new Map<string, MultipartValue>([
-        ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+        [
+          'event',
+          {
+            type: 'string',
+            value: JSON.stringify(metadata),
+            options: {filename: 'event', contentType: 'application/json'},
+          },
+        ],
         [
           VALUE_NAME_IL2CPP_MAPPING,
-          {value: fs.createReadStream(il2cppMappingPath), options: {filename: IL2CPP_MAPPING_FILE_NAME}},
+          {type: 'file', path: il2cppMappingPath, options: {filename: IL2CPP_MAPPING_FILE_NAME}},
         ],
       ]),
     }

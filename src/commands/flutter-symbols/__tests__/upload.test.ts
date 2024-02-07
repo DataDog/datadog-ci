@@ -1,11 +1,8 @@
-import {ReadStream} from 'fs'
 import os from 'os'
-
-import FormData from 'form-data'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartPayload} from '../../../helpers/upload'
+import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import {version} from '../../../helpers/version'
 
@@ -359,12 +356,11 @@ describe('flutter-symbol upload', () => {
 
       expect(uploadMultipartHelper).toHaveBeenCalled()
       const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
-      const mappingFileItem = payload.content.get('jvm_mapping_file')
+      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+      const mappingFileItem = payload.content.get('jvm_mapping_file') as MultipartFileValue
       expect(mappingFileItem).toBeTruthy()
-      expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('jvm_mapping')
-      expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
-      expect((mappingFileItem?.value as ReadStream).path).toBe(`${fixtureDir}/android/fake-mapping.txt`)
+      expect(mappingFileItem.options.filename).toBe('jvm_mapping')
+      expect(mappingFileItem.path).toBe(`${fixtureDir}/android/fake-mapping.txt`)
       expect(exitCode).toBe(0)
     })
 
@@ -412,11 +408,11 @@ describe('flutter-symbol upload', () => {
 
       expect(uploadMultipartHelper).toHaveBeenCalled()
       const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
-      const repoValue = payload.content.get('repository')
-      expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
-      expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
-      expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+      const repoValue = payload.content.get('repository') as MultipartStringValue
+      expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
+      expect((repoValue?.options).filename).toBe('repository')
+      expect((repoValue?.options).contentType).toBe('application/json')
       expect(exitCode).toBe(0)
     })
 
@@ -663,19 +659,18 @@ describe('flutter-symbol upload', () => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {
           const checkPayload = call[1] as MultipartPayload
-          const eventPayload = checkPayload.content.get('event')?.value as string
+          const eventPayload = (checkPayload.content.get('event') as MultipartStringValue).value
 
           return eventPayload === JSON.stringify(expectedMetadata)
         })
         // Ensure the metadata matches at least one call
         expect(index).not.toBe(-1)
         const payload = mockCalls[index][1] as MultipartPayload
-        const mappingFileItem = payload.content.get('flutter_symbol_file')
+        const mappingFileItem = payload.content.get('flutter_symbol_file') as MultipartFileValue
         expect(mappingFileItem).toBeTruthy()
-        expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('flutter_symbol_file')
-        expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
+        expect(mappingFileItem.options.filename).toBe('flutter_symbol_file')
         const expectedPath = `${fixtureDir}/dart-symbols/app.${expectedMetadata.platform}-${expectedMetadata.arch}.symbols`
-        expect((mappingFileItem?.value as ReadStream).path).toBe(expectedPath)
+        expect(mappingFileItem.path).toBe(expectedPath)
       })
 
       expect(exitCode).toBe(0)
@@ -725,17 +720,17 @@ describe('flutter-symbol upload', () => {
         const mockCalls = (uploadMultipartHelper as jest.Mock).mock.calls
         const index = mockCalls.findIndex((call) => {
           const checkPayload = call[1] as MultipartPayload
-          const eventPayload = checkPayload.content.get('event')?.value as string
+          const eventPayload = (checkPayload.content.get('event') as MultipartStringValue).value
 
           return eventPayload === JSON.stringify(expectedMetadata)
         })
         // Ensure the metadata matches at least one call
         expect(index).not.toBe(-1)
         const payload = mockCalls[index][1] as MultipartPayload
-        const repoValue = payload.content.get('repository')
-        expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
-        expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
-        expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+        const repoValue = payload.content.get('repository') as MultipartStringValue
+        expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
+        expect(repoValue.options.filename).toBe('repository')
+        expect(repoValue.options.contentType).toBe('application/json')
         expect(exitCode).toBe(0)
       })
 

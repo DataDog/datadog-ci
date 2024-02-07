@@ -1,4 +1,6 @@
-import fs from 'fs'
+import fs from 'fs/promises'
+
+import {MultipartFileValue} from '../../../helpers/upload'
 
 import {RNSourcemap} from '../interfaces'
 
@@ -15,14 +17,9 @@ describe('interfaces', () => {
       )
       sourcemap.removeSourcesContentFromSourceMap()
       const payload = sourcemap.asMultipartPayload('1.0', 'com.myapp', '1.2.3', '', 'android', '102030')
-      const sourcemapFileHandle = payload.content.get('source_map')?.value as fs.ReadStream
+      const sourcemapFilePath = (payload.content.get('source_map') as MultipartFileValue).path
 
-      let fileContent = ''
-      sourcemapFileHandle.on('data', (chunk) => {
-        fileContent = `${fileContent}${chunk.toString()}`
-      })
-
-      await new Promise((resolve) => sourcemapFileHandle.on('close', resolve))
+      const fileContent = await fs.readFile(sourcemapFilePath, 'utf8')
 
       expect(fileContent).toContain('"sources":["Users/me/datadog-ci/src/commands/sourcemaps/__tests__/git.test.ts"]')
       expect(fileContent).not.toContain('"sourcesContent"')
