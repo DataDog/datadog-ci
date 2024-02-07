@@ -98,7 +98,7 @@ export DATADOG_APP_KEY='<application key>'
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
 echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https//fake.website
+yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https://fake.website
 rm -rf $TEMP_DIR
 ```
 
@@ -107,9 +107,9 @@ Successful output should look like this:
 ```bash
 Starting upload with concurrency 20.
 Will look for sourcemaps in /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/
-Will match JS files for errors on files starting with https//fake.website
+Will match JS files for errors on files starting with https://fake.website
 version: 0.0.1 service: test_datadog-ci project path:
-Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https//fake.website/fake.js
+Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https://fake.website/fake.js
 ✅ Uploaded 1 files in 0.68 seconds.
 ```
 
