@@ -53,14 +53,14 @@ describe('run-test', () => {
         runTests.executeTests(mockReporter, {
           ...ciConfig,
           global: userConfigOverride,
-          publicIds: ['public-id-1', 'public-id-2'],
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
       ).rejects.toThrow()
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: userConfigOverride}),
-          expect.objectContaining({id: 'public-id-2', config: userConfigOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', config: userConfigOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', config: userConfigOverride}),
         ]),
         expect.anything(),
         false,
@@ -103,14 +103,14 @@ describe('run-test', () => {
           runTests.executeTests(mockReporter, {
             ...ciConfig,
             ...partialCIConfig,
-            publicIds: ['public-id-1', 'public-id-2'],
+            publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           })
         ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
         expect(getTestsToTriggersMock).toHaveBeenCalledWith(
           apiHelper,
           expect.arrayContaining([
-            expect.objectContaining({id: 'public-id-1', config: expectedOverriddenConfig}),
-            expect.objectContaining({id: 'public-id-2', config: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'aaa-aaa-aaa', config: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'bbb-bbb-bbb', config: expectedOverriddenConfig}),
           ]),
           expect.anything(),
           false,
@@ -137,14 +137,14 @@ describe('run-test', () => {
         runTests.executeTests(mockReporter, {
           ...ciConfig,
           global: configOverride,
-          publicIds: ['public-id-1', 'public-id-2'],
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: configOverride}),
-          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
         ]),
         expect.anything(),
         false,
@@ -172,15 +172,15 @@ describe('run-test', () => {
         runTests.executeTests(mockReporter, {
           ...ciConfig,
           global: configOverride,
-          publicIds: ['public-id-1', 'public-id-2'],
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           tunnel: true,
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'public-id-1', config: configOverride}),
-          expect.objectContaining({id: 'public-id-2', config: configOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
         ]),
         expect.anything(),
         false,
@@ -251,7 +251,7 @@ describe('run-test', () => {
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
-          runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1'], tunnel: true})
+          runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa'], tunnel: true})
         ).rejects.toThrow(
           new CriticalError(
             error,
@@ -278,7 +278,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
       ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
@@ -366,7 +366,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['public-id-1', 'public-id-2'], tunnel: true})
+        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
@@ -416,7 +416,7 @@ describe('run-test', () => {
         runTests.executeTests(mockReporter, {
           ...ciConfig,
           failOnCriticalErrors: true,
-          publicIds: ['public-id-1', 'public-id-2'],
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           tunnel: true,
         })
       ).rejects.toThrow(

@@ -54,7 +54,7 @@ import {
 } from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
-const PUBLIC_ID_REGEX = /^[\d\w]{3}-[\d\w]{3}-[\d\w]{3}$/
+const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 
 export const readableOperation: {[key in Operator]: string} = {
@@ -644,7 +644,11 @@ export const getTestAndOverrideConfig = async (
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<NotFound | Skipped | TestWithOverride> => {
-  const normalizedId = PUBLIC_ID_REGEX.test(id) ? id : id.substring(id.lastIndexOf('/') + 1)
+  const normalizedId = id.match(PUBLIC_ID_REGEX)?.[0]
+
+  if (!normalizedId) {
+    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)
+  }
 
   const testResult = await getTest(api, {config, id: normalizedId, suite})
   if ('errorMessage' in testResult) {
