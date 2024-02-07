@@ -26,6 +26,8 @@ jobs:
           - synthetics-ci-github-action
           - datadog-ci-azure-devops
           - synthetics-test-automation-circleci-orb
+          - synthetics-test-automation-bitrise-step-run-tests
+          - synthetics-test-automation-bitrise-step-upload-application
     steps:
       - name: Create bump datadog-ci PR
         uses: actions/github-script@v6
