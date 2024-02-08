@@ -1,11 +1,8 @@
-import {ReadStream} from 'fs'
 import os from 'os'
-
-import FormData from 'form-data'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartPayload} from '../../../helpers/upload'
+import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
 import {version} from '../../../helpers/version'
 
@@ -207,11 +204,11 @@ describe('unity-symbols upload', () => {
 
       expect(uploadMultipartHelper).toHaveBeenCalled()
       const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
-      const repoValue = payload.content.get('repository')
-      expect(JSON.parse(repoValue?.value as string)).toStrictEqual(expectedRepository)
-      expect((repoValue?.options as FormData.AppendOptions).filename).toBe('repository')
-      expect((repoValue?.options as FormData.AppendOptions).contentType).toBe('application/json')
+      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+      const repoValue = payload.content.get('repository') as MultipartStringValue
+      expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
+      expect((repoValue?.options).filename).toBe('repository')
+      expect((repoValue?.options).contentType).toBe('application/json')
       expect(exitCode).toBe(0)
     })
 
@@ -231,12 +228,11 @@ describe('unity-symbols upload', () => {
 
       expect(uploadMultipartHelper).toHaveBeenCalled()
       const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse(payload.content.get('event')?.value as string)).toStrictEqual(expectedMetadata)
-      const mappingFileItem = payload.content.get('il2cpp_mapping_file')
+      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+      const mappingFileItem = payload.content.get('il2cpp_mapping_file') as MultipartFileValue
       expect(mappingFileItem).toBeTruthy()
-      expect((mappingFileItem?.options as FormData.AppendOptions).filename).toBe('LineNumberMappings.json')
-      expect(mappingFileItem?.value).toBeInstanceOf(ReadStream)
-      expect((mappingFileItem?.value as ReadStream).path).toBe(`${fixtureDir}/LineNumberMappings.json`)
+      expect(mappingFileItem.options.filename).toBe('LineNumberMappings.json')
+      expect(mappingFileItem.path).toBe(`${fixtureDir}/LineNumberMappings.json`)
       expect(exitCode).toBe(0)
     })
 

@@ -1,4 +1,4 @@
-import {ReadStream} from 'fs'
+import fs from 'fs'
 import {createGzip} from 'zlib'
 
 import FormData from 'form-data'
@@ -13,9 +13,18 @@ export interface MultipartPayload {
   content: Map<string, MultipartValue>
 }
 
-export interface MultipartValue {
-  options?: FormData.AppendOptions | string
-  value: string | ReadStream
+export type MultipartValue = MultipartStringValue | MultipartFileValue
+
+export interface MultipartStringValue {
+  type: 'string'
+  value: string
+  options: FormData.AppendOptions
+}
+
+export interface MultipartFileValue {
+  type: 'file'
+  path: string
+  options: FormData.AppendOptions
 }
 
 export interface UploadOptions {
@@ -92,7 +101,14 @@ const maxBodyLength = Infinity
 const uploadMultipart = async (request: RequestBuilder, payload: MultipartPayload, useGzip: boolean) => {
   const form = new FormData()
   payload.content.forEach((value: MultipartValue, key: string) => {
-    form.append(key, value.value, value.options)
+    switch (value.type) {
+      case 'string':
+        form.append(key, value.value, value.options)
+        break
+      case 'file':
+        form.append(key, fs.createReadStream(value.path), value.options)
+        break
+    }
   })
 
   let data: any = form
