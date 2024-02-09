@@ -252,8 +252,8 @@ describe('commons', () => {
       expect(latestVersionFound).toBe(expectedLatestVersion)
     })
 
-    test('finds latests version for Node14', async () => {
-      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+    test('finds latests version for Node20', async () => {
+      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
       mockLambdaLayers(lambdaClientMock, {
         [`${layer}:1`]: {
           LayerName: layer,
@@ -284,7 +284,7 @@ describe('commons', () => {
           VersionNumber: 41,
         },
       })
-      const runtime: Runtime = 'nodejs14.x'
+      const runtime: Runtime = 'nodejs20.x'
       const region = 'us-east-1'
       const expectedLatestVersion = 41
       const latestVersionFound = await findLatestLayerVersion(runtime, region)
@@ -761,9 +761,9 @@ describe('commons', () => {
             lambdaConfig: {
               FunctionArn: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs20.x',
             },
-            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x',
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
             updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
@@ -774,7 +774,7 @@ describe('commons', () => {
               },
               FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
               Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x:XX'],
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:XX'],
             },
           },
         ],
@@ -810,14 +810,6 @@ describe('commons', () => {
     test('returns true if all runtimes are uniform', async () => {
       const configs: FunctionConfiguration[] = [
         {
-          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
-          lambdaConfig: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
-            Handler: 'index.handler',
-            Runtime: 'nodejs14.x',
-          },
-        },
-        {
           functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
@@ -852,7 +844,7 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
             Handler: 'index.handler',
-            Runtime: 'nodejs14.x',
+            Runtime: 'nodejs20.x',
           },
         },
         {
