@@ -40,7 +40,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -62,7 +62,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -79,7 +79,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {
@@ -106,7 +106,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -128,7 +128,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {
@@ -156,7 +156,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {
@@ -178,7 +178,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {[TAG_VERSION_NAME]: 'vXXXX'},
@@ -206,7 +206,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {not_datadog: 'some-tag'},
@@ -226,7 +226,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -242,7 +242,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {
@@ -263,7 +263,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {[TAG_VERSION_NAME]: 'v0.0.0'},
@@ -281,7 +281,7 @@ describe('tags', () => {
           config: {
             FunctionArn: functionArn,
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
           tags: {
             Tags: {[TAG_VERSION_NAME]: 'vXXXX'},

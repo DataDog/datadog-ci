@@ -80,7 +80,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -123,7 +123,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -172,7 +172,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -253,7 +253,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -289,7 +289,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -334,7 +334,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -386,7 +386,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -438,7 +438,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -483,7 +483,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -511,7 +511,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -723,7 +723,6 @@ describe('lambda', () => {
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -732,7 +731,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs14.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -740,7 +739,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
               FunctionName: 'lambda-hello-world-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3': {
@@ -748,21 +747,13 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
               FunctionName: 'lambda-hello-world-3',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4': {
             config: {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4',
               FunctionName: 'lambda-hello-world-4',
-              Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
-            },
-          },
-          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5',
-              FunctionName: 'lambda-hello-world-5',
               Handler: 'index.handler',
               Runtime: 'nodejs20.x',
             },
@@ -771,10 +762,6 @@ describe('lambda', () => {
         mockLambdaLayers(lambdaClientMock, {
           [`${node14LibraryLayer}:1`]: {
             LayerName: `${node14LibraryLayer}`,
-            VersionNumber: 1,
-          },
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${node16LibraryLayer}:1`]: {
@@ -821,7 +808,7 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -830,7 +817,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -855,12 +842,12 @@ describe('lambda', () => {
             LayerName: `${node14LibraryLayer}`,
             VersionNumber: 1,
           },
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
-            VersionNumber: 1,
-          },
           [`${node16LibraryLayer}:1`]: {
             LayerName: `${node16LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node18LibraryLayer}:1`]: {
+            LayerName: `${node18LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -944,7 +931,7 @@ describe('lambda', () => {
 
       test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -953,14 +940,14 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
 
         mockLambdaLayers(lambdaClientMock, {
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
+          [`${node20LibraryLayer}:1`]: {
+            LayerName: `${node20LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -997,7 +984,7 @@ describe('lambda', () => {
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -1006,13 +993,13 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
         mockLambdaLayers(lambdaClientMock, {
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
+          [`${node20LibraryLayer}:1`]: {
+            LayerName: `${node20LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -1320,7 +1307,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
@@ -1328,7 +1315,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
               FunctionName: 'lambda-2-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
@@ -1336,7 +1323,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
               FunctionName: 'lambda-3-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -1405,7 +1392,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {

@@ -607,7 +607,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
@@ -615,7 +615,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
               FunctionName: 'lambda-2-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
@@ -623,7 +623,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
               FunctionName: 'lambda-3-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -631,7 +631,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
@@ -639,7 +639,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
               FunctionName: 'lambda-2-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
@@ -647,7 +647,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
               FunctionName: 'lambda-3-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -696,7 +696,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -704,7 +704,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs18.x',
             },
           },
         })

@@ -501,8 +501,8 @@ describe('commons', () => {
       )
     })
 
-    test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
-      const runtime = Runtime.nodejs12x
+    test('gets sa-east-1 Node20 Lambda Library layer ARN', async () => {
+      const runtime = Runtime.nodejs20x
       const config = {
         Runtime: runtime,
       }
@@ -514,7 +514,7 @@ describe('commons', () => {
       }
       const region = 'sa-east-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
-      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node20-x`)
     })
 
     test('gets sa-east-1 Python39 arm64 Lambda Library layer ARN', async () => {
@@ -672,9 +672,9 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: 'index.handler',
-            Runtime: Runtime.nodejs12x,
+            Runtime: Runtime.nodejs20x,
           },
-          lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+          lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
           updateFunctionConfigurationCommandInput: {
             Environment: {
               Variables: {
@@ -685,7 +685,7 @@ describe('commons', () => {
             },
             FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'],
           },
         },
       ]
@@ -705,7 +705,7 @@ describe('commons', () => {
         },
         FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'],
       })
     })
   })
@@ -733,9 +733,9 @@ describe('commons', () => {
             lambdaConfig: {
               FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
-            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
             updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
@@ -746,7 +746,7 @@ describe('commons', () => {
               },
               FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
               Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:XX'],
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:XX'],
             },
           },
         ],
@@ -815,14 +815,6 @@ describe('commons', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
             Handler: 'index.handler',
             Runtime: 'nodejs14.x',
-          },
-        },
-        {
-          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
-          lambdaConfig: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
           },
         },
         {

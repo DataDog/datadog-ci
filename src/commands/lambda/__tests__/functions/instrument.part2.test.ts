@@ -24,7 +24,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with just lambda library layers', async () => {
-      const runtime = Runtime.nodejs12x
+      const runtime = Runtime.nodejs20x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -55,7 +55,7 @@ describe('instrument', () => {
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
           "Layers": [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
           ],
         }
       `)
@@ -143,7 +143,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
-      const runtime = Runtime.nodejs12x
+      const runtime = Runtime.nodejs20x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -176,7 +176,7 @@ describe('instrument', () => {
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
           "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
           ],
         }
       `)
@@ -184,7 +184,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {
       process.env[API_KEY_ENV_VAR] = 'SOME-DD-API-KEY'
-      const runtime = Runtime.nodejs12x
+      const runtime = Runtime.nodejs20x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -217,7 +217,7 @@ describe('instrument', () => {
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
           "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
           ],
         }
       `)
