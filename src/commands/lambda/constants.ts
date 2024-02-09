@@ -49,7 +49,6 @@ export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   'nodejs18.x': RuntimeType.NODE,
   'nodejs20.x': RuntimeType.NODE,
   'provided.al2': RuntimeType.CUSTOM,
-  'python3.7': RuntimeType.PYTHON,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
   'python3.10': RuntimeType.PYTHON,
