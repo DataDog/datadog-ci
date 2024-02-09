@@ -9,7 +9,6 @@ export const EXTENSION_LAYER_KEY = 'extension'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   dotnet6: 'dd-trace-dotnet',
-  'dotnetcore3.1': 'dd-trace-dotnet',
   java11: 'dd-trace-java',
   java17: 'dd-trace-java',
   'java8.al2': 'dd-trace-java',
@@ -40,7 +39,6 @@ export enum RuntimeType {
 // Lookup table for runtimes that are currently supported by the CLI
 export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   dotnet6: RuntimeType.DOTNET,
-  'dotnetcore3.1': RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   java17: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,

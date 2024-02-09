@@ -197,7 +197,7 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet',
-          Runtime: Runtime.dotnetcore31,
+          Runtime: Runtime.dotnet6,
         }
 
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
@@ -389,7 +389,7 @@ describe('uninstrument', () => {
               },
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: 'dotnetcore3.1',
+            Runtime: 'dotnet6',
           },
         },
       })
