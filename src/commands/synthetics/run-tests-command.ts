@@ -88,6 +88,9 @@ export class RunTestsCommand extends Command {
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  private deviceIds = Option.String('--deviceIds', {
+    description: 'Override the mobile device(s) to run your mobile test.',
+  })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
       'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
@@ -102,6 +105,10 @@ export class RunTestsCommand extends Command {
   })
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+  })
+  private mobileApplicationVersion = Option.String('--mobileApp,--mobileApplicationVersion', {
+    description:
+      'Override the default mobile application version to test a new version within Datadog. The version must be uploaded and available within Datadog.',
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',
@@ -205,6 +212,8 @@ export class RunTestsCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
+        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS,
+        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_VERSION,
         locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         subdomain: process.env.DATADOG_SUBDOMAIN,
       })
@@ -222,6 +231,7 @@ export class RunTestsCommand extends Command {
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
+        mobileApplicationVersion: this.mobileApplicationVersion,
         publicIds: this.publicIds,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
@@ -234,6 +244,7 @@ export class RunTestsCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
+        deviceIds: this.deviceIds,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
         pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,

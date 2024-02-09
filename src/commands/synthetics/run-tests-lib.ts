@@ -68,6 +68,13 @@ export const executeTests = async (
     }
   }
 
+  if (config.mobileApplicationVersion && config.mobileApplicationVersionFilePath) {
+    throw new CiError(
+      'INVALID_CONFIG',
+      'Both mobileApplicationVersion and mobileApplicationVersionFilePath cannot be set at the same time'
+    )
+  }
+
   if (publicIdsFromCli.length) {
     testsToTrigger = publicIdsFromCli
   } else {
