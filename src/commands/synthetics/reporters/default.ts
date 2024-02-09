@@ -399,7 +399,7 @@ export class DefaultReporter implements MainReporter {
       )
     }
 
-    this.write(lines.join('\n'))
+    this.write(lines.join('\n') + '\n')
   }
 
   public testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number) {

@@ -289,9 +289,9 @@ export class JUnitReporter implements Reporter {
       const xml = this.builder.buildObject(this.json)
       fs.mkdirSync(path.dirname(this.destination), {recursive: true})
       fs.writeFileSync(this.destination, xml, 'utf8')
-      this.write(`✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
+      this.write(`\n✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
     } catch (e) {
-      this.write(`❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
+      this.write(`\n❌ Couldn't write the report to ${c.bold.green(this.destination)}:\n${e.toString()}\n`)
     }
   }
 
