@@ -409,7 +409,7 @@ export class XCodeCommand extends Command {
      * Since RN 0.70, Hermes is enabled even if it is empty.
      */
     if (process.env.USE_HERMES) {
-      return true
+      return process.env.USE_HERMES.toLowerCase() !== 'false'
     }
 
     /**
