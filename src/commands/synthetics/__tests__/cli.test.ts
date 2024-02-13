@@ -227,7 +227,7 @@ describe('run-test', () => {
         return [
           // Parameters we care about.
           (apiHelper as unknown) as api.APIHelper,
-          [{suite: 'Suite 1', id: 'publicId', config}],
+          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', config}],
 
           // Ignore the rest of the parameters.
           expect.anything(),
@@ -243,7 +243,7 @@ describe('run-test', () => {
       const command = createCommand(RunTestsCommand, {stderr: {write}} as any)
 
       // Test file (empty config for now)
-      const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', config: {}}]}}
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
