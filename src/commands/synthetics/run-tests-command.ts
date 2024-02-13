@@ -106,7 +106,7 @@ export class RunTestsCommand extends Command {
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
   })
-  private mobileApplicationVersion = Option.String('--mobileApp,--mobileApplicationVersion', {
+  private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
     description:
       'Override the default mobile application version to test a new version within Datadog. The version must be uploaded and available within Datadog.',
   })
@@ -212,10 +212,17 @@ export class RunTestsCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         datadogSite: process.env.DATADOG_SITE,
-        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS,
-        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_VERSION,
         locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         subdomain: process.env.DATADOG_SUBDOMAIN,
+      })
+    )
+
+    // Override with OVERRIDE ENV variables
+    this.config.global = deepExtend(
+      this.config.global,
+      removeUndefinedValues({
+        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS,
+        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
       })
     )
 
@@ -231,7 +238,6 @@ export class RunTestsCommand extends Command {
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
-        mobileApplicationVersion: this.mobileApplicationVersion,
         publicIds: this.publicIds,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
@@ -245,6 +251,7 @@ export class RunTestsCommand extends Command {
       this.config.global,
       removeUndefinedValues({
         deviceIds: this.deviceIds,
+        mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
         pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,

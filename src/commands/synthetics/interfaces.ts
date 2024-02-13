@@ -381,7 +381,6 @@ export interface TriggerConfig {
   config: UserConfigOverride
   id: string
   suite?: string
-  mobileApplicationVersion?: string
 }
 
 export enum ExecutionRule {
@@ -446,7 +445,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   global: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
-  mobileApplicationVersion?: string
   pollingTimeout: number
   publicIds: string[]
   selectiveRerun: boolean

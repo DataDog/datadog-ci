@@ -33,6 +33,7 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
+  PUBLIC_ID_REGEX,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -66,13 +67,6 @@ export const executeTests = async (
     if (tunnel) {
       await tunnel.stop()
     }
-  }
-
-  if (config.mobileApplicationVersion && config.mobileApplicationVersionFilePath) {
-    throw new CiError(
-      'INVALID_CONFIG',
-      'Both mobileApplicationVersion and mobileApplicationVersionFilePath cannot be set at the same time'
-    )
   }
 
   if (publicIdsFromCli.length) {
@@ -237,7 +231,7 @@ export const getTestsList = async (
     .map((suite) =>
       suite.content.tests.map((test) => ({
         config: overrideTestConfig(test),
-        id: test.id,
+        id: test.id.match(PUBLIC_ID_REGEX)?.[0],
         suite: suite.name,
       }))
     )
