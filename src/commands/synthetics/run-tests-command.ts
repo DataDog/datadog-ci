@@ -88,9 +88,6 @@ export class RunTestsCommand extends Command {
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
-  private deviceIds = Option.String('--deviceIds', {
-    description: 'Override the mobile device(s) to run your mobile test.',
-  })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
       'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
@@ -221,7 +218,6 @@ export class RunTestsCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
-        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS,
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
       })
     )
@@ -250,7 +246,6 @@ export class RunTestsCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
-        deviceIds: this.deviceIds,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
