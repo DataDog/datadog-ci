@@ -260,6 +260,7 @@ describe('xcode', () => {
         CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
         UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
         PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/without-hermes',
+        USE_HERMES: 'false',
       }
       reactNativeVersionSpy.mockReturnValue('0.70.0')
 
