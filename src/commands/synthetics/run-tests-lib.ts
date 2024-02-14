@@ -33,7 +33,7 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
-  PUBLIC_ID_REGEX,
+  normalizePublicId,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -231,7 +231,7 @@ export const getTestsList = async (
     .map((suite) =>
       suite.content.tests.map((test) => ({
         config: overrideTestConfig(test),
-        id: test.id.match(PUBLIC_ID_REGEX)?.[0] || '',
+        id: normalizePublicId(test.id) || '',
         suite: suite.name,
       }))
     )

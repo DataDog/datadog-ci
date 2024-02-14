@@ -281,6 +281,8 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
+export const normalizePublicId = (id: string) => id.match(PUBLIC_ID_REGEX)?.[0]
+
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
     const pollResults = await api.pollResults(resultIds)
@@ -644,7 +646,7 @@ export const getTestAndOverrideConfig = async (
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<NotFound | Skipped | TestWithOverride> => {
-  const normalizedId = id.match(PUBLIC_ID_REGEX)?.[0]
+  const normalizedId = normalizePublicId(id)
 
   if (!normalizedId) {
     throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)

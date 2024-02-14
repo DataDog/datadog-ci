@@ -134,6 +134,7 @@ For example:
     "headers": {"<NEW_HEADER>": "<NEW_VALUE>"},
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff",
+    "mobileApplicationVersionFilePath": "path/to/application.apk",
     "retry": {"count": 2, "interval": 300},
     "executionRule": "blocking",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
