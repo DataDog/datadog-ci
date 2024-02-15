@@ -54,8 +54,8 @@ import {
 } from './internal'
 
 const POLLING_INTERVAL = 5000 // In ms
-const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
+export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 
 export const readableOperation: {[key in Operator]: string} = {
   [Operator.contains]: 'should contain',
@@ -280,6 +280,8 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
 }
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+
+export const normalizePublicId = (id: string): string | undefined => id.match(PUBLIC_ID_REGEX)?.[0]
 
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
@@ -644,7 +646,7 @@ export const getTestAndOverrideConfig = async (
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<NotFound | Skipped | TestWithOverride> => {
-  const normalizedId = id.match(PUBLIC_ID_REGEX)?.[0]
+  const normalizedId = normalizePublicId(id)
 
   if (!normalizedId) {
     throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)

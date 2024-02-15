@@ -21,6 +21,7 @@ test('all option flags are supported', async () => {
     'failOnTimeout',
     'files',
     'jUnitReport',
+    'mobileApplicationVersion',
     'mobileApplicationVersionFilePath',
     'public-id',
     'runName',
@@ -54,6 +55,7 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'fake_app_key',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
+        DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
       }
 
       process.env = overrideEnv
@@ -65,7 +67,10 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
-        global: {pollingTimeout: DEFAULT_POLLING_TIMEOUT},
+        global: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+        },
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
       })
     })
@@ -83,6 +88,7 @@ describe('run-test', () => {
         global: {
           locations: ['us-east-1'],
           pollingTimeout: 2,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
         locations: [],
@@ -124,6 +130,9 @@ describe('run-test', () => {
         tunnel: true,
         variableStrings: ['key=value'],
       }
+      const defaultTestOverrides: UserConfigOverride = {
+        mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+      }
 
       const command = createCommand(RunTestsCommand)
       command['apiKey'] = overrideCLI.apiKey
@@ -134,6 +143,7 @@ describe('run-test', () => {
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
@@ -153,6 +163,7 @@ describe('run-test', () => {
         files: ['new-file'],
         global: {
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
         publicIds: ['ran-dom-id'],
@@ -227,7 +238,7 @@ describe('run-test', () => {
         return [
           // Parameters we care about.
           (apiHelper as unknown) as api.APIHelper,
-          [{suite: 'Suite 1', id: 'publicId', config}],
+          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', config}],
 
           // Ignore the rest of the parameters.
           expect.anything(),
@@ -243,7 +254,7 @@ describe('run-test', () => {
       const command = createCommand(RunTestsCommand, {stderr: {write}} as any)
 
       // Test file (empty config for now)
-      const testFile = {name: 'Suite 1', content: {tests: [{id: 'publicId', config: {}}]}}
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', config: {}}]}}
       jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)

@@ -103,6 +103,9 @@ export class RunTestsCommand extends Command {
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
   })
+  private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
+    description: 'Override the default mobile application version to test a different version within Datadog.',
+  })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',
   })
@@ -210,6 +213,14 @@ export class RunTestsCommand extends Command {
       })
     )
 
+    // Override with OVERRIDE ENV variables
+    this.config.global = deepExtend(
+      this.config.global,
+      removeUndefinedValues({
+        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+      })
+    )
+
     // Override with CLI parameters
     this.config = deepExtend(
       this.config,
@@ -234,6 +245,7 @@ export class RunTestsCommand extends Command {
     this.config.global = deepExtend(
       this.config.global,
       removeUndefinedValues({
+        mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
         pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,

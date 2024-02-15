@@ -527,6 +527,17 @@ describe('utils', () => {
     })
   })
 
+  describe('normalizePublicId', () => {
+    test('should normalize public ID', () => {
+      expect(utils.normalizePublicId('http://localhost/synthetics/tests/details/123-456-789')).toBe('123-456-789')
+      expect(utils.normalizePublicId('123-456-789')).toBe('123-456-789')
+    })
+    test('should be undefined if id is invalid', () => {
+      expect(utils.normalizePublicId('http://localhost/synthetics/tests/details/123-456-7890')).toBe(undefined)
+      expect(utils.normalizePublicId('0123-456-789')).toBe(undefined)
+    })
+  })
+
   describe('getOverriddenConfig', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
