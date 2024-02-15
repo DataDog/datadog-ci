@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_GOV} from '../../constants'
+import {getBaseIntakeUrl, datadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
@@ -12,7 +13,6 @@ import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {getBaseIntakeUrl, datadogSite} from '../../helpers/api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
@@ -216,7 +216,7 @@ export class UploadCommand extends Command {
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl('api')
+      baseUrl: getBaseIntakeUrl('api'),
     })
   }
 

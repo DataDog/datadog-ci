@@ -1,7 +1,8 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {getRequestBuilder} from '../../helpers/utils'
 import {datadogSite} from '../../helpers/api'
+import {getRequestBuilder} from '../../helpers/utils'
+
 import {DeploymentEvent} from './interfaces'
 
 export const apiUrl = `https://api.${datadogSite}`
