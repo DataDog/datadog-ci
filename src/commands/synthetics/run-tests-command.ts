@@ -104,7 +104,7 @@ export class RunTestsCommand extends Command {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
   })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
-    description: 'Override the default mobile application version to test a different version within Datadog. ',
+    description: 'Override the default mobile application version to test a different version within Datadog.',
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',

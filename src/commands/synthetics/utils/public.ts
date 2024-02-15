@@ -281,7 +281,7 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
 
-export const normalizePublicId = (id: string) => id.match(PUBLIC_ID_REGEX)?.[0]
+export const normalizePublicId = (id: string): string | undefined => id.match(PUBLIC_ID_REGEX)?.[0]
 
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {

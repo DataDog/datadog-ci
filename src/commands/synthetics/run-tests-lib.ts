@@ -231,7 +231,7 @@ export const getTestsList = async (
     .map((suite) =>
       suite.content.tests.map((test) => ({
         config: overrideTestConfig(test),
-        id: normalizePublicId(test.id) || '',
+        id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
       }))
     )
