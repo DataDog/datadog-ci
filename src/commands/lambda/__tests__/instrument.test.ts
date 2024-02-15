@@ -212,7 +212,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'dotnetcore3.1',
+              Runtime: 'dotnet6',
             },
           },
         })
@@ -1204,7 +1204,7 @@ describe('lambda', () => {
             config: {
               Architectures: ['arm64'],
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'dotnetcore3.1',
+              Runtime: 'dotnet6',
             },
           },
         })
