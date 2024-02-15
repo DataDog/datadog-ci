@@ -1106,25 +1106,12 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'ruby2.7',
+              Runtime: 'ruby3.2',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
-              Runtime: 'ruby2.7',
-              Architectures: ['arm64'],
-            },
-          },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
-              Runtime: 'ruby3.2',
-            },
-          },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
               Runtime: 'ruby3.2',
               Architectures: ['arm64'],
             },
@@ -1142,10 +1129,6 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
             '-f',
             'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
             '--dry-run',
             '-e',
             '40',
