@@ -1,18 +1,15 @@
+import {getDatadogSite} from '../../helpers/api'
 import {getCommonAppBaseURL} from '../../helpers/app'
 
 export const getBaseUrl = () => {
-  const site = process.env.DD_SITE || 'datadoghq.com'
+  const site = getDatadogSite()
   const subdomain = process.env.DD_SUBDOMAIN || ''
 
   return getCommonAppBaseURL(site, subdomain)
 }
 
 export const getBaseIntakeUrl = () => {
-  if (process.env.DD_SITE) {
-    return `https://quality-gates.${process.env.DD_SITE}`
-  }
-
-  return 'https://quality-gates.datadoghq.com'
+  return `https://quality-gates.${getDatadogSite()}`
 }
 
 /**

@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
@@ -76,7 +77,7 @@ export class UploadCommand extends Command {
   } as const
 
   private config: Record<string, string> = {
-    datadogSite: 'datadoghq.com',
+    datadogSite: getDatadogSite(),
   }
 
   public async execute() {
@@ -90,7 +91,6 @@ export class UploadCommand extends Command {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
       },
       {
         configPath: this.configPath,

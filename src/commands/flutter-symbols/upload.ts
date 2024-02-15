@@ -6,6 +6,7 @@ import yaml from 'js-yaml'
 import semver from 'semver'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogSite} from '../../helpers/api'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
@@ -97,7 +98,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite: 'datadoghq.com',
+    datadogSite: getDatadogSite(),
   }
   private gitData?: RepositoryData
 
@@ -151,7 +152,6 @@ export class UploadCommand extends Command {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
       },
       {
         configPath: this.configPath,

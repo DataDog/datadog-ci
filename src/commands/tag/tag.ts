@@ -3,6 +3,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogSite} from '../../helpers/api'
 import {getCIEnv} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
@@ -137,7 +138,7 @@ export class TagCommand extends Command {
       throw new Error('API key is missing')
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+    const site = getDatadogSite()
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 

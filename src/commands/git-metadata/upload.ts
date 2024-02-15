@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getBaseIntakeUrl, getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -14,7 +15,6 @@ import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
@@ -54,6 +54,7 @@ export class UploadCommand extends Command {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    datadogSite: getDatadogSite(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
@@ -93,13 +94,13 @@ export class UploadCommand extends Command {
 
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
-      datadogSite,
+      datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
-      datadogSite,
+      datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
 
@@ -204,7 +205,7 @@ export class UploadCommand extends Command {
   private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseIntakeUrl('sourcemap-intake'),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
@@ -216,7 +217,7 @@ export class UploadCommand extends Command {
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: 'https://' + apiHost,
+      baseUrl: `https://api.${this.config.datadogSite}`,
     })
   }
 }
