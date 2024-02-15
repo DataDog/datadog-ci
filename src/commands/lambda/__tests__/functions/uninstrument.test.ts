@@ -320,7 +320,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
@@ -340,7 +340,7 @@ describe('uninstrument', () => {
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -451,7 +451,7 @@ describe('uninstrument', () => {
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -482,7 +482,7 @@ describe('uninstrument', () => {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -539,7 +539,7 @@ describe('uninstrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby',
             FunctionName: 'autoinstrument-scooby',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy': {
@@ -557,7 +557,7 @@ describe('uninstrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy',
             FunctionName: 'autoinstrument-scrapy',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
