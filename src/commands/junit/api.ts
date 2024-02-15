@@ -3,7 +3,7 @@ import path from 'path'
 import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
-
+import {datadogSite} from '../../helpers/api'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
 
@@ -15,7 +15,7 @@ import {Payload} from './interfaces'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+
 export const intakeUrl = `https://cireport-intake.${datadogSite}`
 export const apiUrl = `https://api.${datadogSite}`
 

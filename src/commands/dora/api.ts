@@ -1,10 +1,9 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
-
+import {datadogSite} from '../../helpers/api'
 import {DeploymentEvent} from './interfaces'
 
-export const datadogSite = process.env.DD_SITE || 'datadoghq.com'
 export const apiUrl = `https://api.${datadogSite}`
 
 export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (

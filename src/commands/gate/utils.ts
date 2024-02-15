@@ -1,7 +1,7 @@
 import {getCommonAppBaseURL} from '../../helpers/app'
-
+import {datadogSite} from '../../helpers/api'
 export const getBaseUrl = () => {
-  const site = process.env.DD_SITE || 'datadoghq.com'
+  const site = datadogSite
   const subdomain = process.env.DD_SUBDOMAIN || ''
 
   return getCommonAppBaseURL(site, subdomain)

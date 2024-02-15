@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {datadogSite} from '../../helpers/api'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -68,7 +69,7 @@ export class UploadCommand extends Command {
   private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+    datadogSite: datadogSite
   }
 
   public async execute() {
@@ -111,7 +112,7 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: this.config.datadogSite,
       defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.sourcemaps.',
     })

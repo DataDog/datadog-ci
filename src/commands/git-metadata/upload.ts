@@ -12,7 +12,7 @@ import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
+import {getBaseIntakeUrl, datadogSite} from '../../helpers/api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
@@ -204,7 +204,7 @@ export class UploadCommand extends Command {
   private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseIntakeUrl('sourcemap-intake'),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
@@ -216,7 +216,7 @@ export class UploadCommand extends Command {
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: 'https://' + apiHost,
+      baseUrl: getBaseIntakeUrl('api')
     })
   }
 

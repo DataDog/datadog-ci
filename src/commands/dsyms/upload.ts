@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {datadogSite} from '../../helpers/api'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {RequestBuilder} from '../../helpers/interfaces'
@@ -65,7 +66,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite: 'datadoghq.com',
+    datadogSite: datadogSite,
   }
 
   public async execute() {
@@ -77,7 +78,6 @@ export class UploadCommand extends Command {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
       },
       {
         configPath: this.configPath,

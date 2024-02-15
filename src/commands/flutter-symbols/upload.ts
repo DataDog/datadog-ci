@@ -6,6 +6,7 @@ import yaml from 'js-yaml'
 import semver from 'semver'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {datadogSite} from '../../helpers/api'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
@@ -94,7 +95,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite: 'datadoghq.com',
+    datadogSite: datadogSite,
   }
   private gitData?: RepositoryData
 
@@ -139,7 +140,6 @@ export class UploadCommand extends Command {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
       },
       {
         configPath: this.configPath,
