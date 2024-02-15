@@ -496,7 +496,7 @@ describe('instrument', () => {
 
     test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
-      const runtime = Runtime.nodejs14x
+      const runtime = Runtime.nodejs20x
       const region = 'us-east-1'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
