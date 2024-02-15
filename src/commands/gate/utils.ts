@@ -9,7 +9,6 @@ export const getBaseUrl = () => {
 }
 
 export const getBaseIntakeUrl = () => {
-
   return `https://quality-gates.${datadogSite}`
 }
 
