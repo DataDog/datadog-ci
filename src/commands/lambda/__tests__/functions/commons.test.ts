@@ -292,7 +292,7 @@ describe('commons', () => {
     })
 
     test('returns 0 when no layer can be found', async () => {
-      const runtime: Runtime = 'python3.7'
+      const runtime: Runtime = 'python3.12'
       const region = 'us-east-1'
       const expectedLatestVersion = 0
       const latestVersionFound = await findLatestLayerVersion(runtime, region)
@@ -533,8 +533,8 @@ describe('commons', () => {
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
-    test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
-      const runtime = Runtime.python37
+    test('gets us-gov-1 Python312 gov cloud Lambda Library layer ARN', async () => {
+      const runtime = Runtime.python312
       const config = {
         Runtime: runtime,
       }
@@ -546,7 +546,7 @@ describe('commons', () => {
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
-      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python312`)
     })
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
       const runtime = Runtime.python39
