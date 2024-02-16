@@ -7,7 +7,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -16,8 +16,8 @@ import {Payload} from './interfaces'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const intakeUrl = `https://cireport-intake.${datadogSite}`
-export const apiUrl = `https://api.${datadogSite}`
+export const intakeUrl = `https://cireport-intake.${getDatadogSite()}`
+export const apiUrl = `https://api.${getDatadogSite()}`
 
 export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
   jUnitXML: Payload

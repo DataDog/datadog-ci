@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -66,7 +66,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite,
+    datadogSite: getDatadogSite(),
   }
 
   public async execute() {

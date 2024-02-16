@@ -5,7 +5,7 @@ import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
@@ -95,7 +95,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite,
+    datadogSite: getDatadogSite(),
   }
   private gitData?: RepositoryData
 

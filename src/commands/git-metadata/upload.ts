@@ -2,7 +2,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_GOV} from '../../constants'
-import {getBaseIntakeUrl, datadogSite} from '../../helpers/api'
+import {getBaseIntakeUrl, getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
@@ -88,13 +88,13 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: getDatadogSite(),
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
-      datadogSite,
+      datadogSite: getDatadogSite(),
       metricsLogger: metricsLogger.logger,
     })
 

@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {getDatadogSite} from '../../helpers/api'
 import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
@@ -106,7 +107,7 @@ export class TagCommand extends Command {
       throw new Error('API key is missing')
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+    const site = getDatadogSite()
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 

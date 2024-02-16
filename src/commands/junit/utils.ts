@@ -1,15 +1,14 @@
 import {lstatSync} from 'fs'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {getCommonAppBaseURL} from '../../helpers/app'
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 
 export const getBaseUrl = () => {
-  const site = datadogSite
   const subdomain = process.env.DD_SUBDOMAIN || ''
 
-  return getCommonAppBaseURL(site, subdomain)
+  return getCommonAppBaseURL(getDatadogSite(), subdomain)
 }
 
 export const getTestRunsUrl = (spanTags: SpanTags): string => {

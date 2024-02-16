@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
@@ -70,7 +70,7 @@ export class UploadCommand extends Command {
 
   private cliVersion = version
   private config: Record<string, string> = {
-    datadogSite,
+    datadogSite: getDatadogSite(),
   }
 
   public async execute() {

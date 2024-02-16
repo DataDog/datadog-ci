@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
-import {datadogSite} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
@@ -69,7 +69,7 @@ export class UploadCommand extends Command {
   private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
-    datadogSite,
+    datadogSite: getDatadogSite(),
   }
 
   public async execute() {
