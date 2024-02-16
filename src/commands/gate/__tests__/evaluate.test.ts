@@ -21,7 +21,7 @@ describe('evaluate', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}} as any)
 
-      expect(command['getApiHelper'].bind(command)).toThrow('APP key is missing')
+      expect(command['getApiHelper'].bind(command)).toThrow('App key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_APP_KEY')
     })
   })
