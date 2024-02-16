@@ -1,7 +1,8 @@
 import {Cli} from 'clipanion/lib/advanced'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, createMockContext} from '../../../helpers/__tests__/fixtures'
 import * as gitFunctions from '../../../helpers/git/get-git-data'
+import * as ciUtils from '../../../helpers/utils'
 
 import {SendDeploymentEvent} from '../deployment'
 import {DeploymentEvent} from '../interfaces'
@@ -11,11 +12,28 @@ describe('deployment', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new SendDeploymentEvent()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(SendDeploymentEvent, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
+    })
+    test('should use the correct endpoint', () => {
+      process.env = {
+        DD_API_KEY: 'PLACEHOLDER',
+        DD_APP_KEY: 'PLACEHOLDER',
+        DD_SITE: 'us3.datadoghq.com',
+      }
+
+      const command = createCommand(SendDeploymentEvent)
+      const getRequestBuilder = jest.spyOn(ciUtils, 'getRequestBuilder')
+
+      expect(command['getApiHelper'].bind(command)).not.toThrow()
+      expect(getRequestBuilder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://api.us3.datadoghq.com',
+        })
+      )
+      process.env = {}
     })
   })
 })
@@ -48,6 +66,7 @@ describe('execute', () => {
     })
     test('with all parameters provided', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
@@ -72,6 +91,7 @@ describe('execute', () => {
     })
     test('with minimal parameters provided', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -92,6 +112,7 @@ describe('execute', () => {
         DD_ENV: 'test-env',
       }
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -116,6 +137,7 @@ describe('execute', () => {
       mockGitRepositoryURL.mockResolvedValue(gitInfo.repoURL)
       mockGitHash.mockResolvedValue(gitInfo.commitSHA)
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
@@ -134,6 +156,7 @@ describe('execute', () => {
     })
     test('service is required', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -145,6 +168,7 @@ describe('execute', () => {
     })
     test('started-at is required', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -156,6 +180,7 @@ describe('execute', () => {
     })
     test('started-at after finished-at is rejected', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',

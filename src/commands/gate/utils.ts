@@ -8,7 +8,7 @@ export const getBaseUrl = () => {
 }
 
 export const getBaseIntakeUrl = () => {
-  return `https://quality-gates.${getDatadogSite}`
+  return `https://quality-gates.${getDatadogSite()}`
 }
 
 /**
