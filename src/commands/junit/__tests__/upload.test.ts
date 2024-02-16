@@ -2,9 +2,10 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, createMockContext} from '../../../helpers/__tests__/fixtures'
 import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
+import * as ciUtils from '../../../helpers/utils'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
@@ -23,11 +24,28 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new UploadJUnitXMLCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadJUnitXMLCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
+    })
+    test('should use the correct endpoint', () => {
+      process.env = {
+        DD_API_KEY: 'PLACEHOLDER',
+        DD_APP_KEY: 'PLACEHOLDER',
+        DD_SITE: 'us3.datadoghq.com',
+      }
+
+      const command = createCommand(UploadJUnitXMLCommand)
+      const getRequestBuilder = jest.spyOn(ciUtils, 'getRequestBuilder')
+
+      expect(command['getApiHelper'].bind(command)).not.toThrow()
+      expect(getRequestBuilder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://cireport-intake.datadoghq.com',
+        })
+      )
+      process.env = {}
     })
   })
   describe('getMatchingJUnitXMLFiles', () => {
