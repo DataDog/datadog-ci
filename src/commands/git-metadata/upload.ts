@@ -217,7 +217,7 @@ export class UploadCommand extends Command {
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl('api'),
+      baseUrl: `https://api.${getDatadogSite()}`,
     })
   }
 
