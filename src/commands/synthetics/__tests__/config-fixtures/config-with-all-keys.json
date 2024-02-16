@@ -6,9 +6,16 @@
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": false,
-  "files": ["my-new-file"],
+  "files": [
+    "my-new-file"
+  ],
   "global": {
-    "locations": ["us-east-1"],
+    "deviceIds": [
+      "chrome.laptop_large"
+    ],
+    "locations": [
+      "us-east-1"
+    ],
     "pollingTimeout": 2,
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk"
@@ -18,7 +25,9 @@
   "proxy": {
     "protocol": "https"
   },
-  "publicIds": ["ran-dom-id"],
+  "publicIds": [
+    "ran-dom-id"
+  ],
   "selectiveRerun": true,
   "subdomain": "ppa",
   "tunnel": true,

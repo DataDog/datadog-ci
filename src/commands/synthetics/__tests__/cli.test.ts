@@ -16,6 +16,7 @@ test('all option flags are supported', async () => {
     'appKey',
     'config',
     'datadogSite',
+    'deviceIds',
     'failOnCriticalErrors',
     'failOnMissingTests',
     'failOnTimeout',
@@ -55,6 +56,7 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'fake_app_key',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
+        DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
       }
 
@@ -68,6 +70,7 @@ describe('run-test', () => {
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
         global: {
+          deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         },
@@ -86,6 +89,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['my-new-file'],
         global: {
+          deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
           pollingTimeout: 2,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
@@ -131,6 +135,7 @@ describe('run-test', () => {
         variableStrings: ['key=value'],
       }
       const defaultTestOverrides: UserConfigOverride = {
+        deviceIds: ['chrome.laptop_large'],
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
       }
 
@@ -139,6 +144,7 @@ describe('run-test', () => {
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
+      command['deviceIds'] = defaultTestOverrides.deviceIds
       command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
@@ -162,6 +168,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['new-file'],
         global: {
+          deviceIds: ['chrome.laptop_large'],
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
