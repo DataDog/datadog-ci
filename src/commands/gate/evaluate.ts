@@ -111,7 +111,7 @@ export class GateEvaluateCommand extends Command {
 
     if (!this.config.appKey) {
       this.context.stdout.write(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`)
-      throw new Error('APP key is missing')
+      throw new Error('App key is missing')
     }
 
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey, this.config.appKey)

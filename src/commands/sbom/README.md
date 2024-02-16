@@ -20,7 +20,7 @@ DD_BETA_COMMANDS_ENABLED=1 datadog-ci sbom upload --service <my-service> <path/t
 The following environment variables must be defined:
 
  - `DD_SITE`: the [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
- - `DD_APP_KEY`: the App Key to use
+ - `DD_APP_KEY`: the App key to use
  - `DD_API_KEY`: the API key to use
  - `DD_SERVICE`: the Datadog service you use (if `--service` not specified)
 

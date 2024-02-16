@@ -48,7 +48,7 @@ To verify the command works as expected, use `--dry-run`:
 
 ```bash
 export DD_API_KEY='<API key>'
-export DD_APP_KEY='<APP key>'
+export DD_APP_KEY='<App key>'
 
 yarn launch gate evaluate --scope team:backend --dry-run
 ```
