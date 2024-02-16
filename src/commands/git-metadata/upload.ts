@@ -51,6 +51,7 @@ export class UploadCommand extends Command {
   private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    datadogSite: getDatadogSite(),
   }
 
   private logger: Logger = new Logger((s: string) => {
@@ -88,13 +89,13 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: getDatadogSite(),
+      datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
-      datadogSite: getDatadogSite(),
+      datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
 

@@ -13,5 +13,5 @@ export const getDatadogSite = () => {
  * variables are not defined, use the default site (US1).
  */
 export const getBaseIntakeUrl = (intake: string) => {
-  return `https://${intake}.${getDatadogSite}`
+  return `https://${intake}.${getDatadogSite()}`
 }
