@@ -9,6 +9,8 @@ import {Command, Option} from 'clipanion'
 
 import {getSpanTags} from '../../helpers/tags'
 
+import {getBaseUrl} from '../junit/utils'
+
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
 import {ScaRequest} from './types'
@@ -123,7 +125,7 @@ export class UploadSbomCommand extends Command {
       }
     }
 
-    this.context.stdout.write('Upload finished\n')
+    this.context.stdout.write(`Upload finished, results available on ${getBaseUrl()}ci/code-analysis\n`)
 
     return 0
   }
