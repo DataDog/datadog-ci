@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {TagCommand} from '../tag/tag'
 
-import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG} from './constants'
+import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG, SERVICE_TAG} from './constants'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
@@ -23,6 +23,7 @@ export class DeploymentMarkCommand extends Command {
       ['Mark a CI job as a deployment to the staging environment', 'datadog-ci deployment mark --env:staging'],
       ['Mark a CI job as a rollback deployment', 'datadog-ci deployment mark --is-rollback'],
       ['Mark a CI job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
+      ['Mark a CI job as a deployment for service payment-service', 'datadog-ci deployment mark --service:payment-service'],
     ],
   })
 
@@ -33,6 +34,9 @@ export class DeploymentMarkCommand extends Command {
   })
   private revision = Option.String('--revision', {
     description: 'Example: 1.0.0',
+  })
+  private service = Option.String('--service', {
+    description: 'Example: payment-service',
   })
   private tags = Option.Array('--tags')
 
@@ -58,6 +62,10 @@ export class DeploymentMarkCommand extends Command {
 
     if (this.revision) {
       tags.push(REVISION_TAG + this.revision)
+    }
+
+    if (this.service) {
+      tags.push(SERVICE_TAG + this.service)
     }
 
     if (this.isRollback) {
