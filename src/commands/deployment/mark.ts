@@ -23,7 +23,10 @@ export class DeploymentMarkCommand extends Command {
       ['Mark a CI job as a deployment to the staging environment', 'datadog-ci deployment mark --env:staging'],
       ['Mark a CI job as a rollback deployment', 'datadog-ci deployment mark --is-rollback'],
       ['Mark a CI job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
-      ['Mark a CI job as a deployment for service payment-service', 'datadog-ci deployment mark --service:payment-service'],
+      [
+        'Mark a CI job as a deployment for service payment-service',
+        'datadog-ci deployment mark --service:payment-service',
+      ],
     ],
   })
 
