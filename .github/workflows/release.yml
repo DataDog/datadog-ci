@@ -6,8 +6,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '14'
       - run: yarn
@@ -30,7 +30,7 @@ jobs:
           - synthetics-test-automation-bitrise-step-upload-application
     steps:
       - name: Create bump datadog-ci PR
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.CROSS_REPOSITORY_GITHUB_TOKEN }}
           script: |
@@ -49,9 +49,9 @@ jobs:
   build-binary-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
@@ -75,9 +75,9 @@ jobs:
   build-binary-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
@@ -101,9 +101,9 @@ jobs:
   build-binary-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '14.18.3'
       - name: Install project dependencies
