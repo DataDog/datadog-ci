@@ -11,17 +11,18 @@ Marks a CI job as a deployment.
 The `mark` command specifies that a CI job executes a deployment.
 
 ```bash
-datadog-ci deployment mark [--env] [--revision] [--is-rollback] [--tags] [--no-fail]
+datadog-ci deployment mark [--env] [--revision] [--service] [--is-rollback] [--tags] [--no-fail]
 ```
 
 For example:
 
 ```bash
-datadog-ci deployment mark --env prod --revision v1.1.0 --tags team:backend --no-fail
+datadog-ci deployment mark --env prod --service payment-service --revision v1.1.0 --tags team:backend --no-fail
 ```
 
 - `--env` is the environment to which this deployment is performed. For example, `prod`.
 - `--revision` is the revision/version that is being deployed. For example, `1.0.0` or `v123-456`.
+- `--service` the name of the service being deployed. For example, `payment-service`.
 - `--is-rollback` specifies that the deployment is a rollback.
 - `--tags` is an array of key value pairs in the format `key:value`. These tags are added to the deployment event shown in Datadog.
 - `--no-fail` (default: `false`) will prevent the deployment command from failing if there are issues submitting the data.
@@ -35,6 +36,8 @@ datadog-ci deployment mark --env prod --revision v1.1.0 --tags team:backend --no
 
 Additional helpful documentation, links, and articles:
 
-- [Learn about Continuous Delivery][1]
+- [Monitor CI providers deployments][1]
+- [Learn about Continuous Delivery][2]
 
-[1]: https://docs.datadoghq.com/continuous_delivery/
+[1]: https://docs.datadoghq.com/continuous_delivery/deployments/ciproviders
+[2]: https://docs.datadoghq.com/continuous_delivery/

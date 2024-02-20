@@ -22,6 +22,12 @@ describe('mark', () => {
       const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.revision:1.0.0']
       expect(command.createDeploymentTags()).toEqual(expectedTags)
     })
+    test('should add service if present', () => {
+      const command = createCommand(DeploymentMarkCommand)
+      command['service'] = 'payment-service'
+      const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.service:payment-service']
+      expect(command.createDeploymentTags()).toEqual(expectedTags)
+    })
     test('should add custom tags if present', () => {
       const command = createCommand(DeploymentMarkCommand)
       command['tags'] = ['team:backend', 'image:my_image']
