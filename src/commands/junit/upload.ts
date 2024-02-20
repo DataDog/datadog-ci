@@ -179,7 +179,13 @@ export class UploadJUnitXMLCommand extends Command {
     const customMeasures = this.getCustomMeasures()
     const reportTags = this.getReportTags()
     const reportMeasures = this.getReportMeasures()
-    const payloads = await this.getMatchingJUnitXMLFiles(spanTags, customTags, customMeasures, reportTags, reportMeasures)
+    const payloads = await this.getMatchingJUnitXMLFiles(
+      spanTags,
+      customTags,
+      customMeasures,
+      reportTags,
+      reportMeasures
+    )
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -289,9 +295,9 @@ export class UploadJUnitXMLCommand extends Command {
       xpathTags: this.xpathTags,
       spanTags,
       customTags,
-      customMeasures: customMeasures,
+      customMeasures,
       reportTags,
-      reportMeasures: reportMeasures,
+      reportMeasures,
       xmlPath: jUnitXMLFilePath,
     }))
   }
@@ -353,7 +359,7 @@ export class UploadJUnitXMLCommand extends Command {
     // We have renamed "metrics" to "measures", but we will still support the old names for now.
     if (this.reportMetrics) {
       this.context.stdout.write(renderDeprecatedMention('--report-metrics', '--report-measures', 'option'))
-    } 
+    }
 
     return {
       ...cliMetrics,
