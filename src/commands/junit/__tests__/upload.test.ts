@@ -298,11 +298,27 @@ describe('upload', () => {
     })
     test('should parse metrics argument', async () => {
       const context = createMockContext()
+      const stdoutWriteSpy = jest.spyOn(context.stdout, 'write')
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = command['getCustomMetrics'].call({
+      const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {},
         context,
         metrics: ['key1:10', 'key2:20'],
+      })
+
+      expect(stdoutWriteSpy).toHaveBeenCalledWith('⚠️ The "--metrics" option is deprecated. Please use the "--measures" option instead.\n');
+      expect(spanTags).toMatchObject({
+        key1: 10,
+        key2: 20,
+      })
+    })
+    test('should parse measures argument', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getCustomMeasures'].call({
+        config: {},
+        context,
+        measures: ['key1:10', 'key2:20'],
       })
 
       expect(spanTags).toMatchObject({
@@ -313,13 +329,34 @@ describe('upload', () => {
     test('should parse DD_METRICS environment variable', async () => {
       process.env.DD_METRICS = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
       const context = createMockContext()
+      const stdoutWriteSpy = jest.spyOn(context.stdout, 'write');
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = command['getCustomMetrics'].call({
+      const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {
           envVarMetrics: process.env.DD_METRICS,
         },
         context,
       })
+
+      expect(stdoutWriteSpy).toHaveBeenCalledWith('⚠️ The "DD_METRICS" environment variable is deprecated. Please use the "DD_MEASURES" environment variable instead.\n');
+      expect(spanTags).toMatchObject({
+        key1: 321,
+        key2: 123,
+        key3: 321.1,
+        key5: -12.1,
+      })
+    })
+    test('should parse DD_MEASURES environment variable', async () => {
+      process.env.DD_MEASURES = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getCustomMeasures'].call({
+        config: {
+          envVarMeasures: process.env.DD_MEASURES,
+        },
+        context,
+      })
+
       expect(spanTags).toMatchObject({
         key1: 321,
         key2: 123,
@@ -343,11 +380,28 @@ describe('upload', () => {
     })
     test('should parse report metrics argument', async () => {
       const context = createMockContext()
+      const stdoutWriteSpy = jest.spyOn(context.stdout, 'write');
       const command = new UploadJUnitXMLCommand()
-      const spanTags: SpanTags = command['getReportMetrics'].call({
+      const spanTags: SpanTags = command['getReportMeasures'].call({
         config: {},
         context,
         reportMetrics: ['key1:20', 'key2:30'],
+      })
+
+      expect(stdoutWriteSpy).toHaveBeenCalledWith('⚠️ The "--report-metrics" option is deprecated. Please use the "--report-measures" option instead.\n');
+      expect(spanTags).toMatchObject({
+        key1: 20,
+        key2: 30,
+      })
+    })
+    test('should parse report measures argument', async () => {
+      const logSpy = jest.spyOn(global.console, 'log');
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const spanTags: SpanTags = command['getReportMeasures'].call({
+        config: {},
+        context,
+        reportMeasures: ['key1:20', 'key2:30'],
       })
 
       expect(spanTags).toMatchObject({
