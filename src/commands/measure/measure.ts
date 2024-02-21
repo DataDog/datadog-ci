@@ -5,10 +5,10 @@ import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
-export const parseMetrics = (metrics: string[]) =>
-  metrics.reduce((acc, keyValue) => {
+export const parseMeasures = (measures: string[]) =>
+  measures.reduce((acc, keyValue) => {
     if (!keyValue.includes(':')) {
-      throw new Error(`invalid metrics key value pair "${keyValue}"`)
+      throw new Error(`invalid measures key value pair "${keyValue}"`)
     }
 
     const [key, value] = keyValue.split(':', 2)
@@ -23,24 +23,28 @@ export const parseMetrics = (metrics: string[]) =>
     }
   }, {})
 
-export class MetricCommand extends Command {
-  public static paths = [['metric']]
+export class MeasureCommand extends Command {
+  public static paths = [['measure'], ['metric']]
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Add metrics to a CI Pipeline trace pipeline or job span in Datadog.',
+    description: 'Add measures to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
             This command when run from a supported CI provider sends an arbitrary set of key:value
             numeric tags to Datadog to include in the CI Visibility traces.
     `,
     examples: [
-      ['Add a binary size to the current pipeline', 'datadog-ci metric --level pipeline --metrics binary.size:500'],
-      ['Tag the current CI job with a command runtime', 'datadog-ci metric --level job --metrics command.runtime:67.1'],
+      ['Add a binary size to the current pipeline', 'datadog-ci measure --level pipeline --measures binary.size:500'],
+      [
+        'Tag the current CI job with a command runtime',
+        'datadog-ci measure --level job --measures command.runtime:67.1',
+      ],
     ],
   })
 
   private level = Option.String('--level')
-  private metrics = Option.Array('--metrics')
+  private metrics = Option.Array('--metrics', {hidden: true})
+  private measures = Option.Array('--measures')
   private noFail = Option.Boolean('--no-fail')
 
   private config = {
@@ -48,20 +52,34 @@ export class MetricCommand extends Command {
   }
 
   public async execute() {
+    console.log(this.path)
+    if (this.path[0] === 'metric') {
+      this.context.stdout.write(
+        chalk.yellow(`[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n`)
+      )
+    }
+
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
 
       return 1
     }
 
-    if (!this.metrics || this.metrics.length === 0) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} --metrics is required\n`)
+    if ((!this.measures || this.measures.length === 0) && (!this.metrics || this.metrics.length === 0)) {
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} --measures is required\n`)
 
       return 1
     }
 
+    if (this.metrics) {
+      this.context.stdout.write(
+        `${chalk.yellow.yellow(`[WARN] The "--metrics" flag is deprecated. Please use "--measures" flag instead.\n`)}`
+      )
+    }
+
+    const rawMeasures = (this.measures || this.metrics)!
     try {
-      const metrics = parseMetrics(this.metrics)
+      const measures = parseMeasures(rawMeasures)
       const {provider, ciEnv} = getCIEnv()
       // For Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
       if (provider === 'buddy' && this.level === 'job') {
@@ -72,15 +90,15 @@ export class MetricCommand extends Command {
         return 1
       }
 
-      const exitStatus = await this.sendMetrics(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, metrics)
+      const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(
-          `${chalk.yellow.bold('[WARNING]')} sending metrics failed but continuing due to --no-fail\n`
+          `${chalk.yellow.bold('[WARNING]')} sending measures failed but continuing due to --no-fail\n`
         )
 
         return 0
       } else if (exitStatus === 0) {
-        this.context.stdout.write('Metrics sent\n')
+        this.context.stdout.write('Measures sent\n')
       }
 
       return exitStatus
@@ -91,11 +109,11 @@ export class MetricCommand extends Command {
     }
   }
 
-  private async sendMetrics(
+  private async sendMeasures(
     ciEnv: Record<string, string>,
     level: number,
     provider: string,
-    metrics: Record<string, number>
+    measures: Record<string, number>
   ): Promise<number> {
     if (!this.config.apiKey) {
       this.context.stdout.write(
@@ -115,7 +133,7 @@ export class MetricCommand extends Command {
             attributes: {
               ci_env: ciEnv,
               ci_level: level,
-              metrics,
+              metrics: measures,
               provider,
             },
             type: 'ci_custom_metric',
@@ -129,13 +147,13 @@ export class MetricCommand extends Command {
       await retryRequest(doRequest, {
         onRetry: (e, attempt) => {
           this.context.stderr.write(
-            chalk.yellow(`[attempt ${attempt}] Could not send metrics. Retrying...: ${e.message}\n`)
+            chalk.yellow(`[attempt ${attempt}] Could not send measures. Retrying...: ${e.message}\n`)
           )
         },
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send metrics: ${error.message}\n`)
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send measures: ${error.message}\n`)
 
       return 1
     }
