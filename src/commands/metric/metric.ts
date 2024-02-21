@@ -34,8 +34,8 @@ export class MetricCommand extends Command {
             numeric tags to Datadog to include in the CI Visibility traces.
     `,
     examples: [
-      ['Add a binary size to the current pipeline', 'datadog-ci metric --level pipeline --tags binary.size:500'],
-      ['Tag the current CI job with a command runtime', 'datadog-ci metric --level job --tags command.runtime:67.1'],
+      ['Add a binary size to the current pipeline', 'datadog-ci metric --level pipeline --metrics binary.size:500'],
+      ['Tag the current CI job with a command runtime', 'datadog-ci metric --level job --metrics command.runtime:67.1'],
     ],
   })
 
