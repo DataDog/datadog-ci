@@ -2,6 +2,7 @@ import * as apikey from '../../../helpers/apikey'
 import * as upload from '../../../helpers/upload'
 
 import * as git from '../git'
+import * as gitdb from '../gitdb'
 import {CommitInfo} from '../interfaces'
 import {isGitRepo, uploadGitCommitHash} from '../library'
 
@@ -53,6 +54,12 @@ describe('library', () => {
 
         return new CommitInfo('hash', 'url', ['file1', 'file2'])
       })
+      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL) => {
+        expect(repositoryURL).toEqual('url')
+        expect(dryRun).toBe(false)
+
+        return Promise.resolve()
+      })
       jest.spyOn(upload, 'upload').mockReturnValue((a, b) => {
         {
           return new Promise<upload.UploadStatus>((resolve) => {
@@ -74,6 +81,12 @@ describe('library', () => {
         expect(repositoryURL).toEqual('customUrl')
 
         return new CommitInfo('hash', 'customUrl', ['file1', 'file2'])
+      })
+      jest.spyOn(gitdb, 'uploadToGitDB').mockImplementation((log, req, simplegit, dryRun, repositoryURL) => {
+        expect(repositoryURL).toEqual('customUrl')
+        expect(dryRun).toBe(false)
+
+        return Promise.resolve()
       })
       jest.spyOn(upload, 'upload').mockReturnValue((a, b) => {
         {
