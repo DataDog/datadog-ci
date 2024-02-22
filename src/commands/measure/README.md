@@ -1,25 +1,25 @@
-# metric command
+# measure command
 
 Add numeric tags to CI Visibility pipeline and job spans.
 
 ## Usage
 
 ```bash
-datadog-ci metric [--no-fail] [--level <pipeline|job>] [--metrics]
+datadog-ci measure [--no-fail] [--level <pipeline|job>] [--measures]
 ```
 
 For example:
 
 ```bash
-datadog-ci measure --level job --metrics binary.size:1024
+datadog-ci measure --level job --measures binary.size:1024
 ```
 
-- `--level` Has to be one of `[pipeline, job]`. It will determine in what span the metrics will be added. If pipeline
-  is selected then the metrics will be added to the pipeline trace span. If job is selected it will be added to the
+- `--level` Has to be one of `[pipeline, job]`. It will determine in what span the measures will be added. If pipeline
+  is selected then the measures will be added to the pipeline trace span. If job is selected it will be added to the
   span for the currently running job.
-- `--no-fail` (default: `false`) will prevent the metric command from failing if there are issues submitting the data.
-- `--measures` is an array of key value pairs of the shape `key:value`. This will be the metrics added to the pipeline or job span.
-  The `value` must be a number.
+- `--no-fail` (default: `false`) will prevent the measure command from failing if there are issues submitting the data.
+- `--measures` is an array of key value pairs of the shape `key:value`. This will be the measures added to the pipeline or job span.
+  The `value` must be a number
 
 ### Environment variables
 
