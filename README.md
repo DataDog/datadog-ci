@@ -68,7 +68,7 @@ See each command's linked README for more details, or click on [📚](https://do
 
 #### `measure`
 
-- Add [measures](src/commands/measure) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
+- Add [measures](src/commands/measure) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `react-native`
 - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
@@ -93,7 +93,7 @@ See each command's linked README for more details, or click on [📚](https://do
 - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [📚](https://docs.datadoghq.com/mobile_app_testing/)
 
 #### `tag`
-- Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/)
+- Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `trace`
 - Add [custom commands](src/commands/trace) to a CI Visibility Pipeline in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
