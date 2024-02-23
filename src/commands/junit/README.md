@@ -24,12 +24,12 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all spans.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
-- `--metrics` is an array of key numerical value pairs of the shape `key:123`. This will set global metrics applied to all spans.
-  - The resulting dictionary will be merged with whatever is in the `DD_METRICS` environment variable. If a `key` appears both in `--metrics` and `DD_METRICS`, whatever value is in `DD_METRICS` will take precedence.
+- `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all spans.
+  - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `--report-tags` is an array of key value pairs like the `--tags` argument, but the tags are only applied to the session instead of to every test.
   - The resulting dictionary will NOT be merged with `DD_TAGS`.
-- `--report-metrics` is an array of key numerical value pairs like the `--metrics` argument, but the metrics are only applied to the session instead of to every test.
-  - The resulting dictionary will NOT be merged with `DD_METRICS`.
+- `--report-measures` is an array of key numerical value pairs like the `--measures` argument, but the measures are only applied to the session instead of to every test.
+  - The resulting dictionary will NOT be merged with `DD_MEASURES`.
 - `--env` (default: `DD_ENV` env var) is a string that represents the environment where you want your tests to appear in.
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
@@ -47,8 +47,8 @@ Additionally you might configure the `junit` command with environment variables:
 - `DD_SERVICE`: if you haven't specified a service through `--service` you might do it with this env var.
 - `DD_TAGS`: set global tags applied to all test spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
-- `DD_METRICS`: set global numerical tags applied to all test spans. The format must be `key1:123,key2:321`.
-  - The resulting dictionary will be merged with whatever is in the `--metrics` parameter. If a `key` appears both in `--metrics` and `DD_METRICS`, whatever value is in `DD_METRICS` will take precedence.
+- `DD_MEASURES`: set global numerical tags applied to all test spans. The format must be `key1:123,key2:321`.
+  - The resulting dictionary will be merged with whatever is in the `--measures` parameter. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 - `DD_CIVISIBILITY_LOGS_ENABLED`: it will enable collecting logs from the content in the XML reports.
 - `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
