@@ -54,6 +54,6 @@ Tags sent
 
 Additional helpful documentation, links, and articles:
 
-- [Learn about Adding Custom Tags and Measures to Pipeline Traces][1]
+- [Learn about Adding Custom Tags and Metrics to Pipeline Traces][1]
 
-[1]: https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/
+[1]: https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_metrics/
