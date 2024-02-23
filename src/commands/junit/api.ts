@@ -31,16 +31,16 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
     fileName = 'default_file_name'
   }
 
-  const reportTagsAndMeasures: Record<string, any> = {
+  const reportTagsAndMetrics: Record<string, any> = {
     tags: jUnitXML.reportTags,
-    measures: jUnitXML.reportMeasures,
+    metrics: jUnitXML.reportMetrics,
   }
 
   const custom: Record<string, any> = {
     metadata: jUnitXML.spanTags,
     tags: jUnitXML.customTags,
-    metrics: jUnitXML.customMeasures,
-    session: reportTagsAndMeasures,
+    metrics: jUnitXML.customMetrics,
+    session: reportTagsAndMetrics,
     '_dd.cireport_version': '3',
     '_dd.hostname': jUnitXML.hostname,
     '_dd.report_name': fileName,

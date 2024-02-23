@@ -7,9 +7,9 @@ export interface Payload {
   logsEnabled: boolean
   spanTags: SpanTags
   customTags: Record<string, string>
-  customMeasures: Record<string, number>
+  customMetrics: Record<string, number>
   reportTags: Record<string, string>
-  reportMeasures: Record<string, number>
+  reportMetrics: Record<string, number>
   xmlPath: string
   xpathTags?: Record<string, string>
 }

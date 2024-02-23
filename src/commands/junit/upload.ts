@@ -37,7 +37,6 @@ import {
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderUpload,
-  renderDeprecatedMention,
 } from './renderer'
 import {isFile} from './utils'
 
@@ -83,8 +82,8 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
       ],
       [
-        'Upload all jUnit XML test report files in current directory and add extra measures globally',
-        'datadog-ci junit upload --service my-service --measures key1:123 --measures key2:321 .',
+        'Upload all jUnit XML test report files in current directory and add extra metrics globally',
+        'datadog-ci junit upload --service my-service --metrics key1:123 --metrics key2:321 .',
       ],
       [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
@@ -119,13 +118,11 @@ export class UploadJUnitXMLCommand extends Command {
     validator: t.isBoolean(),
   })
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private metrics = Option.Array('--metrics', {hidden: true})
-  private measures = Option.Array('--measures')
+  private metrics = Option.Array('--metrics')
   private service = Option.String('--service', {env: 'DD_SERVICE'})
   private tags = Option.Array('--tags')
   private reportTags = Option.Array('--report-tags')
-  private reportMetrics = Option.Array('--report-metrics', {hidden: true})
-  private reportMeasures = Option.Array('--report-measures')
+  private reportMetrics = Option.Array('--report-metrics')
   private rawXPathTags = Option.Array('--xpath-tag')
   private gitRepositoryURL = Option.String('--git-repository-url')
   private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {validator: t.isBoolean()})
@@ -135,7 +132,6 @@ export class UploadJUnitXMLCommand extends Command {
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
     envVarMetrics: process.env.DD_METRICS,
-    envVarMeasures: process.env.DD_MEASURES,
   }
 
   private xpathTags?: Record<string, string>
@@ -176,16 +172,10 @@ export class UploadJUnitXMLCommand extends Command {
 
     const spanTags = await this.getSpanTags()
     const customTags = this.getCustomTags()
-    const customMeasures = this.getCustomMeasures()
+    const customMetrics = this.getCustomMetrics()
     const reportTags = this.getReportTags()
-    const reportMeasures = this.getReportMeasures()
-    const payloads = await this.getMatchingJUnitXMLFiles(
-      spanTags,
-      customTags,
-      customMeasures,
-      reportTags,
-      reportMeasures
-    )
+    const reportMetrics = this.getReportMetrics()
+    const payloads = await this.getMatchingJUnitXMLFiles(spanTags, customTags, customMetrics, reportTags, reportMetrics)
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
@@ -264,9 +254,9 @@ export class UploadJUnitXMLCommand extends Command {
   private async getMatchingJUnitXMLFiles(
     spanTags: SpanTags,
     customTags: Record<string, string>,
-    customMeasures: Record<string, number>,
+    customMetrics: Record<string, number>,
     reportTags: Record<string, string>,
-    reportMeasures: Record<string, number>
+    reportMetrics: Record<string, number>
   ): Promise<Payload[]> {
     const jUnitXMLFiles = (this.basePaths || [])
       .reduce((acc: string[], basePath: string) => {
@@ -295,9 +285,9 @@ export class UploadJUnitXMLCommand extends Command {
       xpathTags: this.xpathTags,
       spanTags,
       customTags,
-      customMeasures,
+      customMetrics,
       reportTags,
-      reportMeasures,
+      reportMetrics,
       xmlPath: jUnitXMLFilePath,
     }))
   }
@@ -326,25 +316,13 @@ export class UploadJUnitXMLCommand extends Command {
     }
   }
 
-  private getCustomMeasures(): Record<string, number> {
+  private getCustomMetrics(): Record<string, number> {
     const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
-    const envVarMeasures = this.config.envVarMeasures ? parseMetrics(this.config.envVarMeasures.split(',')) : {}
     const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
-    const cliMeasures = this.measures ? parseMetrics(this.measures) : {}
-
-    // We have renamed "metrics" to "measures", but we will still support the old names for now.
-    if (this.metrics) {
-      this.context.stdout.write(renderDeprecatedMention('--metrics', '--measures', 'option'))
-    }
-    if (this.config.envVarMetrics) {
-      this.context.stdout.write(renderDeprecatedMention('DD_METRICS', 'DD_MEASURES', 'environment variable'))
-    }
 
     return {
       ...cliMetrics,
-      ...cliMeasures,
       ...envVarMetrics,
-      ...envVarMeasures,
     }
   }
 
@@ -352,19 +330,8 @@ export class UploadJUnitXMLCommand extends Command {
     return this.reportTags ? parseTags(this.reportTags) : {}
   }
 
-  private getReportMeasures(): Record<string, number> {
-    const cliMetrics = this.reportMetrics ? parseMetrics(this.reportMetrics) : {}
-    const cliMeasures = this.reportMeasures ? parseMetrics(this.reportMeasures) : {}
-
-    // We have renamed "metrics" to "measures", but we will still support the old names for now.
-    if (this.reportMetrics) {
-      this.context.stdout.write(renderDeprecatedMention('--report-metrics', '--report-measures', 'option'))
-    }
-
-    return {
-      ...cliMetrics,
-      ...cliMeasures,
-    }
+  private getReportMetrics(): Record<string, number> {
+    return this.reportMetrics ? parseMetrics(this.reportMetrics) : {}
   }
 
   private async uploadJUnitXML(api: APIHelper, jUnitXML: Payload) {
