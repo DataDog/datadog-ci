@@ -6,7 +6,7 @@ const configuration = client.createConfiguration();
 const apiInstance = new v2.CIVisibilityTestsApi(configuration);
 
 const params = {
-  filterQuery: `test_level:test @test.service:${process.env.DD_SERVICE} @git.commit.sha:${process.env.GITHUB_SHA} ${process.argv[2] || ''}`,
+  filterQuery: `@test.service:${process.env.DD_SERVICE} @git.commit.sha:${process.env.GITHUB_SHA} ${process.argv[2] || ''}`,
   filterFrom: new Date(new Date().getTime() + -300 * 1000), // Last 5 minutes
   filterTo: new Date(),
   pageLimit: 5,

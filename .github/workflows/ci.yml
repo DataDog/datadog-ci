@@ -88,14 +88,26 @@ jobs:
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
-      - name: Run junit upload test
+      - name: Run junit upload test (test level with measures)
         run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --measures key1:20
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried
+      - name: Check that test data can be queried (test level with measures)
         run: |
           yarn add @datadog/datadog-api-client
-          yarn check-junit-upload '@key1:20'
+          yarn check-junit-upload 'test_level:test @key1:20'
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          DD_SERVICE: datadog-ci-e2e-tests-junit
+      - name: Run junit upload test (session level with measures)
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --report-measures key1:20
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Check that test data can be queried (session level with measures)
+        run: |
+          yarn add @datadog/datadog-api-client
+          yarn check-junit-upload 'test_level:session @key1:20'
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
