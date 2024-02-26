@@ -97,7 +97,7 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn check-junit-upload
         env:
-          EXTRA_QUERY_FILTER: key1:20
+          EXTRA_QUERY_FILTER: '@key1:20'
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -110,7 +110,7 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn check-junit-upload
         env:
-          EXTRA_QUERY_FILTER: key2:40
+          EXTRA_QUERY_FILTER: '@key2:40'
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
