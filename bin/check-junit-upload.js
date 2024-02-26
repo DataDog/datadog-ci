@@ -16,11 +16,12 @@ const CHECK_INTERVAL_SECONDS = 10
 const MAX_NUM_ATTEMPTS = 10
 
 function getTestData (extraFilter) {
-  console.log(`🔎 Querying CI Visibility tests with ${params.filterQuery}.`)
+  const finalFilterQuery = `${params.filterQuery} ${extraFilter}`
+  console.log(`🔎 Querying CI Visibility tests with ${finalFilterQuery}.`)
   return apiInstance
     .listCIAppTestEvents({
       ...params,
-      filterQuery: `${params.filterQuery} ${extraFilter}`,
+      filterQuery: `${finalFilterQuery}`,
     })
     .then(data => data.data)
     .catch(error => console.error(error))
