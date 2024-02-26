@@ -35,7 +35,7 @@ async function checkJunitUpload (testLevel, extraFilter) {
   let isSuccess = false
   let data = []
   while (numAttempts++ < MAX_NUM_ATTEMPTS && !isSuccess) {
-    data = await getTestData(extraFilter)
+    data = await getTestData(extraFilter + `test_level:${testLevel}`)
     if (data.length > 0) {
       isSuccess = true
     } else {
@@ -55,5 +55,5 @@ async function checkJunitUpload (testLevel, extraFilter) {
   }
 }
 
-checkJunitUpload("test", process.argv[2] || '')
-checkJunitUpload("session", process.argv[2] || '')
+checkJunitUpload("test", process.env.EXTRA_QUERY_FILTER)
+checkJunitUpload("session", process.env.EXTRA_QUERY_FILTER)
