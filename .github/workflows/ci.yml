@@ -89,7 +89,7 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
       - name: Run junit upload test (measures)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --measures key1:20 --report-measures key1:20
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --measures testmeasure1:20 --report-measures sessionmeasure1:40
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (measures)
@@ -97,12 +97,13 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn check-junit-upload
         env:
-          EXTRA_QUERY_FILTER: '@key1:20'
+          EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
+          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
       - name: Run junit upload test (metrics)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --metrics key2:40 --report-metrics key2:40
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --metrics testmeasure2:60 --report-metrics sessionmeasure2:80
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (metrics)
@@ -110,7 +111,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn check-junit-upload
         env:
-          EXTRA_QUERY_FILTER: '@key2:40'
+          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
+          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit

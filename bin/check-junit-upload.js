@@ -56,5 +56,5 @@ async function checkJunitUpload (testLevel, extraFilter) {
   }
 }
 
-checkJunitUpload("test", process.env.EXTRA_QUERY_FILTER)
-checkJunitUpload("session", process.env.EXTRA_QUERY_FILTER)
+checkJunitUpload("test", process.env.EXTRA_SESSION_QUERY_FILTER)
+checkJunitUpload("session", process.env.EXTRA_TEST_QUERY_FILTER)
