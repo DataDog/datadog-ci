@@ -76,7 +76,7 @@ export class UploadCommand extends Command {
     if (!this.config.apiKey) {
       this.logger.error(
         renderConfigurationError(
-          new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment`)
+          new InvalidConfigurationError(`Missing ${chalk.bold('DD_API_KEY')} in your environment`)
         )
       )
 
@@ -88,6 +88,7 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
       datadogSite: process.env.DATADOG_SITE,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',

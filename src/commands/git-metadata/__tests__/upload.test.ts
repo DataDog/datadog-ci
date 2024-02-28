@@ -11,7 +11,7 @@ describe('execute', () => {
     const cli = makeCli()
     const context = createMockContext()
     if (apiKey !== '') {
-      process.env = {DATADOG_API_KEY: apiKey}
+      process.env = {DD_API_KEY: apiKey}
     } else {
       process.env = {}
     }
@@ -32,7 +32,7 @@ describe('execute', () => {
     const {code, context} = await runCLI('')
     const output = context.stdout.toString().split(os.EOL)
     output.reverse()
-    expect(output[1]).toContain('Missing DATADOG_API_KEY in your environment')
+    expect(output[1]).toContain('Missing DD_API_KEY in your environment')
     expect(code).toBe(1)
   })
 })
