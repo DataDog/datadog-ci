@@ -516,16 +516,17 @@ describe('run-test', () => {
     })
   })
 
-  describe('getTestsList', () => {
+  describe('getFinalVersionOfTestsFromCi', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
     })
 
+    const startUrl = 'fakeUrl'
     const conf1 = {
-      tests: [{config: {}, id: 'abc-def-ghi'}],
+      tests: [{config: {deviceIds: ['chrome.laptop_large']}, id: 'abc-def-ghi'}],
     }
     const conf2 = {
-      tests: [{config: {}, id: 'jkl-mno-pqr'}],
+      tests: [{config: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pqr'}],
     }
     const fakeSuites = [
       {
@@ -537,7 +538,6 @@ describe('run-test', () => {
         name: 'Suite 2',
       },
     ]
-    const startUrl = 'fakeUrl'
     const fakeApi = {
       searchTests: () => ({
         tests: [
@@ -548,22 +548,54 @@ describe('run-test', () => {
       }),
     } as any
 
-    test('should find all tests and extend global config', async () => {
+    test('should extend global config and execute all tests from Test Config when no publicIds were defined', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const configOverride = {startUrl}
 
       await expect(
-        runTests.getTestsList(fakeApi, {...ciConfig, global: configOverride}, mockReporter)
+        runTests.getFinalVersionOfTestsFromCi(
+          fakeApi,
+          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1']},
+          mockReporter
+        )
       ).resolves.toEqual([
         {
-          config: {startUrl},
+          config: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
           id: 'abc-def-ghi',
           suite: 'Suite 1',
         },
         {
-          config: {startUrl},
+          config: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
           id: 'jkl-mno-pqr',
           suite: 'Suite 2',
+        },
+      ])
+    })
+
+    test('should override and execute only publicIds that were defined in the global config', async () => {
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const configOverride = {startUrl}
+
+      await expect(
+        runTests.getFinalVersionOfTestsFromCi(
+          fakeApi,
+          {
+            ...ciConfig,
+            global: configOverride,
+            locations: ['aws:ap-northeast-1'],
+            publicIds: ['abc-def-ghi', '123-456-789'],
+          },
+          mockReporter
+        )
+      ).resolves.toEqual([
+        {
+          config: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
+          id: 'abc-def-ghi',
+          suite: 'Suite 1',
+        },
+        {
+          config: {startUrl, locations: ['aws:ap-northeast-1']},
+          id: '123-456-789',
         },
       ])
     })
@@ -574,16 +606,34 @@ describe('run-test', () => {
       const searchQuery = 'fake search'
 
       await expect(
-        runTests.getTestsList(
+        runTests.getFinalVersionOfTestsFromCi(
           fakeApi,
-          {...ciConfig, global: configOverride, testSearchQuery: searchQuery},
+          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1'], testSearchQuery: searchQuery},
+          mockReporter
+        )
+      ).resolves.toEqual([
+        {
+          config: {startUrl, locations: ['aws:ap-northeast-1']},
+          id: 'stu-vwx-yza',
+          suite: 'Query: fake search',
+        },
+      ])
+    })
+
+    test('should not use testSearchQeury if global config has defined public_ids', async () => {
+      const configOverride = {startUrl}
+      const searchQuery = 'fake search'
+
+      await expect(
+        runTests.getFinalVersionOfTestsFromCi(
+          fakeApi,
+          {...ciConfig, global: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
           mockReporter
         )
       ).resolves.toEqual([
         {
           config: {startUrl},
-          id: 'stu-vwx-yza',
-          suite: 'Query: fake search',
+          id: 'abc-def-ghi',
         },
       ])
     })
@@ -597,7 +647,7 @@ describe('run-test', () => {
 
       const searchQuery = 'fake search'
 
-      await runTests.getTestsList(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
+      await runTests.getFinalVersionOfTestsFromCi(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
       expect(mockReporter.error).toHaveBeenCalledWith(
         `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
       )
@@ -608,7 +658,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getTestsList(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
+      await runTests.getFinalVersionOfTestsFromCi(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
@@ -619,15 +669,15 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files: string[] = []
 
-      const tests = await runTests.getTestsList(
+      const tests = await runTests.getFinalVersionOfTestsFromCi(
         fakeApi,
         {...ciConfig, global: configOverride, files},
         mockReporter,
         fakeSuites
       )
       expect(tests).toEqual([
-        {config: {startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
-        {config: {startUrl}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+        {config: {deviceIds: ['chrome.laptop_large'], startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
+        {config: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
       ])
       expect(getSuitesMock).not.toHaveBeenCalled()
     })
@@ -640,15 +690,15 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['glob']
 
-      const tests = await runTests.getTestsList(
+      const tests = await runTests.getFinalVersionOfTestsFromCi(
         fakeApi,
         {...ciConfig, global: configOverride, files},
         mockReporter,
         userSuites
       )
       expect(tests).toEqual([
-        {config: {startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
-        {config: {startUrl}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+        {config: {deviceIds: ['chrome.laptop_large'], startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
+        {config: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
       ])
       expect(getSuitesMock).toHaveBeenCalled()
     })
