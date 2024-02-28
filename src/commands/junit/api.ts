@@ -33,13 +33,13 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
 
   const reportTagsAndMetrics: Record<string, any> = {
     tags: jUnitXML.reportTags,
-    metrics: jUnitXML.reportMetrics,
+    metrics: jUnitXML.reportMeasures, // We can't change `metrics` to `measures` because the backend only accepts `metrics`.
   }
 
   const custom: Record<string, any> = {
     metadata: jUnitXML.spanTags,
     tags: jUnitXML.customTags,
-    metrics: jUnitXML.customMetrics,
+    metrics: jUnitXML.customMeasures,
     session: reportTagsAndMetrics,
     '_dd.cireport_version': '3',
     '_dd.hostname': jUnitXML.hostname,
