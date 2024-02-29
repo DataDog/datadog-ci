@@ -516,7 +516,7 @@ describe('run-test', () => {
     })
   })
 
-  describe('getFinalVersionOfTestsFromCi', () => {
+  describe('getTriggerConfigs', () => {
     beforeEach(() => {
       jest.restoreAllMocks()
     })
@@ -553,7 +553,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
 
       await expect(
-        runTests.getFinalVersionOfTestsFromCi(
+        runTests.getTriggerConfigs(
           fakeApi,
           {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1']},
           mockReporter
@@ -577,7 +577,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
 
       await expect(
-        runTests.getFinalVersionOfTestsFromCi(
+        runTests.getTriggerConfigs(
           fakeApi,
           {
             ...ciConfig,
@@ -606,7 +606,7 @@ describe('run-test', () => {
       const searchQuery = 'fake search'
 
       await expect(
-        runTests.getFinalVersionOfTestsFromCi(
+        runTests.getTriggerConfigs(
           fakeApi,
           {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1'], testSearchQuery: searchQuery},
           mockReporter
@@ -625,7 +625,7 @@ describe('run-test', () => {
       const searchQuery = 'fake search'
 
       await expect(
-        runTests.getFinalVersionOfTestsFromCi(
+        runTests.getTriggerConfigs(
           fakeApi,
           {...ciConfig, global: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
           mockReporter
@@ -647,7 +647,7 @@ describe('run-test', () => {
 
       const searchQuery = 'fake search'
 
-      await runTests.getFinalVersionOfTestsFromCi(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
+      await runTests.getTriggerConfigs(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
       expect(mockReporter.error).toHaveBeenCalledWith(
         `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
       )
@@ -658,7 +658,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getFinalVersionOfTestsFromCi(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
+      await runTests.getTriggerConfigs(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
@@ -669,7 +669,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files: string[] = []
 
-      const tests = await runTests.getFinalVersionOfTestsFromCi(
+      const tests = await runTests.getTriggerConfigs(
         fakeApi,
         {...ciConfig, global: configOverride, files},
         mockReporter,
@@ -690,7 +690,7 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['glob']
 
-      const tests = await runTests.getFinalVersionOfTestsFromCi(
+      const tests = await runTests.getTriggerConfigs(
         fakeApi,
         {...ciConfig, global: configOverride, files},
         mockReporter,
