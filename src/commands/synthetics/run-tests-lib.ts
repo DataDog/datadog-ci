@@ -174,7 +174,7 @@ export const getFinalVersionOfTestsFromCi = async (
   reporter: MainReporter,
   suites?: Suite[]
 ) => {
-  let testConfig: TriggerConfig[]
+  let TestConfigs: TriggerConfig[]
   // TODO: Clean up locations as part of SYNTH-12989
   const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
 
@@ -205,13 +205,13 @@ export const getFinalVersionOfTestsFromCi = async (
   }
 
   try {
-    testConfig = await getTestConfig(config, reporter, suites)
+    TestConfigs = await getTestConfigs(config, reporter, suites)
   } catch (error) {
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
   if (!testsToTrigger.length) {
-    testsToTrigger = testConfig.map((test) => ({
+    testsToTrigger = TestConfigs.map((test) => ({
       ...test,
       config: {
         ...config.global,
@@ -220,7 +220,7 @@ export const getFinalVersionOfTestsFromCi = async (
       },
     }))
   } else {
-    testsToTrigger = overrideWithTestConfig(testsToTrigger, testConfig)
+    testsToTrigger = overrideWithTestConfigs(testsToTrigger, TestConfigs)
   }
 
   if (!testsToTrigger.length) {
@@ -242,7 +242,7 @@ const getTestsFromSearchQuery = async (api: APIHelper, config: RunTestsCommandCo
   return testsToTriggerBySearchQuery
 }
 
-const getTestConfig = async (
+const getTestConfigs = async (
   config: RunTestsCommandConfig,
   reporter: MainReporter,
   suites: Suite[] = []
@@ -253,22 +253,22 @@ const getTestConfig = async (
 
   suites.push(...suitesFromFiles)
 
-  const testsFromTestConfig = suites
+  const TestConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
-        config: {...test.config},
+        config: test.config,
         id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
       }))
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
-  return testsFromTestConfig
+  return TestConfigs
 }
 
-const overrideWithTestConfig = (testsToTrigger: TriggerConfig[], testConfig: TriggerConfig[]): TriggerConfig[] => {
+const overrideWithTestConfigs = (testsToTrigger: TriggerConfig[], TestConfigs: TriggerConfig[]): TriggerConfig[] => {
   return testsToTrigger.map((testToTrigger) => {
-    const matchingTest = testConfig.find((test) => test.id === testToTrigger.id)
+    const matchingTest = TestConfigs.find((test) => test.id === testToTrigger.id)
     if (matchingTest) {
       return {
         ...testToTrigger,

@@ -620,7 +620,7 @@ describe('run-test', () => {
       ])
     })
 
-    test('should not use testSearchQeury if global config has defined public_ids', async () => {
+    test('should not use testSearchQuery if global config has defined public_ids', async () => {
       const configOverride = {startUrl}
       const searchQuery = 'fake search'
 
