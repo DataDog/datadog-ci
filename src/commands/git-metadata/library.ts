@@ -1,10 +1,14 @@
+import {SimpleGit} from 'simple-git'
+
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {RequestBuilder} from '../../helpers/interfaces'
+import {Logger, LogLevel} from '../../helpers/logger'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
 import {getCommitInfo, newSimpleGit} from './git'
+import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
@@ -33,21 +37,41 @@ export const getGitCommitInfo = async (filterAndFormatGitRepoUrl = true): Promis
   return [gitRemote ?? '', payload.hash]
 }
 
-// UploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
+// uploadGitCommitHash uploads local git metadata and returns the current [repositoryURL, commitHash].
 // The current repositoryURL can be overridden by specifying the 'repositoryURL' arg.
 export const uploadGitCommitHash = async (
   apiKey: string,
   datadogSite: string,
   repositoryURL?: string
 ): Promise<[string, string]> => {
+  const simpleGit = await newSimpleGit()
+  const payload = await getCommitInfo(simpleGit, repositoryURL)
+
+  return Promise.all([
+    syncGitDB(simpleGit, apiKey, datadogSite, payload.remote),
+    uploadToSrcmapTrack(apiKey, datadogSite, payload),
+  ]).then(() => [payload.remote, payload.hash])
+}
+
+const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: string, repositoryURL: string) => {
+  // no-op logger
+  const log = new Logger((s: string) => {}, LogLevel.INFO)
+
+  const requestBuilder = getRequestBuilder({
+    apiKey,
+    baseUrl: 'https://api.' + datadogSite,
+  })
+
+  await uploadToGitDB(log, requestBuilder, simpleGit, false, repositoryURL)
+}
+
+// uploadToSrcmapTrack uploads the payload with tracked files to the sourcemap intake
+// this will be deprecated in the future, as we're transitioning to GitDB
+const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload: CommitInfo) => {
   const apiKeyValidator = newApiKeyValidator({
     apiKey,
     datadogSite,
   })
-
-  const simpleGit = await newSimpleGit()
-  const payload = await getCommitInfo(simpleGit, repositoryURL)
-
   const requestBuilder = getRequestBuilder({
     apiKey,
     baseUrl: 'https://sourcemap-intake.' + datadogSite,
@@ -75,8 +99,6 @@ export const uploadGitCommitHash = async (
   if (status !== UploadStatus.Success) {
     throw new Error('Error uploading commit information.')
   }
-
-  return [payload.remote, payload.hash]
 }
 
 export const uploadRepository = (
