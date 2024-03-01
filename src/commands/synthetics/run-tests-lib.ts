@@ -67,7 +67,7 @@ export const executeTests = async (
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
-  if (!triggerConfigs.length) {
+  if (triggerConfigs.length === 0) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -182,25 +182,23 @@ export const getTriggerConfigs = async (
   reporter: MainReporter,
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
+  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and cli params
   const defaultTestConfigOverrides = config.global
   // TODO: Clean up locations as part of SYNTH-12989
   const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
-  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-  // Grab the list of publicIds of tests to trigger from config file/env variables/CLI params, search query or test config files
+  // Grab the test defined from the search query. Their config will contain the suite name, and the search query itself.
+  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
+
+  // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
   const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
   const testIdsFromTestConfigs = testsFromTestConfigs.map(({id}) => id)
 
+  // Take the list of tests from the first source that defines it, by order of precedence
   const testIdsToTrigger =
-    testIdsFromCli.length !== 0
-      ? testIdsFromCli
-      : testIdsFromSearchQuery.length !== 0
-      ? testIdsFromSearchQuery
-      : testIdsFromTestConfigs.length !== 0
-      ? testIdsFromTestConfigs
-      : []
+    [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map((id) => {
@@ -231,6 +229,10 @@ const getTestsFromSearchQuery = async (api: APIHelper, config: RunTestsCommandCo
     )
   }
 
+  if (testsToTriggerBySearchQuery.length === 0) {
+    throw new CiError('NO_TESTS_TO_RUN')
+  }
+
   return testsToTriggerBySearchQuery
 }
 
@@ -245,7 +247,7 @@ const getTestConfigs = async (
 
   suites.push(...suitesFromFiles)
 
-  const TestConfigs = suites
+  const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
         config: test.config,
@@ -255,7 +257,7 @@ const getTestConfigs = async (
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
-  return TestConfigs
+  return testConfigs
 }
 
 export const executeWithDetails = async (
