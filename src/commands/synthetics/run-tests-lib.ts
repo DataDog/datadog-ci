@@ -52,16 +52,8 @@ export const executeTests = async (
   summary: Summary
 }> => {
   const api = getApiHelper(config)
-
-  const publicIdsFromCli = config.publicIds.map((id) => ({
-    config: {
-      ...config.global,
-      ...(config.locations?.length ? {locations: config.locations} : {}),
-    },
-    id,
-  }))
-  let testsToTrigger: TriggerConfig[]
   let tunnel: Tunnel | undefined
+  let triggerConfigs: TriggerConfig[] = []
 
   const stopTunnel = async () => {
     if (tunnel) {
@@ -69,20 +61,13 @@ export const executeTests = async (
     }
   }
 
-  if (publicIdsFromCli.length) {
-    testsToTrigger = publicIdsFromCli
-  } else {
-    try {
-      testsToTrigger = await getTestsList(api, config, reporter, suites)
-    } catch (error) {
-      throw new CriticalError(
-        isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG',
-        error.message
-      )
-    }
+  try {
+    triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
+  } catch (error) {
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
-  if (!testsToTrigger.length) {
+  if (triggerConfigs.length === 0) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -96,7 +81,7 @@ export const executeTests = async (
     const triggerFromSearch = !!config.testSearchQuery
     testsToTriggerResult = await getTestsToTrigger(
       api,
-      testsToTrigger,
+      triggerConfigs,
       reporter,
       triggerFromSearch,
       config.failOnMissingTests,
@@ -152,7 +137,7 @@ export const executeTests = async (
   }
 
   try {
-    const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
@@ -191,53 +176,88 @@ const getTestListBySearchQuery = async (
     suite: `Query: ${testSearchQuery}`,
   }))
 }
-
-export const getTestsList = async (
+export const getTriggerConfigs = async (
   api: APIHelper,
   config: RunTestsCommandConfig,
   reporter: MainReporter,
-  suites: Suite[] = []
-) => {
-  // If "testSearchQuery" is provided, always default to running it.
-  if (config.testSearchQuery) {
-    const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
+  suites?: Suite[]
+): Promise<TriggerConfig[]> => {
+  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and cli params
+  const defaultTestConfigOverrides = config.global
+  // TODO: Clean up locations as part of SYNTH-12989
+  const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
+  const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-    if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
-      reporter.error(
-        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-      )
+  // Grab the test defined from the search query. Their config will contain the suite name, and the search query itself.
+  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
+
+  // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
+  const testIdsFromCli = config.publicIds
+  const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
+  const testIdsFromTestConfigs = testsFromTestConfigs.map(({id}) => id)
+
+  // Take the list of tests from the first source that defines it, by order of precedence
+  const testIdsToTrigger =
+    [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
+
+  // Create the overrides required for the list of tests to trigger
+  const triggerConfigs = testIdsToTrigger.map((id) => {
+    const testFromSearchQuery = testsFromSearchQuery.find((test) => test.id === id)
+    const testFromTestConfigs = testsFromTestConfigs.find((test) => test.id === id)
+
+    return {
+      id,
+      ...testFromSearchQuery,
+      ...testFromTestConfigs,
+      config: {
+        ...defaultTestConfigOverrides,
+        ...testConfigOverridesFromEnv,
+        ...testFromTestConfigs?.config,
+      },
     }
+  })
 
-    return testsToTriggerBySearchQuery
+  return triggerConfigs
+}
+
+const getTestsFromSearchQuery = async (api: APIHelper, config: RunTestsCommandConfig, reporter: MainReporter) => {
+  const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery || '')
+
+  if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
+    reporter.error(
+      `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
+    )
   }
 
+  if (testsToTriggerBySearchQuery.length === 0) {
+    throw new CiError('NO_TESTS_TO_RUN')
+  }
+
+  return testsToTriggerBySearchQuery
+}
+
+const getTestConfigs = async (
+  config: RunTestsCommandConfig,
+  reporter: MainReporter,
+  suites: Suite[] = []
+): Promise<TriggerConfig[]> => {
   const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 
   suites.push(...suitesFromFiles)
 
-  const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
-
-  const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
-    // {} < global < ENV < test file
-    ({
-      ...config.global,
-      ...configFromEnvironment,
-      ...test.config,
-    })
-
-  const testsToTrigger = suites
+  const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
-        config: overrideTestConfig(test),
+        config: test.config,
         id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
       }))
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
-  return testsToTrigger
+  return testConfigs
 }
 
 export const executeWithDetails = async (
