@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {TagCommand} from '../tag/tag'
 
-import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG, SERVICE_TAG} from './constants'
+import {CUSTOM_TAGS_TAG, ENV_TAG, IS_DEPLOYMENT_TAG, IS_ROLLBACK_TAG, REVISION_TAG, SERVICE_TAG, CONTAINS_DEPLOYMENT_TAG} from './constants'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
@@ -44,19 +44,31 @@ export class DeploymentMarkCommand extends Command {
   private tags = Option.Array('--tags')
 
   public async execute() {
-    const tagCommand = new TagCommand()
-    tagCommand.setLevel('job')
-    tagCommand.setTags(this.createDeploymentTags())
-    tagCommand.context = this.context
+    const tagJobCommand = new TagCommand()
+    tagJobCommand.setLevel('job')
+    tagJobCommand.setTags(this.createJobDeploymentTags())
+    tagJobCommand.context = this.context
+
+    const tagPipelineCommand = new TagCommand()
+    tagPipelineCommand.setLevel('pipeline')
+    tagPipelineCommand.setTags(this.createPipelineDeploymentTags())
+    tagPipelineCommand.context = this.context
 
     if (this.noFail) {
-      tagCommand.setNoFail(true)
+      tagJobCommand.setNoFail(true)
+      tagPipelineCommand.setNoFail(true)
     }
 
-    return tagCommand.execute()
+    const tagJobCommandExitCode = await tagJobCommand.execute()
+
+    if (tagJobCommandExitCode === 0) {
+      return tagPipelineCommand.execute()
+    } else {
+      return tagJobCommandExitCode
+    }
   }
 
-  public createDeploymentTags(): string[] {
+  public createJobDeploymentTags(): string[] {
     const tags = [IS_DEPLOYMENT_TAG]
 
     if (this.env) {
@@ -80,5 +92,9 @@ export class DeploymentMarkCommand extends Command {
     }
 
     return tags
+  }
+
+  public createPipelineDeploymentTags(): string[] {
+    return [CONTAINS_DEPLOYMENT_TAG]
   }
 }
