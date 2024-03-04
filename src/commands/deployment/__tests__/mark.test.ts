@@ -39,9 +39,7 @@ describe('mark', () => {
     })
     test('should add contains deployment tag to pipeline', () => {
       const command = createCommand(DeploymentMarkCommand)
-      const expectedPipelineTags = [
-        'ci.contains_deployment:true',
-      ]
+      const expectedPipelineTags = ['ci.contains_deployment:true']
       expect(command.createPipelineDeploymentTags()).toEqual(expectedPipelineTags)
     })
   })
