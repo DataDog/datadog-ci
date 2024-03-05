@@ -8,25 +8,25 @@ describe('mark', () => {
       const command = createCommand(DeploymentMarkCommand)
       command['isRollback'] = true
       const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.is_rollback:true']
-      expect(command.createDeploymentTags()).toEqual(expectedTags)
+      expect(command.createJobDeploymentTags()).toEqual(expectedTags)
     })
     test('should add env if present', () => {
       const command = createCommand(DeploymentMarkCommand)
       command['env'] = 'test'
       const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.env:test']
-      expect(command.createDeploymentTags()).toEqual(expectedTags)
+      expect(command.createJobDeploymentTags()).toEqual(expectedTags)
     })
     test('should add revision if present', () => {
       const command = createCommand(DeploymentMarkCommand)
       command['revision'] = '1.0.0'
       const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.revision:1.0.0']
-      expect(command.createDeploymentTags()).toEqual(expectedTags)
+      expect(command.createJobDeploymentTags()).toEqual(expectedTags)
     })
     test('should add service if present', () => {
       const command = createCommand(DeploymentMarkCommand)
       command['service'] = 'payment-service'
       const expectedTags = ['datadog_cd_visibility.is_deployment:true', 'datadog_cd_visibility.service:payment-service']
-      expect(command.createDeploymentTags()).toEqual(expectedTags)
+      expect(command.createJobDeploymentTags()).toEqual(expectedTags)
     })
     test('should add custom tags if present', () => {
       const command = createCommand(DeploymentMarkCommand)
@@ -35,7 +35,12 @@ describe('mark', () => {
         'datadog_cd_visibility.is_deployment:true',
         'datadog_cd_visibility.custom_tags:team:backend,image:my_image',
       ]
-      expect(command.createDeploymentTags()).toEqual(expectedTags)
+      expect(command.createJobDeploymentTags()).toEqual(expectedTags)
+    })
+    test('should add contains deployment tag to pipeline', () => {
+      const command = createCommand(DeploymentMarkCommand)
+      const expectedPipelineTags = ['ci.contains_deployment:true']
+      expect(command.createPipelineDeploymentTags()).toEqual(expectedPipelineTags)
     })
   })
 })
