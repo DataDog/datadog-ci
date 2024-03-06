@@ -3,7 +3,7 @@
 
 # Commands (grouped by product)
 
-## CI Visibility
+## CI Visibility (label: ci-visibility)
 src/commands/junit         @DataDog/ci-app-libraries
 src/commands/gate          @DataDog/ci-app-libraries
 src/commands/metric        @DataDog/ci-app-libraries
@@ -12,26 +12,26 @@ src/commands/trace         @DataDog/ci-app-libraries
 src/commands/dora          @DataDog/ci-app-libraries
 src/commands/deployment    @DataDog/ci-app-libraries
 
-## Static Analysis
+## Static Analysis (label: static-analysis)
 src/commands/sarif   @DataDog/static-analysis-core
 src/commands/sbom    @DataDog/static-analysis-core
 
-## RUM
+## RUM (label: rum)
 src/commands/dsyms            @DataDog/rum-mobile
 src/commands/flutter-symbols  @DataDog/rum-mobile
 src/commands/unity-symbols    @Datadog/rum-mobile
 src/commands/react-native     @DataDog/rum-mobile
 src/commands/sourcemaps       @DataDog/rum-browser
 
-## Serverless
+## Serverless (label: serverless)
 src/commands/lambda         @DataDog/serverless
 src/commands/stepfunctions  @DataDog/serverless
 src/commands/cloud-run      @DataDog/serverless
 
-## Source Code Integration
+## Source Code Integration (label: source-code-integration)
 src/commands/git-metadata  @DataDog/source-code-integration
 
-## Synthetics
+## Synthetics (label: synthetics)
 src/commands/synthetics  @DataDog/synthetics-ct
 
 
