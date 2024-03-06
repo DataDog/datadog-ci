@@ -151,7 +151,7 @@ To run `datadog-ci` from a container, you can use the `datadog/ci` image availab
 docker pull datadog/ci
 ```
 
-This example demonstrates how to run a command using the container and passing in the API and APP keys:
+This example demonstrates how to run a command using the container and passing in the API and App keys:
 
 ```
 export DD_API_KEY=$(cat /secret/dd_api_key)
