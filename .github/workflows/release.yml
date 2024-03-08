@@ -92,6 +92,7 @@ jobs:
 
   build-binary-ubuntu:
     runs-on: ubuntu-latest
+    needs: create-draft-release
     steps:
       - uses: actions/checkout@v4
       - name: Install node
@@ -110,14 +111,23 @@ jobs:
           rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
-      - name: Upload binaries to GitHub release
-        uses: shogo82148/actions-upload-release-asset@v1
+      - name: Upload release asset
+        uses: actions/github-script@v7
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./datadog-ci_linux-x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_linux-x64',
+              data: await fs.readFile('./datadog-ci_linux-x64'),
+            })
 
   build-binary-windows:
     runs-on: windows-latest
+    needs: create-draft-release
     steps:
       - uses: actions/checkout@v4
       - name: Install node
@@ -136,14 +146,23 @@ jobs:
           rm src -r
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
-      - name: Upload binaries to GitHub release
-        uses: shogo82148/actions-upload-release-asset@v1
+      - name: Upload release asset
+        uses: actions/github-script@v7
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./datadog-ci_win-x64.exe
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_win-x64',
+              data: await fs.readFile('./datadog-ci_win-x64'),
+            })
 
   build-binary-macos:
     runs-on: macos-latest
+    needs: create-draft-release
     steps:
       - uses: actions/checkout@v4
       - name: Install node
@@ -162,8 +181,16 @@ jobs:
           rm -rf src
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
-      - name: Upload binaries to GitHub release
-        uses: shogo82148/actions-upload-release-asset@v1
+      - name: Upload release asset
+        uses: actions/github-script@v7
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./datadog-ci_darwin-x64
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_darwin-x64',
+              data: await fs.readFile('./datadog-ci_darwin-x64'),
+            })
