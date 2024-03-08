@@ -1,4 +1,4 @@
-name: Publish package on NPM
+name: Publish package on NPM (pre-release)
 on:
   release:
     types: [prereleased]
