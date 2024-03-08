@@ -6,6 +6,47 @@ on:
       - v* # Any version tag
 
 jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.draft-release.outputs.result }}
+    steps:
+      - name: Create a draft release
+        uses: actions/github-script@v7
+        id: draft-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ github.ref_name }}',
+            })
+
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ github.ref_name }}',
+              name: '${{ github.ref_name }}',
+              draft: true,
+              prerelease: false,
+              body: releaseNotes.body,
+            })
+
+            await core.summary
+              .addHeading('Draft release created')
+              .addRaw('Find it here: ')
+              .addLink('${{ github.ref_name }} (draft)', release.html_url)
+              .addBreak()
+              .addBreak()
+              .addRaw('Copy the release notes below, and paste them inside your release PR.')
+              .addBreak()
+              .addBreak()
+              .addCodeBlock(releaseNotes.body, 'markdown')
+              .write()
+
+            return release.id
+
   build:
     runs-on: ubuntu-latest
     steps:
