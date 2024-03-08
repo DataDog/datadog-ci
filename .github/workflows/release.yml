@@ -1,7 +1,10 @@
 name: Publish package on NPM
+
 on:
-  release:
-    types: [released]
+  push:
+    tags:
+      - v* # Any version tag
+
 jobs:
   build:
     runs-on: ubuntu-latest
