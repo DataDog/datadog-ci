@@ -47,49 +47,6 @@ jobs:
 
             return release.id
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '14'
-      - run: yarn
-      - run: yarn npm publish
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
-
-  bump-ci-integrations:
-    name: Bump datadog-ci in integration
-    runs-on: ubuntu-latest
-    needs: build
-    strategy:
-      fail-fast: false
-      matrix:
-        integration:
-          - synthetics-ci-github-action
-          - datadog-ci-azure-devops
-          - synthetics-test-automation-circleci-orb
-          - synthetics-test-automation-bitrise-step-run-tests
-          - synthetics-test-automation-bitrise-step-upload-application
-    steps:
-      - name: Create bump datadog-ci PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.CROSS_REPOSITORY_GITHUB_TOKEN }}
-          script: |
-            const tagName = '${{ github.event.release.tag_name }}'.replace('v', '')
-
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: '${{ matrix.integration }}',
-              workflow_id: 'bump-datadog-ci.yml',
-              ref: 'main',
-              inputs: {
-                datadog_ci_version: tagName,
-              },
-            });
-
   build-binary-ubuntu:
     runs-on: ubuntu-latest
     needs: create-draft-release
@@ -193,4 +150,48 @@ jobs:
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_darwin-x64',
               data: await fs.readFile('./datadog-ci_darwin-x64'),
+            })
+
+  npm-publish:
+    runs-on: ubuntu-latest
+    needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '14'
+      - run: yarn
+      - run: yarn npm publish
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+
+  bump-ci-integrations:
+    name: Bump datadog-ci in integration
+    runs-on: ubuntu-latest
+    needs: npm-publish
+    strategy:
+      fail-fast: false
+      matrix:
+        integration:
+          - synthetics-ci-github-action
+          - datadog-ci-azure-devops
+          - synthetics-test-automation-circleci-orb
+          - synthetics-test-automation-bitrise-step-run-tests
+          - synthetics-test-automation-bitrise-step-upload-application
+    steps:
+      - name: Create bump datadog-ci PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CROSS_REPOSITORY_GITHUB_TOKEN }}
+          script: |
+            const tagName = '${{ github.event.release.tag_name }}'.replace('v', '')
+
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: '${{ matrix.integration }}',
+              workflow_id: 'bump-datadog-ci.yml',
+              ref: 'main',
+              inputs: {
+                datadog_ci_version: tagName,
+              },
             })
