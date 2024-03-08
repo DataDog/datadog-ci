@@ -152,9 +152,10 @@ jobs:
               data: await fs.readFile('./datadog-ci_darwin-x64'),
             })
 
+  # Requires an approval
   npm-publish:
     runs-on: ubuntu-latest
-    needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
+    environment: npm
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
