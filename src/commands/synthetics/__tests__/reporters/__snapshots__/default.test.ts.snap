@@ -34,7 +34,7 @@ exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI ru
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m
-  [1m[32m◂[39m[22m Successful result from previous CI run: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0002&from_ci=true[39m[22m
+  [1m[32m◀[39m[22m Successful result from previous CI run: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0002&from_ci=true[39m[22m
 
 [1m[32m✓[39m[22m [2m(edited) [22m[[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
   ⎋ Total duration: 123 ms - View test run details: [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1003&from_ci=true[39m[22m 

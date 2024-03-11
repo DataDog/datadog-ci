@@ -239,7 +239,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
   if (isResultSkippedBySelectiveRerun(execution)) {
     const resultUrl = getResultUrl(baseUrl, test, resultId)
 
-    const resultInfo = `  ${setColor('◂')} Successful result from previous CI run: ${chalk.dim.cyan(resultUrl)}`
+    const resultInfo = `  ${setColor('◀')} Successful result from previous CI run: ${chalk.dim.cyan(resultUrl)}`
     outputLines.push(resultInfo)
   } else {
     const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
