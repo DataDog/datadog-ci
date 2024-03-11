@@ -2,8 +2,6 @@ import path from 'path'
 
 import chalk from 'chalk'
 
-import {SpanTags} from '../../helpers/interfaces'
-
 import {getBaseUrl} from '../junit/utils'
 
 import {Payload} from './interfaces'
@@ -26,10 +24,29 @@ export const renderInvalidFile = (sarifReport: string, errorMessage: string) => 
   return fullStr
 }
 
-export const renderFailedUpload = (sarifReport: Payload, errorMessage: string) => {
+export const renderMissingSpan = (errorMessage: string) => {
+  const currentPath = `[${chalk.bold.dim(process.cwd())}]`
+
+  let fullStr = ''
+  fullStr += chalk.yellow(`${ICONS.WARNING}  Validation failed: ${errorMessage}.\n`)
+  fullStr += chalk.yellow(
+    `Upload attempted from ${currentPath}. Is this the directory for which this analysis is for?\n`
+  )
+  fullStr += chalk.yellow(`The upload must come from a directory with a ".git" directory.\n`)
+
+  return fullStr
+}
+
+export const renderFailedUpload = (sarifReport: Payload, error: any) => {
   const reportPath = `[${chalk.bold.dim(sarifReport.reportPath)}]`
 
-  return chalk.red(`${ICONS.FAILED} Failed upload SARIF report file ${reportPath}: ${errorMessage}\n`)
+  let fullStr = ''
+  fullStr += chalk.red(`${ICONS.FAILED} Failed upload SARIF report file ${reportPath}: ${error.message}\n`)
+  if (error?.response?.status) {
+    fullStr += chalk.red(`API status code: ${error.response.status}\n`)
+  }
+
+  return fullStr
 }
 
 export const renderRetriedUpload = (sarifReport: Payload, errorMessage: string, attempt: number) => {
@@ -38,13 +55,7 @@ export const renderRetriedUpload = (sarifReport: Payload, errorMessage: string, 
   return chalk.yellow(`[attempt ${attempt}] Retrying SARIF report upload ${sarifReportPath}: ${errorMessage}\n`)
 }
 
-export const renderSuccessfulCommand = (
-  fileCount: number,
-  duration: number,
-  spanTags: SpanTags,
-  service: string,
-  env?: string
-) => {
+export const renderSuccessfulCommand = (fileCount: number, duration: number) => {
   let fullStr = ''
   fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
   fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getBaseUrl()}ci/code-analysis\n`)
