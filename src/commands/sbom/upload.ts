@@ -97,7 +97,6 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-
     const validator: Ajv = getValidator()
 
     const startTimeMs = Date.now()
@@ -135,7 +134,7 @@ export class UploadSbomCommand extends Command {
       }
     }
 
-    const uploadTimeMs = (Date.now() - startTimeMs)  / 1000
+    const uploadTimeMs = (Date.now() - startTimeMs) / 1000
     this.context.stdout.write(renderSuccessfulCommand(this.basePaths.length, uploadTimeMs))
 
     return 0
