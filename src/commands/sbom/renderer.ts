@@ -31,7 +31,7 @@ export const renderMissingSpan = (errorMessage: string) => {
   let fullStr = ''
   fullStr += chalk.yellow(`${ICONS.WARNING}  Validation failed: ${errorMessage}.\n`)
   fullStr += chalk.yellow(
-    `Upload attempted from ${currentPath}. Is this the directory for which this analysis is for?\n`
+    `Upload attempted from ${currentPath}. Is this the directory for which this analysis was run?\n`
   )
   fullStr += chalk.yellow(`The upload must come from a directory with a ".git" directory.\n`)
 
