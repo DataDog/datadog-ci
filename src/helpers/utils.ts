@@ -34,7 +34,7 @@ export const getConfig = async (configPath: string) => {
   }
 }
 
-const resolveConfigPath = ({
+export const resolveConfigPath = ({
   configPath,
   defaultConfigPaths,
 }: {

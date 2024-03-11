@@ -362,10 +362,95 @@ export interface BatchOptions {
   selective_rerun?: boolean
 }
 
+export interface ConfigurationMetadata {
+  allowInsecureCertificates?: number
+  apiKey?: number
+  appKey?: number
+  basicAuth?: number
+  body?: number
+  bodyType?: number
+  configPath?: number
+  configType: string // This one is special
+  cookies?: number
+  datadogSite?: number
+  defaultStepTimeout?: number
+  deviceIds?: number
+  executionRule?: number
+  failOnCriticalErrors?: number
+  failOnMissingTests?: number
+  failOnTimeout?: number
+  files?: number
+  followRedirects?: number
+  headers?: number
+  jUnitReport?: number
+  latest?: number
+  locations?: number
+  mobileApplicationVersion?: number
+  mobileApplicationVersionFilePath?: number
+  pollingTimeout?: number
+  proxy?: number
+  publicIds?: string[] // This one is special
+  resourceUrlSubstitutionRegexes?: number
+  retry?: number
+  runName?: number
+  selectiveRerun?: number
+  startUrl?: number
+  startUrlSubstitutionRegex?: number
+  subdomain?: number
+  testSearchQuery?: number
+  testTimeout?: number
+  tunnel?: number
+  variableStrings?: number
+  variables?: number
+}
+
+export const configurationMetadataKeys: string[] = [
+  'allowInsecureCertificates',
+  'apiKey',
+  'appKey',
+  'basicAuth',
+  'body',
+  'bodyType',
+  'configPath',
+  'configType',
+  'cookies',
+  'datadogSite',
+  'defaultStepTimeout',
+  'deviceIds',
+  'executionRule',
+  'failOnCriticalErrors',
+  'failOnMissingTests',
+  'failOnTimeout',
+  'files',
+  'followRedirects',
+  'headers',
+  'jUnitReport',
+  'latest',
+  'locations',
+  'mobileApplicationVersion',
+  'mobileApplicationVersionFilePath',
+  'pollingTimeout',
+  'proxy',
+  'publicIds',
+  'resourceUrlSubstitutionRegexes',
+  'retry',
+  'runName',
+  'selectiveRerun',
+  'startUrl',
+  'startUrlSubstitutionRegex',
+  'subdomain',
+  'testSearchQuery',
+  'testTimeout',
+  'tunnel',
+  'variableStrings',
+  'variables',
+]
+
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
   options?: BatchOptions
+  config_metadata?: ConfigurationMetadata[]
 }
 
 export interface TestPayload extends ServerConfigOverride {

@@ -19,6 +19,7 @@ import {
   APIHelperConfig,
   Batch,
   BrowserServerResult,
+  ConfigurationMetadata,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -793,13 +794,15 @@ export const getTestsToTrigger = async (
 export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
-  selectiveRerun = false
+  selectiveRerun = false,
+  configMetadata?: ConfigurationMetadata[]
 ): Promise<Trigger> => {
   const payload: Payload = {
     tests: testsToTrigger,
     options: {
       selective_rerun: selectiveRerun,
     },
+    config_metadata: configMetadata,
   }
   const tagsToLimit = {
     [GIT_COMMIT_MESSAGE]: 500,
@@ -810,6 +813,7 @@ export const runTests = async (
     payload.metadata = ciMetadata
   }
 
+  console.log('payload', payload)
   try {
     return await api.triggerTests(payload)
   } catch (e) {

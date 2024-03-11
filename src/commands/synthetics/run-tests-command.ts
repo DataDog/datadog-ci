@@ -1,16 +1,25 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
+import {as} from 'typanion'
 
-import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {getConfig, removeUndefinedValues, resolveConfigFromFile, resolveConfigPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
-import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+import {
+  ConfigurationMetadata,
+  MainReporter,
+  Reporter,
+  Result,
+  RunTestsCommandConfig,
+  Summary,
+  configurationMetadataKeys,
+} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {executeTests} from './run-tests-lib'
+import {anonymizeConfiguration, executeTests} from './run-tests-lib'
 import {
   getExitReason,
   getOrgSettings,
@@ -136,6 +145,7 @@ export class RunTestsCommand extends Command {
 
   private reporter?: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private configMetadata: ConfigurationMetadata[] = []
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
@@ -166,7 +176,7 @@ export class RunTestsCommand extends Command {
     let summary: Summary
 
     try {
-      ;({results, summary} = await executeTests(this.reporter, this.config))
+      ;({results, summary} = await executeTests(this.reporter, this.config, this.configMetadata))
     } catch (error) {
       reportExitLogs(this.reporter, this.config, {error})
 
@@ -198,6 +208,36 @@ export class RunTestsCommand extends Command {
         configPath: this.configPath,
         defaultConfigPaths: [this.config.configPath],
       })
+
+      const resolvedConfigPath = resolveConfigPath({
+        configPath: this.configPath,
+        defaultConfigPaths: [this.config.configPath],
+      })
+      const globalConfig = await getConfig(resolvedConfigPath)
+
+      const configsFromGlobal: ConfigurationMetadata = {
+        configType: 'GlobalConfig',
+      }
+      console.log('this.config', this.config)
+      // eslint-disable-next-line guard-for-in
+      for (const key of configurationMetadataKeys) {
+        // console.log('key', key)
+        if (globalConfig.hasOwnProperty(key)) {
+          console.log('-----------', key)
+          if (key === 'publicIds') {
+            configsFromGlobal[key] = globalConfig[key as keyof RunTestsCommandConfig]
+          } else {
+            configsFromGlobal[key] = anonymizeConfiguration(globalConfig[key as keyof RunTestsCommandConfig])
+          }
+        }
+        if (globalConfig?.global.hasOwnProperty(key)) {
+          // console.log('-----------', key)
+          configsFromGlobal[key] = anonymizeConfiguration(globalConfig.global[key as keyof RunTestsCommandConfig])
+        }
+      }
+
+      console.log('configsFromGlobal', configsFromGlobal)
+      this.configMetadata.push(configsFromGlobal)
     } catch (error) {
       if (this.configPath) {
         throw error
@@ -224,6 +264,33 @@ export class RunTestsCommand extends Command {
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
       })
     )
+
+    const allEnvVarbaible = removeUndefinedValues({
+      apiKey: process.env.DATADOG_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY,
+      datadogSite: process.env.DATADOG_SITE,
+      locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
+      subdomain: process.env.DATADOG_SUBDOMAIN,
+      deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
+      mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+    })
+    // console.log('allEnvVarbaible', allEnvVarbaible)
+
+    const configsFromEnv: ConfigurationMetadata = {
+      configType: 'EnvVariables',
+    }
+
+    for (const key of configurationMetadataKeys) {
+      if (allEnvVarbaible.hasOwnProperty(key)) {
+        if (key === 'publicIds') {
+          configsFromEnv[key] = allEnvVarbaible[key as keyof RunTestsCommandConfig]
+        } else {
+          configsFromEnv[key] = anonymizeConfiguration(allEnvVarbaible[key as keyof RunTestsCommandConfig])
+        }
+      }
+    }
+    console.log('configsFromEnv', configsFromEnv)
+    this.configMetadata.push(configsFromEnv)
 
     // Override with CLI parameters
     this.config = deepExtend(
@@ -256,6 +323,46 @@ export class RunTestsCommand extends Command {
         pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
+
+    const allCli = removeUndefinedValues({
+      apiKey: this.apiKey,
+      appKey: this.appKey,
+      configPath: this.configPath,
+      datadogSite: this.datadogSite,
+      failOnCriticalErrors: this.failOnCriticalErrors,
+      failOnMissingTests: this.failOnMissingTests,
+      failOnTimeout: this.failOnTimeout,
+      files: this.files,
+      publicIds: this.publicIds,
+      selectiveRerun: this.selectiveRerun,
+      subdomain: this.subdomain,
+      testSearchQuery: this.testSearchQuery,
+      tunnel: this.tunnel,
+      deviceIds: this.deviceIds,
+      mobileApplicationVersion: this.mobileApplicationVersion,
+      mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+      variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
+      pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
+    })
+    console.log('configFromCli', allCli)
+
+    const configsFromCLI: ConfigurationMetadata = {
+      configType: 'CLIParams',
+    }
+
+    for (const key of configurationMetadataKeys) {
+      if (allCli.hasOwnProperty(key)) {
+        if (key === 'publicIds') {
+          configsFromCLI[key] = allCli[key as keyof RunTestsCommandConfig]
+        } else {
+          configsFromCLI[key] = anonymizeConfiguration(allCli[key as keyof RunTestsCommandConfig])
+        }
+      }
+    }
+    console.log('configsFromCLI', configsFromCLI)
+    this.configMetadata.push(configsFromCLI)
+
+    console.log('this.configMetadata', this.configMetadata)
 
     if (typeof this.config.files === 'string') {
       this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')

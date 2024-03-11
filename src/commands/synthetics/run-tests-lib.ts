@@ -3,6 +3,7 @@ import {getProxyAgent} from '../../helpers/utils'
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
+  ConfigurationMetadata,
   MainReporter,
   Reporter,
   Result,
@@ -16,6 +17,7 @@ import {
   TriggerConfig,
   UserConfigOverride,
   WrapperConfig,
+  configurationMetadataKeys,
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
@@ -46,6 +48,7 @@ type ExecuteOptions = {
 export const executeTests = async (
   reporter: MainReporter,
   config: RunTestsCommandConfig,
+  configMetadata: ConfigurationMetadata[],
   suites?: Suite[]
 ): Promise<{
   results: Result[]
@@ -70,6 +73,40 @@ export const executeTests = async (
   if (triggerConfigs.length === 0) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
+
+  const allConfigsFromTest = await getTestConfigs(config, reporter, suites)
+  console.log('allConfigsFromTest', allConfigsFromTest)
+
+  const configsFromTestConfig: ConfigurationMetadata = {
+    configType: 'TestConfig',
+  }
+  // eslint-disable-next-line guard-for-in
+  for (const conf of allConfigsFromTest) {
+    const reconstructedConfig = {...conf.config, publicIds: conf.id}
+    // console.log('reconstructedConfig', reconstructedConfig)
+    for (const key of configurationMetadataKeys) {
+      if (reconstructedConfig.hasOwnProperty(key)) {
+        if (key === 'publicIds') {
+          // console.log('configsFromTestConfig[key] 1', configsFromTestConfig[key])
+          // console.log(reconstructedConfig[key as keyof RunTestsCommandConfig])
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          if (configsFromTestConfig[key]) {
+            configsFromTestConfig[key].push(reconstructedConfig[key as keyof RunTestsCommandConfig]);
+          } else {
+            configsFromTestConfig[key] = [reconstructedConfig[key as keyof RunTestsCommandConfig]];
+          }
+          // console.log('configsFromTestConfig[key] 2', configsFromTestConfig[key])
+        } else {
+          const anon = anonymizeConfiguration(reconstructedConfig[key as keyof RunTestsCommandConfig])
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          configsFromTestConfig[key] = configsFromTestConfig[key] ? configsFromTestConfig[key] + anon : anon
+        }
+      }
+    }
+  }
+  console.log('configsFromTestConfig', configsFromTestConfig)
+  configMetadata.push(configsFromTestConfig)
+  console.log('\n\n\n\n\n\n\n\n\n\n\n\nconfigMetadata', configMetadata)
 
   let testsToTriggerResult: {
     initialSummary: InitialSummary
@@ -127,10 +164,11 @@ export const executeTests = async (
       throw new CriticalError('TUNNEL_START_FAILED', error.message)
     }
   }
+  console.log('overriddenTestsToTrigger', overriddenTestsToTrigger)
 
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun)
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, configMetadata)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
@@ -335,4 +373,17 @@ export const execute = async (runConfig: WrapperConfig, executeOptions: ExecuteO
   const {exitCode} = await executeWithDetails(runConfig, executeOptions)
 
   return exitCode
+}
+
+export const anonymizeConfiguration = (
+  configuration: string | number | boolean | string[] | UserConfigOverride | ProxyConfiguration | undefined
+): number => {
+  if (typeof configuration === 'string' || typeof configuration === 'number' || typeof configuration === 'boolean') {
+    return 1
+  }
+  if (Array.isArray(configuration)) {
+    return configuration.length
+  }
+
+  return 0
 }
