@@ -54,6 +54,10 @@ export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[
 
 export const gitBranch = async (git: simpleGit.SimpleGit): Promise<BranchSummary> => git.branch()
 
+export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string> => {
+  return git.raw(['branch', '--show-current'])
+}
+
 export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
 
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
@@ -61,3 +65,13 @@ export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<s
 
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
+
+export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<readonly string[]> => {
+  const gitShas = await git.log({
+    from: `origin/${branchName}`,
+    to: branchName,
+    format: '%H',
+  })
+
+  return gitShas.all
+}
