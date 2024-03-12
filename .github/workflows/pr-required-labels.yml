@@ -15,7 +15,7 @@ jobs:
     name: 'Categorize PR'
     runs-on: ubuntu-latest
     steps:
-      - name: 'Product specified'
+      - name: 'At least one label required'
         uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
