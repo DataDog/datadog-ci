@@ -506,9 +506,21 @@ describe('execute', () => {
     expect(output[3]).toContain('service: test-service')
   })
 
-  test('without git metadata', async () => {
+  test('without git metadata (default value)', async () => {
     const {context, code} = await runCLI([
       '--verbose',
+      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+    ])
+    const output = context.stdout.toString().split(os.EOL)
+    expect(id).not.toHaveBeenCalled()
+    expect(code).toBe(0)
+    expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
+  })
+
+  test('without git metadata (with argument)', async () => {
+    const {context, code} = await runCLI([
+      '--verbose',
+      '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
