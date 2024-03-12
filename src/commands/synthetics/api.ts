@@ -11,7 +11,6 @@ import {
   Batch,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   Payload,
   PollResult,
   MultipartPresignedUrlsResponse,
@@ -20,6 +19,7 @@ import {
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
+  MobileAppUploadResult,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -223,40 +223,60 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
 }
 
 export const completeMultipartMobileApplicationUpload = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<void>
+  request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>
 ) => async (
   applicationId: string,
   uploadId: string,
   key: string,
   uploadPartResponses: MobileApplicationUploadPartResponse[]
-) => {
-  await retryRequest(
+): Promise<string> => {
+  const resp = await retryRequest(
     {
       data: {
         key,
         parts: uploadPartResponses,
         uploadId,
+        validateMode: 'validate-and-persist',
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
     },
     request
   )
+
+  return resp.data.job_id
 }
 
-const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
-  version: MobileApplicationVersion
-) => {
-  const resp = await retryRequest(
-    {
-      data: version,
-      method: 'POST',
-      url: `/synthetics/mobile/applications/versions`,
-    },
-    request
-  )
+export const pollMobileApplicationUploadResponse = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
+) => async (
+  jobId: string
+): Promise<MobileAppUploadResult> => {
+  let response;
+  try {
+    response = await retryRequest(
+      {
+        method: 'GET',
+        url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
+      },
+      request
+    )
+  } catch (e) {
+    console.log('yo')
+    console.log(e.response?.status)
+    console.log(e.response?.data)
+    throw Error(e)
+  }
+  console.log('du')
+  console.log(response.status)
+  console.log(response.data)
+  if (response.status === 202) {
+    await new Promise((resolve) => setTimeout(resolve, 1000))
 
-  return resp.data
+    return pollMobileApplicationUploadResponse(request)(jobId)
+  }
+
+  return response.data
 }
 
 type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
@@ -322,7 +342,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
-    createMobileVersion: createMobileVersion(requestUnstable),
+    pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
 }
 

@@ -4,9 +4,9 @@ import fs from 'fs'
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {CiError} from './errors'
 import {
+  MobileAppUploadResult,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   MultipartPresignedUrlsResponse,
   Test,
   TestPayload,
@@ -49,7 +49,7 @@ export const uploadMobileApplications = async (
   api: APIHelper,
   applicationPathToUpload: string,
   mobileApplicationId: string
-): Promise<string> => {
+): Promise<{appUploadResponse: MobileAppUploadResult, fileName: string}> => {
   const {appSize, parts} = await getSizeAndPartsFromFile(applicationPathToUpload)
 
   let multipartPresignedUrlsResponse: MultipartPresignedUrlsResponse
@@ -70,8 +70,9 @@ export const uploadMobileApplications = async (
   }
 
   const {upload_id: uploadId, key} = multipartPresignedUrlsResponse.multipart_presigned_urls_params
+  let jobId: string
   try {
-    await api.completeMultipartMobileApplicationUpload(mobileApplicationId, uploadId, key, uploadPartResponses)
+    jobId = await api.completeMultipartMobileApplicationUpload(mobileApplicationId, uploadId, key, uploadPartResponses)
   } catch (e) {
     throw new EndpointError(
       `Failed to complete upload mobile application: ${formatBackendErrors(e)}\n`,
@@ -79,7 +80,16 @@ export const uploadMobileApplications = async (
     )
   }
 
-  return multipartPresignedUrlsResponse.file_name
+  try {
+    const appUploadResponse = await api.pollMobileApplicationUploadResponse(jobId)
+
+    return {appUploadResponse, fileName: multipartPresignedUrlsResponse.file_name}
+  } catch (e) {
+    throw new EndpointError(
+      `Failed to poll for application: ${formatBackendErrors(e)}\n`,
+      e.response?.status
+    )
+  }
 }
 
 export const uploadApplication = async (
@@ -88,7 +98,7 @@ export const uploadApplication = async (
   testApplicationId: string,
   uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
 ) => {
-  const fileName = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
+  const {fileName} = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
   if (!(applicationPathToUpload in uploadedApplicationByPath)) {
     uploadedApplicationByPath[applicationPathToUpload] = []
   }
@@ -161,23 +171,9 @@ export const uploadApplicationAndOverrideConfig = async (
   overrideMobileConfig(userConfigOverride, overriddenTestsToTrigger, test, localApplicationOverride)
 }
 
-export const createNewMobileVersion = async (
-  api: APIHelper,
-  version: MobileApplicationVersion
-): Promise<MobileApplicationVersion> => {
-  let newVersion: MobileApplicationVersion
-  try {
-    newVersion = await api.createMobileVersion(version)
-  } catch (e) {
-    throw new EndpointError(`Failed create new Mobile Version: ${formatBackendErrors(e)}\n`, e.response?.status)
-  }
-
-  return newVersion
-}
-
 export const uploadMobileApplicationVersion = async (
   config: UploadApplicationCommandConfig
-): Promise<MobileApplicationVersion> => {
+): Promise<MobileAppUploadResult> => {
   const api = getApiHelper(config)
 
   if (!config.mobileApplicationVersionFilePath) {
@@ -193,19 +189,11 @@ export const uploadMobileApplicationVersion = async (
   }
   config.latest = config.latest ?? false
 
-  const fileName = await uploadMobileApplications(
+  const {appUploadResponse} = await uploadMobileApplications(
     api,
     config.mobileApplicationVersionFilePath,
     config.mobileApplicationId
   )
 
-  const version = await createNewMobileVersion(api, {
-    file_name: fileName,
-    application_id: config.mobileApplicationId,
-    original_file_name: config.mobileApplicationVersionFilePath,
-    version_name: config.versionName,
-    is_latest: config.latest,
-  })
-
-  return version
+  return appUploadResponse
 }

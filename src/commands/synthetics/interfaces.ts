@@ -486,6 +486,32 @@ export interface MultipartPresignedUrlsResponse {
   }
 }
 
+type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
+
+type MobileInvalidAppResult = {
+  invalid_reason: string
+  invalid_message: string
+}
+
+type MobileValidAppResult = {
+  extracted_metadata: Record<string, unknown>
+  app_version_uuid: string
+}
+
+type MobileUserErrorResult = {
+  user_error_reason: string
+  user_error_message: string
+}
+
+export type MobileAppUploadResult = {
+  status: MobileAppValidationStatus
+  is_valid?: boolean
+  org_uuid?: string
+  invalid_app_result?: MobileInvalidAppResult
+  valid_app_result?: MobileValidAppResult
+  user_error_result?: MobileUserErrorResult
+}
+
 // Not the entire response, but only what's needed.
 export interface SyntheticsOrgSettings {
   onDemandConcurrencyCap: number

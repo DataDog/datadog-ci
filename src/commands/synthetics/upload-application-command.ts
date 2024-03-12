@@ -76,8 +76,8 @@ export class UploadApplicationCommand extends Command {
     }
 
     try {
-      const version = await uploadMobileApplicationVersion(this.config)
-      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
+      const mobileAppUploadResult = await uploadMobileApplicationVersion(this.config)
+      this.logger.info(`Created new version ${this.config.versionName}, with version ID: ${mobileAppUploadResult.valid_app_result?.app_version_uuid}`)
     } catch (error) {
       if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
         this.logger.error(`Error: ${error.message}`)
