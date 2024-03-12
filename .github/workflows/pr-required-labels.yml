@@ -1,21 +1,21 @@
 # See https://github.com/DataDog/datadog-ci/issues/labels for the list of labels
 
-name: 'PR labels'
+name: PR labels
 on:
   pull_request:
     types:
-      - 'opened'
-      - 'reopened'
-      - 'labeled'
-      - 'unlabeled'
-      - 'synchronize'
+      - opened
+      - reopened
+      - labeled
+      - unlabeled
+      - synchronize
 
 jobs:
   categorize:
-    name: 'Categorize PR'
+    name: Categorize PR
     runs-on: ubuntu-latest
     steps:
-      - name: 'At least one label required'
+      - name: At least one label required
         uses: mheap/github-action-required-labels@v5
         with:
           mode: exactly
