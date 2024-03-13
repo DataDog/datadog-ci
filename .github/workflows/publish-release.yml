@@ -159,6 +159,7 @@ jobs:
   npm-publish:
     runs-on: ubuntu-latest
     environment: npm
+    needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
