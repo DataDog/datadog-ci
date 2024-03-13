@@ -24,6 +24,7 @@ jobs:
             dependencies
             documentation
             chores
+            release
             ci-visibility
             static-analysis
             rum

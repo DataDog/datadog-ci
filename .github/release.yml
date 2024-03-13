@@ -3,6 +3,9 @@
 #
 # See .github/workflows/pr-required-labels.yml
 changelog:
+  exclude:
+    labels:
+      - release # Exclude release PRs from changelog
   categories:
     - title: Dependencies
       labels:
