@@ -92,7 +92,8 @@ To release a new version of `datadog-ci`:
 4. Push the branch **along with the tag** with `git push --tags origin name-of-the-branch`, create a PR, and get at least one approval.
    - **Find and open** the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/release.yml).
    - Copy the release notes from the summary, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
-   - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1047).
+   - Add the `release` label to your PR.
+   - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1215).
 5. Once you've received at least one approval, merge the PR **with the "Create a merge commit" strategy**.
    - You may notice that a **GitHub** job is waiting for an approval, and some **_GitLab_** jobs are pending: this is expected (see **step 6 and 8**). You can merge the PR when *only those jobs* are left.
    - The "Create a merge commit" strategy is required for **step 7**, and for the GitHub Release to point to an existing commit once the PR is merged.
