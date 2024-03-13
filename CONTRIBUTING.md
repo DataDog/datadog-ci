@@ -90,7 +90,7 @@ To release a new version of `datadog-ci`:
 2. Update the `package.json` version to `X.X.X`, commit the change `vX.X.X` and tag it with `git tag vX.X.X`.
    - You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
 4. Push the branch **along with the tag** with `git push --tags origin name-of-the-branch`, create a PR, and get at least one approval.
-   - **Find and open** the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/release.yml).
+   - **Find and open** the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/publish-release.yml).
    - Copy the release notes from the summary, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
    - Add the `release` label to your PR.
    - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1215).
