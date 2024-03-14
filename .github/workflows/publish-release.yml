@@ -116,7 +116,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_win-x64',
-              data: await fs.readFile('./datadog-ci_win-x64'),
+              data: await fs.readFile('./datadog-ci_win-x64.exe'),
             })
 
   build-binary-macos:
