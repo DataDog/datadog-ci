@@ -33,6 +33,11 @@ jobs:
               body: releaseNotes.body,
             })
 
+            console.debug('Release notes:', JSON.stringify(releaseNotes.body))
+
+            // https://github.com/actions/toolkit/issues/1689
+            const releaseNotesToCopy = releaseNotes.body.replace('-->\n\n', '-->\n')
+
             await core.summary
               .addHeading('Draft release created')
               .addRaw('Find it here: ')
@@ -42,7 +47,7 @@ jobs:
               .addRaw('Copy the release notes below, and paste them inside your release PR.')
               .addBreak()
               .addBreak()
-              .addCodeBlock(releaseNotes.body, 'markdown')
+              .addCodeBlock(releaseNotesToCopy, 'markdown')
               .write()
 
             return release.id
