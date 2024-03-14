@@ -36,7 +36,7 @@ jobs:
             console.debug('Release notes:', JSON.stringify(releaseNotes.body))
 
             // https://github.com/actions/toolkit/issues/1689
-            const releaseNotesToCopy = releaseNotes.body.replace('-->\n\n', '-->\n')
+            const releaseNotesToCopy = releaseNotes.body.replace('\n\n##', '\n##')
 
             await core.summary
               .addHeading('Draft release created')
