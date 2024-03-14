@@ -33,6 +33,11 @@ jobs:
               body: releaseNotes.body,
             })
 
+            console.debug('Release notes:', JSON.stringify(releaseNotes.body))
+
+            // https://github.com/actions/toolkit/issues/1689
+            const releaseNotesToCopy = releaseNotes.body.replace('-->\n\n', '-->\n')
+
             await core.summary
               .addHeading('Draft release created')
               .addRaw('Find it here: ')
@@ -42,7 +47,7 @@ jobs:
               .addRaw('Copy the release notes below, and paste them inside your release PR.')
               .addBreak()
               .addBreak()
-              .addCodeBlock(releaseNotes.body, 'markdown')
+              .addCodeBlock(releaseNotesToCopy, 'markdown')
               .write()
 
             return release.id
@@ -116,7 +121,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_win-x64',
-              data: await fs.readFile('./datadog-ci_win-x64'),
+              data: await fs.readFile('./datadog-ci_win-x64.exe'),
             })
 
   build-binary-macos:
