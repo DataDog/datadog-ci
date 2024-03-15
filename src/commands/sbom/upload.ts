@@ -75,7 +75,13 @@ export class UploadSbomCommand extends Command {
     }
 
     if (!this.config.apiKey) {
-      this.context.stderr.write('API key not defined\n')
+      this.context.stderr.write('API key not defined, define the environment variable DD_API_KEY.\n')
+
+      return 1
+    }
+
+    if (!this.config.appKey) {
+      this.context.stderr.write('APP key not defined, define the environment variable DD_APP_KEY.\n')
 
       return 1
     }
