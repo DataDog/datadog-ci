@@ -90,7 +90,6 @@ export const getLicensesFromString = (s: string): DependencyLicense[] => {
 export const getLicensesFromComponent = (component: any): DependencyLicense[] => {
   const elementsForLicense = ['id', 'name']
 
-  const componentName = component['name']
   const licensesSet: Set<DependencyLicense> = new Set()
 
   // Get the "licenses" attribute of the SBOM component.
@@ -111,10 +110,6 @@ export const getLicensesFromComponent = (component: any): DependencyLicense[] =>
         }
       }
     }
-  }
-
-  if (licensesSet.size === 0) {
-    console.log(`license for component ${componentName} not found`)
   }
 
   return Array.from(licensesSet)

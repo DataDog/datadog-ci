@@ -4,7 +4,7 @@ import {DatadogCiConfig} from '../../../helpers/config'
 import {getSpanTags} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
-import {DependencyLanguage, DependencyLicense} from '../types'
+import {DependencyLanguage, DependencyLicense, Location} from '../types'
 
 describe('generation of payload', () => {
   beforeEach(() => {
@@ -187,5 +187,63 @@ describe('generation of payload', () => {
     expect(dependenciesWithNode?.length).toStrictEqual(433)
     expect(dependencies?.filter((d) => d.group !== undefined).length).toBeGreaterThan(0)
     expect(dependencies && dependencies[10].group).toStrictEqual('@aws-sdk')
+  })
+  test('SBOM generated from osv-scanner with files', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/osv-scanner-files.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(7368)
+    const dependencies = payload!.dependencies
+
+    // all languages are detected
+    const dependenciesWithoutLocation = payload?.dependencies.filter((d) => !d.locations)
+    expect(dependenciesWithoutLocation?.length).toStrictEqual(0)
+
+    // Check that we can have multiple locations
+    expect(dependencies[0].locations?.length).toStrictEqual(1)
+    expect(dependencies[1].locations?.length).toStrictEqual(3)
+
+    // check location correctness
+    expect(dependencies[0]).not.toBeNull()
+    expect(dependencies[0].locations![0].block!.start.line).toStrictEqual(19328)
+    expect(dependencies[0].locations![0].block!.start.col).toStrictEqual(9)
+    expect(dependencies[0].locations![0].block!.end.line).toStrictEqual(19336)
+    expect(dependencies[0].locations![0].block!.end.col).toStrictEqual(10)
+
+    // check that for a location, the end line is greater or equal to start line
+    // if start and end lines are equal, the end col must be smaller than start col
+    const checkLocation = (location: Location | undefined): void => {
+      if (!location) {
+        return
+      }
+      expect(location.end.line).toBeGreaterThanOrEqual(location.start.line)
+      if (location.start.line === location.end.line) {
+        // eslint-disable-next-line jest/no-conditional-expect
+        expect(location.start.line).toBeGreaterThanOrEqual(location.end.line)
+      }
+    }
+
+    // Check that all locations are valid
+    for (const d of dependencies) {
+      expect(d.locations).not.toBeNull()
+      // just to avoid eslint warnings
+      if (!d.locations) {
+        continue
+      }
+      for (const l of d.locations) {
+        checkLocation(l.block)
+        checkLocation(l.name)
+        checkLocation(l.namespace)
+        checkLocation(l.version)
+      }
+    }
   })
 })
