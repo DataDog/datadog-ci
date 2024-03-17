@@ -1,4 +1,3 @@
-import * as console from 'console'
 import fs from 'fs'
 import process from 'process'
 
