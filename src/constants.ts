@@ -6,7 +6,6 @@ export const DATADOG_SITE_AP1 = 'ap1.datadoghq.com'
 export const DATADOG_SITE_GOV = 'ddog-gov.com'
 
 export const DATADOG_SITES: string[] = [
-  'datad0g.com',
   DATADOG_SITE_US1,
   DATADOG_SITE_EU1,
   DATADOG_SITE_US3,

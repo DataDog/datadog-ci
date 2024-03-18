@@ -613,7 +613,7 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   testsWait: (tests, baseUrl, batchId, skippedCount) => {
     for (const reporter of reporters) {
       if (typeof reporter.testsWait === 'function') {
-          reporter.testsWait(tests, baseUrl, batchId, skippedCount)
+        reporter.testsWait(tests, baseUrl, batchId, skippedCount)
       }
     }
   },
