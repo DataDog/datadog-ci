@@ -44,7 +44,7 @@ export class AppUploadReporter {
     public reportFailure(error: Error, failedApp: AppUploadDetails) {
         this.endRendering()
         this.write(`${ICONS.FAILED} Failed to upload application:\n${this.getAppRepr(failedApp)}\n`)
-        this.write(chalk.red(error.message))
+        this.write(`${chalk.red(error.message)}\n`)
     }
 
     public endRendering() {

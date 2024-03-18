@@ -263,12 +263,6 @@ export const pollMobileApplicationUploadResponse = (
     request
   )
 
-  if (response.data.status === 'pending') {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    return pollMobileApplicationUploadResponse(request)(jobId)
-  }
-
   return response.data
 }
 

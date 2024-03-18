@@ -218,7 +218,7 @@ export interface Step {
   }[]
 }
 
-  export interface ServerTest {
+export interface ServerTest {
   config: {
     assertions: Assertion[]
     request: {

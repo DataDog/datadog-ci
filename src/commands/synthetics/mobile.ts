@@ -18,8 +18,11 @@ import {
   AppUploadDetails,
 } from './interfaces'
 import { AppUploadReporter } from './reporters/appUpload'
+import { wait } from './utils/public'
 
 const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
+const APP_UPLOAD_POLLING_INTERVAL = 1000 // 1 second
+const MAX_APP_UPLOAD_POLLING_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 
 export const getSizeAndPartsFromFile = async (
   filePath: string
@@ -87,13 +90,25 @@ export const uploadMobileApplication = async (
   }
 
   let appUploadResponse: MobileAppUploadResult
-  try {
-    appUploadResponse = await api.pollMobileApplicationUploadResponse(jobId)
-  } catch (e) {
-    throw new EndpointError(
-      `Failed to validate mobile application: ${formatBackendErrors(e)}\n`,
-      e.response?.status
-    )
+  const maxPollingDate = Date.now() + MAX_APP_UPLOAD_POLLING_TIMEOUT
+  while (true){
+    if (Date.now() >= maxPollingDate) {
+      throw new CriticalError('MOBILE_APP_UPLOAD_TIMEOUT', 'Timeout while polling for mobile application upload')
+    }
+    try {
+        appUploadResponse = await api.pollMobileApplicationUploadResponse(jobId)
+    } catch (e) {
+      throw new EndpointError(
+        `Failed to validate mobile application: ${formatBackendErrors(e)}\n`,
+        e.response?.status
+      )
+    }
+
+    if (appUploadResponse.status !== 'pending') {
+      break
+    }
+
+    await wait(APP_UPLOAD_POLLING_INTERVAL)
   }
 
   if (appUploadResponse.status === 'complete' && !appUploadResponse.is_valid) {
