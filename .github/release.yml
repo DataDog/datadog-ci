@@ -7,21 +7,18 @@ changelog:
     labels:
       - release # Exclude release PRs from changelog
   categories:
+    - title: datadog-ci
+      labels:
+        - '*'
     - title: Dependencies
       labels:
-        - dependencies
+        - dependencies # Generally about vulnerability fixes
     - title: Documentation
       labels:
         - documentation
-    - title: Chores
-      labels:
-        - chores
     - title: CI Visibility
       labels:
         - ci-visibility
-    - title: Static Analysis
-      labels:
-        - static-analysis
     - title: RUM
       labels:
         - rum
@@ -31,9 +28,12 @@ changelog:
     - title: Source Code Integration
       labels:
         - source-code-integration
+    - title: Static Analysis
+      labels:
+        - static-analysis
     - title: Synthetics
       labels:
         - synthetics
-    - title: datadog-ci
+    - title: Chores
       labels:
-        - '*'
+        - chores
