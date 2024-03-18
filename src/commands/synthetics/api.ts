@@ -27,6 +27,7 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
+const DELAY_FOR_TOO_MANY_REQUESTS = 5000 // In ms (5s). Could be changed to the header returned for 429s later on
 
 interface BackendError {
   errors: string[]
@@ -259,10 +260,19 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
   return resp.data
 }
 
-type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
+const retryWithJitter = (delay: number = DELAY_FOR_TOO_MANY_REQUESTS) => delay + Math.floor(Math.random() * delay)
 
-const retryOn5xxErrors: RetryPolicy = (retries, error) => {
-  // Retry on Node.js errors for both retry policies.
+export type OptionalRetries = {
+  retryOn404?: boolean | undefined
+  retryOn429?: boolean | undefined
+}
+
+export const determineRetryDelay = (
+  retries: number,
+  error: AxiosError,
+  optionalRetries: OptionalRetries = {retryOn404: false, retryOn429: false}
+) => {
+  // Retry on 5xx
   if (retries < MAX_RETRIES && isNodeError(error)) {
     return LARGE_DELAY_BETWEEN_RETRIES
   }
@@ -270,16 +280,15 @@ const retryOn5xxErrors: RetryPolicy = (retries, error) => {
   if (retries < MAX_RETRIES && is5xxError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
-}
 
-const retryOn5xxOr404Errors: RetryPolicy = (retries, error) => {
-  const retryOn5xxDelay = retryOn5xxErrors(retries, error)
-  if (retryOn5xxDelay) {
-    return retryOn5xxDelay
+  // Retry on 404
+  if (optionalRetries.retryOn404 && retries < MAX_RETRIES && isNotFoundError(error)) {
+    return DELAY_BETWEEN_RETRIES
   }
 
-  if (retries < MAX_RETRIES && isNotFoundError(error)) {
-    return DELAY_BETWEEN_RETRIES
+  // Retry on 429
+  if (optionalRetries.retryOn429 && retries < MAX_RETRIES && isTooManyRequestsError(error)) {
+    return retryWithJitter(DELAY_FOR_TOO_MANY_REQUESTS)
   }
 }
 
@@ -289,6 +298,8 @@ const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
 export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
 
 export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+
+export const isTooManyRequestsError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 429
 
 export const isNodeError = (error: unknown): error is NodeJS.ErrnoException => !!error && 'code' in (error as Error)
 
