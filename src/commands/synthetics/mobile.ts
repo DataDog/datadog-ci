@@ -108,7 +108,7 @@ export const uploadMobileApplication = async (
     throw new CriticalError('UNKNOWN_MOBILE_APP_UPLOAD_FAILURE', `Unknown mobile application upload error.`)
   }
 
-  return {appUploadResponse, fileName: applicationPathToUpload}
+  return {appUploadResponse, fileName: multipartPresignedUrlsResponse.file_name}
 
 }
 
