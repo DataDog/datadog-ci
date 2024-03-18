@@ -17,6 +17,9 @@ const criticalErrorCodes = [
   'MISSING_MOBILE_APPLICATION_PATH',
   'MISSING_MOBILE_APPLICATION_ID',
   'MISSING_MOBILE_VERSION_NAME',
+  'INVALID_MOBILE_APP',
+  'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
+  'UNKNOWN_MOBILE_APP_UPLOAD_FAILURE',
 ] as const
 export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 

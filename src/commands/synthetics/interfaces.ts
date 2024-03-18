@@ -218,7 +218,7 @@ export interface Step {
   }[]
 }
 
-export interface ServerTest {
+  export interface ServerTest {
   config: {
     assertions: Assertion[]
     request: {
@@ -373,6 +373,18 @@ export interface TestPayload extends ServerConfigOverride {
   public_id: string
 }
 
+export interface TestNotFound {
+  errorMessage: string
+}
+
+export interface TestSkipped {
+  overriddenConfig: TestPayload
+}
+
+export interface TestWithOverride {
+  test: Test; overriddenConfig: TestPayload
+}
+
 export interface BasicAuthCredentials {
   password: string
   username: string
@@ -485,6 +497,14 @@ export interface MultipartPresignedUrlsResponse {
     }
   }
 }
+
+export type MobileApplicationNewVersionParams = {
+  originalFileName: string
+  versionName: string
+  isLatest: boolean
+}
+
+export type AppUploadDetails = {appId: string; appPath: string, versionName?: string}
 
 type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
 

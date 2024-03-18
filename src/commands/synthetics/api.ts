@@ -20,6 +20,7 @@ import {
   TestSearchResult,
   Trigger,
   MobileAppUploadResult,
+  MobileApplicationNewVersionParams,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -228,15 +229,17 @@ export const completeMultipartMobileApplicationUpload = (
   applicationId: string,
   uploadId: string,
   key: string,
-  uploadPartResponses: MobileApplicationUploadPartResponse[]
+  uploadPartResponses: MobileApplicationUploadPartResponse[],
+  newVersionParams?: MobileApplicationNewVersionParams
 ): Promise<string> => {
   const resp = await retryRequest(
     {
       data: {
         key,
+        newVersionParams,
         parts: uploadPartResponses,
         uploadId,
-        validateMode: 'validate-and-persist',
+        validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
@@ -252,25 +255,15 @@ export const pollMobileApplicationUploadResponse = (
 ) => async (
   jobId: string
 ): Promise<MobileAppUploadResult> => {
-  let response;
-  try {
-    response = await retryRequest(
-      {
-        method: 'GET',
-        url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
-      },
-      request
-    )
-  } catch (e) {
-    console.log('yo')
-    console.log(e.response?.status)
-    console.log(e.response?.data)
-    throw Error(e)
-  }
-  console.log('du')
-  console.log(response.status)
-  console.log(response.data)
-  if (response.status === 202) {
+  const response = await retryRequest(
+    {
+      method: 'GET',
+      url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
+    },
+    request
+  )
+
+  if (response.data.status === 'pending') {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     return pollMobileApplicationUploadResponse(request)(jobId)

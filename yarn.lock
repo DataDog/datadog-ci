@@ -1968,7 +1968,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/datadog-ci@workspace:.":
+"@datadog/datadog-ci@^2.32.0, @datadog/datadog-ci@workspace:.":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:."
   dependencies:
@@ -1981,6 +1981,7 @@ __metadata:
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
+    "@datadog/datadog-ci": ^2.32.0
     "@google-cloud/logging": ^11.0.0
     "@google-cloud/run": ^1.0.2
     "@microsoft/eslint-formatter-sarif": ^3.0.0

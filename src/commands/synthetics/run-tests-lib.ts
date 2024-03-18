@@ -17,6 +17,7 @@ import {
   UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
+import { AppUploadReporter } from './reporters/appUpload'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
@@ -45,6 +46,7 @@ type ExecuteOptions = {
 
 export const executeTests = async (
   reporter: MainReporter,
+  appUploadReporter: AppUploadReporter,
   config: RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
@@ -83,6 +85,7 @@ export const executeTests = async (
       api,
       triggerConfigs,
       reporter,
+      appUploadReporter,
       triggerFromSearch,
       config.failOnMissingTests,
       config.tunnel
