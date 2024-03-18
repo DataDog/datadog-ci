@@ -836,13 +836,13 @@ export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): P
 
 export const retry = async <T, E extends Error>(
   func: () => Promise<T>,
-  shouldRetryAfterWait: (retries: number, error: E) => number | undefined
+  optionalStatusCodesToRetryOn: OptionalRetries | undefined
 ): Promise<T> => {
   const trier = async (retries = 0): Promise<T> => {
     try {
       return await func()
     } catch (e) {
-      const waiter = shouldRetryAfterWait(retries, e)
+      const waiter = determineRetryDelay(retries, e, optionalStatusCodesToRetryOn)
       if (waiter) {
         await wait(waiter)
 

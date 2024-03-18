@@ -66,7 +66,8 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
     },
-    request
+    request,
+    {retryOn429: true}
   )
 
   return resp.data
@@ -77,7 +78,8 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>
     {
       url: `/synthetics/tests/${testId}`,
     },
-    request
+    request,
+    {retryOn429: true}
   )
 
   return resp.data
@@ -117,7 +119,7 @@ const getSyntheticsOrgSettings = (
 const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
   batchId: string
 ): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, retryOn5xxOr404Errors)
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {retryOn404: true, retryOn429: true})
 
   const serverBatch = resp.data.data
 
@@ -138,7 +140,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
       url: '/synthetics/tests/poll_results',
     },
     request,
-    retryOn5xxOr404Errors
+    {retryOn404: true, retryOn429: true}
   )
 
   return resp.data.results
@@ -312,8 +314,8 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
 const retryRequest = <T>(
   args: AxiosRequestConfig,
   request: (args: AxiosRequestConfig) => AxiosPromise<T>,
-  retryPolicy: RetryPolicy = retryOn5xxErrors
-) => retry(() => request(args), retryPolicy)
+  optionalStatusCodesToRetryOn?: OptionalRetries
+) => retry(() => request(args), optionalStatusCodesToRetryOn)
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
