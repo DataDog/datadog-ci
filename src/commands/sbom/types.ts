@@ -1,4 +1,5 @@
 export enum DependencyLanguage {
+  DOTNET = 'dotnet',
   NPM = 'node',
   PYTHON = 'python',
   PHP = 'php',
