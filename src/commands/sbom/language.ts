@@ -27,6 +27,9 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     if (component['purl'].includes('pkg:pypi')) {
       return DependencyLanguage.PYTHON
     }
+    if (component['purl'].includes('pkg:nuget')) {
+      return DependencyLanguage.DOTNET
+    }
   }
 
   console.debug(`language for component ${componentName} not found`)
