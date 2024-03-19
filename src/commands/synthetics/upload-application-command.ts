@@ -75,7 +75,7 @@ export class UploadApplicationCommand extends Command {
 
       return 1
     }
-    const appUploadReporter = new AppUploadReporter({context: this.context})
+    const appUploadReporter = new AppUploadReporter(this.context)
     const appRenderingInfo = {
       appId: this.config.mobileApplicationId!,
       appPath: this.config.mobileApplicationVersionFilePath!,

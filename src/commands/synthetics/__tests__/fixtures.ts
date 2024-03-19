@@ -17,7 +17,6 @@ import {
   ExecutionRule,
   Location,
   MainReporter,
-  MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
   MobileApplicationUploadPart,
@@ -33,7 +32,12 @@ import {
   Trigger,
   UploadApplicationCommandConfig,
   User,
+  MobileAppUploadResult,
+  MobileApplicationUploadPartResponse,
+  TestWithOverride,
+  TriggerConfig,
 } from '../interfaces'
+import { AppUploadReporter } from '../reporters/appUpload'
 import {createInitialSummary} from '../utils/public'
 
 const mockUser: User = {
@@ -569,16 +573,18 @@ export const getTestPayload = (override?: Partial<TestPayload>) => ({
   ...override,
 })
 
-export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
-  id: '123-abc-456',
-  application_id: '789-dfg-987',
-  file_name: 'bla.',
-  original_file_name: 'test.apk',
-  is_latest: true,
-  version_name: 'test version',
-  created_at: '22-09-2022',
-  ...override,
-})
+export const getTestAndConfigOverride = (appId: string): TestWithOverride => {
+  const testWithOverride = {test: getMobileTest(), overriddenConfig: getTestPayload()}
+  testWithOverride.test.options.mobileApplication!.applicationId = appId
+
+  return testWithOverride
+}
+
+export const getTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
+  const config = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
+
+  return {id: 'abc', config}
+}
 
 export const uploadCommandConfig: UploadApplicationCommandConfig = {
   apiKey: 'foo',
@@ -608,3 +614,30 @@ export const MOBILE_PRESIGNED_UPLOAD_PARTS: MobileApplicationUploadPart[] = [
   {partNumber: 1, md5: 'md5', blob: Buffer.from('content1')},
   {partNumber: 2, md5: 'md5', blob: Buffer.from('content2')},
 ]
+
+export const APP_UPLOAD_POLL_RESULTS: MobileAppUploadResult = {
+  status: 'complete',
+  is_valid: true,
+}
+
+export const APP_UPLOAD_SIZE_AND_PARTS = {
+  appSize: 1000,
+  parts: MOBILE_PRESIGNED_UPLOAD_PARTS,
+}
+
+export const APP_UPLOAD_PART_RESPONSES: MobileApplicationUploadPartResponse[] = MOBILE_PRESIGNED_UPLOAD_PARTS.map(
+  (partNumber) => ({
+    PartNumber: Number(partNumber),
+    ETag: 'etag',
+  })
+)
+
+export const getMockAppUploadReporter = (): AppUploadReporter => {
+  const reporter: AppUploadReporter = new AppUploadReporter({} as any)
+  reporter.start = jest.fn()
+  reporter.renderProgress = jest.fn()
+  reporter.reportSuccess = jest.fn()
+  reporter.reportFailure = jest.fn()
+
+  return reporter
+}

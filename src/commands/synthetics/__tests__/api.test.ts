@@ -22,6 +22,7 @@ import {
   MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
   mockTestTriggerResponse,
+  APP_UPLOAD_POLL_RESULTS,
 } from './fixtures'
 
 describe('dd-api', () => {
@@ -277,6 +278,21 @@ describe('dd-api', () => {
     )
 
     expect(mockRequest).toHaveBeenCalled()
+    spy.mockRestore()
+  })
+
+  test('should poll for app upload validation', async () => {
+    const mockRequest = jest.fn()
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {pollMobileApplicationUploadResponse} = api
+
+    const jobId = 'jobId'
+
+    const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
+
+    expect(mockRequest).toHaveBeenCalled()
+    expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
     spy.mockRestore()
   })
 

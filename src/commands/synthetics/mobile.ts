@@ -21,8 +21,8 @@ import { AppUploadReporter } from './reporters/appUpload'
 import { wait } from './utils/public'
 
 const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
-const APP_UPLOAD_POLLING_INTERVAL = 1000 // 1 second
-const MAX_APP_UPLOAD_POLLING_TIMEOUT = 5 * 60 * 1000 // 5 minutes
+export const APP_UPLOAD_POLLING_INTERVAL = 1000 // 1 second
+export const MAX_APP_UPLOAD_POLLING_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 
 export const getSizeAndPartsFromFile = async (
   filePath: string

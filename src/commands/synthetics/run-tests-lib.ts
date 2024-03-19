@@ -310,7 +310,8 @@ export const executeWithDetails = async (
   }
 
   const mainReporter = getReporter(localReporters)
-  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
+  const appUploadReporter = new AppUploadReporter(process)
+  const {results, summary} = await executeTests(mainReporter, appUploadReporter, localConfig, suites)
 
   const orgSettings = await getOrgSettings(mainReporter, localConfig)
 

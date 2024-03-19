@@ -165,7 +165,7 @@ export class RunTestsCommand extends Command {
 
     let results: Result[]
     let summary: Summary
-    const appUploadReporter = new AppUploadReporter(this)
+    const appUploadReporter = new AppUploadReporter(this.context)
     try {
       ;({results, summary} = await executeTests(this.reporter, appUploadReporter, this.config))
     } catch (error) {
