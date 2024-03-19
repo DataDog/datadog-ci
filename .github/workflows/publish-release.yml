@@ -17,12 +17,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { data: releaseNotes } = await github.rest.repos.generateReleaseNotes({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: '${{ github.ref_name }}',
-            })
-
             const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -30,24 +24,17 @@ jobs:
               name: '${{ github.ref_name }}',
               draft: true,
               prerelease: false,
-              body: releaseNotes.body,
+              generate_release_notes: true,
             })
 
-            console.debug('Release notes:', JSON.stringify(releaseNotes.body))
-
-            // https://github.com/actions/toolkit/issues/1689
-            const releaseNotesToCopy = releaseNotes.body.replace('-->\n\n', '-->\n')
+            const editReleaseLink = release.html_url.replace('datadog-ci/releases/tag/', 'datadog-ci/releases/edit/')
 
             await core.summary
               .addHeading('Draft release created')
-              .addRaw('Find it here: ')
-              .addLink('${{ github.ref_name }} (draft)', release.html_url)
+              .addRaw('Please go to the link below, copy the release notes and paste them in your release PR.', true)
               .addBreak()
               .addBreak()
-              .addRaw('Copy the release notes below, and paste them inside your release PR.')
-              .addBreak()
-              .addBreak()
-              .addCodeBlock(releaseNotesToCopy, 'markdown')
+              .addLink('Edit ${{ github.ref_name }} (draft)', editReleaseLink)
               .write()
 
             return release.id
