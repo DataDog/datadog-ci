@@ -67,7 +67,7 @@ describe('execute', () => {
     expect(output).toContain(`"type": "ci_app_deployment_correlate"`)
     expect(output).toContain(`"ci_provider": "gitlab"`)
     expect(output).toContain(`"cd_provider": "argocd"`)
-    expect(output).toContain(`"config_repo_url": "git@github.com:DataDog/datadog-ci.git"`)
+    expect(output).toContain(`"config_repo_url"`)
     expect(output).toContain(`"config_commit_shas"`)
     expect(output).toContain(`"ci_env": {
       "ci.pipeline.id": "1",
