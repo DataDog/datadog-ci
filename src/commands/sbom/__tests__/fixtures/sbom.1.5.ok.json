@@ -117,7 +117,7 @@
       ]
     },
     {
-      "bom-ref": "@graphql-typed-document-node/core@3.1.1",
+      "bom-ref": "pkg:npm/%40graphql-typed-document-node/core@3.1.1",
       "type": "library",
       "name": "@graphql-typed-document-node/core",
       "version": "3.1.1",
@@ -3540,7 +3540,9 @@
     },
     {
       "ref": "220bd407-7b0f-49f6-9423-951e94ada86e",
-      "dependsOn": ["pkg:npm/delayed-stream@1.0.0"]
+      "dependsOn": [
+        "pkg:npm/delayed-stream@1.0.0"
+      ]
     },
     {
       "ref": "33caa079-436b-424a-90be-2c68cbd3255d",
@@ -3553,7 +3555,9 @@
     },
     {
       "ref": "5d8c2ef5-9e73-4494-8d36-51d5e3d950d0",
-      "dependsOn": ["pkg:npm/punycode@2.1.0"]
+      "dependsOn": [
+        "pkg:npm/punycode@2.1.0"
+      ]
     },
     {
       "ref": "b501a5e4-f7d9-4609-b400-d8522e94c104",
@@ -3572,7 +3576,9 @@
     },
     {
       "ref": "c37e5f2e-5d20-4050-b045-f18db8d1a9fb",
-      "dependsOn": ["pkg:npm/delayed-stream@1.0.0"]
+      "dependsOn": [
+        "pkg:npm/delayed-stream@1.0.0"
+      ]
     },
     {
       "ref": "e59db258-a989-4b65-817c-53d5fca84945",
@@ -3611,19 +3617,27 @@
     },
     {
       "ref": "pkg:npm/%40microsoft/fast-web-utilities@5.4.1",
-      "dependsOn": ["pkg:npm/exenv-es6@1.1.1"]
+      "dependsOn": [
+        "pkg:npm/exenv-es6@1.1.1"
+      ]
     },
     {
       "ref": "pkg:npm/%40types/debug@4.1.7",
-      "dependsOn": ["pkg:npm/%40types/ms@0.7.31"]
+      "dependsOn": [
+        "pkg:npm/%40types/ms@0.7.31"
+      ]
     },
     {
       "ref": "pkg:npm/%40types/hast@2.3.4",
-      "dependsOn": ["pkg:npm/%40types/unist@2.0.6"]
+      "dependsOn": [
+        "pkg:npm/%40types/unist@2.0.6"
+      ]
     },
     {
       "ref": "pkg:npm/%40types/mdast@3.0.10",
-      "dependsOn": ["pkg:npm/%40types/unist@2.0.6"]
+      "dependsOn": [
+        "pkg:npm/%40types/unist@2.0.6"
+      ]
     },
     {
       "ref": "pkg:npm/%40types/mdurl@1.0.2",
@@ -3679,7 +3693,10 @@
     },
     {
       "ref": "pkg:npm/brace-expansion@1.1.11",
-      "dependsOn": ["pkg:npm/balanced-match@1.0.2", "pkg:npm/concat-map@0.0.1"]
+      "dependsOn": [
+        "pkg:npm/balanced-match@1.0.2",
+        "pkg:npm/concat-map@0.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/ccount@2.0.1",
@@ -3699,7 +3716,9 @@
     },
     {
       "ref": "pkg:npm/combined-stream@1.0.8",
-      "dependsOn": ["pkg:npm/delayed-stream@1.0.0"]
+      "dependsOn": [
+        "pkg:npm/delayed-stream@1.0.0"
+      ]
     },
     {
       "ref": "pkg:npm/comma-separated-tokens@2.0.2",
@@ -3715,7 +3734,9 @@
     },
     {
       "ref": "pkg:npm/cross-fetch@3.1.5",
-      "dependsOn": ["pkg:npm/node-fetch@2.6.7"]
+      "dependsOn": [
+        "pkg:npm/node-fetch@2.6.7"
+      ]
     },
     {
       "ref": "pkg:npm/csstype@3.0.11",
@@ -3723,15 +3744,21 @@
     },
     {
       "ref": "pkg:npm/debug@4.3.3",
-      "dependsOn": ["pkg:npm/ms@2.1.2"]
+      "dependsOn": [
+        "pkg:npm/ms@2.1.2"
+      ]
     },
     {
       "ref": "pkg:npm/decache@3.1.0",
-      "dependsOn": ["pkg:npm/find@0.2.9"]
+      "dependsOn": [
+        "pkg:npm/find@0.2.9"
+      ]
     },
     {
       "ref": "pkg:npm/decode-named-character-reference@1.0.1",
-      "dependsOn": ["pkg:npm/character-entities@2.0.1"]
+      "dependsOn": [
+        "pkg:npm/character-entities@2.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/delayed-stream@1.0.0",
@@ -3747,7 +3774,9 @@
     },
     {
       "ref": "pkg:npm/error-stack-parser@2.1.4",
-      "dependsOn": ["pkg:npm/stackframe@1.3.4"]
+      "dependsOn": [
+        "pkg:npm/stackframe@1.3.4"
+      ]
     },
     {
       "ref": "pkg:npm/exenv-es6@1.1.1",
@@ -3763,7 +3792,9 @@
     },
     {
       "ref": "pkg:npm/find@0.2.9",
-      "dependsOn": ["pkg:npm/traverse-chain@0.1.0"]
+      "dependsOn": [
+        "pkg:npm/traverse-chain@0.1.0"
+      ]
     },
     {
       "ref": "pkg:npm/form-data@3.0.1",
@@ -3795,7 +3826,9 @@
     },
     {
       "ref": "pkg:npm/hast-util-sanitize@4.0.0",
-      "dependsOn": ["pkg:npm/%40types/hast@2.3.4"]
+      "dependsOn": [
+        "pkg:npm/%40types/hast@2.3.4"
+      ]
     },
     {
       "ref": "pkg:npm/hast-util-to-html@8.0.3",
@@ -3854,7 +3887,9 @@
     },
     {
       "ref": "pkg:npm/loose-envify@1.4.0",
-      "dependsOn": ["pkg:npm/js-tokens@4.0.0"]
+      "dependsOn": [
+        "pkg:npm/js-tokens@4.0.0"
+      ]
     },
     {
       "ref": "pkg:npm/lru-cache@2.2.4",
@@ -3862,7 +3897,9 @@
     },
     {
       "ref": "pkg:npm/lru-cache@6.0.0",
-      "dependsOn": ["pkg:npm/yallist@4.0.0"]
+      "dependsOn": [
+        "pkg:npm/yallist@4.0.0"
+      ]
     },
     {
       "ref": "pkg:npm/mdast-util-definitions@5.1.0",
@@ -3997,7 +4034,9 @@
     },
     {
       "ref": "pkg:npm/micromark-util-chunked@1.0.0",
-      "dependsOn": ["pkg:npm/micromark-util-symbol@1.0.1"]
+      "dependsOn": [
+        "pkg:npm/micromark-util-symbol@1.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/micromark-util-classify-character@1.0.0",
@@ -4016,7 +4055,9 @@
     },
     {
       "ref": "pkg:npm/micromark-util-decode-numeric-character-reference@1.0.0",
-      "dependsOn": ["pkg:npm/micromark-util-symbol@1.0.1"]
+      "dependsOn": [
+        "pkg:npm/micromark-util-symbol@1.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/micromark-util-decode-string@1.0.2",
@@ -4037,11 +4078,15 @@
     },
     {
       "ref": "pkg:npm/micromark-util-normalize-identifier@1.0.0",
-      "dependsOn": ["pkg:npm/micromark-util-symbol@1.0.1"]
+      "dependsOn": [
+        "pkg:npm/micromark-util-symbol@1.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/micromark-util-resolve-all@1.0.0",
-      "dependsOn": ["pkg:npm/micromark-util-types@1.0.2"]
+      "dependsOn": [
+        "pkg:npm/micromark-util-types@1.0.2"
+      ]
     },
     {
       "ref": "pkg:npm/micromark-util-sanitize-uri@1.0.0",
@@ -4096,11 +4141,15 @@
     },
     {
       "ref": "pkg:npm/mime-types@2.1.34",
-      "dependsOn": ["pkg:npm/mime-db@1.51.0"]
+      "dependsOn": [
+        "pkg:npm/mime-db@1.51.0"
+      ]
     },
     {
       "ref": "pkg:npm/minimatch@3.1.2",
-      "dependsOn": ["pkg:npm/brace-expansion@1.1.11"]
+      "dependsOn": [
+        "pkg:npm/brace-expansion@1.1.11"
+      ]
     },
     {
       "ref": "pkg:npm/mri@1.2.0",
@@ -4112,7 +4161,9 @@
     },
     {
       "ref": "pkg:npm/node-fetch@2.6.7",
-      "dependsOn": ["pkg:npm/whatwg-url@5.0.0"]
+      "dependsOn": [
+        "pkg:npm/whatwg-url@5.0.0"
+      ]
     },
     {
       "ref": "pkg:npm/object-assign@4.1.1",
@@ -4225,7 +4276,9 @@
     },
     {
       "ref": "pkg:npm/request-ip@2.0.2",
-      "dependsOn": ["pkg:npm/is_js@0.9.0"]
+      "dependsOn": [
+        "pkg:npm/is_js@0.9.0"
+      ]
     },
     {
       "ref": "pkg:npm/rollbar@2.26.0",
@@ -4242,15 +4295,22 @@
     },
     {
       "ref": "pkg:npm/sade@1.8.1",
-      "dependsOn": ["pkg:npm/mri@1.2.0"]
+      "dependsOn": [
+        "pkg:npm/mri@1.2.0"
+      ]
     },
     {
       "ref": "pkg:npm/scheduler@0.19.1",
-      "dependsOn": ["pkg:npm/loose-envify@1.4.0", "pkg:npm/object-assign@4.1.1"]
+      "dependsOn": [
+        "pkg:npm/loose-envify@1.4.0",
+        "pkg:npm/object-assign@4.1.1"
+      ]
     },
     {
       "ref": "pkg:npm/semver@7.3.8",
-      "dependsOn": ["pkg:npm/lru-cache@6.0.0"]
+      "dependsOn": [
+        "pkg:npm/lru-cache@6.0.0"
+      ]
     },
     {
       "ref": "pkg:npm/source-map@0.5.7",
@@ -4273,7 +4333,9 @@
     },
     {
       "ref": "pkg:npm/style-to-object@0.3.0",
-      "dependsOn": ["pkg:npm/inline-style-parser@0.1.1"]
+      "dependsOn": [
+        "pkg:npm/inline-style-parser@0.1.1"
+      ]
     },
     {
       "ref": "pkg:npm/tabbable@5.3.3",
@@ -4309,7 +4371,9 @@
     },
     {
       "ref": "pkg:npm/unist-builder@3.0.0",
-      "dependsOn": ["pkg:npm/%40types/unist@2.0.6"]
+      "dependsOn": [
+        "pkg:npm/%40types/unist@2.0.6"
+      ]
     },
     {
       "ref": "pkg:npm/unist-util-generated@2.0.0",
@@ -4321,11 +4385,15 @@
     },
     {
       "ref": "pkg:npm/unist-util-position@4.0.3",
-      "dependsOn": ["pkg:npm/%40types/unist@2.0.6"]
+      "dependsOn": [
+        "pkg:npm/%40types/unist@2.0.6"
+      ]
     },
     {
       "ref": "pkg:npm/unist-util-stringify-position@3.0.2",
-      "dependsOn": ["pkg:npm/%40types/unist@2.0.6"]
+      "dependsOn": [
+        "pkg:npm/%40types/unist@2.0.6"
+      ]
     },
     {
       "ref": "pkg:npm/unist-util-visit-parents@4.1.1",
@@ -4411,7 +4479,9 @@
     },
     {
       "ref": "pkg:npm/vscode-languageserver@8.0.2",
-      "dependsOn": ["pkg:npm/vscode-languageserver-protocol@3.17.2"]
+      "dependsOn": [
+        "pkg:npm/vscode-languageserver-protocol@3.17.2"
+      ]
     },
     {
       "ref": "pkg:npm/vscode-uri@3.0.7",
@@ -4423,7 +4493,10 @@
     },
     {
       "ref": "pkg:npm/whatwg-url@5.0.0",
-      "dependsOn": ["pkg:npm/tr46@0.0.3", "pkg:npm/webidl-conversions@3.0.1"]
+      "dependsOn": [
+        "pkg:npm/tr46@0.0.3",
+        "pkg:npm/webidl-conversions@3.0.1"
+      ]
     },
     {
       "ref": "pkg:npm/yallist@4.0.0",
