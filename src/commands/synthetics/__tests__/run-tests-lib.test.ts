@@ -18,6 +18,7 @@ import {
   getApiTest,
   getAxiosHttpError,
   getMobileTest,
+  getMockAppUploadReporter,
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   mockReporter,
   mockTestTriggerResponse,
@@ -50,7 +51,7 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           global: userConfigOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
@@ -62,6 +63,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'aaa-aaa-aaa', config: userConfigOverride}),
           expect.objectContaining({id: 'bbb-bbb-bbb', config: userConfigOverride}),
         ]),
+        expect.anything(),
         expect.anything(),
         false,
         false,
@@ -100,7 +102,7 @@ describe('run-test', () => {
 
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
         await expect(
-          runTests.executeTests(mockReporter, {
+          runTests.executeTests( mockReporter, getMockAppUploadReporter(), {
             ...ciConfig,
             ...partialCIConfig,
             publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
@@ -112,6 +114,7 @@ describe('run-test', () => {
             expect.objectContaining({id: 'aaa-aaa-aaa', config: expectedOverriddenConfig}),
             expect.objectContaining({id: 'bbb-bbb-bbb', config: expectedOverriddenConfig}),
           ]),
+          expect.anything(),
           expect.anything(),
           false,
           false,
@@ -134,7 +137,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           global: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
@@ -146,6 +149,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
           expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
         ]),
+        expect.anything(),
         expect.anything(),
         false,
         false,
@@ -169,7 +173,7 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           global: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
@@ -182,6 +186,7 @@ describe('run-test', () => {
           expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
           expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
         ]),
+        expect.anything(),
         expect.anything(),
         false,
         false,
@@ -215,7 +220,7 @@ describe('run-test', () => {
       }
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
-      await runTests.executeTests(mockReporter, {
+      await runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
         ...ciConfig,
         failOnCriticalErrors: true,
         publicIds: ['123-456-789'],
@@ -239,7 +244,7 @@ describe('run-test', () => {
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
-          runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
+          runTests.executeTests(mockReporter, getMockAppUploadReporter(), {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
         ).rejects.toThrow(new CriticalError(error, 'Server Error'))
       })
 
@@ -251,7 +256,7 @@ describe('run-test', () => {
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
-          runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa'], tunnel: true})
+          runTests.executeTests(mockReporter, getMockAppUploadReporter(), {...ciConfig, publicIds: ['aaa-aaa-aaa'], tunnel: true})
         ).rejects.toThrow(
           new CriticalError(
             error,
@@ -278,7 +283,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
       ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
@@ -303,7 +308,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
@@ -335,7 +340,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
@@ -366,7 +371,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
@@ -413,7 +418,7 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {
+        runTests.executeTests(mockReporter, getMockAppUploadReporter(), {
           ...ciConfig,
           failOnCriticalErrors: true,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
@@ -455,6 +460,7 @@ describe('run-test', () => {
       await runTests.executeWithDetails(runConfig, {})
       expect(runTests.executeTests).toHaveBeenCalledWith(
         expect.anything(),
+        expect.anything(),
         expect.objectContaining(runConfig),
         undefined
       )
@@ -464,6 +470,7 @@ describe('run-test', () => {
       const suites = [{content: {tests: []}}]
       await runTests.executeWithDetails({}, {suites})
       expect(runTests.executeTests).toHaveBeenCalledWith(
+        expect.anything(),
         expect.anything(),
         expect.objectContaining({files: []}),
         suites
