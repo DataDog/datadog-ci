@@ -20,14 +20,15 @@ export class DeploymentCorrelateCommand extends Command {
     category: 'CI Visibility',
     description: 'Correlate gitOps CD deployments with CI pipelines',
     details: `
-      This command will correlate the current pipeline.\n
+      This command will correlate the pipeline with a gitOps CD deployment.\n
+      It does not work for every setup, see README for details.
     `,
     examples: [['Mark a CI job as a deployment', 'datadog-ci deployment mark']],
   })
 
   private cdProviderParam = Option.String('--provider')
   private cdProvider!: string
-  private supportedCDProviders: string[] = ['argocd']
+  private supportedCDProviders: string[] = ['argocd'] // update the README if changing this
   private configurationRepo = Option.String('--config-repo')
   private dryRun = Option.Boolean('--dry-run', false)
 
@@ -84,7 +85,7 @@ export class DeploymentCorrelateCommand extends Command {
     if (this.configurationRepo) {
       localCommitShas = await gitLocalCommitShas(git, currentBranch)
     } else {
-      ;[this.configurationRepo, localCommitShas] = await Promise.all([
+      [this.configurationRepo, localCommitShas] = await Promise.all([
         gitRepositoryURL(git),
         gitLocalCommitShas(git, currentBranch),
       ])
