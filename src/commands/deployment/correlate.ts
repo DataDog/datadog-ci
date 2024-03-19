@@ -6,7 +6,7 @@ import {getCISpanTags} from '../../helpers/ci'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '../../helpers/git/get-git-data'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import { CI_PROVIDER_NAME, CI_ENV_VARS } from '../../helpers/tags'
+import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 /**
@@ -27,6 +27,7 @@ export class DeploymentCorrelateCommand extends Command {
 
   private cdProviderParam = Option.String('--provider')
   private cdProvider!: string
+  private supportedCDProviders: string[] = ['argocd']
   private configurationRepo = Option.String('--config-repo')
   private dryRun = Option.Boolean('--dry-run', false)
 
@@ -46,26 +47,22 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    if (this.cdProviderParam) {
-      this.cdProvider = this.cdProviderParam
-    } else {
-      this.logger.error('Missing CD provider. It must be provided with --provider')
-
+    if (!this.validateCDProviderParam()) {
       return 1
     }
 
     const tags = getCISpanTags() || {}
-    if (!tags) {
-      this.logger.error('Missing CD provider. It must be provided with --provider')
 
+    if (!this.validateTags(tags)) {
       return 1
     }
-    let envVars : Record<string, string> = {}
+
+    let envVars: Record<string, string> = {}
     if (tags[CI_ENV_VARS]) {
-      envVars = JSON.parse(tags[CI_ENV_VARS]);
+      envVars = JSON.parse(tags[CI_ENV_VARS])
       delete tags[CI_ENV_VARS]
     }
-    const ciEnv : Record<string, string> = {
+    const ciEnv: Record<string, string> = {
       ...tags,
       ...envVars,
     }
@@ -83,11 +80,11 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    let localCommitShas: readonly string[]
+    let localCommitShas: string[]
     if (this.configurationRepo) {
       localCommitShas = await gitLocalCommitShas(git, currentBranch)
     } else {
-      [this.configurationRepo, localCommitShas] = await Promise.all([
+      ;[this.configurationRepo, localCommitShas] = await Promise.all([
         gitRepositoryURL(git),
         gitLocalCommitShas(git, currentBranch),
       ])
@@ -98,7 +95,7 @@ export class DeploymentCorrelateCommand extends Command {
 
   private async sendCorrelationData(
     ciProvider: string,
-    configCommitShas: readonly string[],
+    configCommitShas: string[],
     ciEnv: Record<string, string>,
     apiKey: string
   ) {
@@ -112,7 +109,6 @@ export class DeploymentCorrelateCommand extends Command {
         ci_env: ciEnv,
       },
     }
-
 
     if (this.dryRun) {
       this.logger.info(`[DRYRUN] Sending correlation event\n data: ` + JSON.stringify(correlateEvent, undefined, 2))
@@ -145,6 +141,42 @@ export class DeploymentCorrelateCommand extends Command {
       })
     } catch (error) {
       this.logger.error(`Failed to send deployment correlation data: ${error.message}`)
+    }
+  }
+
+  private validateTags(tags: Record<string, string>): boolean {
+    if (!tags[GIT_REPOSITORY_URL]) {
+      this.logger.error('Could not extract the source code repository URL from the CI environment variables')
+
+      return false
+    }
+    if (!tags[GIT_SHA]) {
+      this.logger.error('Could not extract the source git commit sha from the CI environment variables')
+
+      return false
+    }
+
+    return true
+  }
+
+  private validateCDProviderParam(): boolean {
+    this.cdProviderParam = this.cdProviderParam?.toLowerCase()
+    if (this.cdProviderParam && this.supportedCDProviders.includes(this.cdProviderParam)) {
+      this.cdProvider = this.cdProviderParam
+
+      return true
+    } else if (!this.cdProviderParam) {
+      this.logger.error('Missing CD provider. It must be provided with --provider')
+
+      return false
+    } else {
+      this.logger.error(
+        `Unsupported CD provider: "${
+          this.cdProviderParam
+        }". Supported providers are: ${this.supportedCDProviders.toString()}`
+      )
+
+      return false
     }
   }
 }

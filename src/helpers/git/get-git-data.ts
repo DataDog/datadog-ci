@@ -68,7 +68,7 @@ export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<s
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
 
-export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<readonly string[]> => {
+export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<string[]> => {
   const gitShas = await git.raw(['log', branchName, '--not', '--remotes', '--format=%H'])
 
   return gitShas.split(/\r\n|\r|\n/).filter(Boolean) // split by new line and discarding empty lines
