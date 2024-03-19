@@ -257,8 +257,8 @@ describe('dd-api', () => {
   })
 
   test('should complete presigned mobile application upload', async () => {
-    const mockRequest = jest.fn()
-    const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const jobId = 'fake_job_id'
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: {job_id: jobId}})) as any)
     const api = apiConstructor(apiConfiguration)
     const {completeMultipartMobileApplicationUpload} = api
 
@@ -270,19 +270,18 @@ describe('dd-api', () => {
       })
     )
 
-    await completeMultipartMobileApplicationUpload(
+    const result = await completeMultipartMobileApplicationUpload(
       appId,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
       partUploadResponses
     )
 
-    expect(mockRequest).toHaveBeenCalled()
+    expect(result).toBe(jobId)
     spy.mockRestore()
   })
 
   test('should poll for app upload validation', async () => {
-    const mockRequest = jest.fn()
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const {pollMobileApplicationUploadResponse} = api
@@ -291,7 +290,6 @@ describe('dd-api', () => {
 
     const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
 
-    expect(mockRequest).toHaveBeenCalled()
     expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
     spy.mockRestore()
   })
