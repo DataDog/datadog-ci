@@ -59,14 +59,13 @@ describe('AppUploadReporter', () => {
 
   describe('reportFailure', () => {
     test('should write the correct output', () => {
-      const error = new Error('Failed to upload')
       const failedApp: AppUploadDetails = {
         versionName: '1.0.0',
         appId: '123',
         appPath: '/path/to/app',
       }
 
-      reporter.reportFailure(error, failedApp)
+      reporter.reportFailure(failedApp)
 
       // Assert that the correct output is written to stdout
       expect(reporter['context'].stdout.write).toHaveBeenCalledWith(
@@ -75,7 +74,6 @@ describe('AppUploadReporter', () => {
       expect(reporter['context'].stdout.write).toHaveBeenCalledWith(
         expect.stringContaining('Version 1.0.0 - Application ID 123 - Local Path /path/to/app')
       )
-      expect(reporter['context'].stdout.write).toHaveBeenCalledWith(expect.stringContaining(error.message))
     })
   })
 })

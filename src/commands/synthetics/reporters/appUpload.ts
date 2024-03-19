@@ -17,8 +17,8 @@ export class AppUploadReporter {
     this.startTime = Date.now()
   }
 
-  public start = (appsToUpload: AppUploadDetails[]): void => {
-    this.write(`\n${appsToUpload.length} mobile application(s) to upload:\n`)
+  public start = (appsToUpload: AppUploadDetails[], prependLineBreak = false): void => {
+    this.write(`${prependLineBreak ? '\n' : ''}${appsToUpload.length} mobile application(s) to upload:\n`)
     this.write(appsToUpload.map((appToUpload) => this.getAppRepr(appToUpload)).join('\n') + '\n')
   }
 
@@ -32,15 +32,20 @@ export class AppUploadReporter {
     this.spinner.start()
   }
 
-  public reportSuccess = (): void => {
+  public reportSuccess = (appendLineBreak = false): void => {
     this.endRendering()
-    this.write(`${ICONS.SUCCESS} Uploaded applications in ${Math.round((Date.now() - this.startTime) / 1000)}s`)
+    this.write(
+      `${ICONS.SUCCESS} Uploaded applications in ${Math.round((Date.now() - this.startTime) / 1000)}s${
+        appendLineBreak ? '\n' : ''
+      }`
+    )
   }
 
-  public reportFailure = (error: Error, failedApp: AppUploadDetails): void => {
+  public reportFailure = (failedApp: AppUploadDetails, appendLineBreak = false): void => {
     this.endRendering()
-    this.write(`${ICONS.FAILED} Failed to upload application:\n${this.getAppRepr(failedApp)}\n`)
-    this.write(`${chalk.red(error.message)}\n`)
+    this.write(
+      `${ICONS.FAILED} Failed to upload application:\n${this.getAppRepr(failedApp)}${appendLineBreak ? '\n' : ''}`
+    )
   }
 
   public endRendering = (): void => {

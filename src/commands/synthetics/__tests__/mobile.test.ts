@@ -148,7 +148,7 @@ describe('uploadMobileApplication', () => {
       },
     }
     pollMobileApplicationUploadResponseSpy.mockImplementation(async () => appUploadResponse)
-    const expectedError = new CiError(
+    const expectedError = new CriticalError(
       'INVALID_MOBILE_APP',
       `Mobile application failed validation for reason: ${appUploadResponse.invalid_app_result.invalid_message}`
     )
@@ -167,7 +167,7 @@ describe('uploadMobileApplication', () => {
       },
     }
     pollMobileApplicationUploadResponseSpy.mockImplementation(async () => appUploadResponse)
-    const expectedError = new CiError(
+    const expectedError = new CriticalError(
       'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
       `Mobile application failed validation for reason: ${appUploadResponse.user_error_result.user_error_message}`
     )

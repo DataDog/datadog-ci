@@ -115,14 +115,14 @@ export const uploadMobileApplication = async (
   }
 
   if (appUploadResponse.status === 'complete' && !appUploadResponse.is_valid) {
-    throw new CiError(
+    throw new CriticalError(
       'INVALID_MOBILE_APP',
       `Mobile application failed validation for reason: ${appUploadResponse.invalid_app_result?.invalid_message}`
     )
   }
 
   if (appUploadResponse.status === 'user_error') {
-    throw new CiError(
+    throw new CriticalError(
       'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
       `Mobile application failed validation for reason: ${appUploadResponse.user_error_result?.user_error_message}`
     )
@@ -238,9 +238,9 @@ export const uploadMobileApplicationVersion = async (
       config.mobileApplicationId,
       newVersionParams
     ))
-    appUploadReporter.reportSuccess()
+    appUploadReporter.reportSuccess(true)
   } catch (error) {
-    appUploadReporter.reportFailure(error, appRenderingInfo)
+    appUploadReporter.reportFailure(appRenderingInfo, true)
     throw error
   }
 
@@ -257,14 +257,14 @@ export const uploadMobileApplicationsAndOverrideConfigs = async (
   appUploadCache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
   const appsToUpload = appUploadCache.getAppsToUpload()
 
-  appUploadReporter.start(appsToUpload)
+  appUploadReporter.start(appsToUpload, true)
   for (const [index, item] of appsToUpload.entries()) {
     appUploadReporter.renderProgress(appsToUpload.length - index)
     try {
       const fileName = (await uploadMobileApplication(api, item.appPath, item.appId)).fileName
       appUploadCache.setFileName(item.appPath, item.appId, fileName)
     } catch (error) {
-      appUploadReporter.reportFailure(error, item)
+      appUploadReporter.reportFailure(item, true)
       throw error
     }
   }
