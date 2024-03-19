@@ -27,7 +27,8 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
-const DELAY_FOR_TOO_MANY_REQUESTS = 5000 // In ms (5s). Could be changed to the header returned for 429s later on
+// SYNTH-13709: Use the `Retry-After` header.
+const DELAY_BETWEEN_429_RETRIES = 5000 // In ms (5s). Could be changed to the header returned for 429s later on
 
 interface BackendError {
   errors: string[]
@@ -265,7 +266,7 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
   return resp.data
 }
 
-const retryWithJitter = (delay: number = DELAY_FOR_TOO_MANY_REQUESTS) => delay + Math.floor(Math.random() * delay)
+const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
 
 export type RetryPolicy = {
   retryOn404?: boolean | undefined
@@ -302,7 +303,7 @@ export const determineRetryDelay = (
     retries < MAX_RETRIES &&
     isTooManyRequestsError(error as AxiosError<unknown, any> | EndpointError)
   ) {
-    return retryWithJitter(DELAY_FOR_TOO_MANY_REQUESTS)
+    return retryWithJitter(DELAY_BETWEEN_429_RETRIES)
   }
 }
 
