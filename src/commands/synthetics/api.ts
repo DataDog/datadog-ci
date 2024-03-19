@@ -267,7 +267,7 @@ const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise
 
 const retryWithJitter = (delay: number = DELAY_FOR_TOO_MANY_REQUESTS) => delay + Math.floor(Math.random() * delay)
 
-export type OptionalRetries = {
+export type RetryPolicy = {
   retryOn404?: boolean | undefined
   retryOn429?: boolean | undefined
 }
@@ -275,20 +275,21 @@ export type OptionalRetries = {
 export const determineRetryDelay = (
   retries: number,
   error: Error,
-  optionalRetries: OptionalRetries = {retryOn404: false, retryOn429: false}
+  retryPolicy: RetryPolicy = {retryOn404: false, retryOn429: false}
 ) => {
-  // Retry on 5xx
+  // Always retry on Node.js errors
   if (retries < MAX_RETRIES && isNodeError(error)) {
     return LARGE_DELAY_BETWEEN_RETRIES
   }
 
+  // Always retry on 5xx
   if (retries < MAX_RETRIES && is5xxError(error as AxiosError<unknown, any> | EndpointError)) {
     return DELAY_BETWEEN_RETRIES
   }
 
   // Retry on 404
   if (
-    optionalRetries.retryOn404 &&
+    retryPolicy.retryOn404 &&
     retries < MAX_RETRIES &&
     isNotFoundError(error as AxiosError<unknown, any> | EndpointError)
   ) {
@@ -297,7 +298,7 @@ export const determineRetryDelay = (
 
   // Retry on 429
   if (
-    optionalRetries.retryOn429 &&
+    retryPolicy.retryOn429 &&
     retries < MAX_RETRIES &&
     isTooManyRequestsError(error as AxiosError<unknown, any> | EndpointError)
   ) {
@@ -325,11 +326,11 @@ export const is5xxError = (error: AxiosError | EndpointError) => {
 const retryRequest = <T>(
   args: AxiosRequestConfig,
   request: (args: AxiosRequestConfig) => AxiosPromise<T>,
-  optionalStatusCodesToRetryOn?: OptionalRetries
+  statusCodesToRetryOn?: RetryPolicy
 ) =>
   retry(
     () => request(args),
-    (retries, e) => determineRetryDelay(retries, e, optionalStatusCodesToRetryOn)
+    (retries, e) => determineRetryDelay(retries, e, statusCodesToRetryOn)
   )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
