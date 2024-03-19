@@ -34,7 +34,7 @@ jobs:
               .addRaw('Please go to the link below, copy the release notes and paste them in your release PR.', true)
               .addBreak()
               .addBreak()
-              .addLink('Edit v0.0.1 (draft)', editReleaseLink)
+              .addLink('Edit ${{ github.ref_name }} (draft)', editReleaseLink)
               .write()
 
             return release.id
