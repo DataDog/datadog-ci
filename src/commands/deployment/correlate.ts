@@ -2,10 +2,11 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
 
-import {getCIEnv} from '../../helpers/ci'
+import {getCISpanTags} from '../../helpers/ci'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '../../helpers/git/get-git-data'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
+import { CI_PROVIDER_NAME, CI_ENV_VARS } from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 /**
@@ -21,14 +22,13 @@ export class DeploymentCorrelateCommand extends Command {
     details: `
       This command will correlate the current pipeline.\n
     `,
-    examples: [
-      ['Mark a CI job as a deployment', 'datadog-ci deployment mark'],
-    ],
+    examples: [['Mark a CI job as a deployment', 'datadog-ci deployment mark']],
   })
 
   private cdProviderParam = Option.String('--provider')
   private cdProvider!: string
   private configurationRepo = Option.String('--config-repo')
+  private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -54,7 +54,22 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    const {provider, ciEnv} = getCIEnv()
+    const tags = getCISpanTags() || {}
+    if (!tags) {
+      this.logger.error('Missing CD provider. It must be provided with --provider')
+
+      return 1
+    }
+    let envVars : Record<string, string> = {}
+    if (tags[CI_ENV_VARS]) {
+      envVars = JSON.parse(tags[CI_ENV_VARS]);
+      delete tags[CI_ENV_VARS]
+    }
+    const ciEnv : Record<string, string> = {
+      ...tags,
+      ...envVars,
+    }
+
     const git = simpleGit({
       baseDir: process.cwd(),
       binary: 'git',
@@ -72,13 +87,13 @@ export class DeploymentCorrelateCommand extends Command {
     if (this.configurationRepo) {
       localCommitShas = await gitLocalCommitShas(git, currentBranch)
     } else {
-      ;[this.configurationRepo, localCommitShas] = await Promise.all([
+      [this.configurationRepo, localCommitShas] = await Promise.all([
         gitRepositoryURL(git),
         gitLocalCommitShas(git, currentBranch),
       ])
     }
 
-    await this.sendCorrelationData(provider, localCommitShas, ciEnv, this.config.apiKey)
+    await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], localCommitShas, ciEnv, this.config.apiKey)
   }
 
   private async sendCorrelationData(
@@ -87,22 +102,31 @@ export class DeploymentCorrelateCommand extends Command {
     ciEnv: Record<string, string>,
     apiKey: string
   ) {
+    const correlateEvent = {
+      type: 'ci_app_deployment_correlate',
+      data: {
+        ci_provider: ciProvider,
+        cd_provider: this.cdProvider,
+        config_repo_url: this.configurationRepo,
+        config_commit_shas: configCommitShas,
+        ci_env: ciEnv,
+      },
+    }
+
+
+    if (this.dryRun) {
+      this.logger.info(`[DRYRUN] Sending correlation event\n data: ` + JSON.stringify(correlateEvent, undefined, 2))
+
+      return
+    }
+
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey})
     const doRequest = () =>
       request({
         data: {
-          data: {
-            type: 'ci_app_deployment_correlate',
-            data: {
-              ci_provider: ciProvider,
-              cd_provider: this.cdProvider,
-              config_repo_url: this.configurationRepo,
-              config_commit_shas: configCommitShas,
-              ci_env: ciEnv,
-            },
-          },
+          data: correlateEvent,
         },
         method: 'post',
         url: '/api/v2/ci/deployments/correlate',
