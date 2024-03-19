@@ -119,7 +119,10 @@ const getSyntheticsOrgSettings = (
 const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
   batchId: string
 ): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {retryOn404: true, retryOn429: true})
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
+    retryOn404: true,
+    retryOn429: true,
+  })
 
   const serverBatch = resp.data.data
 
@@ -271,7 +274,7 @@ export type OptionalRetries = {
 
 export const determineRetryDelay = (
   retries: number,
-  error: AxiosError,
+  error: Error,
   optionalRetries: OptionalRetries = {retryOn404: false, retryOn429: false}
 ) => {
   // Retry on 5xx
@@ -279,17 +282,25 @@ export const determineRetryDelay = (
     return LARGE_DELAY_BETWEEN_RETRIES
   }
 
-  if (retries < MAX_RETRIES && is5xxError(error)) {
+  if (retries < MAX_RETRIES && is5xxError(error as AxiosError<unknown, any> | EndpointError)) {
     return DELAY_BETWEEN_RETRIES
   }
 
   // Retry on 404
-  if (optionalRetries.retryOn404 && retries < MAX_RETRIES && isNotFoundError(error)) {
+  if (
+    optionalRetries.retryOn404 &&
+    retries < MAX_RETRIES &&
+    isNotFoundError(error as AxiosError<unknown, any> | EndpointError)
+  ) {
     return DELAY_BETWEEN_RETRIES
   }
 
   // Retry on 429
-  if (optionalRetries.retryOn429 && retries < MAX_RETRIES && isTooManyRequestsError(error)) {
+  if (
+    optionalRetries.retryOn429 &&
+    retries < MAX_RETRIES &&
+    isTooManyRequestsError(error as AxiosError<unknown, any> | EndpointError)
+  ) {
     return retryWithJitter(DELAY_FOR_TOO_MANY_REQUESTS)
   }
 }
@@ -315,7 +326,11 @@ const retryRequest = <T>(
   args: AxiosRequestConfig,
   request: (args: AxiosRequestConfig) => AxiosPromise<T>,
   optionalStatusCodesToRetryOn?: OptionalRetries
-) => retry(() => request(args), optionalStatusCodesToRetryOn)
+) =>
+  retry(
+    () => request(args),
+    (retries, e) => determineRetryDelay(retries, e, optionalStatusCodesToRetryOn)
+  )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration

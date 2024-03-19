@@ -13,15 +13,7 @@ import {getCIMetadata} from '../../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
-import {
-  APIHelper,
-  EndpointError,
-  OptionalRetries,
-  determineRetryDelay,
-  formatBackendErrors,
-  getApiHelper,
-  isNotFoundError,
-} from '../api'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from '../api'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
@@ -836,13 +828,13 @@ export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): P
 
 export const retry = async <T, E extends Error>(
   func: () => Promise<T>,
-  optionalStatusCodesToRetryOn: OptionalRetries | undefined
+  shouldRetryAfterWait: (retries: number, error: E) => number | undefined
 ): Promise<T> => {
   const trier = async (retries = 0): Promise<T> => {
     try {
       return await func()
     } catch (e) {
-      const waiter = determineRetryDelay(retries, e, optionalStatusCodesToRetryOn)
+      const waiter = shouldRetryAfterWait(retries, e)
       if (waiter) {
         await wait(waiter)
 
