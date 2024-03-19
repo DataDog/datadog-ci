@@ -1,13 +1,25 @@
 import fs from 'fs'
 import path from 'path'
 
-import { EndpointError } from '../api'
-import { CiError, CriticalError } from '../errors'
-import { TestWithOverride, TriggerConfig } from '../interfaces'
+import {EndpointError} from '../api'
+import {CiError, CriticalError} from '../errors'
+import {TestWithOverride, TriggerConfig} from '../interfaces'
 import * as mobile from '../mobile'
-import { AppUploadReporter } from '../reporters/appUpload'
+import {AppUploadReporter} from '../reporters/appUpload'
 
-import {APP_UPLOAD_POLL_RESULTS, MOBILE_PRESIGNED_URLS_PAYLOAD, getApiHelper, getMobileTest, getTestPayload, APP_UPLOAD_SIZE_AND_PARTS, APP_UPLOAD_PART_RESPONSES, getTriggerConfig, getTestAndConfigOverride, uploadCommandConfig, getMockAppUploadReporter} from './fixtures'
+import {
+  APP_UPLOAD_POLL_RESULTS,
+  MOBILE_PRESIGNED_URLS_PAYLOAD,
+  getApiHelper,
+  getMobileTest,
+  getTestPayload,
+  APP_UPLOAD_SIZE_AND_PARTS,
+  APP_UPLOAD_PART_RESPONSES,
+  getTriggerConfig,
+  getTestAndConfigOverride,
+  uploadCommandConfig,
+  getMockAppUploadReporter,
+} from './fixtures'
 
 describe('getSizeAndPartsFromFile', () => {
   test('correctly get size and parts of a file', async () => {
@@ -45,22 +57,48 @@ describe('uploadMobileApplication', () => {
   const jobId = 'jobId'
 
   beforeEach(() => {
-    getSizeAndPartsFromFileSpy = jest.spyOn(mobile, 'getSizeAndPartsFromFile').mockImplementation(async () => APP_UPLOAD_SIZE_AND_PARTS)
-    getMobileApplicationPresignedURLsSpy = jest.spyOn(api, 'getMobileApplicationPresignedURLs').mockImplementation(async () => MOBILE_PRESIGNED_URLS_PAYLOAD)
-    uploadMobileApplicationPartSpy = jest.spyOn(api, 'uploadMobileApplicationPart').mockImplementation(async () => APP_UPLOAD_PART_RESPONSES)
-    completeMultipartMobileApplicationUploadSpy = jest.spyOn(api, 'completeMultipartMobileApplicationUpload').mockImplementation(async () => jobId)
-    pollMobileApplicationUploadResponseSpy = jest.spyOn(api, 'pollMobileApplicationUploadResponse').mockImplementation(async () => APP_UPLOAD_POLL_RESULTS)
+    getSizeAndPartsFromFileSpy = jest
+      .spyOn(mobile, 'getSizeAndPartsFromFile')
+      .mockImplementation(async () => APP_UPLOAD_SIZE_AND_PARTS)
+    getMobileApplicationPresignedURLsSpy = jest
+      .spyOn(api, 'getMobileApplicationPresignedURLs')
+      .mockImplementation(async () => MOBILE_PRESIGNED_URLS_PAYLOAD)
+    uploadMobileApplicationPartSpy = jest
+      .spyOn(api, 'uploadMobileApplicationPart')
+      .mockImplementation(async () => APP_UPLOAD_PART_RESPONSES)
+    completeMultipartMobileApplicationUploadSpy = jest
+      .spyOn(api, 'completeMultipartMobileApplicationUpload')
+      .mockImplementation(async () => jobId)
+    pollMobileApplicationUploadResponseSpy = jest
+      .spyOn(api, 'pollMobileApplicationUploadResponse')
+      .mockImplementation(async () => APP_UPLOAD_POLL_RESULTS)
   })
 
   test('happy path', async () => {
     const result = await mobile.uploadMobileApplication(api, 'new-application-path.ipa', 'mobileAppUuid')
 
     expect(getSizeAndPartsFromFileSpy).toHaveBeenCalledWith('new-application-path.ipa')
-    expect(getMobileApplicationPresignedURLsSpy).toHaveBeenCalledWith('mobileAppUuid', APP_UPLOAD_SIZE_AND_PARTS.appSize, APP_UPLOAD_SIZE_AND_PARTS.parts)
-    expect(uploadMobileApplicationPartSpy).toHaveBeenCalledWith(APP_UPLOAD_SIZE_AND_PARTS.parts, MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params)
-    expect(completeMultipartMobileApplicationUploadSpy).toHaveBeenCalledWith('mobileAppUuid', MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id, MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key, APP_UPLOAD_PART_RESPONSES, undefined)
+    expect(getMobileApplicationPresignedURLsSpy).toHaveBeenCalledWith(
+      'mobileAppUuid',
+      APP_UPLOAD_SIZE_AND_PARTS.appSize,
+      APP_UPLOAD_SIZE_AND_PARTS.parts
+    )
+    expect(uploadMobileApplicationPartSpy).toHaveBeenCalledWith(
+      APP_UPLOAD_SIZE_AND_PARTS.parts,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
+    expect(completeMultipartMobileApplicationUploadSpy).toHaveBeenCalledWith(
+      'mobileAppUuid',
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
+      APP_UPLOAD_PART_RESPONSES,
+      undefined
+    )
     expect(pollMobileApplicationUploadResponseSpy).toHaveBeenCalledWith(jobId)
-    expect(result).toEqual({appUploadResponse: APP_UPLOAD_POLL_RESULTS, fileName: MOBILE_PRESIGNED_URLS_PAYLOAD.file_name})
+    expect(result).toEqual({
+      appUploadResponse: APP_UPLOAD_POLL_RESULTS,
+      fileName: MOBILE_PRESIGNED_URLS_PAYLOAD.file_name,
+    })
   })
 
   test('happy path with new version params', async () => {
@@ -69,14 +107,35 @@ describe('uploadMobileApplication', () => {
       versionName: 'versionName',
       isLatest: true,
     }
-    const result = await mobile.uploadMobileApplication(api, 'new-application-path.ipa', 'mobileAppUuid', newVersionParams)
+    const result = await mobile.uploadMobileApplication(
+      api,
+      'new-application-path.ipa',
+      'mobileAppUuid',
+      newVersionParams
+    )
 
     expect(getSizeAndPartsFromFileSpy).toHaveBeenCalledWith('new-application-path.ipa')
-    expect(getMobileApplicationPresignedURLsSpy).toHaveBeenCalledWith('mobileAppUuid', APP_UPLOAD_SIZE_AND_PARTS.appSize, APP_UPLOAD_SIZE_AND_PARTS.parts)
-    expect(uploadMobileApplicationPartSpy).toHaveBeenCalledWith(APP_UPLOAD_SIZE_AND_PARTS.parts, MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params)
-    expect(completeMultipartMobileApplicationUploadSpy).toHaveBeenCalledWith('mobileAppUuid', MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id, MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key, APP_UPLOAD_PART_RESPONSES, newVersionParams)
+    expect(getMobileApplicationPresignedURLsSpy).toHaveBeenCalledWith(
+      'mobileAppUuid',
+      APP_UPLOAD_SIZE_AND_PARTS.appSize,
+      APP_UPLOAD_SIZE_AND_PARTS.parts
+    )
+    expect(uploadMobileApplicationPartSpy).toHaveBeenCalledWith(
+      APP_UPLOAD_SIZE_AND_PARTS.parts,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
+    expect(completeMultipartMobileApplicationUploadSpy).toHaveBeenCalledWith(
+      'mobileAppUuid',
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
+      APP_UPLOAD_PART_RESPONSES,
+      newVersionParams
+    )
     expect(pollMobileApplicationUploadResponseSpy).toHaveBeenCalledWith(jobId)
-    expect(result).toEqual({appUploadResponse: APP_UPLOAD_POLL_RESULTS, fileName: MOBILE_PRESIGNED_URLS_PAYLOAD.file_name})
+    expect(result).toEqual({
+      appUploadResponse: APP_UPLOAD_POLL_RESULTS,
+      fileName: MOBILE_PRESIGNED_URLS_PAYLOAD.file_name,
+    })
   })
 
   test('invalid app throws', async () => {
@@ -89,9 +148,14 @@ describe('uploadMobileApplication', () => {
       },
     }
     pollMobileApplicationUploadResponseSpy.mockImplementation(async () => appUploadResponse)
-    const expectedError = new CiError('INVALID_MOBILE_APP', `Mobile application failed validation for reason: ${appUploadResponse.invalid_app_result.invalid_message}`)
+    const expectedError = new CiError(
+      'INVALID_MOBILE_APP',
+      `Mobile application failed validation for reason: ${appUploadResponse.invalid_app_result.invalid_message}`
+    )
 
-    await expect(mobile.uploadMobileApplication(api, 'invalid-application-path.ipa', 'mobileAppUuid')).rejects.toThrow(expectedError)
+    await expect(mobile.uploadMobileApplication(api, 'invalid-application-path.ipa', 'mobileAppUuid')).rejects.toThrow(
+      expectedError
+    )
   })
 
   test('user error upload throws', async () => {
@@ -103,9 +167,14 @@ describe('uploadMobileApplication', () => {
       },
     }
     pollMobileApplicationUploadResponseSpy.mockImplementation(async () => appUploadResponse)
-    const expectedError = new CiError('INVALID_MOBILE_APP_UPLOAD_PARAMETERS', `Mobile application failed validation for reason: ${appUploadResponse.user_error_result.user_error_message}`)
+    const expectedError = new CiError(
+      'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
+      `Mobile application failed validation for reason: ${appUploadResponse.user_error_result.user_error_message}`
+    )
 
-    await expect(mobile.uploadMobileApplication(api, 'user-error-application-path.ipa', 'mobileAppUuid')).rejects.toThrow(expectedError)
+    await expect(
+      mobile.uploadMobileApplication(api, 'user-error-application-path.ipa', 'mobileAppUuid')
+    ).rejects.toThrow(expectedError)
   })
 
   test('user 500 validation error throws', async () => {
@@ -113,9 +182,14 @@ describe('uploadMobileApplication', () => {
       status: 'error',
     }
     pollMobileApplicationUploadResponseSpy.mockImplementation(async () => appUploadResponse)
-    const expectedError = new CriticalError('UNKNOWN_MOBILE_APP_UPLOAD_FAILURE', 'Unknown mobile application upload error.')
+    const expectedError = new CriticalError(
+      'UNKNOWN_MOBILE_APP_UPLOAD_FAILURE',
+      'Unknown mobile application upload error.'
+    )
 
-    await expect(mobile.uploadMobileApplication(api, 'error-application-path.ipa', 'mobileAppUuid')).rejects.toThrow(expectedError)
+    await expect(mobile.uploadMobileApplication(api, 'error-application-path.ipa', 'mobileAppUuid')).rejects.toThrow(
+      expectedError
+    )
   })
 })
 
@@ -156,18 +230,13 @@ describe('AppUploadCache', () => {
 
     expect(cache.getFileName('appPath1', 'appId1')).toBe('fileName')
   })
-
 })
 
 describe('overrideMobileConfig', () => {
   test('mobileApplicationVersionFilePath', () => {
     const test = getMobileTest()
     const overriddenConfig = getTestPayload({public_id: test.public_id})
-    mobile.overrideMobileConfig(
-      overriddenConfig,
-      test.options.mobileApplication!.applicationId,
-      'fileName'
-    )
+    mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication!.applicationId, 'fileName')
 
     expect(overriddenConfig.mobileApplication).toEqual({
       applicationId: test.options.mobileApplication!.applicationId,
@@ -243,7 +312,12 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       return {fileName: `fileName-${appId}`, appUploadResponse: APP_UPLOAD_POLL_RESULTS}
     })
 
-    await mobile.uploadMobileApplicationsAndOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride, appUploadReporter)
+    await mobile.uploadMobileApplicationsAndOverrideConfigs(
+      api,
+      triggerConfigs,
+      testsAndConfigsOverride,
+      appUploadReporter
+    )
 
     expect(appUploadReporter.start).toHaveBeenCalledWith([
       {appId: 'appId1', appPath: 'appPath1'},
@@ -258,7 +332,12 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       [testsAndConfigsOverride[1].overriddenConfig, 'appId2', 'fileName-appId2', undefined],
       [testsAndConfigsOverride[2].overriddenConfig, 'appId1', 'fileName-appId1', undefined],
       [testsAndConfigsOverride[3].overriddenConfig, 'appId3', 'fileName-appId3', undefined],
-      [testsAndConfigsOverride[4].overriddenConfig, 'appId4', undefined, triggerConfigs[4].config.mobileApplicationVersion],
+      [
+        testsAndConfigsOverride[4].overriddenConfig,
+        'appId4',
+        undefined,
+        triggerConfigs[4].config.mobileApplicationVersion,
+      ],
     ])
   })
 
@@ -267,7 +346,9 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       throw new Error('mock failure')
     })
 
-    await expect(mobile.uploadMobileApplicationsAndOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride, appUploadReporter)).rejects.toThrow(Error)
+    await expect(
+      mobile.uploadMobileApplicationsAndOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride, appUploadReporter)
+    ).rejects.toThrow(Error)
 
     expect(appUploadReporter.reportFailure).toHaveBeenCalledTimes(1)
     expect(appUploadReporter.reportSuccess).toHaveBeenCalledTimes(0)
@@ -301,11 +382,13 @@ describe('uploadMobileApplicationVersion', () => {
         isLatest: uploadCommandConfig.latest,
       }
     )
-    expect(mockAppUploadReporter.start).toHaveBeenCalledWith([{
-      appId: uploadCommandConfig.mobileApplicationId,
-      appPath: uploadCommandConfig.mobileApplicationVersionFilePath,
-      versionName: uploadCommandConfig.versionName,
-    }])
+    expect(mockAppUploadReporter.start).toHaveBeenCalledWith([
+      {
+        appId: uploadCommandConfig.mobileApplicationId,
+        appPath: uploadCommandConfig.mobileApplicationVersionFilePath,
+        versionName: uploadCommandConfig.versionName,
+      },
+    ])
     expect(mockAppUploadReporter.renderProgress).toHaveBeenCalledWith(1)
     expect(mockAppUploadReporter.reportSuccess).toHaveBeenCalledTimes(1)
   })

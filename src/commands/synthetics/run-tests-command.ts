@@ -8,7 +8,7 @@ import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
-import { AppUploadReporter } from './reporters/appUpload'
+import {AppUploadReporter} from './reporters/appUpload'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'

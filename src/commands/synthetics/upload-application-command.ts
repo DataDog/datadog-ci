@@ -5,11 +5,11 @@ import terminalLink from 'terminal-link'
 import {LogLevel, Logger} from '../../helpers/logger'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
-import { EndpointError } from './api'
-import { CiError, CriticalError } from './errors'
+import {EndpointError} from './api'
+import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
-import { AppUploadReporter } from './reporters/appUpload'
+import {AppUploadReporter} from './reporters/appUpload'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',

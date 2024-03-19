@@ -46,7 +46,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 import {uploadMobileApplicationsAndOverrideConfigs} from '../mobile'
-import { AppUploadReporter } from '../reporters/appUpload'
+import {AppUploadReporter} from '../reporters/appUpload'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {Tunnel} from '../tunnel'
 

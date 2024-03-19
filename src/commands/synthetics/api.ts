@@ -252,9 +252,7 @@ export const completeMultipartMobileApplicationUpload = (
 
 export const pollMobileApplicationUploadResponse = (
   request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
-) => async (
-  jobId: string
-): Promise<MobileAppUploadResult> => {
+) => async (jobId: string): Promise<MobileAppUploadResult> => {
   const response = await retryRequest(
     {
       method: 'GET',

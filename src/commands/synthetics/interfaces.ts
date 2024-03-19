@@ -382,7 +382,8 @@ export interface TestSkipped {
 }
 
 export interface TestWithOverride {
-  test: Test; overriddenConfig: TestPayload
+  test: Test
+  overriddenConfig: TestPayload
 }
 
 export interface BasicAuthCredentials {
@@ -504,7 +505,7 @@ export type MobileApplicationNewVersionParams = {
   isLatest: boolean
 }
 
-export type AppUploadDetails = {appId: string; appPath: string, versionName?: string}
+export type AppUploadDetails = {appId: string; appPath: string; versionName?: string}
 
 type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
 

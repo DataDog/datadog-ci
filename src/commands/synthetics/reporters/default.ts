@@ -33,7 +33,7 @@ import {
   ResultOutcome,
 } from '../utils/public'
 
-import { ICONS } from './constants'
+import {ICONS} from './constants'
 
 // Step rendering
 

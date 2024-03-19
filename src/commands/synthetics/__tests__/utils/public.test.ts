@@ -351,7 +351,9 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], mockReporter, getMockAppUploadReporter())).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
+      await expect(utils.getTestsToTrigger(api, [], mockReporter, getMockAppUploadReporter())).rejects.toEqual(
+        new CiError('NO_TESTS_TO_RUN')
+      )
     })
 
     describe('too many tests to trigger', () => {
@@ -373,14 +375,22 @@ describe('utils', () => {
 
       test('trim and warn if from search', async () => {
         const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
-        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, getMockAppUploadReporter(), true)
+        const tests = await utils.getTestsToTrigger(
+          fakeApi,
+          tooManyTests,
+          mockReporter,
+          getMockAppUploadReporter(),
+          true
+        )
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
         expect(mockReporter.initErrors).toMatchSnapshot()
       })
 
       test('fails outside of search', async () => {
         const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
-        await expect(utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, getMockAppUploadReporter(), false)).rejects.toEqual(
+        await expect(
+          utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, getMockAppUploadReporter(), false)
+        ).rejects.toEqual(
           new Error(`Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${tooManyTests.length})`)
         )
       })
@@ -391,7 +401,13 @@ describe('utils', () => {
           {id: 'skipped'},
           {id: 'missing'},
         ]
-        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, getMockAppUploadReporter(), true)
+        const tests = await utils.getTestsToTrigger(
+          fakeApi,
+          tooManyTests,
+          mockReporter,
+          getMockAppUploadReporter(),
+          true
+        )
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
       })
     })

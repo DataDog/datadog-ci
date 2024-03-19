@@ -37,7 +37,7 @@ import {
   TestWithOverride,
   TriggerConfig,
 } from '../interfaces'
-import { AppUploadReporter } from '../reporters/appUpload'
+import {AppUploadReporter} from '../reporters/appUpload'
 import {createInitialSummary} from '../utils/public'
 
 const mockUser: User = {

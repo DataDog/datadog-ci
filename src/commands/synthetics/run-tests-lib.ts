@@ -17,7 +17,7 @@ import {
   UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
-import { AppUploadReporter } from './reporters/appUpload'
+import {AppUploadReporter} from './reporters/appUpload'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
