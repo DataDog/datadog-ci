@@ -319,11 +319,14 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       appUploadReporter
     )
 
-    expect(appUploadReporter.start).toHaveBeenCalledWith([
-      {appId: 'appId1', appPath: 'appPath1'},
-      {appId: 'appId2', appPath: 'appPath2'},
-      {appId: 'appId3', appPath: 'appPath3'},
-    ])
+    expect(appUploadReporter.start).toHaveBeenCalledWith(
+      [
+        {appId: 'appId1', appPath: 'appPath1'},
+        {appId: 'appId2', appPath: 'appPath2'},
+        {appId: 'appId3', appPath: 'appPath3'},
+      ],
+      true
+    )
     expect(appUploadReporter.renderProgress).toHaveBeenCalledTimes(3)
     expect(appUploadReporter.reportSuccess).toHaveBeenCalledTimes(1)
     expect(overrideMobileConfigSpy).toHaveBeenCalledTimes(5)
