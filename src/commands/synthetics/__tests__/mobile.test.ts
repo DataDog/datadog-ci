@@ -288,7 +288,8 @@ describe('uploadMobileApplicationVersion', () => {
       return {fileName: 'abc-123', appUploadResponse: APP_UPLOAD_POLL_RESULTS}
     })
 
-    await mobile.uploadMobileApplicationVersion(config)
+    const mockAppUploadReporter = getMockAppUploadReporter()
+    await mobile.uploadMobileApplicationVersion(config, mockAppUploadReporter)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledWith(
       expect.anything(),
@@ -300,6 +301,13 @@ describe('uploadMobileApplicationVersion', () => {
         isLatest: uploadCommandConfig.latest,
       }
     )
+    expect(mockAppUploadReporter.start).toHaveBeenCalledWith([{
+      appId: uploadCommandConfig.mobileApplicationId,
+      appPath: uploadCommandConfig.mobileApplicationVersionFilePath,
+      versionName: uploadCommandConfig.versionName,
+    }])
+    expect(mockAppUploadReporter.renderProgress).toHaveBeenCalledWith(1)
+    expect(mockAppUploadReporter.reportSuccess).toHaveBeenCalledTimes(1)
   })
 
   test('get pre-signed URL fails', async () => {
@@ -307,26 +315,28 @@ describe('uploadMobileApplicationVersion', () => {
       throw new EndpointError('mock fail', 1)
     })
 
-    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(EndpointError)
+    const mockAppUploadReporter = getMockAppUploadReporter()
+    await expect(mobile.uploadMobileApplicationVersion(config, mockAppUploadReporter)).rejects.toThrow(EndpointError)
+    expect(mockAppUploadReporter.reportFailure).toHaveBeenCalledTimes(1)
   })
 
   test('missing mobile application ID', async () => {
     config.mobileApplicationId = ''
-    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+    await expect(mobile.uploadMobileApplicationVersion(config, getMockAppUploadReporter())).rejects.toThrow(CiError)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
   })
 
   test('missing mobile application file', async () => {
     delete config.mobileApplicationVersionFilePath
-    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+    await expect(mobile.uploadMobileApplicationVersion(config, getMockAppUploadReporter())).rejects.toThrow(CiError)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
   })
 
   test('missing version name', async () => {
     delete config.versionName
-    await expect(mobile.uploadMobileApplicationVersion(config)).rejects.toThrow(CiError)
+    await expect(mobile.uploadMobileApplicationVersion(config, getMockAppUploadReporter())).rejects.toThrow(CiError)
 
     expect(uploadMobileApplicationSpy).toHaveBeenCalledTimes(0)
   })

@@ -5,6 +5,8 @@ import terminalLink from 'terminal-link'
 import {LogLevel, Logger} from '../../helpers/logger'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
+import { EndpointError } from './api'
+import { CiError, CriticalError } from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import { AppUploadReporter } from './reporters/appUpload'
@@ -53,9 +55,7 @@ export class UploadApplicationCommand extends Command {
   private mobileApplicationId = Option.String('--mobileApplicationId', {
     description: 'ID of the application you want to upload the new version to.',
   })
-  private versionName = Option.String('--versionName', {
-    description: 'Name of the new version. It has to be unique.',
-  })
+  private versionName = Option.String('--versionName', {description: 'Name of the new version. It has to be unique.'})
   private latest = Option.Boolean('--latest', {
     description:
       'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
@@ -75,19 +75,14 @@ export class UploadApplicationCommand extends Command {
 
       return 1
     }
+
     const appUploadReporter = new AppUploadReporter(this.context)
-    const appRenderingInfo = {
-      appId: this.config.mobileApplicationId!,
-      appPath: this.config.mobileApplicationVersionFilePath!,
-      versionName: this.config.versionName!,
-    }
-    appUploadReporter.start([appRenderingInfo])
-    appUploadReporter.renderProgress(1)
     try {
-      await uploadMobileApplicationVersion(this.config)
-      appUploadReporter.reportSuccess()
+      await uploadMobileApplicationVersion(this.config, appUploadReporter)
     } catch (error) {
-      appUploadReporter.reportFailure(error, appRenderingInfo)
+      if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
+        this.logger.error(`Error: ${error.message}`)
+      }
 
       return 1
     }

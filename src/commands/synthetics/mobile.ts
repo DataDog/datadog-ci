@@ -192,7 +192,8 @@ export const overrideMobileConfig = (
 }
 
 export const uploadMobileApplicationVersion = async (
-  config: UploadApplicationCommandConfig
+  config: UploadApplicationCommandConfig,
+  appUploadReporter: AppUploadReporter
 ): Promise<MobileAppUploadResult> => {
   const api = getApiHelper(config)
 
@@ -215,12 +216,26 @@ export const uploadMobileApplicationVersion = async (
     isLatest: config.latest,
   } as MobileApplicationNewVersionParams
 
-  const {appUploadResponse} = await uploadMobileApplication(
-    api,
-    config.mobileApplicationVersionFilePath,
-    config.mobileApplicationId,
-    newVersionParams
-  )
+  const appRenderingInfo = {
+    appId: config.mobileApplicationId,
+    appPath: config.mobileApplicationVersionFilePath,
+    versionName: config.versionName,
+  }
+  appUploadReporter.start([appRenderingInfo])
+  appUploadReporter.renderProgress(1)
+  let appUploadResponse: MobileAppUploadResult
+  try {
+    ({appUploadResponse} = await uploadMobileApplication(
+      api,
+      config.mobileApplicationVersionFilePath,
+      config.mobileApplicationId,
+      newVersionParams
+    ))
+    appUploadReporter.reportSuccess()
+  } catch (error){
+    appUploadReporter.reportFailure(error, appRenderingInfo)
+    throw error
+  }
 
   return appUploadResponse
 }
