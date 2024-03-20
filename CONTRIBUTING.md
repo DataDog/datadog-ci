@@ -18,7 +18,11 @@ yarn launch synthetics run-tests --config dev/global.config.json
 - [jest](https://github.com/facebook/jest): Tests are written in Jest.
 - [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning.
 
-### Repository structure
+### Creating a new command
+
+Any command you add should follow the [Structure](#structure) below. Then, don't forget the [Things to update](#things-to-update) in the project.
+
+#### Structure
 
 Commands are stored in the [src/commands](src/commands) folder.
 
@@ -33,8 +37,6 @@ src/
          ├── README.md
          └── index.ts
 ```
-
-Documentation of the command must be placed in the README.md file, the [current README](/README.md) must be updated to link to the new command README.
 
 The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
 
@@ -52,9 +54,31 @@ export class HelloWorldCommand extends Command {
 module.exports = [HelloWorldCommand]
 ```
 
-Lastly, test files must be created in the `__tests__/` folder. `jest` is used to run the tests and a CI has been set using GitHub Actions to ensure all tests are passing when merging a Pull Request.
+Lastly, unit tests must be created in the `__tests__/` folder. The tests can then be launched with the `yarn test` command: it will find all files with a filename ending in `.test.ts` in the repo and execute them.
 
-The tests can then be launched through the `yarn test` command, it will find all files with a filename ending in `.test.ts` in the repo and execute them.
+#### Beta command
+
+If your command is related to a beta product or feature, or that you want to dogfood the command first, you can mark you command as beta.
+
+To do so, add your command's name to the [`BETA_COMMANDS` array](https://github.com/DataDog/datadog-ci/blob/35c54e1d1e991d21461084ef2e346ca1c6bb7ea6/src/cli.ts#L8).
+
+Users will have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1`. Please document this in your command's README for visibility. This will be something to remove once the command goes out of beta.
+
+Optionally, you can create a pre-release for your command by following the [Pre-Release Process](#pre-release-process) instructions below.
+
+#### Things to update
+
+- The [Usage section in the root README](README.md#usage) must be updated to link to:
+  - The new command's README.
+  - And 📚 should link to our official Datadog documentation site.
+  - **Note:** If your command is beta, please use the [Beta commands](README.md#beta-commands) section instead.
+
+- The command should be added under the right product in the [CODEOWNERS](.github/CODEOWNERS) file to ensure the right people are notified when a PR is opened.
+
+- If you are adding a command for a new product, you should:
+  - Create a label [here](https://github.com/DataDog/datadog-ci/issues/labels) and add it to [`pr-required-labels.yml`](.github/workflows/pr-required-labels.yml).
+  - Update [`advanced-issue-labeler.yml`](.github/advanced-issue-labeler.yml).
+  - Update the `changelog` configuration in [`release.yml`](.github/release.yml).
 
 ### Continuous Integration tests
 
