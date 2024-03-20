@@ -487,9 +487,7 @@ describe('run-test', () => {
         getTest: jest.fn((testId: string) => {
           if (testId === 'for-bid-den') {
             const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
-            if (serverError.config) {
-              serverError.config.url = 'tests/for-bid-den'
-            }
+            serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }
 

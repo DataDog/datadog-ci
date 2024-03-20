@@ -84,7 +84,7 @@ export const ciConfig: RunTestsCommandConfig = {
 }
 
 export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
-  const serverError = new AxiosError(message)
+  const serverError = new AxiosError(message) as AxiosError<any> & {config: InternalAxiosRequestConfig}
   serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'} as InternalAxiosRequestConfig
   serverError.response = {data: {errors}, status} as AxiosResponse
 
