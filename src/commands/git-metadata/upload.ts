@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_GOV} from '../../constants'
+import {getBaseIntakeUrl, getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
@@ -12,7 +13,6 @@ import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
 import {CommitInfo} from './interfaces'
@@ -51,6 +51,7 @@ export class UploadCommand extends Command {
   private cliVersion = version
   private config = {
     apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    datadogSite: getDatadogSite(),
   }
 
   private logger: Logger = new Logger((s: string) => {
@@ -88,13 +89,13 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: this.config.datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
     const apiKeyValidator = newApiKeyValidator({
       apiKey: this.config.apiKey,
-      datadogSite,
+      datadogSite: this.config.datadogSite,
       metricsLogger: metricsLogger.logger,
     })
 
@@ -204,7 +205,7 @@ export class UploadCommand extends Command {
   private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl(),
+      baseUrl: getBaseIntakeUrl('sourcemap-intake'),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
@@ -216,7 +217,7 @@ export class UploadCommand extends Command {
   private getApiRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: 'https://' + apiHost,
+      baseUrl: `https://api.${getDatadogSite()}`,
     })
   }
 

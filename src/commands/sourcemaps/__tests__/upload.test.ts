@@ -3,6 +3,9 @@ import os from 'os'
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 
+import {createCommand} from '../../../helpers/__tests__/fixtures'
+import * as ciUtils from '../../../helpers/utils'
+
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
 
@@ -91,11 +94,31 @@ describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
       )
+    })
+    test('should use the correct endpoint', () => {
+      process.env = {
+        DD_API_KEY: 'PLACEHOLDER',
+        DD_APP_KEY: 'PLACEHOLDER',
+        DD_SITE: 'us3.datadoghq.com',
+      }
+
+      const command = createCommand(UploadCommand)
+      command['config']['apiKey'] = 'PLACEHOLDER'
+
+      const getRequestBuilder = jest.spyOn(ciUtils, 'getRequestBuilder')
+
+      expect(command['getRequestBuilder'].bind(command)).not.toThrow()
+      expect(getRequestBuilder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://sourcemap-intake.us3.datadoghq.com',
+        })
+      )
+      process.env = {}
     })
   })
 

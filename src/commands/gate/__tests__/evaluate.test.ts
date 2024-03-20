@@ -1,6 +1,7 @@
 import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
+import * as ciUtils from '../../../helpers/utils'
 
 import {apiConstructor} from '../api'
 import {GateEvaluateCommand} from '../evaluate'
@@ -23,6 +24,24 @@ describe('evaluate', () => {
 
       expect(command['getApiHelper'].bind(command)).toThrow('App key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_APP_KEY')
+    })
+    test('should use the correct endpoint', () => {
+      process.env = {
+        DD_API_KEY: 'PLACEHOLDER',
+        DD_APP_KEY: 'PLACEHOLDER',
+        DD_SITE: 'us3.datadoghq.com',
+      }
+
+      const command = createCommand(GateEvaluateCommand)
+      const getRequestBuilder = jest.spyOn(ciUtils, 'getRequestBuilder')
+
+      expect(command['getApiHelper'].bind(command)).not.toThrow()
+      expect(getRequestBuilder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://quality-gates.us3.datadoghq.com',
+        })
+      )
+      process.env = {}
     })
   })
   describe('handleEvaluationSuccess', () => {

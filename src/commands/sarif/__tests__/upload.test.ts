@@ -2,6 +2,9 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
+import {createCommand} from '../../../helpers/__tests__/fixtures'
+import * as ciUtils from '../../../helpers/utils'
+
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'
 
@@ -36,11 +39,29 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new UploadSarifReportCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadSarifReportCommand, {stdout: {write}} as any)
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
+    })
+    test('should use the correct endpoint', () => {
+      process.env = {
+        DD_API_KEY: 'PLACEHOLDER',
+        DD_APP_KEY: 'PLACEHOLDER',
+        DD_SITE: 'us3.datadoghq.com',
+      }
+
+      const command = createCommand(UploadSarifReportCommand)
+
+      const getRequestBuilder = jest.spyOn(ciUtils, 'getRequestBuilder')
+
+      expect(command['getApiHelper'].bind(command)).not.toThrow()
+      expect(getRequestBuilder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          baseUrl: 'https://cicodescan-intake.us3.datadoghq.com',
+        })
+      )
+      process.env = {}
     })
   })
   describe('getMatchingSarifReports', () => {
