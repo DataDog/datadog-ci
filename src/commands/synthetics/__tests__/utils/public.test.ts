@@ -1012,7 +1012,7 @@ describe('utils', () => {
         {
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 0,
+          maxPollingTimeout: 1,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
@@ -1022,6 +1022,8 @@ describe('utils', () => {
     })
 
     test('results should be timed out if global pollingTimeout is exceeded', async () => {
+      jest.useFakeTimers()
+
       mockApi({
         getBatchImplementation: async () => ({
           status: 'in_progress',
@@ -1069,6 +1071,8 @@ describe('utils', () => {
       // `resultEnd` should return the same data as `waitForResults`
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
+
+      jest.useRealTimers()
     })
 
     test('results failure should ignore if timed-out', async () => {

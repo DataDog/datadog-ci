@@ -315,16 +315,16 @@ const waitForBatchToFinish = async (
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
-  const maxPollingDate = Date.now() + maxPollingTimeout
+  const safeDeadline = Date.now() + maxPollingTimeout + 3 * POLLING_INTERVAL
   const emittedResultIndexes = new Set<number>()
 
   while (true) {
     const batch = await getBatch(api, trigger)
-    const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
+    const safeDeadlineReached = Date.now() >= safeDeadline
 
     // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
-    // But `hasBatchExceededMaxPollingDate` is a safety in case it fails to do that.
-    const shouldContinuePolling = batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate
+    // But `safeDeadlineReached` is a safety in case it fails to do that on time.
+    const shouldContinuePolling = batch.status === 'in_progress' && !safeDeadlineReached
 
     const receivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
     const residualResults = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
@@ -338,12 +338,15 @@ const waitForBatchToFinish = async (
 
     const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
 
-    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, safeDeadlineReached, reporter)
+
+    if (safeDeadlineReached) {
+      // Do not return made up data from the current function since the backend isn't the source of truth.
+      throw new CriticalError('SAFE_DEADLINE_REACHED', 'Datadog did not answer on time.')
+    }
 
     if (!shouldContinuePolling) {
-      return batch.results.map((r) =>
-        getResultFromBatch(r, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate)
-      )
+      return batch.results.map((r) => getResultFromBatch(r, pollResultMap, resultDisplayInfo))
     }
 
     reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
@@ -374,16 +377,13 @@ const reportResults = (
   results: ResultInBatch[],
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean,
+  safeDeadlineReached: boolean,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
   for (const result of results) {
-    reporter.resultEnd(
-      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
-      baseUrl
-    )
+    reporter.resultEnd(getResultFromBatch(result, pollResultMap, resultDisplayInfo, safeDeadlineReached), baseUrl)
   }
 }
 
@@ -427,11 +427,11 @@ const getResultFromBatch = (
   resultInBatch: ResultInBatch,
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean
+  safeDeadlineReached = false
 ): Result => {
   const {getLocation, options, tests} = resultDisplayInfo
 
-  const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
+  const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
 
   const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
@@ -448,7 +448,10 @@ const getResultFromBatch = (
 
   const pollResult = pollResultMap[resultInBatch.result_id]
 
-  if (hasTimedOut) {
+  if (safeDeadlineReached) {
+    pollResult.result.failure = {code: 'SAFE_DEADLINE_REACHED', message: 'Datadog did not answer on time.'}
+    pollResult.result.passed = false
+  } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
     pollResult.result.passed = false
   }
@@ -1076,6 +1079,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       break
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+      break
+    case 'SAFE_DEADLINE_REACHED':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: safe deadline reached ')}\n${error.message}\n\n`)
       break
     case 'TUNNEL_START_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)

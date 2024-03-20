@@ -415,7 +415,10 @@ export class DefaultReporter implements MainReporter {
     const testCountText = pluralize('test', tests.length)
     const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
 
-    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+    const text =
+      tests.length > 0
+        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+        : 'Waiting for the batch to end…\n'
 
     if (this.testWaitSpinner) {
       // Only refresh the spinner when the text changes.
