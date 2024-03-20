@@ -284,44 +284,40 @@ export const determineRetryDelay = (
   }
 
   // Always retry on 5xx
-  if (retries < MAX_RETRIES && is5xxError(error as AxiosError<unknown, any> | EndpointError)) {
+  if (retries < MAX_RETRIES && is5xxError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
 
   // Retry on 404
-  if (
-    retryPolicy.retryOn404 &&
-    retries < MAX_RETRIES &&
-    isNotFoundError(error as AxiosError<unknown, any> | EndpointError)
-  ) {
+  if (retryPolicy.retryOn404 && retries < MAX_RETRIES && isNotFoundError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
 
   // Retry on 429
-  if (
-    retryPolicy.retryOn429 &&
-    retries < MAX_RETRIES &&
-    isTooManyRequestsError(error as AxiosError<unknown, any> | EndpointError)
-  ) {
+  if (retryPolicy.retryOn429 && retries < MAX_RETRIES && isTooManyRequestsError(error)) {
     return retryWithJitter(DELAY_BETWEEN_429_RETRIES)
   }
 }
 
-const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
-  'status' in error ? error.status : error.response?.status
+const getErrorHttpStatus = (error: Error): number | undefined =>
+  'status' in error
+    ? error.status
+    : 'response' in error && 'status' in (error.response as any)
+    ? (error.response as any)?.status
+    : undefined
 
-export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
+export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
 
-export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+export const isNotFoundError = (error: Error): boolean => getErrorHttpStatus(error) === 404
 
-export const isTooManyRequestsError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 429
+export const isTooManyRequestsError = (error: Error): boolean => getErrorHttpStatus(error) === 429
 
 export const isNodeError = (error: unknown): error is NodeJS.ErrnoException => !!error && 'code' in (error as Error)
 
-export const is5xxError = (error: AxiosError | EndpointError) => {
+export const is5xxError = (error: Error): boolean => {
   const statusCode = getErrorHttpStatus(error)
 
-  return statusCode && statusCode >= 500 && statusCode <= 599
+  return statusCode && statusCode >= 500 && statusCode <= 599 ? true : false
 }
 
 const retryRequest = <T>(
