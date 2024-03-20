@@ -13,7 +13,7 @@ export const renderInvalidFile = (sbomReport: string) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 
   let fullStr = ''
-  fullStr += chalk.red(`${ICONS.FAILED} Invalid SARIF report file ${reportPath}.\n`)
+  fullStr += chalk.red(`${ICONS.FAILED} Invalid SBOM report file ${reportPath}.\n`)
   fullStr += chalk.red(`The report is not a valid SBOM or is not compliant with our json schema.\n`)
 
   return fullStr

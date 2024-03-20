@@ -127,7 +127,6 @@ export class UploadSbomCommand extends Command {
 
           continue
         }
-
         this.context.stdout.write(renderUploading(basePath))
         await api(scaPayload)
         if (this.debug) {
