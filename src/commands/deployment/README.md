@@ -1,6 +1,6 @@
 # Deployment command
 
-Contains some tools related to CD visibility.
+Contains helper commands related to CD Visibility.
 
 ## Usage
 
@@ -29,7 +29,7 @@ datadog-ci deployment mark --env prod --service payment-service --revision v1.1.
 
 ### `correlate`
 
-The `correlate` command "connects" the CD deployments with a CI pipeline. If you are using `datadog-ci deployment mark` then you do not need to use 
+The `correlate` command "connects" a GitOps deployment with the CI pipeline of the application repository. If you are using `datadog-ci deployment mark` then you do not need to use 
 this command and the correlation will happen automatically. This command does not work for every setup, check the section 
 [when to call the command][#When-to-call-the-command] for more details.
 
@@ -46,7 +46,7 @@ the CI using git. More specifically the  command needs to be called **after comm
 3. `datadog-ci deployment correlate` (you can check below the command syntax)
 4. `git push`
 
-Unfortunately if you are using [argo cd image updater][3] this command will not work since it relies on making the changes using `git commit`. 
+If you are using [argo cd image updater][3] this command will not work since it relies on making the changes using `git commit`. 
 
 Again, these steps need to happen in your CI since the end goal of this command is to correlate the pipeline doing the configuration changes
 with the associated deployments.
