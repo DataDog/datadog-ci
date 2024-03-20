@@ -1,9 +1,9 @@
 import {createServer} from 'http'
 import {AddressInfo} from 'net'
 
-import type {AxiosError, AxiosResponse} from 'axios'
+import type {AxiosResponse} from 'axios'
 
-import axios from 'axios'
+import axios, {AxiosError} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
@@ -167,7 +167,7 @@ describe('dd-api', () => {
     test.each(cases)(
       'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
       async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
-        const serverError = new Error('Server Error') as AxiosError
+        const serverError = new AxiosError('Server Error')
 
         const requestMock = jest.fn().mockImplementation(() => {
           throw serverError

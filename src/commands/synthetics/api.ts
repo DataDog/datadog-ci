@@ -2,6 +2,8 @@ import {stringify} from 'querystring'
 
 import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
+import {isAxiosError} from 'axios'
+
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {CriticalError} from './errors'
@@ -299,12 +301,10 @@ export const determineRetryDelay = (
   }
 }
 
+const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
+
 const getErrorHttpStatus = (error: Error): number | undefined =>
-  'status' in error
-    ? error.status
-    : 'response' in error && 'status' in (error.response as any)
-    ? (error.response as any)?.status
-    : undefined
+  isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined
 
 export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
 
