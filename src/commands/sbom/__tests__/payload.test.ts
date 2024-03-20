@@ -234,7 +234,7 @@ describe('generation of payload', () => {
       expect(location.end.line).toBeGreaterThanOrEqual(location.start.line)
       if (location.start.line === location.end.line) {
         // eslint-disable-next-line jest/no-conditional-expect
-        expect(location.start.col).toBeGreaterThanOrEqual(location.end.col)
+        expect(location.end.col).toBeGreaterThanOrEqual(location.start.col)
       }
     }
 
