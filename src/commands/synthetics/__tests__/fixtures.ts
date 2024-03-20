@@ -2,8 +2,9 @@ import * as http from 'http'
 import * as net from 'net'
 import {URL} from 'url'
 
-import type {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from 'axios'
+import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
+import {AxiosError} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -83,7 +84,7 @@ export const ciConfig: RunTestsCommandConfig = {
 }
 
 export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
-  const serverError = new Error(message) as AxiosError<any, any> & {config: InternalAxiosRequestConfig}
+  const serverError = new AxiosError(message)
   serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'} as InternalAxiosRequestConfig
   serverError.response = {data: {errors}, status} as AxiosResponse
 
