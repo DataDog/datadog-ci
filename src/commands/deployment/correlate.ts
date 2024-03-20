@@ -34,7 +34,6 @@ export class DeploymentCorrelateCommand extends Command {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    envVarTags: process.env.DD_TAGS,
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
