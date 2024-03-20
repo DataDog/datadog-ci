@@ -39,14 +39,14 @@ so that given a deployment you can check the pipeline that triggered it.
 #### When to call the command
 
 For the command to work properly, you need to be making changes to the configuration repository (where the kubernetes manifests are) from
-the CI using git. More specifically the  command needs to be called **after committing the changes and before pushing them**.
+the CI using git. More specifically the  command needs to be called **after committing the changes and before pushing them**:
 
 1. Make the changes to the configuration (for example: updating a image tag)
-2. git commit -m "update kubernetes yaml"
+2. `git commit -m "updating my kubernetes configuration"`
 3. `datadog-ci deployment correlate` (you can check below the command syntax)
-4. git push 
+4. `git push`
 
-Unfortunately if you are using [argo cd image updater][3] this command will not work since it relies on git. 
+Unfortunately if you are using [argo cd image updater][3] this command will not work since it relies on making the changes using `git commit`. 
 
 Again, these steps need to happen in your CI since the end goal of this command is to correlate the pipeline doing the configuration changes
 with the associated deployments.
