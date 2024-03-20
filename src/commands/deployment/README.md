@@ -28,13 +28,11 @@ datadog-ci deployment mark --env prod --service payment-service --revision v1.1.
 - `--no-fail` (default: `false`) will prevent the deployment command from failing if there are issues submitting the data.
 
 ### `correlate`
+**Note**: If you are using `datadog-ci deployment mark` then you do not need to use this command and the correlation will happen automatically.
 
-The `correlate` command "connects" a GitOps deployment with the CI pipeline of the application repository. If you are using `datadog-ci deployment mark` then you do not need to use 
-this command and the correlation will happen automatically. This command does not work for every setup, check the section 
-[when to call the command][#When-to-call-the-command] for more details.
+The `correlate` command "connects" a GitOps deployment with the CI pipeline of the application repositoryL you'll be able to check what pipeline triggered a deployment and what deployments were triggered by a pipeline.
 
-This command will allow Datadog to correlate the associated deployments to a pipeline from the UI. It also works the other way around, 
-so that given a deployment you can check the pipeline that triggered it.
+**Important**: This command does not work for every setup, check the section [when to call the command][#When-to-call-the-command] for more details.
 
 #### When to call the command
 
@@ -43,7 +41,7 @@ the CI using git. More specifically the  command needs to be called **after comm
 
 1. Make the changes to the configuration (for example: updating a image tag)
 2. `git commit -m "updating my kubernetes configuration"`
-3. `datadog-ci deployment correlate` (you can check below the command syntax)
+3. `datadog-ci deployment correlate --provider <cd_provider>` (you can check below the command syntax)
 4. `git push`
 
 If you are using [argo cd image updater][3] this command will not work since it relies on making the changes using `git commit`. 

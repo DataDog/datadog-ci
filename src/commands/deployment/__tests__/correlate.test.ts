@@ -20,11 +20,6 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Missing CD provider')
   })
-  test('invalid CD provider', async () => {
-    const {context, code} = await runCLI(['--provider', 'helloworld'])
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('Unsupported CD provider')
-  })
   test('no repository URL on environment variables', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',

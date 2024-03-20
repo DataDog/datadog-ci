@@ -10,8 +10,9 @@ import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 /**
- * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
- * as deployments and setting specific properties, like the environment or the revision in a simple way.
+ * This command collects environment variables and git information to correlate commits from the
+ * source code repository to the configuration repo repository. This allows to connect pipelines triggering
+ * changes on the configuration repository to deployments from gitOps CD providers
  */
 export class DeploymentCorrelateCommand extends Command {
   public static paths = [['deployment', 'correlate']]
@@ -23,12 +24,10 @@ export class DeploymentCorrelateCommand extends Command {
       This command will correlate the pipeline with a gitOps CD deployment.\n
       It does not work for every setup, see README for details.
     `,
-    examples: [['Correlate an argoCD deployment', 'datadog-ci deployment correlate --provider argocd']],
+    examples: [['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd']],
   })
 
   private cdProviderParam = Option.String('--provider')
-  private cdProvider!: string
-  private supportedCDProviders: string[] = ['argocd'] // update the README if changing this
   private configurationRepo = Option.String('--config-repo')
   private dryRun = Option.Boolean('--dry-run', false)
 
@@ -47,9 +46,12 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    if (!this.validateCDProviderParam()) {
+    if (!this.cdProviderParam) {
+      this.logger.error('Missing CD provider. It must be provided with --provider')
+
       return 1
     }
+    this.cdProviderParam.toLowerCase()
 
     const tags = getCISpanTags() || {}
 
@@ -84,7 +86,7 @@ export class DeploymentCorrelateCommand extends Command {
     if (this.configurationRepo) {
       localCommitShas = await gitLocalCommitShas(git, currentBranch)
     } else {
-      ;[this.configurationRepo, localCommitShas] = await Promise.all([
+      [this.configurationRepo, localCommitShas] = await Promise.all([
         gitRepositoryURL(git),
         gitLocalCommitShas(git, currentBranch),
       ])
@@ -103,7 +105,7 @@ export class DeploymentCorrelateCommand extends Command {
       type: 'ci_app_deployment_correlate',
       data: {
         ci_provider: ciProvider,
-        cd_provider: this.cdProvider,
+        cd_provider: this.cdProviderParam,
         config_repo_url: this.configurationRepo,
         config_commit_shas: configCommitShas,
         ci_env: ciEnv,
@@ -157,26 +159,5 @@ export class DeploymentCorrelateCommand extends Command {
     }
 
     return true
-  }
-
-  private validateCDProviderParam(): boolean {
-    this.cdProviderParam = this.cdProviderParam?.toLowerCase()
-    if (this.cdProviderParam && this.supportedCDProviders.includes(this.cdProviderParam)) {
-      this.cdProvider = this.cdProviderParam
-
-      return true
-    } else if (!this.cdProviderParam) {
-      this.logger.error('Missing CD provider. It must be provided with --provider')
-
-      return false
-    } else {
-      this.logger.error(
-        `Unsupported CD provider: "${
-          this.cdProviderParam
-        }". Supported providers are: ${this.supportedCDProviders.toString()}`
-      )
-
-      return false
-    }
   }
 }
