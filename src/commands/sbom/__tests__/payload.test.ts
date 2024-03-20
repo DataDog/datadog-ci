@@ -200,7 +200,7 @@ describe('generation of payload', () => {
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
-    expect(payload?.dependencies.length).toStrictEqual(7368)
+    expect(payload?.dependencies.length).toStrictEqual(22)
     const dependencies = payload!.dependencies
 
     // all languages are detected
@@ -209,20 +209,21 @@ describe('generation of payload', () => {
 
     // Check that we can have multiple locations
     expect(dependencies[0].locations?.length).toStrictEqual(1)
-    expect(dependencies[1].locations?.length).toStrictEqual(3)
+    expect(dependencies[1].locations?.length).toStrictEqual(1)
 
     // check location correctness
     expect(dependencies[0]).not.toBeNull()
-    expect(dependencies[0].locations![0].block!.start.line).toStrictEqual(19328)
+    expect(dependencies[0].locations![0].block!.start.line).toStrictEqual(62)
     expect(dependencies[0].locations![0].block!.start.col).toStrictEqual(9)
-    expect(dependencies[0].locations![0].block!.end.line).toStrictEqual(19336)
-    expect(dependencies[0].locations![0].block!.end.col).toStrictEqual(10)
+    expect(dependencies[0].locations![0].block!.end.line).toStrictEqual(67)
+    expect(dependencies[0].locations![0].block!.end.col).toStrictEqual(22)
+    expect(dependencies[0].locations![0].block!.file_name).toStrictEqual('/Users/julien.delange/tmp/tutorials/pom.xml')
 
-    // check that we do not have duplicate locations. The org.slf4j:slf4j-api in our test file has 988 locations
-    // but 10 unique locations only (lots of duplicates). We make sure we only surface the non-duplicates ones.
-    const dependencySlf4j = dependencies[55]
-    expect(dependencySlf4j.name).toStrictEqual('org.slf4j:slf4j-api')
-    expect(dependencySlf4j.locations?.length).toStrictEqual(10)
+    // check that we do not have duplicate locations. The org.assertj:assertj-core in our test file has 2 locations
+    // but 1 unique locations only (lots of duplicates). We make sure we only surface the non-duplicates ones.
+    const dependencyAssertJCore = dependencies[0]
+    expect(dependencyAssertJCore.name).toStrictEqual('org.assertj:assertj-core')
+    expect(dependencyAssertJCore.locations?.length).toStrictEqual(1)
 
     // check that for a location, the end line is greater or equal to start line
     // if start and end lines are equal, the end col must be smaller than start col
