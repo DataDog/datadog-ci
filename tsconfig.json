@@ -11,6 +11,7 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "baseUrl": "./",
+    "skipLibCheck": true,
     "paths": {
       "*": ["node_modules/*"]
     },
