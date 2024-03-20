@@ -218,6 +218,12 @@ describe('generation of payload', () => {
     expect(dependencies[0].locations![0].block!.end.line).toStrictEqual(19336)
     expect(dependencies[0].locations![0].block!.end.col).toStrictEqual(10)
 
+    // check that we do not have duplicate locations. The org.slf4j:slf4j-api in our test file has 988 locations
+    // but 10 unique locations only (lots of duplicates). We make sure we only surface the non-duplicates ones.
+    const dependencySlf4j = dependencies[55]
+    expect(dependencySlf4j.name).toStrictEqual('org.slf4j:slf4j-api')
+    expect(dependencySlf4j.locations?.length).toStrictEqual(10)
+
     // check that for a location, the end line is greater or equal to start line
     // if start and end lines are equal, the end col must be smaller than start col
     const checkLocation = (location: Location | undefined): void => {

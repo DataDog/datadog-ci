@@ -127,14 +127,24 @@ export const generatePayload = (
 
         const locations: Locations[] = []
 
+        // Extract the unique location strings from the file.
+        const locationsStrings: Set<string> = new Set()
         if (component['evidence'] && component['evidence']['occurrences']) {
           for (const occ of component['evidence']['occurrences']) {
             if (occ['location']) {
-              const loc = parseLocationsString(occ['location'])
-              if (loc) {
-                locations.push(loc)
+              const loc: string = occ['location']
+
+              if (!locationsStrings.has(loc)) {
+                locationsStrings.add(loc)
               }
             }
+          }
+        }
+
+        for (const l of locationsStrings) {
+          const loc = parseLocationsString(l)
+          if (loc) {
+            locations.push(loc)
           }
         }
 
