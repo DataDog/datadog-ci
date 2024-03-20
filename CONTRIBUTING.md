@@ -74,6 +74,7 @@ Optionally, you can create a pre-release for your command by following the [Pre-
   - **Note:** If your command is beta, please use the [Beta commands](README.md#beta-commands) section instead.
 
 - The command should be added under the right product in the [CODEOWNERS](.github/CODEOWNERS) file to ensure the right people are notified when a PR is opened.
+  - If you are only adding a sub-command (e.g. `datadog-ci <existing-command> <new-sub-command>`), no changes are required.
 
 - If you are adding a command for a new product, you should:
   - Create a label [here](https://github.com/DataDog/datadog-ci/issues/labels) and add it to [`pr-required-labels.yml`](.github/workflows/pr-required-labels.yml).
