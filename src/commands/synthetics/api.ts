@@ -302,8 +302,8 @@ export const determineRetryDelay = (
 const getErrorHttpStatus = (error: Error): number | undefined =>
   'status' in error
     ? error.status
-    : 'response' in error && 'status' in (error.response as any)
-    ? (error.response as any)?.status
+    : 'response' in error && 'status' in error.response
+    ? error.response.status
     : undefined
 
 export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
