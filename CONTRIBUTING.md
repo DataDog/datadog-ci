@@ -20,7 +20,7 @@ yarn launch synthetics run-tests --config dev/global.config.json
 
 ### Creating a new command
 
-Any command you add should follow the [Structure](#structure) below. Then, don't forget the [Things to update](#things-to-update) in the project.
+Follow the [Structure](#structure) below for any commands you add. Then, don't forget the [Things to update](#things-to-update) in the project.
 
 #### Structure
 
@@ -54,15 +54,15 @@ export class HelloWorldCommand extends Command {
 module.exports = [HelloWorldCommand]
 ```
 
-Lastly, unit tests must be created in the `__tests__/` folder. The tests can then be launched with the `yarn test` command: it will find all files with a filename ending in `.test.ts` in the repo and execute them.
+Lastly, unit tests must be created in the `__tests__/` folder. The tests can then be launched with the `yarn test` command: it finds all files with a filename ending in `.test.ts` in the repo and executes them.
 
 #### Beta command
 
-If your command is related to a beta product or feature, or that you want to dogfood the command first, you can mark you command as beta.
+If your command is related to a beta product or feature, or you want to test out the command first, you can mark your command as beta.
 
 To do so, add your command's name to the [`BETA_COMMANDS` array](https://github.com/DataDog/datadog-ci/blob/35c54e1d1e991d21461084ef2e346ca1c6bb7ea6/src/cli.ts#L8).
 
-Users will have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1`. Please document this in your command's README for visibility. This will be something to remove once the command goes out of beta.
+Users have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1` to use the command. Make sure to document this in your command's README for visibility. This is removed once the command goes out of beta.
 
 Optionally, you can create a pre-release for your command by following the [Pre-Release Process](#pre-release-process) instructions below.
 
@@ -70,8 +70,8 @@ Optionally, you can create a pre-release for your command by following the [Pre-
 
 - The [Usage section in the root README](README.md#usage) must be updated to link to:
   - The new command's README.
-  - And 📚 should link to our official Datadog documentation site.
-  - **Note:** If your command is beta, please use the [Beta commands](README.md#beta-commands) section instead.
+  - And 📚 should link to the official Datadog documentation site.
+  - **Note:** If your command is beta, use the [Beta commands](README.md#beta-commands) section instead.
 
 - The command should be added under the right product in the [CODEOWNERS](.github/CODEOWNERS) file to ensure the right people are notified when a PR is opened.
   - If you are only adding a sub-command (e.g. `datadog-ci <existing-command> <new-sub-command>`), no changes are required.
