@@ -1,7 +1,17 @@
 import deepExtend from 'deep-extend'
 
 import {APIHelper, EndpointError, formatBackendErrors} from './api'
-import {Batch, MainReporter, PollResultMap, Result, ResultDisplayInfo, ResultInBatch, Test, Trigger} from './interfaces'
+import {
+  BaseResultInBatch,
+  Batch,
+  MainReporter,
+  PollResultMap,
+  Result,
+  ResultDisplayInfo,
+  ResultInBatch,
+  Test,
+  Trigger,
+} from './interfaces'
 import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId} from './utils/internal'
 import {wait, getAppBaseURL, hasResultPassed} from './utils/public'
 
@@ -16,6 +26,7 @@ export const waitForBatchToFinish = async (
 ): Promise<Result[]> => {
   const maxPollingDate = Date.now() + maxPollingTimeout
   const emittedResultIndexes = new Set<number>()
+  let oldIncompleteResultIds = new Set<string>()
 
   while (true) {
     const batch = await getBatch(api, trigger)
@@ -25,19 +36,30 @@ export const waitForBatchToFinish = async (
     // But `hasBatchExceededMaxPollingDate` is a safety in case it fails to do that.
     const shouldContinuePolling = batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate
 
-    const receivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
-    const residualResults = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
+    const newlyReceivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
 
-    // For the last iteration, the full up-to-date data has to be fetched to compute this function's return value,
-    // while only the [received + residual] results have to be reported.
-    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).flatMap((r) =>
-      isResultInBatchSkippedBySelectiveRerun(r) ? [] : [r.result_id]
+    const resultIdsToFetch = getResultIdsToFetch(
+      shouldContinuePolling,
+      batch,
+      newlyReceivedResults,
+      oldIncompleteResultIds
     )
-    const resultsToReport = receivedResults.concat(shouldContinuePolling ? [] : residualResults)
 
-    const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
+    const {pollResultMap, incompleteResultIds} = await getPollResultMap(api, resultIdsToFetch)
+
+    const resultsToReport = getResultsToReport(
+      shouldContinuePolling,
+      batch,
+      newlyReceivedResults,
+      emittedResultIndexes,
+      oldIncompleteResultIds,
+      incompleteResultIds,
+      reporter
+    )
 
     reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+
+    oldIncompleteResultIds = incompleteResultIds
 
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
@@ -49,6 +71,52 @@ export const waitForBatchToFinish = async (
 
     await wait(POLLING_INTERVAL)
   }
+}
+
+const getResultIdsToFetch = (
+  shouldContinuePolling: boolean,
+  batch: Batch,
+  newlyReceivedResults: ResultInBatch[],
+  oldIncompleteResultIds: Set<string>
+): string[] => {
+  // For the last iteration, the full up-to-date data has to be fetched to compute the return value of `waitForResults()`.
+  if (!shouldContinuePolling) {
+    return getResultIds(batch.results)
+  }
+
+  return getResultIds(newlyReceivedResults).concat(...oldIncompleteResultIds)
+}
+
+const getResultsToReport = (
+  shouldContinuePolling: boolean,
+  batch: Batch,
+  newlyReceivedResults: ResultInBatch[],
+  emittedResultIndexes: Set<number>,
+  oldIncompleteResultIds: Set<string>,
+  incompleteResultIds: Set<string>,
+  reporter: MainReporter
+): ResultInBatch[] => {
+  const newlyCompleteResults = excludeSkipped(batch.results).filter(
+    (r) => oldIncompleteResultIds.has(r.result_id) && !incompleteResultIds.has(r.result_id)
+  )
+
+  const resultsToReport = newlyReceivedResults
+    .filter((r) => isResultInBatchSkippedBySelectiveRerun(r) || !incompleteResultIds.has(r.result_id))
+    .concat(newlyCompleteResults)
+
+  if (shouldContinuePolling) {
+    return resultsToReport
+  }
+
+  const residualResults = excludeSkipped(batch.results).filter(
+    (r, index) => !emittedResultIndexes.has(index) || incompleteResultIds.has(r.result_id)
+  )
+
+  for (const result of residualResults) {
+    reporter.log(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+  }
+
+  return resultsToReport.concat(residualResults)
 }
 
 const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
@@ -176,16 +244,30 @@ const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
   }
 }
 
-const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
-
 const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   try {
     const pollResults = await api.pollResults(resultIds)
-    const pollResultMap: PollResultMap = {}
-    pollResults.forEach((r) => (pollResultMap[r.resultID] = r))
 
-    return pollResultMap
+    const pollResultMap: PollResultMap = {}
+    const incompleteResultIds = new Set<string>()
+
+    pollResults.forEach((r) => {
+      // When they are initialized in the backend, results only contain an `eventType: created` property.
+      if ('eventType' in r.result && r.result.eventType === 'created') {
+        incompleteResultIds.add(r.resultID)
+      }
+      pollResultMap[r.resultID] = r
+    })
+
+    return {pollResultMap, incompleteResultIds}
   } catch (e) {
     throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
 }
+
+const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
+
+const getResultIds = (results: ResultInBatch[]): string[] => excludeSkipped(results).map((r) => r.result_id)
+
+const excludeSkipped = (results: ResultInBatch[]) =>
+  results.filter((r): r is BaseResultInBatch => !isResultInBatchSkippedBySelectiveRerun(r))
