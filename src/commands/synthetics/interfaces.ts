@@ -13,7 +13,7 @@ export interface MainReporter {
   testWait(test: Test): void
   testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   resultReceived(result: ResultInBatch): void
-  resultEnd(result: Result, baseUrl: string): void
+  resultEnd(result: Result, baseUrl: string, batchId: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
 }

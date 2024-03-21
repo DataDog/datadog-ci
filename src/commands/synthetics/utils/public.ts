@@ -269,9 +269,9 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
+const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
   try {
-    const batch = await api.getBatch(trigger.batch_id)
+    const batch = await api.getBatch(batchId)
 
     return batch
   } catch (e) {
@@ -310,8 +310,8 @@ export const getOrgSettings = async (
 
 const waitForBatchToFinish = async (
   api: APIHelper,
+  batchId: string,
   maxPollingTimeout: number,
-  trigger: Trigger,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
@@ -319,7 +319,7 @@ const waitForBatchToFinish = async (
   const emittedResultIndexes = new Set<number>()
 
   while (true) {
-    const batch = await getBatch(api, trigger)
+    const batch = await getBatch(api, batchId)
     const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
 
     // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
@@ -338,7 +338,7 @@ const waitForBatchToFinish = async (
 
     const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
 
-    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+    reportResults(batchId, resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
 
     if (!shouldContinuePolling) {
       return batch.results.map((r) =>
@@ -346,7 +346,7 @@ const waitForBatchToFinish = async (
       )
     }
 
-    reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
+    reportWaitingTests(batchId, batch, resultDisplayInfo, reporter)
 
     await wait(POLLING_INTERVAL)
   }
@@ -371,6 +371,7 @@ const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, 
 }
 
 const reportResults = (
+  batchId: string,
   results: ResultInBatch[],
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
@@ -382,13 +383,14 @@ const reportResults = (
   for (const result of results) {
     reporter.resultEnd(
       getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
-      baseUrl
+      baseUrl,
+      batchId
     )
   }
 }
 
 const reportWaitingTests = (
-  trigger: Trigger,
+  batchId: string,
   batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
@@ -420,7 +422,7 @@ const reportWaitingTests = (
     }
   }
 
-  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id, skippedCount)
+  reporter.testsWait(remainingTests, baseUrl, batchId, skippedCount)
 }
 
 const getResultFromBatch = (
@@ -508,7 +510,13 @@ export const waitForResults = async (
     tests,
   }
 
-  const results = await waitForBatchToFinish(api, options.maxPollingTimeout, trigger, resultDisplayInfo, reporter)
+  const results = await waitForBatchToFinish(
+    api,
+    trigger.batch_id,
+    options.maxPollingTimeout,
+    resultDisplayInfo,
+    reporter
+  )
 
   if (tunnel && !isTunnelConnected) {
     reporter.error('The tunnel has stopped working, this may have affected the results.')
@@ -571,10 +579,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  resultEnd: (result, baseUrl) => {
+  resultEnd: (result, baseUrl, batchId) => {
     for (const reporter of reporters) {
       if (typeof reporter.resultEnd === 'function') {
-        reporter.resultEnd(result, baseUrl)
+        reporter.resultEnd(result, baseUrl, batchId)
       }
     }
   },
@@ -884,8 +892,8 @@ export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConf
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
-export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
-  const ciQueryParam = 'from_ci=true'
+export const getResultUrl = (baseUrl: string, test: Test, resultId: string, batchId: string) => {
+  const ciQueryParam = `batch_id=${batchId}`
   const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
   if (test.type === 'browser') {
     return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`

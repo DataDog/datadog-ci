@@ -410,7 +410,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 | `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
 | `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
 | `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
+| `resultEnd`      | `(result: Result, baseUrl: string, batchId: string)`                                     | Called for each result at the end of all results.               |
 | `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
 | `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
 
