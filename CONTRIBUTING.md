@@ -62,7 +62,7 @@ If your command is related to a beta product or feature, or you want to test out
 
 To do so, add your command's name to the [`BETA_COMMANDS` array](https://github.com/DataDog/datadog-ci/blob/35c54e1d1e991d21461084ef2e346ca1c6bb7ea6/src/cli.ts#L8).
 
-Users have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1` to use the command. Make sure to document this in your command's README for visibility. This is removed once the command goes out of beta.
+Users have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1` to use the command. Make sure to document this in your command's README for visibility. This should be removed once the command goes out of beta.
 
 Optionally, you can create a pre-release for your command by following the [Pre-Release Process](#pre-release-process) instructions below.
 
