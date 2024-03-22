@@ -86,7 +86,7 @@ export class DeploymentCorrelateCommand extends Command {
     if (this.configurationRepo) {
       localCommitShas = await gitLocalCommitShas(git, currentBranch)
     } else {
-      [this.configurationRepo, localCommitShas] = await Promise.all([
+      ;[this.configurationRepo, localCommitShas] = await Promise.all([
         gitRepositoryURL(git),
         gitLocalCommitShas(git, currentBranch),
       ])
