@@ -17,7 +17,7 @@ import {
   Summary,
   Test,
   UserConfigOverride,
-  Batch,
+  ResultInBatch,
 } from '../interfaces'
 import {hasResult} from '../utils/internal'
 import {
@@ -319,7 +319,7 @@ export class DefaultReporter implements MainReporter {
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
   }
 
-  public resultReceived(result: Batch['results'][0]): void {
+  public resultReceived(result: ResultInBatch): void {
     return
   }
 
