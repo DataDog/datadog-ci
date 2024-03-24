@@ -48,16 +48,17 @@ jobs:
       - run: mkdir artifacts
       - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
       - run: cp -r .github/workflows/e2e artifacts/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.version }}
           path: artifacts/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: sarif-datadog-ci.sarif
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
+          overwrite: true
 
   e2e-test:
     strategy:
@@ -74,9 +75,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.version }}
+          path: artifacts/
       - run: yarn add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json

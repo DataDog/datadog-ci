@@ -20,6 +20,9 @@ beforeEach(() => {
   delete process.env.SOURCEMAP_FILE
   delete process.env.UNLOCALIZED_RESOURCES_FOLDER_PATH
   delete process.env.USE_HERMES
+  delete process.env.SKIP_BUNDLING
+  delete process.env.PLATFORM_NAME
+  delete process.env.FORCE_BUNDLING
   reactNativeVersionSpy.mockClear()
 })
 
@@ -59,6 +62,7 @@ const basicEnvironment = {
   MARKETING_VERSION: '0.0.2',
   PRODUCT_BUNDLE_IDENTIFIER: 'com.myapp.test',
   SOURCEMAP_FILE: './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
+  PLATFORM_NAME: 'iphoneos',
 }
 
 const runCLI = async (
@@ -309,7 +313,7 @@ describe('xcode', () => {
       expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
     })
 
-    test('should not compose sourcemaps when using hermes and source maps are not uploaded', async () => {
+    test('should not bundle RN code when using hermes and building for simulator in debug mode', async () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
@@ -317,6 +321,7 @@ describe('xcode', () => {
         UNLOCALIZED_RESOURCES_FOLDER_PATH: 'MyApp.app',
         USE_HERMES: 'true',
         CONFIGURATION: 'Debug',
+        PLATFORM_NAME: 'iphonesimulator',
       }
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh',
@@ -331,15 +336,16 @@ describe('xcode', () => {
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
-      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).toContain('Skipping bundling and sourcemaps upload.')
       expect(output).not.toContain('Hermes detected, composing sourcemaps')
     })
 
-    test('should not bundle nor upload sourcemaps when the build configuration is Debug', async () => {
+    test('should not bundle nor upload sourcemaps when the build configuration is Debug and target is simulator', async () => {
       process.env = {
         ...process.env,
         ...basicEnvironment,
         CONFIGURATION: 'Debug',
+        PLATFORM_NAME: 'iphonesimulator',
       }
       const {context, code} = await runCLI(
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
@@ -350,7 +356,68 @@ describe('xcode', () => {
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
-      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload')
+      expect(output).toContain('Skipping bundling and sourcemaps upload.')
+      expect(output).not.toContain('Starting successful script')
+    })
+
+    test('should bundle but not upload sourcemaps when the build configuration is Debug and target is phone', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION: 'Debug',
+        PLATFORM_NAME: 'iphoneos',
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('Starting successful script')
+      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload.')
+    })
+
+    test('should bundle but not upload sourcemaps when the build configuration is Debug and user enforce bundling', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION: 'Debug',
+        PLATFORM_NAME: 'iphonesimulator',
+        FORCE_BUNDLING: 'true',
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('Starting successful script')
+      expect(output).toContain('Build configuration Debug is not Release, skipping sourcemaps upload.')
+    })
+
+    test('should not bundle nor upload sourcemaps when user skips bundling', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        CONFIGURATION: 'Release',
+        SKIP_BUNDLING: 'true',
+      }
+      const {context, code} = await runCLI(
+        './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
+      )
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('Skipping bundling and sourcemaps upload.')
       expect(output).not.toContain('Starting successful script')
     })
 
