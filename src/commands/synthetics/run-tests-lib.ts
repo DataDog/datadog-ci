@@ -157,6 +157,10 @@ export const executeTests = async (
       },
     }
   } catch (error) {
+    if (error instanceof CriticalError && error.code === 'SAFE_DEADLINE_REACHED') {
+      throw error
+    }
+
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
