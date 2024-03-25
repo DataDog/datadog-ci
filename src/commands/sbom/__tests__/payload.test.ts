@@ -188,7 +188,7 @@ describe('generation of payload', () => {
     expect(dependencies?.filter((d) => d.group !== undefined).length).toBeGreaterThan(0)
     expect(dependencies && dependencies[10].group).toStrictEqual('@aws-sdk')
   })
-  
+
   test('SBOM generated from cyclonedx-npm', async () => {
     const sbomFile = './src/commands/sbom/__tests__/fixtures/cyclonedx-npm.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
@@ -210,8 +210,8 @@ describe('generation of payload', () => {
     expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
     const dependenciesWithNode = payload?.dependencies.filter((d) => d.language === DependencyLanguage.NPM)
     expect(dependenciesWithNode?.length).toStrictEqual(63)
-  })  
-  
+  })
+
   test('SBOM generated from osv-scanner with files', async () => {
     const sbomFile = './src/commands/sbom/__tests__/fixtures/osv-scanner-files.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
