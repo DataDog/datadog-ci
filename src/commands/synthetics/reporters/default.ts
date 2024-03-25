@@ -240,7 +240,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const resultUrl = getResultUrl(baseUrl, test, resultId)
 
     const resultInfo = chalk.dim(
-      `  ${setColor('◀')} Successful result from ${setColor('previous')} CI run: ${chalk.cyan(resultUrl)}`
+      `  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch: ${chalk.cyan(resultUrl)}`
     )
     outputLines.push(resultInfo)
   } else {
