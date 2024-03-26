@@ -1,7 +1,7 @@
 import deepExtend from 'deep-extend'
 
 import {APIHelper, EndpointError, formatBackendErrors} from './api'
-import {SafeDeadlineReachedError} from './errors'
+import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
@@ -63,7 +63,7 @@ export const waitForBatchToFinish = async (
     oldIncompleteResultIds = incompleteResultIds
 
     if (safeDeadlineReached) {
-      throw new SafeDeadlineReachedError()
+      throw new BatchTimeoutRunawayError()
     }
 
     if (!shouldContinuePolling) {
@@ -212,7 +212,7 @@ const getResultFromBatch = (
   const pollResult = pollResultMap[resultInBatch.result_id]
 
   if (safeDeadlineReached) {
-    pollResult.result.failure = new SafeDeadlineReachedError().toJson()
+    pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
     pollResult.result.passed = false
   } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}

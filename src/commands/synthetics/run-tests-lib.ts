@@ -1,7 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {CiError, CriticalError, SafeDeadlineReachedError} from './errors'
+import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
   Reporter,
@@ -157,7 +157,7 @@ export const executeTests = async (
       },
     }
   } catch (error) {
-    if (error instanceof SafeDeadlineReachedError) {
+    if (error instanceof BatchTimeoutRunawayError) {
       throw error
     }
 

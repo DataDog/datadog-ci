@@ -7,7 +7,7 @@ const criticalErrorCodes = [
   'MISSING_API_KEY',
   'MISSING_APP_KEY',
   'POLL_RESULTS_FAILED',
-  'SAFE_DEADLINE_REACHED',
+  'BATCH_TIMEOUT_RUNAWAY',
   'TOO_MANY_TESTS_TO_TRIGGER',
   'TRIGGER_TESTS_FAILED',
   'TUNNEL_START_FAILED',
@@ -42,8 +42,8 @@ export class CriticalError extends CiError {
   }
 }
 
-export class SafeDeadlineReachedError extends CriticalError {
+export class BatchTimeoutRunawayError extends CriticalError {
   constructor() {
-    super('SAFE_DEADLINE_REACHED', "The batch didn't timeout after the expected timeout period.")
+    super('BATCH_TIMEOUT_RUNAWAY', "The batch didn't timeout after the expected timeout period.")
   }
 }
