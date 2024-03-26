@@ -7,9 +7,6 @@ changelog:
     labels:
       - release # Exclude release PRs from changelog
   categories:
-    - title: datadog-ci
-      labels:
-        - '*'
     - title: Dependencies
       labels:
         - dependencies # Generally about vulnerability fixes
@@ -37,3 +34,6 @@ changelog:
     - title: Chores
       labels:
         - chores
+    - title: datadog-ci
+      labels:
+        - '*'
