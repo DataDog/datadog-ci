@@ -17,7 +17,7 @@ import {
   Summary,
   Test,
   UserConfigOverride,
-  Batch,
+  ResultInBatch,
 } from '../interfaces'
 import {hasResult} from '../utils/internal'
 import {
@@ -240,7 +240,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const resultUrl = getResultUrl(baseUrl, test, resultId)
 
     const resultInfo = chalk.dim(
-      `  ${setColor('◀')} Successful result from ${setColor('previous')} CI run: ${chalk.cyan(resultUrl)}`
+      `  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch: ${chalk.cyan(resultUrl)}`
     )
     outputLines.push(resultInfo)
   } else {
@@ -319,7 +319,7 @@ export class DefaultReporter implements MainReporter {
     this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
   }
 
-  public resultReceived(result: Batch['results'][0]): void {
+  public resultReceived(result: ResultInBatch): void {
     return
   }
 
