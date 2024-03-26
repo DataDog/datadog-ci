@@ -792,12 +792,6 @@ describe('utils', () => {
     }
     const trigger = {batch_id: 'bid', locations: [mockLocation]}
 
-    const getIncompleteResult = (data: {resultID: string}): PollResult => ({
-      ...pollResult,
-      ...data,
-      result: incompleteServerResult,
-    })
-
     const mockApi = ({
       getBatchImplementation,
       pollResultsImplementation,
@@ -1017,9 +1011,7 @@ describe('utils', () => {
             {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
           ] as ResultInBatch[],
         }),
-        pollResultsImplementation: async () => [
-          getIncompleteResult({resultID: 'rid-2'}), // not available yet
-        ],
+        pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2', result: incompleteServerResult}],
       })
 
       const resultsPromise = utils.waitForResults(
@@ -1071,7 +1063,7 @@ describe('utils', () => {
           ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
-          getIncompleteResult({resultID: 'rid'}), // not available yet
+          {...pollResult, result: incompleteServerResult}, // not available yet
           deepExtend({}, pollResult, {resultID: 'rid-2'}), // just became available
         ],
       })
@@ -1101,7 +1093,7 @@ describe('utils', () => {
           ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
-          getIncompleteResult({resultID: 'rid'}), // still not available
+          {...pollResult, result: incompleteServerResult}, // still not available
           deepExtend({}, pollResult, {resultID: 'rid-2'}),
           deepExtend({}, pollResult, {resultID: 'rid-3'}),
         ],
