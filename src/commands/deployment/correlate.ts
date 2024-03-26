@@ -103,7 +103,7 @@ export class DeploymentCorrelateCommand extends Command {
   ) {
     const correlateEvent = {
       type: 'ci_app_deployment_correlate',
-      data: {
+      attributes: {
         ci_provider: ciProvider,
         cd_provider: this.cdProviderParam,
         config_repo_url: this.configurationRepo,

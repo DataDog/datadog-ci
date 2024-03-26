@@ -60,6 +60,7 @@ describe('execute', () => {
     expect(code).toBe(0)
     const output = context.stdout.toString()
     expect(output).toContain(`"type": "ci_app_deployment_correlate"`)
+    expect(output).toContain(`"attributes"`)
     expect(output).toContain(`"ci_provider": "gitlab"`)
     expect(output).toContain(`"cd_provider": "argocd"`)
     expect(output).toContain(`"config_repo_url"`)
