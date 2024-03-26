@@ -53,7 +53,7 @@ import {Metadata} from '../../../../helpers/interfaces'
 import * as ciUtils from '../../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../../api'
-import {CiError, CiErrorCode, CriticalError} from '../../errors'
+import {CiError, CiErrorCode, CriticalError, SafeDeadlineReachedError} from '../../errors'
 import {
   BaseResult,
   BaseResultInBatch,
@@ -1241,7 +1241,10 @@ describe('utils', () => {
         ...result,
         result: {
           ...result.result,
-          failure: {code: 'SAFE_DEADLINE_REACHED', message: 'Datadog did not answer on time.'},
+          failure: {
+            code: 'SAFE_DEADLINE_REACHED',
+            message: "The batch didn't timeout after the expected timeout period.",
+          },
           passed: false,
         },
         resultId: '3',
@@ -1261,7 +1264,7 @@ describe('utils', () => {
           },
           mockReporter
         )
-      ).rejects.toThrow('Datadog did not answer on time.')
+      ).rejects.toThrow(new SafeDeadlineReachedError())
 
       // Residual results are never 'received': we force-end them.
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)

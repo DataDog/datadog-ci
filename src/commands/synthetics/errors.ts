@@ -27,10 +27,23 @@ export class CiError extends Error {
   constructor(public code: CiErrorCode, message?: string) {
     super(message)
   }
+
+  public toJson() {
+    return {
+      code: this.code,
+      message: this.message,
+    }
+  }
 }
 
 export class CriticalError extends CiError {
   constructor(public code: CriticalCiErrorCode, message?: string) {
     super(code, message)
+  }
+}
+
+export class SafeDeadlineReachedError extends CriticalError {
+  constructor() {
+    super('SAFE_DEADLINE_REACHED', "The batch didn't timeout after the expected timeout period.")
   }
 }
