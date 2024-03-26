@@ -88,6 +88,7 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
       datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
