@@ -1,7 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {CiError, CriticalError} from './errors'
+import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
   Reporter,
@@ -157,6 +157,10 @@ export const executeTests = async (
       },
     }
   } catch (error) {
+    if (error instanceof BatchTimeoutRunawayError) {
+      throw error
+    }
+
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()

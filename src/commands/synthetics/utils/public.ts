@@ -885,6 +885,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
       break
+    case 'BATCH_TIMEOUT_RUNAWAY':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: batch timeout runaway ')}\n${error.message}\n\n`)
+      break
     case 'TUNNEL_START_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
       break

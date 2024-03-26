@@ -53,7 +53,7 @@ import {Metadata} from '../../../../helpers/interfaces'
 import * as ciUtils from '../../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../../api'
-import {CiError, CiErrorCode, CriticalError} from '../../errors'
+import {CiError, CiErrorCode, CriticalError, BatchTimeoutRunawayError} from '../../errors'
 import {
   BaseResult,
   BaseResultInBatch,
@@ -770,6 +770,16 @@ describe('utils', () => {
   })
 
   describe('waitForResults', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.spyOn(utils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+      jest.restoreAllMocks()
+    })
+
     const batch: Batch = getBatch()
     const apiTest = getApiTest(batch.results[0].test_public_id)
     const incompleteServerResult = ({eventType: 'created'} as unknown) as ServerResult
@@ -1133,7 +1143,7 @@ describe('utils', () => {
       mockApi({
         getBatchImplementation: async () => ({
           results: [batch.results[0], {...batch.results[0], result_id: '3'}],
-          status: 'in_progress',
+          status: 'passed',
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -1158,14 +1168,13 @@ describe('utils', () => {
       expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
     })
 
-    test('results should be timed out if global pollingTimeout is exceeded', async () => {
+    test('results should be timed out if the backend says so', async () => {
       mockApi({
         getBatchImplementation: async () => ({
-          status: 'in_progress',
+          status: 'failed',
           results: [
             {...batch.results[0]},
-            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
-            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
+            {...batch.results[0], status: 'failed', result_id: '3', timed_out: true},
           ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
@@ -1193,19 +1202,79 @@ describe('utils', () => {
           {
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 0,
+            maxPollingTimeout: 3000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
         )
       ).toEqual([result, expectedTimeoutResult])
 
+      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
+
+      // `resultEnd` should return the same data as `waitForResults`
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
+
+      // Failed directly.
+      expect(utils.wait).toHaveBeenCalledTimes(0)
+
+      jest.useRealTimers()
+    })
+
+    test('results should be timed out with a different error if the backend did not say so', async () => {
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'in_progress',
+          results: [
+            {...batch.results[0]},
+            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
+            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
+          ] as ResultInBatch[],
+        }),
+        pollResultsImplementation: async () => [
+          {...pollResult, result: {...pollResult.result}},
+          {...pollResult, result: {...pollResult.result}, resultID: '3'},
+        ],
+      })
+
+      const expectedDeadlineResult = {
+        ...result,
+        result: {
+          ...result.result,
+          failure: {
+            code: 'BATCH_TIMEOUT_RUNAWAY',
+            message: "The batch didn't timeout after the expected timeout period.",
+          },
+          passed: false,
+        },
+        resultId: '3',
+        timedOut: true,
+      }
+
+      await expect(
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test, result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 3000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
+      ).rejects.toThrow(new BatchTimeoutRunawayError())
+
       // Residual results are never 'received': we force-end them.
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
 
       // `resultEnd` should return the same data as `waitForResults`
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL)
+
+      // Initial wait + 3 polling cycles.
+      expect(utils.wait).toHaveBeenCalledTimes(4)
     })
 
     test('results failure should be ignored if timed out', async () => {
@@ -1213,9 +1282,8 @@ describe('utils', () => {
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
         getBatchImplementation: async () => ({
-          // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
-          results: [{...batch.results[0], timed_out: null}],
-          status: 'in_progress',
+          status: 'failed',
+          results: [{...batch.results[0], status: 'failed', timed_out: true}] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           {
@@ -1291,15 +1359,9 @@ describe('utils', () => {
     })
 
     test('wait between batch polling', async () => {
-      const waitMock = jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
-
-      let counter = 0
-
-      mockApi({
+      const {getBatchMock} = mockApi({
         getBatchImplementation: async () => {
-          counter += 1
-
-          return counter === 3 ? batch : {...batch, status: 'in_progress'}
+          return getBatchMock.mock.calls.length === 3 ? batch : {...batch, status: 'in_progress'}
         },
       })
 
@@ -1318,8 +1380,8 @@ describe('utils', () => {
         )
       ).toEqual([result])
 
-      expect(counter).toBe(3)
-      expect(waitMock).toHaveBeenCalledTimes(2)
+      expect(getBatchMock).toHaveBeenCalledTimes(3)
+      expect(utils.wait).toHaveBeenCalledTimes(2)
     })
 
     test('correct number of pass and timeout results', async () => {

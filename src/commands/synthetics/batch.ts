@@ -1,6 +1,7 @@
 import deepExtend from 'deep-extend'
 
 import {APIHelper, EndpointError, formatBackendErrors} from './api'
+import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
@@ -24,17 +25,17 @@ export const waitForBatchToFinish = async (
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
-  const maxPollingDate = Date.now() + maxPollingTimeout
+  const safeDeadline = Date.now() + maxPollingTimeout + 3 * POLLING_INTERVAL
   const emittedResultIndexes = new Set<number>()
   let oldIncompleteResultIds = new Set<string>()
 
   while (true) {
     const batch = await getBatch(api, trigger)
-    const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
+    const safeDeadlineReached = Date.now() >= safeDeadline
 
     // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
-    // But `hasBatchExceededMaxPollingDate` is a safety in case it fails to do that.
-    const shouldContinuePolling = batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate
+    // But `safeDeadlineReached` is a safety in case it fails to do that on time.
+    const shouldContinuePolling = batch.status === 'in_progress' && !safeDeadlineReached
 
     const newlyReceivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
 
@@ -57,14 +58,16 @@ export const waitForBatchToFinish = async (
       reporter
     )
 
-    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
+    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, safeDeadlineReached, reporter)
 
     oldIncompleteResultIds = incompleteResultIds
 
+    if (safeDeadlineReached) {
+      throw new BatchTimeoutRunawayError()
+    }
+
     if (!shouldContinuePolling) {
-      return batch.results.map((r) =>
-        getResultFromBatch(r, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate)
-      )
+      return batch.results.map((r) => getResultFromBatch(r, pollResultMap, resultDisplayInfo))
     }
 
     reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
@@ -137,16 +140,13 @@ const reportResults = (
   results: ResultInBatch[],
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean,
+  safeDeadlineReached: boolean,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
   for (const result of results) {
-    reporter.resultEnd(
-      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
-      baseUrl
-    )
+    reporter.resultEnd(getResultFromBatch(result, pollResultMap, resultDisplayInfo, safeDeadlineReached), baseUrl)
   }
 }
 
@@ -190,11 +190,11 @@ const getResultFromBatch = (
   resultInBatch: ResultInBatch,
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean
+  safeDeadlineReached = false
 ): Result => {
   const {getLocation, options, tests} = resultDisplayInfo
 
-  const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
+  const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
 
   const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
@@ -211,7 +211,10 @@ const getResultFromBatch = (
 
   const pollResult = pollResultMap[resultInBatch.result_id]
 
-  if (hasTimedOut) {
+  if (safeDeadlineReached) {
+    pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
+    pollResult.result.passed = false
+  } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
     pollResult.result.passed = false
   }
