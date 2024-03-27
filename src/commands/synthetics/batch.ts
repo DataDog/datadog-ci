@@ -140,14 +140,14 @@ const reportResults = (
   results: ResultInBatch[],
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean,
+  safeDeadlineReached: boolean,
   reporter: MainReporter
 ) => {
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
   for (const result of results) {
     reporter.resultEnd(
-      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
+      getResultFromBatch(result, pollResultMap, resultDisplayInfo, safeDeadlineReached),
       baseUrl,
       batchId
     )
