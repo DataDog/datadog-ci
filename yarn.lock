@@ -1930,7 +1930,7 @@ __metadata:
     chalk: 3.0.0
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
-    dd-trace: ^3.47.0
+    dd-trace: ^5.9.0
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^7.32.0
@@ -2018,17 +2018,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:5.1.0":
-  version: 5.1.0
-  resolution: "@datadog/pprof@npm:5.1.0"
+"@datadog/pprof@npm:5.2.0":
+  version: 5.2.0
+  resolution: "@datadog/pprof@npm:5.2.0"
   dependencies:
     delay: ^5.0.0
     node-gyp: latest
     node-gyp-build: <4.0
     p-limit: ^3.1.0
-    pprof-format: ^2.0.7
+    pprof-format: ^2.1.0
     source-map: ^0.7.4
-  checksum: 087e0f54136d316731a4ee0de8cb8e01d47dc3e12e0772943babe2577b5db05a13ce99e8f3215f8023ae0572013e799db23b66901658db361e4bceb9bcdc2c30
+  checksum: baa8e0c9aa7d6540d8e91837975c37d55d7791f3b8fa32a0ccc193e8d11287a8ae45abfe5c7bb4dd7f19d19ab58a9ca8ffeee7610f886a227f171924cf1ba4b2
   languageName: node
   linkType: hard
 
@@ -4965,15 +4965,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:^3.47.0":
-  version: 3.52.0
-  resolution: "dd-trace@npm:3.52.0"
+"dd-trace@npm:^5.9.0":
+  version: 5.9.0
+  resolution: "dd-trace@npm:5.9.0"
   dependencies:
     "@datadog/native-appsec": 7.1.0
     "@datadog/native-iast-rewriter": 2.3.0
     "@datadog/native-iast-taint-tracking": 1.7.0
     "@datadog/native-metrics": ^2.0.0
-    "@datadog/pprof": 5.1.0
+    "@datadog/pprof": 5.2.0
     "@datadog/sketches-js": ^2.1.0
     "@opentelemetry/api": ^1.0.0
     "@opentelemetry/core": ^1.14.0
@@ -4995,13 +4995,13 @@ __metadata:
     node-abort-controller: ^3.1.1
     opentracing: ">=0.12.1"
     path-to-regexp: ^0.1.2
-    pprof-format: ^2.0.7
+    pprof-format: ^2.1.0
     protobufjs: ^7.2.5
     retry: ^0.13.1
     semver: ^7.5.4
     shell-quote: ^1.8.1
     tlhunter-sorted-set: ^0.1.0
-  checksum: 14909576138a8bcc4c742fe361a4e1b50853f98decab042b362c3940e5fbbbeac711989623f94ca8c627fc6bf464195465229ce089973052843b2c0b83da7c08
+  checksum: f62a605186c8389bd7c4b1b8b950cb47f90629c1f8598947fc2e4f382d35de645048534ccdb3a0961ce00ef02c28122576640a5de4222bd3f3286ff244f1af48
   languageName: node
   linkType: hard
 
@@ -9145,7 +9145,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pprof-format@npm:^2.0.7":
+"pprof-format@npm:^2.1.0":
   version: 2.1.0
   resolution: "pprof-format@npm:2.1.0"
   checksum: f51beeaeac6d1409571a64132836ec5c48ba11a29da9e8da12a61b9689c67933488df77efa644089218da7d54de96e4fafedeaef835dfdfc94da37016a1b64fa
