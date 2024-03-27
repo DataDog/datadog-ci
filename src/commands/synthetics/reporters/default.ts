@@ -239,7 +239,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
   if (isResultSkippedBySelectiveRerun(execution)) {
     const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
 
-    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from ${setColor('previous')} CI run:`))
+    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
     outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)
   } else {
     const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
@@ -413,7 +413,10 @@ export class DefaultReporter implements MainReporter {
     const testCountText = pluralize('test', tests.length)
     const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
 
-    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+    const text =
+      tests.length > 0
+        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+        : 'Waiting for the batch to end…\n'
 
     if (this.testWaitSpinner) {
       // Only refresh the spinner when the text changes.

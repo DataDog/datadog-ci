@@ -205,6 +205,17 @@ describe('Default reporter', () => {
         expect(clearLine).toHaveBeenCalled()
       }
       expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      clearLine.mockClear()
+      ttyReporter.testsWait([], MOCK_BASE_URL, '123')
+      ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
+      if (inCI) {
+        // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
+        expect(clearLine).not.toHaveBeenCalled()
+      } else {
+        expect(clearLine).toHaveBeenCalled()
+      }
+      expect(simulatedTerminalOutput).toMatchSnapshot()
     })
   })
   /* eslint-enable jest/no-conditional-expect */

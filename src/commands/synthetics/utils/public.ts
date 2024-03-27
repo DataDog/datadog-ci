@@ -5,7 +5,6 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import deepExtend from 'deep-extend'
 import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
@@ -14,21 +13,19 @@ import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from '../api'
+import {waitForBatchToFinish} from '../batch'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
-  Batch,
   BrowserServerResult,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
   Operator,
   Payload,
-  PollResultMap,
   Reporter,
   Result,
   ResultDisplayInfo,
-  ResultInBatch,
   ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
@@ -46,14 +43,8 @@ import {uploadApplicationAndOverrideConfig} from '../mobile'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {Tunnel} from '../tunnel'
 
-import {
-  getOverriddenExecutionRule,
-  getResultIdOrLinkedResultId,
-  hasResult,
-  isResultInBatchSkippedBySelectiveRerun,
-} from './internal'
+import {getOverriddenExecutionRule, hasResult} from './internal'
 
-const POLLING_INTERVAL = 5000 // In ms
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 
@@ -269,31 +260,7 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
-  try {
-    const batch = await api.getBatch(batchId)
-
-    return batch
-  } catch (e) {
-    throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}\n`, e.response?.status)
-  }
-}
-
-const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
-
 export const normalizePublicId = (id: string): string | undefined => id.match(PUBLIC_ID_REGEX)?.[0]
-
-const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
-  try {
-    const pollResults = await api.pollResults(resultIds)
-    const pollResultMap: PollResultMap = {}
-    pollResults.forEach((r) => (pollResultMap[r.resultID] = r))
-
-    return pollResultMap
-  } catch (e) {
-    throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
-  }
-}
 
 export const getOrgSettings = async (
   reporter: MainReporter,
@@ -308,169 +275,8 @@ export const getOrgSettings = async (
   }
 }
 
-const waitForBatchToFinish = async (
-  api: APIHelper,
-  batchId: string,
-  maxPollingTimeout: number,
-  resultDisplayInfo: ResultDisplayInfo,
-  reporter: MainReporter
-): Promise<Result[]> => {
-  const maxPollingDate = Date.now() + maxPollingTimeout
-  const emittedResultIndexes = new Set<number>()
-
-  while (true) {
-    const batch = await getBatch(api, batchId)
-    const hasBatchExceededMaxPollingDate = Date.now() >= maxPollingDate
-
-    // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
-    // But `hasBatchExceededMaxPollingDate` is a safety in case it fails to do that.
-    const shouldContinuePolling = batch.status === 'in_progress' && !hasBatchExceededMaxPollingDate
-
-    const receivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
-    const residualResults = batch.results.filter((_, index) => !emittedResultIndexes.has(index))
-
-    // For the last iteration, the full up-to-date data has to be fetched to compute this function's return value,
-    // while only the [received + residual] results have to be reported.
-    const resultIdsToFetch = (shouldContinuePolling ? receivedResults : batch.results).flatMap((r) =>
-      isResultInBatchSkippedBySelectiveRerun(r) ? [] : [r.result_id]
-    )
-    const resultsToReport = receivedResults.concat(shouldContinuePolling ? [] : residualResults)
-
-    const pollResultMap = await getPollResultMap(api, resultIdsToFetch)
-
-    reportResults(batchId, resultsToReport, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate, reporter)
-
-    if (!shouldContinuePolling) {
-      return batch.results.map((r) =>
-        getResultFromBatch(r, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate)
-      )
-    }
-
-    reportWaitingTests(batchId, batch, resultDisplayInfo, reporter)
-
-    await wait(POLLING_INTERVAL)
-  }
-}
-
 export const isResultSkippedBySelectiveRerun = (result: Result): result is ResultSkippedBySelectiveRerun => {
   return result.selectiveRerun?.decision === 'skip'
-}
-
-const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
-  const receivedResults: ResultInBatch[] = []
-
-  for (const [index, result] of batch.results.entries()) {
-    if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
-      emittedResultIndexes.add(index)
-      reporter.resultReceived(result)
-      receivedResults.push(result)
-    }
-  }
-
-  return receivedResults
-}
-
-const reportResults = (
-  batchId: string,
-  results: ResultInBatch[],
-  pollResultMap: PollResultMap,
-  resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean,
-  reporter: MainReporter
-) => {
-  const baseUrl = getAppBaseURL(resultDisplayInfo.options)
-
-  for (const result of results) {
-    reporter.resultEnd(
-      getResultFromBatch(result, pollResultMap, resultDisplayInfo, hasBatchExceededMaxPollingDate),
-      baseUrl,
-      batchId
-    )
-  }
-}
-
-const reportWaitingTests = (
-  batchId: string,
-  batch: Batch,
-  resultDisplayInfo: ResultDisplayInfo,
-  reporter: MainReporter
-) => {
-  const baseUrl = getAppBaseURL(resultDisplayInfo.options)
-  const {tests} = resultDisplayInfo
-
-  const inProgressPublicIds = new Set()
-  const skippedBySelectiveRerunPublicIds = new Set()
-
-  for (const result of batch.results) {
-    if (result.status === 'in_progress') {
-      inProgressPublicIds.add(result.test_public_id)
-    }
-    if (isResultInBatchSkippedBySelectiveRerun(result)) {
-      skippedBySelectiveRerunPublicIds.add(result.test_public_id)
-    }
-  }
-
-  const remainingTests = []
-  let skippedCount = 0
-
-  for (const test of tests) {
-    if (inProgressPublicIds.has(test.public_id)) {
-      remainingTests.push(test)
-    }
-    if (skippedBySelectiveRerunPublicIds.has(test.public_id)) {
-      skippedCount++
-    }
-  }
-
-  reporter.testsWait(remainingTests, baseUrl, batchId, skippedCount)
-}
-
-const getResultFromBatch = (
-  resultInBatch: ResultInBatch,
-  pollResultMap: PollResultMap,
-  resultDisplayInfo: ResultDisplayInfo,
-  hasBatchExceededMaxPollingDate: boolean
-): Result => {
-  const {getLocation, options, tests} = resultDisplayInfo
-
-  const hasTimedOut = resultInBatch.timed_out ?? hasBatchExceededMaxPollingDate
-
-  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
-
-  if (isResultInBatchSkippedBySelectiveRerun(resultInBatch)) {
-    return {
-      executionRule: resultInBatch.execution_rule,
-      passed: true,
-      resultId: getResultIdOrLinkedResultId(resultInBatch),
-      selectiveRerun: resultInBatch.selective_rerun,
-      test,
-      timedOut: hasTimedOut,
-    }
-  }
-
-  const pollResult = pollResultMap[resultInBatch.result_id]
-
-  if (hasTimedOut) {
-    pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
-    pollResult.result.passed = false
-  }
-
-  return {
-    executionRule: resultInBatch.execution_rule,
-    location: getLocation(resultInBatch.location, test),
-    passed: hasResultPassed(
-      pollResult.result,
-      hasTimedOut,
-      options.failOnCriticalErrors ?? false,
-      options.failOnTimeout ?? false
-    ),
-    result: pollResult.result,
-    resultId: getResultIdOrLinkedResultId(resultInBatch),
-    selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult.check),
-    timedOut: hasTimedOut,
-    timestamp: pollResult.timestamp,
-  }
 }
 
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
@@ -1084,6 +890,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       break
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+      break
+    case 'BATCH_TIMEOUT_RUNAWAY':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: batch timeout runaway ')}\n${error.message}\n\n`)
       break
     case 'TUNNEL_START_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
