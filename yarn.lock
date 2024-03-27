@@ -1930,7 +1930,7 @@ __metadata:
     chalk: 3.0.0
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
-    dd-trace: ^5.9.0
+    dd-trace: ^3.54.0
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^7.32.0
@@ -4965,9 +4965,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:^5.9.0":
-  version: 5.9.0
-  resolution: "dd-trace@npm:5.9.0"
+"dd-trace@npm:^3.54.0":
+  version: 3.54.0
+  resolution: "dd-trace@npm:3.54.0"
   dependencies:
     "@datadog/native-appsec": 7.1.0
     "@datadog/native-iast-rewriter": 2.3.0
@@ -5001,7 +5001,7 @@ __metadata:
     semver: ^7.5.4
     shell-quote: ^1.8.1
     tlhunter-sorted-set: ^0.1.0
-  checksum: f62a605186c8389bd7c4b1b8b950cb47f90629c1f8598947fc2e4f382d35de645048534ccdb3a0961ce00ef02c28122576640a5de4222bd3f3286ff244f1af48
+  checksum: f90dffc486a673a99303427dcb267c00cf1f15daa7f4a28c3ca63129401e3d6773dc20e4de61a72f95a631049383a9ea6d8913f2899ba47af372cebd1cbd222c
   languageName: node
   linkType: hard
 
