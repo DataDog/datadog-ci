@@ -316,7 +316,13 @@ export const waitForResults = async (
     tests,
   }
 
-  const results = await waitForBatchToFinish(api, options.maxPollingTimeout, trigger, resultDisplayInfo, reporter)
+  const results = await waitForBatchToFinish(
+    api,
+    trigger.batch_id,
+    options.maxPollingTimeout,
+    resultDisplayInfo,
+    reporter
+  )
 
   if (tunnel && !isTunnelConnected) {
     reporter.error('The tunnel has stopped working, this may have affected the results.')
@@ -379,10 +385,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  resultEnd: (result, baseUrl) => {
+  resultEnd: (result, baseUrl, batchId) => {
     for (const reporter of reporters) {
       if (typeof reporter.resultEnd === 'function') {
-        reporter.resultEnd(result, baseUrl)
+        reporter.resultEnd(result, baseUrl, batchId)
       }
     }
   },
@@ -692,8 +698,8 @@ export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConf
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
-export const getResultUrl = (baseUrl: string, test: Test, resultId: string) => {
-  const ciQueryParam = 'from_ci=true'
+export const getResultUrl = (baseUrl: string, test: Test, resultId: string, batchId: string) => {
+  const ciQueryParam = `batch_id=${batchId}&from_ci=true`
   const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
   if (test.type === 'browser') {
     return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`

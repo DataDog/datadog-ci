@@ -141,7 +141,7 @@ describe('Junit reporter', () => {
     })
 
     it('should give a default suite name', () => {
-      reporter.resultEnd(globalResultMock, '')
+      reporter.resultEnd(globalResultMock, '', '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$.name).toBe('Undefined suite')
     })
@@ -152,7 +152,7 @@ describe('Junit reporter', () => {
         {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}},
       ]
 
-      results.forEach((result) => reporter.resultEnd(result, ''))
+      results.forEach((result) => reporter.resultEnd(result, '', ''))
 
       // We should have 1 unique report. Not 2 different ones.
       expect(reporter['json'].testsuites.testsuite.length).toBe(1)
@@ -165,7 +165,7 @@ describe('Junit reporter', () => {
     })
 
     it('should add stats to the run', () => {
-      reporter.resultEnd({...globalResultMock, test: {...globalTestMock, suite: 'suite 1'}}, '')
+      reporter.resultEnd({...globalResultMock, test: {...globalTestMock, suite: 'suite 1'}}, '', '')
 
       reporter.testTrigger({...globalTestMock, suite: 'suite 2'}, '', ExecutionRule.SKIPPED, {})
       reporter.resultEnd(
@@ -178,6 +178,7 @@ describe('Junit reporter', () => {
             suite: 'suite 2',
           },
         },
+        '',
         ''
       )
       reporter.resultEnd(
@@ -192,6 +193,7 @@ describe('Junit reporter', () => {
           },
           timedOut: false,
         },
+        '',
         ''
       )
 
@@ -221,6 +223,7 @@ describe('Junit reporter', () => {
             suite: 'suite 1',
           },
         },
+        '',
         ''
       )
 
@@ -294,10 +297,10 @@ describe('Junit reporter', () => {
           ],
         },
       }
-      reporter.resultEnd(browserResult1, '')
-      reporter.resultEnd(browserResult2, '')
-      reporter.resultEnd(browserResult3, '')
-      reporter.resultEnd(apiResult, '')
+      reporter.resultEnd(browserResult1, '', '')
+      reporter.resultEnd(browserResult2, '', '')
+      reporter.resultEnd(browserResult3, '', '')
+      reporter.resultEnd(apiResult, '', '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       const results = [
         [1, 2, 0, 1],
@@ -326,7 +329,7 @@ describe('Junit reporter', () => {
         ...globalResultMock,
         result: getApiServerResult({passed: false}),
       }
-      const testCase = reporter['getTestCase'](resultMock, '')
+      const testCase = reporter['getTestCase'](resultMock, '', '')
       expect(testCase.$).toMatchObject({
         ...getDefaultTestCaseStats(),
         steps_count: 1,
@@ -340,7 +343,7 @@ describe('Junit reporter', () => {
         ...globalResultMock,
         result: getFailedMultiStepsServerResult(),
       }
-      const testCase = reporter['getTestCase'](resultMock, '')
+      const testCase = reporter['getTestCase'](resultMock, '', '')
       expect(testCase.$).toMatchObject({
         ...getDefaultTestCaseStats(),
         steps_allowfailures: 1,
@@ -372,7 +375,7 @@ describe('Junit reporter', () => {
           },
         },
       }
-      const testCase = reporter['getTestCase'](resultMock, '')
+      const testCase = reporter['getTestCase'](resultMock, '', '')
       expect(testCase.$).toMatchObject({
         ...getDefaultTestCaseStats(),
         steps_count: 3,
@@ -427,6 +430,7 @@ describe('GitLab test report compatibility', () => {
           ...(location && {location}),
           ...(timedOut && {timedOut}),
         },
+        '',
         ''
       )
 
@@ -489,7 +493,7 @@ describe('GitLab test report compatibility', () => {
       test: {...baseResult.test, suite: 'tests.json'},
     }
 
-    reporter['resultEnd'](result, '')
+    reporter['resultEnd'](result, '', '')
 
     const testCase = reporter['json'].testsuites.testsuite[0].testcase[0]
 
@@ -528,9 +532,9 @@ describe('GitLab test report compatibility', () => {
 
     reporter['testTrigger'](globalTestMock, '', ExecutionRule.SKIPPED, {})
 
-    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.BLOCKING} as Result, '')
-    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.NON_BLOCKING} as Result, '')
-    reporter['resultEnd']({...getBrowserResult('', globalTestMock), executionRule: ExecutionRule.BLOCKING}, '')
+    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.BLOCKING} as Result, '', '')
+    reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.NON_BLOCKING} as Result, '', '')
+    reporter['resultEnd']({...getBrowserResult('', globalTestMock), executionRule: ExecutionRule.BLOCKING}, '', '')
 
     const [testCaseSkipped, testCaseBlocking, testCaseNonBlocking, testCasePassed] = reporter[
       'json'
@@ -560,7 +564,7 @@ describe('GitLab test report compatibility', () => {
       result: {...baseResult.result, failure},
     }
 
-    reporter['resultEnd'](result, '')
+    reporter['resultEnd'](result, '', '')
 
     const testCase = reporter['json'].testsuites.testsuite[0].testcase[0]
     expect(testCase.failure).toStrictEqual([

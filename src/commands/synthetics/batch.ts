@@ -11,7 +11,6 @@ import {
   ResultDisplayInfo,
   ResultInBatch,
   Test,
-  Trigger,
 } from './interfaces'
 import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId} from './utils/internal'
 import {wait, getAppBaseURL, hasResultPassed} from './utils/public'
@@ -20,8 +19,8 @@ const POLLING_INTERVAL = 5000 // In ms
 
 export const waitForBatchToFinish = async (
   api: APIHelper,
+  batchId: string,
   maxPollingTimeout: number,
-  trigger: Trigger,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
@@ -30,7 +29,7 @@ export const waitForBatchToFinish = async (
   let oldIncompleteResultIds = new Set<string>()
 
   while (true) {
-    const batch = await getBatch(api, trigger)
+    const batch = await getBatch(api, batchId)
     const safeDeadlineReached = Date.now() >= safeDeadline
 
     // The backend is expected to handle the time out of the batch by eventually changing its status to `failed`.
@@ -58,7 +57,7 @@ export const waitForBatchToFinish = async (
       reporter
     )
 
-    reportResults(resultsToReport, pollResultMap, resultDisplayInfo, safeDeadlineReached, reporter)
+    reportResults(batchId, resultsToReport, pollResultMap, resultDisplayInfo, safeDeadlineReached, reporter)
 
     oldIncompleteResultIds = incompleteResultIds
 
@@ -70,7 +69,7 @@ export const waitForBatchToFinish = async (
       return batch.results.map((r) => getResultFromBatch(r, pollResultMap, resultDisplayInfo))
     }
 
-    reportWaitingTests(trigger, batch, resultDisplayInfo, reporter)
+    reportWaitingTests(batchId, batch, resultDisplayInfo, reporter)
 
     await wait(POLLING_INTERVAL)
   }
@@ -137,6 +136,7 @@ const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, 
 }
 
 const reportResults = (
+  batchId: string,
   results: ResultInBatch[],
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
@@ -146,12 +146,16 @@ const reportResults = (
   const baseUrl = getAppBaseURL(resultDisplayInfo.options)
 
   for (const result of results) {
-    reporter.resultEnd(getResultFromBatch(result, pollResultMap, resultDisplayInfo, safeDeadlineReached), baseUrl)
+    reporter.resultEnd(
+      getResultFromBatch(result, pollResultMap, resultDisplayInfo, safeDeadlineReached),
+      baseUrl,
+      batchId
+    )
   }
 }
 
 const reportWaitingTests = (
-  trigger: Trigger,
+  batchId: string,
   batch: Batch,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
@@ -183,7 +187,7 @@ const reportWaitingTests = (
     }
   }
 
-  reporter.testsWait(remainingTests, baseUrl, trigger.batch_id, skippedCount)
+  reporter.testsWait(remainingTests, baseUrl, batchId, skippedCount)
 }
 
 const getResultFromBatch = (
@@ -237,9 +241,9 @@ const getResultFromBatch = (
   }
 }
 
-const getBatch = async (api: APIHelper, trigger: Trigger): Promise<Batch> => {
+const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
   try {
-    const batch = await api.getBatch(trigger.batch_id)
+    const batch = await api.getBatch(batchId)
 
     return batch
   } catch (e) {

@@ -203,7 +203,7 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
-const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
   const {executionRule, test: overriddenTest, resultId, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
@@ -229,20 +229,18 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
     const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
-    const resultInfo = `  ⎋${durationText} View test run details: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
-    outputLines.push(resultInfo)
+    outputLines.push(`  •${durationText} View test run details:`)
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`)
   }
 
   if (isResultSkippedBySelectiveRerun(execution)) {
-    const resultUrl = getResultUrl(baseUrl, test, resultId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
 
-    const resultInfo = chalk.dim(
-      `  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch: ${chalk.cyan(resultUrl)}`
-    )
-    outputLines.push(resultInfo)
+    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)
   } else {
     const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
 
@@ -313,10 +311,10 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public resultEnd(result: Result, baseUrl: string) {
+  public resultEnd(result: Result, baseUrl: string, batchId: string) {
     // Stop the spinner so it doesn't show multiple times in a burst of received results.
     this.testWaitSpinner?.stop()
-    this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
+    this.write(renderExecutionResult(result.test, result, baseUrl, batchId) + '\n\n')
   }
 
   public resultReceived(result: ResultInBatch): void {

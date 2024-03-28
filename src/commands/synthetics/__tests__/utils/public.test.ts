@@ -929,7 +929,7 @@ describe('utils', () => {
         status: 'passed',
         result_id: 'rid-2',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
       // Still waiting for 2 tests
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
         3,
@@ -966,7 +966,7 @@ describe('utils', () => {
         ...batch.results[0],
         status: 'passed',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL, 'bid')
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
@@ -998,7 +998,7 @@ describe('utils', () => {
         test_public_id: 'other-public-id',
         result_id: 'rid-3',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
       // Do not report when there are no tests to wait anymore
       expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
     })
@@ -1086,7 +1086,7 @@ describe('utils', () => {
         status: 'passed',
       })
       // Result 2 just became available, so it should be reported
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
@@ -1123,13 +1123,14 @@ describe('utils', () => {
         result_id: 'rid-3',
       })
       // Result 3 was available instantly
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
 
       // Result 1 never became available
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
         {...result, resultId: 'rid', result: incompleteServerResult},
-        MOCK_BASE_URL
+        MOCK_BASE_URL,
+        'bid'
       )
       expect(mockReporter.log).toHaveBeenCalledWith(
         'The full information for result rid was incomplete at the end of the batch.'
@@ -1212,8 +1213,8 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
 
       // `resultEnd` should return the same data as `waitForResults`
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL, 'bid')
 
       // Failed directly.
       expect(utils.wait).toHaveBeenCalledTimes(0)
@@ -1270,8 +1271,8 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
 
       // `resultEnd` should return the same data as `waitForResults`
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
 
       // Initial wait + 3 polling cycles.
       expect(utils.wait).toHaveBeenCalledTimes(4)
