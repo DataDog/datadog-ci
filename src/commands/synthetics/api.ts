@@ -13,7 +13,6 @@ import {
   Batch,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   Payload,
   PollResult,
   MultipartPresignedUrlsResponse,
@@ -22,6 +21,8 @@ import {
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
+  MobileAppUploadResult,
+  MobileApplicationNewVersionParams,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -232,40 +233,44 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
 }
 
 export const completeMultipartMobileApplicationUpload = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<void>
+  request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>
 ) => async (
   applicationId: string,
   uploadId: string,
   key: string,
-  uploadPartResponses: MobileApplicationUploadPartResponse[]
-) => {
-  await retryRequest(
+  uploadPartResponses: MobileApplicationUploadPartResponse[],
+  newVersionParams?: MobileApplicationNewVersionParams
+): Promise<string> => {
+  const resp = await retryRequest(
     {
       data: {
         key,
+        newVersionParams,
         parts: uploadPartResponses,
         uploadId,
+        validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
     },
     request
   )
+
+  return resp.data.job_id
 }
 
-const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
-  version: MobileApplicationVersion
-) => {
-  const resp = await retryRequest(
+export const pollMobileApplicationUploadResponse = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
+) => async (jobId: string): Promise<MobileAppUploadResult> => {
+  const response = await retryRequest(
     {
-      data: version,
-      method: 'POST',
-      url: `/synthetics/mobile/applications/versions`,
+      method: 'GET',
+      url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
     },
     request
   )
 
-  return resp.data
+  return response.data
 }
 
 const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
@@ -348,7 +353,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
-    createMobileVersion: createMobileVersion(requestUnstable),
+    pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
 }
 
