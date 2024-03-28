@@ -89,7 +89,7 @@ export class UploadCommand extends Command {
 
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
-      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
@@ -222,6 +222,6 @@ export class UploadCommand extends Command {
   }
 
   private isTargetingGov(): boolean {
-    return process.env.DATADOG_SITE === DATADOG_SITE_GOV
+    return datadogSite === DATADOG_SITE_GOV
   }
 }
