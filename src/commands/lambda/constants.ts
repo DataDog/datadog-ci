@@ -9,8 +9,10 @@ export const EXTENSION_LAYER_KEY = 'extension'
 export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   dotnet6: 'dd-trace-dotnet',
+  dotnet8: 'dd-trace-dotnet',
   java11: 'dd-trace-java',
   java17: 'dd-trace-java',
+  java21: 'dd-trace-java',
   'java8.al2': 'dd-trace-java',
   'nodejs16.x': 'Datadog-Node16-x',
   'nodejs18.x': 'Datadog-Node18-x',
@@ -35,8 +37,10 @@ export enum RuntimeType {
 // Lookup table for runtimes that are currently supported by the CLI
 export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   dotnet6: RuntimeType.DOTNET,
+  dotnet8: RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   java17: RuntimeType.JAVA,
+  java21: RuntimeType.JAVA,
   'java8.al2': RuntimeType.JAVA,
   'nodejs16.x': RuntimeType.NODE,
   'nodejs18.x': RuntimeType.NODE,
@@ -54,6 +58,7 @@ export type LayerKey = keyof typeof LAYER_LOOKUP
 export const ARM_LAYERS = [
   EXTENSION_LAYER_KEY,
   'dotnet6',
+  'dotnet8',
   'python3.8',
   'python3.9',
   'python3.10',
