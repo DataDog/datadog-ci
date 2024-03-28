@@ -1132,8 +1132,8 @@ describe('utils', () => {
         MOCK_BASE_URL,
         'bid'
       )
-      expect(mockReporter.log).toHaveBeenCalledWith(
-        'The full information for result rid was incomplete at the end of the batch.'
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        'The full information for result rid was incomplete at the end of the batch.\n\n'
       )
 
       // Do not report when there are no tests to wait anymore

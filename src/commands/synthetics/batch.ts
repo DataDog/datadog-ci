@@ -110,12 +110,22 @@ const getResultsToReport = (
     return resultsToReport
   }
 
+  // Residual results are either:
+  //  - Still in progress (from the batch POV): they were never emitted.
+  //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
   const residualResults = excludeSkipped(batch.results).filter(
     (r, index) => !emittedResultIndexes.has(index) || incompleteResultIds.has(r.result_id)
   )
 
+  const errors: string[] = []
   for (const result of residualResults) {
-    reporter.log(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+    if (!result.timed_out) {
+      errors.push(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+    }
+  }
+
+  if (errors.length > 0) {
+    reporter.error(errors.join('\n') + '\n\n')
   }
 
   return resultsToReport.concat(residualResults)
