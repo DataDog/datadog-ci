@@ -24,6 +24,7 @@ export class TagCommand extends Command {
 
   private level = Option.String('--level')
   private noFail = Option.Boolean('--no-fail')
+  private silent = Option.Boolean('--silent')
   private tags = Option.Array('--tags')
 
   private config = {
@@ -48,6 +49,15 @@ export class TagCommand extends Command {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
 
       return 1
+    }
+
+    if (this.silent) {
+      this.context.stdout.write = () => {
+        return true
+      }
+      this.context.stderr.write = () => {
+        return true
+      }
     }
 
     const tags = {
