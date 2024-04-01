@@ -72,22 +72,32 @@ describe('execute', () => {
   })
 
   test('should fail if provider is BuddyWorks and level is job', async () => {
-    const {context, code} = await runCLI('job', ['key:value'], {
-      BUDDY: 'true',
-      BUDDY_PIPELINE_ID: 'example/example',
-      BUDDY_EXECUTION_ID: '10',
-      BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
-    }, [])
+    const {context, code} = await runCLI(
+      'job',
+      ['key:value'],
+      {
+        BUDDY: 'true',
+        BUDDY_PIPELINE_ID: 'example/example',
+        BUDDY_EXECUTION_ID: '10',
+        BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
+      },
+      []
+    )
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
   })
 
   test('should not output anything if silent mode is enabled', async () => {
-    const result = await runCLI('pipeline', ['key:value'], {
-      BUILDKITE: 'true',
-      BUILDKITE_BUILD_ID: 'id',
-      BUILDKITE_JOB_ID: 'id',
-    }, ['--silent'])
+    const result = await runCLI(
+      'pipeline',
+      ['key:value'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+      },
+      ['--silent']
+    )
     expect(result.context.stderr.toString()).toBe('')
     expect(result.context.stdout.toString()).toBe('')
   })
