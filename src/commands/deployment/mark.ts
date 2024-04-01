@@ -61,6 +61,7 @@ export class DeploymentMarkCommand extends Command {
     tagPipelineCommand.setLevel('pipeline')
     tagPipelineCommand.setTags(this.createPipelineDeploymentTags())
     tagPipelineCommand.context = this.context
+    tagPipelineCommand.setSilent(true)
 
     if (this.noFail) {
       tagJobCommand.setNoFail(true)

@@ -30,7 +30,7 @@ const createMockContext = () => {
 }
 
 describe('execute', () => {
-  const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[]) => {
+  const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {
     const cli = makeCLI()
     const context = createMockContext() as any
     process.env = {
@@ -50,13 +50,13 @@ describe('execute', () => {
   }
 
   test('should fail if an invalid level given', async () => {
-    const {context, code} = await runCLI('stage', ['key:value'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'}, [])
+    const {context, code} = await runCLI('stage', ['key:value'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain('Level must be one of [pipeline, job]')
   })
 
   test('should fail if no tags provided', async () => {
-    const {context, code} = await runCLI('pipeline', [], {}, [])
+    const {context, code} = await runCLI('pipeline', [], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
       'DD_TAGS environment variable or --tags command line argument is required'
@@ -64,7 +64,7 @@ describe('execute', () => {
   })
 
   test('should fail if not running in a supported provider', async () => {
-    const {context, code} = await runCLI('pipeline', ['key:value'], {}, [])
+    const {context, code} = await runCLI('pipeline', ['key:value'], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
       'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
@@ -72,17 +72,12 @@ describe('execute', () => {
   })
 
   test('should fail if provider is BuddyWorks and level is job', async () => {
-    const {context, code} = await runCLI(
-      'job',
-      ['key:value'],
-      {
-        BUDDY: 'true',
-        BUDDY_PIPELINE_ID: 'example/example',
-        BUDDY_EXECUTION_ID: '10',
-        BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
-      },
-      []
-    )
+    const {context, code} = await runCLI('job', ['key:value'], {
+      BUDDY: 'true',
+      BUDDY_PIPELINE_ID: 'example/example',
+      BUDDY_EXECUTION_ID: '10',
+      BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
+    })
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
   })

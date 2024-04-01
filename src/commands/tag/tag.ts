@@ -44,6 +44,10 @@ export class TagCommand extends Command {
     this.noFail = noFail
   }
 
+  public setSilent(silent: boolean) {
+    this.silent = silent
+  }
+
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
