@@ -205,6 +205,27 @@ jobs:
           cpu_count: 2
           enable_performance_statistics: true
           sca_enabled: true
+          diff_aware: true
+
+  datadog-static-analyzer-non-diff-aware:
+    runs-on: ubuntu-latest
+    name: Datadog Static Analyzer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Datadog static analyzer
+        id: datadog-static-analysis
+        uses: DataDog/datadog-static-analyzer-github-action@main
+        with:
+          dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          dd_service: 'datadog-ci'
+          dd_env: 'ci-no-dq'
+          cpu_count: 2
+          enable_performance_statistics: true
+          sca_enabled: true
+          diff_aware: false
+
 
   check-licenses:
     name: Check licenses
