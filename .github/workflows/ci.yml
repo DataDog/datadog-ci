@@ -190,7 +190,7 @@ jobs:
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
-    name: Datadog Static Analyzer
+    name: Static Analyzer - Diff Aware
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -208,7 +208,7 @@ jobs:
 
   datadog-static-analyzer-non-diff-aware:
     runs-on: ubuntu-latest
-    name: Datadog Static Analyzer
+    name: Static Analyzer - Non Diff Aware
     steps:
       - name: Checkout
         uses: actions/checkout@v4
