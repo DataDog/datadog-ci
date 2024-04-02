@@ -20,6 +20,7 @@ datadog-ci tag --level job --tags "go.version:`go version`"
 - `--no-fail` (default: `false`) will prevent the tag command from failing if there are issues submitting the data.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will be the tags added to the pipeline or job span.
   The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
+- `--silent` (default: `false`) will prevent the tag command from writing to stdout and stderr.
 
 ### Environment variables
 
