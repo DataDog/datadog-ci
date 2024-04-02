@@ -638,21 +638,6 @@ describe('run-test', () => {
       ])
     })
 
-    test('display warning if too many tests from search', async () => {
-      const apiHelper = {
-        searchTests: () => ({
-          tests: Array(MAX_TESTS_TO_TRIGGER + 1).fill({public_id: 'stu-vwx-yza'}),
-        }),
-      } as any
-
-      const searchQuery = 'fake search'
-
-      await runTests.getTriggerConfigs(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
-      expect(mockReporter.error).toHaveBeenCalledWith(
-        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-      )
-    })
-
     test('should use given globs to get tests list', async () => {
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const configOverride = {startUrl}

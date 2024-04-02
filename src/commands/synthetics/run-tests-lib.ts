@@ -21,6 +21,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
+import {hasTestSearchQuery} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -178,7 +179,7 @@ export const getTriggerConfigs = async (
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
   // Grab the test defined from the search query. Their config will contain the suite name, and the search query itself.
-  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
+  const testsFromSearchQuery = hasTestSearchQuery(config) ? await getTestsFromSearchQuery(api, config) : []
 
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
