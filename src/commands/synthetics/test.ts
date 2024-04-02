@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {CiError} from './errors'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig, UserConfigOverride} from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {getSuites, normalizePublicId} from './utils/public'
@@ -41,10 +40,6 @@ export const getTestsFromSearchQuery = async (
     reporter.error(
       `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
     )
-  }
-
-  if (testsToTriggerBySearchQuery.length === 0) {
-    throw new CiError('NO_TESTS_TO_RUN')
   }
 
   return testsToTriggerBySearchQuery
