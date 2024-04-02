@@ -14,17 +14,16 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
-  UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
+import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
   getOrgSettings,
-  getSuites,
   getTestsToTrigger,
   InitialSummary,
   renderResults,
@@ -33,7 +32,6 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
-  normalizePublicId,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -167,19 +165,6 @@ export const executeTests = async (
   }
 }
 
-const getTestListBySearchQuery = async (
-  api: APIHelper,
-  globalConfigOverride: UserConfigOverride,
-  testSearchQuery: string
-) => {
-  const testSearchResults = await api.searchTests(testSearchQuery)
-
-  return testSearchResults.tests.map((test) => ({
-    config: globalConfigOverride,
-    id: test.public_id,
-    suite: `Query: ${testSearchQuery}`,
-  }))
-}
 export const getTriggerConfigs = async (
   api: APIHelper,
   config: RunTestsCommandConfig,
@@ -222,46 +207,6 @@ export const getTriggerConfigs = async (
   })
 
   return triggerConfigs
-}
-
-const getTestsFromSearchQuery = async (api: APIHelper, config: RunTestsCommandConfig, reporter: MainReporter) => {
-  const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery || '')
-
-  if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
-    reporter.error(
-      `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-    )
-  }
-
-  if (testsToTriggerBySearchQuery.length === 0) {
-    throw new CiError('NO_TESTS_TO_RUN')
-  }
-
-  return testsToTriggerBySearchQuery
-}
-
-const getTestConfigs = async (
-  config: RunTestsCommandConfig,
-  reporter: MainReporter,
-  suites: Suite[] = []
-): Promise<TriggerConfig[]> => {
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
-    .reduce((acc, val) => acc.concat(val), [])
-    .filter((suite) => !!suite.content.tests)
-
-  suites.push(...suitesFromFiles)
-
-  const testConfigs = suites
-    .map((suite) =>
-      suite.content.tests.map((test) => ({
-        config: test.config,
-        id: normalizePublicId(test.id) ?? '',
-        suite: suite.name,
-      }))
-    )
-    .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-
-  return testConfigs
 }
 
 export const executeWithDetails = async (

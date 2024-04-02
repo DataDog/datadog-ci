@@ -12,7 +12,7 @@ import {getCIMetadata} from '../../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper, isNotFoundError} from '../api'
+import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
 import {waitForBatchToFinish} from '../batch'
 import {CiError, CriticalError} from '../errors'
 import {
@@ -41,6 +41,7 @@ import {
 } from '../interfaces'
 import {uploadApplicationAndOverrideConfig} from '../mobile'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
 import {getOverriddenExecutionRule, hasResult} from './internal'
@@ -428,25 +429,6 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
     }
   },
 })
-
-const getTest = async (api: APIHelper, {id, suite}: TriggerConfig): Promise<{test: Test} | {errorMessage: string}> => {
-  try {
-    const test = {
-      ...(await api.getTest(id)),
-      suite,
-    }
-
-    return {test}
-  } catch (error) {
-    if (isNotFoundError(error)) {
-      const errorMessage = formatBackendErrors(error)
-
-      return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
-    }
-
-    throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
-  }
-}
 
 type NotFound = {errorMessage: string}
 type Skipped = {overriddenConfig: TestPayload}
