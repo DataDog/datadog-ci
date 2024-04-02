@@ -507,11 +507,12 @@ export const getTestsToTrigger = async (
   const errorMessages: string[] = []
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
   // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
-  if (triggerConfigs.length > MAX_TESTS_TO_TRIGGER && triggerFromSearch) {
+  if (triggerFromSearch && triggerConfigs.length > MAX_TESTS_TO_TRIGGER) {
+    const testsCount = triggerConfigs.length
     triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
     const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
     errorMessages.push(
-      chalk.yellow(`More than ${maxTests} tests returned by search query, only the first ${maxTests} were fetched.\n`)
+      chalk.yellow(`The search query returned ${testsCount} tests, only the first ${maxTests} will be triggered.\n`)
     )
   }
 
