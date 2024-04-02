@@ -23,10 +23,6 @@ export const hasResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
 }
 
-export const hasTestSearchQuery = (config: {testSearchQuery?: string}): config is {testSearchQuery: string} => {
-  return config.testSearchQuery !== undefined && config.testSearchQuery !== '' // For backwards compatibility, empty search queries are not allowed
-}
-
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch
 ): result is ResultInBatchSkippedBySelectiveRerun => {

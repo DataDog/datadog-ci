@@ -30,9 +30,14 @@ export const getTestConfigs = async (
 
 export const getTestsFromSearchQuery = async (
   api: APIHelper,
-  config: Required<Pick<RunTestsCommandConfig, 'global' | 'testSearchQuery'>>
+  config: Pick<RunTestsCommandConfig, 'global' | 'testSearchQuery'>
 ) => {
   const {global: globalConfigOverride, testSearchQuery} = config
+
+  // Empty search queries are not allowed.
+  if (!testSearchQuery) {
+    return []
+  }
 
   const testSearchResults = await api.searchTests(testSearchQuery)
 
