@@ -203,7 +203,6 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci'
           cpu_count: 2
-          enable_performance_statistics: true
           sca_enabled: true
           diff_aware: true
 
@@ -222,7 +221,6 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci-no-dq'
           cpu_count: 2
-          enable_performance_statistics: true
           sca_enabled: true
           diff_aware: false
 
