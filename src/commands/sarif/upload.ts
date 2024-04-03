@@ -13,7 +13,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {getSpanTags, mandatoryGitFields} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
@@ -138,8 +138,10 @@ export class UploadSarifReportCommand extends Command {
       return 1
     }
 
+    const sha = spanTags[GIT_SHA] || 'sha-not-found'
+    const env = this.config.env || 'env-not-set'
     this.context.stdout.write(
-      renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun, this.noVerify)
+      renderCommandInfo(this.basePaths, this.service, env, sha, this.maxConcurrency, this.dryRun, this.noVerify)
     )
     const upload = (p: Payload) => this.uploadSarifReport(api, p)
 
