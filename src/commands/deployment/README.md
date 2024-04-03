@@ -30,7 +30,7 @@ datadog-ci deployment mark --env prod --service payment-service --revision v1.1.
 ### `correlate`
 **Note**: If you are using `datadog-ci deployment mark`, then you do not need to use this command, as the correlation is made automatically.
 
-The `correlate` command connects a GitOps deployment with the CI pipeline of the application repository. Once they are connected, you can check which pipeline
+The `correlate` command connects a GitOps deployment with the CI pipeline of the application repository. Once they are connected, you can see in Datadog's UI which pipeline
 triggered a deployment, and which deployments were triggered by a pipeline.
 
 **Important**: This command does not work for every setup. Refer to [when to call the command](#When-to-call-the-command) for more details.
@@ -56,7 +56,7 @@ datadog-ci deployment correlate --provider argocd
 ```
 
 - `--provider` (**required**): the CD provider name. Currently, the only supported CD provider is `argocd`.
-- `--config-repo`: configuration repository URL where the kubernetes manifests are stored. If empty, the command tries to get it using a Git command.
+- `--config-repo`: configuration repository URL where the kubernetes manifests are stored. If empty, the command tries to get it using the git command `git ls-remote --get-url`.
 - `--dry-run` (default: `false`): prevents the command from sending any data to Datadog. All the other checks are still performed.
 
 ### Environment variables
