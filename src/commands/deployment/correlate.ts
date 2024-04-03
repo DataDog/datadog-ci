@@ -51,7 +51,7 @@ export class DeploymentCorrelateCommand extends Command {
 
       return 1
     }
-    this.cdProviderParam.toLowerCase()
+    this.cdProviderParam = this.cdProviderParam.toLowerCase()
 
     const tags = getCISpanTags() || {}
 
