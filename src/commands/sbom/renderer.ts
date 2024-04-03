@@ -48,7 +48,6 @@ export const renderDuplicateUpload = (sha: string, env: string, service: string)
   return fullStr
 }
 
-
 export const renderFailedUpload = (sbomReport: string, error: any) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 

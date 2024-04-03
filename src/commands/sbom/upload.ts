@@ -1,7 +1,6 @@
 import fs from 'fs'
 import process from 'process'
 
-
 import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
