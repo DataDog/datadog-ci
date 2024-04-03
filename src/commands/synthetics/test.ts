@@ -1,8 +1,7 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig, UserConfigOverride} from './interfaces'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
 import {getSuites, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
@@ -31,18 +30,22 @@ export const getTestConfigs = async (
 
 export const getTestsFromSearchQuery = async (
   api: APIHelper,
-  config: RunTestsCommandConfig,
-  reporter: MainReporter
+  config: Pick<RunTestsCommandConfig, 'global' | 'testSearchQuery'>
 ) => {
-  const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery || '')
+  const {global: globalConfigOverride, testSearchQuery} = config
 
-  if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
-    reporter.error(
-      `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-    )
+  // Empty search queries are not allowed.
+  if (!testSearchQuery) {
+    return []
   }
 
-  return testsToTriggerBySearchQuery
+  const testSearchResults = await api.searchTests(testSearchQuery)
+
+  return testSearchResults.tests.map((test) => ({
+    config: globalConfigOverride,
+    id: test.public_id,
+    suite: `Query: ${testSearchQuery}`,
+  }))
 }
 
 export const getTest = async (
@@ -65,18 +68,4 @@ export const getTest = async (
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
   }
-}
-
-const getTestListBySearchQuery = async (
-  api: APIHelper,
-  globalConfigOverride: UserConfigOverride,
-  testSearchQuery: string
-) => {
-  const testSearchResults = await api.searchTests(testSearchQuery)
-
-  return testSearchResults.tests.map((test) => ({
-    config: globalConfigOverride,
-    id: test.public_id,
-    suite: `Query: ${testSearchQuery}`,
-  }))
 }

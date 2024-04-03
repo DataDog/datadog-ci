@@ -171,14 +171,14 @@ export const getTriggerConfigs = async (
   reporter: MainReporter,
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
-  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and cli params
+  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
   const defaultTestConfigOverrides = config.global
   // TODO: Clean up locations as part of SYNTH-12989
   const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-  // Grab the test defined from the search query. Their config will contain the suite name, and the search query itself.
-  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
+  // Grab the tests returned by the search query (or `[]` if not given).
+  const testsFromSearchQuery = await getTestsFromSearchQuery(api, config)
 
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
