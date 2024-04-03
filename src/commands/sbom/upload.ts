@@ -1,16 +1,17 @@
 import fs from 'fs'
 import process from 'process'
 
-import type {AxiosPromise, AxiosResponse} from 'axios'
 
 import Ajv from 'ajv'
+import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {getSpanTags, mandatoryGitFields} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
 import {
+  renderDuplicateUpload,
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
@@ -133,6 +134,16 @@ export class UploadSbomCommand extends Command {
           this.context.stdout.write(`Upload done for ${basePath}.\n`)
         }
       } catch (error) {
+        console.log(error)
+        if (isAxiosError(error)) {
+          if (error.response?.status === 409) {
+            const sha = tags[GIT_SHA] || 'sha-not-found'
+            this.context.stderr.write(renderDuplicateUpload(basePath, error, sha, environment, service))
+
+            return 0
+          }
+        }
+
         this.context.stderr.write(renderFailedUpload(basePath, error))
 
         return 1
