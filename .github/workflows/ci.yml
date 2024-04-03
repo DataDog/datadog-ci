@@ -219,7 +219,7 @@ jobs:
           dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           dd_service: 'datadog-ci'
-          dd_env: 'ci-no-dq'
+          dd_env: 'ci-no-da'
           cpu_count: 2
           sca_enabled: true
           diff_aware: false
