@@ -134,11 +134,10 @@ export class UploadSbomCommand extends Command {
           this.context.stdout.write(`Upload done for ${basePath}.\n`)
         }
       } catch (error) {
-        console.log(error)
         if (isAxiosError(error)) {
           if (error.response?.status === 409) {
             const sha = tags[GIT_SHA] || 'sha-not-found'
-            this.context.stderr.write(renderDuplicateUpload(basePath, error, sha, environment, service))
+            this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
 
             return 0
           }
