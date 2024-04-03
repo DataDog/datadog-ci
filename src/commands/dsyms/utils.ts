@@ -51,7 +51,7 @@ export const executeLipo = async (
 ): Promise<{stderr: string; stdout: string}> => execute(`lipo '${objectPath}' -thin ${arch} -output '${newObjectPath}'`)
 
 const execProc = promisify(exec)
-const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
+export const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
   execProc(cmd, {
     cwd,
     maxBuffer: 5 * 1024 * 5000,

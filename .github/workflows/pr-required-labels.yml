@@ -31,3 +31,4 @@ jobs:
             serverless
             source-code-integration
             synthetics
+            profiling
