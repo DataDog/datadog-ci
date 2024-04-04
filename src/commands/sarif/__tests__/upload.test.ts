@@ -183,7 +183,10 @@ describe('execute', () => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['sarif', 'upload', '--service', 'test-service', '--dry-run', ...paths], context)
+    const code = await cli.run(
+      ['sarif', 'upload', '--service', 'test-service', '--env', 'ci', '--dry-run', ...paths],
+      context
+    )
 
     return {context, code}
   }
@@ -195,6 +198,7 @@ describe('execute', () => {
       basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
       concurrency: 20,
       service: 'test-service',
+      env: 'ci',
     })
   })
   test('multiple paths', async () => {
@@ -211,6 +215,7 @@ describe('execute', () => {
       ],
       concurrency: 20,
       service: 'test-service',
+      env: 'ci',
     })
   })
 
@@ -222,6 +227,7 @@ describe('execute', () => {
       basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
       concurrency: 20,
       service: 'test-service',
+      env: 'ci',
     })
   })
 
@@ -233,7 +239,9 @@ describe('execute', () => {
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
     expect(output[2]).toContain(`Will upload SARIF report file ${path}`)
-    expect(output[3]).toContain('service: test-service')
+    expect(output[3]).toContain('Only one upload per commit, env, service and tool')
+    expect(output[4]).toContain(`Preparing upload for`)
+    expect(output[4]).toContain(`env:ci service:test-service`)
   })
 
   test('not found file', async () => {
@@ -250,11 +258,14 @@ interface ExpectedOutput {
   basePaths: string[]
   concurrency: number
   service: string
+  env: string
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
   expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
   expect(output[2]).toContain(`Will look for SARIF report files in ${expected.basePaths.join(', ')}`)
-  expect(output[3]).toContain(`service: ${expected.service}`)
+  expect(output[3]).toContain('Only one upload per commit, env, service and tool')
+  expect(output[4]).toContain(`Preparing upload for`)
+  expect(output[4]).toContain(`env:${expected.env} service:${expected.service}`)
 }
