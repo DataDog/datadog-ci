@@ -38,11 +38,21 @@ export const renderMissingSpan = (errorMessage: string) => {
   return fullStr
 }
 
+export const renderDuplicateUpload = (sha: string, env: string, service: string) => {
+  let fullStr = ''
+  fullStr += chalk.red(`${ICONS.WARNING}  Duplicate SBOM upload detected\n`)
+  fullStr += chalk.red(`An analysis has already been processed for sha:${sha} env:${env} service:${service}\n`)
+  fullStr += chalk.red(`Push a new commit or specify a different env or service variable\n`)
+  fullStr += chalk.red(`Exiting with code 0\n`)
+
+  return fullStr
+}
+
 export const renderFailedUpload = (sbomReport: string, error: any) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 
   let fullStr = ''
-  fullStr += chalk.red(`${ICONS.FAILED} Failed upload SBOM file ${reportPath}: ${error.message}\n`)
+  fullStr += chalk.red(`${ICONS.FAILED}  Failed upload SBOM file ${reportPath}: ${error.message}\n`)
   if (error?.response?.status) {
     fullStr += chalk.red(`API status code: ${error.response.status}\n`)
   }

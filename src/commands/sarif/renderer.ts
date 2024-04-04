@@ -73,6 +73,8 @@ export const renderUpload = (payload: Payload): string => `Uploading SARIF repor
 export const renderCommandInfo = (
   basePaths: string[],
   service: string,
+  env: string,
+  sha: string,
   concurrency: number,
   dryRun: boolean,
   noVerify: boolean
@@ -92,7 +94,8 @@ export const renderCommandInfo = (
   } else {
     fullStr += chalk.green(`Will look for SARIF report files in ${basePaths.join(', ')}\n`)
   }
-  fullStr += chalk.green(`service: ${service}\n`)
+  fullStr += `Only one upload per commit, env, service and tool\n`
+  fullStr += `Preparing upload for sha:${sha} env:${env} service:${service}\n`
 
   return fullStr
 }
