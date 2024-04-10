@@ -4,7 +4,7 @@ import {DatadogCiConfig} from '../../../helpers/config'
 import {getSpanTags} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
-import {DependencyLanguage, DependencyLicense, Location} from '../types'
+import {DependencyLanguage, Location} from '../types'
 
 describe('generation of payload', () => {
   beforeEach(() => {
