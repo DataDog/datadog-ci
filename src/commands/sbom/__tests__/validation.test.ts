@@ -56,7 +56,13 @@ describe('validation of sbom file', () => {
   })
   test('SBOM with no components is not valid', () => {
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-no-components', true)
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-no-components.json', true)
     ).toBeFalsy()
+  })
+  test('does not validate random data', () => {
+    expect(
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/random-data', validator, true)
+    ).toBeFalsy()
+    expect(validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/random-data', true)).toBeFalsy()
   })
 })
