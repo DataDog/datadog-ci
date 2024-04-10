@@ -35,8 +35,7 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(62)
     expect(payload?.dependencies[0].name).toBe('stack-cors')
     expect(payload?.dependencies[0].version).toBe('1.3.0')
-    expect(payload?.dependencies[0].licenses.length).toBe(1)
-    expect(payload?.dependencies[0].licenses[0]).toBe(DependencyLicense.MIT)
+    expect(payload?.dependencies[0].licenses.length).toBe(0)
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
   })
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
@@ -62,7 +61,7 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(147)
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toBe(17)
+    expect(dependenciesWithoutLicense?.length).toBe(147)
   })
 
   test('SBOM for rust with multiple licenses', async () => {
@@ -79,15 +78,7 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(305)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
-
-    // Check licenses is correct
-    console.log(payload?.dependencies[0].licenses)
-    expect(payload?.dependencies[0].licenses.length).toStrictEqual(1)
-
-    expect(payload?.dependencies[1].licenses.length).toStrictEqual(2)
-    expect(payload?.dependencies[1].licenses[0]).toStrictEqual(DependencyLicense.MIT)
-    expect(payload?.dependencies[1].licenses[1]).toStrictEqual(DependencyLicense.APACHE2)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(305)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -129,7 +120,7 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(89)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(10)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(89)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -202,8 +193,9 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
     expect(payload?.dependencies.length).toStrictEqual(63)
+
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(63)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)

@@ -19,7 +19,7 @@ import {
   renderUploading,
 } from './renderer'
 import {ScaRequest} from './types'
-import {getValidator, validateSbomFile} from './validation'
+import {getValidator, validateFileAgainstToolRequirements, validateSbomFileAgainstSchema} from './validation'
 
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
@@ -111,10 +111,16 @@ export class UploadSbomCommand extends Command {
         this.context.stdout.write(`Processing file ${basePath}\n`)
       }
 
-      if (!validateSbomFile(basePath, validator, !!this.debug)) {
-        this.context.stdout.write(renderInvalidFile(basePath))
+      if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
+        if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+          this.context.stdout.write(renderInvalidFile(basePath))
 
-        return 1
+          return 1
+        } else {
+          this.context.stdout.write(
+            'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
+          )
+        }
       }
 
       const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
