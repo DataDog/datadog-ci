@@ -207,7 +207,7 @@ export class UploadCommand extends Command {
       apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
