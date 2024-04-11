@@ -265,7 +265,7 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',

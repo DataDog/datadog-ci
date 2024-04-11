@@ -8,7 +8,7 @@ export const getUnityRequestBuilder = (apiKey: string, cliVersion: string, site:
     apiKey,
     baseUrl: getBaseSourcemapIntakeUrl(site),
     headers: new Map([
-      ['DD-EVP-ORIGIN', 'datadog-ci unity-symbols'],
+      ['DD-EVP-ORIGIN', 'datadog-ci_unity-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
     overrideUrl: 'api/v2/srcmap',
