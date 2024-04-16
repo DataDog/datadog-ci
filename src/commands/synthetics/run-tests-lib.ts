@@ -59,6 +59,19 @@ export const executeTests = async (
     }
   }
 
+  // If both global and defaultTestOverrides exist use defaultTestOverrides
+  // TODO: Clean up global as part of SYNTH-12989
+  if (config.global) {
+    console.warn(
+      "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
+    )
+
+    // if config.defaultTestOverrides does not exist because executeTests was called directly, use global instead
+    if (!config.defaultTestOverrides) {
+      config.defaultTestOverrides = config.global
+    }
+  }
+
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
   } catch (error) {
@@ -172,7 +185,7 @@ export const getTriggerConfigs = async (
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
   // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
-  const defaultTestConfigOverrides = config.global
+  const defaultTestConfigOverrides = config.defaultTestOverrides
   // TODO: Clean up locations as part of SYNTH-12989
   const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)

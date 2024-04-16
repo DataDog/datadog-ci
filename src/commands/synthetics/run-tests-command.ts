@@ -35,7 +35,9 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  // TODO: Clean up global as part of SYNTH-12989
   global: {},
+  defaultTestOverrides: {},
   locations: [],
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
@@ -204,6 +206,13 @@ export class RunTestsCommand extends Command {
       }
     }
 
+    // Use global only if defaultTestOverrides does not exist
+    // TODO: Clean up global as part of SYNTH-12989
+    if (this.config.global && !this.config.defaultTestOverrides) {
+      this.config.defaultTestOverrides = this.config.global
+    }
+    console.log(this.config)
+
     // Override with ENV variables
     this.config = deepExtend(
       this.config,
@@ -217,8 +226,8 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with OVERRIDE ENV variables
-    this.config.global = deepExtend(
-      this.config.global,
+    this.config.defaultTestOverrides = deepExtend(
+      this.config.defaultTestOverrides,
       removeUndefinedValues({
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
@@ -246,14 +255,15 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with Global CLI parameters
-    this.config.global = deepExtend(
-      this.config.global,
+    this.config.defaultTestOverrides = deepExtend(
+      this.config.defaultTestOverrides,
       removeUndefinedValues({
         deviceIds: this.deviceIds,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
-        pollingTimeout: this.pollingTimeout ?? this.config.global.pollingTimeout ?? this.config.pollingTimeout,
+        pollingTimeout:
+          this.pollingTimeout ?? this.config.defaultTestOverrides.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 

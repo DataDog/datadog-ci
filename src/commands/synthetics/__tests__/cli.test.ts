@@ -95,6 +95,13 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
+        defaultTestOverrides: {
+          deviceIds: ['chrome.laptop_large'],
+          locations: ['us-east-1'],
+          pollingTimeout: 2,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
         locations: [],
         pollingTimeout: 1,
         proxy: {
@@ -115,7 +122,7 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'proxy'> = {
+      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -267,7 +274,12 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       // Global
+      // TODO: Clean up global as part of SYNTH-12989
       command['config'].global = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
+      }
+      command['config'].defaultTestOverrides = {
         locations: ['aws:us-east-2'],
         mobileApplicationVersionFilePath: './path/to/application_global.apk',
       }

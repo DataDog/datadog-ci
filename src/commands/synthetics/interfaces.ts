@@ -442,7 +442,9 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
+  // TODO: Clean up global as part of SYNTH-12989
   global: UserConfigOverride
+  defaultTestOverrides: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
   pollingTimeout: number
