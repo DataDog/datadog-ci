@@ -92,6 +92,7 @@ describe('execute', () => {
       'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
     )
   })
+})
 
 describe('warnings when deprecated metric mentioned', () => {
   test('should warn if metric command is used', async () => {
