@@ -32,7 +32,6 @@ export const CI_ENGINES = {
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
-  BUDDY: 'buddy',
   BUILDKITE: 'buildkite',
   CIRCLECI: 'circleci',
   CODEFRESH: 'codefresh',
@@ -45,7 +44,6 @@ export const CI_ENGINES = {
 
 export const PROVIDER_TO_DISPLAY_NAME = {
   github: 'GitHub Actions',
-  buddy: 'Buddy',
 }
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
@@ -541,37 +539,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
     }
   }
 
-  if (env.BUDDY) {
-    const {
-      BUDDY_PIPELINE_NAME,
-      BUDDY_PIPELINE_ID,
-      BUDDY_EXECUTION_ID,
-      BUDDY_SCM_URL,
-      BUDDY_EXECUTION_BRANCH,
-      BUDDY_EXECUTION_TAG,
-      BUDDY_EXECUTION_REVISION,
-      BUDDY_EXECUTION_URL,
-      BUDDY_EXECUTION_REVISION_MESSAGE,
-      BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
-      BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
-    } = env
-
-    tags = {
-      [CI_PROVIDER_NAME]: CI_ENGINES.BUDDY,
-      [CI_PIPELINE_ID]: `${BUDDY_PIPELINE_ID || ''}/${BUDDY_EXECUTION_ID || ''}`,
-      [CI_PIPELINE_NAME]: BUDDY_PIPELINE_NAME,
-      [CI_PIPELINE_NUMBER]: `${BUDDY_EXECUTION_ID || ''}`, // gets parsed to int again later using parsePipelineNumber
-      [CI_PIPELINE_URL]: BUDDY_EXECUTION_URL,
-      [GIT_SHA]: BUDDY_EXECUTION_REVISION,
-      [GIT_BRANCH]: BUDDY_EXECUTION_BRANCH,
-      [GIT_TAG]: BUDDY_EXECUTION_TAG,
-      [GIT_REPOSITORY_URL]: BUDDY_SCM_URL,
-      [GIT_COMMIT_MESSAGE]: BUDDY_EXECUTION_REVISION_MESSAGE,
-      [GIT_COMMIT_COMMITTER_EMAIL]: BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
-      [GIT_COMMIT_COMMITTER_NAME]: BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
-    }
-  }
-
   if (env.CF_BUILD_ID) {
     const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
     tags = {
@@ -736,13 +703,6 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  if (process.env.BUDDY) {
-    return {
-      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
-      provider: 'buddy',
-    }
-  }
-
   if (process.env.TEAMCITY_VERSION) {
     return {
       ciEnv: filterEnv(['DATADOG_BUILD_ID']),
@@ -765,7 +725,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   }
 
   throw new Error(
-    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
   )
 }
 

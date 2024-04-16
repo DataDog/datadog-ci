@@ -89,21 +89,9 @@ describe('execute', () => {
     const {context, code} = await runCLI('pipeline', ['key:1'], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
     )
   })
-
-  test('should fail if provider is BuddyWorks and level is job', async () => {
-    const {context, code} = await runCLI('job', ['key:1'], {
-      BUDDY: 'true',
-      BUDDY_PIPELINE_ID: 'example/example',
-      BUDDY_EXECUTION_ID: '10',
-      BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
-    })
-    expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
-  })
-})
 
 describe('warnings when deprecated metric mentioned', () => {
   test('should warn if metric command is used', async () => {

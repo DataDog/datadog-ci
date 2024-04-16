@@ -81,14 +81,6 @@ export class MeasureCommand extends Command {
     try {
       const measures = parseMeasures(rawMeasures)
       const {provider, ciEnv} = getCIEnv()
-      // For Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
-      if (provider === 'buddy' && this.level === 'job') {
-        this.context.stderr.write(
-          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
-        )
-
-        return 1
-      }
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
       if (exitStatus !== 0 && this.noFail) {

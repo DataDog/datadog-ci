@@ -67,19 +67,8 @@ describe('execute', () => {
     const {context, code} = await runCLI('pipeline', ['key:value'], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
     )
-  })
-
-  test('should fail if provider is BuddyWorks and level is job', async () => {
-    const {context, code} = await runCLI('job', ['key:value'], {
-      BUDDY: 'true',
-      BUDDY_PIPELINE_ID: 'example/example',
-      BUDDY_EXECUTION_ID: '10',
-      BUDDY_EXECUTION_START_DATE: '2023-03-08T00:00:00Z',
-    })
-    expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
   })
 
   test('should not output anything if silent mode is enabled', async () => {
