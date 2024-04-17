@@ -61,14 +61,14 @@ export const executeTests = async (
 
   // If both global and defaultTestOverrides exist use defaultTestOverrides
   // TODO: Clean up global as part of SYNTH-12989
-  if (config.global) {
+  if (Object.keys(config.global).length !== 0) {
     console.warn(
       "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
     )
 
     // if config.defaultTestOverrides does not exist because executeTests was called directly, use global instead
-    if (!config.defaultTestOverrides) {
-      config.defaultTestOverrides = config.global
+    if (Object.keys(config.defaultTestOverrides).length === 0) {
+      config.defaultTestOverrides = {...config.global}
     }
   }
 

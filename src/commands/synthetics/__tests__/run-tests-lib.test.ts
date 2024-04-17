@@ -555,7 +555,7 @@ describe('run-test', () => {
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1']},
+          {...ciConfig, defaultTestOverrides: configOverride, locations: ['aws:ap-northeast-1']},
           mockReporter
         )
       ).resolves.toEqual([
@@ -581,7 +581,7 @@ describe('run-test', () => {
           fakeApi,
           {
             ...ciConfig,
-            global: configOverride,
+            defaultTestOverrides: configOverride,
             locations: ['aws:ap-northeast-1'],
             publicIds: ['abc-def-ghi', '123-456-789'],
           },
@@ -608,7 +608,12 @@ describe('run-test', () => {
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1'], testSearchQuery: searchQuery},
+          {
+            ...ciConfig,
+            defaultTestOverrides: configOverride,
+            locations: ['aws:ap-northeast-1'],
+            testSearchQuery: searchQuery,
+          },
           mockReporter
         )
       ).resolves.toEqual([
@@ -627,7 +632,7 @@ describe('run-test', () => {
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
+          {...ciConfig, defaultTestOverrides: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
           mockReporter
         )
       ).resolves.toEqual([
@@ -643,7 +648,11 @@ describe('run-test', () => {
       const configOverride = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getTriggerConfigs(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
+      await runTests.getTriggerConfigs(
+        fakeApi,
+        {...ciConfig, defaultTestOverrides: configOverride, files},
+        mockReporter
+      )
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
@@ -656,7 +665,7 @@ describe('run-test', () => {
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, global: configOverride, files},
+        {...ciConfig, defaultTestOverrides: configOverride, files},
         mockReporter,
         fakeSuites
       )
@@ -677,7 +686,7 @@ describe('run-test', () => {
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, global: configOverride, files},
+        {...ciConfig, defaultTestOverrides: configOverride, files},
         mockReporter,
         userSuites
       )

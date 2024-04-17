@@ -69,7 +69,7 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
-        global: {
+        defaultTestOverrides: {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
@@ -176,8 +176,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
-        // TODO: Clean up global as part of SYNTH-12989
-        global: {
+        defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
@@ -210,6 +209,7 @@ describe('run-test', () => {
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
+        // TODO: Clean up global as part of SYNTH-12989
         global: {
           pollingTimeout: 111,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
@@ -233,6 +233,10 @@ describe('run-test', () => {
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
         global: {
+          pollingTimeout: 111,
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
+        defaultTestOverrides: {
           pollingTimeout: 333,
           mobileApplicationVersionFilePath: './path/to/application_cli.apk',
         },
@@ -347,7 +351,9 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        global: {followRedirects: false, pollingTimeout: 333},
+        // TODO: Clean up global as part of SYNTH-12989
+        global: {followRedirects: false},
+        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
     })

@@ -208,10 +208,9 @@ export class RunTestsCommand extends Command {
 
     // Use global only if defaultTestOverrides does not exist
     // TODO: Clean up global as part of SYNTH-12989
-    if (this.config.global && !this.config.defaultTestOverrides) {
-      this.config.defaultTestOverrides = this.config.global
+    if (Object.keys(this.config.global).length !== 0 && Object.keys(this.config.defaultTestOverrides).length === 0) {
+      this.config.defaultTestOverrides = {...this.config.global}
     }
-    console.log(this.config)
 
     // Override with ENV variables
     this.config = deepExtend(
