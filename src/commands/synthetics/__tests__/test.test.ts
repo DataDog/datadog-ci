@@ -5,7 +5,8 @@ describe('getTestsFromSearchQuery', () => {
     const api = {
       searchTests: jest.fn().mockResolvedValue({tests: []}),
     }
-    const config = {global: {}, testSearchQuery: ''}
+    // TODO: Clean up global as part of SYNTH-12989
+    const config = {global: {}, defaultTestOverrides: {}, testSearchQuery: ''}
 
     const result = await getTestsFromSearchQuery(api as any, config)
 
@@ -16,7 +17,8 @@ describe('getTestsFromSearchQuery', () => {
     const api = {
       searchTests: jest.fn().mockResolvedValue({tests: []}),
     }
-    const config = {global: {}, testSearchQuery: 'my search query'}
+    // TODO: Clean up global as part of SYNTH-12989
+    const config = {global: {}, defaultTestOverrides: {}, testSearchQuery: 'my search query'}
 
     const result = await getTestsFromSearchQuery(api as any, config)
 

@@ -88,6 +88,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
+        // TODO: Clean up global as part of SYNTH-12989
         global: {
           deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
@@ -122,6 +123,7 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
+      // TODO: Clean up global as part of SYNTH-12989
       const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
@@ -174,6 +176,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        // TODO: Clean up global as part of SYNTH-12989
         global: {
           deviceIds: ['chrome.laptop_large'],
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
