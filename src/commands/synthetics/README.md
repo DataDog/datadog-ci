@@ -79,7 +79,7 @@ See below for the list of advanced options in the global configuration file. For
 `files`
 : Glob patterns to detect Synthetic test [configuration files](#test-files).
 
-`global`
+`defaultTestOverrides`
 : Overrides for Synthetic tests applied to all tests.
 
 `mobileApplicationVersionFilePath`
@@ -123,7 +123,7 @@ For example:
   "failOnMissingTests": false,
   "failOnTimeout": true,
   "files": ["{,!(node_modules)/**/}*.synthetics.json"],
-  "global": {
+  "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
     "body": "{\"fakeContent\":true}",
@@ -155,6 +155,7 @@ For example:
   "tunnel": true
 }
 ```
+**Note**: A `global` filed was present in the global configuration file. This field is now deprecated and replaced by `defaultTestOverrides`.
 
 ### Command line options
 
@@ -187,7 +188,7 @@ For example:
   "failOnMissingTests": true,
   "failOnTimeout": true,
   "files": ["{,!(node_modules)/**/}*.synthetics.json"],
-  "global": {
+  "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
     "body": "{\"fakeContent\":true}",
@@ -221,6 +222,7 @@ For example:
   "tunnel": true
 }
 ```
+**Note**: A `global` filed was present in the global configuration file. This field is now deprecated and replaced by `defaultTestOverrides`.
 
 ## Run tests
 
