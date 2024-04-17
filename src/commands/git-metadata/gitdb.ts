@@ -24,6 +24,44 @@ const MAX_HISTORY = {
   oldestCommits: '1 month ago',
 }
 
+const getCommitsToInclude = async (
+  log: Logger,
+  request: RequestBuilder,
+  git: simpleGit.SimpleGit,
+  repositoryURL: string
+) => {
+  let latestCommits: string[]
+  try {
+    latestCommits = await getLatestLocalCommits(git)
+    if (latestCommits.length === 0) {
+      log.debug('No local commits found.')
+
+      return {
+        commitsToInclude: [],
+        commitsToExclude: [],
+      }
+    }
+    log.debug(`${latestCommits.length} commits found, asking GitDB which ones are missing.`)
+  } catch (err) {
+    log.warn(`Failed getting local commits: ${err}`)
+    throw err
+  }
+
+  let commitsToExclude: string[]
+  try {
+    commitsToExclude = await getKnownCommits(log, request, repositoryURL, latestCommits)
+    log.debug(`${commitsToExclude.length} commits already in GitDB.`)
+  } catch (err) {
+    log.warn(`Failed getting commits to exclude: ${err}`)
+    throw err
+  }
+
+  return {
+    commitsToInclude: latestCommits.filter((x) => !commitsToExclude.includes(x)),
+    commitsToExclude,
+  }
+}
+
 export const uploadToGitDB = async (
   log: Logger,
   request: RequestBuilder,
@@ -44,8 +82,6 @@ export const uploadToGitDB = async (
     }
   }
 
-  await unshallowRepositoryWhenNeeded(log, git)
-
   let latestCommits: string[]
   try {
     latestCommits = await getLatestLocalCommits(git)
@@ -59,17 +95,26 @@ export const uploadToGitDB = async (
     log.warn(`Failed getting local commits: ${err}`)
     throw err
   }
-
+  let commitsToInclude: string[]
   let commitsToExclude: string[]
-  try {
-    commitsToExclude = await getKnownCommits(log, request, repoURL, latestCommits)
-    log.debug(`${commitsToExclude.length} commits already in GitDB.`)
-  } catch (err) {
-    log.warn(`Failed getting commits to exclude: ${err}`)
-    throw err
-  }
 
-  const commitsToInclude = latestCommits.filter((x) => !commitsToExclude.includes(x))
+  const getCommitsBeforeUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
+
+  commitsToInclude = getCommitsBeforeUnshallowing.commitsToInclude
+  commitsToExclude = getCommitsBeforeUnshallowing.commitsToExclude
+
+  // If there are no commits to include, it means the backend already has all the commits.
+  if (commitsToInclude.length === 0) {
+    return
+  }
+  // If there are commits to include and the repository is shallow, we need to repeat the process after unshallowing
+  const isShallow = await isShallowRepository(git)
+  if (isShallow) {
+    await unshallowRepository(log, git)
+    const getCommitsAfterUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
+    commitsToInclude = getCommitsAfterUnshallowing.commitsToInclude
+    commitsToExclude = getCommitsAfterUnshallowing.commitsToExclude
+  }
 
   // Get the list of all objects (commits, trees) to upload. This list can be quite long
   // so quite memory intensive (multiple MBs).
@@ -118,15 +163,16 @@ const getLatestLocalCommits = async (git: simpleGit.SimpleGit) => {
   return logResult.all.map((c) => c.hash)
 }
 
-const unshallowRepositoryWhenNeeded = async (log: Logger, git: simpleGit.SimpleGit) => {
-  const isShallow = (await git.revparse('--is-shallow-repository')) === 'true'
-  if (!isShallow) {
-    return
-  }
+const isShallowRepository = async (git: simpleGit.SimpleGit) => {
   const gitversion = String(await git.version())
   if (lte(gitversion, '2.27.0')) {
-    return
+    return false
   }
+
+  return (await git.revparse('--is-shallow-repository')) === 'true'
+}
+
+const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit) => {
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
 
   const [headCommit, remoteName] = await Promise.all([git.revparse('HEAD'), getDefaultRemoteName(git)])
