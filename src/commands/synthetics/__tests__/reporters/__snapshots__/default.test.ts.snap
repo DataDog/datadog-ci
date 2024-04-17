@@ -92,7 +92,7 @@ exports[`Default reporter runEnd Case with 2 passed results, of which 1 comes fr
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m0[22m failed[39m
+• Test Results: [32m[1m2[22m passed ([1m1[22m in a previous CI batch)[39m, [31m[1m0[22m failed[39m
 • Selective re-run: ran 1 out of 2 tests
 • Total Duration: 9m 28s
 "
@@ -103,7 +103,7 @@ exports[`Default reporter runEnd Complex case with all the tests and results out
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 
 [1mContinuous Testing Summary:[22m
-• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
+• Test Results: [32m[1m2[22m passed ([1m1[22m in a previous CI batch)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
 • Selective re-run: ran 5 out of 6 tests
 • Total Duration: 9m 28s
 "
