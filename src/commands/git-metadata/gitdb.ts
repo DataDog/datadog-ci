@@ -172,6 +172,8 @@ const isShallowRepository = async (git: simpleGit.SimpleGit) => {
   return (await git.revparse('--is-shallow-repository')) === 'true'
 }
 
+// console.log('dumb commit')
+
 const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit) => {
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
 
