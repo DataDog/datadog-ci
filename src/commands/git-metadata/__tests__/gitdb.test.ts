@@ -516,6 +516,82 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
+  test('should not unshallow repository if backend has all commits already', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
+      fetch: [],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [],
+      revparse: [],
+      version: [],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {
+            data: {
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).resolves.toBe(undefined)
+    mocks.expectCalls()
+  })
+
   test('should unshallow repository if the local HEAD is a commit not pushed to the remote', async () => {
     const mocks = new MockAll({
       getConfig: [
