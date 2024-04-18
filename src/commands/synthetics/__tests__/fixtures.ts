@@ -73,6 +73,7 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   global: {},
+  defaultTestOverrides: {},
   locations: [],
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},

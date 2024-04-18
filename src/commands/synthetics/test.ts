@@ -30,9 +30,9 @@ export const getTestConfigs = async (
 
 export const getTestsFromSearchQuery = async (
   api: APIHelper,
-  config: Pick<RunTestsCommandConfig, 'global' | 'testSearchQuery'>
-) => {
-  const {global: globalConfigOverride, testSearchQuery} = config
+  config: Pick<RunTestsCommandConfig, 'defaultTestOverrides' | 'testSearchQuery'>
+): Promise<TriggerConfig[] | []> => {
+  const {defaultTestOverrides, testSearchQuery} = config
 
   // Empty search queries are not allowed.
   if (!testSearchQuery) {
@@ -42,7 +42,7 @@ export const getTestsFromSearchQuery = async (
   const testSearchResults = await api.searchTests(testSearchQuery)
 
   return testSearchResults.tests.map((test) => ({
-    config: globalConfigOverride,
+    config: defaultTestOverrides,
     id: test.public_id,
     suite: `Query: ${testSearchQuery}`,
   }))
