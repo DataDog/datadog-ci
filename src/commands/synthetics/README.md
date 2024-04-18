@@ -155,7 +155,7 @@ For example:
   "tunnel": true
 }
 ```
-**Note**: A `global` filed was present in the global configuration file. This field is now deprecated and replaced by `defaultTestOverrides`.
+**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 
 ### Command line options
 
@@ -222,7 +222,7 @@ For example:
   "tunnel": true
 }
 ```
-**Note**: A `global` filed was present in the global configuration file. This field is now deprecated and replaced by `defaultTestOverrides`.
+**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 
 ## Run tests
 

@@ -442,7 +442,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
-  // TODO: Clean up global as part of SYNTH-12989
+  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: UserConfigOverride
   defaultTestOverrides: UserConfigOverride
   locations: string[]

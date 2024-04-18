@@ -35,7 +35,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  // TODO: Clean up global as part of SYNTH-12989
+  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   defaultTestOverrides: {},
   locations: [],
@@ -207,7 +207,7 @@ export class RunTestsCommand extends Command {
     }
 
     // Use global only if defaultTestOverrides does not exist
-    // TODO: Clean up global as part of SYNTH-12989
+    // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     if (Object.keys(this.config.global).length !== 0 && Object.keys(this.config.defaultTestOverrides).length === 0) {
       this.config.defaultTestOverrides = {...this.config.global}
     }
