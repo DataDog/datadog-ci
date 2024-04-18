@@ -550,12 +550,12 @@ describe('run-test', () => {
 
     test('should extend global config and execute all tests from Test Config when no publicIds were defined', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
 
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, defaultTestOverrides: configOverride, locations: ['aws:ap-northeast-1']},
+          {...ciConfig, defaultTestOverrides, locations: ['aws:ap-northeast-1']},
           mockReporter
         )
       ).resolves.toEqual([
