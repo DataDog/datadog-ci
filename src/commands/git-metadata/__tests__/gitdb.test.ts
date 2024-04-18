@@ -177,12 +177,19 @@ describe('gitdb', () => {
         })
 
         return () => {
-          expect(mock.mock.calls, `${name} failed`).toHaveLength(params.length)
-          params.forEach((param, i) => {
-            if (param.input !== undefined) {
-              expect(mock.mock.calls[i][0], `${name} failed`).toStrictEqual(param.input)
-            }
-          })
+          try {
+            expect(mock.mock.calls).toHaveLength(params.length)
+            params.forEach((param, i) => {
+              if (param.input !== undefined) {
+                expect(mock.mock.calls[i][0]).toStrictEqual(param.input)
+              }
+            })
+          } catch (e) {
+            // To make it easier to debug the tests
+            // eslint-disable-next-line
+            console.log('Error in', name, 'mock')
+            throw e
+          }
         }
       }
 

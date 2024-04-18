@@ -16,6 +16,5 @@
     "lib": ["es2020"],
     "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
-  "files": ["node_modules/jest-expect-message/types/index.d.ts"]
+  "include": ["src/**/*"]
 }
