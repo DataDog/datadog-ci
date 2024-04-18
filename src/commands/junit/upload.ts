@@ -198,9 +198,7 @@ export class UploadJUnitXMLCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
-    debugger
     if (!this.skipGitMetadataUpload) {
-      debugger
       if (await isGitRepo()) {
         const traceId = id()
 

@@ -39,6 +39,7 @@ const getCommitsToInclude = async (
       return {
         commitsToInclude: [],
         commitsToExclude: [],
+        headCommit: '',
       }
     }
     log.debug(`${latestCommits.length} commits found, asking GitDB which ones are missing.`)
@@ -59,6 +60,7 @@ const getCommitsToInclude = async (
   return {
     commitsToInclude: latestCommits.filter((x) => !commitsToExclude.includes(x)),
     commitsToExclude,
+    headCommit: latestCommits[0],
   }
 }
 
@@ -82,26 +84,15 @@ export const uploadToGitDB = async (
     }
   }
 
-  let latestCommits: string[]
-  try {
-    latestCommits = await getLatestLocalCommits(git)
-    if (latestCommits.length === 0) {
-      log.debug('No local commits found.')
-
-      return
-    }
-    log.debug(`${latestCommits.length} commits found, asking GitDB which ones are missing.`)
-  } catch (err) {
-    log.warn(`Failed getting local commits: ${err}`)
-    throw err
-  }
   let commitsToInclude: string[]
   let commitsToExclude: string[]
+  let headCommit: string
 
   const getCommitsBeforeUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
 
   commitsToInclude = getCommitsBeforeUnshallowing.commitsToInclude
   commitsToExclude = getCommitsBeforeUnshallowing.commitsToExclude
+  headCommit = getCommitsBeforeUnshallowing.headCommit
 
   // If there are no commits to include, it means the backend already has all the commits.
   if (commitsToInclude.length === 0) {
@@ -114,6 +105,7 @@ export const uploadToGitDB = async (
     const getCommitsAfterUnshallowing = await getCommitsToInclude(log, request, git, repoURL)
     commitsToInclude = getCommitsAfterUnshallowing.commitsToInclude
     commitsToExclude = getCommitsAfterUnshallowing.commitsToExclude
+    headCommit = getCommitsBeforeUnshallowing.headCommit
   }
 
   // Get the list of all objects (commits, trees) to upload. This list can be quite long
@@ -144,7 +136,7 @@ export const uploadToGitDB = async (
       return
     }
     log.debug(`Uploading packfiles...`)
-    await uploadPackfiles(log, request, repoURL, latestCommits[0], packfiles)
+    await uploadPackfiles(log, request, repoURL, headCommit, packfiles)
     log.debug('Successfully uploaded packfiles.')
   } catch (err) {
     log.warn(`Failed to upload packfiles: ${err}`)
@@ -171,8 +163,6 @@ const isShallowRepository = async (git: simpleGit.SimpleGit) => {
 
   return (await git.revparse('--is-shallow-repository')) === 'true'
 }
-
-// console.log('dumb commit')
 
 const unshallowRepository = async (log: Logger, git: simpleGit.SimpleGit) => {
   log.info('[unshallow] Git repository is a shallow clone, unshallowing it...')
