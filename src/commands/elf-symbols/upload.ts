@@ -47,7 +47,7 @@ export class UploadCommand extends Command {
     category: 'RUM',
     description: 'Upload Elf debug info files to Datadog.',
     details: `
-            This command will upload debug info from all Elf files found recursively in the given location in order to symbolize profiles
+            This command will upload debug info from all Elf files found recursively in the given location in order to symbolicate profiles
         `,
     examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload']],
   })

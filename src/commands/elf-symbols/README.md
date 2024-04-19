@@ -1,6 +1,6 @@
 ## Overview
 
-Upload Elf debug info files to Datadog to symbolize your profiles.
+Upload Elf debug info files to Datadog to symbolicate your profiles.
 
 **This command runs only in Linux.**
 
@@ -32,7 +32,7 @@ To override the full URL for the intake endpoint, define the `DATADOG_SOURCEMAP_
 
 **Warning:** The `elf-symbols upload` command is in beta. It requires you to set `DD_BETA_COMMANDS_ENABLED=1`.
 
-This command will upload debug info from Elf files to Datadog in order to symbolize your application's profiles.
+This command will upload debug info from Elf files to Datadog in order to symbolicate your application's profiles.
 
 Run the following command to upload all the necessary files:
 
