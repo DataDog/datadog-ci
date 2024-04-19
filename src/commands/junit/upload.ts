@@ -128,7 +128,7 @@ export class UploadJUnitXMLCommand extends Command {
   private reportMeasures = Option.Array('--report-measures')
   private rawXPathTags = Option.Array('--xpath-tag')
   private gitRepositoryURL = Option.String('--git-repository-url')
-  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {
+  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'false', {
     validator: t.isBoolean(),
     tolerateBoolean: true,
   })
