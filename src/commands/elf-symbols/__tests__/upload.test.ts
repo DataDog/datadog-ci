@@ -65,7 +65,6 @@ describe('elf-symbols upload', () => {
         cmd['symbolsLocation'] = fixtureDir
         process.env.DATADOG_API_KEY = 'fake_api_key'
       })
-      console.log(context.stdout.toString())
       const output = context.stdout.toString().split(os.EOL)
 
       expect(exitCode).toBe(0)
@@ -84,6 +83,8 @@ describe('elf-symbols upload', () => {
         `${fixtureDir}/dyn_aarch64.debug`,
         `${fixtureDir}/dyn_x86_64`,
         `${fixtureDir}/exec_aarch64`,
+        `${fixtureDir}/exec_arm_big`,
+        `${fixtureDir}/exec_arm_little`,
       ])
     })
 
@@ -149,9 +150,23 @@ describe('elf-symbols upload', () => {
           build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
           arch: 'x86_64',
         },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          build_id: '623209afd6c408f9009e57fad28782f056112daf',
+          arch: 'arm',
+        },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
+          arch: 'arm',
+        },
       ]
 
-      expect(uploadMultipartHelper).toHaveBeenCalledTimes(3)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(5)
       const metadata = (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => {
         const payload = call[1] as MultipartPayload
         const mappingFileItem = payload.content.get('elf_symbol_file') as MultipartFileValue

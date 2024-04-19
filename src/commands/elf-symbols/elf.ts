@@ -16,6 +16,8 @@ export type ElfFileMetadata = {
   filename: string
   isElf: boolean
   arch: string
+  littleEndian: boolean
+  elfClass: number
   buildId: string
   type: string
   hasDebugInfo: boolean
@@ -142,6 +144,7 @@ export type ElfResult = {
 const SUPPORTED_ARCHS = [
   MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64],
   MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64],
+  MACHINE_TYPES_DESCRIPTION[MachineType.EM_ARM],
 ]
 const SUPPORTED_ELF_TYPES = [ELF_TYPES_DESCRIPTION[ElfFileType.ET_DYN], ELF_TYPES_DESCRIPTION[ElfFileType.ET_EXEC]]
 const BFD_TARGET_FOR_ARCH: Record<string, string> = {
@@ -151,6 +154,18 @@ const BFD_TARGET_FOR_ARCH: Record<string, string> = {
 const GENERIC_BFD_TARGET_FOR_ARCH: Partial<Record<string, string>> = {
   [MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64]]: 'elf64-little',
   [MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]]: 'elf64-little',
+}
+
+const getBFDTargetForArch = (arch: string, littleEndian: boolean, elfClass: number): string => {
+  if (arch === MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]) {
+    return `elf${elfClass}-x86-64`
+  }
+
+  return `elf${elfClass}-${littleEndian ? 'little' : 'big'}${arch}`
+}
+
+const getGenericBFDTargetForArch = (_arch: string, littleEndian: boolean, elfClass: number): string => {
+  return `elf${elfClass}-${littleEndian ? 'little' : 'big'}`
 }
 
 // Read the first 24 bytes of the file to get the ELF header (up to and including e_version field)
@@ -424,6 +439,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
   const metadata: ElfFileMetadata = {
     filename,
     isElf: false,
+    littleEndian: false,
+    elfClass: 0,
     arch: '',
     buildId: '',
     type: '',
@@ -439,6 +456,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     const {isElf, elfHeader, error} = await readElfHeader(reader)
 
     if (isElf) {
+      metadata.littleEndian = elfHeader!.littleEndian
+      metadata.elfClass = elfHeader!.elfClass === ElfClass.ELFCLASS64 ? 64 : 32
       metadata.arch = MACHINE_TYPES_DESCRIPTION[elfHeader!.e_machine as MachineType]
       metadata.type = ELF_TYPES_DESCRIPTION[elfHeader!.e_type as ElfFileType]
     }
@@ -498,16 +517,21 @@ const replaceElfHeader = async (targetFilename: string, sourceFilename: string):
 export const copyElfDebugInfo = async (
   filename: string,
   outputFile: string,
-  arch: string,
+  elfFileMetadata: ElfFileMetadata,
   compressDebugSections: boolean
 ): Promise<void> => {
   const supportedtargets = await getSupportedBfdTargets()
 
   let bfdTargetOption = ''
-  const bfdTarget = BFD_TARGET_FOR_ARCH[arch]
+  const bfdTarget = getBFDTargetForArch(elfFileMetadata.arch, elfFileMetadata.littleEndian, elfFileMetadata.elfClass)
   if (!supportedtargets.includes(bfdTarget)) {
     // To be able to use objcopy on a file with a different architecture than the host, we need to give the BFD target
-    bfdTargetOption = `-I ${GENERIC_BFD_TARGET_FOR_ARCH[arch]}`
+    const genericBfdTarget = getGenericBFDTargetForArch(
+      elfFileMetadata.arch,
+      elfFileMetadata.littleEndian,
+      elfFileMetadata.elfClass
+    )
+    bfdTargetOption = `-I ${genericBfdTarget}`
   }
 
   const compressDebugSectionsOption = compressDebugSections ? '--compress-debug-sections' : ''

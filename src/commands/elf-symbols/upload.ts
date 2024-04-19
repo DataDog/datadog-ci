@@ -270,7 +270,7 @@ export class UploadCommand extends Command {
         const metadata = this.getMappingMetadata(fileMetadata.buildId, fileMetadata.arch)
         const outputFilename = getOutputFilenameFromBuildId(fileMetadata.buildId)
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata.arch, false)
+        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, fileMetadata.buildId)}`)
