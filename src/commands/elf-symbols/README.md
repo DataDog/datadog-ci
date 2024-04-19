@@ -2,7 +2,7 @@
 
 Upload Elf debug info files to Datadog to symbolicate your profiles.
 
-**This command runs only in Linux.**
+**This command requires `objcopy` from binutils package.**
 
 ## Setup
 

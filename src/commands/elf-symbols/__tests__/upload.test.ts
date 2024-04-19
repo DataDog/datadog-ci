@@ -118,7 +118,7 @@ describe('elf-symbols upload', () => {
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
         platform: 'elf',
-        type: 'elf_debuginfo_file',
+        type: 'elf_symbol_file',
       })
     })
 
@@ -131,21 +131,21 @@ describe('elf-symbols upload', () => {
         {
           cli_version: cliVersion,
           platform: 'elf',
-          type: 'elf_debuginfo_file',
+          type: 'elf_symbol_file',
           build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
           arch: 'aarch64',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
-          type: 'elf_debuginfo_file',
+          type: 'elf_symbol_file',
           build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           arch: 'aarch64',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
-          type: 'elf_debuginfo_file',
+          type: 'elf_symbol_file',
           build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
           arch: 'x86_64',
         },
@@ -154,9 +154,9 @@ describe('elf-symbols upload', () => {
       expect(uploadMultipartHelper).toHaveBeenCalledTimes(3)
       const metadata = (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => {
         const payload = call[1] as MultipartPayload
-        const mappingFileItem = payload.content.get('elf_debuginfo_file') as MultipartFileValue
+        const mappingFileItem = payload.content.get('elf_symbol_file') as MultipartFileValue
         expect(mappingFileItem).toBeTruthy()
-        expect(mappingFileItem.options.filename).toBe('elf_debuginfo_file')
+        expect(mappingFileItem.options.filename).toBe('elf_symbol_file')
 
         return JSON.parse((payload.content.get('event') as MultipartStringValue).value)
       })

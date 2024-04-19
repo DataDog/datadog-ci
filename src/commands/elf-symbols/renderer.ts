@@ -87,7 +87,7 @@ export const renderInvalidSymbolsLocation = (symbolsDirectory: string) =>
   chalk.red(`${ICONS.FAILED} Failed to get symbols files - ${symbolsDirectory} is not a file, nor a directory.\n`)
 
 export const renderMissingBinUtils = () =>
-  chalk.red(`${ICONS.FAILED} Could not find required ELF utilities (objcopy). Please install binutils.\n`)
+  chalk.red(`${ICONS.FAILED} Could not find required 'objcopy' program. Please install binutils.\n`)
 
 export const renderGeneralizedError = (error: any) => {
   let str = chalk.red(`${ICONS.FAILED} Error: ${error}\n`)
