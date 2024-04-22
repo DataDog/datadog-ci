@@ -329,7 +329,7 @@ export class DefaultReporter implements MainReporter {
     const runSummary = []
 
     if (summary.previouslyPassed) {
-      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in previous CI run)`))
+      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in a previous CI batch)`))
     } else {
       runSummary.push(green(`${b(summary.passed)} passed`))
     }
