@@ -205,6 +205,7 @@ jobs:
           cpu_count: 2
           sca_enabled: true
           diff_aware: true
+          debug: yes
 
   datadog-static-analyzer-non-diff-aware:
     runs-on: ubuntu-latest
