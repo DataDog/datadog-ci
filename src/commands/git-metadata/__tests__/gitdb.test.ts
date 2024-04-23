@@ -161,7 +161,7 @@ describe('gitdb', () => {
       this.execSync = jest.spyOn(child_process, 'execSync').mockImplementation(() => '') as jest.Mock
       this.axios = jest.spyOn(axios, 'create').mockImplementation(() => ((_: any) => {}) as any) as jest.Mock
 
-      const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean, name = '') => {
+      const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean) => {
         params.forEach((param) => {
           if (param.output instanceof Error) {
             mock = mock.mockImplementationOnce((..._: any) => {
@@ -177,40 +177,23 @@ describe('gitdb', () => {
         })
 
         return () => {
-          try {
-            expect(mock.mock.calls).toHaveLength(params.length)
-            params.forEach((param, i) => {
-              if (param.input !== undefined) {
-                expect(mock.mock.calls[i][0]).toStrictEqual(param.input)
-              }
-            })
-          } catch (e) {
-            // To make it easier to debug the tests
-            // eslint-disable-next-line
-            console.log('Error in', name, 'mock')
-            throw e
-          }
+          expect(mock.mock.calls).toHaveLength(params.length)
+          params.forEach((param, i) => {
+            if (param.input !== undefined) {
+              expect(mock.mock.calls[i][0]).toStrictEqual(param.input)
+            }
+          })
         }
       }
 
-      this.getConfigMetExpectations = initMockWithParams(
-        this.simpleGit.getConfig,
-        mockParams.getConfig,
-        true,
-        'getConfig'
-      )
-      this.fetchMetExpectations = initMockWithParams(this.simpleGit.fetch, mockParams.fetch, true, 'fetch')
-      this.getRemotesMetExpectations = initMockWithParams(
-        this.simpleGit.getRemotes,
-        mockParams.getRemotes,
-        true,
-        'getRemotes'
-      )
-      this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true, 'log')
-      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true, 'raw')
-      this.revparseMetExpectations = initMockWithParams(this.simpleGit.revparse, mockParams.revparse, true, 'revparse')
-      this.versionMetExpectations = initMockWithParams(this.simpleGit.version, mockParams.version, true, 'version')
-      this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false, 'execSync')
+      this.getConfigMetExpectations = initMockWithParams(this.simpleGit.getConfig, mockParams.getConfig, true)
+      this.fetchMetExpectations = initMockWithParams(this.simpleGit.fetch, mockParams.fetch, true)
+      this.getRemotesMetExpectations = initMockWithParams(this.simpleGit.getRemotes, mockParams.getRemotes, true)
+      this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true)
+      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true)
+      this.revparseMetExpectations = initMockWithParams(this.simpleGit.revparse, mockParams.revparse, true)
+      this.versionMetExpectations = initMockWithParams(this.simpleGit.version, mockParams.version, true)
+      this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false)
 
       this.axiosCalls = []
 
@@ -269,7 +252,7 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
-  test('should unshallow repository if git version is recent and backend does not have all commits already', async () => {
+  test('should unshallow repository if git version is recent', async () => {
     const mocks = new MockAll({
       getConfig: [
         {
@@ -300,24 +283,9 @@ describe('gitdb', () => {
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-        // throw an exception after the update shallow to shortcut the rest of the test as we only
-        // care about updating the shallow clone, not about the rest of the process for this test
-        {input: undefined, output: testError},
-      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
       raw: [],
       revparse: [
         {input: '--is-shallow-repository', output: 'true'},
@@ -325,29 +293,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {data: {data: []}},
-        },
-      ],
+      axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
@@ -398,24 +344,9 @@ describe('gitdb', () => {
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-        // throw an exception after the update shallow to shortcut the rest of the test as we only
-        // care about updating the shallow clone, not about the rest of the process for this test
-        {input: undefined, output: testError},
-      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
       raw: [],
       revparse: [
         {input: '--is-shallow-repository', output: 'true'},
@@ -423,29 +354,7 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {data: {data: []}},
-        },
-      ],
+      axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
@@ -467,128 +376,17 @@ describe('gitdb', () => {
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-      ],
-      // throw an exception after the failed unshallow to shortcut the rest of the test
-      raw: [{input: undefined, output: testError}],
-      revparse: [],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
+      raw: [],
+      revparse: [{input: '--is-shallow-repository', output: 'true'}],
       version: [{input: undefined, output: oldGitVersion}],
       execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {data: {data: []}},
-        },
-      ],
+      axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
-    mocks.expectCalls()
-  })
-
-  test('should not unshallow repository if backend has all commits already', async () => {
-    const mocks = new MockAll({
-      getConfig: [
-        {
-          input: 'clone.defaultRemoteName',
-          output: defaultRemoteNameNotConfigured,
-        },
-      ],
-      fetch: [],
-      getRemotes: [
-        {
-          input: undefined,
-          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
-        },
-      ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-      ],
-      raw: [],
-      revparse: [],
-      version: [],
-      execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {
-            data: {
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-        },
-      ],
-    })
-    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
-    await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
   })
 
@@ -646,23 +444,9 @@ describe('gitdb', () => {
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-        // we short circuit the test after the unshallow
-        {input: undefined, output: testError},
-      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
       raw: [],
       revparse: [
         {input: '--is-shallow-repository', output: 'true'},
@@ -671,36 +455,14 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {data: {data: []}},
-        },
-      ],
+      axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
     mocks.expectCalls()
   })
 
-  test("should unshallow repository if the CI is working on a detached HEAD or branch tracking hasn't been set up", async () => {
+  test('should unshallow repository if the CI is working on a detached HEAD or branch tracking hasn’t been set up', async () => {
     const mocks = new MockAll({
       getConfig: [
         {
@@ -764,23 +526,9 @@ describe('gitdb', () => {
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      log: [
-        {
-          input: ['-n 1000', '--since="1 month ago"'],
-          output: {
-            all: [
-              {
-                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-              },
-              {
-                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-              },
-            ],
-          },
-        },
-        // we short circuit the test after the unshallow
-        {input: undefined, output: testError},
-      ],
+      // throw an exception after the update shallow to shortcut the rest of the test as we only
+      // care about updating the shallow clone, not about the rest of the process for this test
+      log: [{input: undefined, output: testError}],
       raw: [],
       revparse: [
         {input: '--is-shallow-repository', output: 'true'},
@@ -789,35 +537,12 @@ describe('gitdb', () => {
       ],
       version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [
-        {
-          input: {
-            url: '/api/v2/git/repository/search_commits',
-            data: {
-              meta: {
-                repository_url: 'https://github.com/DataDog/datadog-ci',
-              },
-              data: [
-                {
-                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
-                  type: 'commit',
-                },
-                {
-                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
-                  type: 'commit',
-                },
-              ],
-            },
-          },
-          output: {data: {data: []}},
-        },
-      ],
+      axios: [],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
     mocks.expectCalls()
   })
-
   test('should send packfiles', async () => {
     const mocks = new MockAll({
       getConfig: [
@@ -863,7 +588,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -948,7 +673,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -1049,7 +774,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -1146,7 +871,7 @@ describe('gitdb', () => {
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
-      version: [{input: undefined, output: newGitVersion}],
+      version: [],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -1250,7 +975,7 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
-      revparse: [],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       version: [],
       execSync: [],
       axios: [
@@ -1355,7 +1080,7 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
-      revparse: [],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       version: [],
       execSync: [],
       axios: [
@@ -1428,8 +1153,21 @@ describe('gitdb', () => {
           },
         },
       ],
-      raw: [],
-      revparse: [],
+      raw: [
+        {
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            '^cc424c261da5e261b76d982d5d361a023556e2aa',
+          ],
+          output: '\n',
+        },
+      ],
+      revparse: [{input: '--is-shallow-repository', output: 'false'}],
       version: [],
       execSync: [],
       axios: [
