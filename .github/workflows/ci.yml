@@ -194,11 +194,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Massage repo
-        run: git config --unset extensions.worktreeConfig
       - name: Run Datadog static analyzer
         id: datadog-static-analysis
-        uses: DataDog/datadog-static-analyzer-github-action@main
+        uses: DataDog/datadog-static-analyzer-github-action@juli1/STAL-1921
         with:
           dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
