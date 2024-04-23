@@ -504,7 +504,7 @@ Additional helpful documentation, links, and articles:
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
 [2]: https://github.com/TooTallNate/node-proxy-agent
-[3]: https://docs.datadoghq.com/environments/
+[3]: https://docs.datadoghq.com/continuous_testing/environments/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
