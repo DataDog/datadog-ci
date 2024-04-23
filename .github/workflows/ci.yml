@@ -194,6 +194,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Massage repo
+        run: git config --unset extensions.worktreeConfig $GITHUB_WORKSPACE
       - name: Run Datadog static analyzer
         id: datadog-static-analysis
         uses: DataDog/datadog-static-analyzer-github-action@main
