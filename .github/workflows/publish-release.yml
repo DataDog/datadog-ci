@@ -47,7 +47,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 14.18.3
+          node-version: 20.11.0 # Use newer version to build the standalone binary # Use newer version to build the standalone binary
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -83,7 +83,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 14.18.3
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
@@ -112,6 +112,8 @@ jobs:
             })
 
   build-binary-macos:
+    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64`, which is downloaded by `pkg`
+    # https://github.com/actions/runner-images#available-images
     runs-on: macos-latest
     needs: create-draft-release
     steps:
@@ -119,7 +121,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 14.18.3
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
