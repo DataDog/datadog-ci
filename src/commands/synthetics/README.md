@@ -418,7 +418,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ## View test results
 
-You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Continuous Testing Explorer][4] or clicking on a test in the [**Synthetic Tests** page][5].
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Testing Results Explorer][4] or clicking on a test on the [**Tests** page][5].
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
@@ -499,12 +499,12 @@ Additional helpful documentation, links, and articles:
 - [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
 - [Learn about Continuous Testing and CI/CD][7]
 - [Learn about Mobile Application Testing][10]
-- [Learn about the Continuous Testing Explorer][8]
-- [Learn about the Continuous Testing Tunnel][3]
+- [Learn about the Synthetic Monitoring & Testing Results Explorer][8]
+- [Learn about Testing Local and Staging Environments][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
 [2]: https://github.com/TooTallNate/node-proxy-agent
-[3]: https://docs.datadoghq.com/continuous_testing/testing_tunnel/
+[3]: https://docs.datadoghq.com/continuous_testing/environments/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
