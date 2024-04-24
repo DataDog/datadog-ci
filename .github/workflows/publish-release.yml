@@ -47,7 +47,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary # Use newer version to build the standalone binary
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
