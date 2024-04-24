@@ -208,7 +208,10 @@ export class RunTestsCommand extends Command {
 
     // Use `global` only if `defaultTestOverrides` does not exist
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (Object.keys(this.config.global).length !== 0 && Object.keys(this.config.defaultTestOverrides).length === 0) {
+    if (
+      Object.keys(this.config.global ?? {}).length > 0 &&
+      Object.keys(this.config.defaultTestOverrides).length === 0
+    ) {
       this.config.defaultTestOverrides = {...this.config.global}
     }
 

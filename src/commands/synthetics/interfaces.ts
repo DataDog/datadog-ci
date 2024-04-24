@@ -443,7 +443,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnTimeout: boolean
   files: string[]
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  global: UserConfigOverride
+  global?: UserConfigOverride
   defaultTestOverrides: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
