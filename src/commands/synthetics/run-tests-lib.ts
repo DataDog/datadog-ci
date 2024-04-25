@@ -22,7 +22,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
-import {isLegacyRunTestsCommandConfig} from './utils/internal'
+import {isRunTestsCommandConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -63,10 +63,12 @@ export const executeTests = async (
 
   // If both global and defaultTestOverrides exist use defaultTestOverrides
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  if (isLegacyRunTestsCommandConfig(config)) {
-    console.warn(
-      "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
-    )
+  if (!isRunTestsCommandConfig(config)) {
+    if (Object.keys(config.global).length !== 0) {
+      console.warn(
+        "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
+      )
+    }
     config = {
       ...config,
       defaultTestOverrides: {...config.global},

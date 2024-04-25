@@ -11,7 +11,7 @@ import {LegacyRunTestsCommandConfig, MainReporter, Reporter, Result, RunTestsCom
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {isLegacyRunTestsCommandConfig} from './utils/internal'
+import {isRunTestsCommandConfig} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -211,10 +211,7 @@ export class RunTestsCommand extends Command {
 
     // Use global only if defaultTestOverrides does not exist
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (isLegacyRunTestsCommandConfig(this.config)) {
-      console.warn(
-        "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
-      )
+    if (!isRunTestsCommandConfig(this.config)) {
       this.config = {
         ...this.config,
         defaultTestOverrides: {...this.config.global},
