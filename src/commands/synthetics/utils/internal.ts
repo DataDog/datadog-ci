@@ -42,5 +42,5 @@ export const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
 export const isLegacyRunTestsCommandConfig = (
   obj: LegacyRunTestsCommandConfig | RunTestsCommandConfig
 ): obj is LegacyRunTestsCommandConfig => {
-  return 'global' in obj
+  return 'global' in obj && Object.keys(obj.global).length !== 0
 }
