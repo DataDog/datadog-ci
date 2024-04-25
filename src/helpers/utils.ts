@@ -1,3 +1,4 @@
+import {exec} from 'child_process'
 import fs, {existsSync} from 'fs'
 import {promisify} from 'util'
 
@@ -404,3 +405,10 @@ export const maskString = (value: string) => {
   // Keep first two and last four characters if it's long
   return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
 }
+
+const execProc = promisify(exec)
+export const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
+  execProc(cmd, {
+    cwd,
+    maxBuffer: 5 * 1024 * 5000,
+  })

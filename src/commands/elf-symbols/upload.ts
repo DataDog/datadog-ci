@@ -1,4 +1,3 @@
-import child_process from 'child_process'
 import fs from 'fs'
 
 import {Command, Option} from 'clipanion'
@@ -9,7 +8,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {buildPath, DEFAULT_CONFIG_PATHS, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
@@ -348,9 +347,9 @@ export class UploadCommand extends Command {
     }
   }
 
-  private checkBinUtils(): boolean {
+  private async checkBinUtils(): Promise<boolean> {
     try {
-      child_process.execSync('objcopy --version', {stdio: 'ignore'})
+      await execute('objcopy --version')
 
       return true
     } catch (e) {
@@ -377,7 +376,7 @@ export class UploadCommand extends Command {
       }
     }
 
-    if (!this.checkBinUtils()) {
+    if (!(await this.checkBinUtils())) {
       this.context.stderr.write(renderMissingBinUtils())
       parametersOkay = false
     }

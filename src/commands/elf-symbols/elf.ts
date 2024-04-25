@@ -1,7 +1,7 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
-import {execute} from '../dsyms/utils'
+import {execute} from '../../helpers/utils'
 
 import {
   MACHINE_TYPES_DESCRIPTION,
