@@ -36,7 +36,7 @@ export const DEFAULT_COMMAND_CONFIG: LegacyRunTestsCommandConfig | RunTestsComma
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   defaultTestOverrides: {},
   locations: [],

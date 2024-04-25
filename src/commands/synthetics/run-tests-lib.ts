@@ -187,7 +187,7 @@ export const getTriggerConfigs = async (
 ): Promise<TriggerConfig[]> => {
   // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
   const defaultTestConfigOverrides = config.defaultTestOverrides
-  // TODO: Clean up locations as part of SYNTH-12989
+  // TODO SYNTH-12989: Clean up `locations`
   const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 

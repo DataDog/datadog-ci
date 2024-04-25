@@ -29,7 +29,7 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
-// SYNTH-13709: Use the `Retry-After` header.
+// TODO SYNTH-13709: Use the `Retry-After` header.
 const DELAY_BETWEEN_429_RETRIES = 5000 // In ms
 
 interface BackendError {

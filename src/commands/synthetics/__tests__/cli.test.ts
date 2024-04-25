@@ -88,7 +88,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
@@ -123,7 +123,7 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
       const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
@@ -209,7 +209,7 @@ describe('run-test', () => {
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
-        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           pollingTimeout: 111,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
@@ -281,7 +281,7 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       // Global
-      // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
       command['config'].global = {
         locations: ['aws:us-east-2'],
         mobileApplicationVersionFilePath: './path/to/application_global.apk',
@@ -351,7 +351,7 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {followRedirects: false},
         defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
