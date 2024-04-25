@@ -80,6 +80,7 @@ describe('elf-symbols upload', () => {
       const files = await command['getElfSymbolFiles'](fixtureDir)
       expect(files.map((f) => f.filename)).toEqual([
         `${fixtureDir}/dyn_aarch64`,
+        `${fixtureDir}/dyn_aarch64_nobuildid`,
         `${fixtureDir}/dyn_aarch64.debug`,
         `${fixtureDir}/dyn_x86_64`,
         `${fixtureDir}/exec_aarch64`,
@@ -110,11 +111,18 @@ describe('elf-symbols upload', () => {
         trackedFilesMatcher: new TrackedFilesMatcher([]),
       }
 
-      const metadata = command['getMappingMetadata']('fake-build-id', 'x86_64')
+      const metadata = command['getMappingMetadata'](
+        'fake-gnu-build-id',
+        'fake-go-build-id',
+        'fake-file-hash',
+        'x86_64'
+      )
 
       expect(metadata).toEqual({
         arch: 'x86_64',
-        build_id: 'fake-build-id',
+        gnu_build_id: 'fake-gnu-build-id',
+        go_build_id: 'fake-go-build-id',
+        file_hash: 'fake-file-hash',
         cli_version: cliVersion,
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
@@ -133,40 +141,59 @@ describe('elf-symbols upload', () => {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
+          file_hash: 'd19d63194275d385e3dd852b80d5ba7a',
+          gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
+          go_build_id: '',
           arch: 'aarch64',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+          file_hash: '5ba2907faebb8002de89711d5f0f005c',
+          gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+          go_build_id: '',
           arch: 'aarch64',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
+          file_hash: 'e8a12b7f5702d7a4f92da4983d75e9af',
+          gnu_build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
+          go_build_id: '',
           arch: 'x86_64',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          build_id: '623209afd6c408f9009e57fad28782f056112daf',
+          file_hash: '3c8e0a68a99a3a03836d225a33ac1f8d',
+          gnu_build_id: '623209afd6c408f9009e57fad28782f056112daf',
+          go_build_id: '',
           arch: 'arm',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
+          file_hash: 'f984122099288eea0f23e7444dd9076c',
+          gnu_build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
+          go_build_id: '',
           arch: 'arm',
+        },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          file_hash: 'b3af701d97f2e6872a05d2b6f67bf0cd',
+          gnu_build_id: '',
+          go_build_id: '',
+          arch: 'aarch64',
         },
       ]
 
-      expect(uploadMultipartHelper).toHaveBeenCalledTimes(5)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(6)
       const metadata = (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => {
         const payload = call[1] as MultipartPayload
         const mappingFileItem = payload.content.get('elf_symbol_file') as MultipartFileValue
@@ -175,8 +202,9 @@ describe('elf-symbols upload', () => {
 
         return JSON.parse((payload.content.get('event') as MultipartStringValue).value)
       })
-      metadata.sort((a, b) => a.build_id.localeCompare(b.build_id))
-      expectedMetadata.sort((a, b) => a.build_id.localeCompare(b.build_id))
+      const getId = (m: any) => m.gnu_build_id || m.go_build_id || m.file_hash
+      metadata.sort((a, b) => getId(a).localeCompare(getId(b)))
+      expectedMetadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expect(metadata).toEqual(expectedMetadata)
       expect(exitCode).toBe(0)
     })

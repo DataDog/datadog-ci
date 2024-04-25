@@ -8,6 +8,8 @@ export interface MappingMetadata {
   git_commit_sha?: string
   git_repository_url?: string
   platform?: string
-  build_id: string
+  gnu_build_id: string
+  go_build_id: string
+  file_hash: string
   type: string
 }

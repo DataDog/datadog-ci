@@ -1,3 +1,5 @@
+import path from 'path'
+
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
@@ -10,7 +12,8 @@ import {
   isSupportedArch,
   isSupportedElfType,
   readElfProgramHeaderTable,
-  getBuildId,
+  getBuildIds,
+  computeFileHash,
 } from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'
 
@@ -120,7 +123,7 @@ describe('elf', () => {
       })
     })
     test('return correct header if file is a EXEC ELF arm big endian file', async () => {
-      const result = await getElfHeader(`${fixtureDir}/exec_arm_be`)
+      const result = await getElfHeader(`${fixtureDir}/exec_arm_big`)
       expect(result.isElf).toBeTruthy()
       expect(result.error).toBeUndefined()
       expect(result.elfHeader).toBeDefined()
@@ -651,23 +654,46 @@ describe('elf', () => {
     })
   })
 
-  describe('getBuildId', () => {
+  describe('getBuildIds', () => {
     test('return GNU build id from ELF file', async () => {
       const reader = await createReaderFromFile(`${fixtureDir}/dyn_aarch64`)
       const {elfHeader} = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
-      const buildId = await getBuildId(reader, sectionHeaders, elfHeader!)
+      const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
 
-      expect(buildId).toEqual('90aef8b4a3cd45d758501e49d1d9844736c872cd')
+      expect(gnuBuildId).toEqual('90aef8b4a3cd45d758501e49d1d9844736c872cd')
+      expect(goBuildId).toBeFalsy()
     })
 
     test('return Go build id from ELF file', async () => {
       const reader = await createReaderFromFile(`${fixtureDir}/go_x86_64_only_go_build_id`)
       const {elfHeader} = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
-      const buildId = await getBuildId(reader, sectionHeaders, elfHeader!)
+      const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
 
-      expect(buildId).toEqual('tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn')
+      expect(goBuildId).toEqual('tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn')
+      expect(gnuBuildId).toBeFalsy()
+    })
+
+    test('return Go and GNU build id from ELF file', async () => {
+      const reader = await createReaderFromFile(`${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`)
+      const {elfHeader} = await readElfHeader(reader)
+      const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
+      const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
+
+      expect(goBuildId).toEqual('tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn')
+      expect(gnuBuildId).toEqual('6a5e565db576fe96acd8ab12bf857eb36f8afdf4')
+    })
+  })
+
+  describe('computeFileHash', () => {
+    test('return hash of file', async () => {
+      const hash = await computeFileHash(`${fixtureDir}/exec_arm_big`)
+      expect(hash).toEqual('3c8e0a68a99a3a03836d225a33ac1f8d')
+    })
+    test('return hash of small file', async () => {
+      const hash = await computeFileHash(`${fixtureDir}/truncated_elf_file`)
+      expect(hash).toEqual('9c4c18153f9b78e0885062b07e873259')
     })
   })
 
@@ -689,7 +715,9 @@ describe('elf', () => {
         littleEndian: true,
         elfClass: 64,
         arch: 'aarch64',
-        buildId: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+        fileHash: '5ba2907faebb8002de89711d5f0f005c',
+        gnuBuildId: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+        goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
         hasSymbols: true,
@@ -702,7 +730,9 @@ describe('elf', () => {
         littleEndian: true,
         elfClass: 64,
         arch: 'aarch64',
-        buildId: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+        fileHash: '',
+        gnuBuildId: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+        goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
         hasSymbols: true,
@@ -715,7 +745,9 @@ describe('elf', () => {
         littleEndian: true,
         elfClass: 64,
         arch: 'aarch64',
-        buildId: '',
+        fileHash: 'b3af701d97f2e6872a05d2b6f67bf0cd',
+        gnuBuildId: '',
+        goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
         hasSymbols: true,
@@ -728,7 +760,9 @@ describe('elf', () => {
         littleEndian: true,
         elfClass: 64,
         arch: 'x86_64',
-        buildId: '6a5e565db576fe96acd8ab12bf857eb36f8afdf4',
+        gnuBuildId: '6a5e565db576fe96acd8ab12bf857eb36f8afdf4',
+        goBuildId: 'tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn',
+        fileHash: '70c9cab66acf4f5c715119b0999c20a4',
         type: 'DYN',
         hasDebugInfo: false,
         hasSymbols: false,
@@ -741,7 +775,9 @@ describe('elf', () => {
         littleEndian: true,
         elfClass: 64,
         arch: 'x86_64',
-        buildId: 'tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn',
+        gnuBuildId: '',
+        goBuildId: 'tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn',
+        fileHash: '7d39634381df8bf0bb7101f36e78fea2',
         type: 'DYN',
         hasDebugInfo: false,
         hasSymbols: false,
@@ -754,7 +790,9 @@ describe('elf', () => {
         littleEndian: false,
         elfClass: 32,
         arch: 'arm',
-        buildId: '623209afd6c408f9009e57fad28782f056112daf',
+        gnuBuildId: '623209afd6c408f9009e57fad28782f056112daf',
+        goBuildId: '',
+        fileHash: '3c8e0a68a99a3a03836d225a33ac1f8d',
         type: 'EXEC',
         hasDebugInfo: true,
         hasSymbols: true,
@@ -784,13 +822,19 @@ describe('elf', () => {
     })
 
     const checkCopyDebugInfo = async (elfFile: string) => {
-      const outputFilename = `${tmpDirectory}/output.debug`
+      const filename = path.basename(elfFile)
+      const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
       await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, false)
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
       // check that elf and debug info metadata are equal except for hasCode and filename
-      expect(debugInfoMetadata).toEqual({...elfFileMetadata, hasCode: false, filename: outputFilename})
+      expect(debugInfoMetadata).toEqual({
+        ...elfFileMetadata,
+        hasCode: false,
+        filename: outputFilename,
+        fileHash: debugInfoMetadata.fileHash,
+      })
     }
 
     test('copy debug info from elf files', async () => {

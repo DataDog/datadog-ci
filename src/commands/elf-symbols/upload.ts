@@ -20,6 +20,7 @@ import {
   ElfFileMetadata,
   getElfFileMetadata,
   isSupportedElfType,
+  getBuildId,
   getOutputFilenameFromBuildId,
   copyElfDebugInfo,
   isSupportedArch,
@@ -147,10 +148,12 @@ export class UploadCommand extends Command {
     return undefined
   }
 
-  private getMappingMetadata(buildId: string, arch: string): MappingMetadata {
+  private getMappingMetadata(gnuBuildId: string, goBuildId: string, fileHash: string, arch: string): MappingMetadata {
     return {
       arch,
-      build_id: buildId,
+      gnu_build_id: gnuBuildId,
+      go_build_id: goBuildId,
+      file_hash: fileHash,
       cli_version: this.cliVersion,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
@@ -208,7 +211,7 @@ export class UploadCommand extends Command {
           reportFailure(`Skipped ${file} because it has an unsupported architecture (${metadata.arch})`)
           continue
         }
-        if (!metadata.buildId) {
+        if (!(metadata.gnuBuildId || metadata.goBuildId || metadata.fileHash)) {
           reportFailure(`Skipped ${file} because it has no build id`)
           continue
         }
@@ -229,26 +232,27 @@ export class UploadCommand extends Command {
   private removeBuildIdDuplicates(filesMetadata: ElfFileMetadata[]): ElfFileMetadata[] {
     const buildIds = new Map<string, ElfFileMetadata>()
     for (const metadata of filesMetadata) {
-      const existing = buildIds.get(metadata.buildId)
+      const buildId = getBuildId(metadata)
+      const existing = buildIds.get(buildId)
       if (existing) {
         if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbols && !existing.hasSymbols)) {
           // if we have a duplicate build_id, we keep the one with debug info and symbols
           this.context.stderr.write(
             renderWarning(
-              `Duplicate build_id found: ${metadata.buildId} in ${metadata.filename} and ${existing.filename} - skipping ${existing.filename} because it has no debug info or symbols`
+              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${existing.filename} because it has no debug info or symbols`
             )
           )
-          buildIds.set(metadata.buildId, metadata)
+          buildIds.set(buildId, metadata)
         } else {
           // if both files have debug info and symbols, we keep the first one
           this.context.stderr.write(
             renderWarning(
-              `Duplicate build_id found: ${metadata.buildId} in ${metadata.filename} and ${existing.filename} - skipping ${metadata.filename}`
+              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${metadata.filename}`
             )
           )
         }
       } else {
-        buildIds.set(metadata.buildId, metadata)
+        buildIds.set(buildId, metadata)
       }
     }
 
@@ -267,13 +271,20 @@ export class UploadCommand extends Command {
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
-        const metadata = this.getMappingMetadata(fileMetadata.buildId, fileMetadata.arch)
-        const outputFilename = getOutputFilenameFromBuildId(fileMetadata.buildId)
+        const metadata = this.getMappingMetadata(
+          fileMetadata.gnuBuildId,
+          fileMetadata.goBuildId,
+          fileMetadata.fileHash,
+          fileMetadata.arch
+        )
+        const outputFilename = getOutputFilenameFromBuildId(
+          fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
+        )
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
         await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
 
         if (this.dryRun) {
-          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, fileMetadata.buildId)}`)
+          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, getBuildId(fileMetadata))}`)
 
           return UploadStatus.Success
         }
@@ -314,7 +325,7 @@ export class UploadCommand extends Command {
             metricsLogger.logger.increment('retries', 1)
           },
           onUpload: () => {
-            this.context.stdout.write(renderUpload(fileMetadata.filename, fileMetadata.buildId))
+            this.context.stdout.write(renderUpload(fileMetadata.filename, getBuildId(fileMetadata)))
           },
           retries: 5,
           useGzip: true,

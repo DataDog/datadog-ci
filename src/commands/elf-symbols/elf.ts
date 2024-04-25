@@ -1,3 +1,4 @@
+import {createHash} from 'crypto'
 import fs from 'fs'
 
 import {execute} from '../dsyms/utils'
@@ -18,7 +19,9 @@ export type ElfFileMetadata = {
   arch: string
   littleEndian: boolean
   elfClass: number
-  buildId: string
+  gnuBuildId: string
+  goBuildId: string
+  fileHash: string
   type: string
   hasDebugInfo: boolean
   hasSymbols: boolean
@@ -388,18 +391,20 @@ const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHead
   return {type, name, desc}
 }
 
-export const getBuildId = async (
+export const getBuildIds = async (
   reader: Reader,
   sectionHeaders: SectionHeader[],
   elfHeader: ElfHeader
-): Promise<string> => {
+): Promise<{gnuBuildId: string; goBuildId: string}> => {
+  let gnuBuildId = ''
+  let goBuildId = ''
   const gnuBuildIdSection = sectionHeaders.find(
     (section) => section.sh_type === SectionHeaderType.SHT_NOTE && section.name === '.note.gnu.build-id'
   )
   if (gnuBuildIdSection) {
     const {type, name, desc} = await readElfNote(reader, gnuBuildIdSection, elfHeader)
     if (type === NoteType.NT_GNU_BUILD_ID || name === 'GNU') {
-      return desc.toString('hex')
+      gnuBuildId = desc.toString('hex')
     }
   }
   const goBuildIdSection = sectionHeaders.find(
@@ -408,11 +413,11 @@ export const getBuildId = async (
   if (goBuildIdSection) {
     const {type, name, desc} = await readElfNote(reader, goBuildIdSection, elfHeader)
     if (type === NoteType.NT_GO_BUILD_ID || name === 'Go') {
-      return desc.toString('ascii')
+      goBuildId = desc.toString('ascii')
     }
   }
 
-  return ''
+  return {gnuBuildId, goBuildId}
 }
 
 export const isSupportedArch = (arch: string): boolean => {
@@ -442,7 +447,9 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     littleEndian: false,
     elfClass: 0,
     arch: '',
-    buildId: '',
+    gnuBuildId: '',
+    goBuildId: '',
+    fileHash: '',
     type: '',
     hasDebugInfo: false,
     hasSymbols: false,
@@ -469,9 +476,15 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     }
 
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
-    metadata.buildId = await getBuildId(reader, sectionHeaders, elfHeader!)
+    const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
     const {hasDebugInfo, hasSymbols, hasCode} = getSectionInfo(sectionHeaders)
-    Object.assign(metadata, {hasDebugInfo, hasSymbols, hasCode})
+    let fileHash = ''
+    if (hasCode) {
+      // Only compute file hash if the file has code:
+      // if the file has no code, it is likely a debug info file and its hash is useless
+      fileHash = await computeFileHash(filename)
+    }
+    Object.assign(metadata, {fileHash, gnuBuildId, goBuildId, hasDebugInfo, hasSymbols, hasCode})
   } catch (error) {
     metadata.error = error
   } finally {
@@ -481,6 +494,30 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
   }
 
   return metadata
+}
+
+// Compute a file hash as SHA256 checksum of the first and last 4096 bytes of the file
+// and the file size represented as a big endian uint64. Only the first 16 bytes (128 bits)
+// of the hash are used.
+export const computeFileHash = async (filename: string): Promise<string> => {
+  const fd = await fs.promises.open(filename, 'r')
+  try {
+    const stats = await fd.stat()
+    const fileSize = stats.size
+    const hash = createHash('sha256')
+    const buffer = Buffer.alloc(4096)
+    let {bytesRead} = await fd.read(buffer, 0, 4096)
+    hash.update(buffer.slice(0, bytesRead))
+    ;({bytesRead} = await fd.read(buffer, 0, 4096, Math.max(0, fileSize - 4096)))
+    hash.update(buffer.slice(0, bytesRead))
+
+    buffer.writeBigUInt64BE(BigInt(fileSize), 0)
+    hash.update(buffer.slice(0, 8))
+
+    return hash.digest('hex').slice(0, 32)
+  } finally {
+    await fd.close()
+  }
 }
 
 const getSupportedBfdTargetsInternal = async (): Promise<string[]> => {
@@ -520,12 +557,12 @@ export const copyElfDebugInfo = async (
   elfFileMetadata: ElfFileMetadata,
   compressDebugSections: boolean
 ): Promise<void> => {
-  const supportedtargets = await getSupportedBfdTargets()
+  const supportedTargets = await getSupportedBfdTargets()
 
   let bfdTargetOption = ''
   const bfdTarget = getBFDTargetForArch(elfFileMetadata.arch, elfFileMetadata.littleEndian, elfFileMetadata.elfClass)
-  if (!supportedtargets.includes(bfdTarget)) {
-    // To be able to use objcopy on a file with a different architecture than the host, we need to give the BFD target
+  if (!supportedTargets.includes(bfdTarget)) {
+    // To be able to use `objcopy` on a file with a different architecture than the host, we need to give the BFD target
     const genericBfdTarget = getGenericBFDTargetForArch(
       elfFileMetadata.arch,
       elfFileMetadata.littleEndian,
@@ -550,4 +587,8 @@ export const copyElfDebugInfo = async (
 export const getOutputFilenameFromBuildId = (buildId: string): string => {
   // Go build id may contain slashes, replace them with dashes so it can be used as a filename
   return buildId.replace(/\//g, '-')
+}
+
+export const getBuildId = (fileMetadata: ElfFileMetadata): string => {
+  return fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
 }
