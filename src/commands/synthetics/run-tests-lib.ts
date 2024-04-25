@@ -69,7 +69,7 @@ export const executeTests = async (
     )
     config = {
       ...config,
-      defaultTestOverrides: config.global,
+      defaultTestOverrides: {...config.global},
     }
   }
 

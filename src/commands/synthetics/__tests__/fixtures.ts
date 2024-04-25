@@ -34,6 +34,7 @@ import {
   Trigger,
   UploadApplicationCommandConfig,
   User,
+  LegacyRunTestsCommandConfig,
 } from '../interfaces'
 import {createInitialSummary} from '../utils/public'
 
@@ -63,7 +64,7 @@ export const mockReporter: MainReporter = {
   testsWait: jest.fn(),
 }
 
-export const ciConfig: RunTestsCommandConfig = {
+export const ciConfig: LegacyRunTestsCommandConfig | RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',

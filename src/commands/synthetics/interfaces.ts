@@ -436,7 +436,7 @@ export interface APIHelperConfig {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
-  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+// TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
 export interface LegacyRunTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
   failOnCriticalErrors: boolean
@@ -473,7 +473,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   variableStrings: string[]
 }
 
-export type WrapperConfig = Partial<RunTestsCommandConfig>
+export type WrapperConfig = Partial<LegacyRunTestsCommandConfig | RunTestsCommandConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   configPath: string
