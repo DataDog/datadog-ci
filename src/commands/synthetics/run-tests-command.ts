@@ -7,10 +7,11 @@ import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
-import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+import {LegacyRunTestsCommandConfig, MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
+import {isLegacyRunTestsCommandConfig} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -26,7 +27,7 @@ export const MAX_TESTS_TO_TRIGGER = 100
 
 export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
-export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
+export const DEFAULT_COMMAND_CONFIG: LegacyRunTestsCommandConfig | RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -207,9 +208,15 @@ export class RunTestsCommand extends Command {
     }
 
     // Use global only if defaultTestOverrides does not exist
-    // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (Object.keys(this.config.global).length !== 0 && Object.keys(this.config.defaultTestOverrides).length === 0) {
-      this.config.defaultTestOverrides = {...this.config.global}
+    // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+    if (isLegacyRunTestsCommandConfig(this.config)) {
+      console.warn(
+        "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
+      )
+      this.config = {
+        ...this.config,
+        defaultTestOverrides: this.config.global,
+      }
     }
 
     // Override with ENV variables

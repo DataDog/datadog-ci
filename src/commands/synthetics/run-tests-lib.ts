@@ -3,6 +3,7 @@ import {getProxyAgent} from '../../helpers/utils'
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
+  LegacyRunTestsCommandConfig,
   MainReporter,
   Reporter,
   Result,
@@ -21,6 +22,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
+import {isLegacyRunTestsCommandConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -43,7 +45,7 @@ type ExecuteOptions = {
 
 export const executeTests = async (
   reporter: MainReporter,
-  config: RunTestsCommandConfig,
+  config: LegacyRunTestsCommandConfig | RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
   results: Result[]
@@ -60,15 +62,14 @@ export const executeTests = async (
   }
 
   // If both global and defaultTestOverrides exist use defaultTestOverrides
-  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  if (Object.keys(config.global).length !== 0) {
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  if (isLegacyRunTestsCommandConfig(config)) {
     console.warn(
       "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!"
     )
-
-    // if config.defaultTestOverrides does not exist because executeTests was called directly, use global instead
-    if (Object.keys(config.defaultTestOverrides).length === 0) {
-      config.defaultTestOverrides = {...config.global}
+    config = {
+      ...config,
+      defaultTestOverrides: config.global,
     }
   }
 

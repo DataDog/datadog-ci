@@ -1,9 +1,11 @@
 import {
   BaseResult,
   ExecutionRule,
+  LegacyRunTestsCommandConfig,
   Result,
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
+  RunTestsCommandConfig,
   Test,
   UserConfigOverride,
 } from '../interfaces'
@@ -35,4 +37,10 @@ export const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
   }
 
   return result.result_id
+}
+
+export const isLegacyRunTestsCommandConfig = (
+  obj: LegacyRunTestsCommandConfig | RunTestsCommandConfig
+): obj is LegacyRunTestsCommandConfig => {
+  return 'global' in obj
 }

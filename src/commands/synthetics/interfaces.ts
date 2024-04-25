@@ -436,14 +436,31 @@ export interface APIHelperConfig {
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+export interface LegacyRunTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  failOnCriticalErrors: boolean
+  failOnMissingTests: boolean
+  failOnTimeout: boolean
+  files: string[]
+  global: UserConfigOverride
+  locations: string[]
+  mobileApplicationVersionFilePath?: string
+  pollingTimeout: number
+  publicIds: string[]
+  selectiveRerun: boolean
+  subdomain: string
+  testSearchQuery?: string
+  tunnel: boolean
+  variableStrings: string[]
+}
+
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
-  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  global: UserConfigOverride
   defaultTestOverrides: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
