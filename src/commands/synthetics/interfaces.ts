@@ -455,7 +455,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
 }
 
 // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-export type LegacyRunTestsCommandConfig = Omit<RunTestsCommandConfig, 'defaultTestOverrides'> & {
+export interface LegacyRunTestsCommandConfig extends Omit<RunTestsCommandConfig, 'defaultTestOverrides'> {
   global: UserConfigOverride
 }
 
