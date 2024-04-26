@@ -288,17 +288,16 @@ describe('run-test', () => {
       // Global
       // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
 
-      if ('global' in command['config']) {
-        command['config'].global = {
+      command['config'] = {
+        ...command['config'],
+        global: {
           locations: ['aws:us-east-2'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
-        }
-      }
-      if ('defaultTestOverrides' in command['config']) {
-        command['config'].defaultTestOverrides = {
+        },
+        defaultTestOverrides: {
           locations: ['aws:us-east-2'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
-        }
+        },
       }
 
       expect(await command.execute()).toBe(0)
