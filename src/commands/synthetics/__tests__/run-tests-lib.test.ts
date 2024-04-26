@@ -31,6 +31,59 @@ describe('run-test', () => {
   })
 
   describe('executeTests', () => {
+    test('legacy usage', async () => {
+      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+
+      await expect(
+        runTests.executeTests(mockReporter, {
+          apiKey: '',
+          appKey: '',
+          configPath: 'datadog-ci.json',
+          datadogSite: 'datadoghq.com',
+          failOnCriticalErrors: false,
+          failOnMissingTests: false,
+          failOnTimeout: true,
+          files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          global: {},
+          locations: [],
+          pollingTimeout: 2 * 60 * 1000,
+          proxy: {protocol: 'http'},
+          publicIds: [],
+          selectiveRerun: false,
+          subdomain: 'app',
+          tunnel: false,
+          variableStrings: [],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+    })
+
+    test('current usage', async () => {
+      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+
+      await expect(
+        runTests.executeTests(mockReporter, {
+          apiKey: '',
+          appKey: '',
+          configPath: 'datadog-ci.json',
+          datadogSite: 'datadoghq.com',
+          failOnCriticalErrors: false,
+          failOnMissingTests: false,
+          failOnTimeout: true,
+          files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          defaultTestOverrides: {},
+          locations: [],
+          pollingTimeout: 2 * 60 * 1000,
+          proxy: {protocol: 'http'},
+          publicIds: [],
+          selectiveRerun: false,
+          subdomain: 'app',
+          tunnel: false,
+          variableStrings: [],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+    })
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
