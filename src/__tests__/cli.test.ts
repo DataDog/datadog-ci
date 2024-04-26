@@ -14,9 +14,9 @@ describe('cli', () => {
 
     const cases: [string, [string, CommandClass][]][] = Object.entries(
       userDefinedCommands.reduce((acc, command) => {
-        const commandRootPath = command.paths?.[0][0] || 'unknown' // e.g. synthetics
-        const commandName = BETA_COMMANDS.includes(commandRootPath) ? `${commandRootPath} (beta)` : commandRootPath
-        const subcommandName = command.paths?.[0].slice(1).join(' ') || '<root>' // e.g. run-tests
+        const rootCommand = command.paths?.[0][0] || 'unknown' // e.g. synthetics
+        const commandName = BETA_COMMANDS.includes(rootCommand) ? `${rootCommand} (beta)` : rootCommand
+        const subcommandName = command.paths?.[0].slice(1).join(' ') ?? '<root>' // e.g. run-tests
         const newCase: [string, CommandClass] = [subcommandName, command]
 
         return {

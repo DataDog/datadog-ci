@@ -1,6 +1,12 @@
 import {exec} from 'child_process'
 import {promisify} from 'util'
 
+// Test all commands, including beta ones.
+process.env.DD_BETA_COMMANDS_ENABLED = '1'
+
+import {cli, BETA_COMMANDS} from '../src/cli'
+import {Builtins, CommandClass} from 'clipanion'
+
 import {version} from '../package.json'
 
 const execPromise = promisify(exec)
@@ -34,65 +40,32 @@ describe('standalone binary', () => {
       expect(binaryVersion.slice(1)).toEqual(version)
     })
   })
-  describe('dsyms', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} dsyms upload --help`)
-      const dsymsHelpText = sanitizeOutput(stdout)
-      expect(dsymsHelpText).toContain('datadog-ci dsyms upload')
-    })
-  })
-  describe('git-metadata', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} git-metadata upload --help`)
-      const gitMetadataHelpText = sanitizeOutput(stdout)
-      expect(gitMetadataHelpText).toContain('datadog-ci git-metadata upload')
-    })
-  })
-  describe('junit', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} junit upload --help`)
-      const junitHelpText = sanitizeOutput(stdout)
-      expect(junitHelpText).toContain('datadog-ci junit upload')
-    })
-  })
-  describe('lambda', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} lambda instrument --help`)
-      const lambdaHelpText = sanitizeOutput(stdout)
-      expect(lambdaHelpText).toContain('datadog-ci lambda instrument')
-    })
-  })
-  describe('sourcemaps', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} sourcemaps upload --help`)
-      const sourceMapsHelpText = sanitizeOutput(stdout)
-      expect(sourceMapsHelpText).toContain('datadog-ci sourcemaps upload')
-    })
-  })
-  describe('stepfunctions', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions instrument --help`)
-      const stepFunctionsHelpText = sanitizeOutput(stdout)
-      expect(stepFunctionsHelpText).toContain('datadog-ci stepfunctions instrument')
-    })
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions uninstrument --help`)
-      const stepFunctionsHelpText = sanitizeOutput(stdout)
-      expect(stepFunctionsHelpText).toContain('datadog-ci stepfunctions uninstrument')
-    })
-  })
-  describe('synthetics', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)
-      const syntheticsHelpText = sanitizeOutput(stdout)
-      expect(syntheticsHelpText).toContain('datadog-ci synthetics run-tests')
-    })
-  })
-  describe('trace', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} trace --help`)
-      const traceHelpText = sanitizeOutput(stdout)
-      expect(traceHelpText).toContain('datadog-ci trace')
+
+  const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
+  const commands = Array.from(cli['registrations'].keys())
+  const userDefinedCommands = commands.filter((command) => !builtins.includes(command))
+
+  const cases: [string, [string, string][]][] = Object.entries(
+    userDefinedCommands.reduce((acc, command) => {
+      const rootCommand = command.paths?.[0][0] || 'unknown' // e.g. synthetics
+      const commandName = BETA_COMMANDS.includes(rootCommand) ? `${rootCommand} (beta)` : rootCommand
+      const subcommand = command.paths?.[0].slice(1).join(' ') // e.g. run-tests
+      const subcommandName = subcommand ?? '<root>'
+      const commandLine = `${rootCommand}${subcommand ? ` ${subcommand}` : ''} --help`
+      const newCase: [string, string] = [subcommandName, commandLine]
+
+      return {
+        ...acc,
+        [commandName]: [...(acc[commandName] ?? []), newCase],
+      }
+    }, {} as Record<string, [string, string][]>)
+  )
+
+  describe.each(cases)('%s', (_, subcommandCases) => {
+    test.each(subcommandCases)('%s', async (_, commandLine) => {
+      const {stdout} = await execPromise(`DD_BETA_COMMANDS_ENABLED=1 ${STANDALONE_BINARY_PATH} ${commandLine}`)
+      const helpText = sanitizeOutput(stdout)
+      expect(helpText).toContain(commandLine.replace('--help', ''))
     })
   })
 })
