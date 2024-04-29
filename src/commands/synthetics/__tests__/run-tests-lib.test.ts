@@ -84,6 +84,7 @@ describe('run-test', () => {
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
     })
+
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
