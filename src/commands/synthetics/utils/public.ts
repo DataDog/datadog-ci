@@ -19,7 +19,6 @@ import {
   APIHelperConfig,
   BrowserServerResult,
   ExecutionRule,
-  LegacyRunTestsCommandConfig,
   LocationsMapping,
   MainReporter,
   Operator,
@@ -718,7 +717,7 @@ export const renderResults = ({
   startTime,
   summary,
 }: {
-  config: LegacyRunTestsCommandConfig | RunTestsCommandConfig
+  config: RunTestsCommandConfig
   orgSettings: SyntheticsOrgSettings | undefined
   reporter: MainReporter
   results: Result[]

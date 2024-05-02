@@ -6,12 +6,12 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {isUsingGlobal} from './compatibility'
 import {CiError} from './errors'
-import {LegacyRunTestsCommandConfig, MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {isLegacyRunTestCommandConfig} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -27,7 +27,7 @@ export const MAX_TESTS_TO_TRIGGER = 100
 
 export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
 
-export const DEFAULT_COMMAND_CONFIG: LegacyRunTestsCommandConfig | RunTestsCommandConfig = {
+export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -138,9 +138,7 @@ export class RunTestsCommand extends Command {
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
   private reporter?: MainReporter
-  private config: LegacyRunTestsCommandConfig | RunTestsCommandConfig = JSON.parse(
-    JSON.stringify(DEFAULT_COMMAND_CONFIG)
-  ) // Deep copy to avoid mutation during unit tests
+  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
@@ -211,7 +209,7 @@ export class RunTestsCommand extends Command {
 
     // Use global only if defaultTestOverrides does not exist
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (isLegacyRunTestCommandConfig(this.config, this.reporter)) {
+    if (isUsingGlobal(this.config, this.reporter)) {
       this.config = {
         ...this.config,
         defaultTestOverrides: {...this.config.global},
@@ -268,7 +266,7 @@ export class RunTestsCommand extends Command {
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
         pollingTimeout:
-          this.pollingTimeout ?? this.config.defaultTestOverrides.pollingTimeout ?? this.config.pollingTimeout,
+          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 

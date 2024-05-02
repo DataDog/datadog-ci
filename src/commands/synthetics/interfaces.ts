@@ -442,7 +442,10 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
-  defaultTestOverrides: UserConfigOverride
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  /** @deprecated */
+  global?: UserConfigOverride
+  defaultTestOverrides?: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
   pollingTimeout: number
@@ -454,12 +457,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   variableStrings: string[]
 }
 
-// TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-export interface LegacyRunTestsCommandConfig extends Omit<RunTestsCommandConfig, 'defaultTestOverrides'> {
-  global: UserConfigOverride
-}
-
-export type WrapperConfig = Partial<LegacyRunTestsCommandConfig | RunTestsCommandConfig>
+export type WrapperConfig = Partial<RunTestsCommandConfig>
 
 export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
   configPath: string

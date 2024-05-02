@@ -1,9 +1,9 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {isUsingGlobal} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
-  LegacyRunTestsCommandConfig,
   MainReporter,
   Reporter,
   Result,
@@ -22,7 +22,6 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
-import {isLegacyRunTestCommandConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -45,7 +44,7 @@ type ExecuteOptions = {
 
 export const executeTests = async (
   reporter: MainReporter,
-  config: LegacyRunTestsCommandConfig | RunTestsCommandConfig,
+  config: RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
   results: Result[]
@@ -63,7 +62,7 @@ export const executeTests = async (
 
   // If both global and defaultTestOverrides exist use defaultTestOverrides
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  if (isLegacyRunTestCommandConfig(config, reporter)) {
+  if (isUsingGlobal(config, reporter)) {
     config = {
       ...config,
       defaultTestOverrides: {...config.global},

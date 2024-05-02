@@ -4,12 +4,7 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {
-  LegacyRunTestsCommandConfig,
-  RunTestsCommandConfig,
-  UploadApplicationCommandConfig,
-  UserConfigOverride,
-} from '../interfaces'
+import {RunTestsCommandConfig, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils/public'
@@ -84,7 +79,7 @@ describe('run-test', () => {
     })
 
     test('override from config file', async () => {
-      const overrideConfigFile: LegacyRunTestsCommandConfig | RunTestsCommandConfig = {
+      const overrideConfigFile: RunTestsCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
@@ -287,17 +282,13 @@ describe('run-test', () => {
 
       // Global
       // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-
-      command['config'] = {
-        ...command['config'],
-        global: {
-          locations: ['aws:us-east-2'],
-          mobileApplicationVersionFilePath: './path/to/application_global.apk',
-        },
-        defaultTestOverrides: {
-          locations: ['aws:us-east-2'],
-          mobileApplicationVersionFilePath: './path/to/application_global.apk',
-        },
+      command['config'].global = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
+      }
+      command['config'].defaultTestOverrides = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
       }
 
       expect(await command.execute()).toBe(0)
