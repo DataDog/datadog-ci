@@ -6,7 +6,6 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {isUsingGlobal} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -209,11 +208,11 @@ export class RunTestsCommand extends Command {
 
     // Use global only if defaultTestOverrides does not exist
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (isUsingGlobal(this.config, this.reporter)) {
-      this.config = {
-        ...this.config,
-        defaultTestOverrides: {...this.config.global},
-      }
+    if (
+      Object.keys(this.config.global ?? {}).length !== 0 &&
+      Object.keys(this.config.defaultTestOverrides ?? {}).length === 0
+    ) {
+      this.config.defaultTestOverrides = {...this.config.global}
     }
 
     // Override with ENV variables
