@@ -4,7 +4,7 @@ jest.mock('child_process')
 jest.unmock('chalk')
 
 jest.mock('path', () => {
-  const actualPath = jest.requireActual('path')
+  const actualPath: typeof path = jest.requireActual('path')
 
   return {
     ...actualPath,
@@ -41,6 +41,8 @@ jest.mock('path', () => {
 import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
+
+import type * as path from 'path'
 
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
