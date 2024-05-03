@@ -137,7 +137,7 @@ export class RunTestsCommand extends Command {
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
   private reporter!: MainReporter
-  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
