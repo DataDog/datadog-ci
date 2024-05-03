@@ -136,7 +136,7 @@ export class RunTestsCommand extends Command {
   })
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
-  private reporter?: MainReporter
+  private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
 
   public async execute() {
@@ -260,14 +260,14 @@ export class RunTestsCommand extends Command {
         deviceIds: this.deviceIds,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter?.log(log)),
+        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
         pollingTimeout:
           this.pollingTimeout ?? this.config.defaultTestOverrides.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 
     if (typeof this.config.files === 'string') {
-      this.reporter!.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
+      this.reporter.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
       this.config.files = [this.config.files]
     }
 
