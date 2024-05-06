@@ -8,7 +8,6 @@ import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
-import {AppUploadReporter} from './reporters/appUpload'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
@@ -167,9 +166,8 @@ export class RunTestsCommand extends Command {
 
     let results: Result[]
     let summary: Summary
-    const appUploadReporter = new AppUploadReporter(this.context)
     try {
-      ;({results, summary} = await executeTests(this.reporter, appUploadReporter, this.config))
+      ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
       reportExitLogs(this.reporter, this.config, {error})
 

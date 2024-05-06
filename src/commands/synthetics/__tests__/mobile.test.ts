@@ -3,9 +3,9 @@ import path from 'path'
 
 import {EndpointError} from '../api'
 import {CiError, CriticalError} from '../errors'
-import {TestWithOverride, TriggerConfig} from '../interfaces'
+import {MobileTestWithOverride, TriggerConfig} from '../interfaces'
 import * as mobile from '../mobile'
-import {AppUploadReporter} from '../reporters/appUpload'
+import {AppUploadReporter} from '../reporters/mobile/app-upload'
 
 import {
   APP_UPLOAD_POLL_RESULTS,
@@ -15,8 +15,8 @@ import {
   getTestPayload,
   APP_UPLOAD_SIZE_AND_PARTS,
   APP_UPLOAD_PART_RESPONSES,
-  getTriggerConfig,
-  getTestAndConfigOverride,
+  getMobileTriggerConfig,
+  getMobileTestWithOverride,
   uploadCommandConfig,
   getMockAppUploadReporter,
 } from './fixtures'
@@ -195,20 +195,20 @@ describe('uploadMobileApplication', () => {
 
 describe('AppUploadCache', () => {
   let triggerConfigs: TriggerConfig[]
-  let testsAndConfigsOverride: TestWithOverride[]
+  let testsAndConfigsOverride: MobileTestWithOverride[]
 
   beforeEach(() => {
     triggerConfigs = [
-      getTriggerConfig('appPath1'),
-      getTriggerConfig('appPath2'),
-      getTriggerConfig('appPath1'),
-      getTriggerConfig('appPath3'),
+      getMobileTriggerConfig('appPath1'),
+      getMobileTriggerConfig('appPath2'),
+      getMobileTriggerConfig('appPath1'),
+      getMobileTriggerConfig('appPath3'),
     ]
     testsAndConfigsOverride = [
-      getTestAndConfigOverride('appId1'),
-      getTestAndConfigOverride('appId2'),
-      getTestAndConfigOverride('appId1'),
-      getTestAndConfigOverride('appId3'),
+      getMobileTestWithOverride('appId1'),
+      getMobileTestWithOverride('appId2'),
+      getMobileTestWithOverride('appId1'),
+      getMobileTestWithOverride('appId3'),
     ]
   })
 
@@ -223,12 +223,12 @@ describe('AppUploadCache', () => {
     ])
   })
 
-  test('setFileName', () => {
+  test('setUploadedAppFileName', () => {
     const cache = new mobile.AppUploadCache()
     cache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
-    cache.setFileName('appPath1', 'appId1', 'fileName')
+    cache.setUploadedAppFileName('appPath1', 'appId1', 'fileName')
 
-    expect(cache.getFileName('appPath1', 'appId1')).toBe('fileName')
+    expect(cache.getUploadedAppFileName('appPath1', 'appId1')).toBe('fileName')
   })
 })
 
@@ -236,10 +236,10 @@ describe('overrideMobileConfig', () => {
   test('mobileApplicationVersionFilePath', () => {
     const test = getMobileTest()
     const overriddenConfig = getTestPayload({public_id: test.public_id})
-    mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication!.applicationId, 'fileName')
+    mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication.applicationId, 'fileName')
 
     expect(overriddenConfig.mobileApplication).toEqual({
-      applicationId: test.options.mobileApplication!.applicationId,
+      applicationId: test.options.mobileApplication.applicationId,
       referenceId: 'fileName',
       referenceType: 'temporary',
     })
@@ -250,13 +250,13 @@ describe('overrideMobileConfig', () => {
     const overriddenConfig = getTestPayload({public_id: test.public_id})
     mobile.overrideMobileConfig(
       overriddenConfig,
-      test.options.mobileApplication!.applicationId,
+      test.options.mobileApplication.applicationId,
       undefined,
       'newAndroidVersionId'
     )
 
     expect(overriddenConfig.mobileApplication).toEqual({
-      applicationId: test.options.mobileApplication!.applicationId,
+      applicationId: test.options.mobileApplication.applicationId,
       referenceId: 'newAndroidVersionId',
       referenceType: 'version',
     })
@@ -267,13 +267,13 @@ describe('overrideMobileConfig', () => {
     const overriddenConfig = getTestPayload({public_id: test.public_id})
     mobile.overrideMobileConfig(
       overriddenConfig,
-      test.options.mobileApplication!.applicationId,
+      test.options.mobileApplication.applicationId,
       'fileName',
       'androidVersionId'
     )
 
     expect(overriddenConfig.mobileApplication).toEqual({
-      applicationId: test.options.mobileApplication!.applicationId,
+      applicationId: test.options.mobileApplication.applicationId,
       referenceId: 'fileName',
       referenceType: 'temporary',
     })
@@ -283,26 +283,28 @@ describe('overrideMobileConfig', () => {
 describe('uploadMobileApplicationsAndOverrideConfigs', () => {
   const api = getApiHelper()
   const triggerConfigs = [
-    getTriggerConfig('appPath1'),
-    getTriggerConfig('appPath2'),
-    getTriggerConfig('appPath1'),
-    getTriggerConfig('appPath3'),
-    getTriggerConfig(undefined, 'appVersion1'),
+    getMobileTriggerConfig('appPath1'),
+    getMobileTriggerConfig('appPath2'),
+    getMobileTriggerConfig('appPath1'),
+    getMobileTriggerConfig('appPath3'),
+    getMobileTriggerConfig(undefined, 'appVersion1'),
   ]
   const testsAndConfigsOverride = [
-    getTestAndConfigOverride('appId1'),
-    getTestAndConfigOverride('appId2'),
-    getTestAndConfigOverride('appId1'),
-    getTestAndConfigOverride('appId3'),
-    getTestAndConfigOverride('appId4'),
+    getMobileTestWithOverride('appId1'),
+    getMobileTestWithOverride('appId2'),
+    getMobileTestWithOverride('appId1'),
+    getMobileTestWithOverride('appId3'),
+    getMobileTestWithOverride('appId4'),
   ]
-  let appUploadReporter: AppUploadReporter
 
   const uploadMobileApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplication')
   const overrideMobileConfigSpy = jest.spyOn(mobile, 'overrideMobileConfig')
+  const appUploadReporterStartSpy = jest.spyOn(AppUploadReporter.prototype, 'start').mockImplementation()
+  const appUploadReporterRenderProgressSpy = jest.spyOn(AppUploadReporter.prototype, 'renderProgress').mockImplementation()
+  const appUploadReporterReportSuccessSpy = jest.spyOn(AppUploadReporter.prototype, 'reportSuccess').mockImplementation()
+  const appUploadReporterReportFailureSpy = jest.spyOn(AppUploadReporter.prototype, 'reportFailure').mockImplementation()
 
   beforeEach(() => {
-    appUploadReporter = getMockAppUploadReporter()
     uploadMobileApplicationSpy.mockReset()
     overrideMobileConfigSpy.mockReset()
   })
@@ -312,14 +314,13 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       return {fileName: `fileName-${appId}`, appUploadResponse: APP_UPLOAD_POLL_RESULTS}
     })
 
-    await mobile.uploadMobileApplicationsAndOverrideConfigs(
+    await mobile.uploadMobileApplicationsAndUpdateOverrideConfigs(
       api,
       triggerConfigs,
-      testsAndConfigsOverride,
-      appUploadReporter
+      testsAndConfigsOverride
     )
 
-    expect(appUploadReporter.start).toHaveBeenCalledWith(
+    expect(appUploadReporterStartSpy).toHaveBeenCalledWith(
       [
         {appId: 'appId1', appPath: 'appPath1'},
         {appId: 'appId2', appPath: 'appPath2'},
@@ -327,8 +328,8 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       ],
       true
     )
-    expect(appUploadReporter.renderProgress).toHaveBeenCalledTimes(3)
-    expect(appUploadReporter.reportSuccess).toHaveBeenCalledTimes(1)
+    expect(appUploadReporterRenderProgressSpy).toHaveBeenCalledTimes(3)
+    expect(appUploadReporterReportSuccessSpy).toHaveBeenCalledTimes(1)
     expect(overrideMobileConfigSpy).toHaveBeenCalledTimes(5)
     expect(overrideMobileConfigSpy.mock.calls).toEqual([
       [testsAndConfigsOverride[0].overriddenConfig, 'appId1', 'fileName-appId1', undefined],
@@ -350,11 +351,11 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
     })
 
     await expect(
-      mobile.uploadMobileApplicationsAndOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride, appUploadReporter)
+      mobile.uploadMobileApplicationsAndUpdateOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride)
     ).rejects.toThrow(Error)
 
-    expect(appUploadReporter.reportFailure).toHaveBeenCalledTimes(1)
-    expect(appUploadReporter.reportSuccess).toHaveBeenCalledTimes(0)
+    expect(appUploadReporterReportFailureSpy).toHaveBeenCalledTimes(1)
+    expect(appUploadReporterReportSuccessSpy).toHaveBeenCalledTimes(0)
     expect(overrideMobileConfigSpy).toHaveBeenCalledTimes(0)
   })
 })

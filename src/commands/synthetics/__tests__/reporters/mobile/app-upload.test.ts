@@ -1,7 +1,7 @@
 import {BaseContext} from 'clipanion/lib/advanced'
 
-import {AppUploadDetails} from '../../interfaces'
-import {AppUploadReporter} from '../../reporters/appUpload'
+import {AppUploadDetails} from '../../../interfaces'
+import {AppUploadReporter} from '../../../reporters/mobile/app-upload'
 
 describe('AppUploadReporter', () => {
   let reporter: AppUploadReporter
@@ -53,7 +53,7 @@ describe('AppUploadReporter', () => {
       reporter.reportSuccess()
 
       // Assert that the correct output is written to stdout
-      expect(reporter['context'].stdout.write).toHaveBeenCalledWith(expect.stringContaining('Uploaded applications in'))
+      expect(reporter['context'].stdout.write).toHaveBeenCalledWith(expect.stringContaining('Successfully uploaded in'))
     })
   })
 

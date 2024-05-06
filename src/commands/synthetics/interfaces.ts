@@ -386,6 +386,15 @@ export interface TestWithOverride {
   overriddenConfig: TestPayload
 }
 
+export interface MobileTestWithOverride extends TestWithOverride{
+  test: Test & {
+    type: 'mobile',
+    options: {
+      mobileApplication: MobileApplication
+    }
+  }
+}
+
 export interface BasicAuthCredentials {
   password: string
   username: string

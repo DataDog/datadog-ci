@@ -80,7 +80,6 @@ import {
   getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
-  getMockAppUploadReporter,
   getResults,
   getSummary,
   MOCK_BASE_URL,
@@ -295,6 +294,13 @@ describe('utils', () => {
       'mob-ile-tes': {
         config: {},
         name: 'Fake Mobile Test',
+        options: {
+          mobileApplication: {
+            applicationId: 'appId',
+            referenceId: 'versionId',
+            referenceType: 'version',
+          },
+        },
         public_id: 'mob-ile-tes',
         suite: 'Suite 3',
         type: 'mobile',
@@ -329,8 +335,7 @@ describe('utils', () => {
       const {tests, overriddenTestsToTrigger, initialSummary} = await utils.getTestsToTrigger(
         api,
         triggerConfigs,
-        mockReporter,
-        getMockAppUploadReporter()
+        mockReporter
       )
 
       expect(tests).toStrictEqual([fakeTests['123-456-789']])
@@ -351,7 +356,7 @@ describe('utils', () => {
     })
 
     test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], mockReporter, getMockAppUploadReporter())).rejects.toEqual(
+      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(
         new CiError('NO_TESTS_TO_RUN')
       )
     })
@@ -379,7 +384,6 @@ describe('utils', () => {
           fakeApi,
           tooManyTests,
           mockReporter,
-          getMockAppUploadReporter(),
           true
         )
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
@@ -389,7 +393,7 @@ describe('utils', () => {
       test('fails outside of search', async () => {
         const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
         await expect(
-          utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, getMockAppUploadReporter(), false)
+          utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, false)
         ).rejects.toEqual(
           new Error(`Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${tooManyTests.length})`)
         )
@@ -405,7 +409,6 @@ describe('utils', () => {
           fakeApi,
           tooManyTests,
           mockReporter,
-          getMockAppUploadReporter(),
           true
         )
         expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
@@ -413,13 +416,13 @@ describe('utils', () => {
     })
 
     test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
-      const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndOverrideConfigs').mockImplementation()
+      const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
       const triggerConfigs = [
         {suite: 'Suite 1', config: {}, id: '123-456-789'},
         {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
       ]
 
-      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter, getMockAppUploadReporter())
+      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
       expect(spy).toHaveBeenCalledTimes(1)
     })
   })

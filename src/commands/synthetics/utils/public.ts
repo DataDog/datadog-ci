@@ -42,13 +42,12 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {uploadMobileApplicationsAndOverrideConfigs} from '../mobile'
-import {AppUploadReporter} from '../reporters/appUpload'
+import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasResult} from './internal'
+import {getOverriddenExecutionRule, hasResult, isMobileTestWithOverride} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -500,7 +499,6 @@ export const getTestsToTrigger = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
   reporter: MainReporter,
-  appUploadReporter: AppUploadReporter,
   triggerFromSearch?: boolean,
   failOnMissingTests?: boolean,
   isTunnelEnabled?: boolean
@@ -524,9 +522,7 @@ export const getTestsToTrigger = async (
     )
   )
 
-  if (testsAndConfigsOverride.some((item) => 'test' in item && item.test.type === 'mobile')) {
-    await uploadMobileApplicationsAndOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride, appUploadReporter)
-  }
+  await uploadMobileApplicationsAndUpdateOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride.filter(isMobileTestWithOverride))
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []

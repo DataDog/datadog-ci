@@ -35,10 +35,10 @@ import {
   User,
   MobileAppUploadResult,
   MobileApplicationUploadPartResponse,
-  TestWithOverride,
   TriggerConfig,
+  MobileTestWithOverride,
 } from '../interfaces'
-import {AppUploadReporter} from '../reporters/appUpload'
+import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
 
 const mockUser: User = {
@@ -516,7 +516,7 @@ export const getBatch = (): Batch => ({
   status: 'passed',
 })
 
-export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
+export const getMobileTest = (publicId = 'abc-def-ghi', appId = 'mobileAppUuid'): MobileTestWithOverride['test'] => ({
   config: {
     assertions: [],
     request: {
@@ -540,7 +540,7 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
     min_failure_duration: 0,
     min_location_failed: 0,
     mobileApplication: {
-      applicationId: 'mobileAppUuid',
+      applicationId: appId,
       referenceId: 'versionId',
       referenceType: 'version',
     },
@@ -575,14 +575,14 @@ export const getTestPayload = (override?: Partial<TestPayload>) => ({
   ...override,
 })
 
-export const getTestAndConfigOverride = (appId: string): TestWithOverride => {
-  const testWithOverride = {test: getMobileTest(), overriddenConfig: getTestPayload()}
-  testWithOverride.test.options.mobileApplication!.applicationId = appId
-
-  return testWithOverride
+export const getMobileTestWithOverride = (appId: string): MobileTestWithOverride => {
+  return {
+    test: getMobileTest('abc-def-ghi', appId),
+    overriddenConfig: getTestPayload(),
+  }
 }
 
-export const getTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
+export const getMobileTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
   const config = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
 
   return {id: 'abc', config}

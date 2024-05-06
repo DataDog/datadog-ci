@@ -266,7 +266,6 @@ describe('run-test', () => {
           expect.anything(),
           expect.anything(),
           expect.anything(),
-          expect.anything(),
         ]
       }
 

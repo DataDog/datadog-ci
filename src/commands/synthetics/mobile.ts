@@ -12,12 +12,10 @@ import {
   UploadApplicationCommandConfig,
   MobileApplicationNewVersionParams,
   TriggerConfig,
-  TestNotFound,
-  TestSkipped,
-  TestWithOverride,
   AppUploadDetails,
+  MobileTestWithOverride,
 } from './interfaces'
-import {AppUploadReporter} from './reporters/appUpload'
+import {AppUploadReporter} from './reporters/mobile/app-upload'
 import {wait} from './utils/public'
 
 const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
@@ -140,11 +138,11 @@ export class AppUploadCache {
 
   public setAppCacheKeys(
     triggerConfigs: TriggerConfig[],
-    testsAndConfigsOverride: (TestNotFound | TestSkipped | TestWithOverride)[]
+    testsAndConfigsOverride: MobileTestWithOverride[]
   ): void {
     for (const [index, item] of testsAndConfigsOverride.entries()) {
       if ('test' in item && item.test.type === 'mobile' && !('errorMessage' in item)) {
-        const appId = item.test.options.mobileApplication!.applicationId
+        const appId = item.test.options.mobileApplication.applicationId
         const userConfigOverride = triggerConfigs[index].config
         const appPath = userConfigOverride.mobileApplicationVersionFilePath
         if (appPath && (!this.cache[appPath] || !this.cache[appPath][appId])) {
@@ -168,11 +166,11 @@ export class AppUploadCache {
     return appsToUpload
   }
 
-  public getFileName(appPath: string, appId: string): string | undefined {
+  public getUploadedAppFileName(appPath: string, appId: string): string | undefined {
     return this.cache[appPath][appId]
   }
 
-  public setFileName(appPath: string, appId: string, fileName: string): void {
+  public setUploadedAppFileName(appPath: string, appId: string, fileName: string): void {
     this.cache[appPath][appId] = fileName
   }
 }
@@ -238,22 +236,28 @@ export const uploadMobileApplicationVersion = async (
       config.mobileApplicationId,
       newVersionParams
     ))
-    appUploadReporter.reportSuccess(true)
+    appUploadReporter.reportSuccess()
   } catch (error) {
-    appUploadReporter.reportFailure(appRenderingInfo, true)
+    appUploadReporter.reportFailure(appRenderingInfo)
     throw error
   }
 
   return appUploadResponse
 }
 
-export const uploadMobileApplicationsAndOverrideConfigs = async (
+export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
   api: APIHelper,
   triggerConfigs: TriggerConfig[],
-  testsAndConfigsOverride: (TestNotFound | TestSkipped | TestWithOverride)[],
-  appUploadReporter: AppUploadReporter
+  testsAndConfigsOverride: MobileTestWithOverride[]
 ): Promise<void> => {
+  if (!testsAndConfigsOverride.length) {
+    return
+  }
+  if (!triggerConfigs.filter((config) => config.config.mobileApplicationVersionFilePath).length) {
+    return
+  }
   const appUploadCache = new AppUploadCache()
+  const appUploadReporter = new AppUploadReporter(process)
   appUploadCache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
   const appsToUpload = appUploadCache.getAppsToUpload()
 
@@ -261,10 +265,10 @@ export const uploadMobileApplicationsAndOverrideConfigs = async (
   for (const [index, item] of appsToUpload.entries()) {
     appUploadReporter.renderProgress(appsToUpload.length - index)
     try {
-      const fileName = (await uploadMobileApplication(api, item.appPath, item.appId)).fileName
-      appUploadCache.setFileName(item.appPath, item.appId, fileName)
+      const {fileName} = await uploadMobileApplication(api, item.appPath, item.appId)
+      appUploadCache.setUploadedAppFileName(item.appPath, item.appId, fileName)
     } catch (error) {
-      appUploadReporter.reportFailure(item, true)
+      appUploadReporter.reportFailure(item)
       throw error
     }
   }
@@ -272,13 +276,10 @@ export const uploadMobileApplicationsAndOverrideConfigs = async (
 
   for (const [index, item] of testsAndConfigsOverride.entries()) {
     if ('test' in item) {
-      const appId = item.test.options.mobileApplication!.applicationId
+      const appId = item.test.options.mobileApplication.applicationId
       const userConfigOverride = triggerConfigs[index].config
       const appPath = userConfigOverride.mobileApplicationVersionFilePath
-      let fileName: string | undefined
-      if (appPath) {
-        fileName = appUploadCache.getFileName(appPath, appId)
-      }
+      const fileName = appPath && appUploadCache.getUploadedAppFileName(appPath, appId)
       overrideMobileConfig(item.overriddenConfig, appId, fileName, userConfigOverride.mobileApplicationVersion)
     }
   }

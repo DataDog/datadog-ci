@@ -16,7 +16,6 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
-import {AppUploadReporter} from './reporters/appUpload'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
@@ -44,7 +43,6 @@ type ExecuteOptions = {
 
 export const executeTests = async (
   reporter: MainReporter,
-  appUploadReporter: AppUploadReporter,
   config: RunTestsCommandConfig,
   suites?: Suite[]
 ): Promise<{
@@ -96,7 +94,6 @@ export const executeTests = async (
       api,
       triggerConfigs,
       reporter,
-      appUploadReporter,
       triggerFromSearch,
       config.failOnMissingTests,
       config.tunnel
@@ -272,8 +269,7 @@ export const executeWithDetails = async (
   }
 
   const mainReporter = getReporter(localReporters)
-  const appUploadReporter = new AppUploadReporter(process)
-  const {results, summary} = await executeTests(mainReporter, appUploadReporter, localConfig, suites)
+  const {results, summary} = await executeTests(mainReporter, localConfig, suites)
 
   const orgSettings = await getOrgSettings(mainReporter, localConfig)
 
