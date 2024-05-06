@@ -522,7 +522,11 @@ export const getTestsToTrigger = async (
     )
   )
 
-  await uploadMobileApplicationsAndUpdateOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride.filter(isMobileTestWithOverride))
+  await uploadMobileApplicationsAndUpdateOverrideConfigs(
+    api,
+    triggerConfigs,
+    testsAndConfigsOverride.filter(isMobileTestWithOverride)
+  )
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []

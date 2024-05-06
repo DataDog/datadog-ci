@@ -300,9 +300,15 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
   const uploadMobileApplicationSpy = jest.spyOn(mobile, 'uploadMobileApplication')
   const overrideMobileConfigSpy = jest.spyOn(mobile, 'overrideMobileConfig')
   const appUploadReporterStartSpy = jest.spyOn(AppUploadReporter.prototype, 'start').mockImplementation()
-  const appUploadReporterRenderProgressSpy = jest.spyOn(AppUploadReporter.prototype, 'renderProgress').mockImplementation()
-  const appUploadReporterReportSuccessSpy = jest.spyOn(AppUploadReporter.prototype, 'reportSuccess').mockImplementation()
-  const appUploadReporterReportFailureSpy = jest.spyOn(AppUploadReporter.prototype, 'reportFailure').mockImplementation()
+  const appUploadReporterRenderProgressSpy = jest
+    .spyOn(AppUploadReporter.prototype, 'renderProgress')
+    .mockImplementation()
+  const appUploadReporterReportSuccessSpy = jest
+    .spyOn(AppUploadReporter.prototype, 'reportSuccess')
+    .mockImplementation()
+  const appUploadReporterReportFailureSpy = jest
+    .spyOn(AppUploadReporter.prototype, 'reportFailure')
+    .mockImplementation()
 
   beforeEach(() => {
     uploadMobileApplicationSpy.mockReset()
@@ -314,11 +320,7 @@ describe('uploadMobileApplicationsAndOverrideConfigs', () => {
       return {fileName: `fileName-${appId}`, appUploadResponse: APP_UPLOAD_POLL_RESULTS}
     })
 
-    await mobile.uploadMobileApplicationsAndUpdateOverrideConfigs(
-      api,
-      triggerConfigs,
-      testsAndConfigsOverride
-    )
+    await mobile.uploadMobileApplicationsAndUpdateOverrideConfigs(api, triggerConfigs, testsAndConfigsOverride)
 
     expect(appUploadReporterStartSpy).toHaveBeenCalledWith(
       [

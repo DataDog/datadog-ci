@@ -33,7 +33,9 @@ export const isResultInBatchSkippedBySelectiveRerun = (
   return result.selective_rerun?.decision === 'skip'
 }
 
-export const isMobileTestWithOverride = ( item: TestNotFound | TestSkipped | TestWithOverride ): item is MobileTestWithOverride =>
+export const isMobileTestWithOverride = (
+  item: TestNotFound | TestSkipped | TestWithOverride
+): item is MobileTestWithOverride =>
   'test' in item && item.test.type === 'mobile' && !!item.test.options && !!item.test.options.mobileApplication
 
 export const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {

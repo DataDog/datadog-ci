@@ -386,9 +386,9 @@ export interface TestWithOverride {
   overriddenConfig: TestPayload
 }
 
-export interface MobileTestWithOverride extends TestWithOverride{
+export interface MobileTestWithOverride extends TestWithOverride {
   test: Test & {
-    type: 'mobile',
+    type: 'mobile'
     options: {
       mobileApplication: MobileApplication
     }

@@ -136,10 +136,7 @@ export const uploadMobileApplication = async (
 export class AppUploadCache {
   private cache: {[applicationFilePath: string]: {[applicationId: string]: string | undefined}} = {}
 
-  public setAppCacheKeys(
-    triggerConfigs: TriggerConfig[],
-    testsAndConfigsOverride: MobileTestWithOverride[]
-  ): void {
+  public setAppCacheKeys(triggerConfigs: TriggerConfig[], testsAndConfigsOverride: MobileTestWithOverride[]): void {
     for (const [index, item] of testsAndConfigsOverride.entries()) {
       if ('test' in item && item.test.type === 'mobile' && !('errorMessage' in item)) {
         const appId = item.test.options.mobileApplication.applicationId
