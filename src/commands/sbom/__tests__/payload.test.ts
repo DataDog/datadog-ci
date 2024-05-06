@@ -4,7 +4,7 @@ import {DatadogCiConfig} from '../../../helpers/config'
 import {getSpanTags} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
-import {DependencyLanguage, DependencyLicense} from '../types'
+import {DependencyLanguage, Location} from '../types'
 
 describe('generation of payload', () => {
   beforeEach(() => {
@@ -35,8 +35,7 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(62)
     expect(payload?.dependencies[0].name).toBe('stack-cors')
     expect(payload?.dependencies[0].version).toBe('1.3.0')
-    expect(payload?.dependencies[0].licenses.length).toBe(1)
-    expect(payload?.dependencies[0].licenses[0]).toBe(DependencyLicense.MIT)
+    expect(payload?.dependencies[0].licenses.length).toBe(0)
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
   })
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
@@ -62,7 +61,7 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(147)
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toBe(17)
+    expect(dependenciesWithoutLicense?.length).toBe(147)
   })
 
   test('SBOM for rust with multiple licenses', async () => {
@@ -79,15 +78,7 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(305)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(3)
-
-    // Check licenses is correct
-    console.log(payload?.dependencies[0].licenses)
-    expect(payload?.dependencies[0].licenses.length).toStrictEqual(1)
-
-    expect(payload?.dependencies[1].licenses.length).toStrictEqual(2)
-    expect(payload?.dependencies[1].licenses[0]).toStrictEqual(DependencyLicense.MIT)
-    expect(payload?.dependencies[1].licenses[1]).toStrictEqual(DependencyLicense.APACHE2)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(305)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -129,7 +120,7 @@ describe('generation of payload', () => {
 
     expect(payload?.dependencies.length).toStrictEqual(89)
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toStrictEqual(10)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(89)
 
     // all languages are detected
     const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
@@ -187,5 +178,95 @@ describe('generation of payload', () => {
     expect(dependenciesWithNode?.length).toStrictEqual(433)
     expect(dependencies?.filter((d) => d.group !== undefined).length).toBeGreaterThan(0)
     expect(dependencies && dependencies[10].group).toStrictEqual('@aws-sdk')
+  })
+
+  test('SBOM generated from cyclonedx-npm', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/cyclonedx-npm.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(63)
+
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toStrictEqual(63)
+
+    // all languages are detected
+    const dependenciesWithoutLanguage = payload?.dependencies.filter((d) => !d.language)
+    expect(dependenciesWithoutLanguage?.length).toStrictEqual(0)
+    const dependenciesWithNode = payload?.dependencies.filter((d) => d.language === DependencyLanguage.NPM)
+    expect(dependenciesWithNode?.length).toStrictEqual(63)
+  })
+
+  test('SBOM generated from osv-scanner with files', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/osv-scanner-files.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(22)
+    const dependencies = payload!.dependencies
+
+    // all languages are detected
+    const dependenciesWithoutLocation = payload?.dependencies.filter((d) => !d.locations)
+    expect(dependenciesWithoutLocation?.length).toStrictEqual(0)
+
+    // Check that we can have multiple locations
+    expect(dependencies[0].locations?.length).toStrictEqual(1)
+    expect(dependencies[1].locations?.length).toStrictEqual(1)
+
+    // check location correctness
+    expect(dependencies[0]).not.toBeNull()
+    expect(dependencies[0].locations![0].block!.start.line).toStrictEqual(62)
+    expect(dependencies[0].locations![0].block!.start.col).toStrictEqual(9)
+    expect(dependencies[0].locations![0].block!.end.line).toStrictEqual(67)
+    expect(dependencies[0].locations![0].block!.end.col).toStrictEqual(22)
+    expect(dependencies[0].locations![0].block!.file_name).toStrictEqual('/Users/julien.delange/tmp/tutorials/pom.xml')
+
+    // check that we do not have duplicate locations. The org.assertj:assertj-core in our test file has 2 locations
+    // but 1 unique locations only (lots of duplicates). We make sure we only surface the non-duplicates ones.
+    const dependencyAssertJCore = dependencies[0]
+    expect(dependencyAssertJCore.name).toStrictEqual('org.assertj:assertj-core')
+    expect(dependencyAssertJCore.locations?.length).toStrictEqual(1)
+
+    // check that for a location, the end line is greater or equal to start line
+    // if start and end lines are equal, the end col must be smaller than start col
+    const checkLocation = (location: Location | undefined): void => {
+      if (!location) {
+        return
+      }
+      expect(location.end.line).toBeGreaterThanOrEqual(location.start.line)
+      if (location.start.line === location.end.line) {
+        // eslint-disable-next-line jest/no-conditional-expect
+        expect(location.end.col).toBeGreaterThanOrEqual(location.start.col)
+      }
+    }
+
+    // Check that all locations are valid
+    for (const d of dependencies) {
+      expect(d.locations).not.toBeNull()
+      // just to avoid eslint warnings
+      if (!d.locations) {
+        continue
+      }
+      for (const l of d.locations) {
+        checkLocation(l.block)
+        checkLocation(l.name)
+        checkLocation(l.namespace)
+        checkLocation(l.version)
+      }
+    }
   })
 })

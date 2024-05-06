@@ -16,7 +16,7 @@ export const renderRetriedRequest = (service: string, error: Error, attempt: num
   `[attempt ${attempt}] Retrying to send DORA deployment event for service: ${service}: ${error.message}`
 
 export const renderSuccessfulRequest = (service: string) =>
-  `${ICONS.SUCCESS} Successfuly sent DORA deployment event for service: ${service}`
+  `${ICONS.SUCCESS} Successfully sent DORA deployment event for service: ${service}`
 
 export const renderDryRun = (deployment: DeploymentEvent): string =>
   `[DRYRUN] ${renderRequest(deployment.service)}\n data: ` + JSON.stringify(deployment, undefined, 2)

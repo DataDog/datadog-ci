@@ -136,17 +136,23 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!this.shouldUploadSourcemaps()) {
-      this.context.stdout.write(
-        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
-      )
-
-      return 0
-    }
-
     // Run bundle script
     try {
+      if (!this.shouldBundleRNCode()) {
+        this.context.stdout.write(`Skipping bundling and sourcemaps upload.`)
+
+        return 0
+      }
+
       await this.bundleReactNativeCodeAndImages()
+
+      if (!this.shouldUploadSourcemaps()) {
+        this.context.stdout.write(
+          `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload.`
+        )
+
+        return 0
+      }
 
       /**
        * Because of a bug in React Native (https://github.com/facebook/react-native/issues/34212), the composition
@@ -437,5 +443,37 @@ export class XCodeCommand extends Command {
     return !!podfileLockContent.match('hermes-engine')
   }
 
-  private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
+  private shouldUploadSourcemaps = (): boolean => {
+    // If we did not bundle the RN code, we won't have anything to upload.
+    if (!this.shouldBundleRNCode()) {
+      return false
+    }
+
+    if (this.force) {
+      return true
+    }
+
+    // We don't upload sourcemaps if the configuration is "Debug"
+    return !process.env.CONFIGURATION?.includes('Debug')
+  }
+
+  private shouldBundleRNCode = (): boolean => {
+    if (this.force) {
+      return true
+    }
+
+    // We keep the same logic and order than react-native-xcode.sh script from RN.
+    if (!!process.env.SKIP_BUNDLING) {
+      return false
+    }
+    if (process.env.CONFIGURATION?.includes('Debug')) {
+      // We don't build for simulators in debug mode but we do for real devices.
+      // See https://github.com/DataDog/expo-datadog/issues/31
+      if (process.env.PLATFORM_NAME?.includes('simulator')) {
+        return !!process.env.FORCE_BUNDLING
+      }
+    }
+
+    return true
+  }
 }

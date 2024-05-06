@@ -1,0 +1,196 @@
+name: Publish package on NPM
+
+on:
+  push:
+    tags:
+      - v* # Any version tag
+
+jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.draft-release.outputs.result }}
+    steps:
+      - name: Create a draft release
+        uses: actions/github-script@v7
+        id: draft-release
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: release } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ github.ref_name }}',
+              name: '${{ github.ref_name }}',
+              draft: true,
+              prerelease: false,
+              generate_release_notes: true,
+            })
+
+            const editReleaseLink = release.html_url.replace('datadog-ci/releases/tag/', 'datadog-ci/releases/edit/')
+
+            await core.summary
+              .addHeading('Draft release created')
+              .addRaw('Please go to the link below, copy the release notes and paste them in your release PR.', true)
+              .addBreak()
+              .addBreak()
+              .addLink('Edit ${{ github.ref_name }} (draft)', editReleaseLink)
+              .write()
+
+            return release.id
+
+  build-binary-ubuntu:
+    runs-on: ubuntu-latest
+    needs: create-draft-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci_linux-x64
+      - name: Remove dist folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+      - name: Upload release asset
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_linux-x64',
+              data: await fs.readFile('./datadog-ci_linux-x64'),
+            })
+
+  build-binary-windows:
+    runs-on: windows-latest
+    needs: create-draft-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build:win
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-win-x64 -o datadog-ci_win-x64
+      - name: Remove dist folder to check that binary can stand alone
+        run: |
+          rm dist -r
+          rm src -r
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+      - name: Upload release asset
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_win-x64',
+              data: await fs.readFile('./datadog-ci_win-x64.exe'),
+            })
+
+  build-binary-macos:
+    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
+    # https://github.com/actions/runner-images#available-images
+    runs-on: macos-latest
+    needs: create-draft-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
+      - name: Remove dist folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+      - name: Upload release asset
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_darwin-x64',
+              data: await fs.readFile('./datadog-ci_darwin-x64'),
+            })
+
+  # Requires an approval
+  npm-publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 14.18.3
+      - run: yarn
+      - run: yarn npm publish
+        env:
+          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+
+  bump-ci-integrations:
+    name: Bump datadog-ci in integration
+    runs-on: ubuntu-latest
+    needs: npm-publish
+    strategy:
+      fail-fast: false
+      matrix:
+        integration:
+          - synthetics-ci-github-action
+          - datadog-ci-azure-devops
+          - synthetics-test-automation-circleci-orb
+          - synthetics-test-automation-bitrise-step-run-tests
+          - synthetics-test-automation-bitrise-step-upload-application
+    steps:
+      - name: Create bump datadog-ci PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CROSS_REPOSITORY_GITHUB_TOKEN }}
+          script: |
+            const tagName = '${{ github.event.release.tag_name }}'.replace('v', '')
+
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: '${{ matrix.integration }}',
+              workflow_id: 'bump-datadog-ci.yml',
+              ref: 'main',
+              inputs: {
+                datadog_ci_version: tagName,
+              },
+            })

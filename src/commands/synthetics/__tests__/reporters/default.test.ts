@@ -50,7 +50,7 @@ describe('Default reporter', () => {
       ['initErrors', [['error']], 1],
       ['log', ['log'], 1],
       ['reportStart', [{startTime: 0}], 1],
-      ['resultEnd', [getApiResult('1', getApiTest()), ''], 1],
+      ['resultEnd', [getApiResult('1', getApiTest()), '', ''], 1],
       ['runEnd', [getSummary(), ''], 1],
       ['testTrigger', [getApiTest(), '', ExecutionRule.BLOCKING, {}], 1],
       ['testsWait', [[getApiTest()], '', ''], 2],
@@ -186,7 +186,7 @@ describe('Default reporter', () => {
       expect(simulatedTerminalOutput).toMatchSnapshot()
 
       clearLine.mockClear()
-      ttyReporter.resultEnd(getApiResult('rid', getApiTest('aaa-aaa-aaa')), MOCK_BASE_URL)
+      ttyReporter.resultEnd(getApiResult('rid', getApiTest('aaa-aaa-aaa')), MOCK_BASE_URL, '123')
       if (inCI) {
         // In CI the spinner does not spin, so `resultEnd()` has no spinner text to clear.
         expect(clearLine).not.toHaveBeenCalled()
@@ -197,6 +197,17 @@ describe('Default reporter', () => {
 
       clearLine.mockClear()
       ttyReporter.testsWait([getApiTest('aaa-aaa-aaa')], MOCK_BASE_URL, '123')
+      ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
+      if (inCI) {
+        // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
+        expect(clearLine).not.toHaveBeenCalled()
+      } else {
+        expect(clearLine).toHaveBeenCalled()
+      }
+      expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      clearLine.mockClear()
+      ttyReporter.testsWait([], MOCK_BASE_URL, '123')
       ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
       if (inCI) {
         // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
@@ -319,7 +330,7 @@ describe('Default reporter', () => {
     test.each(cases)('$description', (testCase) => {
       const {results, baseUrl} = testCase.fixtures
       for (const result of results) {
-        reporter.resultEnd(result, baseUrl)
+        reporter.resultEnd(result, baseUrl, '123')
       }
       const output = writeMock.mock.calls.map((c) => c[0]).join('')
       expect(output).toMatchSnapshot()

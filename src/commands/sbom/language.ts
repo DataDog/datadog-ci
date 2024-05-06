@@ -6,7 +6,7 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
   const componentName = component['name']
 
   if (component['bom-ref']) {
-    if (component['bom-ref'].includes('pkg:npm')) {
+    if (component['bom-ref'].includes('pkg:npm') || component['purl'].includes('pkg:npm')) {
       return DependencyLanguage.NPM
     }
     if (component['purl'].includes('pkg:composer')) {
@@ -26,6 +26,9 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     }
     if (component['purl'].includes('pkg:pypi')) {
       return DependencyLanguage.PYTHON
+    }
+    if (component['purl'].includes('pkg:nuget')) {
+      return DependencyLanguage.DOTNET
     }
   }
 

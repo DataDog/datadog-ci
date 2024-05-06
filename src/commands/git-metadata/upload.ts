@@ -88,7 +88,8 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      apiKey: this.config.apiKey,
+      datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
@@ -206,7 +207,7 @@ export class UploadCommand extends Command {
       apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
@@ -221,6 +222,6 @@ export class UploadCommand extends Command {
   }
 
   private isTargetingGov(): boolean {
-    return process.env.DATADOG_SITE === DATADOG_SITE_GOV
+    return datadogSite === DATADOG_SITE_GOV
   }
 }

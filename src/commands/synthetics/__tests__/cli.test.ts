@@ -69,7 +69,7 @@ describe('run-test', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         datadogSite: overrideEnv.DATADOG_SITE,
-        global: {
+        defaultTestOverrides: {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
@@ -88,7 +88,15 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
+        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
+          deviceIds: ['chrome.laptop_large'],
+          locations: ['us-east-1'],
+          pollingTimeout: 2,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
+        defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
           pollingTimeout: 2,
@@ -115,7 +123,8 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'proxy'> = {
+      // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -167,7 +176,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
-        global: {
+        defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
@@ -200,6 +209,7 @@ describe('run-test', () => {
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
+        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           pollingTimeout: 111,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
@@ -223,6 +233,10 @@ describe('run-test', () => {
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
         global: {
+          pollingTimeout: 111,
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
+        defaultTestOverrides: {
           pollingTimeout: 333,
           mobileApplicationVersionFilePath: './path/to/application_cli.apk',
         },
@@ -268,7 +282,12 @@ describe('run-test', () => {
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
 
       // Global
+      // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
       command['config'].global = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
+      }
+      command['config'].defaultTestOverrides = {
         locations: ['aws:us-east-2'],
         mobileApplicationVersionFilePath: './path/to/application_global.apk',
       }
@@ -333,7 +352,9 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        global: {followRedirects: false, pollingTimeout: 333},
+        // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        global: {followRedirects: false},
+        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
     })

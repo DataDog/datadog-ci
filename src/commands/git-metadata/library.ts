@@ -76,7 +76,7 @@ const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload:
     apiKey,
     baseUrl: 'https://sourcemap-intake.' + datadogSite,
     headers: new Map([
-      ['DD-EVP-ORIGIN', 'datadog-ci sci'],
+      ['DD-EVP-ORIGIN', 'datadog-ci_sci'],
       ['DD-EVP-ORIGIN-VERSION', version],
     ]),
     overrideUrl: 'api/v2/srcmap',

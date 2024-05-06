@@ -30,7 +30,7 @@ const createMockContext = () => {
 }
 
 describe('execute', () => {
-  const runCLI = async (level: string, tags: string[], env: Record<string, string>) => {
+  const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {
     const cli = makeCLI()
     const context = createMockContext() as any
     process.env = {
@@ -44,7 +44,7 @@ describe('execute', () => {
       tagsList.push(t)
     })
 
-    const code = await cli.run(['tag', '--level', level, ...tagsList], context)
+    const code = await cli.run(['tag', '--level', level, ...extraArgs, ...tagsList], context)
 
     return {context, code}
   }
@@ -80,5 +80,20 @@ describe('execute', () => {
     })
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain('Cannot use level "job" for Buddy.')
+  })
+
+  test('should not output anything if silent mode is enabled', async () => {
+    const result = await runCLI(
+      'pipeline',
+      ['key:value'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+      },
+      ['--silent']
+    )
+    expect(result.context.stderr.toString()).toBe('')
+    expect(result.context.stdout.toString()).toBe('')
   })
 })

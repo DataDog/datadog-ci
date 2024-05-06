@@ -6,16 +6,16 @@ import {TunnelInfo} from './tunnel'
 export type SupportedReporter = 'junit' | 'default'
 
 export interface MainReporter {
+  log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  log(log: string): void
-  reportStart(timings: {startTime: number}): void
-  resultEnd(result: Result, baseUrl: string): void
-  resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
-  testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
+  testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
+  resultReceived(result: ResultInBatch): void
+  resultEnd(result: Result, baseUrl: string, batchId: string): void
+  reportStart(timings: {startTime: number}): void
+  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
 }
 
 export type Reporter = Partial<MainReporter>
@@ -455,7 +455,9 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
+  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: UserConfigOverride
+  defaultTestOverrides: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string
   pollingTimeout: number

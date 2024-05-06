@@ -20,6 +20,17 @@
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk"
   },
+  "defaultTestOverrides": {
+    "deviceIds": [
+      "chrome.laptop_large"
+    ],
+    "locations": [
+      "us-east-1"
+    ],
+    "pollingTimeout": 2,
+    "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
+    "mobileApplicationVersionFilePath": "./path/to/application.apk"
+  },
   "locations": [],
   "pollingTimeout": 1,
   "proxy": {

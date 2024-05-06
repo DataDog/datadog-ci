@@ -48,16 +48,17 @@ jobs:
       - run: mkdir artifacts
       - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
       - run: cp -r .github/workflows/e2e artifacts/
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.version }}
           path: artifacts/
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: sarif-datadog-ci.sarif
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
+          overwrite: true
 
   e2e-test:
     strategy:
@@ -74,9 +75,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.version }}
+          path: artifacts/
       - run: yarn add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
@@ -134,7 +136,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -154,7 +156,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build:win
       - name: Create standalone binary
@@ -168,13 +170,15 @@ jobs:
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
+    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
+    # https://github.com/actions/runner-images#available-images
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -188,7 +192,7 @@ jobs:
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
-    name: Datadog Static Analyzer
+    name: Static Analyzer - Diff Aware
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -201,8 +205,26 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci'
           cpu_count: 2
-          enable_performance_statistics: true
           sca_enabled: true
+          diff_aware: true
+
+  datadog-static-analyzer-non-diff-aware:
+    runs-on: ubuntu-latest
+    name: Static Analyzer - Non Diff Aware
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run Datadog static analyzer
+        id: datadog-static-analysis
+        uses: DataDog/datadog-static-analyzer-github-action@main
+        with:
+          dd_app_key: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          dd_api_key: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          dd_service: 'datadog-ci'
+          dd_env: 'ci-no-da'
+          cpu_count: 2
+          sca_enabled: true
+          diff_aware: false
 
   check-licenses:
     name: Check licenses
@@ -213,7 +235,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: 14.18.3
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable

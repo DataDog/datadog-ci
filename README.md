@@ -56,7 +56,7 @@ See each command's linked README for more details, or click on [📚](https://do
 - `upload`: Upload [Unity symbols](src/commands/unity-symbols) for Error Tracking.
 
 #### `git-metadata`
-- `upload`: Upload [Git metadata](src/commands/git-metadata) for Source Code Integration. [📚](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
+- `upload`: Upload [Git metadata](src/commands/git-metadata) for the Source Code Integration. [📚](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 
 #### `junit`
 - `upload`: Upload [JUnit test reports](src/commands/junit) for Test Visibility. [📚](https://docs.datadoghq.com/tests/setup/junit_xml/)
@@ -68,7 +68,7 @@ See each command's linked README for more details, or click on [📚](https://do
 
 #### `measure`
 
-- Add [measures](src/commands/measure) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
+- Add [measures](src/commands/measure) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `react-native`
 - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
@@ -76,10 +76,10 @@ See each command's linked README for more details, or click on [📚](https://do
 - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
 
 #### `sarif`
-- `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/static_analysis/)
+- `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/code_analysis/static_analysis/)
 
 #### `sbom`
-- `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. [📚](https://docs.datadoghq.com/static_analysis/)
+- `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. [📚](https://docs.datadoghq.com/code_analysis/software_composition_analysis/)
 
 #### `sourcemaps`
 - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps)
@@ -93,10 +93,10 @@ See each command's linked README for more details, or click on [📚](https://do
 - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [📚](https://docs.datadoghq.com/mobile_app_testing/)
 
 #### `tag`
-- Add [custom tags](src/commands/tag) to a CI Visibility Pipeline trace or Job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
+- Add [custom tags](src/commands/tag) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `trace`
-- Add [custom commands](src/commands/trace) to a CI Visibility Pipeline in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
+- Add [custom commands](src/commands/trace) to a CI Visibility pipeline in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
 
 ### Beta commands
 
@@ -106,7 +106,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 
 #### `dora`
-- `deployment`: Send a new Deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
+- `deployment`: Send a new deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
 
 #### `gate`
 - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
@@ -145,15 +145,15 @@ datadog-ci version
 
 ### Container image
 
-To run `datadog-ci` from a container, you can use the `datadog/ci` image available in [Dockerhub](https://hub.docker.com/r/datadog/ci) as well as the public [Amazon ECR](https://gallery.ecr.aws/datadog/ci) and [Google GC](https://console.cloud.google.com/gcr/images/datadoghq/global/ci) registries.
+To run `datadog-ci` from a container, you can use the `datadog/ci` image available in [Docker Hub](https://hub.docker.com/r/datadog/ci) as well as the public [Amazon ECR](https://gallery.ecr.aws/datadog/ci) and [Google GC](https://console.cloud.google.com/gcr/images/datadoghq/global/ci) registries.
 
-```
+```shell
 docker pull datadog/ci
 ```
 
-This example demonstrates how to run a command using the container and passing in the API and App keys:
+This example demonstrates how to run a command using the container and passing in the API and app keys:
 
-```
+```shell
 export DD_API_KEY=$(cat /secret/dd_api_key)
 export DD_APP_KEY=$(cat /secret/dd_app_key)
 docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1

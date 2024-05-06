@@ -53,7 +53,7 @@ import {Metadata} from '../../../../helpers/interfaces'
 import * as ciUtils from '../../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../../api'
-import {CiError, CiErrorCode, CriticalError} from '../../errors'
+import {CiError, CiErrorCode, CriticalError, BatchTimeoutRunawayError} from '../../errors'
 import {
   BaseResult,
   BaseResultInBatch,
@@ -788,8 +788,19 @@ describe('utils', () => {
   })
 
   describe('waitForResults', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      jest.spyOn(utils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+      jest.restoreAllMocks()
+    })
+
     const batch: Batch = getBatch()
     const apiTest = getApiTest(batch.results[0].test_public_id)
+    const incompleteServerResult = ({eventType: 'created'} as unknown) as ServerResult
     const result: Result = {
       executionRule: ExecutionRule.BLOCKING,
       location: mockLocation.display_name,
@@ -936,7 +947,7 @@ describe('utils', () => {
         status: 'passed',
         result_id: 'rid-2',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
       // Still waiting for 2 tests
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
         3,
@@ -973,7 +984,7 @@ describe('utils', () => {
         ...batch.results[0],
         status: 'passed',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL, 'bid')
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
@@ -1005,16 +1016,153 @@ describe('utils', () => {
         test_public_id: 'other-public-id',
         result_id: 'rid-3',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
       // Do not report when there are no tests to wait anymore
       expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
+    })
+
+    test('should wait for incomplete results', async () => {
+      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+
+      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
+
+      // First ('in_progress')
+      waiter.start()
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'in_progress',
+          results: [
+            // First test
+            {...batch.results[0], status: 'in_progress'},
+            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            // Second test
+            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ] as ResultInBatch[],
+        }),
+        pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2', result: incompleteServerResult}],
+      })
+
+      const resultsPromise = utils.waitForResults(
+        api,
+        trigger,
+        tests,
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: false,
+          maxPollingTimeout: 120000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
+        mockReporter
+      )
+
+      // Wait for the 2 tests (initial)
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+
+      await waiter.promise
+
+      // One result received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
+        ...batch.results[0],
+        status: 'passed',
+        result_id: 'rid-2',
+      })
+      // But the data from `/poll_results` data is not available yet, so we should wait more before reporting
+      expect(mockReporter.resultEnd).not.toHaveBeenCalled()
+      // Still waiting for 2 tests
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
+        2,
+        [tests[0], tests[1]],
+        MOCK_BASE_URL,
+        trigger.batch_id,
+        0
+      )
+
+      // Third ('in_progress')
+      waiter.start()
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'in_progress',
+          results: [
+            // First test
+            {...batch.results[0], status: 'passed'},
+            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            // Second test
+            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ] as ResultInBatch[],
+        }),
+        pollResultsImplementation: async () => [
+          {...pollResult, result: incompleteServerResult}, // not available yet
+          deepExtend({}, pollResult, {resultID: 'rid-2'}), // just became available
+        ],
+      })
+
+      await waiter.promise
+
+      // One result received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
+        ...batch.results[0],
+        status: 'passed',
+      })
+      // Result 2 just became available, so it should be reported
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
+      // Now waiting for 1 test
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+
+      // Last ('passed')
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'passed',
+          results: [
+            // First test
+            {...batch.results[0], status: 'passed'},
+            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            // Second test
+            {...batch.results[0], status: 'passed', test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ] as ResultInBatch[],
+        }),
+        pollResultsImplementation: async () => [
+          {...pollResult, result: incompleteServerResult}, // still not available
+          deepExtend({}, pollResult, {resultID: 'rid-2'}),
+          deepExtend({}, pollResult, {resultID: 'rid-3'}),
+        ],
+      })
+
+      expect(await resultsPromise).toEqual([
+        {...result, resultId: 'rid', result: incompleteServerResult},
+        {...result, resultId: 'rid-2'},
+        {...result, resultId: 'rid-3'},
+      ])
+
+      // One result received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(3, {
+        ...batch.results[0],
+        status: 'passed',
+        test_public_id: 'other-public-id',
+        result_id: 'rid-3',
+      })
+      // Result 3 was available instantly
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
+
+      // Result 1 never became available
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+        3,
+        {...result, resultId: 'rid', result: incompleteServerResult},
+        MOCK_BASE_URL,
+        'bid'
+      )
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        'The full information for result rid was incomplete at the end of the batch.\n\n'
+      )
+
+      // Do not report when there are no tests to wait anymore
+      expect(mockReporter.testsWait).toHaveBeenCalledTimes(3)
     })
 
     test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
       mockApi({
         getBatchImplementation: async () => ({
           results: [batch.results[0], {...batch.results[0], result_id: '3'}],
-          status: 'in_progress',
+          status: 'passed',
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -1039,14 +1187,13 @@ describe('utils', () => {
       expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
     })
 
-    test('results should be timed out if global pollingTimeout is exceeded', async () => {
+    test('results should be timed out if the backend says so', async () => {
       mockApi({
         getBatchImplementation: async () => ({
-          status: 'in_progress',
+          status: 'failed',
           results: [
             {...batch.results[0]},
-            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
-            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
+            {...batch.results[0], status: 'failed', result_id: '3', timed_out: true},
           ] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
@@ -1074,29 +1221,88 @@ describe('utils', () => {
           {
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 0,
+            maxPollingTimeout: 3000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
         )
       ).toEqual([result, expectedTimeoutResult])
 
+      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
+
+      // `resultEnd` should return the same data as `waitForResults`
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL, 'bid')
+
+      // Failed directly.
+      expect(utils.wait).toHaveBeenCalledTimes(0)
+
+      jest.useRealTimers()
+    })
+
+    test('results should be timed out with a different error if the backend did not say so', async () => {
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'in_progress',
+          results: [
+            {...batch.results[0]},
+            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
+            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
+          ] as ResultInBatch[],
+        }),
+        pollResultsImplementation: async () => [
+          {...pollResult, result: {...pollResult.result}},
+          {...pollResult, result: {...pollResult.result}, resultID: '3'},
+        ],
+      })
+
+      const expectedDeadlineResult = {
+        ...result,
+        result: {
+          ...result.result,
+          failure: {
+            code: 'BATCH_TIMEOUT_RUNAWAY',
+            message: "The batch didn't timeout after the expected timeout period.",
+          },
+          passed: false,
+        },
+        resultId: '3',
+        timedOut: true,
+      }
+
+      await expect(
+        utils.waitForResults(
+          api,
+          trigger,
+          [result.test, result.test],
+          {
+            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+            failOnCriticalErrors: false,
+            maxPollingTimeout: 3000,
+            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+          },
+          mockReporter
+        )
+      ).rejects.toThrow(new BatchTimeoutRunawayError())
+
       // Residual results are never 'received': we force-end them.
       expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
 
       // `resultEnd` should return the same data as `waitForResults`
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL)
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL)
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
+
+      // Initial wait + 3 polling cycles.
+      expect(utils.wait).toHaveBeenCalledTimes(4)
     })
 
-    test('results failure should ignore if timed-out', async () => {
-      // The original failure of a result received between timing-out in batch poll
+    test('results failure should be ignored if timed out', async () => {
+      // The original failure of a result received between timing out in batch poll
       // and retrieving it should be ignored in favor of timeout.
       mockApi({
         getBatchImplementation: async () => ({
-          // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
-          results: [{...batch.results[0], timed_out: null}],
-          status: 'in_progress',
+          status: 'failed',
+          results: [{...batch.results[0], status: 'failed', timed_out: true}] as ResultInBatch[],
         }),
         pollResultsImplementation: async () => [
           {
@@ -1172,15 +1378,9 @@ describe('utils', () => {
     })
 
     test('wait between batch polling', async () => {
-      const waitMock = jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((r) => setTimeout(r, 10)))
-
-      let counter = 0
-
-      mockApi({
+      const {getBatchMock} = mockApi({
         getBatchImplementation: async () => {
-          counter += 1
-
-          return counter === 3 ? batch : {...batch, status: 'in_progress'}
+          return getBatchMock.mock.calls.length === 3 ? batch : {...batch, status: 'in_progress'}
         },
       })
 
@@ -1199,8 +1399,8 @@ describe('utils', () => {
         )
       ).toEqual([result])
 
-      expect(counter).toBe(3)
-      expect(waitMock).toHaveBeenCalledTimes(2)
+      expect(getBatchMock).toHaveBeenCalledTimes(3)
+      expect(utils.wait).toHaveBeenCalledTimes(2)
     })
 
     test('correct number of pass and timeout results', async () => {

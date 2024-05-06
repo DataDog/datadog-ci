@@ -5,6 +5,8 @@ Component,Origin,Licence,Copyright
 @aws-sdk/client-sfn,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-providers,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/types,dev,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
+@aws-sdk/core,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
+@aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors

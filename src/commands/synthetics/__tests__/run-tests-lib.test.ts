@@ -573,12 +573,12 @@ describe('run-test', () => {
 
     test('should extend global config and execute all tests from Test Config when no publicIds were defined', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
 
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1']},
+          {...ciConfig, defaultTestOverrides, locations: ['aws:ap-northeast-1']},
           mockReporter
         )
       ).resolves.toEqual([
@@ -604,7 +604,7 @@ describe('run-test', () => {
           fakeApi,
           {
             ...ciConfig,
-            global: configOverride,
+            defaultTestOverrides: configOverride,
             locations: ['aws:ap-northeast-1'],
             publicIds: ['abc-def-ghi', '123-456-789'],
           },
@@ -631,7 +631,12 @@ describe('run-test', () => {
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, locations: ['aws:ap-northeast-1'], testSearchQuery: searchQuery},
+          {
+            ...ciConfig,
+            defaultTestOverrides: configOverride,
+            locations: ['aws:ap-northeast-1'],
+            testSearchQuery: searchQuery,
+          },
           mockReporter
         )
       ).resolves.toEqual([
@@ -650,7 +655,7 @@ describe('run-test', () => {
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, global: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
+          {...ciConfig, defaultTestOverrides: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
           mockReporter
         )
       ).resolves.toEqual([
@@ -661,27 +666,16 @@ describe('run-test', () => {
       ])
     })
 
-    test('display warning if too many tests from search', async () => {
-      const apiHelper = {
-        searchTests: () => ({
-          tests: Array(MAX_TESTS_TO_TRIGGER + 1).fill({public_id: 'stu-vwx-yza'}),
-        }),
-      } as any
-
-      const searchQuery = 'fake search'
-
-      await runTests.getTriggerConfigs(apiHelper, {...ciConfig, testSearchQuery: searchQuery}, mockReporter)
-      expect(mockReporter.error).toHaveBeenCalledWith(
-        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-      )
-    })
-
     test('should use given globs to get tests list', async () => {
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const configOverride = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getTriggerConfigs(fakeApi, {...ciConfig, global: configOverride, files}, mockReporter)
+      await runTests.getTriggerConfigs(
+        fakeApi,
+        {...ciConfig, defaultTestOverrides: configOverride, files},
+        mockReporter
+      )
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
@@ -694,7 +688,7 @@ describe('run-test', () => {
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, global: configOverride, files},
+        {...ciConfig, defaultTestOverrides: configOverride, files},
         mockReporter,
         fakeSuites
       )
@@ -715,7 +709,7 @@ describe('run-test', () => {
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, global: configOverride, files},
+        {...ciConfig, defaultTestOverrides: configOverride, files},
         mockReporter,
         userSuites
       )

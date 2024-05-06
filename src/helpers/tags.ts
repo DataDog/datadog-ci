@@ -105,6 +105,14 @@ export const parseMetrics = (tags: string[]) => {
 }
 
 /**
+ * The repository URL is mandatory in processing for the following commands: sarif and sbom.
+ * Note: for sarif uploads, this will fail silent on the backend.
+ */
+export const mandatoryGitFields: Record<string, boolean> = {
+  [GIT_REPOSITORY_URL]: true,
+}
+
+/**
  * Get the tags to upload results in CI for the following commands: sarif and sbom.
  * @param config - the configuration of the CLI
  * @param additionalTags - additional tags passed, generally from the command line.
@@ -120,7 +128,7 @@ export const getSpanTags = async (config: DatadogCiConfig, additionalTags: strin
   return {
     ...gitSpanTags,
     ...ciSpanTags,
-    ...userGitSpanTags,
+    ...userGitSpanTags, // User-provided git tags have precedence over the ones we get from the git command
     ...cliTags,
     ...envVarTags,
     ...(config.env ? {env: config.env} : {}),

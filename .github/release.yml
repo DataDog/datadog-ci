@@ -1,0 +1,39 @@
+# Used for automated release notes
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+#
+# See .github/workflows/pr-required-labels.yml
+changelog:
+  exclude:
+    labels:
+      - release # Exclude release PRs from changelog
+  categories:
+    - title: Dependencies
+      labels:
+        - dependencies # Generally about vulnerability fixes
+    - title: Documentation
+      labels:
+        - documentation
+    - title: CI Visibility
+      labels:
+        - ci-visibility
+    - title: RUM
+      labels:
+        - rum
+    - title: Serverless
+      labels:
+        - serverless
+    - title: Source Code Integration
+      labels:
+        - source-code-integration
+    - title: Static Analysis
+      labels:
+        - static-analysis
+    - title: Synthetics
+      labels:
+        - synthetics
+    - title: Chores
+      labels:
+        - chores
+    - title: datadog-ci
+      labels:
+        - '*'

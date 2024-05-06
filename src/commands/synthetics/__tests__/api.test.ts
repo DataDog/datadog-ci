@@ -1,9 +1,9 @@
 import {createServer} from 'http'
 import {AddressInfo} from 'net'
 
-import type {AxiosError, AxiosResponse} from 'axios'
+import type {AxiosResponse} from 'axios'
 
-import axios from 'axios'
+import axios, {AxiosError} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
@@ -109,6 +109,7 @@ describe('dd-api', () => {
         makeApiRequest: () => api.getBatch('batch-id'),
         name: 'get batch' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
@@ -116,30 +117,35 @@ describe('dd-api', () => {
           api.getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTunnelPresignedURL(['test-id']),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTest('public-id'),
         name: 'get test' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.pollResults(['result-id']),
         name: 'poll results' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.searchTests('search query'),
         name: 'search tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
@@ -147,20 +153,22 @@ describe('dd-api', () => {
           api.triggerTests({tests: [{public_id: '123-456-789', executionRule: ExecutionRule.NON_BLOCKING}]}),
         name: 'trigger tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getSyntheticsOrgSettings(),
         name: 'get settings' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
     ]
 
     test.each(cases)(
-      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 5xx: $shouldBeRetriedOn5xx)',
-      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn5xx}) => {
-        const serverError = new Error('Server Error') as AxiosError
+      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
+      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
+        const serverError = new AxiosError('Server Error')
 
         const requestMock = jest.fn().mockImplementation(() => {
           throw serverError
@@ -175,6 +183,18 @@ describe('dd-api', () => {
           await expect(requestPromise).rejects.toThrow('Server Error')
 
           expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
+
+        requestMock.mockClear()
+
+        {
+          serverError.response = {status: 429} as AxiosResponse
+
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow('Server Error')
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn429 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
         }
 
         requestMock.mockClear()
