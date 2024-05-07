@@ -34,6 +34,8 @@ src/commands/git-metadata  @DataDog/source-code-integration
 ## Synthetics (label: synthetics)
 src/commands/synthetics  @DataDog/synthetics-ct
 
+## Profiling (label: profiling)
+src/commands/elf-symbols  @DataDog/profiling-native
 
 # Shared utilities
 

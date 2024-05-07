@@ -17,6 +17,9 @@ policy:
             keys:
               - sarif
               - sbom
+          - name: profiling
+            keys:
+              - elf-symbols
           - name: rum
             keys:
               - dsyms
