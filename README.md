@@ -108,6 +108,9 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 #### `dora`
 - `deployment`: Send a new deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
 
+#### `elf-symbols`
+- `upload`: Upload [Elf debug info files](src/commands/elf-symbols) for Profiling (requires binutils). [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
+
 #### `gate`
 - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 

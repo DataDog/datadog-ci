@@ -43,7 +43,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
-import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
@@ -121,6 +121,18 @@ export const getOverriddenConfig = (
   }
 
   return overriddenConfig
+}
+
+export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
+  return Object.keys(testOverrides).reduce((count, configKey) => {
+    // We always send a value for `pollingTimeout` to the backend, even when the user doesn't override it.
+    // In that case, it shouldn't be counted.
+    if (configKey === 'pollingTimeout' && testOverrides[configKey] === DEFAULT_POLLING_TIMEOUT) {
+      return count
+    }
+
+    return count + 1
+  }, 0)
 }
 
 export const setCiTriggerApp = (source: string): void => {

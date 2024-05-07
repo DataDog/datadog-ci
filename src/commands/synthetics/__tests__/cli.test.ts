@@ -4,12 +4,12 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {RunTestsCommandConfig, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
+import {RunTestsCommandConfig, ServerTest, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import * as utils from '../utils/public'
 
-import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -248,10 +248,10 @@ describe('run-test', () => {
         throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
 
-      const apiHelper = {
-        getTest: jest.fn(() => ({...getApiTest('publicId')})),
+      const apiHelper = mockApi({
+        getTest: jest.fn(async () => ({...getApiTest('publicId')})),
         triggerTests,
-      }
+      })
 
       const getExpectedTestsToTriggerArguments = (
         config: Partial<UserConfigOverride>
@@ -272,13 +272,13 @@ describe('run-test', () => {
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
       const write = jest.fn()
-      const command = createCommand(RunTestsCommand, {stderr: {write}} as any)
+      const command = createCommand(RunTestsCommand, {stderr: {write}})
 
       // Test file (empty config for now)
       const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', config: {}}]}}
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
 
       // Global
       // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
@@ -361,17 +361,17 @@ describe('run-test', () => {
 
   describe('exit code respects `failOnCriticalErrors`', () => {
     test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
-      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
       command['config'].failOnCriticalErrors = true
 
-      const apiHelper = {
+      const apiHelper = mockApi({
         getTest: jest.fn(() => {
           throw getAxiosHttpError(404, {errors: ['Test not found']})
         }),
-      }
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
       expect(await command.execute()).toBe(0)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
@@ -383,16 +383,16 @@ describe('run-test', () => {
 
       describe.each(cases)('%s', (_, errorCode) => {
         test('unable to obtain test configurations', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
           command['testSearchQuery'] = 'test:search'
 
-          const apiHelper = {
+          const apiHelper = mockApi({
             searchTests: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -400,55 +400,55 @@ describe('run-test', () => {
         })
 
         test('unavailable test config', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
+          const apiHelper = mockApi({
             getTest: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
         })
 
         test('unable to trigger tests', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
-            getTest: () => getApiTest('123-456-789'),
+          const apiHelper = mockApi({
+            getTest: async () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
         })
 
         test('unable to poll test results', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
-            getBatch: () => ({results: [], status: 'success'}),
-            getTest: () => getApiTest('123-456-789'),
+          const apiHelper = mockApi({
+            getBatch: async () => ({results: [], status: 'passed'}),
+            getTest: async () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-            triggerTests: () => mockTestTriggerResponse,
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+            triggerTests: async () => mockTestTriggerResponse,
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
@@ -467,29 +467,29 @@ describe('run-test', () => {
 
     test.each(cases)(
       '%s with failOnMissingTests=%s exits with %s',
-      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
-        const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: string[]) => {
+        const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
         command['config'].failOnMissingTests = failOnMissingTests
 
-        const apiHelper = {
-          getTest: jest.fn((testId: string) => {
+        const apiHelper = mockApi({
+          getTest: jest.fn(async (testId: string) => {
             if (testId === 'mis-sin-ggg') {
               throw getAxiosHttpError(404, {errors: ['Test not found']})
             }
 
-            return {}
+            return {} as ServerTest
           }),
-        }
-        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        })
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-        jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+        jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+        jest.spyOn(utils, 'getSuites').mockResolvedValue([
           {
             content: {
               tests: tests.map((testId) => ({config: {}, id: testId})),
             },
             name: 'Suite 1',
           },
-        ]) as any)
+        ])
 
         expect(await command.execute()).toBe(exitCode)
         expect(apiHelper.getTest).toHaveBeenCalledTimes(tests.length)
@@ -501,40 +501,40 @@ describe('run-test', () => {
     test('enough context is provided', async () => {
       const writeMock = jest.fn()
 
-      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}} as any)
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}})
       command['config'].failOnCriticalErrors = true
 
-      const apiHelper = {
-        getTest: jest.fn((testId: string) => {
+      const apiHelper = mockApi({
+        getTest: jest.fn(async (testId: string) => {
           if (testId === 'for-bid-den') {
             const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
             serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }
 
-          return {name: testId}
+          return {name: testId} as ServerTest
         }),
-      }
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([
         {
           content: {
             tests: [
               {config: {}, id: 'aaa-aaa-aaa'},
-              {config: {}, id: 'bbb-bbb-bbb'},
+              {config: {headers: {}}, id: 'bbb-bbb-bbb'}, // 1 config override
               {config: {}, id: 'for-bid-den'},
             ],
           },
           name: 'Suite 1',
         },
-      ]) as any)
+      ])
 
       expect(await command.execute()).toBe(1)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
 
       expect(writeMock).toHaveBeenCalledTimes(4)
-      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
       expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
       expect(writeMock).toHaveBeenCalledWith(
         '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
