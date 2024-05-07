@@ -581,7 +581,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
     triggerTests: jest.fn(),
     uploadMobileApplicationPart: jest.fn(),
     completeMultipartMobileApplicationUpload: jest.fn(),
-    createMobileVersion: jest.fn(),
+    pollMobileApplicationUploadResponse: jest.fn(),
     ...override,
   }
 }
