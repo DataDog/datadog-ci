@@ -166,6 +166,7 @@ export class RunTestsCommand extends Command {
 
     let results: Result[]
     let summary: Summary
+
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
