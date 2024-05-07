@@ -522,7 +522,7 @@ describe('run-test', () => {
           content: {
             tests: [
               {config: {}, id: 'aaa-aaa-aaa'},
-              {config: {}, id: 'bbb-bbb-bbb'},
+              {config: {headers: {}}, id: 'bbb-bbb-bbb'}, // 1 config override
               {config: {}, id: 'for-bid-den'},
             ],
           },
@@ -534,7 +534,7 @@ describe('run-test', () => {
       expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
 
       expect(writeMock).toHaveBeenCalledTimes(4)
-      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
       expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
       expect(writeMock).toHaveBeenCalledWith(
         '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
