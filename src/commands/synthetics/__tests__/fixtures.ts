@@ -9,7 +9,7 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {APIHelper, apiConstructor} from '../api'
 import {
   ApiServerResult,
   BaseResult,
@@ -563,6 +563,23 @@ export const getApiHelper = () => {
   }
 
   return apiConstructor(apiConfiguration)
+}
+
+export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
+  return {
+    getBatch: jest.fn(),
+    getMobileApplicationPresignedURLs: jest.fn(),
+    getTest: jest.fn(),
+    getSyntheticsOrgSettings: jest.fn(),
+    getTunnelPresignedURL: jest.fn(),
+    pollResults: jest.fn(),
+    searchTests: jest.fn(),
+    triggerTests: jest.fn(),
+    uploadMobileApplicationPart: jest.fn(),
+    completeMultipartMobileApplicationUpload: jest.fn(),
+    createMobileVersion: jest.fn(),
+    ...override,
+  }
 }
 
 export const getTestPayload = (override?: Partial<TestPayload>) => ({

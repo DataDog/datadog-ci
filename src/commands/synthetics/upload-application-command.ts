@@ -60,7 +60,7 @@ export class UploadApplicationCommand extends Command {
       'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
   })
 
-  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
