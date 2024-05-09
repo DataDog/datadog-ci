@@ -30,8 +30,8 @@ export class TraceCommand extends Command {
         'datadog-ci trace --name "Say Hello" -- echo "Hello World"',
       ],
       [
-        'Trace a command with name "Say Hello" and a extra tags and report to Datadog',
-        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 -- echo "Hello World"',
+        'Trace a command with name "Say Hello", extra tags and measures and report to Datadog',
+        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 --measured key1:3.5 -- echo "Hello World"',
       ],
       [
         'Trace a command and report to the datadoghq.eu site',
@@ -41,6 +41,7 @@ export class TraceCommand extends Command {
   })
 
   private command = Option.Rest({required: 1})
+  private measures = Option.Array('--measures')
   private name = Option.String('--name')
   private noFail = Option.Boolean('--no-fail')
   private tags = Option.Array('--tags')
@@ -89,6 +90,8 @@ export class TraceCommand extends Command {
       const commandStr = this.command.join(' ')
       const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
       const cliTags = this.tags ? parseTags(this.tags) : {}
+      const cliMeasures = (this.measures ? parseTags(this.measures) : {})
+      const measures = Object.fromEntries(Object.entries(cliMeasures).map(([key, value]) => [key, parseFloat(value)]))
       await this.reportCustomSpan(
         {
           command: commandStr,
@@ -107,6 +110,7 @@ export class TraceCommand extends Command {
             ...cliTags,
             ...envVarTags,
           },
+          measures: measures
         },
         provider
       )
