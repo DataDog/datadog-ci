@@ -220,7 +220,8 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
       request
     )
 
-    const quotedEtag = resp.headers.etag as string
+    // Azure part-upload does not return ETag -- set to empty string
+    const quotedEtag = (resp.headers.etag || '') as string
 
     return {
       ETag: quotedEtag.replace(/"/g, ''),
