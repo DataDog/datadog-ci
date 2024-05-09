@@ -31,7 +31,7 @@ export class TraceCommand extends Command {
       ],
       [
         'Trace a command with name "Say Hello", extra tags and measures and report to Datadog',
-        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 --measured key1:3.5 -- echo "Hello World"',
+        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 --measures key3:3.5 --measures key4:8 -- echo "Hello World"',
       ],
       [
         'Trace a command and report to the datadoghq.eu site',
@@ -90,7 +90,7 @@ export class TraceCommand extends Command {
       const commandStr = this.command.join(' ')
       const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
       const cliTags = this.tags ? parseTags(this.tags) : {}
-      const cliMeasures = (this.measures ? parseTags(this.measures) : {})
+      const cliMeasures = this.measures ? parseTags(this.measures) : {}
       const measures = Object.fromEntries(Object.entries(cliMeasures).map(([key, value]) => [key, parseFloat(value)]))
       await this.reportCustomSpan(
         {
@@ -104,13 +104,13 @@ export class TraceCommand extends Command {
           error_message: stderr,
           exit_code: exitCode,
           is_error: exitCode !== 0,
+          measures,
           name: this.name ?? commandStr,
           start_time: startTime,
           tags: {
             ...cliTags,
             ...envVarTags,
           },
-          measures: measures
         },
         provider
       )
