@@ -1,6 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {replaceGlobalWithDefaultTestOverrides} from './compatability'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -59,18 +60,8 @@ export const executeTests = async (
     }
   }
 
-  // If both global and defaultTestOverrides exist use defaultTestOverrides
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  if (Object.keys(config.global ?? {}).length !== 0) {
-    reporter.error(
-      "The 'global' property is deprecated. Please use 'defaultTestOverrides' instead.\nIf both 'global' and 'defaultTestOverrides' properties exist, 'defaultTestOverrides' is used!\n"
-    )
-
-    // if config.defaultTestOverrides does not exist because executeTests was called directly, use global instead
-    if (Object.keys(config.defaultTestOverrides ?? {}).length === 0) {
-      config.defaultTestOverrides = {...config.global}
-    }
-  }
+  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
