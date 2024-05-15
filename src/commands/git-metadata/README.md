@@ -33,7 +33,7 @@ datadog-ci git-metadata upload
 
 #### Limitations
 
-This command will only report commits in the current HEAD's history, with a commit date within the last 30 days and up to 1,000 commits.
+The `git-metadata` command only reports commits in the current HEAD's history with a commit date within the last 30 days. The command outputs a maximum of 1,000 commits.
 
 The repository URL is inferred from the remote named `origin` (or the first remote if none are named `origin`). The value can be overridden by using the `--repository-url` flag.
 For example: The remote `git@github.com:Datadog/example.git` will create links that point to `https://github.com/Datadog/example`.
