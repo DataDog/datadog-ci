@@ -31,6 +31,60 @@ describe('run-test', () => {
   })
 
   describe('executeTests', () => {
+    test('legacy usage', async () => {
+      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+
+      await expect(
+        runTests.executeTests(mockReporter, {
+          apiKey: '',
+          appKey: '',
+          configPath: 'datadog-ci.json',
+          datadogSite: 'datadoghq.com',
+          failOnCriticalErrors: false,
+          failOnMissingTests: false,
+          failOnTimeout: true,
+          files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          global: {},
+          locations: [],
+          pollingTimeout: 2 * 60 * 1000,
+          proxy: {protocol: 'http'},
+          publicIds: [],
+          selectiveRerun: false,
+          subdomain: 'app',
+          tunnel: false,
+          variableStrings: [],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+    })
+
+    test('current usage', async () => {
+      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+
+      await expect(
+        runTests.executeTests(mockReporter, {
+          apiKey: '',
+          appKey: '',
+          configPath: 'datadog-ci.json',
+          datadogSite: 'datadoghq.com',
+          failOnCriticalErrors: false,
+          failOnMissingTests: false,
+          failOnTimeout: true,
+          files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          defaultTestOverrides: {},
+          locations: [],
+          pollingTimeout: 2 * 60 * 1000,
+          proxy: {protocol: 'http'},
+          publicIds: [],
+          selectiveRerun: false,
+          subdomain: 'app',
+          tunnel: false,
+          variableStrings: [],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+    })
+
     test('should apply config override for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
@@ -574,14 +628,14 @@ describe('run-test', () => {
 
     test('should override and execute only publicIds that were defined in the global config', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
 
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
           {
             ...ciConfig,
-            defaultTestOverrides: configOverride,
+            defaultTestOverrides,
             locations: ['aws:ap-northeast-1'],
             publicIds: ['abc-def-ghi', '123-456-789'],
           },
@@ -602,7 +656,7 @@ describe('run-test', () => {
 
     test('should search tests and extend global config', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
       const searchQuery = 'fake search'
 
       await expect(
@@ -610,7 +664,7 @@ describe('run-test', () => {
           fakeApi,
           {
             ...ciConfig,
-            defaultTestOverrides: configOverride,
+            defaultTestOverrides,
             locations: ['aws:ap-northeast-1'],
             testSearchQuery: searchQuery,
           },
@@ -626,13 +680,13 @@ describe('run-test', () => {
     })
 
     test('should not use testSearchQuery if global config has defined public_ids', async () => {
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
       const searchQuery = 'fake search'
 
       await expect(
         runTests.getTriggerConfigs(
           fakeApi,
-          {...ciConfig, defaultTestOverrides: configOverride, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
+          {...ciConfig, defaultTestOverrides, publicIds: ['abc-def-ghi'], testSearchQuery: searchQuery},
           mockReporter
         )
       ).resolves.toEqual([
@@ -645,14 +699,10 @@ describe('run-test', () => {
 
     test('should use given globs to get tests list', async () => {
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
       const files = ['new glob', 'another one']
 
-      await runTests.getTriggerConfigs(
-        fakeApi,
-        {...ciConfig, defaultTestOverrides: configOverride, files},
-        mockReporter
-      )
+      await runTests.getTriggerConfigs(fakeApi, {...ciConfig, defaultTestOverrides, files}, mockReporter)
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
@@ -660,12 +710,12 @@ describe('run-test', () => {
 
     test('should return tests from provided suites with overrides', async () => {
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
       const files: string[] = []
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, defaultTestOverrides: configOverride, files},
+        {...ciConfig, defaultTestOverrides, files},
         mockReporter,
         fakeSuites
       )
@@ -681,12 +731,12 @@ describe('run-test', () => {
       const globSuites = [fakeSuites[1]]
 
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => globSuites) as any)
-      const configOverride = {startUrl}
+      const defaultTestOverrides = {startUrl}
       const files = ['glob']
 
       const tests = await runTests.getTriggerConfigs(
         fakeApi,
-        {...ciConfig, defaultTestOverrides: configOverride, files},
+        {...ciConfig, defaultTestOverrides, files},
         mockReporter,
         userSuites
       )
