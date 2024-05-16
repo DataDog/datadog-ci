@@ -1,7 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {replaceGlobalWithDefaultTestOverrides} from './compatability'
+import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
