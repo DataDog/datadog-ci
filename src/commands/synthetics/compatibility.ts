@@ -18,7 +18,7 @@ export const replaceGlobalWithDefaultTestOverrides = (
   if (isGlobalUsed && !isDefaultTestOverridesUsed) {
     return {
       ...config,
-      defaultTestOverrides: config.global,
+      defaultTestOverrides: {...config.global},
     }
   }
 
