@@ -91,7 +91,15 @@ export class TraceCommand extends Command {
       const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
       const cliTags = this.tags ? parseTags(this.tags) : {}
       const cliMeasures = this.measures ? parseTags(this.measures) : {}
-      const measures = Object.fromEntries(Object.entries(cliMeasures).map(([key, value]) => [key, parseFloat(value)]))
+      const measures = Object.entries(cliMeasures).reduce((acc, [key, value]) => {
+        const parsedValue = parseFloat(value)
+        if (!isNaN(parsedValue)) {
+          return {...acc, [key]: parsedValue}
+        }
+
+        return acc
+      }, {})
+
       await this.reportCustomSpan(
         {
           command: commandStr,
