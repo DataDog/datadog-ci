@@ -6,6 +6,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -35,7 +36,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   defaultTestOverrides: {},
   locations: [],
@@ -206,11 +207,8 @@ export class RunTestsCommand extends Command {
       }
     }
 
-    // Use global only if defaultTestOverrides does not exist
-    // SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    if (Object.keys(this.config.global).length !== 0 && Object.keys(this.config.defaultTestOverrides).length === 0) {
-      this.config.defaultTestOverrides = {...this.config.global}
-    }
+    // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+    this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -262,7 +260,7 @@ export class RunTestsCommand extends Command {
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
         pollingTimeout:
-          this.pollingTimeout ?? this.config.defaultTestOverrides.pollingTimeout ?? this.config.pollingTimeout,
+          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
       })
     )
 
