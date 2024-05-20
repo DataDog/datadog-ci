@@ -292,14 +292,11 @@ describe('dd-api', () => {
       2: 'https://myaccount.blob.core.windows.net/mycontainer/myblob2',
     }
 
-    const result = await uploadMobileApplicationPart(
-      MOBILE_PRESIGNED_UPLOAD_PARTS,
-      {
-        ...MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params,
-        // override fixture with our cutsom azure urls
-        urls,
-      }
-    )
+    const result = await uploadMobileApplicationPart(MOBILE_PRESIGNED_UPLOAD_PARTS, {
+      ...MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params,
+      // override fixture with azure urls
+      urls,
+    })
 
     expect(result).toEqual([
       {ETag: '', PartNumber: 1},

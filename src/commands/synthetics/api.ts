@@ -221,9 +221,7 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
     )
 
     // Azure part-upload does not return ETag -- set to empty string
-    const quotedEtag = isAzureUrl(presignedUrl)
-        ? ''
-        : resp.headers.etag as string
+    const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
 
     return {
       ETag: quotedEtag.replace(/"/g, ''),
@@ -373,7 +371,6 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })
-
 }
 
 const isAzureUrl = (presignedUrl: string) => {
