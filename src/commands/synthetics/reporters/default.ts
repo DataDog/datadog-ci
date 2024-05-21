@@ -468,17 +468,16 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    // TODO SYNTH-12972: Rename "config override" to "test override" in the code AND the reported message
-    const getConfigOverridesPart = () => {
+    const getTestOverridesPart = () => {
       const nbConfigsOverridden = getTestOverridesCount(testOverrides)
       if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 
-      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} test ${pluralize('override', nbConfigsOverridden)})`)
     }
 
-    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
+    this.write(`${idDisplay} ${getMessage()}${getTestOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {
