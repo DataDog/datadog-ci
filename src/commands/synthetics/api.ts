@@ -220,7 +220,7 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
       request
     )
 
-    // Azure part-upload does not return ETag -- set to empty string
+    // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
     const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
 
     return {
