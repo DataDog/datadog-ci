@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "2.34.0",
+  "version": "2.35.0",
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
