@@ -254,12 +254,12 @@ describe('run-test', () => {
       })
 
       const getExpectedTestsToTriggerArguments = (
-        config: Partial<UserConfigOverride>
+        testOverrides: Partial<UserConfigOverride>
       ): Parameters<typeof utils['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
           (apiHelper as unknown) as api.APIHelper,
-          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', config}],
+          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', testOverrides}],
 
           // Ignore the rest of the parameters.
           expect.anything(),
@@ -275,7 +275,7 @@ describe('run-test', () => {
       const command = createCommand(RunTestsCommand, {stderr: {write}})
 
       // Test file (empty config for now)
-      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', config: {}}]}}
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', testOverrides: {}}]}}
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
       jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
       jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
@@ -329,7 +329,7 @@ describe('run-test', () => {
       )
 
       // ENV < test file
-      testFile.content.tests[0].config = {
+      testFile.content.tests[0].testOverrides = {
         locations: ['aws:us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
       }
@@ -521,9 +521,9 @@ describe('run-test', () => {
         {
           content: {
             tests: [
-              {config: {}, id: 'aaa-aaa-aaa'},
-              {config: {headers: {}}, id: 'bbb-bbb-bbb'}, // 1 config override
-              {config: {}, id: 'for-bid-den'},
+              {testOverrides: {}, id: 'aaa-aaa-aaa'},
+              {testOverrides: {headers: {}}, id: 'bbb-bbb-bbb'}, // 1 test override
+              {testOverrides: {}, id: 'for-bid-den'},
             ],
           },
           name: 'Suite 1',
@@ -535,7 +535,7 @@ describe('run-test', () => {
 
       expect(writeMock).toHaveBeenCalledTimes(4)
       expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
-      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 test override)\n')
       expect(writeMock).toHaveBeenCalledWith(
         '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
       )
