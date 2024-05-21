@@ -105,8 +105,8 @@ describe('Default reporter', () => {
       ['Skipped test from Datadog, with 2 config overrides', ExecutionRule.SKIPPED, {startUrl: 'foo', body: 'hello'}],
     ]
 
-    test.each(cases)('%s', (title, executionRule, config) => {
-      reporter.testTrigger(testObject, testId, executionRule, config)
+    test.each(cases)('%s', (title, executionRule, testOverrides) => {
+      reporter.testTrigger(testObject, testId, executionRule, testOverrides)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

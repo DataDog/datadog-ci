@@ -1,4 +1,4 @@
-import {MainReporter, RunTestsCommandConfig} from './interfaces'
+import {MainReporter, RunTestsCommandConfig, UserConfigOverride} from './interfaces'
 
 export const replaceGlobalWithDefaultTestOverrides = (
   config: RunTestsCommandConfig,
@@ -23,4 +23,19 @@ export const replaceGlobalWithDefaultTestOverrides = (
   }
 
   return config
+}
+
+export const replaceConfigWithTestOverrides = (
+  config?: UserConfigOverride,
+  testOverrides?: UserConfigOverride
+): UserConfigOverride => {
+  const isConfigUsed = Object.keys(config ?? {}).length !== 0
+  const isTestOverridesUsed = Object.keys(testOverrides ?? {}).length !== 0
+
+  // If both config and testOverrides exist use testOverrides
+  if (isConfigUsed && !isTestOverridesUsed) {
+    return {...config}
+  }
+
+  return testOverrides ?? {}
 }

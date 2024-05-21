@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
+import {replaceConfigWithTestOverrides} from './compatibility'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
 import {getSuites, normalizePublicId} from './utils/public'
 
@@ -19,11 +20,20 @@ export const getTestConfigs = async (
     .map((suite) =>
       suite.content.tests.map((test) => ({
         config: test.config,
+        // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+        testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
         id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
       }))
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
+
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  if (testConfigs.some((testConfig) => Object.keys(testConfig.config ?? {}).length > 0)) {
+    reporter?.error(
+      "The 'config' property is deprecated. Please use 'testOverrides' instead.\nIf both 'config' and 'testOverrides' properties exist, 'testOverrides' is used!\n"
+    )
+  }
 
   return testConfigs
 }
@@ -42,7 +52,7 @@ export const getTestsFromSearchQuery = async (
   const testSearchResults = await api.searchTests(testSearchQuery)
 
   return testSearchResults.tests.map((test) => ({
-    config: defaultTestOverrides ?? {},
+    testOverrides: defaultTestOverrides ?? {},
     id: test.public_id,
     suite: `Query: ${testSearchQuery}`,
   }))

@@ -9,7 +9,7 @@ export interface MainReporter {
   log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void
   testWait(test: Test): void
   testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   resultReceived(result: ResultInBatch): void
@@ -378,7 +378,9 @@ export interface BasicAuthCredentials {
   username: string
 }
 export interface TriggerConfig {
-  config: UserConfigOverride
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  config?: UserConfigOverride
+  testOverrides?: UserConfigOverride
   id: string
   suite?: string
 }
