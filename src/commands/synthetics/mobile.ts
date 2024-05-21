@@ -140,7 +140,7 @@ export class AppUploadCache {
     for (const [index, item] of testsAndConfigsOverride.entries()) {
       if ('test' in item && item.test.type === 'mobile' && !('errorMessage' in item)) {
         const appId = item.test.options.mobileApplication.applicationId
-        const userConfigOverride = triggerConfigs[index].config
+        const userConfigOverride = triggerConfigs[index].testOverrides ?? {}
         const appPath = userConfigOverride.mobileApplicationVersionFilePath
         if (appPath && (!this.cache[appPath] || !this.cache[appPath][appId])) {
           this.cache[appPath] = {
@@ -250,7 +250,7 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
   if (!testsAndConfigsOverride.length) {
     return
   }
-  if (!triggerConfigs.filter((config) => config.config.mobileApplicationVersionFilePath).length) {
+  if (!triggerConfigs.filter((config) => config.testOverrides?.mobileApplicationVersionFilePath).length) {
     return
   }
   const appUploadCache = new AppUploadCache()
@@ -274,7 +274,7 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
   for (const [index, item] of testsAndConfigsOverride.entries()) {
     if ('test' in item) {
       const appId = item.test.options.mobileApplication.applicationId
-      const userConfigOverride = triggerConfigs[index].config
+      const userConfigOverride = triggerConfigs[index].testOverrides ?? {}
       const appPath = userConfigOverride.mobileApplicationVersionFilePath
       const fileName = appPath && appUploadCache.getUploadedAppFileName(appPath, appId)
       overrideMobileConfig(item.overriddenConfig, appId, fileName, userConfigOverride.mobileApplicationVersion)
