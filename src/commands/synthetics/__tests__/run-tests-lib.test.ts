@@ -293,7 +293,11 @@ describe('run-test', () => {
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
-          runTests.executeTests(mockReporter, {...ciConfig, testSearchQuery: 'a-search-query', tunnel: true})
+          runTests.executeTests(mockReporter, {
+            ...ciConfig,
+            testSearchQuery: 'a-search-query',
+            tunnel: true,
+          })
         ).rejects.toThrow(new CriticalError(error, 'Server Error'))
       })
 
@@ -305,7 +309,11 @@ describe('run-test', () => {
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
         await expect(
-          runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa'], tunnel: true})
+          runTests.executeTests(mockReporter, {
+            ...ciConfig,
+            publicIds: ['aaa-aaa-aaa'],
+            tunnel: true,
+          })
         ).rejects.toThrow(
           new CriticalError(
             error,
@@ -332,7 +340,11 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+          tunnel: true,
+        })
       ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
@@ -420,7 +432,11 @@ describe('run-test', () => {
 
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       await expect(
-        runTests.executeTests(mockReporter, {...ciConfig, publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'], tunnel: true})
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+          tunnel: true,
+        })
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',

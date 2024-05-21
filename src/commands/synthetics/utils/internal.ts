@@ -1,10 +1,14 @@
 import {
   BaseResult,
   ExecutionRule,
+  MobileTestWithOverride,
   Result,
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   Test,
+  TestNotFound,
+  TestSkipped,
+  TestWithOverride,
   UserConfigOverride,
 } from '../interfaces'
 
@@ -28,6 +32,11 @@ export const isResultInBatchSkippedBySelectiveRerun = (
 ): result is ResultInBatchSkippedBySelectiveRerun => {
   return result.selective_rerun?.decision === 'skip'
 }
+
+export const isMobileTestWithOverride = (
+  item: TestNotFound | TestSkipped | TestWithOverride
+): item is MobileTestWithOverride =>
+  'test' in item && item.test.type === 'mobile' && !!item.test.options && !!item.test.options.mobileApplication
 
 export const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
   if (isResultInBatchSkippedBySelectiveRerun(result)) {

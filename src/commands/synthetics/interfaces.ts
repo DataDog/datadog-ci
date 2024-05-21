@@ -373,6 +373,28 @@ export interface TestPayload extends ServerConfigOverride {
   public_id: string
 }
 
+export interface TestNotFound {
+  errorMessage: string
+}
+
+export interface TestSkipped {
+  overriddenConfig: TestPayload
+}
+
+export interface TestWithOverride {
+  test: Test
+  overriddenConfig: TestPayload
+}
+
+export interface MobileTestWithOverride extends TestWithOverride {
+  test: Test & {
+    type: 'mobile'
+    options: {
+      mobileApplication: MobileApplication
+    }
+  }
+}
+
 export interface BasicAuthCredentials {
   password: string
   username: string
@@ -490,6 +512,40 @@ export interface MultipartPresignedUrlsResponse {
       [key: string]: string
     }
   }
+}
+
+export type MobileApplicationNewVersionParams = {
+  originalFileName: string
+  versionName: string
+  isLatest: boolean
+}
+
+export type AppUploadDetails = {appId: string; appPath: string; versionName?: string}
+
+type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
+
+type MobileInvalidAppResult = {
+  invalid_reason: string
+  invalid_message: string
+}
+
+type MobileValidAppResult = {
+  extracted_metadata: Record<string, unknown>
+  app_version_uuid: string
+}
+
+type MobileUserErrorResult = {
+  user_error_reason: string
+  user_error_message: string
+}
+
+export type MobileAppUploadResult = {
+  status: MobileAppValidationStatus
+  is_valid?: boolean
+  org_uuid?: string
+  invalid_app_result?: MobileInvalidAppResult
+  valid_app_result?: MobileValidAppResult
+  user_error_result?: MobileUserErrorResult
 }
 
 // Not the entire response, but only what's needed.
