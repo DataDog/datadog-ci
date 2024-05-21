@@ -296,7 +296,12 @@ export class JUnitReporter implements Reporter {
   }
 
   // Handle skipped tests (`resultEnd()` is not called for them since they don't have a result).
-  public testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void {
+  public testTrigger(
+    test: Test,
+    testId: string,
+    executionRule: ExecutionRule,
+    testOverrides: UserConfigOverride
+  ): void {
     if (executionRule !== ExecutionRule.SKIPPED) {
       return
     }
