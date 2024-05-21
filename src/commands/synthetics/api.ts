@@ -221,7 +221,8 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
       request
     )
 
-    const quotedEtag = resp.headers.etag as string
+    // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
+    const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
 
     return {
       ETag: quotedEtag.replace(/"/g, ''),
@@ -375,4 +376,9 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })
+}
+
+const isAzureUrl = (presignedUrl: string) => {
+  // https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob-from-url?tabs=microsoft-entra-id#request
+  return presignedUrl.includes('.blob.core.windows.net')
 }
