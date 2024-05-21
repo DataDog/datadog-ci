@@ -296,6 +296,13 @@ describe('utils', () => {
       'mob-ile-tes': {
         config: {},
         name: 'Fake Mobile Test',
+        options: {
+          mobileApplication: {
+            applicationId: 'appId',
+            referenceId: 'versionId',
+            referenceType: 'version',
+          },
+        },
         public_id: 'mob-ile-tes',
         suite: 'Suite 3',
         type: 'mobile',
@@ -397,7 +404,7 @@ describe('utils', () => {
     })
 
     test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
-      const spy = jest.spyOn(mobile, 'uploadApplicationAndOverrideConfig').mockImplementation()
+      const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
       const triggerConfigs = [
         {suite: 'Suite 1', config: {}, id: '123-456-789'},
         {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},

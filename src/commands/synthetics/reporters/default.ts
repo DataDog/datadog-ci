@@ -34,6 +34,8 @@ import {
   ResultOutcome,
 } from '../utils/public'
 
+import {ICONS} from './constants'
+
 // Step rendering
 
 const renderStepDuration = (duration: number) => {
@@ -50,13 +52,6 @@ const renderStepDuration = (duration: number) => {
   const color = getColor()
 
   return `${color(duration.toString())}ms`
-}
-
-const ICONS = {
-  FAILED: chalk.bold.red('✖'),
-  FAILED_NON_BLOCKING: chalk.bold.yellow('✖'),
-  SKIPPED: chalk.bold.yellow('⇢'),
-  SUCCESS: chalk.bold.green('✓'),
 }
 
 const renderStepIcon = (step: Step) => {

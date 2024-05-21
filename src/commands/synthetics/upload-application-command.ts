@@ -9,6 +9,7 @@ import {EndpointError} from './api'
 import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
+import {AppUploadReporter} from './reporters/mobile/app-upload'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
@@ -75,9 +76,9 @@ export class UploadApplicationCommand extends Command {
       return 1
     }
 
+    const appUploadReporter = new AppUploadReporter(this.context)
     try {
-      const version = await uploadMobileApplicationVersion(this.config)
-      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
+      await uploadMobileApplicationVersion(this.config, appUploadReporter)
     } catch (error) {
       if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
         this.logger.error(`Error: ${error.message}`)

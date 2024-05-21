@@ -34,17 +34,20 @@ import {
   SyntheticsCIConfig,
   SyntheticsOrgSettings,
   Test,
+  TestNotFound,
   TestPayload,
+  TestSkipped,
+  TestWithOverride,
   Trigger,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {uploadApplicationAndOverrideConfig} from '../mobile'
+import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
 import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasResult} from './internal'
+import {getOverriddenExecutionRule, hasResult, isMobileTestWithOverride} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -442,10 +445,6 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-type NotFound = {errorMessage: string}
-type Skipped = {overriddenConfig: TestPayload}
-type TestWithOverride = {test: Test; overriddenConfig: TestPayload}
-
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
@@ -453,7 +452,7 @@ export const getTestAndOverrideConfig = async (
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-): Promise<NotFound | Skipped | TestWithOverride> => {
+): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
   const normalizedId = normalizePublicId(id)
 
   if (!normalizedId) {
@@ -535,32 +534,11 @@ export const getTestsToTrigger = async (
     )
   )
 
-  // Keep track of uploaded applications to avoid uploading them twice.
-  const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
-
-  for (const item of testsAndConfigsOverride) {
-    // Ignore not found and skipped tests.
-    if ('errorMessage' in item || !('test' in item)) {
-      continue
-    }
-
-    const {test, overriddenConfig} = item
-
-    if (test.type === 'mobile') {
-      const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
-      try {
-        await uploadApplicationAndOverrideConfig(
-          api,
-          test,
-          userConfigOverride,
-          overriddenConfig,
-          uploadedApplicationByPath
-        )
-      } catch (e) {
-        throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
-      }
-    }
-  }
+  await uploadMobileApplicationsAndUpdateOverrideConfigs(
+    api,
+    triggerConfigs,
+    testsAndConfigsOverride.filter(isMobileTestWithOverride)
+  )
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
