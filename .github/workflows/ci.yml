@@ -55,10 +55,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sarif-datadog-ci.sarif
+          name: sarif-datadog-ci-${{ matrix.version }}.sarif
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
-          overwrite: true
 
   e2e-test:
     strategy:
