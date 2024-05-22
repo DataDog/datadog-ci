@@ -600,9 +600,9 @@ export const getMobileTestWithOverride = (appId: string): MobileTestWithOverride
 }
 
 export const getMobileTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
-  const config = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
+  const testOverrides = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
 
-  return {id: 'abc', config}
+  return {id: 'abc', testOverrides}
 }
 
 export const uploadCommandConfig: UploadApplicationCommandConfig = {
