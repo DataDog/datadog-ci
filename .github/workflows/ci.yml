@@ -36,7 +36,7 @@ jobs:
           fi
       - run: yarn no-only-in-tests
 
-      - run: yarn test src/commands/synthetics/__tests__/reporters/default.test.ts -u
+      - run: yarn test -u
         # env:
         #   CI: true
         #   DD_SERVICE: datadog-ci-tests
