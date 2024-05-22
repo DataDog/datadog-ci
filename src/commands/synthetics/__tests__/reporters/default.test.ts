@@ -74,35 +74,35 @@ describe('Default reporter', () => {
     const testId = 'aaa-bbb-ccc'
 
     const cases: [string, ExecutionRule, UserConfigOverride][] = [
-      ['Blocking test, without test override', ExecutionRule.BLOCKING, {}],
-      ['Blocking test, with 1 test override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
-      ['Blocking test, with 2 test overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
-      ['Non-blocking test from Datadog, without test override', ExecutionRule.NON_BLOCKING, {}],
-      ['Non-blocking test from Datadog, with 1 test override', ExecutionRule.NON_BLOCKING, {startUrl: 'foo'}],
+      ['Blocking test, without config overwrite', ExecutionRule.BLOCKING, {}],
+      ['Blocking test, with 1 config override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
+      ['Blocking test, with 2 config overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
+      ['Non-blocking test from Datadog, without config overwrite', ExecutionRule.NON_BLOCKING, {}],
+      ['Non-blocking test from Datadog, with 1 config override', ExecutionRule.NON_BLOCKING, {startUrl: 'foo'}],
       [
-        'Non-blocking test from Datadog, with 2 test overrides',
+        'Non-blocking test from Datadog, with 2 config overrides',
         ExecutionRule.NON_BLOCKING,
         {startUrl: 'foo', body: 'hello'},
       ],
       [
-        'Non-blocking test, with 1 test override',
+        'Non-blocking test, with 1 config override',
         ExecutionRule.NON_BLOCKING,
         {executionRule: ExecutionRule.NON_BLOCKING},
       ],
       [
-        'Non-blocking test, with 2 test overrides',
+        'Non-blocking test, with 2 config overrides',
         ExecutionRule.NON_BLOCKING,
         {startUrl: 'foo', executionRule: ExecutionRule.NON_BLOCKING},
       ],
-      ['Skipped test, with 1 test override', ExecutionRule.SKIPPED, {executionRule: ExecutionRule.SKIPPED}],
+      ['Skipped test, with 1 config override', ExecutionRule.SKIPPED, {executionRule: ExecutionRule.SKIPPED}],
       [
-        'Skipped test, with 2 test overrides',
+        'Skipped test, with 2 config overrides',
         ExecutionRule.SKIPPED,
         {startUrl: 'foo', executionRule: ExecutionRule.SKIPPED},
       ],
-      ['Skipped test from Datadog, without test override', ExecutionRule.SKIPPED, {}],
-      ['Skipped test from Datadog, with 1 test override', ExecutionRule.SKIPPED, {startUrl: 'foo'}],
-      ['Skipped test from Datadog, with 2 test overrides', ExecutionRule.SKIPPED, {startUrl: 'foo', body: 'hello'}],
+      ['Skipped test from Datadog, without config overwrite', ExecutionRule.SKIPPED, {}],
+      ['Skipped test from Datadog, with 1 config override', ExecutionRule.SKIPPED, {startUrl: 'foo'}],
+      ['Skipped test from Datadog, with 2 config overrides', ExecutionRule.SKIPPED, {startUrl: 'foo', body: 'hello'}],
     ]
 
     test.each(cases)('%s', (title, executionRule, testOverrides) => {
