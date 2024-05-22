@@ -36,16 +36,15 @@ jobs:
           fi
       - run: yarn no-only-in-tests
 
-      - run: yarn test -u
-        # env:
-        #   CI: true
-        #   DD_SERVICE: datadog-ci-tests
-        #   DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
-        #   DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
-        #   DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
-        #   DD_ENV: ci
-        #   NODE_OPTIONS: -r dd-trace/ci/init
-      - run: git diff
+      - run: yarn test
+        env:
+          CI: true
+          DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
       - run: mkdir artifacts
       - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
       - run: cp -r .github/workflows/e2e artifacts/
