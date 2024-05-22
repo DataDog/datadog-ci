@@ -301,7 +301,7 @@ Your test files must be named with a `.synthetics.json` suffix.
   "tests": [
     {
       "id": "<TEST_PUBLIC_ID>",
-      "config": {
+      "testOverrides": {
         "allowInsecureCertificates": true,
         "basicAuth": {"username": "test", "password": "test"},
         "body": "{\"fakeContent\":true}",
@@ -326,10 +326,11 @@ Your test files must be named with a `.synthetics.json` suffix.
   ]
 }
 ```
+**Note**: The `config` field from the global configuration file is deprecated in favor of `testOverrides`.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
-All options under the `config` key are optional and allow overriding of the test configuration as stored in Datadog.
+All options under the `testOverrides` key are optional and allow overriding of the test configuration as stored in Datadog.
 
 | Options                            | Type             | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | ---------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
