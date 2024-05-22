@@ -29,6 +29,7 @@ import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveI
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
+  AWSCODEPIPELINE: 'awscodepipeline',
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
@@ -593,7 +594,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
   if (env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
     const {CODEBUILD_BUILD_ARN, DD_ACTION_EXECUTION_ID, DD_PIPELINE_EXECUTION_ID} = env
     tags = {
-      [CI_PROVIDER_NAME]: 'awscodepipeline',
+      [CI_PROVIDER_NAME]: CI_ENGINES.AWSCODEPIPELINE,
       [CI_PIPELINE_ID]: DD_PIPELINE_EXECUTION_ID,
       [CI_ENV_VARS]: JSON.stringify({CODEBUILD_BUILD_ARN, DD_PIPELINE_EXECUTION_ID, DD_ACTION_EXECUTION_ID}),
     }
@@ -767,6 +768,62 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   throw new Error(
     'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
   )
+}
+
+export const getCIProvider = (): string => {
+  if (process.env.CIRCLECI) {
+    return CI_ENGINES.CIRCLECI
+  }
+
+  if (process.env.GITLAB_CI) {
+    return CI_ENGINES.GITLAB
+  }
+
+  if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
+    return CI_ENGINES.GITHUB
+  }
+
+  if (process.env.BUILDKITE) {
+    return CI_ENGINES.BUILDKITE
+  }
+
+  if (process.env.BUDDY) {
+    return CI_ENGINES.BUDDY
+  }
+
+  if (process.env.TEAMCITY_VERSION) {
+    return CI_ENGINES.TEAMCITY
+  }
+
+  if (process.env.JENKINS_URL) {
+    return CI_ENGINES.JENKINS
+  }
+
+  if (process.env.TF_BUILD) {
+    return CI_ENGINES.AZURE
+  }
+
+  if (process.env.CF_BUILD_ID) {
+    return CI_ENGINES.CODEFRESH
+  }
+
+  if (process.env.APPVEYOR) {
+    return CI_ENGINES.APPVEYOR
+  }
+
+  if (process.env.BITBUCKET_COMMIT) {
+    return CI_ENGINES.BITBUCKET
+  }
+
+  if (process.env.BITRISE_BUILD_SLUG) {
+    return CI_ENGINES.BITRISE
+  }
+
+  if (process.env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
+    return CI_ENGINES.AWSCODEPIPELINE
+  }
+
+  return 'unknown'
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {
