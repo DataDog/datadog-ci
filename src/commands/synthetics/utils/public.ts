@@ -80,15 +80,11 @@ export const getOverriddenConfig = (
   publicId: string,
   reporter: MainReporter,
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  config?: UserConfigOverride,
-  testOverrides?: UserConfigOverride
+  testOverrides: UserConfigOverride
 ): TestPayload => {
   let overriddenConfig: TestPayload = {
     public_id: publicId,
   }
-
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  testOverrides = replaceConfigWithTestOverrides(config, testOverrides)
 
   if (!testOverrides || !Object.keys(testOverrides).length) {
     return overriddenConfig
@@ -478,7 +474,7 @@ export const getTestAndOverrideConfig = async (
 
   const {test} = testResult
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config, testOverrides)
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, testOverrides)
   const testExecutionRule = test?.options?.ci?.executionRule
   const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 

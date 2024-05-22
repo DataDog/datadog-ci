@@ -1,4 +1,4 @@
-import {MainReporter, RunTestsCommandConfig, UserConfigOverride} from './interfaces'
+import {MainReporter, RunTestsCommandConfig, Suite, UserConfigOverride} from './interfaces'
 
 export const replaceGlobalWithDefaultTestOverrides = (
   config: RunTestsCommandConfig,
@@ -14,7 +14,7 @@ export const replaceGlobalWithDefaultTestOverrides = (
     )
   }
 
-  // If both global and defaultTestOverrides exist use defaultTestOverrides
+  // If both global and defaultTestOverrides exist, use defaultTestOverrides
   if (isGlobalUsed && !isDefaultTestOverridesUsed) {
     return {
       ...config,
@@ -32,10 +32,22 @@ export const replaceConfigWithTestOverrides = (
   const isConfigUsed = Object.keys(config ?? {}).length !== 0
   const isTestOverridesUsed = Object.keys(testOverrides ?? {}).length !== 0
 
-  // If both config and testOverrides exist use testOverrides
+  // If both config and testOverrides exist, use testOverrides
   if (isConfigUsed && !isTestOverridesUsed) {
-    return {...config}
+    return config ?? {}
   }
 
   return testOverrides ?? {}
+}
+
+export const warnIfDeprecatedConfigUsed = (suites: Suite[], reporter?: MainReporter): void => {
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  const isUsingConfig = suites.some((suite) =>
+    suite.content.tests.some((test) => Object.keys(test.config ?? {}).length > 0)
+  )
+  if (isUsingConfig) {
+    reporter?.error(
+      "The 'config' property is deprecated. Please use 'testOverrides' instead.\nIf both 'config' and 'testOverrides' properties exist, 'testOverrides' is used!\n"
+    )
+  }
 }

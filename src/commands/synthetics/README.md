@@ -472,7 +472,7 @@ datadog-ci synthetics upload-application                \
   --mobileApplicationVersionFilePath example/test.apk   \
   --versionName 'example 1.0'                           \
   --latest
-```   
+```
 
 ### Using the global configuration file
 

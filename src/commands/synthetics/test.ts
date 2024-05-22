@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {replaceConfigWithTestOverrides} from './compatibility'
+import {replaceConfigWithTestOverrides, warnIfDeprecatedConfigUsed} from './compatibility'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
 import {getSuites, normalizePublicId} from './utils/public'
 
@@ -16,15 +16,7 @@ export const getTestConfigs = async (
 
   suites.push(...suitesFromFiles)
 
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  const isUsingConfig = suites.some((suite) =>
-    suite.content.tests.some((test) => Object.keys(test.config ?? {}).length > 0)
-  )
-  if (isUsingConfig) {
-    reporter?.error(
-      "The 'config' property is deprecated. Please use 'testOverrides' instead.\nIf both 'config' and 'testOverrides' properties exist, 'testOverrides' is used!\n"
-    )
-  }
+  warnIfDeprecatedConfigUsed(suites, reporter)
 
   const testConfigs = suites
     .map((suite) =>
