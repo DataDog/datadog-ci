@@ -9,7 +9,7 @@ export interface MainReporter {
   log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
   testWait(test: Test): void
   testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   resultReceived(result: ResultInBatch): void
