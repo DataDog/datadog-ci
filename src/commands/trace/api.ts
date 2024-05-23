@@ -13,8 +13,10 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
 ) => {
   return request({
     data: {
-      type: 'ci_app_custom_span',
-      attributes: customSpan,
+      data: {
+        type: 'ci_app_custom_span',
+        attributes: customSpan,
+      },
     },
     maxBodyLength,
     method: 'POST',
