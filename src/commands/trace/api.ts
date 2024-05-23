@@ -18,7 +18,7 @@ export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPro
     },
     maxBodyLength,
     method: 'POST',
-    url: '/api/v2/ci/custom_spans',
+    url: '/api/intake/ci/custom_spans',
   })
 }
 
