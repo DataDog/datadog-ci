@@ -86,6 +86,7 @@ export class TraceCommand extends Command {
     })
 
     const stderr: string = await stderrCatcher
+    const endTime = new Date().toISOString()
     const provider = getCIProvider()
     if (!SUPPORTED_PROVIDERS.includes(provider)) {
       this.context.stdout.write(
@@ -94,7 +95,6 @@ export class TraceCommand extends Command {
 
       return 1
     }
-    const endTime = new Date().toISOString()
     const exitCode: number = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
     const ciSpanTags = getCISpanTags()
     const commandStr = this.command.join(' ')
