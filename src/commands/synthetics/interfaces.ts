@@ -400,7 +400,10 @@ export interface BasicAuthCredentials {
   username: string
 }
 export interface TriggerConfig {
-  config: UserConfigOverride
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  /** @deprecated This property is deprecated, please use `testOverrides` instead. */
+  config?: UserConfigOverride
+  testOverrides?: UserConfigOverride
   id: string
   suite?: string
 }

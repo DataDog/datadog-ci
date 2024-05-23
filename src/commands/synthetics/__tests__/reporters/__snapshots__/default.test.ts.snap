@@ -153,67 +153,67 @@ exports[`Default reporter runEnd does not communicate for uncapped orgs 1`] = `
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(1 config override)[39m
+exports[`Default reporter testTrigger Blocking test, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Blocking test, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Blocking test, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m"
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 config override)[39m
+exports[`Default reporter testTrigger Non-blocking test from Datadog, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Non-blocking test from Datadog, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Non-blocking test from Datadog, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking)
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 config override)[39m
+exports[`Default reporter testTrigger Non-blocking test, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Non-blocking test, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, with 1 config override 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, with 1 test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, with 2 config overrides 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, with 2 test overrides 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test, with 1 config override 1`] = `
+exports[`Default reporter testTrigger Skipped test, with 1 test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m"
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test, with 2 config overrides 1`] = `
+exports[`Default reporter testTrigger Skipped test, with 2 test overrides 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m"
 "
 `;

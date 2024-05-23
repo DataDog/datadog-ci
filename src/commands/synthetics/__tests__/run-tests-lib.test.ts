@@ -113,8 +113,8 @@ describe('run-test', () => {
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'aaa-aaa-aaa', config: userConfigOverride}),
-          expect.objectContaining({id: 'bbb-bbb-bbb', config: userConfigOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: userConfigOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: userConfigOverride}),
         ]),
         expect.anything(),
         false,
@@ -163,8 +163,8 @@ describe('run-test', () => {
         expect(getTestsToTriggersMock).toHaveBeenCalledWith(
           apiHelper,
           expect.arrayContaining([
-            expect.objectContaining({id: 'aaa-aaa-aaa', config: expectedOverriddenConfig}),
-            expect.objectContaining({id: 'bbb-bbb-bbb', config: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: expectedOverriddenConfig}),
+            expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: expectedOverriddenConfig}),
           ]),
           expect.anything(),
           false,
@@ -197,8 +197,8 @@ describe('run-test', () => {
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
-          expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: configOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: configOverride}),
         ]),
         expect.anything(),
         false,
@@ -233,8 +233,8 @@ describe('run-test', () => {
       expect(getTestsToTriggersMock).toHaveBeenCalledWith(
         apiHelper,
         expect.arrayContaining([
-          expect.objectContaining({id: 'aaa-aaa-aaa', config: configOverride}),
-          expect.objectContaining({id: 'bbb-bbb-bbb', config: configOverride}),
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: configOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: configOverride}),
         ]),
         expect.anything(),
         false,
@@ -593,10 +593,18 @@ describe('run-test', () => {
 
     const startUrl = 'fakeUrl'
     const conf1 = {
-      tests: [{config: {deviceIds: ['chrome.laptop_large']}, id: 'abc-def-ghi'}],
+      tests: [{testOverrides: {deviceIds: ['chrome.laptop_large']}, id: 'abc-def-ghi'}],
     }
     const conf2 = {
-      tests: [{config: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pqr'}],
+      tests: [{testOverrides: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pqr'}],
+    }
+    // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+    // The following two cases are testing the behavior while we're migrating from config to testOverrides
+    const conf3 = {
+      tests: [{config: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pq1'}],
+    }
+    const conf4 = {
+      tests: [{config: {startUrl: 'someOtherFakeUrl'}, testOverrides: {startUrl: 'theFakestUrl'}, id: 'jkl-mno-pq2'}],
     }
     const fakeSuites = [
       {
@@ -606,6 +614,14 @@ describe('run-test', () => {
       {
         content: conf2,
         name: 'Suite 2',
+      },
+      {
+        content: conf3,
+        name: 'Suite 3',
+      },
+      {
+        content: conf4,
+        name: 'Suite 4',
       },
     ]
     const fakeApi = {
@@ -630,14 +646,24 @@ describe('run-test', () => {
         )
       ).resolves.toEqual([
         {
-          config: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
           id: 'abc-def-ghi',
           suite: 'Suite 1',
         },
         {
-          config: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
           id: 'jkl-mno-pqr',
           suite: 'Suite 2',
+        },
+        {
+          testOverrides: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
+          id: 'jkl-mno-pq1',
+          suite: 'Suite 3',
+        },
+        {
+          testOverrides: {startUrl: 'theFakestUrl', locations: ['aws:ap-northeast-1']},
+          id: 'jkl-mno-pq2',
+          suite: 'Suite 4',
         },
       ])
     })
@@ -659,12 +685,12 @@ describe('run-test', () => {
         )
       ).resolves.toEqual([
         {
-          config: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
           id: 'abc-def-ghi',
           suite: 'Suite 1',
         },
         {
-          config: {startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl, locations: ['aws:ap-northeast-1']},
           id: '123-456-789',
         },
       ])
@@ -688,7 +714,7 @@ describe('run-test', () => {
         )
       ).resolves.toEqual([
         {
-          config: {startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl, locations: ['aws:ap-northeast-1']},
           id: 'stu-vwx-yza',
           suite: 'Query: fake search',
         },
@@ -707,7 +733,7 @@ describe('run-test', () => {
         )
       ).resolves.toEqual([
         {
-          config: {startUrl},
+          testOverrides: {startUrl},
           id: 'abc-def-ghi',
         },
       ])
@@ -736,8 +762,14 @@ describe('run-test', () => {
         fakeSuites
       )
       expect(tests).toEqual([
-        {config: {deviceIds: ['chrome.laptop_large'], startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
-        {config: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+        {
+          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl},
+          id: conf1.tests[0].id,
+          suite: fakeSuites[0].name,
+        },
+        {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+        {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf3.tests[0].id, suite: fakeSuites[2].name},
+        {testOverrides: {startUrl: 'theFakestUrl'}, id: conf4.tests[0].id, suite: fakeSuites[3].name},
       ])
       expect(getSuitesMock).not.toHaveBeenCalled()
     })
@@ -757,8 +789,12 @@ describe('run-test', () => {
         userSuites
       )
       expect(tests).toEqual([
-        {config: {deviceIds: ['chrome.laptop_large'], startUrl}, id: conf1.tests[0].id, suite: fakeSuites[0].name},
-        {config: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
+        {
+          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl},
+          id: conf1.tests[0].id,
+          suite: fakeSuites[0].name,
+        },
+        {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
       ])
       expect(getSuitesMock).toHaveBeenCalled()
     })

@@ -16,10 +16,10 @@ import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './publ
 
 export const getOverriddenExecutionRule = (
   test?: Test,
-  configOverride?: UserConfigOverride
+  testOverrides?: UserConfigOverride
 ): ExecutionRule | undefined => {
-  if (configOverride?.executionRule) {
-    return getStrictestExecutionRule(configOverride.executionRule, test?.options?.ci?.executionRule)
+  if (testOverrides?.executionRule) {
+    return getStrictestExecutionRule(testOverrides.executionRule, test?.options?.ci?.executionRule)
   }
 }
 

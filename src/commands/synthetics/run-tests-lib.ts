@@ -139,7 +139,9 @@ export const executeTests = async (
   }
 
   try {
-    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const maxPollingTimeout = Math.max(
+      ...triggerConfigs.map((t) => t.testOverrides?.pollingTimeout || config.pollingTimeout)
+    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
@@ -202,10 +204,10 @@ export const getTriggerConfigs = async (
       id,
       ...testFromSearchQuery,
       ...testFromTestConfigs,
-      config: {
+      testOverrides: {
         ...defaultTestConfigOverrides,
         ...testConfigOverridesFromEnv,
-        ...testFromTestConfigs?.config,
+        ...testFromTestConfigs?.testOverrides,
       },
     }
   })
