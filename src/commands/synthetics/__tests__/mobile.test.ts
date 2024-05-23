@@ -21,7 +21,7 @@ import {
   getMockAppUploadReporter,
 } from './fixtures'
 
-describe('mobile tests', () => {
+describe('mobile', () => {
   describe('getSizeAndPartsFromFile', () => {
     test('correctly get size and parts of a file', async () => {
       const tmpdir = fs.mkdtempSync('getSizeAndPartsFromFile')
