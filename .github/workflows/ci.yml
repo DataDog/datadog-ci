@@ -204,7 +204,6 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci'
           cpu_count: 2
-          sca_enabled: true
           diff_aware: true
 
   datadog-static-analyzer-non-diff-aware:
@@ -222,7 +221,6 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci-no-da'
           cpu_count: 2
-          sca_enabled: true
           diff_aware: false
 
   check-licenses:
