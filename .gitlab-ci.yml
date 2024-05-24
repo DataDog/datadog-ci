@@ -4,7 +4,7 @@ stages:
 
 build-docker-image:
   stage: build
-  only: ['tags']
+  # only: ['tags']
   when: manual
   allow_failure: false
   tags: ['arch:amd64']
@@ -17,16 +17,15 @@ build-docker-image:
       --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
       --push
       .
-
-publish-docker-image:
-  stage: release
-  only: ['tags']
-  needs: ['build-docker-image']
-  trigger:
-    project: DataDog/public-images
-    branch: main
-    strategy: depend
-  variables:
-    IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
-    IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
-    IMG_SIGNING: 'false'
+# publish-docker-image:
+#   stage: release
+#   only: ['tags']
+#   needs: ['build-docker-image']
+#   trigger:
+#     project: DataDog/public-images
+#     branch: main
+#     strategy: depend
+#   variables:
+#     IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
+#     IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
+#     IMG_SIGNING: 'false'
