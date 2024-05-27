@@ -10,6 +10,7 @@ import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
+import {toBoolean} from './utils/internal'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
@@ -106,7 +107,11 @@ export class UploadApplicationCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
+        configPath: process.env.DATADOG_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
+        mobileApplicationId: process.env.DATADOG_MOBILE_APPLICATION_ID,
+        versionName: process.env.DATADOG_VERSION_NAME,
+        latest: toBoolean(process.env.DATADOG_LATEST),
       })
     )
 
