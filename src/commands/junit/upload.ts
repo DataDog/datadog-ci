@@ -276,8 +276,17 @@ export class UploadJUnitXMLCommand extends Command {
         if (isFile(basePath)) {
           return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
         }
+        let globPattern
+        // It's either a folder (possibly including .xml extension) or a glob pattern
+        if (glob.hasMagic(basePath)) {
+          globPattern = basePath
+        } else {
+          globPattern = buildPath(basePath, '*.xml')
+        }
 
-        return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
+        const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
+
+        return acc.concat(filesToUpload)
       }, [])
       .filter(isFile)
 
