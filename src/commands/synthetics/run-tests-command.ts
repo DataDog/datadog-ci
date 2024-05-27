@@ -144,7 +144,6 @@ export class RunTestsCommand extends Command {
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   public async execute() {
-
     try {
       await this.resolveConfig()
     } catch (error) {

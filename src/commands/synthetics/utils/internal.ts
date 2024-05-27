@@ -51,11 +51,11 @@ export const toBoolean = (env: string | undefined): boolean | undefined => {
     return undefined
   }
 
-  if ( env.toLowerCase() === 'true' || env === '1'){
+  if (env.toLowerCase() === 'true' || env === '1') {
     return true
   }
 
-  if ( env.toLowerCase() === 'false' || env === '0'){
+  if (env.toLowerCase() === 'false' || env === '0') {
     return false
   }
 

@@ -50,11 +50,8 @@ describe('utils', () => {
       ['randomString', undefined],
     ]
 
-    test.each(cases)(
-      'toBoolean(%s) should return %s',
-      (input, expectedOutput) => {
-        expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
-      }
-    )
+    test.each(cases)('toBoolean(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
+    })
   })
 })
