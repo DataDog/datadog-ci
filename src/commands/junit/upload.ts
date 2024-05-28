@@ -279,8 +279,10 @@ export class UploadJUnitXMLCommand extends Command {
         let globPattern
         // It's either a folder (possibly including .xml extension) or a glob pattern
         if (glob.hasMagic(basePath)) {
+          // It's a glob pattern so we just use it as is
           globPattern = basePath
         } else {
+          // It's a folder
           globPattern = buildPath(basePath, '*.xml')
         }
 

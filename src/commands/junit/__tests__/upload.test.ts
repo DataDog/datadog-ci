@@ -275,6 +275,32 @@ describe('upload', () => {
         'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
       ])
     })
+    test('should fetch nested folders and ignore non xml files', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['**/junit/**'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {},
+        {},
+        {},
+        {},
+        {}
+      )
+      const fileNames = files.map((file) => file.xmlPath)
+
+      expect(fileNames).toEqual([
+        'src/commands/junit/__tests__/fixtures/go-report.xml',
+        'src/commands/junit/__tests__/fixtures/java-report.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      ])
+    })
   })
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
