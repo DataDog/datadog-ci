@@ -76,7 +76,7 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT: '42',
-        DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX: 'regex1;regex2',
+        DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
         DATADOG_SYNTHETICS_OVERRIDE_RETRY: 'retry',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
@@ -103,7 +103,7 @@ describe('run-test', () => {
           executionRule: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
           pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
-          resourceUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(
+          resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
           retry: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
