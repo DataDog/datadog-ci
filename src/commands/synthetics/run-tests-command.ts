@@ -158,7 +158,13 @@ export class RunTestsCommand extends Command {
     this.reporter = getReporter(reporters)
 
     if (this.config.jUnitReport) {
-      reporters.push(new JUnitReporter(this))
+      reporters.push(
+        new JUnitReporter({
+          context: this.context,
+          jUnitReport: this.config.jUnitReport,
+          runName: this.runName,
+        })
+      )
     }
 
     const startTime = Date.now()
@@ -198,20 +204,10 @@ export class RunTestsCommand extends Command {
   private async resolveConfig() {
     // Defaults < file < ENV < CLI
 
-    let overrideConfigPath = this.config.configPath
-
-    // Override Config Path with ENV variables
-    const envConfigPath = process.env.DATADOG_SYNTHETICS_CONFIG_PATH
-    if (envConfigPath) {
-      overrideConfigPath = envConfigPath
-    }
-    // Override Config Path with CLI parameters
-    if (this.configPath) {
-      overrideConfigPath = this.configPath
-    }
-
     // Override with config file variables (e.g. datadog-ci.json)
     try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
       this.config = await resolveConfigFromFile(this.config, {
         configPath: overrideConfigPath,
         defaultConfigPaths: [this.config.configPath],
@@ -231,7 +227,7 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
-        configPath: envConfigPath,
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),

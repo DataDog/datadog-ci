@@ -92,8 +92,10 @@ export class UploadApplicationCommand extends Command {
   private async resolveConfig() {
     // Defaults < file < ENV < CLI
     try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
       this.config = await resolveConfigFromFile(this.config, {
-        configPath: this.configPath,
+        configPath: overrideConfigPath,
         defaultConfigPaths: [this.config.configPath],
       })
     } catch (error) {
