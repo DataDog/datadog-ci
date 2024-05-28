@@ -348,7 +348,7 @@ export class XCodeCommand extends Command {
 
   private getReleaseVersion = (): string | null => {
     if (process.env.DATADOG_RELEASE_VERSION) {
-      return process.env.DATADOG_RELEASE_VERSION;
+      return process.env.DATADOG_RELEASE_VERSION
     }
 
     try {
