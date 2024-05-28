@@ -104,6 +104,7 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 `tunnel`
 : Use the [Continuous Testing Tunnel](#use-the-testing-tunnel) to execute your test batch.
 
+
 #### Use a proxy
 
 It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
@@ -156,6 +157,30 @@ For example:
 }
 ```
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+
+### Configuring with Environment Variables
+
+In addition to the global configuration file and CLI arguments, you can configure the following properties using environment variables:
+
+| Property                        | Environment Variable                             |
+|---------------------------------|--------------------------------------------------|
+| apiKey                          | `DATADOG_API_KEY`                                |
+| appKey                          | `DATADOG_APP_KEY`                                |
+| configPath                      | `DATADOG_SYNTHETICS_CONFIG_PATH`                 |
+| datadogSite                     | `DATADOG_SITE`                                   |
+| failOnCriticalErrors            | `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS`     |
+| failOnMissingTests              | `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS`       |
+| failOnTimeout                   | `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT`             |
+| files                           | `DATADOG_SYNTHETICS_FILES`                       |
+| jUnitReport                     | `DATADOG_SYNTHETICS_JUNIT_REPORT`                |
+| publicIds                       | `DATADOG_SYNTHETICS_PUBLIC_IDS`                  |
+| selectiveRerun                  | `DATADOG_SYNTHETICS_SELECTIVE_RERUN`             |
+| subdomain                       | `DATADOG_SUBDOMAIN`                              |
+| testSearchQuery                 | `DATADOG_SYNTHETICS_TEST_SEARCH_QUERY`           |
+| tunnel                          | `DATADOG_SYNTHETICS_TUNNEL`                      |
+| latest                          | `DATADOG_SYNTHETICS_LATEST`                      |
+| mobileApplicationId             | `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID`       |
+
 
 ### Command line options
 

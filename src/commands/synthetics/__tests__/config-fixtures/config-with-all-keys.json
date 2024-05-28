@@ -9,6 +9,7 @@
   "files": [
     "my-new-file"
   ],
+  "jUnitReport": "junit-report.xml",
   "global": {
     "deviceIds": [
       "chrome.laptop_large"
@@ -41,6 +42,7 @@
   ],
   "selectiveRerun": true,
   "subdomain": "ppa",
+  "testSearchQuery": "a-search-query",
   "tunnel": true,
   "variableStrings": []
 }

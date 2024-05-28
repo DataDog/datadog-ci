@@ -12,6 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
+import {toBoolean} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -39,12 +40,14 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   defaultTestOverrides: {},
+  jUnitReport: '',
   locations: [],
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
   selectiveRerun: false,
   subdomain: 'app',
+  testSearchQuery: '',
   tunnel: false,
   variableStrings: [],
 }
@@ -141,13 +144,6 @@ export class RunTestsCommand extends Command {
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   public async execute() {
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
-
-    if (this.jUnitReport) {
-      reporters.push(new JUnitReporter(this))
-    }
-
     try {
       await this.resolveConfig()
     } catch (error) {
@@ -156,6 +152,19 @@ export class RunTestsCommand extends Command {
       }
 
       return 1
+    }
+
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
+
+    if (this.config.jUnitReport) {
+      reporters.push(
+        new JUnitReporter({
+          context: this.context,
+          jUnitReport: this.config.jUnitReport,
+          runName: this.runName,
+        })
+      )
     }
 
     const startTime = Date.now()
@@ -197,8 +206,10 @@ export class RunTestsCommand extends Command {
 
     // Override with config file variables (e.g. datadog-ci.json)
     try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
       this.config = await resolveConfigFromFile(this.config, {
-        configPath: this.configPath,
+        configPath: overrideConfigPath,
         defaultConfigPaths: [this.config.configPath],
       })
     } catch (error) {
@@ -216,9 +227,19 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
+        failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+        failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+        failOnTimeout: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
+        files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
+        jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
         locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
+        publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
+        selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: process.env.DATADOG_SUBDOMAIN,
+        testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
+        tunnel: toBoolean(process.env.DATADOG_SYNTHETICS_TUNNEL),
       })
     )
 
@@ -243,6 +264,7 @@ export class RunTestsCommand extends Command {
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
+        jUnitReport: this.jUnitReport,
         publicIds: this.publicIds,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,

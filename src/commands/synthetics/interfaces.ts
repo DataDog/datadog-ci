@@ -470,6 +470,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
   global?: UserConfigOverride
+  jUnitReport?: string
   defaultTestOverrides?: UserConfigOverride
   locations: string[]
   mobileApplicationVersionFilePath?: string

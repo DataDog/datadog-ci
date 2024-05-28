@@ -45,3 +45,19 @@ export const getResultIdOrLinkedResultId = (result: ResultInBatch): string => {
 
   return result.result_id
 }
+
+export const toBoolean = (env: string | undefined): boolean | undefined => {
+  if (env === undefined) {
+    return undefined
+  }
+
+  if (env.toLowerCase() === 'true' || env === '1') {
+    return true
+  }
+
+  if (env.toLowerCase() === 'false' || env === '0') {
+    return false
+  }
+
+  return undefined
+}

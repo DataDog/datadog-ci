@@ -76,6 +76,7 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  jUnitReport: '',
   global: {},
   defaultTestOverrides: {},
   locations: [],
@@ -84,6 +85,7 @@ export const ciConfig: RunTestsCommandConfig = {
   publicIds: [],
   selectiveRerun: false,
   subdomain: 'app',
+  testSearchQuery: '',
   tunnel: false,
   variableStrings: [],
 }

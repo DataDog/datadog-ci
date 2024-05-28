@@ -7,6 +7,7 @@ import * as api from '../api'
 import {RunTestsCommandConfig, ServerTest, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
+import {toBoolean} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -58,6 +59,16 @@ describe('run-test', () => {
         DATADOG_SUBDOMAIN: 'custom',
         DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
+        DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
+        DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
+        DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
+        DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'false',
+        DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
+        DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
+        DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
+        DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
+        DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
+        DATADOG_SYNTHETICS_TUNNEL: 'false',
       }
 
       process.env = overrideEnv
@@ -68,13 +79,23 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
+        configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         },
+        failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+        failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+        failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
+        files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
+        jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+        publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
+        selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
+        testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
+        tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
       })
     })
 
@@ -88,6 +109,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
+        jUnitReport: 'junit-report.xml',
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           deviceIds: ['chrome.laptop_large'],
@@ -111,6 +133,7 @@ describe('run-test', () => {
         publicIds: ['ran-dom-id'],
         selectiveRerun: true,
         subdomain: 'ppa',
+        testSearchQuery: 'a-search-query',
         tunnel: true,
         variableStrings: [],
       }
@@ -133,6 +156,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
         locations: ['us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 1,
@@ -158,6 +182,7 @@ describe('run-test', () => {
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['jUnitReport'] = overrideCLI.jUnitReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
@@ -176,6 +201,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
@@ -555,6 +581,31 @@ describe('upload-application', () => {
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}
+    })
+
+    test('override from ENV', async () => {
+      const overrideEnv = {
+        DATADOG_API_KEY: 'fake_api_key',
+        DATADOG_APP_KEY: 'fake_app_key',
+        DATADOG_SITE: 'datadoghq.eu',
+        DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
+        DATADOG_SYNTHETICS_VERSION_NAME: 'new',
+        DATADOG_SYNTHETICS_LATEST: 'true',
+      }
+
+      process.env = overrideEnv
+      const command = createCommand(UploadApplicationCommand)
+
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        apiKey: overrideEnv.DATADOG_API_KEY,
+        appKey: overrideEnv.DATADOG_APP_KEY,
+        configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
+        datadogSite: overrideEnv.DATADOG_SITE,
+        versionName: overrideEnv.DATADOG_SYNTHETICS_VERSION_NAME,
+        latest: toBoolean(overrideEnv.DATADOG_SYNTHETICS_LATEST),
+      })
     })
 
     test('override from config file', async () => {

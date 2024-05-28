@@ -31,4 +31,27 @@ describe('utils', () => {
       }
     )
   })
+
+  describe('toBoolean', () => {
+    const cases: [string | undefined, boolean | undefined][] = [
+      ['true', true],
+      ['True', true],
+      ['TRUE', true],
+      ['1', true],
+      ['false', false],
+      ['False', false],
+      ['FALSE', false],
+      ['0', false],
+      [undefined, undefined],
+      ['no', undefined],
+      ['yes', undefined],
+      ['', undefined],
+      ['  ', undefined],
+      ['randomString', undefined],
+    ]
+
+    test.each(cases)('toBoolean(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
+    })
+  })
 })
