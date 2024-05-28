@@ -12,7 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean} from './utils/internal'
+import {toBoolean, toNumber} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -249,6 +249,18 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+        allowInsecureCertificates: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+        body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
+        bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+        defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+        executionRule: process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
+        followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+        pollingTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
+        resourceUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(';'),
+        retry: process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
+        startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
+        startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
+        testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
       })
     )
 

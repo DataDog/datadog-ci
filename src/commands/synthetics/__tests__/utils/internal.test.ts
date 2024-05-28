@@ -54,4 +54,24 @@ describe('utils', () => {
       expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
     })
   })
+
+  describe('toNumber', () => {
+    const cases: [string | undefined, number | undefined][] = [
+      ['42', 42],
+      ['0', 0],
+      ['-1', -1],
+      ['3.14', 3.14], // Floats should be supported
+      ['  42', 42], // Leading whitespace should be ignored
+      ['0042', 42], // Leading zeros should be ignored
+      ['', undefined],
+      ['  ', undefined],
+      ['randomString', undefined],
+      ['NaN', undefined],
+      [undefined, undefined],
+    ]
+
+    test.each(cases)('toNumber(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toNumber(input)).toEqual(expectedOutput)
+    })
+  })
 })

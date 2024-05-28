@@ -61,3 +61,17 @@ export const toBoolean = (env: string | undefined): boolean | undefined => {
 
   return undefined
 }
+
+export const toNumber = (env: string | undefined): number | undefined => {
+  if (env === undefined || env.trim() === '') {
+    return undefined
+  }
+
+  const number = Number(env)
+
+  if (isNaN(number)) {
+    return undefined
+  }
+
+  return number
+}
