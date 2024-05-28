@@ -86,16 +86,16 @@ describe('run-test', () => {
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         },
-        failOnCriticalErrors: overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS === 'true',
-        failOnMissingTests: overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS === 'true',
-        failOnTimeout: overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT === 'true',
+        failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+        failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+        failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
-        selectiveRerun: overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN === 'true',
+        selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
         testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
-        tunnel: overrideEnv.DATADOG_SYNTHETICS_TUNNEL === 'true',
+        tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
       })
     })
 
