@@ -103,7 +103,9 @@ describe('run-test', () => {
           executionRule: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
           pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
-          resourceUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(';'),
+          resourceUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(
+            ';'
+          ),
           retry: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,

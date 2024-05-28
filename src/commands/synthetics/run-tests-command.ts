@@ -256,7 +256,9 @@ export class RunTestsCommand extends Command {
         executionRule: process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
         pollingTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
-        resourceUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(';'),
+        resourceUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEX?.split(
+          ';'
+        ),
         retry: process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
