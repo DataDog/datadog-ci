@@ -52,7 +52,6 @@ export class MeasureCommand extends Command {
   }
 
   public async execute() {
-    console.log(this.path)
     if (this.path[0] === 'metric') {
       this.context.stdout.write(
         chalk.yellow(`[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n`)
