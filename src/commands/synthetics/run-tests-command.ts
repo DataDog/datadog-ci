@@ -255,7 +255,6 @@ export class RunTestsCommand extends Command {
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         executionRule: process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-        pollingTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
         ),

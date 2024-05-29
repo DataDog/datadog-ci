@@ -75,7 +75,6 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
-        DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT: '42',
         DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
         DATADOG_SYNTHETICS_OVERRIDE_RETRY: 'retry',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
@@ -95,6 +94,7 @@ describe('run-test', () => {
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
           allowInsecureCertificates: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
           body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
@@ -102,7 +102,6 @@ describe('run-test', () => {
           defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
           executionRule: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-          pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_POLLING_TIMEOUT),
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
