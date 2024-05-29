@@ -74,4 +74,21 @@ describe('utils', () => {
       expect(internalUtils.toNumber(input)).toEqual(expectedOutput)
     })
   })
+  describe('toExecutionRule', () => {
+    const cases: [string | undefined, ExecutionRule | undefined][] = [
+      ['blocking', ExecutionRule.BLOCKING],
+      ['non_blocking', ExecutionRule.NON_BLOCKING],
+      ['skipped', ExecutionRule.SKIPPED],
+      ['BLOCKING', ExecutionRule.BLOCKING], // Case-sensitive check
+      ['NON_BLOCKING', ExecutionRule.NON_BLOCKING],
+      ['non-blocking', undefined], // Exact match required
+      ['', undefined],
+      ['  ', undefined],
+      ['randomString', undefined],
+      [undefined, undefined],
+    ]
+    test.each(cases)('toExecutionRule(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toExecutionRule(input)).toEqual(expectedOutput)
+    })
+  })
 })

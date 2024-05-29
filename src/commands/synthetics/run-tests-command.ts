@@ -12,7 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean, toNumber} from './utils/internal'
+import {toBoolean, toNumber, toExecutionRule} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -244,6 +244,10 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with OVERRIDE ENV variables
+    const retryConfig = removeUndefinedValues({
+      count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+      interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+    })
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -253,12 +257,12 @@ export class RunTestsCommand extends Command {
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
-        executionRule: process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
+        executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
         ),
-        retry: process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
+        retry: Object.keys(retryConfig).length > 0 ? retryConfig : undefined,
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
         testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),

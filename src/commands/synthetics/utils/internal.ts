@@ -75,3 +75,15 @@ export const toNumber = (env: string | undefined): number | undefined => {
 
   return number
 }
+
+export const toExecutionRule = (env: string | undefined): ExecutionRule | undefined => {
+  if (env === undefined) {
+    return undefined
+  }
+  const enumValues = Object.values(ExecutionRule)
+  if (enumValues.includes(env.toLowerCase() as ExecutionRule)) {
+    return env.toLowerCase() as ExecutionRule
+  }
+
+  return undefined
+}

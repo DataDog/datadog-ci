@@ -7,7 +7,7 @@ import * as api from '../api'
 import {RunTestsCommandConfig, ServerTest, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean, toNumber} from '../utils/internal'
+import {toBoolean, toNumber, toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -76,7 +76,8 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
-        DATADOG_SYNTHETICS_OVERRIDE_RETRY: 'retry',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
         DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
@@ -100,12 +101,15 @@ describe('run-test', () => {
           body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
           bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
           defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
-          executionRule: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE,
+          executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
-          retry: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY,
+          retry: {
+            count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+            interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+          },
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
           testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
