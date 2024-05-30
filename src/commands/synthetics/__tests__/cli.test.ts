@@ -127,6 +127,28 @@ describe('run-test', () => {
       })
     })
 
+    test('partial retryConfig override from ENV retains existing values', async () => {
+      const overrideEnv = {
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+      }
+      process.env = overrideEnv
+      const command = createCommand(RunTestsCommand)
+
+      command['config'].defaultTestOverrides = {
+        ...command['config'].defaultTestOverrides,
+        retry: {
+          count: 1,
+          interval: 42,
+        },
+      }
+      await command['resolveConfig']()
+
+      expect(command['config'].defaultTestOverrides.retry).toEqual({
+        count: 5,
+        interval: 42,
+      })
+    })
+
     test('override from config file', async () => {
       const overrideConfigFile: RunTestsCommandConfig = {
         apiKey: 'fake_api_key',

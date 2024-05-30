@@ -244,10 +244,13 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with OVERRIDE ENV variables
-    const retryConfig = removeUndefinedValues({
-      count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
-      interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
-    })
+    const retryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+        interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
