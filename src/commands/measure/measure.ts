@@ -1,3 +1,5 @@
+import type {AxiosError} from 'axios'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -152,11 +154,18 @@ export class MeasureCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send measures: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send measures: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }
