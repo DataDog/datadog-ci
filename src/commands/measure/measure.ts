@@ -1,10 +1,10 @@
+import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import { AxiosError } from "axios";
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {
