@@ -4,6 +4,7 @@ import {Command, Option} from 'clipanion'
 import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
+import { AxiosError } from "axios";
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {
@@ -152,11 +153,18 @@ export class MeasureCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send measures: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send measures: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }
