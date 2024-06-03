@@ -12,7 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean, toNumber, toExecutionRule} from './utils/internal'
+import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -117,6 +117,9 @@ export class RunTestsCommand extends Command {
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',
+  })
+  private overrides = Option.Array('--override', {
+    description: 'Override specific test properties.',
   })
   private pollingTimeout = Option.String('--pollingTimeout', {
     description:
@@ -244,7 +247,7 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with OVERRIDE ENV variables
-    const retryConfig = deepExtend(
+    const envOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
       removeUndefinedValues({
         count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
@@ -265,7 +268,7 @@ export class RunTestsCommand extends Command {
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
         ),
-        retry: Object.keys(retryConfig).length > 0 ? retryConfig : undefined,
+        retry: Object.keys(envOverrideRetryConfig).length > 0 ? envOverrideRetryConfig : undefined,
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
         testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
@@ -294,6 +297,14 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with Global CLI parameters
+    const validatedOverrides = validateAndParseOverrides(this.overrides)
+    const cliOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: validatedOverrides['retry.count'],
+        interval: validatedOverrides['retry.interval'],
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -303,6 +314,16 @@ export class RunTestsCommand extends Command {
         variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
         pollingTimeout:
           this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
+        allowInsecureCertificates: validatedOverrides.allowInsecureCertificates,
+        body: validatedOverrides.body,
+        bodyType: validatedOverrides.bodyType,
+        defaultStepTimeout: validatedOverrides.defaultStepTimeout,
+        executionRule: validatedOverrides.executionRule,
+        followRedirects: validatedOverrides.followRedirects,
+        retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
+        startUrl: validatedOverrides.startUrl,
+        startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
+        testTimeout: validatedOverrides.testTimeout,
       })
     )
 

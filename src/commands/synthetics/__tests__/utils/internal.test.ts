@@ -1,5 +1,12 @@
 import {ExecutionRule} from '../../interfaces'
-import * as internalUtils from '../../utils/internal'
+import {
+  getOverriddenExecutionRule,
+  parseOverrideValue,
+  toBoolean,
+  toExecutionRule,
+  toNumber,
+  validateAndParseOverrides,
+} from '../../utils/internal'
 
 import {getApiTest} from '../fixtures'
 
@@ -23,7 +30,7 @@ describe('utils', () => {
         const test = getApiTest('abc-def-ghi')
 
         expect(
-          internalUtils.getOverriddenExecutionRule(
+          getOverriddenExecutionRule(
             testRule ? {...test, options: {...test.options, ci: {executionRule: testRule}}} : test,
             resultRule ? {executionRule: resultRule} : {}
           )
@@ -51,7 +58,7 @@ describe('utils', () => {
     ]
 
     test.each(cases)('toBoolean(%s) should return %s', (input, expectedOutput) => {
-      expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
+      expect(toBoolean(input)).toEqual(expectedOutput)
     })
   })
 
@@ -71,7 +78,7 @@ describe('utils', () => {
     ]
 
     test.each(cases)('toNumber(%s) should return %s', (input, expectedOutput) => {
-      expect(internalUtils.toNumber(input)).toEqual(expectedOutput)
+      expect(toNumber(input)).toEqual(expectedOutput)
     })
   })
   describe('toExecutionRule', () => {
@@ -88,7 +95,80 @@ describe('utils', () => {
       [undefined, undefined],
     ]
     test.each(cases)('toExecutionRule(%s) should return %s', (input, expectedOutput) => {
-      expect(internalUtils.toExecutionRule(input)).toEqual(expectedOutput)
+      expect(toExecutionRule(input)).toEqual(expectedOutput)
+    })
+  })
+
+  describe('overrideUtils', () => {
+    describe('parseValue', () => {
+      it('should parse boolean values correctly', () => {
+        expect(parseOverrideValue('true', 'boolean')).toBe(true)
+        expect(parseOverrideValue('True', 'boolean')).toBe(true)
+        expect(parseOverrideValue('TRUE', 'boolean')).toBe(true)
+        expect(parseOverrideValue('1', 'boolean')).toBe(true)
+        expect(parseOverrideValue('false', 'boolean')).toBe(false)
+        expect(parseOverrideValue('False', 'boolean')).toBe(false)
+        expect(parseOverrideValue('FALSE', 'boolean')).toBe(false)
+        expect(parseOverrideValue('0', 'boolean')).toBe(false)
+      })
+
+      it('should throw an error for invalid boolean values', () => {
+        expect(() => parseOverrideValue('notABoolean', 'boolean')).toThrow('Invalid boolean value: notABoolean')
+        expect(() => parseOverrideValue('', 'boolean')).toThrow('Invalid boolean value: ')
+      })
+
+      it('should parse number values correctly', () => {
+        expect(parseOverrideValue('123', 'number')).toBe(123)
+        expect(parseOverrideValue('3.14', 'number')).toBe(3.14)
+      })
+
+      it('should throw an error for invalid number values', () => {
+        expect(() => parseOverrideValue('notANumber', 'number')).toThrow('Invalid number value: notANumber')
+      })
+
+      it('should parse string values correctly', () => {
+        expect(parseOverrideValue('hello world!', 'string')).toBe('hello world!')
+      })
+
+      it('should parse enum values correctly', () => {
+        expect(parseOverrideValue('blocking', 'ExecutionRule')).toBe(ExecutionRule.BLOCKING)
+        expect(parseOverrideValue('non_blocking', 'ExecutionRule')).toBe(ExecutionRule.NON_BLOCKING)
+        expect(parseOverrideValue('skipped', 'ExecutionRule')).toBe(ExecutionRule.SKIPPED)
+      })
+      it('should throw an error for invalid enum values', () => {
+        expect(() => parseOverrideValue('invalid_enum', 'ExecutionRule')).toThrow(
+          'Invalid ExecutionRule value: invalid_enum'
+        )
+      })
+    })
+
+    describe('validateAndParseOverrides', () => {
+      it('should parse valid overrides correctly', () => {
+        const overrides = [
+          'allowInsecureCertificates=true',
+          'body=a body with spaces',
+          'defaultStepTimeout=300',
+          'followRedirects=False',
+        ]
+        const parsedOverrides = validateAndParseOverrides(overrides)
+
+        expect(parsedOverrides).toEqual({
+          allowInsecureCertificates: true,
+          body: 'a body with spaces',
+          defaultStepTimeout: 300,
+          followRedirects: false,
+        })
+      })
+
+      it('should throw an error for invalid keys', () => {
+        const overrides = ['invalidKey=value']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: invalidKey')
+      })
+
+      it('should throw an error for invalid values', () => {
+        const overrides = ['defaultStepTimeout=notANumber']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid number value: notANumber')
+      })
     })
   })
 })

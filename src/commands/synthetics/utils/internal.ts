@@ -1,4 +1,5 @@
 import {
+  BaseConfigOverride,
   BaseResult,
   ExecutionRule,
   MobileTestWithOverride,
@@ -86,4 +87,99 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
   }
 
   return undefined
+}
+
+type validTestOverridesValues = 'boolean' | 'number' | 'string' | 'string[]' | 'ExecutionRule'
+type AccumulatorBaseConfigOverride = Omit<
+  BaseConfigOverride,
+  'basicAuth' | 'headers' | 'cookies' | 'deviceIds' | 'locations' | 'tunnel' | 'variables' | 'retry'
+> & {
+  'retry.count'?: number
+  'retry.interval'?: number
+}
+type AccumulatorBaseConfigOverrideKeys = keyof AccumulatorBaseConfigOverride
+type OverridesValues = boolean | number | string | string[] | ExecutionRule
+
+export const parseOverrideValue = (value: string, type: validTestOverridesValues): OverridesValues => {
+  switch (type) {
+    case 'boolean':
+      const parsedBoolean = toBoolean(value)
+      if (parsedBoolean !== undefined) {
+        return parsedBoolean
+      }
+      throw new Error(`Invalid boolean value: ${value}`)
+    case 'number':
+      const parsedNumber = toNumber(value)
+      if (parsedNumber !== undefined) {
+        return parsedNumber
+      }
+      throw new Error(`Invalid number value: ${value}`)
+    case 'string':
+      return value.trim()
+    case 'string[]':
+      return value.split(';').map((item) => item.trim())
+    case 'ExecutionRule':
+      const parsedExecutionRule = toExecutionRule(value)
+      if (parsedExecutionRule !== undefined) {
+        return parsedExecutionRule
+      }
+      throw new Error(`Invalid ExecutionRule value: ${value}`)
+    default:
+      throw new Error(`Unknown type: ${type}`)
+  }
+}
+
+export const validateAndParseOverrides = (overrides: string[] | undefined): AccumulatorBaseConfigOverride => {
+  if (!overrides) {
+    return {}
+  }
+  const resourceUrlSubstitutionRegexes: string[] = []
+
+  return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
+    const [key, value] = override.split('=') as [AccumulatorBaseConfigOverrideKeys, string]
+
+    // here, we want to parse the value according to its type. With sepcial case for retry
+    switch (key) {
+      // Convert to numbers
+      case 'defaultStepTimeout':
+      case 'pollingTimeout':
+      case 'retry.count':
+      case 'retry.interval':
+      case 'testTimeout':
+        acc[key] = parseOverrideValue(value, 'number') as number
+        break
+
+      // Convert to strings
+      case 'body':
+      case 'bodyType':
+      case 'startUrl':
+      case 'startUrlSubstitutionRegex':
+        acc[key] = parseOverrideValue(value, 'string') as string
+        break
+
+      // Convert to boolean
+      case 'allowInsecureCertificates':
+      case 'followRedirects':
+        acc[key] = parseOverrideValue(value, 'boolean') as boolean
+        break
+
+      // Convert to ExecutionRule
+      case 'executionRule':
+        acc[key] = parseOverrideValue(value, 'ExecutionRule') as ExecutionRule
+        break
+
+      // Special parsing for resourceUrlSubstitutionRegexes
+      case 'resourceUrlSubstitutionRegexes':
+        resourceUrlSubstitutionRegexes.push(value)
+        acc['resourceUrlSubstitutionRegexes'] = resourceUrlSubstitutionRegexes
+        break
+
+      // TODO: Convert to string[], to be implemented when adding localisations, variableStrings, etc.
+
+      default:
+        throw new Error(`Invalid key: ${key}`)
+    }
+
+    return acc
+  }, {})
 }
