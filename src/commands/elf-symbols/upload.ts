@@ -276,14 +276,12 @@ export class UploadCommand extends Command {
           fileMetadata.fileHash,
           fileMetadata.arch
         )
-        const outputFilename = getOutputFilenameFromBuildId(
-          fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
-        )
+        const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
         await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
 
         if (this.dryRun) {
-          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, getBuildId(fileMetadata))}`)
+          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
 
           return UploadStatus.Success
         }
@@ -324,7 +322,7 @@ export class UploadCommand extends Command {
             metricsLogger.logger.increment('retries', 1)
           },
           onUpload: () => {
-            this.context.stdout.write(renderUpload(fileMetadata.filename, getBuildId(fileMetadata)))
+            this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
           },
           retries: 5,
           useGzip: true,
