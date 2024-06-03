@@ -177,7 +177,7 @@ export class UploadCommand extends Command {
     let reportFailure
 
     if (fs.statSync(symbolsLocation).isDirectory()) {
-      files = glob.sync(buildPath(symbolsLocation, '**'), {nodir: true})
+      files = glob.sync(buildPath(symbolsLocation, '**'), {nodir: true, dot: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
     } else {
       files = [symbolsLocation]

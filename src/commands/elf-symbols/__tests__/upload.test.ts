@@ -79,9 +79,9 @@ describe('elf-symbols upload', () => {
       const command = createCommand(UploadCommand)
       const files = await command['getElfSymbolFiles'](fixtureDir)
       expect(files.map((f) => f.filename)).toEqual([
+        `${fixtureDir}/.debug/dyn_aarch64.debug`,
         `${fixtureDir}/dyn_aarch64`,
         `${fixtureDir}/dyn_aarch64_nobuildid`,
-        `${fixtureDir}/dyn_aarch64.debug`,
         `${fixtureDir}/dyn_x86_64`,
         `${fixtureDir}/exec_aarch64`,
         `${fixtureDir}/exec_arm_big`,
@@ -150,7 +150,7 @@ describe('elf-symbols upload', () => {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          file_hash: '5ba2907faebb8002de89711d5f0f005c',
+          file_hash: '',
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
