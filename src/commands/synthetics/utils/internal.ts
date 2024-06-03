@@ -61,3 +61,29 @@ export const toBoolean = (env: string | undefined): boolean | undefined => {
 
   return undefined
 }
+
+export const toNumber = (env: string | undefined): number | undefined => {
+  if (env === undefined || env.trim() === '') {
+    return undefined
+  }
+
+  const number = Number(env)
+
+  if (isNaN(number)) {
+    return undefined
+  }
+
+  return number
+}
+
+export const toExecutionRule = (env: string | undefined): ExecutionRule | undefined => {
+  if (env === undefined) {
+    return undefined
+  }
+  const enumValues = Object.values(ExecutionRule)
+  if (enumValues.includes(env.toLowerCase() as ExecutionRule)) {
+    return env.toLowerCase() as ExecutionRule
+  }
+
+  return undefined
+}

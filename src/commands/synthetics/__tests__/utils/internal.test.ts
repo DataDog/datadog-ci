@@ -54,4 +54,41 @@ describe('utils', () => {
       expect(internalUtils.toBoolean(input)).toEqual(expectedOutput)
     })
   })
+
+  describe('toNumber', () => {
+    const cases: [string | undefined, number | undefined][] = [
+      ['42', 42],
+      ['0', 0],
+      ['-1', -1],
+      ['3.14', 3.14], // Floats should be supported
+      ['  42', 42], // Leading whitespace should be ignored
+      ['0042', 42], // Leading zeros should be ignored
+      ['', undefined],
+      ['  ', undefined],
+      ['randomString', undefined],
+      ['NaN', undefined],
+      [undefined, undefined],
+    ]
+
+    test.each(cases)('toNumber(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toNumber(input)).toEqual(expectedOutput)
+    })
+  })
+  describe('toExecutionRule', () => {
+    const cases: [string | undefined, ExecutionRule | undefined][] = [
+      ['blocking', ExecutionRule.BLOCKING],
+      ['non_blocking', ExecutionRule.NON_BLOCKING],
+      ['skipped', ExecutionRule.SKIPPED],
+      ['BLOCKING', ExecutionRule.BLOCKING], // Case-sensitive check
+      ['NON_BLOCKING', ExecutionRule.NON_BLOCKING],
+      ['non-blocking', undefined], // Exact match required
+      ['', undefined],
+      ['  ', undefined],
+      ['randomString', undefined],
+      [undefined, undefined],
+    ]
+    test.each(cases)('toExecutionRule(%s) should return %s', (input, expectedOutput) => {
+      expect(internalUtils.toExecutionRule(input)).toEqual(expectedOutput)
+    })
+  })
 })

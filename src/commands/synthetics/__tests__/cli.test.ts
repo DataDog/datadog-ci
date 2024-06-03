@@ -7,7 +7,7 @@ import * as api from '../api'
 import {RunTestsCommandConfig, ServerTest, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean} from '../utils/internal'
+import {toBoolean, toNumber, toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -57,8 +57,6 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'fake_app_key',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
-        DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
-        DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
         DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
         DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
         DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
@@ -69,6 +67,20 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
         DATADOG_SYNTHETICS_TUNNEL: 'false',
+        DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
+        DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
+        DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body',
+        DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType',
+        DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+        DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
+        DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
+        DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
+        DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
+        DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
       }
 
       process.env = overrideEnv
@@ -85,6 +97,22 @@ describe('run-test', () => {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+          allowInsecureCertificates: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+          body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
+          bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+          defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+          executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
+          followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+          resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
+            ';'
+          ),
+          retry: {
+            count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+            interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+          },
+          startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
+          startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
+          testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
         },
         failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -96,6 +124,28 @@ describe('run-test', () => {
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
         testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
         tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
+      })
+    })
+
+    test('partial retryConfig override from ENV retains existing values', async () => {
+      const overrideEnv = {
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+      }
+      process.env = overrideEnv
+      const command = createCommand(RunTestsCommand)
+
+      command['config'].defaultTestOverrides = {
+        ...command['config'].defaultTestOverrides,
+        retry: {
+          count: 1,
+          interval: 42,
+        },
+      }
+      await command['resolveConfig']()
+
+      expect(command['config'].defaultTestOverrides.retry).toEqual({
+        count: 5,
+        interval: 42,
       })
     })
 
