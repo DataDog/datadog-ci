@@ -102,7 +102,7 @@ The duration (in milliseconds) after which `datadog-ci` stops polling for test r
 : Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
 
 `tunnel`
-: Use the [Continuous Testing Tunnel](#use-the-testing-tunnel) to execute your test batch.
+: Use [Local and Staging Environments](#use-local-and-staging-environments) to execute your test batch.
 
 
 #### Use a proxy
@@ -379,9 +379,9 @@ All options under the `testOverrides` key are optional and allow overriding of t
 | `testTimeout`                      | Number           | The maximum duration of a browser test in seconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `variables`                        | Object           | The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
-## Use the testing tunnel
+## Use local and staging environments
 
-You can combine variable overrides with the [Continuous Testing Tunnel][3] to run tests within your development environment. The testing tunnel creates an end-to-end encrypted HTTP proxy between your infrastructure and Datadog that allows all test requests sent through the CLI to be automatically routed through the `datadog-ci` client. 
+You can combine variable overrides with [Local and Staging Environments][3] to run tests within your development environment. This connection ensures that all test requests sent through the CLI are automatically routed through the `datadog-ci` client. 
 
 This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
 
