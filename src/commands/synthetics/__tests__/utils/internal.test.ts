@@ -128,6 +128,7 @@ describe('utils', () => {
 
       it('should parse string values correctly', () => {
         expect(parseOverrideValue('  hello world!  ', 'string')).toBe('hello world!')
+        expect(parseOverrideValue('\\,./!@#$%^&*()_-+=|/?<>[]{}\\', 'string')).toBe('\\,./!@#$%^&*()_-+=|/?<>[]{}\\')
       })
 
       it('should parse enum values correctly', () => {
@@ -140,6 +141,9 @@ describe('utils', () => {
           'Invalid ExecutionRule value: invalid_enum'
         )
       })
+      it('should parse string array values correctly', () => {
+        expect(parseOverrideValue(' first value;second value ; \\,./!@#$%^&*()_-+=|/?<>[]{}\\  ', 'string[]')).toEqual(['first value', 'second value', '\\,./!@#$%^&*()_-+=|/?<>[]{}\\'])
+      })
     })
 
     describe('validateAndParseOverrides', () => {
@@ -149,6 +153,8 @@ describe('utils', () => {
           'body=a body with spaces',
           'defaultStepTimeout=300',
           'followRedirects=False',
+          'resourceUrlSubstitutionRegexes=s/(https://www.)(.*)/$1extra-$2',
+          'resourceUrlSubstitutionRegexes=https://example.com(.*)|http://subdomain.example.com$1',
         ]
         const parsedOverrides = validateAndParseOverrides(overrides)
 
@@ -157,6 +163,7 @@ describe('utils', () => {
           body: 'a body with spaces',
           defaultStepTimeout: 300,
           followRedirects: false,
+          resourceUrlSubstitutionRegexes: ['s/(https://www.)(.*)/$1extra-$2', 'https://example.com(.*)|http://subdomain.example.com$1'],
         })
       })
 
