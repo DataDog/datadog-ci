@@ -1,5 +1,4 @@
 import {
-  BaseConfigOverride,
   BaseResult,
   ExecutionRule,
   MobileTestWithOverride,
@@ -89,18 +88,28 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
   return undefined
 }
 
-type validTestOverridesValues = 'boolean' | 'number' | 'string' | 'string[]' | 'ExecutionRule'
 type AccumulatorBaseConfigOverride = Omit<
-  BaseConfigOverride,
-  'basicAuth' | 'headers' | 'cookies' | 'deviceIds' | 'locations' | 'tunnel' | 'variables' | 'retry' // These options will be implemented later in separate PRs, see https://datadoghq.atlassian.net/browse/SYNTH-12971
+UserConfigOverride,
+| 'retry'
+// TODO SYNTH-12971: These options will be implemented later in separate PRs
+| 'basicAuth'
+| 'headers'
+| 'cookies'
+| 'deviceIds'
+| 'locations'
+| 'mobileApplicationVersion'
+| 'mobileApplicationVersionFilePath'
+| 'tunnel'
+| 'variables'
 > & {
   'retry.count'?: number
   'retry.interval'?: number
 }
-type AccumulatorBaseConfigOverrideKeys = keyof AccumulatorBaseConfigOverride
-type OverridesValues = boolean | number | string | string[] | ExecutionRule
+type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
+type TestOverrideValueType = boolean | number | string | string[] | ExecutionRule
+type ValidTestOverrideValueTypeName = 'boolean' | 'number' | 'string' | 'string[]' | 'ExecutionRule'
 
-export const parseOverrideValue = (value: string, type: validTestOverridesValues): OverridesValues => {
+export const parseOverrideValue = (value: string, type: ValidTestOverrideValueTypeName): TestOverrideValueType => {
   switch (type) {
     case 'boolean':
       const parsedBoolean = toBoolean(value)
@@ -135,11 +144,10 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   }
 
   return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
-    const [key, value] = override.split('=') as [AccumulatorBaseConfigOverrideKeys, string]
+    const [key, value] = override.split('=') as [AccumulatorBaseConfigOverrideKey, string]
 
-    // here, we want to parse the value according to its type. With sepcial case for retry
     switch (key) {
-      // Convert to numbers
+      // Convert to number
       case 'defaultStepTimeout':
       case 'pollingTimeout':
       case 'retry.count':
@@ -148,7 +156,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         acc[key] = parseOverrideValue(value, 'number') as number
         break
 
-      // Convert to strings
+      // Convert to string
       case 'body':
       case 'bodyType':
       case 'startUrl':
@@ -169,11 +177,11 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
 
       // Special parsing for resourceUrlSubstitutionRegexes
       case 'resourceUrlSubstitutionRegexes':
-        acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
+        acc['resourceUrlSubstitutionRegexes'] ??= []
         acc['resourceUrlSubstitutionRegexes'].push(value)
         break
 
-      // TODO: Convert to string[], to be implemented when adding localisations, variableStrings, etc.
+      // TODO: Convert to string[], to be implemented when adding `locations`, `variableStrings`, etc.
 
       default:
         throw new Error(`Invalid key: ${key}`)
