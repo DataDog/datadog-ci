@@ -133,7 +133,6 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   if (!overrides) {
     return {}
   }
-  const resourceUrlSubstitutionRegexes: string[] = []
 
   return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
     const [key, value] = override.split('=') as [AccumulatorBaseConfigOverrideKeys, string]
@@ -170,8 +169,8 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
 
       // Special parsing for resourceUrlSubstitutionRegexes
       case 'resourceUrlSubstitutionRegexes':
-        resourceUrlSubstitutionRegexes.push(value)
-        acc['resourceUrlSubstitutionRegexes'] = resourceUrlSubstitutionRegexes
+        acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
+        acc['resourceUrlSubstitutionRegexes'].push(value)
         break
 
       // TODO: Convert to string[], to be implemented when adding localisations, variableStrings, etc.
