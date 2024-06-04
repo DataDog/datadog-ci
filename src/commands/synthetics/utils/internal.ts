@@ -92,7 +92,7 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
 type validTestOverridesValues = 'boolean' | 'number' | 'string' | 'string[]' | 'ExecutionRule'
 type AccumulatorBaseConfigOverride = Omit<
   BaseConfigOverride,
-  'basicAuth' | 'headers' | 'cookies' | 'deviceIds' | 'locations' | 'tunnel' | 'variables' | 'retry'
+  'basicAuth' | 'headers' | 'cookies' | 'deviceIds' | 'locations' | 'tunnel' | 'variables' | 'retry' // These options will be implemented later in separate PRs, see https://datadoghq.atlassian.net/browse/SYNTH-12971
 > & {
   'retry.count'?: number
   'retry.interval'?: number

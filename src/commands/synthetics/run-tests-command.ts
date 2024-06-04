@@ -257,14 +257,14 @@ export class RunTestsCommand extends Command {
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
-        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
-        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         allowInsecureCertificates: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+        deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+        mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
         ),
@@ -308,22 +308,22 @@ export class RunTestsCommand extends Command {
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
-        deviceIds: this.deviceIds,
-        mobileApplicationVersion: this.mobileApplicationVersion,
-        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
-        pollingTimeout:
-          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
         allowInsecureCertificates: validatedOverrides.allowInsecureCertificates,
         body: validatedOverrides.body,
         bodyType: validatedOverrides.bodyType,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
+        deviceIds: this.deviceIds,
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,
+        mobileApplicationVersion: this.mobileApplicationVersion,
+        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+        pollingTimeout:
+          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
         testTimeout: validatedOverrides.testTimeout,
+        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
       })
     )
 

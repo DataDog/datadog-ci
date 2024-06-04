@@ -224,14 +224,14 @@ describe('run-test', () => {
         variableStrings: ['key=value'],
       }
       const defaultTestOverrides: UserConfigOverride = {
-        deviceIds: ['chrome.laptop_large'],
-        mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
         allowInsecureCertificates: true,
         body: 'a body',
         bodyType: 'bodyType',
         defaultStepTimeout: 42,
+        deviceIds: ['chrome.laptop_large'],
         executionRule: ExecutionRule.BLOCKING,
         followRedirects: true,
+        mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
         pollingTimeout: 42,
         resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
         retry: {
@@ -289,16 +289,16 @@ describe('run-test', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
-          deviceIds: ['chrome.laptop_large'],
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-          mobileApplicationVersionFilePath: './path/to/application.apk',
           allowInsecureCertificates: true,
           body: 'a body',
           bodyType: 'bodyType',
           defaultStepTimeout: 42,
+          deviceIds: ['chrome.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
           followRedirects: true,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           retry: {
             count: 5,
             interval: 42,
