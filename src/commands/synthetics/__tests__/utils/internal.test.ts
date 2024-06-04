@@ -127,7 +127,7 @@ describe('utils', () => {
       })
 
       it('should parse string values correctly', () => {
-        expect(parseOverrideValue('hello world!', 'string')).toBe('hello world!')
+        expect(parseOverrideValue('  hello world!  ', 'string')).toBe('hello world!')
       })
 
       it('should parse enum values correctly', () => {
