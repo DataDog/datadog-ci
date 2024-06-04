@@ -142,7 +142,11 @@ describe('utils', () => {
         )
       })
       it('should parse string array values correctly', () => {
-        expect(parseOverrideValue(' first value;second value ; \\,./!@#$%^&*()_-+=|/?<>[]{}\\  ', 'string[]')).toEqual(['first value', 'second value', '\\,./!@#$%^&*()_-+=|/?<>[]{}\\'])
+        expect(parseOverrideValue(' first value;second value ; \\,./!@#$%^&*()_-+=|/?<>[]{}\\  ', 'string[]')).toEqual([
+          'first value',
+          'second value',
+          '\\,./!@#$%^&*()_-+=|/?<>[]{}\\',
+        ])
       })
     })
 
@@ -163,7 +167,10 @@ describe('utils', () => {
           body: 'a body with spaces',
           defaultStepTimeout: 300,
           followRedirects: false,
-          resourceUrlSubstitutionRegexes: ['s/(https://www.)(.*)/$1extra-$2', 'https://example.com(.*)|http://subdomain.example.com$1'],
+          resourceUrlSubstitutionRegexes: [
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
         })
       })
 
