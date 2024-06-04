@@ -89,18 +89,18 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
 }
 
 type AccumulatorBaseConfigOverride = Omit<
-UserConfigOverride,
-| 'retry'
-// TODO SYNTH-12971: These options will be implemented later in separate PRs
-| 'basicAuth'
-| 'headers'
-| 'cookies'
-| 'deviceIds'
-| 'locations'
-| 'mobileApplicationVersion'
-| 'mobileApplicationVersionFilePath'
-| 'tunnel'
-| 'variables'
+  UserConfigOverride,
+  | 'retry'
+  // TODO SYNTH-12971: These options will be implemented later in separate PRs
+  | 'basicAuth'
+  | 'headers'
+  | 'cookies'
+  | 'deviceIds'
+  | 'locations'
+  | 'mobileApplicationVersion'
+  | 'mobileApplicationVersionFilePath'
+  | 'tunnel'
+  | 'variables'
 > & {
   'retry.count'?: number
   'retry.interval'?: number
@@ -177,7 +177,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
 
       // Special parsing for resourceUrlSubstitutionRegexes
       case 'resourceUrlSubstitutionRegexes':
-        acc['resourceUrlSubstitutionRegexes'] ??= []
+        acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
         acc['resourceUrlSubstitutionRegexes'].push(value)
         break
 
