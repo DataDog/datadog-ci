@@ -12,7 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides} from './utils/internal'
+import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringObject} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -94,6 +94,7 @@ export class RunTestsCommand extends Command {
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  // TO DO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
   private deviceIds = Option.Array('--deviceIds', {
     description: 'Override the mobile device(s) to run your mobile test.',
   })
@@ -254,16 +255,26 @@ export class RunTestsCommand extends Command {
         interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
       })
     )
+    const envOverrideBasicAuth = deepExtend(
+      this.config.defaultTestOverrides?.basicAuth ?? {},
+      removeUndefinedValues({
+        password: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD,
+        username: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
         allowInsecureCertificates: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+        basicAuth: Object.keys(envOverrideBasicAuth).length > 0 ? envOverrideBasicAuth : undefined,
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+        cookies: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+        headers: toStringObject(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
@@ -301,20 +312,31 @@ export class RunTestsCommand extends Command {
     const cliOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
       removeUndefinedValues({
-        count: validatedOverrides['retry.count'],
-        interval: validatedOverrides['retry.interval'],
+        count: validatedOverrides.retry?.count,
+        interval: validatedOverrides.retry?.interval,
+      })
+    )
+    const cliOverrideBasicAuth = deepExtend(
+      this.config.defaultTestOverrides?.basicAuth ?? {},
+      removeUndefinedValues({
+        password: validatedOverrides.basicAuth?.password,
+        username: validatedOverrides.basicAuth?.username,
       })
     )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
         allowInsecureCertificates: validatedOverrides.allowInsecureCertificates,
+        basicAuth: Object.keys(cliOverrideBasicAuth).length > 0 ? cliOverrideBasicAuth : undefined,
         body: validatedOverrides.body,
         bodyType: validatedOverrides.bodyType,
+        cookies: validatedOverrides.cookies,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
-        deviceIds: this.deviceIds,
+        // TO DO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,
+        headers: validatedOverrides.headers,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         pollingTimeout:

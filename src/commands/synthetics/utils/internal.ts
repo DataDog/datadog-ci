@@ -1,10 +1,12 @@
 import {
   BaseResult,
+  BasicAuthCredentials,
   ExecutionRule,
   MobileTestWithOverride,
   Result,
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
+  RetryConfig,
   Test,
   TestNotFound,
   TestSkipped,
@@ -88,22 +90,42 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
   return undefined
 }
 
+export const toStringObject = (env: string | undefined): {[key: string]: string} | undefined => {
+  if (env === undefined) {
+    return undefined
+  }
+  const cleanedEnv = env.replace(/'/g, '"').replace(/\s/g, '');
+
+  try {
+    const parsed = JSON.parse(cleanedEnv)
+    // eslint-disable-next-line no-null/no-null
+    if (typeof parsed === 'object' && parsed !== null) {
+      for (const key in parsed as object) {
+        if (typeof parsed[key] !== 'string') {
+          return undefined
+        }
+      }
+
+      return parsed as {[key: string]: string}
+    }
+  } catch (error) {
+    return undefined
+  }
+}
+
 type AccumulatorBaseConfigOverride = Omit<
   UserConfigOverride,
   | 'retry'
-  // TODO SYNTH-12971: These options will be implemented later in separate PRs
   | 'basicAuth'
-  | 'headers'
-  | 'cookies'
-  | 'deviceIds'
+  // TODO SYNTH-12971: These options will be implemented later in separate PRs
   | 'locations'
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
   | 'tunnel'
   | 'variables'
 > & {
-  'retry.count'?: number
-  'retry.interval'?: number
+  retry?: Partial<RetryConfig>
+  basicAuth?: Partial<BasicAuthCredentials>
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
 type TestOverrideValueType = boolean | number | string | string[] | ExecutionRule
@@ -144,24 +166,17 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   }
 
   return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
-    const [key, value] = override.split('=') as [AccumulatorBaseConfigOverrideKey, string]
+    const [rawKey, value] = override.split('=') as [string, string]
+
+    const key = rawKey.split('.')[0] as AccumulatorBaseConfigOverrideKey
+    const subKey = rawKey.split('.')[1]
 
     switch (key) {
       // Convert to number
       case 'defaultStepTimeout':
       case 'pollingTimeout':
-      case 'retry.count':
-      case 'retry.interval':
       case 'testTimeout':
         acc[key] = parseOverrideValue(value, 'number') as number
-        break
-
-      // Convert to string
-      case 'body':
-      case 'bodyType':
-      case 'startUrl':
-      case 'startUrlSubstitutionRegex':
-        acc[key] = parseOverrideValue(value, 'string') as string
         break
 
       // Convert to boolean
@@ -170,9 +185,18 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         acc[key] = parseOverrideValue(value, 'boolean') as boolean
         break
 
-      // Convert to ExecutionRule
-      case 'executionRule':
-        acc[key] = parseOverrideValue(value, 'ExecutionRule') as ExecutionRule
+      // Convert to string
+      case 'body':
+      case 'bodyType':
+      case 'cookies':
+      case 'startUrl':
+      case 'startUrlSubstitutionRegex':
+        acc[key] = parseOverrideValue(value, 'string') as string
+        break
+
+      // Convert to string[]
+      case 'deviceIds':
+        acc[key] = parseOverrideValue(value, 'string[]') as string[]
         break
 
       // Special parsing for resourceUrlSubstitutionRegexes
@@ -181,7 +205,44 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         acc['resourceUrlSubstitutionRegexes'].push(value)
         break
 
-      // TODO: Convert to string[], to be implemented when adding `locations`, `variableStrings`, etc.
+      // Convert to ExecutionRule
+      case 'executionRule':
+        acc[key] = parseOverrideValue(value, 'ExecutionRule') as ExecutionRule
+        break
+
+      // Convert to RetryConfig
+      case 'retry':
+        switch (subKey as keyof RetryConfig) {
+          case 'count':
+          case 'interval':
+            acc['retry'] = acc['retry'] ?? {}
+            acc['retry'][subKey as keyof RetryConfig] = parseOverrideValue(value, 'number') as number
+            break
+          default:
+            throw new Error(`Invalid subkey for ${key}`)
+        }
+        break
+
+      case 'basicAuth':
+        switch (subKey as keyof BasicAuthCredentials) {
+          case 'username':
+          case 'password':
+            acc['basicAuth'] = acc['basicAuth'] ?? {}
+            acc['basicAuth'][subKey as keyof BasicAuthCredentials] = parseOverrideValue(value, 'string') as string
+            break
+          default:
+            throw new Error(`Invalid subkey for ${key}`)
+        }
+        break
+      // Convert to {[key: string]: string}
+      case 'headers':
+        if (subKey) {
+          acc['headers'] = acc['headers'] ?? {}
+          acc['headers'][subKey] = value
+        } else {
+          throw new Error(`No subkey found for ${key}`)
+        }
+        break
 
       default:
         throw new Error(`Invalid key: ${key}`)
