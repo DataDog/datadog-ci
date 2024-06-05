@@ -4,7 +4,13 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {RunTestsCommandConfig, ServerTest, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
+import {
+  ExecutionRule,
+  RunTestsCommandConfig,
+  ServerTest,
+  UploadApplicationCommandConfig,
+  UserConfigOverride,
+} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import {toBoolean, toNumber, toExecutionRule} from '../utils/internal'
@@ -218,8 +224,23 @@ describe('run-test', () => {
         variableStrings: ['key=value'],
       }
       const defaultTestOverrides: UserConfigOverride = {
+        allowInsecureCertificates: true,
+        body: 'a body',
+        bodyType: 'bodyType',
+        defaultStepTimeout: 42,
         deviceIds: ['chrome.laptop_large'],
+        executionRule: ExecutionRule.BLOCKING,
+        followRedirects: true,
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+        pollingTimeout: 42,
+        resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
+        retry: {
+          count: 5,
+          interval: 42,
+        },
+        startUrl: 'startUrl',
+        startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
+        testTimeout: 42,
       }
 
       const command = createCommand(RunTestsCommand)
@@ -239,6 +260,21 @@ describe('run-test', () => {
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
+      command['overrides'] = [
+        `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+        `body=${defaultTestOverrides.body}`,
+        `bodyType=${defaultTestOverrides.bodyType}`,
+        `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+        `executionRule=${defaultTestOverrides.executionRule}`,
+        `followRedirects=${defaultTestOverrides.followRedirects}`,
+        `retry.count=${defaultTestOverrides.retry?.count}`,
+        `retry.interval=${defaultTestOverrides.retry?.interval}`,
+        `startUrl=${defaultTestOverrides.startUrl}`,
+        `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+        `testTimeout=${defaultTestOverrides.testTimeout}`,
+        'resourceUrlSubstitutionRegexes=regex1',
+        'resourceUrlSubstitutionRegexes=regex42',
+      ]
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -253,10 +289,23 @@ describe('run-test', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          body: 'a body',
+          bodyType: 'bodyType',
+          defaultStepTimeout: 42,
           deviceIds: ['chrome.laptop_large'],
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          retry: {
+            count: 5,
+            interval: 42,
+          },
+          startUrl: 'startUrl',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
+          testTimeout: 42,
         },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
