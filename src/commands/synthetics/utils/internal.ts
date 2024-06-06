@@ -94,7 +94,7 @@ export const toStringObject = (env: string | undefined): {[key: string]: string}
   if (env === undefined) {
     return undefined
   }
-  const cleanedEnv = env.replace(/'/g, '"').replace(/\s/g, '');
+  const cleanedEnv = env.replace(/'/g, '"').replace(/\s/g, '')
 
   try {
     const parsed = JSON.parse(cleanedEnv)

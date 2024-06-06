@@ -104,10 +104,13 @@ describe('utils', () => {
     const cases: [string | undefined, {[key: string]: string} | undefined][] = [
       ['{"key1":"value1","key2":"value2"}', {key1: 'value1', key2: 'value2'}],
       ['{"key1": "value1", "key2": "value2"}', {key1: 'value1', key2: 'value2'}],
-      [`{
+      [
+        `{
         "key1": "value1",
         "key2": "value2"
-      }`, {key1: 'value1', key2: 'value2'}], // Multiline JSON should be supported
+      }`,
+        {key1: 'value1', key2: 'value2'},
+      ], // Multiline JSON should be supported
       ["{'key1': 'value1', 'key2': 'value2'}", {key1: 'value1', key2: 'value2'}], // Single quotes should be supported
       ['{"key1":"value1"}', {key1: 'value1'}],
       ['{}', {}],
