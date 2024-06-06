@@ -354,12 +354,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       if (this.mergeStepFunctionAndLambdaTraces || this.propagateUpstreamTrace) {
         // Not putting the update operation into the business logic of logs subscription. This will
         // add additional API call, but it would also allow easier testing and cleaner code.
-        await injectContextIntoTasks(
-          describeStateMachineCommandOutput,
-          stepFunctionsClient,
-          this.context,
-          this.dryRun
-        )
+        await injectContextIntoTasks(describeStateMachineCommandOutput, stepFunctionsClient, this.context, this.dryRun)
       }
     }
     if (!hasChanges) {

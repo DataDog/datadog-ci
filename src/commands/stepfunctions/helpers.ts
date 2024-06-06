@@ -117,7 +117,7 @@ export const addTraceContextToLambdaParameters = ({Parameters}: StepType): void 
 
 export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType): void => {
   if (Parameters) {
-    if (!Parameters.Input){
+    if (!Parameters.Input) {
       Parameters.Input = {}
     }
     Parameters.Input['CONTEXT.$'] = 'States.JsonMerge($$, $, false)'
@@ -157,13 +157,13 @@ export const shouldUpdateStepForStepFunctionContextInjection = (step: StepType):
     if (!step.Parameters) {
       return false
     }
-    if (!step.Parameters.Input){
+    if (!step.Parameters.Input) {
       return true
     }
-    if (typeof step.Parameters.Input !== "object"){
+    if (typeof step.Parameters.Input !== 'object') {
       return false
     }
-    if (!step.Parameters.Input['CONTEXT.$']){
+    if (!step.Parameters.Input['CONTEXT.$']) {
       return true
     }
   }
@@ -198,6 +198,7 @@ export type ParametersType = {
 function injectContextForLambdaFunctions(step: StepType, context: BaseContext, stepName: string) {
   if (shouldUpdateStepForTracesMerging(step)) {
     addTraceContextToLambdaParameters(step)
+
     return true
   } else if (step.Resource?.startsWith('arn:aws:lambda')) {
     context.stdout.write(
@@ -206,13 +207,16 @@ function injectContextForLambdaFunctions(step: StepType, context: BaseContext, s
           More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
     )
   }
+
   return false
 }
 
 function injectContextForStepFunctions(step: StepType) {
-  if (shouldUpdateStepForStepFunctionContextInjection(step)){
+  if (shouldUpdateStepForStepFunctionContextInjection(step)) {
     addTraceContextToStepFunctionParameters(step)
+
     return true
   }
+
   return false
 }
