@@ -94,7 +94,7 @@ export class RunTestsCommand extends Command {
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
-  // TO DO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+  // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
   private deviceIds = Option.Array('--deviceIds', {
     description: 'Override the mobile device(s) to run your mobile test.',
   })
@@ -332,7 +332,7 @@ export class RunTestsCommand extends Command {
         bodyType: validatedOverrides.bodyType,
         cookies: validatedOverrides.cookies,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
-        // TO DO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
         deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,

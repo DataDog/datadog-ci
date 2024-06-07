@@ -166,7 +166,9 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   }
 
   return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
-    const [rawKey, value] = override.split('=') as [string, string]
+    const match = override.match(/^(.*?)=(.*)$/) ?? []; // split key and value at first equal sign
+    const rawKey = match[1] ?? '';
+    const value = match[2] ?? '';
 
     const key = rawKey.split('.')[0] as AccumulatorBaseConfigOverrideKey
     const subKey = rawKey.split('.')[1]
