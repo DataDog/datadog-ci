@@ -38,20 +38,20 @@ describe('elf-symbols upload', () => {
   }
 
   describe('parameter validation', () => {
-    test('fails if symbols-location is blank', async () => {
+    test('fails if symbols locations is empty', async () => {
       const {exitCode, context} = await runCommand((cmd) => {
-        cmd['symbolsLocation'] = ''
+        cmd['symbolsLocations'] = []
       })
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
-      expect(errorOutput).toContain(renderArgumentMissingError('symbols-location'))
+      expect(errorOutput).toContain(renderArgumentMissingError('symbols locations'))
     })
 
-    test('fails if symbols-location is does not exist', async () => {
+    test('fails if symbols locations does not exist', async () => {
       const nonExistentSymbolsLocation = `${fixtureDir}/does-not-exist`
       const {exitCode, context} = await runCommand((cmd) => {
-        cmd['symbolsLocation'] = nonExistentSymbolsLocation
+        cmd['symbolsLocations'] = [nonExistentSymbolsLocation]
       })
       const errorOutput = context.stderr.toString()
 
@@ -62,7 +62,7 @@ describe('elf-symbols upload', () => {
     test('uses API Key from env over config from JSON file', async () => {
       const {exitCode, context} = await runCommand((cmd) => {
         cmd['configPath'] = `${fixtureDir}/config/datadog-ci.json`
-        cmd['symbolsLocation'] = fixtureDir
+        cmd['symbolsLocations'] = [fixtureDir]
         process.env.DATADOG_API_KEY = 'fake_api_key'
       })
       const output = context.stdout.toString().split(os.EOL)
@@ -103,7 +103,7 @@ describe('elf-symbols upload', () => {
   describe('upload', () => {
     test('creates correct metadata payload', async () => {
       const command = createCommand(UploadCommand)
-      command['symbolsLocation'] = fixtureDir
+      command['symbolsLocations'] = [fixtureDir]
 
       command['gitData'] = {
         hash: 'fake-git-hash',
@@ -131,9 +131,51 @@ describe('elf-symbols upload', () => {
       })
     })
 
+    test('uploads correct multipart payload with multiple locations', async () => {
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`, `${fixtureDir}/exec_aarch64`]
+      })
+
+      const expectedMetadata = [
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          file_hash: 'd19d63194275d385e3dd852b80d5ba7a',
+          gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
+          go_build_id: '',
+          arch: 'aarch64',
+        },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          file_hash: '5ba2907faebb8002de89711d5f0f005c',
+          gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
+          go_build_id: '',
+          arch: 'aarch64',
+        },
+      ]
+
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(expectedMetadata.length)
+      const metadata = (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => {
+        const payload = call[1] as MultipartPayload
+        const mappingFileItem = payload.content.get('elf_symbol_file') as MultipartFileValue
+        expect(mappingFileItem).toBeTruthy()
+        expect(mappingFileItem.options.filename).toBe('elf_symbol_file')
+
+        return JSON.parse((payload.content.get('event') as MultipartStringValue).value)
+      })
+      const getId = (m: any) => m.gnu_build_id || m.go_build_id || m.file_hash
+      metadata.sort((a, b) => getId(a).localeCompare(getId(b)))
+      expectedMetadata.sort((a, b) => getId(a).localeCompare(getId(b)))
+      expect(metadata).toEqual(expectedMetadata)
+      expect(exitCode).toBe(0)
+    })
+
     test('uploads correct multipart payload without repository', async () => {
       const {exitCode} = await runCommand((cmd) => {
-        cmd['symbolsLocation'] = fixtureDir
+        cmd['symbolsLocations'] = [fixtureDir]
       })
 
       const expectedMetadata = [
@@ -193,7 +235,7 @@ describe('elf-symbols upload', () => {
         },
       ]
 
-      expect(uploadMultipartHelper).toHaveBeenCalledTimes(6)
+      expect(uploadMultipartHelper).toHaveBeenCalledTimes(expectedMetadata.length)
       const metadata = (uploadMultipartHelper as jest.Mock).mock.calls.map((call) => {
         const payload = call[1] as MultipartPayload
         const mappingFileItem = payload.content.get('elf_symbol_file') as MultipartFileValue
@@ -211,7 +253,7 @@ describe('elf-symbols upload', () => {
 
     test('skips upload on dry run', async () => {
       const {exitCode} = await runCommand((cmd) => {
-        cmd['symbolsLocation'] = fixtureDir
+        cmd['symbolsLocations'] = [fixtureDir]
         cmd['dryRun'] = true
       })
 

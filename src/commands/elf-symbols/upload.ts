@@ -49,7 +49,7 @@ export class UploadCommand extends Command {
     details: `
             This command will upload debug info from all Elf files found recursively in the given location in order to symbolicate profiles
         `,
-    examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload']],
+    examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload .']],
   })
 
   private disableGit = Option.Boolean('--disable-git', false)
@@ -57,7 +57,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
-  private symbolsLocation = Option.String('--symbols-location', './')
+  private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
   private config: Record<string, string> = {
@@ -72,7 +72,7 @@ export class UploadCommand extends Command {
 
     const initialTime = Date.now()
 
-    this.context.stdout.write(renderCommandInfo(this.dryRun, this.symbolsLocation))
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.symbolsLocations))
 
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
@@ -262,7 +262,9 @@ export class UploadCommand extends Command {
     const metricsLogger = this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
-    let elfFilesMetadata = await this.getElfSymbolFiles(this.symbolsLocation)
+    let elfFilesMetadata = (
+      await Promise.all(this.symbolsLocations.map((location) => this.getElfSymbolFiles(location)))
+    ).flat()
     elfFilesMetadata = this.removeBuildIdDuplicates(elfFilesMetadata)
 
     const requestBuilder = getElfRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
@@ -358,19 +360,21 @@ export class UploadCommand extends Command {
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
 
-    if (!this.symbolsLocation) {
-      this.context.stderr.write(renderArgumentMissingError('symbols-location'))
+    if (!this.symbolsLocations || this.symbolsLocations.length === 0) {
+      this.context.stderr.write(renderArgumentMissingError('symbols locations'))
       parametersOkay = false
     } else {
-      if (fs.existsSync(this.symbolsLocation)) {
-        const stats = fs.statSync(this.symbolsLocation)
-        if (!stats.isDirectory() && !stats.isFile()) {
-          this.context.stderr.write(renderInvalidSymbolsLocation(this.symbolsLocation))
+      for (const symbolsLocation of this.symbolsLocations) {
+        if (fs.existsSync(symbolsLocation)) {
+          const stats = fs.statSync(symbolsLocation)
+          if (!stats.isDirectory() && !stats.isFile()) {
+            this.context.stderr.write(renderInvalidSymbolsLocation(symbolsLocation))
+            parametersOkay = false
+          }
+        } else {
+          this.context.stderr.write(renderInvalidSymbolsLocation(symbolsLocation))
           parametersOkay = false
         }
-      } else {
-        this.context.stderr.write(renderInvalidSymbolsLocation(this.symbolsLocation))
-        parametersOkay = false
       }
     }
 
