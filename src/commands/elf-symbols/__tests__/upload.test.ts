@@ -1,4 +1,6 @@
+import fs from 'fs'
 import os from 'os'
+import path from 'path'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
@@ -97,6 +99,21 @@ describe('elf-symbols upload', () => {
     test('should throw an error when input is a single elf file without symbols', async () => {
       const command = createCommand(UploadCommand)
       await expect(command['getElfSymbolFiles'](`${fixtureDir}/go_x86_64_only_go_build_id`)).rejects.toThrow()
+    })
+
+    test('should not throw an error when a directory (except top-level) is not readable', async () => {
+      const command = createCommand(UploadCommand)
+      let tmpDir
+      try {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elf-tests-'))
+        const tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
+        fs.chmodSync(tmpSubDir, 0o200)
+        await expect(command['getElfSymbolFiles'](tmpDir)).resolves.toEqual([])
+      } finally {
+        if (tmpDir) {
+          fs.rmSync(tmpDir, {recursive: true})
+        }
+      }
     })
   })
 

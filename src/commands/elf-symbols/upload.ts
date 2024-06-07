@@ -173,14 +173,22 @@ export class UploadCommand extends Command {
   }
 
   private async getElfSymbolFiles(symbolsLocation: string): Promise<ElfFileMetadata[]> {
-    let files: string[] = []
-    let reportFailure
+    let paths: string[] = []
+    let reportFailure: (message: string) => void
 
-    if (fs.statSync(symbolsLocation).isDirectory()) {
-      files = glob.sync(buildPath(symbolsLocation, '**'), {nodir: true, dot: true})
+    const stat = await fs.promises.stat(symbolsLocation)
+    if (stat.isDirectory()) {
+      // strict: false is needed to avoid throwing an error if a directory is not readable
+      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, strict: false, silent: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
+
+      // throw an error if top-level directory is not readable
+      // eslint-disable-next-line no-bitwise
+      await fs.promises.access(symbolsLocation, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+        throw Error(`Directory ${symbolsLocation} is not readable`)
+      })
     } else {
-      files = [symbolsLocation]
+      paths = [symbolsLocation]
       // in single file mode, we want to report failures as errors
       reportFailure = (message: string) => {
         throw Error(message)
@@ -188,34 +196,41 @@ export class UploadCommand extends Command {
     }
 
     const filesMetadata: ElfFileMetadata[] = []
-    for (const file of files) {
-      // check that path is a file and is an ELF file
-      if (fs.lstatSync(file).isFile()) {
-        const metadata = await getElfFileMetadata(file)
+    for (const path of paths) {
+      const pathStat = await fs.promises.lstat(path)
+      if (pathStat.isDirectory()) {
+        // check if directory is readable and if not emit a warning
+        // eslint-disable-next-line no-bitwise
+        await fs.promises.access(path, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+          reportFailure(`Skipped directory ${path} because it is not readable`)
+        })
+      } else if (pathStat.isFile()) {
+        // check that path is a file and is an ELF file
+        const metadata = await getElfFileMetadata(path)
 
         // handle all possible failures
         if (!metadata.isElf) {
-          reportFailure(`Input location ${file} is not an ELF file`)
+          reportFailure(`Input location ${path} is not an ELF file`)
           continue
         }
         if (metadata.error) {
-          reportFailure(`Error reading ELF file ${file}: ${metadata.error.message}`)
+          reportFailure(`Error reading ELF file ${path}: ${metadata.error.message}`)
           continue
         }
         if (!isSupportedElfType(metadata.type)) {
-          reportFailure(`Skipped ${file} because its not an executable, nor a shared library`)
+          reportFailure(`Skipped ${path} because its not an executable, nor a shared library`)
           continue
         }
         if (!isSupportedArch(metadata.arch)) {
-          reportFailure(`Skipped ${file} because it has an unsupported architecture (${metadata.arch})`)
+          reportFailure(`Skipped ${path} because it has an unsupported architecture (${metadata.arch})`)
           continue
         }
         if (!(metadata.gnuBuildId || metadata.goBuildId || metadata.fileHash)) {
-          reportFailure(`Skipped ${file} because it has no build id`)
+          reportFailure(`Skipped ${path} because it has no build id`)
           continue
         }
         if (!metadata.hasDebugInfo && !metadata.hasSymbols) {
-          reportFailure(`Skipped ${file} because it has no debug info, nor symbols`)
+          reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
           continue
         }
         filesMetadata.push(metadata)
