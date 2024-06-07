@@ -10,6 +10,7 @@ import {
   buildLogAccessPolicyName,
   shouldUpdateStepForTracesMerging,
   StepType,
+  injectContextForStepFunctions,
 } from '../helpers'
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
@@ -169,6 +170,24 @@ describe('stepfunctions command helpers tests', () => {
       expect(arnObject.region).toBe('us-east-1')
       expect(arnObject.accountId).toBe('000000000000')
       expect(arnObject.resourceName).toBe('ExampleStepFunction')
+    })
+  })
+
+  describe('inject context for StepFunctions', () => {
+    test('injects context into a step function invocation', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {},
+        },
+        End: true,
+      }
+
+      const changed = injectContextForStepFunctions(step)
+      expect(changed).toBeTruthy()
+      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
     })
   })
 

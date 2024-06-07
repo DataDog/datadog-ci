@@ -189,13 +189,14 @@ export type StepType = {
 export type ParametersType = {
   'Payload.$'?: string
   FunctionName?: string
+  StateMachineArn?: string
   TableName?: string
   Input?: {
     'CONTEXT.$'?: string
   }
 }
 
-function injectContextForLambdaFunctions(step: StepType, context: BaseContext, stepName: string) {
+const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
   if (shouldUpdateStepForTracesMerging(step)) {
     addTraceContextToLambdaParameters(step)
 
@@ -211,7 +212,7 @@ function injectContextForLambdaFunctions(step: StepType, context: BaseContext, s
   return false
 }
 
-function injectContextForStepFunctions(step: StepType) {
+export const injectContextForStepFunctions = (step: StepType): boolean => {
   if (shouldUpdateStepForStepFunctionContextInjection(step)) {
     addTraceContextToStepFunctionParameters(step)
 
