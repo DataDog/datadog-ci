@@ -147,6 +147,28 @@ jobs:
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
+  standalone-binary-test-ubuntu-arm:
+    name: Test standalone binary in ubuntu
+    runs-on:
+      group: ARM LINUX SHARED
+      labels: arm-4core-linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
+      - name: Remove dist and src folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
   standalone-binary-test-windows:
     name: Test standalone binary in windows
     runs-on: windows-latest
