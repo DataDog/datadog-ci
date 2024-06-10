@@ -375,5 +375,11 @@ export class RunTestsCommand extends Command {
         )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
       )
     }
+
+    if (typeof this.config.defaultTestOverrides?.cookies === 'object') {
+      if (!this.config.defaultTestOverrides.cookies.value) {
+        throw new Error('Cookies value cannot be empty')
+      }
+    }
   }
 }
