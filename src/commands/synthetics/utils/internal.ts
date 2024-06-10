@@ -257,6 +257,9 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
               throw new Error(`Invalid subkey for ${key}`)
           }
         } else {
+          if (typeof acc['cookies'] === 'object') {
+            throw new Error(`Cannot have both a string and an object for ${key}`)
+          }
           acc['cookies'] = parseOverrideValue(value, 'string') as string
         }
         break

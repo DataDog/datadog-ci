@@ -636,7 +636,7 @@ describe('utils', () => {
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',
         bodyType: 'application/json',
-        cookies: 'name1=value1;name2=value2;',
+        cookies: 'name=value;',
         defaultStepTimeout: 15,
         deviceIds: ['device_id'],
         executionRule: ExecutionRule.NON_BLOCKING,

@@ -150,12 +150,10 @@ export class RunTestsCommand extends Command {
   public async execute() {
     try {
       await this.resolveConfig()
-      console.log('finale config:', this.config)
     } catch (error) {
       if (error instanceof CiError) {
         reportCiError(error, this.reporter)
       }
-      throw error
 
       return 1
     }
@@ -271,6 +269,9 @@ export class RunTestsCommand extends Command {
         value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE,
       })
     )
+    if (Object.keys(envOverrideCookies).length > 0 && process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES) {
+      throw new Error(`Cannot have both a string and an object for cookies`)
+    }
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
