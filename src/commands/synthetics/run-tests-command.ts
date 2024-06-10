@@ -150,10 +150,12 @@ export class RunTestsCommand extends Command {
   public async execute() {
     try {
       await this.resolveConfig()
+      console.log('finale config:', this.config)
     } catch (error) {
       if (error instanceof CiError) {
         reportCiError(error, this.reporter)
       }
+      throw error
 
       return 1
     }
@@ -262,6 +264,13 @@ export class RunTestsCommand extends Command {
         username: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
       })
     )
+    const envOverrideCookies = deepExtend(
+      this.config.defaultTestOverrides?.cookies ?? {},
+      removeUndefinedValues({
+        append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+        value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE,
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -269,7 +278,10 @@ export class RunTestsCommand extends Command {
         basicAuth: Object.keys(envOverrideBasicAuth).length > 0 ? envOverrideBasicAuth : undefined,
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
-        cookies: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+        cookies:
+          Object.keys(envOverrideCookies).length > 0
+            ? envOverrideCookies
+            : process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),

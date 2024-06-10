@@ -117,6 +117,7 @@ type AccumulatorBaseConfigOverride = Omit<
   UserConfigOverride,
   | 'retry'
   | 'basicAuth'
+  | 'cookies'
   // TODO SYNTH-12971: These options will be implemented later in separate PRs
   | 'locations'
   | 'mobileApplicationVersion'
@@ -126,6 +127,7 @@ type AccumulatorBaseConfigOverride = Omit<
 > & {
   retry?: Partial<RetryConfig>
   basicAuth?: Partial<BasicAuthCredentials>
+  cookies?: string | {value?: string; append?: boolean}
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
 type TestOverrideValueType = boolean | number | string | string[] | ExecutionRule
@@ -190,7 +192,6 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
       // Convert to string
       case 'body':
       case 'bodyType':
-      case 'cookies':
       case 'startUrl':
       case 'startUrlSubstitutionRegex':
         acc[key] = parseOverrideValue(value, 'string') as string
@@ -225,6 +226,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         }
         break
 
+      // Convert to BasicAuthCredentials
       case 'basicAuth':
         switch (subKey as keyof BasicAuthCredentials) {
           case 'username':
@@ -236,6 +238,29 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
             throw new Error(`Invalid subkey for ${key}`)
         }
         break
+
+      // Convert to cookies (either a string or an object)
+      case 'cookies':
+        if (subKey) {
+          if (typeof acc['cookies'] === 'string') {
+            throw new Error(`Cannot have both a string and an object for ${key}`)
+          }
+          acc['cookies'] = acc['cookies'] ?? {}
+          switch (subKey) {
+            case 'value':
+              acc['cookies'].value = parseOverrideValue(value, 'string') as string
+              break
+            case 'append':
+              acc['cookies'].append = parseOverrideValue(value, 'boolean') as boolean
+              break
+            default:
+              throw new Error(`Invalid subkey for ${key}`)
+          }
+        } else {
+          acc['cookies'] = parseOverrideValue(value, 'string') as string
+        }
+        break
+
       // Convert to {[key: string]: string}
       case 'headers':
         if (subKey) {
