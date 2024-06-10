@@ -148,7 +148,7 @@ jobs:
         run: yarn dist-standalone:test
 
   standalone-binary-test-ubuntu-arm:
-    name: Test standalone binary in ubuntu
+    name: Test standalone binary in ARM ubuntu
     runs-on:
       group: ARM LINUX SHARED
       labels: arm-4core-linux
