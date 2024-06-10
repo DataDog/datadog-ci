@@ -86,6 +86,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
+      - run: npm install -g yarn
+        name: Install Yarn  # Yarn is not installed by default in this runner
       - name: Install project dependencies
         run: yarn install --immutable
       - name: Bundle library
