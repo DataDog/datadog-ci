@@ -12,7 +12,7 @@ export interface UploadInfo {
   platform: string
 }
 
-export const renderCommandInfo = (dryRun: boolean, symbolsLocation: string) => {
+export const renderCommandInfo = (dryRun: boolean, symbolsLocations: string[]) => {
   let fullString = ''
   if (dryRun) {
     fullString += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SYMBOLS\n`)
@@ -20,7 +20,7 @@ export const renderCommandInfo = (dryRun: boolean, symbolsLocation: string) => {
   const startStr = chalk.green('Starting upload. \n')
 
   fullString += startStr
-  fullString += chalk.green(`Uploading symbols from location ${symbolsLocation}\n`)
+  fullString += chalk.green(`Uploading symbols from location(s): ${symbolsLocations.join(' ')}\n`)
 
   fullString += chalk.green(
     `After upload is successful symbol files will be processed and ready to use within the next 5 minutes.\n`
