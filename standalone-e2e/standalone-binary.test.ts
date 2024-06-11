@@ -9,7 +9,7 @@ const isWin = process.platform === 'win32'
 const os = isWin ? 'win' : process.platform === 'darwin' ? 'darwin' : 'linux'
 
 const isARM = process.arch === 'arm64'
-const arch = isARM && os === 'linux' ? 'arm64' : 'x64'
+const arch = isARM ? 'arm64' : 'x64'
 
 const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
 const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isWin ? '.exe' : ''}`
