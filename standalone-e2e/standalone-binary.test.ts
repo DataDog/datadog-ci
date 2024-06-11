@@ -8,7 +8,10 @@ const execPromise = promisify(exec)
 const isWin = process.platform === 'win32'
 const os = isWin ? 'win' : process.platform === 'darwin' ? 'darwin' : 'linux'
 
-const STANDALONE_BINARY = `datadog-ci_${os}-x64`
+const isARM = process.arch === 'arm64'
+const arch = isARM ? 'arm64' : 'x64'
+
+const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
 const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isWin ? '.exe' : ''}`
 
 const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')

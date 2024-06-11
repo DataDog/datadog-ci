@@ -75,6 +75,47 @@ jobs:
               data: await fs.readFile('./datadog-ci_linux-x64'),
             })
 
+  build-binary-ubuntu-arm:
+    runs-on:
+      group: ARM LINUX SHARED
+      labels: arm-4core-linux
+    needs: create-draft-release
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - run: npm install -g yarn
+        name: Install Yarn  # Yarn is not installed by default in this runner
+      - name: Install project dependencies
+        run: yarn install --immutable
+      - name: Bundle library
+        run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
+      - name: Remove dist folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+      - name: Upload release asset
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require("fs").promises
+
+            github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: "${{ needs.create-draft-release.outputs.release-id }}",
+              name: 'datadog-ci_linux-arm64',
+              data: await fs.readFile('./datadog-ci_linux-arm64'),
+            })
+
+
   build-binary-windows:
     runs-on: windows-latest
     needs: create-draft-release
@@ -127,7 +168,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
+        run: yarn dist-standalone -t node14-macos-arm64 -o datadog-ci_darwin-arm64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
@@ -145,8 +186,8 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
-              name: 'datadog-ci_darwin-x64',
-              data: await fs.readFile('./datadog-ci_darwin-x64'),
+              name: 'datadog-ci_darwin-arm64',
+              data: await fs.readFile('./datadog-ci_darwin-arm64'),
             })
 
   # Requires an approval
