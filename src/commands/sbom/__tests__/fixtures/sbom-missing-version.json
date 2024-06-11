@@ -1,0 +1,35 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "components": [
+    {
+      "bom-ref": "pkg:pypi/markupsafe",
+      "type": "library",
+      "name": "markupsafe",
+      "purl": "pkg:pypi/markupsafe",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "{\"block\":{\"file_name\":\"requirements.txt\",\"line_start\":2,\"line_end\":2,\"column_start\":1,\"column_end\":11},\"name\":{\"file_name\":\"requirements.txt\",\"line_start\":2,\"line_end\":2,\"column_start\":1,\"column_end\":11}}"
+          }
+        ]
+      }
+    },
+    {
+      "bom-ref": "pkg:pypi/jinja2@3.1.5",
+      "type": "library",
+      "name": "jinja2",
+      "version": "3.1.5",
+      "purl": "pkg:pypi/jinja2@3.1.5",
+      "evidence": {
+        "occurrences": [
+          {
+            "location": "{\"block\":{\"file_name\":\"requirements.txt\",\"line_start\":1,\"line_end\":1,\"column_start\":1,\"column_end\":7}}"
+          }
+        ]
+      }
+    }
+  ]
+}

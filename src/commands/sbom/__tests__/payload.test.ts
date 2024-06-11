@@ -269,4 +269,26 @@ describe('generation of payload', () => {
       }
     }
   })
+
+  test('SBOM generated from osv-scanner with missing versions', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-missing-version.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [])
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(2)
+    const dependencies = payload!.dependencies
+
+    // Check that we can have multiple locations
+    expect(dependencies[0].name).toEqual('markupsafe')
+    expect(dependencies[0].version).toBeUndefined()
+    expect(dependencies[1].name).toEqual('jinja2')
+    expect(dependencies[1].version).toEqual('3.1.5')
+  })
 })
