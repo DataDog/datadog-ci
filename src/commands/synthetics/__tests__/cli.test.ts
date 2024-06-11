@@ -4,12 +4,19 @@ import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {RunTestsCommandConfig, UploadApplicationCommandConfig, UserConfigOverride} from '../interfaces'
+import {
+  ExecutionRule,
+  RunTestsCommandConfig,
+  ServerTest,
+  UploadApplicationCommandConfig,
+  UserConfigOverride,
+} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
+import {toBoolean, toNumber, toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
-import {getApiTest, getAxiosHttpError, getTestSuite, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -56,8 +63,30 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'fake_app_key',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
+        DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
+        DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
+        DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
+        DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'false',
+        DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
+        DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
+        DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
+        DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
+        DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
+        DATADOG_SYNTHETICS_TUNNEL: 'false',
         DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
+        DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body',
+        DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType',
+        DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+        DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
+        DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
+        DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
+        DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
+        DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
       }
 
       process.env = overrideEnv
@@ -68,13 +97,61 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
+        configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
-        global: {
+        defaultTestOverrides: {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+          allowInsecureCertificates: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+          body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
+          bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+          defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+          executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
+          followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+          resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
+            ';'
+          ),
+          retry: {
+            count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+            interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+          },
+          startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
+          startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
+          testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
         },
+        failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+        failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+        failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
+        files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
+        jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+        publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
+        selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
+        testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
+        tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
+      })
+    })
+
+    test('partial retryConfig override from ENV retains existing values', async () => {
+      const overrideEnv = {
+        DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+      }
+      process.env = overrideEnv
+      const command = createCommand(RunTestsCommand)
+
+      command['config'].defaultTestOverrides = {
+        ...command['config'].defaultTestOverrides,
+        retry: {
+          count: 1,
+          interval: 42,
+        },
+      }
+      await command['resolveConfig']()
+
+      expect(command['config'].defaultTestOverrides.retry).toEqual({
+        count: 5,
+        interval: 42,
       })
     })
 
@@ -88,7 +165,16 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
+        jUnitReport: 'junit-report.xml',
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
+          deviceIds: ['chrome.laptop_large'],
+          locations: ['us-east-1'],
+          pollingTimeout: 2,
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+        },
+        defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
           pollingTimeout: 2,
@@ -103,6 +189,7 @@ describe('run-test', () => {
         publicIds: ['ran-dom-id'],
         selectiveRerun: true,
         subdomain: 'ppa',
+        testSearchQuery: 'a-search-query',
         tunnel: true,
         variableStrings: [],
       }
@@ -115,7 +202,8 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'proxy'> = {
+      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -124,6 +212,7 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
         locations: ['us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 1,
@@ -135,8 +224,23 @@ describe('run-test', () => {
         variableStrings: ['key=value'],
       }
       const defaultTestOverrides: UserConfigOverride = {
+        allowInsecureCertificates: true,
+        body: 'a body',
+        bodyType: 'bodyType',
+        defaultStepTimeout: 42,
         deviceIds: ['chrome.laptop_large'],
+        executionRule: ExecutionRule.BLOCKING,
+        followRedirects: true,
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+        pollingTimeout: 42,
+        resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
+        retry: {
+          count: 5,
+          interval: 42,
+        },
+        startUrl: 'startUrl',
+        startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
+        testTimeout: 42,
       }
 
       const command = createCommand(RunTestsCommand)
@@ -149,12 +253,28 @@ describe('run-test', () => {
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['jUnitReport'] = overrideCLI.jUnitReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
+      command['overrides'] = [
+        `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+        `body=${defaultTestOverrides.body}`,
+        `bodyType=${defaultTestOverrides.bodyType}`,
+        `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+        `executionRule=${defaultTestOverrides.executionRule}`,
+        `followRedirects=${defaultTestOverrides.followRedirects}`,
+        `retry.count=${defaultTestOverrides.retry?.count}`,
+        `retry.interval=${defaultTestOverrides.retry?.interval}`,
+        `startUrl=${defaultTestOverrides.startUrl}`,
+        `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+        `testTimeout=${defaultTestOverrides.testTimeout}`,
+        'resourceUrlSubstitutionRegexes=regex1',
+        'resourceUrlSubstitutionRegexes=regex42',
+      ]
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -167,11 +287,25 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
-        global: {
+        jUnitReport: 'junit-report.xml',
+        defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          body: 'a body',
+          bodyType: 'bodyType',
+          defaultStepTimeout: 42,
           deviceIds: ['chrome.laptop_large'],
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          retry: {
+            count: 5,
+            interval: 42,
+          },
+          startUrl: 'startUrl',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
+          testTimeout: 42,
         },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
@@ -200,6 +334,7 @@ describe('run-test', () => {
         apiKey: 'api_key_config_file',
         appKey: 'app_key_config_file',
         datadogSite: 'us5.datadoghq.com',
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           pollingTimeout: 111,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
@@ -223,6 +358,10 @@ describe('run-test', () => {
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
         global: {
+          pollingTimeout: 111,
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
+        defaultTestOverrides: {
           pollingTimeout: 333,
           mobileApplicationVersionFilePath: './path/to/application_cli.apk',
         },
@@ -234,18 +373,18 @@ describe('run-test', () => {
         throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
 
-      const apiHelper = {
-        getTest: jest.fn(() => ({...getApiTest('publicId')})),
+      const apiHelper = mockApi({
+        getTest: jest.fn(async () => ({...getApiTest('publicId')})),
         triggerTests,
-      }
+      })
 
       const getExpectedTestsToTriggerArguments = (
-        config: Partial<UserConfigOverride>
+        testOverrides: Partial<UserConfigOverride>
       ): Parameters<typeof utils['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
           (apiHelper as unknown) as api.APIHelper,
-          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', config}],
+          [{suite: 'Suite 1', id: 'aaa-bbb-ccc', testOverrides}],
 
           // Ignore the rest of the parameters.
           expect.anything(),
@@ -258,16 +397,21 @@ describe('run-test', () => {
       const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
 
       const write = jest.fn()
-      const command = createCommand(RunTestsCommand, {stderr: {write}} as any)
+      const command = createCommand(RunTestsCommand, {stderr: {write}})
 
       // Test file (empty config for now)
-      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', config: {}}]}}
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [testFile]) as any)
+      const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', testOverrides: {}}]}}
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
 
       // Global
+      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
       command['config'].global = {
+        locations: ['aws:us-east-2'],
+        mobileApplicationVersionFilePath: './path/to/application_global.apk',
+      }
+      command['config'].defaultTestOverrides = {
         locations: ['aws:us-east-2'],
         mobileApplicationVersionFilePath: './path/to/application_global.apk',
       }
@@ -310,7 +454,7 @@ describe('run-test', () => {
       )
 
       // ENV < test file
-      testFile.content.tests[0].config = {
+      testFile.content.tests[0].testOverrides = {
         locations: ['aws:us-east-1'],
         mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
       }
@@ -332,7 +476,9 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        global: {followRedirects: false, pollingTimeout: 333},
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        global: {followRedirects: false},
+        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
         pollingTimeout: 333,
       })
     })
@@ -340,17 +486,17 @@ describe('run-test', () => {
 
   describe('exit code respects `failOnCriticalErrors`', () => {
     test('404 leading to `NO_TESTS_TO_RUN` never exits with 1', async () => {
-      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
       command['config'].failOnCriticalErrors = true
 
-      const apiHelper = {
+      const apiHelper = mockApi({
         getTest: jest.fn(() => {
           throw getAxiosHttpError(404, {errors: ['Test not found']})
         }),
-      }
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
       expect(await command.execute()).toBe(0)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
@@ -362,16 +508,16 @@ describe('run-test', () => {
 
       describe.each(cases)('%s', (_, errorCode) => {
         test('unable to obtain test configurations', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
           command['testSearchQuery'] = 'test:search'
 
-          const apiHelper = {
+          const apiHelper = mockApi({
             searchTests: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
 
           expect(await command.execute()).toBe(expectedExit)
@@ -379,55 +525,55 @@ describe('run-test', () => {
         })
 
         test('unavailable test config', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
+          const apiHelper = mockApi({
             getTest: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
         })
 
         test('unable to trigger tests', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
-            getTest: () => getApiTest('123-456-789'),
+          const apiHelper = mockApi({
+            getTest: async () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.triggerTests).toHaveBeenCalledTimes(1)
         })
 
         test('unable to poll test results', async () => {
-          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+          const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
           command['config'].failOnCriticalErrors = failOnCriticalErrors
 
-          const apiHelper = {
-            getBatch: () => ({results: [], status: 'success'}),
-            getTest: () => getApiTest('123-456-789'),
+          const apiHelper = mockApi({
+            getBatch: async () => ({results: [], status: 'passed'}),
+            getTest: async () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
               throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-            triggerTests: () => mockTestTriggerResponse,
-          }
-          jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+            triggerTests: async () => mockTestTriggerResponse,
+          })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-          jest.spyOn(utils, 'getSuites').mockImplementation((() => [getTestSuite()]) as any)
+          jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+          jest.spyOn(utils, 'getSuites').mockResolvedValue([getTestSuite()])
 
           expect(await command.execute()).toBe(expectedExit)
           expect(apiHelper.pollResults).toHaveBeenCalledTimes(1)
@@ -446,29 +592,29 @@ describe('run-test', () => {
 
     test.each(cases)(
       '%s with failOnMissingTests=%s exits with %s',
-      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: (string | null)[]) => {
-        const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
+      async (_: string, failOnMissingTests: boolean, exitCode: number, tests: string[]) => {
+        const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}})
         command['config'].failOnMissingTests = failOnMissingTests
 
-        const apiHelper = {
-          getTest: jest.fn((testId: string) => {
+        const apiHelper = mockApi({
+          getTest: jest.fn(async (testId: string) => {
             if (testId === 'mis-sin-ggg') {
               throw getAxiosHttpError(404, {errors: ['Test not found']})
             }
 
-            return {}
+            return {} as ServerTest
           }),
-        }
-        jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+        })
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-        jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+        jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+        jest.spyOn(utils, 'getSuites').mockResolvedValue([
           {
             content: {
               tests: tests.map((testId) => ({config: {}, id: testId})),
             },
             name: 'Suite 1',
           },
-        ]) as any)
+        ])
 
         expect(await command.execute()).toBe(exitCode)
         expect(apiHelper.getTest).toHaveBeenCalledTimes(tests.length)
@@ -480,41 +626,41 @@ describe('run-test', () => {
     test('enough context is provided', async () => {
       const writeMock = jest.fn()
 
-      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}} as any)
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}})
       command['config'].failOnCriticalErrors = true
 
-      const apiHelper = {
-        getTest: jest.fn((testId: string) => {
+      const apiHelper = mockApi({
+        getTest: jest.fn(async (testId: string) => {
           if (testId === 'for-bid-den') {
             const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
             serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }
 
-          return {name: testId}
+          return {name: testId} as ServerTest
         }),
-      }
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+      })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([
         {
           content: {
             tests: [
-              {config: {}, id: 'aaa-aaa-aaa'},
-              {config: {}, id: 'bbb-bbb-bbb'},
-              {config: {}, id: 'for-bid-den'},
+              {testOverrides: {}, id: 'aaa-aaa-aaa'},
+              {testOverrides: {headers: {}}, id: 'bbb-bbb-bbb'}, // 1 test override
+              {testOverrides: {}, id: 'for-bid-den'},
             ],
           },
           name: 'Suite 1',
         },
-      ]) as any)
+      ])
 
       expect(await command.execute()).toBe(1)
       expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
 
       expect(writeMock).toHaveBeenCalledTimes(4)
-      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa" (1 config override)\n')
-      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 config override)\n')
+      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
+      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 test override)\n')
       expect(writeMock).toHaveBeenCalledWith(
         '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
       )
@@ -534,6 +680,31 @@ describe('upload-application', () => {
   describe('resolveConfig', () => {
     beforeEach(() => {
       process.env = {}
+    })
+
+    test('override from ENV', async () => {
+      const overrideEnv = {
+        DATADOG_API_KEY: 'fake_api_key',
+        DATADOG_APP_KEY: 'fake_app_key',
+        DATADOG_SITE: 'datadoghq.eu',
+        DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
+        DATADOG_SYNTHETICS_VERSION_NAME: 'new',
+        DATADOG_SYNTHETICS_LATEST: 'true',
+      }
+
+      process.env = overrideEnv
+      const command = createCommand(UploadApplicationCommand)
+
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        apiKey: overrideEnv.DATADOG_API_KEY,
+        appKey: overrideEnv.DATADOG_APP_KEY,
+        configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
+        datadogSite: overrideEnv.DATADOG_SITE,
+        versionName: overrideEnv.DATADOG_SYNTHETICS_VERSION_NAME,
+        latest: toBoolean(overrideEnv.DATADOG_SYNTHETICS_LATEST),
+      })
     })
 
     test('override from config file', async () => {

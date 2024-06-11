@@ -72,7 +72,10 @@ export type ConstructorOf<T> = new (...args: unknown[]) => T
  * @param parameters parameters to use while creating the commandClass
  * @returns the instance of the given command with a mock context attached.
  */
-export const createCommand = <T extends Command>(commandClass: ConstructorOf<T>, context?: CommandContext) => {
+export const createCommand = <T extends Command>(
+  commandClass: ConstructorOf<T>,
+  context: {stdout?: {write: () => void}; stderr?: {write: () => void}} = {}
+) => {
   // Create a new instance of commandClass and pass in the parameters
   const command = new commandClass()
   command.context = {...createMockContext(), ...context} as BaseContext

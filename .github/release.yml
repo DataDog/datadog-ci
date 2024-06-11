@@ -31,6 +31,9 @@ changelog:
     - title: Synthetics
       labels:
         - synthetics
+    - title: Profiling
+      labels:
+        - profiling
     - title: Chores
       labels:
         - chores

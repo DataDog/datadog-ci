@@ -22,6 +22,7 @@ import {
   MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
   mockTestTriggerResponse,
+  APP_UPLOAD_POLL_RESULTS,
 } from './fixtures'
 
 describe('dd-api', () => {
@@ -264,10 +265,15 @@ describe('dd-api', () => {
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
-    await uploadMobileApplicationPart(
+    const result = await uploadMobileApplicationPart(
       MOBILE_PRESIGNED_UPLOAD_PARTS,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
     )
+
+    expect(result).toEqual([
+      {ETag: '123', PartNumber: 1},
+      {ETag: '123', PartNumber: 2},
+    ])
 
     const callArg = mockRequest.mock.calls[0][0]
     expect(callArg.url).toBe(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls[1])
@@ -275,9 +281,38 @@ describe('dd-api', () => {
     spy.mockRestore()
   })
 
-  test('should complete presigned mobile application upload', async () => {
+  test('should return empty ETag when doing azure part upload', async () => {
     const mockRequest = jest.fn()
+    mockRequest.mockReturnValue({status: 200, headers: {}})
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {uploadMobileApplicationPart} = api
+
+    const urls = {
+      1: 'https://myaccount.blob.core.windows.net/mycontainer/myblob1',
+      2: 'https://myaccount.blob.core.windows.net/mycontainer/myblob2',
+    }
+
+    const result = await uploadMobileApplicationPart(MOBILE_PRESIGNED_UPLOAD_PARTS, {
+      ...MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params,
+      // override fixture with azure urls
+      urls,
+    })
+
+    expect(result).toEqual([
+      {ETag: '', PartNumber: 1},
+      {ETag: '', PartNumber: 2},
+    ])
+
+    const callArg = mockRequest.mock.calls[0][0]
+    expect(callArg.url).toBe(urls[1])
+    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+    spy.mockRestore()
+  })
+
+  test('should complete presigned mobile application upload', async () => {
+    const jobId = 'fake_job_id'
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: {job_id: jobId}})) as any)
     const api = apiConstructor(apiConfiguration)
     const {completeMultipartMobileApplicationUpload} = api
 
@@ -289,14 +324,27 @@ describe('dd-api', () => {
       })
     )
 
-    await completeMultipartMobileApplicationUpload(
+    const result = await completeMultipartMobileApplicationUpload(
       appId,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
       partUploadResponses
     )
 
-    expect(mockRequest).toHaveBeenCalled()
+    expect(result).toBe(jobId)
+    spy.mockRestore()
+  })
+
+  test('should poll for app upload validation', async () => {
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {pollMobileApplicationUploadResponse} = api
+
+    const jobId = 'jobId'
+
+    const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
+
+    expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
     spy.mockRestore()
   })
 

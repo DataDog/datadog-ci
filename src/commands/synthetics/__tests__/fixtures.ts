@@ -9,7 +9,7 @@ import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {APIHelper, apiConstructor} from '../api'
 import {
   ApiServerResult,
   BaseResult,
@@ -18,7 +18,6 @@ import {
   ExecutionRule,
   Location,
   MainReporter,
-  MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
   MobileApplicationUploadPart,
@@ -34,7 +33,12 @@ import {
   Trigger,
   UploadApplicationCommandConfig,
   User,
+  MobileAppUploadResult,
+  MobileApplicationUploadPartResponse,
+  TriggerConfig,
+  MobileTestWithOverride,
 } from '../interfaces'
+import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
 
 const mockUser: User = {
@@ -72,13 +76,16 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  jUnitReport: '',
   global: {},
+  defaultTestOverrides: {},
   locations: [],
   pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
   publicIds: [],
   selectiveRerun: false,
   subdomain: 'app',
+  testSearchQuery: '',
   tunnel: false,
   variableStrings: [],
 }
@@ -511,7 +518,7 @@ export const getBatch = (): Batch => ({
   status: 'passed',
 })
 
-export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
+export const getMobileTest = (publicId = 'abc-def-ghi', appId = 'mobileAppUuid'): MobileTestWithOverride['test'] => ({
   config: {
     assertions: [],
     request: {
@@ -535,7 +542,7 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
     min_failure_duration: 0,
     min_location_failed: 0,
     mobileApplication: {
-      applicationId: 'mobileAppUuid',
+      applicationId: appId,
       referenceId: 'versionId',
       referenceType: 'version',
     },
@@ -564,22 +571,41 @@ export const getApiHelper = () => {
   return apiConstructor(apiConfiguration)
 }
 
+export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
+  return {
+    getBatch: jest.fn(),
+    getMobileApplicationPresignedURLs: jest.fn(),
+    getTest: jest.fn(),
+    getSyntheticsOrgSettings: jest.fn(),
+    getTunnelPresignedURL: jest.fn(),
+    pollResults: jest.fn(),
+    searchTests: jest.fn(),
+    triggerTests: jest.fn(),
+    uploadMobileApplicationPart: jest.fn(),
+    completeMultipartMobileApplicationUpload: jest.fn(),
+    pollMobileApplicationUploadResponse: jest.fn(),
+    ...override,
+  }
+}
+
 export const getTestPayload = (override?: Partial<TestPayload>) => ({
   executionRule: ExecutionRule.BLOCKING,
   public_id: 'aaa-aaa-aaa',
   ...override,
 })
 
-export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
-  id: '123-abc-456',
-  application_id: '789-dfg-987',
-  file_name: 'bla.',
-  original_file_name: 'test.apk',
-  is_latest: true,
-  version_name: 'test version',
-  created_at: '22-09-2022',
-  ...override,
-})
+export const getMobileTestWithOverride = (appId: string): MobileTestWithOverride => {
+  return {
+    test: getMobileTest('abc-def-ghi', appId),
+    overriddenConfig: getTestPayload(),
+  }
+}
+
+export const getMobileTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
+  const testOverrides = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
+
+  return {id: 'abc', testOverrides}
+}
 
 export const uploadCommandConfig: UploadApplicationCommandConfig = {
   apiKey: 'foo',
@@ -609,3 +635,30 @@ export const MOBILE_PRESIGNED_UPLOAD_PARTS: MobileApplicationUploadPart[] = [
   {partNumber: 1, md5: 'md5', blob: Buffer.from('content1')},
   {partNumber: 2, md5: 'md5', blob: Buffer.from('content2')},
 ]
+
+export const APP_UPLOAD_POLL_RESULTS: MobileAppUploadResult = {
+  status: 'complete',
+  is_valid: true,
+}
+
+export const APP_UPLOAD_SIZE_AND_PARTS = {
+  appSize: 1000,
+  parts: MOBILE_PRESIGNED_UPLOAD_PARTS,
+}
+
+export const APP_UPLOAD_PART_RESPONSES: MobileApplicationUploadPartResponse[] = MOBILE_PRESIGNED_UPLOAD_PARTS.map(
+  (partNumber) => ({
+    PartNumber: Number(partNumber),
+    ETag: 'etag',
+  })
+)
+
+export const getMockAppUploadReporter = (): AppUploadReporter => {
+  const reporter: AppUploadReporter = new AppUploadReporter({} as any)
+  reporter.start = jest.fn()
+  reporter.renderProgress = jest.fn()
+  reporter.reportSuccess = jest.fn()
+  reporter.reportFailure = jest.fn()
+
+  return reporter
+}

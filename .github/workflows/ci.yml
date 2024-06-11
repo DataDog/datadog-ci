@@ -55,10 +55,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sarif-datadog-ci.sarif
+          name: sarif-datadog-ci-${{ matrix.version }}.sarif
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
-          overwrite: true
 
   e2e-test:
     strategy:
@@ -91,7 +90,7 @@ jobs:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
       - name: Run junit upload test (measures)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --measures testmeasure1:20 --report-measures sessionmeasure1:40
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (measures)
@@ -104,8 +103,8 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run junit upload test (metrics)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit artifacts/e2e/junit-reports --metrics testmeasure2:60 --report-metrics sessionmeasure2:80
+      - name: Run junit upload test (metrics), passing glob as literal string
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --metrics testmeasure2:60 --report-metrics sessionmeasure2:80
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (metrics)
@@ -136,7 +135,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -156,7 +155,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build:win
       - name: Create standalone binary
@@ -170,13 +169,15 @@ jobs:
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
+    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
+    # https://github.com/actions/runner-images#available-images
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14.18.3'
+          node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -203,7 +204,6 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci'
           cpu_count: 2
-          sca_enabled: true
           diff_aware: true
 
   datadog-static-analyzer-non-diff-aware:
@@ -221,9 +221,7 @@ jobs:
           dd_service: 'datadog-ci'
           dd_env: 'ci-no-da'
           cpu_count: 2
-          sca_enabled: true
           diff_aware: false
-
 
   check-licenses:
     name: Check licenses
@@ -234,7 +232,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: 14.18.3
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable

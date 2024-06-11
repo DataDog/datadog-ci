@@ -51,7 +51,7 @@ const parseNumericTag = (numericTag: string | undefined): number | undefined => 
  * Receives an array of the form ['key:value', 'key2:value2']
  * and returns an object of the form {key: 'value', key2: 'value2'}
  */
-export const parseTags = (tags: string[]) => {
+export const parseTags = (tags: string[]): Record<string, string> => {
   try {
     return tags.reduce((acc, keyValuePair) => {
       if (!keyValuePair.includes(':')) {

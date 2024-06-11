@@ -1,12 +1,10 @@
-import {exec} from 'child_process'
 import {promises} from 'fs'
 import {tmpdir} from 'os'
 import path from 'path'
-import {promisify} from 'util'
 
 import rimraf from 'rimraf'
 
-import {buildPath} from '../../helpers/utils'
+import {buildPath, execute} from '../../helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
   try {
@@ -49,13 +47,6 @@ export const executeLipo = async (
   arch: string,
   newObjectPath: string
 ): Promise<{stderr: string; stdout: string}> => execute(`lipo '${objectPath}' -thin ${arch} -output '${newObjectPath}'`)
-
-const execProc = promisify(exec)
-const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
-  execProc(cmd, {
-    cwd,
-    maxBuffer: 5 * 1024 * 5000,
-  })
 
 export const getBaseIntakeUrl = (datadogSite?: string) => {
   if (process.env.DATADOG_DSYM_INTAKE_URL) {

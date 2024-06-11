@@ -128,7 +128,7 @@ export class UploadJUnitXMLCommand extends Command {
   private reportMeasures = Option.Array('--report-measures')
   private rawXPathTags = Option.Array('--xpath-tag')
   private gitRepositoryURL = Option.String('--git-repository-url')
-  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {
+  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'false', {
     validator: t.isBoolean(),
     tolerateBoolean: true,
   })
@@ -276,8 +276,19 @@ export class UploadJUnitXMLCommand extends Command {
         if (isFile(basePath)) {
           return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
         }
+        let globPattern
+        // It's either a folder (possibly including .xml extension) or a glob pattern
+        if (glob.hasMagic(basePath)) {
+          // It's a glob pattern so we just use it as is
+          globPattern = basePath
+        } else {
+          // It's a folder
+          globPattern = buildPath(basePath, '*.xml')
+        }
 
-        return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
+        const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
+
+        return acc.concat(filesToUpload)
       }, [])
       .filter(isFile)
 

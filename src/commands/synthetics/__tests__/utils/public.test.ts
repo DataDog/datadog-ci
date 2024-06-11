@@ -4,7 +4,7 @@ jest.mock('child_process')
 jest.unmock('chalk')
 
 jest.mock('path', () => {
-  const actualPath = jest.requireActual('path')
+  const actualPath: typeof path = jest.requireActual('path')
 
   return {
     ...actualPath,
@@ -42,6 +42,8 @@ import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
 
+import type * as path from 'path'
+
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 import glob from 'glob'
@@ -70,7 +72,7 @@ import {
   UserConfigOverride,
 } from '../../interfaces'
 import * as mobile from '../../mobile'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
 import * as utils from '../../utils/public'
 
 import {
@@ -294,6 +296,13 @@ describe('utils', () => {
       'mob-ile-tes': {
         config: {},
         name: 'Fake Mobile Test',
+        options: {
+          mobileApplication: {
+            applicationId: 'appId',
+            referenceId: 'versionId',
+            referenceType: 'version',
+          },
+        },
         public_id: 'mob-ile-tes',
         suite: 'Suite 3',
         type: 'mobile',
@@ -395,7 +404,7 @@ describe('utils', () => {
     })
 
     test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
-      const spy = jest.spyOn(mobile, 'uploadApplicationAndOverrideConfig').mockImplementation()
+      const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
       const triggerConfigs = [
         {suite: 'Suite 1', config: {}, id: '123-456-789'},
         {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
@@ -647,6 +656,22 @@ describe('utils', () => {
         ...configOverride,
         public_id: publicId,
       })
+    })
+  })
+
+  describe('getTestOverridesCount', () => {
+    test('should count overrides', () => {
+      expect(utils.getTestOverridesCount({})).toBe(0)
+
+      // If the user sets anything, even an empty array or object, it counts as an override
+      expect(utils.getTestOverridesCount({deviceIds: []})).toBe(1)
+      expect(utils.getTestOverridesCount({headers: {}})).toBe(1)
+
+      expect(utils.getTestOverridesCount({deviceIds: ['a']})).toBe(1)
+      expect(utils.getTestOverridesCount({pollingTimeout: 123})).toBe(1)
+
+      // Should ignore the default value for the pollingTimeout
+      expect(utils.getTestOverridesCount({pollingTimeout: DEFAULT_POLLING_TIMEOUT})).toBe(0)
     })
   })
 

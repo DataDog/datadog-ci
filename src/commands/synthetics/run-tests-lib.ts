@@ -1,6 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -58,6 +59,9 @@ export const executeTests = async (
       await tunnel.stop()
     }
   }
+
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
@@ -135,7 +139,9 @@ export const executeTests = async (
   }
 
   try {
-    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const maxPollingTimeout = Math.max(
+      ...triggerConfigs.map((t) => t.testOverrides?.pollingTimeout || config.pollingTimeout)
+    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
@@ -172,8 +178,8 @@ export const getTriggerConfigs = async (
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
   // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
-  const defaultTestConfigOverrides = config.global
-  // TODO: Clean up locations as part of SYNTH-12989
+  const defaultTestConfigOverrides = config.defaultTestOverrides
+  // TODO SYNTH-12989: Clean up `locations`
   const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
@@ -198,10 +204,10 @@ export const getTriggerConfigs = async (
       id,
       ...testFromSearchQuery,
       ...testFromTestConfigs,
-      config: {
+      testOverrides: {
         ...defaultTestConfigOverrides,
         ...testConfigOverridesFromEnv,
-        ...testFromTestConfigs?.config,
+        ...testFromTestConfigs?.testOverrides,
       },
     }
   })
