@@ -45,8 +45,7 @@ describe('run-test', () => {
           failOnMissingTests: false,
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
-          global: {},
-          locations: [],
+          defaultTestOverrides: {},
           pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
@@ -73,7 +72,6 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           defaultTestOverrides: {},
-          locations: [],
           pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
@@ -106,7 +104,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: userConfigOverride,
+          defaultTestOverrides: userConfigOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
       ).rejects.toThrow()
@@ -125,19 +123,22 @@ describe('run-test', () => {
 
     test.each([
       [
-        'locations in global config only',
-        {global: {locations: ['global-location-1']}},
-        {locations: ['global-location-1']},
+        'locations in defaultTestOverrides only',
+        {defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']}},
+        {locations: ['defaultTestOverrides-location-1']},
       ],
       [
-        'locations in env var only',
+        'locations at root level only',
         {locations: ['envvar-location-1', 'envvar-location-2']},
         {locations: ['envvar-location-1', 'envvar-location-2']},
       ],
       [
-        'locations in both global config and env var',
-        {global: {locations: ['global-location-1']}, locations: ['envvar-location-1', 'envvar-location-2']},
-        {locations: ['envvar-location-1', 'envvar-location-2']},
+        'locations in both defaultTestOverrides and at the root level',
+        {
+          defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']},
+          locations: ['envvar-location-1', 'envvar-location-2'],
+        },
+        {locations: ['defaultTestOverrides-location-1']},
       ],
     ] as [string, Partial<RunTestsCommandConfig>, UserConfigOverride][])(
       'Use appropriate list of locations for tests triggered by public id: %s',
@@ -190,7 +191,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: configOverride,
+          defaultTestOverrides: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
@@ -225,7 +226,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: configOverride,
+          defaultTestOverrides: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           tunnel: true,
         })
@@ -371,7 +372,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: {mobileApplicationVersionFilePath: 'filePath'},
+          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to get presigned URL: could not query https://app.datadoghq.com/example')
@@ -403,7 +404,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          global: {mobileApplicationVersionFilePath: 'filePath'},
+          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to upload mobile application: could not query https://app.datadoghq.com/example')
@@ -592,6 +593,7 @@ describe('run-test', () => {
     })
 
     const startUrl = 'fakeUrl'
+    const locations = ['aws:ap-northeast-1']
     const conf1 = {
       tests: [{testOverrides: {deviceIds: ['chrome.laptop_large']}, id: 'abc-def-ghi'}],
     }
@@ -636,32 +638,28 @@ describe('run-test', () => {
 
     test('should extend global config and execute all tests from Test Config when no publicIds were defined', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const defaultTestOverrides = {startUrl}
+      const defaultTestOverrides = {locations, startUrl}
 
       await expect(
-        runTests.getTriggerConfigs(
-          fakeApi,
-          {...ciConfig, defaultTestOverrides, locations: ['aws:ap-northeast-1']},
-          mockReporter
-        )
+        runTests.getTriggerConfigs(fakeApi, {...ciConfig, defaultTestOverrides}, mockReporter)
       ).resolves.toEqual([
         {
-          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl, locations},
           id: 'abc-def-ghi',
           suite: 'Suite 1',
         },
         {
-          testOverrides: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl: 'someOtherFakeUrl', locations},
           id: 'jkl-mno-pqr',
           suite: 'Suite 2',
         },
         {
-          testOverrides: {startUrl: 'someOtherFakeUrl', locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl: 'someOtherFakeUrl', locations},
           id: 'jkl-mno-pq1',
           suite: 'Suite 3',
         },
         {
-          testOverrides: {startUrl: 'theFakestUrl', locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl: 'theFakestUrl', locations},
           id: 'jkl-mno-pq2',
           suite: 'Suite 4',
         },
@@ -670,7 +668,7 @@ describe('run-test', () => {
 
     test('should override and execute only publicIds that were defined in the global config', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const defaultTestOverrides = {startUrl}
+      const defaultTestOverrides = {locations, startUrl}
 
       await expect(
         runTests.getTriggerConfigs(
@@ -678,7 +676,6 @@ describe('run-test', () => {
           {
             ...ciConfig,
             defaultTestOverrides,
-            locations: ['aws:ap-northeast-1'],
             publicIds: ['abc-def-ghi', '123-456-789'],
           },
           mockReporter
@@ -698,7 +695,7 @@ describe('run-test', () => {
 
     test('should search tests and extend global config', async () => {
       jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
-      const defaultTestOverrides = {startUrl}
+      const defaultTestOverrides = {locations, startUrl}
       const searchQuery = 'fake search'
 
       await expect(
@@ -707,14 +704,13 @@ describe('run-test', () => {
           {
             ...ciConfig,
             defaultTestOverrides,
-            locations: ['aws:ap-northeast-1'],
             testSearchQuery: searchQuery,
           },
           mockReporter
         )
       ).resolves.toEqual([
         {
-          testOverrides: {startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {locations, startUrl},
           id: 'stu-vwx-yza',
           suite: 'Query: fake search',
         },

@@ -119,7 +119,6 @@ type AccumulatorBaseConfigOverride = Omit<
   | 'basicAuth'
   | 'cookies'
   // TODO SYNTH-12971: These options will be implemented later in separate PRs
-  | 'locations'
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
   | 'tunnel'
@@ -199,6 +198,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
 
         // Convert to string[]
         case 'deviceIds':
+        case 'locations':
           acc[key] = parseOverrideValue(value, 'string[]') as string[]
           break
 

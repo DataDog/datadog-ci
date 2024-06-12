@@ -195,6 +195,7 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         locations: [],
         pollingTimeout: 1,
         proxy: {
@@ -227,7 +228,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
-        locations: ['us-east-1'],
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 1,
         publicIds: ['ran-dom-id'],
@@ -251,6 +252,7 @@ describe('run-test', () => {
         executionRule: ExecutionRule.BLOCKING,
         followRedirects: true,
         headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
+        locations: ['us-east-1'],
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
         pollingTimeout: 42,
         resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
@@ -293,6 +295,7 @@ describe('run-test', () => {
         `followRedirects=${defaultTestOverrides.followRedirects}`,
         `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
         `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
+        `locations=${defaultTestOverrides.locations}`,
         `retry.count=${defaultTestOverrides.retry?.count}`,
         `retry.interval=${defaultTestOverrides.retry?.interval}`,
         `startUrl=${defaultTestOverrides.startUrl}`,
@@ -331,6 +334,7 @@ describe('run-test', () => {
           executionRule: ExecutionRule.BLOCKING,
           followRedirects: true,
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
+          locations: ['us-east-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
