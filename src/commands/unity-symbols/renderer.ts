@@ -72,8 +72,14 @@ export const renderCommandSummary = (statuses: UploadStatus[], duration: number,
   return output.join('\n') + '\n'
 }
 
+export const renderMustSupplyPlatform = () =>
+  chalk.red(`${ICONS.FAILED} Error: must supply either iOS or Android as your platform.\n`)
+
+export const renderUseOnlyOnePlatform = () =>
+  chalk.red(`${ICONS.FAILED} Error: Only supply either iOS or Android as your platform, not both.\n`)
+
 export const renderMissingBuildId = (path: string) =>
-  chalk.red(`${ICONS.FAILED} Error: Invalid or missing 'build_id' file. Expected at path ${path}`)
+  chalk.red(`${ICONS.FAILED} Error: Invalid or missing 'build_id' file. Expected at path ${path}\n`)
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
@@ -90,9 +96,12 @@ export const renderGeneralizedError = (error: any) => {
   return str
 }
 
+export const renderMissingDir = (directory: string) => 
+  chalk.red(`${ICONS.FAILED} Could not find symbols location: ${directory}`);
+
 export const renderMissingIL2CPPMappingFile = (path: string) =>
   chalk.yellow(
-    `${ICONS.WARNING} No IL2CPP mapping file was found at ${path}. This file is needed for C# line level symbolication.`
+    `${ICONS.WARNING} No IL2CPP mapping file was found at ${path}. This file is needed for C# line level symbolication.\n`
   )
 
 export const renderFailedUpload = (filePath: string, errorMessage: string) => {
