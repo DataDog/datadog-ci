@@ -222,6 +222,11 @@ export class RunTestsCommand extends Command {
       }
     }
 
+    // Convert cookies to object
+    if (typeof this.config.defaultTestOverrides?.cookies === 'string') {
+      this.config.defaultTestOverrides.cookies = {value: this.config.defaultTestOverrides.cookies}
+    }
+
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
@@ -262,16 +267,10 @@ export class RunTestsCommand extends Command {
         username: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
       })
     )
-    const envOverrideCookies = deepExtend(
-      this.config.defaultTestOverrides?.cookies ?? {},
-      removeUndefinedValues({
-        append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
-        value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE,
-      })
-    )
-    if (Object.keys(envOverrideCookies).length > 0 && process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES) {
-      throw new Error(`Cannot have both a string and an object for cookies`)
-    }
+    const envOverrideCookies = removeUndefinedValues({
+      append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+      value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+    })
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -279,10 +278,7 @@ export class RunTestsCommand extends Command {
         basicAuth: Object.keys(envOverrideBasicAuth).length > 0 ? envOverrideBasicAuth : undefined,
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
-        cookies:
-          Object.keys(envOverrideCookies).length > 0
-            ? envOverrideCookies
-            : process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+        cookies: Object.keys(envOverrideCookies).length > 0 ? envOverrideCookies : undefined,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
@@ -336,6 +332,10 @@ export class RunTestsCommand extends Command {
         username: validatedOverrides.basicAuth?.username,
       })
     )
+    const cliOverrideCookies = removeUndefinedValues({
+      append: validatedOverrides.cookies?.append,
+      value: validatedOverrides.cookies?.value,
+    })
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -343,7 +343,7 @@ export class RunTestsCommand extends Command {
         basicAuth: Object.keys(cliOverrideBasicAuth).length > 0 ? cliOverrideBasicAuth : undefined,
         body: validatedOverrides.body,
         bodyType: validatedOverrides.bodyType,
-        cookies: validatedOverrides.cookies,
+        cookies: Object.keys(cliOverrideCookies).length > 0 ? cliOverrideCookies : undefined,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
         // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
         deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
@@ -376,10 +376,11 @@ export class RunTestsCommand extends Command {
       )
     }
 
-    if (typeof this.config.defaultTestOverrides?.cookies === 'object') {
-      if (!this.config.defaultTestOverrides.cookies.value) {
-        throw new Error('Cookies value cannot be empty')
-      }
+    if (
+      typeof this.config.defaultTestOverrides?.cookies === 'object' &&
+      !this.config.defaultTestOverrides.cookies.value
+    ) {
+      throw new Error('Cookies value cannot be empty')
     }
   }
 }

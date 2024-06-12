@@ -127,7 +127,7 @@ type AccumulatorBaseConfigOverride = Omit<
 > & {
   retry?: Partial<RetryConfig>
   basicAuth?: Partial<BasicAuthCredentials>
-  cookies?: string | {value?: string; append?: boolean}
+  cookies?: Partial<Exclude<UserConfigOverride['cookies'], string>>
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
 type TestOverrideValueType = boolean | number | string | string[] | ExecutionRule
@@ -166,118 +166,111 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   if (!overrides) {
     return {}
   }
+  const parsedOverrides: AccumulatorBaseConfigOverride = overrides.reduce(
+    (acc: AccumulatorBaseConfigOverride, override: string) => {
+      const match = override.match(/^(.*?)=(.*)$/) ?? [] // split key and value at first equal sign
+      const rawKey = match[1] ?? ''
+      const value = match[2] ?? ''
 
-  return overrides.reduce((acc: AccumulatorBaseConfigOverride, override: string) => {
-    const match = override.match(/^(.*?)=(.*)$/) ?? [] // split key and value at first equal sign
-    const rawKey = match[1] ?? ''
-    const value = match[2] ?? ''
+      const key = rawKey.split('.')[0] as AccumulatorBaseConfigOverrideKey
+      const subKey = rawKey.split('.')[1]
 
-    const key = rawKey.split('.')[0] as AccumulatorBaseConfigOverrideKey
-    const subKey = rawKey.split('.')[1]
+      switch (key) {
+        // Convert to number
+        case 'defaultStepTimeout':
+        case 'pollingTimeout':
+        case 'testTimeout':
+          acc[key] = parseOverrideValue(value, 'number') as number
+          break
 
-    switch (key) {
-      // Convert to number
-      case 'defaultStepTimeout':
-      case 'pollingTimeout':
-      case 'testTimeout':
-        acc[key] = parseOverrideValue(value, 'number') as number
-        break
+        // Convert to boolean
+        case 'allowInsecureCertificates':
+        case 'followRedirects':
+          acc[key] = parseOverrideValue(value, 'boolean') as boolean
+          break
 
-      // Convert to boolean
-      case 'allowInsecureCertificates':
-      case 'followRedirects':
-        acc[key] = parseOverrideValue(value, 'boolean') as boolean
-        break
+        // Convert to string
+        case 'body':
+        case 'bodyType':
+        case 'startUrl':
+        case 'startUrlSubstitutionRegex':
+          acc[key] = parseOverrideValue(value, 'string') as string
+          break
 
-      // Convert to string
-      case 'body':
-      case 'bodyType':
-      case 'startUrl':
-      case 'startUrlSubstitutionRegex':
-        acc[key] = parseOverrideValue(value, 'string') as string
-        break
+        // Convert to string[]
+        case 'deviceIds':
+          acc[key] = parseOverrideValue(value, 'string[]') as string[]
+          break
 
-      // Convert to string[]
-      case 'deviceIds':
-        acc[key] = parseOverrideValue(value, 'string[]') as string[]
-        break
+        // Special parsing for resourceUrlSubstitutionRegexes
+        case 'resourceUrlSubstitutionRegexes':
+          acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
+          acc['resourceUrlSubstitutionRegexes'].push(value)
+          break
 
-      // Special parsing for resourceUrlSubstitutionRegexes
-      case 'resourceUrlSubstitutionRegexes':
-        acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
-        acc['resourceUrlSubstitutionRegexes'].push(value)
-        break
+        // Convert to ExecutionRule
+        case 'executionRule':
+          acc[key] = parseOverrideValue(value, 'ExecutionRule') as ExecutionRule
+          break
 
-      // Convert to ExecutionRule
-      case 'executionRule':
-        acc[key] = parseOverrideValue(value, 'ExecutionRule') as ExecutionRule
-        break
-
-      // Convert to RetryConfig
-      case 'retry':
-        switch (subKey as keyof RetryConfig) {
-          case 'count':
-          case 'interval':
-            acc['retry'] = acc['retry'] ?? {}
-            acc['retry'][subKey as keyof RetryConfig] = parseOverrideValue(value, 'number') as number
-            break
-          default:
-            throw new Error(`Invalid subkey for ${key}`)
-        }
-        break
-
-      // Convert to BasicAuthCredentials
-      case 'basicAuth':
-        switch (subKey as keyof BasicAuthCredentials) {
-          case 'username':
-          case 'password':
-            acc['basicAuth'] = acc['basicAuth'] ?? {}
-            acc['basicAuth'][subKey as keyof BasicAuthCredentials] = parseOverrideValue(value, 'string') as string
-            break
-          default:
-            throw new Error(`Invalid subkey for ${key}`)
-        }
-        break
-
-      // Convert to cookies (either a string or an object)
-      case 'cookies':
-        if (subKey) {
-          if (typeof acc['cookies'] === 'string') {
-            throw new Error(`Cannot have both a string and an object for ${key}`)
-          }
-          acc['cookies'] = acc['cookies'] ?? {}
-          switch (subKey) {
-            case 'value':
-              acc['cookies'].value = parseOverrideValue(value, 'string') as string
-              break
-            case 'append':
-              acc['cookies'].append = parseOverrideValue(value, 'boolean') as boolean
+        // Convert to RetryConfig
+        case 'retry':
+          switch (subKey as keyof RetryConfig) {
+            case 'count':
+            case 'interval':
+              acc['retry'] = acc['retry'] ?? {}
+              acc['retry'][subKey as keyof RetryConfig] = parseOverrideValue(value, 'number') as number
               break
             default:
               throw new Error(`Invalid subkey for ${key}`)
           }
-        } else {
-          if (typeof acc['cookies'] === 'object') {
-            throw new Error(`Cannot have both a string and an object for ${key}`)
+          break
+
+        // Convert to BasicAuthCredentials
+        case 'basicAuth':
+          switch (subKey as keyof BasicAuthCredentials) {
+            case 'username':
+            case 'password':
+              acc['basicAuth'] = acc['basicAuth'] ?? {}
+              acc['basicAuth'][subKey as keyof BasicAuthCredentials] = parseOverrideValue(value, 'string') as string
+              break
+            default:
+              throw new Error(`Invalid subkey for ${key}`)
           }
-          acc['cookies'] = parseOverrideValue(value, 'string') as string
-        }
-        break
+          break
 
-      // Convert to {[key: string]: string}
-      case 'headers':
-        if (subKey) {
-          acc['headers'] = acc['headers'] ?? {}
-          acc['headers'][subKey] = value
-        } else {
-          throw new Error(`No subkey found for ${key}`)
-        }
-        break
+        // Convert to cookies (either a string or an object)
+        case 'cookies':
+          acc['cookies'] = acc['cookies'] ?? {}
+          if (subKey) {
+            if (subKey === 'append') {
+              acc['cookies'].append = parseOverrideValue(value, 'boolean') as boolean
+            } else {
+              throw new Error(`Invalid subkey for ${key}`)
+            }
+          } else {
+            acc['cookies'].value = parseOverrideValue(value, 'string') as string
+          }
+          break
 
-      default:
-        throw new Error(`Invalid key: ${key}`)
-    }
+        // Convert to {[key: string]: string}
+        case 'headers':
+          if (subKey) {
+            acc['headers'] = acc['headers'] ?? {}
+            acc['headers'][subKey] = value
+          } else {
+            throw new Error(`No subkey found for ${key}`)
+          }
+          break
 
-    return acc
-  }, {})
+        default:
+          throw new Error(`Invalid key: ${key}`)
+      }
+
+      return acc
+    },
+    {}
+  )
+
+  return parsedOverrides
 }

@@ -79,6 +79,7 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body',
         DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType',
         DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1;cookie2;cookie3',
+        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
         DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
@@ -111,7 +112,10 @@ describe('run-test', () => {
           },
           body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
           bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
-          cookies: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+          cookies: {
+            value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+            append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+          },
           defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
@@ -141,37 +145,6 @@ describe('run-test', () => {
         testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
         tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
       })
-    })
-
-    test('`cookies` object ENV overrides', async () => {
-      const overrideEnv = {
-        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE: 'name1=value1;name2=value2;',
-        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
-      }
-      process.env = overrideEnv
-      const command = createCommand(RunTestsCommand)
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        defaultTestOverrides: {
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-          cookies: {
-            append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
-            value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE,
-          },
-        },
-      })
-    })
-
-    it('should throw an error when trying to set cookies as both an object and a string from ENV', async () => {
-      const overrideEnv = {
-        DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'name1=value1;name2=value2;',
-        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_VALUE: 'name3=value3;name4=value4;',
-        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
-      }
-      process.env = overrideEnv
-      const command = createCommand(RunTestsCommand)
-      await expect(command['resolveConfig']()).rejects.toThrow('Cannot have both a string and an object for cookies')
     })
 
     test('partial retryConfig override from ENV retains existing values', async () => {
@@ -313,6 +286,7 @@ describe('run-test', () => {
         `body=${defaultTestOverrides.body}`,
         `bodyType=${defaultTestOverrides.bodyType}`,
         `cookies=${defaultTestOverrides.cookies}`,
+        `cookies.append=true`,
         `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
         `deviceIds=${defaultTestOverrides.deviceIds}`,
         `executionRule=${defaultTestOverrides.executionRule}`,
@@ -348,7 +322,10 @@ describe('run-test', () => {
           },
           body: 'a body',
           bodyType: 'bodyType',
-          cookies: 'name1=value1;name2=value2;',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
           defaultStepTimeout: 42,
           deviceIds: ['chrome.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
@@ -370,42 +347,6 @@ describe('run-test', () => {
         testSearchQuery: 'a-search-query',
         tunnel: true,
       })
-    })
-
-    test('cookies object override from CLI', async () => {
-      const cookiesCliOverride = {
-        value: 'name1=value1;name2=value2;',
-        append: true,
-      }
-      const command = createCommand(RunTestsCommand)
-      command['overrides'] = [
-        `cookies.value=${cookiesCliOverride.value}`,
-        `cookies.append=${cookiesCliOverride.append}`,
-      ]
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        defaultTestOverrides: {
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-          cookies: cookiesCliOverride,
-        },
-      })
-    })
-
-    it('should throw an error when trying to set cookies as both an object and a string from CLI', async () => {
-      const cookieObject = {
-        value: 'name3=value3;name4=value4;',
-        append: true,
-      }
-      const cookieString = 'name1=value1;name2=value2;'
-      const command = createCommand(RunTestsCommand)
-      command['overrides'] = [
-        `cookies.value=${cookieObject.value}`,
-        `cookies.append=${cookieObject.append}`,
-        `cookies=${cookieString}`,
-      ]
-
-      await expect(command['resolveConfig']()).rejects.toThrow('Cannot have both a string and an object for cookies')
     })
 
     // We have 2 code paths that handle different levels of configuration overrides:
