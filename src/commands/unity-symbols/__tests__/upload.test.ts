@@ -316,105 +316,109 @@ describe('unity-symbols upload', () => {
   })
 
   describe('il2cpp mapping upload', () => {
-    test('warns if mapping file does not exist', async () => {
-      const {exitCode, context} = await runCommand((cmd) => {
-        cmd['ios'] = true
-        cmd['symbolsLocation'] = `${fixtureDir}/buildIdOnly`
+    ;['ios', 'android'].forEach((platform) => {
+      test(`warns if mapping file does not exist for ${platform}`, async () => {
+        const {exitCode, context} = await runCommand((cmd) => {
+          ;(cmd as any)[platform] = true
+          cmd['symbolsLocation'] = `${fixtureDir}/buildIdOnly`
+        })
+
+        const errorOutput = context.stderr.toString()
+
+        // Doesn't fail, only warning
+        expect(exitCode).toBe(0)
+        expect(errorOutput).toContain(
+          renderMissingIL2CPPMappingFile(`${fixtureDir}/buildIdOnly/LineNumberMappings.json`)
+        )
       })
 
-      const errorOutput = context.stderr.toString()
+      test(`creates correct metadata payload for ${platform}`, async () => {
+        const command = createCommand(UploadCommand)
+        ;(command as any)[platform] = true
+        command['symbolsLocation'] = `${fixtureDir}/mappingFile`
+        await command['verifyParameters']()
 
-      // Doesn't fail, only warning
-      expect(exitCode).toBe(0)
-      expect(errorOutput).toContain(renderMissingIL2CPPMappingFile(`${fixtureDir}/buildIdOnly/LineNumberMappings.json`))
-    })
+        mockGitRepoParameters(command)
 
-    test('creates correct metadata payload', async () => {
-      const command = createCommand(UploadCommand)
-      command['ios'] = true
-      command['symbolsLocation'] = `${fixtureDir}/mappingFile`
-      await command['verifyParameters']()
+        const metadata = command['getMappingMetadata']('il2cpp_mapping_file')
 
-      mockGitRepoParameters(command)
-
-      const metadata = command['getMappingMetadata']('il2cpp_mapping_file')
-
-      expect(metadata).toEqual({
-        cli_version: cliVersion,
-        git_commit_sha: 'fake-git-hash',
-        git_repository_url: 'fake-git-remote',
-        build_id: 'fake-build-id',
-        type: 'il2cpp_mapping_file',
-      })
-    })
-
-    test('uploads correct multipart payload with repository', async () => {
-      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
-      ;(getRepositoryData as jest.Mock).mockResolvedValueOnce({
-        hash: 'fake-git-hash',
-        remote: 'fake-git-remote',
-        trackedFilesMatcher: new TrackedFilesMatcher([
-          './Assets/Scripts/Behavior.cs',
-          './Assets/Scripts/UIBehavior.cs',
-        ]),
+        expect(metadata).toEqual({
+          cli_version: cliVersion,
+          git_commit_sha: 'fake-git-hash',
+          git_repository_url: 'fake-git-remote',
+          build_id: 'fake-build-id',
+          type: 'il2cpp_mapping_file',
+        })
       })
 
-      const {exitCode} = await runCommand((cmd) => {
-        cmd['ios'] = true
-        cmd['symbolsLocation'] = `${fixtureDir}/mappingFile`
+      test(`uploads correct multipart payload with repository for ${platform}`, async () => {
+        ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+        ;(getRepositoryData as jest.Mock).mockResolvedValueOnce({
+          hash: 'fake-git-hash',
+          remote: 'fake-git-remote',
+          trackedFilesMatcher: new TrackedFilesMatcher([
+            './Assets/Scripts/Behavior.cs',
+            './Assets/Scripts/UIBehavior.cs',
+          ]),
+        })
+
+        const {exitCode} = await runCommand((cmd) => {
+          ;(cmd as any)[platform] = true
+          cmd['symbolsLocation'] = `${fixtureDir}/mappingFile`
+        })
+
+        const expectedMetadata = {
+          cli_version: cliVersion,
+          git_commit_sha: 'fake-git-hash',
+          git_repository_url: 'fake-git-remote',
+          type: 'il2cpp_mapping_file',
+          build_id: 'fake-build-id',
+        }
+
+        const expectedRepository = {
+          data: [
+            {
+              files: ['./Assets/Scripts/Behavior.cs', './Assets/Scripts/UIBehavior.cs'],
+              hash: 'fake-git-hash',
+              repository_url: 'fake-git-remote',
+            },
+          ],
+          version: 1,
+        }
+
+        expect(uploadMultipartHelper).toHaveBeenCalled()
+        const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+        expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+        const repoValue = payload.content.get('repository') as MultipartStringValue
+        expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
+        expect((repoValue?.options).filename).toBe('repository')
+        expect((repoValue?.options).contentType).toBe('application/json')
+        expect(exitCode).toBe(0)
       })
 
-      const expectedMetadata = {
-        cli_version: cliVersion,
-        git_commit_sha: 'fake-git-hash',
-        git_repository_url: 'fake-git-remote',
-        type: 'il2cpp_mapping_file',
-        build_id: 'fake-build-id',
-      }
+      test(`uploads correct multipart payload without repository for ${platform}`, async () => {
+        ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
 
-      const expectedRepository = {
-        data: [
-          {
-            files: ['./Assets/Scripts/Behavior.cs', './Assets/Scripts/UIBehavior.cs'],
-            hash: 'fake-git-hash',
-            repository_url: 'fake-git-remote',
-          },
-        ],
-        version: 1,
-      }
+        const {exitCode} = await runCommand((cmd) => {
+          ;(cmd as any)[platform] = true
+          cmd['symbolsLocation'] = `${fixtureDir}/mappingFile`
+        })
 
-      expect(uploadMultipartHelper).toHaveBeenCalled()
-      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
-      const repoValue = payload.content.get('repository') as MultipartStringValue
-      expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
-      expect((repoValue?.options).filename).toBe('repository')
-      expect((repoValue?.options).contentType).toBe('application/json')
-      expect(exitCode).toBe(0)
-    })
+        const expectedMetadata = {
+          cli_version: cliVersion,
+          build_id: 'fake-build-id',
+          type: 'il2cpp_mapping_file',
+        }
 
-    test('uploads correct multipart payload without repository', async () => {
-      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
-
-      const {exitCode} = await runCommand((cmd) => {
-        cmd['ios'] = true
-        cmd['symbolsLocation'] = `${fixtureDir}/mappingFile`
+        expect(uploadMultipartHelper).toHaveBeenCalled()
+        const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+        expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+        const mappingFileItem = payload.content.get('il2cpp_mapping_file') as MultipartFileValue
+        expect(mappingFileItem).toBeTruthy()
+        expect(mappingFileItem.options.filename).toBe('LineNumberMappings.json')
+        expect(mappingFileItem.path).toBe(`${fixtureDir}/mappingFile/LineNumberMappings.json`)
+        expect(exitCode).toBe(0)
       })
-
-      const expectedMetadata = {
-        cli_version: cliVersion,
-        build_id: 'fake-build-id',
-        type: 'il2cpp_mapping_file',
-      }
-
-      expect(uploadMultipartHelper).toHaveBeenCalled()
-      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
-      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
-      const mappingFileItem = payload.content.get('il2cpp_mapping_file') as MultipartFileValue
-      expect(mappingFileItem).toBeTruthy()
-      expect(mappingFileItem.options.filename).toBe('LineNumberMappings.json')
-      expect(mappingFileItem.path).toBe(`${fixtureDir}/mappingFile/LineNumberMappings.json`)
-      expect(exitCode).toBe(0)
     })
 
     test('skips upload on dry run', async () => {
