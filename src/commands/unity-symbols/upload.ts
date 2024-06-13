@@ -1,7 +1,8 @@
-import fs, {mkdir} from 'fs'
+import fs from 'fs'
 import path, {basename} from 'path'
 
 import {Command, Option} from 'clipanion'
+import glob from 'glob'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
@@ -19,6 +20,7 @@ import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
 import * as dsyms from '../dsyms/upload'
+import {createUniqueTmpDirectory} from '../dsyms/utils'
 import * as elf from '../elf-symbols/elf'
 
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
@@ -45,8 +47,6 @@ import {
   renderUpload,
   renderUseOnlyOnePlatform,
 } from './renderer'
-import glob from 'glob'
-import {createUniqueTmpDirectory} from '../dsyms/utils'
 
 export class UploadCommand extends Command {
   public static paths = [['unity-symbols', 'upload']]
@@ -170,12 +170,12 @@ export class UploadCommand extends Command {
 
   private getMappingMetadata(type: string, arch?: string): MappingMetadata {
     return {
-      arch: arch,
+      arch,
       cli_version: this.cliVersion,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       build_id: this.buildId!,
-      type: type,
+      type,
     }
   }
 
@@ -229,7 +229,7 @@ export class UploadCommand extends Command {
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     const soFiles = glob.sync(buildPath(this.symbolsLocation!, '**/*.so'))
-    this.context.stdout.write(`${soFiles}`);
+    this.context.stdout.write(`${soFiles}`)
 
     const tmpDirectory = await createUniqueTmpDirectory()
 
@@ -273,7 +273,7 @@ export class UploadCommand extends Command {
           payload.content.set('repository', this.getGitDataPayload(this.gitData))
         }
 
-        return await uploadMultipartHelper(requestBuilder, payload, {
+        return uploadMultipartHelper(requestBuilder, payload, {
           apiKeyValidator,
           onError: (e) => {
             this.context.stdout.write(renderFailedUpload(soFileName, e.message))
@@ -301,12 +301,13 @@ export class UploadCommand extends Command {
         this.context.stdout.write(`WARN: ${err}\n`)
       }
     }
+
     return []
   }
 
   private async performIl2CppMappingUpload(): Promise<UploadStatus> {
     const il2cppMappingPath = path.join(this.symbolsLocation!, 'LineNumberMappings.json')
-      
+
     if (!fs.existsSync(il2cppMappingPath)) {
       this.context.stderr.write(renderMissingIl2CppMappingFile(il2cppMappingPath))
 
@@ -376,12 +377,14 @@ export class UploadCommand extends Command {
 
     if (!this.ios && !this.android) {
       this.context.stderr.write(renderMustSupplyPlatform())
+
       return false
     }
 
     if (this.ios && this.android) {
       this.context.stderr.write(renderUseOnlyOnePlatform())
-      return false;
+
+      return false
     }
 
     if (this.symbolsLocation === undefined) {
@@ -391,13 +394,14 @@ export class UploadCommand extends Command {
         this.symbolsLocation = './unityLibrary/symbols'
       }
     }
-  
+
     if (!this.symbolsLocation) {
       this.context.stderr.write(renderArgumentMissingError('symbols-location'))
       parametersOkay = false
-    } else if(!fs.existsSync(this.symbolsLocation!)) {
-      this.context.stderr.write(renderMissingDir(this.symbolsLocation!))
-      return false; 
+    } else if (!fs.existsSync(this.symbolsLocation)) {
+      this.context.stderr.write(renderMissingDir(this.symbolsLocation))
+
+      return false
     }
 
     if (await this.getBuildId()) {

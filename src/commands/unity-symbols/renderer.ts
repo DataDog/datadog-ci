@@ -96,8 +96,8 @@ export const renderGeneralizedError = (error: any) => {
   return str
 }
 
-export const renderMissingDir = (directory: string) => 
-  chalk.red(`${ICONS.FAILED} Could not find symbols location: ${directory}`);
+export const renderMissingDir = (directory: string) =>
+  chalk.red(`${ICONS.FAILED} Could not find symbols location: ${directory}`)
 
 export const renderMissingIL2CPPMappingFile = (path: string) =>
   chalk.yellow(

@@ -1,5 +1,4 @@
 import os from 'os'
-import fs from 'fs'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
@@ -10,7 +9,13 @@ import {version} from '../../../helpers/version'
 import * as dsyms from '../../dsyms/upload'
 
 import {uploadMultipartHelper} from '../helpers'
-import {renderArgumentMissingError, renderMissingBuildId, renderMissingDir, renderMissingIL2CPPMappingFile, renderMustSupplyPlatform} from '../renderer'
+import {
+  renderArgumentMissingError,
+  renderMissingBuildId,
+  renderMissingDir,
+  renderMissingIL2CPPMappingFile,
+  renderMustSupplyPlatform,
+} from '../renderer'
 import {UploadCommand} from '../upload'
 
 const cliVersion = version
@@ -31,7 +36,7 @@ jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
   getRepositoryData: jest.fn(),
 }))
 
-describe('unity-symbols upload', () => {  
+describe('unity-symbols upload', () => {
   const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
     const command = createCommand(UploadCommand)
     prepFunction(command)
@@ -41,14 +46,11 @@ describe('unity-symbols upload', () => {
     return {exitCode, context: command.context}
   }
 
-  const mockGitRepoParameters = (command: UploadCommand) => {      
+  const mockGitRepoParameters = (command: UploadCommand) => {
     command['gitData'] = {
       hash: 'fake-git-hash',
       remote: 'fake-git-remote',
-      trackedFilesMatcher: new TrackedFilesMatcher([
-        './Assets/Scripts/Behavior.cs',
-        './Assets/Scripts/UIBehavior.cs',
-      ]),
+      trackedFilesMatcher: new TrackedFilesMatcher(['./Assets/Scripts/Behavior.cs', './Assets/Scripts/UIBehavior.cs']),
     }
   }
 
@@ -71,7 +73,6 @@ describe('unity-symbols upload', () => {
       type: 'ndk_symbol_file',
     })
   })
-
 
   describe('parameter validation', () => {
     test('ios fails if symbols-location is blank', async () => {
@@ -97,31 +98,29 @@ describe('unity-symbols upload', () => {
     })
 
     test('default ios symbol location is ./datadogSymbols', async () => {
-      var captureCmd: UploadCommand
-      const {exitCode, context} = await runCommand((cmd) => {
+      let captureCmd: UploadCommand
+      const {exitCode} = await runCommand((cmd) => {
         cmd['ios'] = true
         captureCmd = cmd
       })
-      const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
       expect(captureCmd!['symbolsLocation']).toBe('./datadogSymbols')
     })
 
     test('default android symbol location is ./unityLibrary/symbols', async () => {
-      var captureCmd: UploadCommand
-      const {exitCode, context} = await runCommand((cmd) => {
+      let captureCmd: UploadCommand
+      const {exitCode} = await runCommand((cmd) => {
         cmd['android'] = true
         captureCmd = cmd
       })
-      const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
       expect(captureCmd!['symbolsLocation']).toBe('./unityLibrary/symbols')
     })
 
     test('requires platform', async () => {
-      const {exitCode, context} = await runCommand((_) => { })
+      const {exitCode, context} = await runCommand((_) => {})
       const output = context.stdout.toString()
 
       expect(exitCode).not.toBe(0)
@@ -174,11 +173,11 @@ describe('unity-symbols upload', () => {
     const symbolsLocation = `${fixtureDir}/buildIdOnly`
 
     test('calls dsyms sub-command with proper default parameters', async () => {
-      const {exitCode, context} = await runCommand((cmd) => {
+      const {exitCode} = await runCommand((cmd) => {
         cmd['ios'] = true
         cmd['symbolsLocation'] = symbolsLocation
       })
-      
+
       expect(exitCode).toBe(0)
 
       expect(performSubCommand).toHaveBeenCalledWith(
@@ -232,11 +231,7 @@ describe('unity-symbols upload', () => {
       expect(errorOutput).toBe(renderMissingDir(`${fixtureDir}/missing-dir`))
     })
 
-    const getExpectedMetadata = (      
-      arch: string,
-      gitCommitSha?: string,
-      gitRespositoryUrl?: string
-    ) => ({
+    const getExpectedMetadata = (arch: string, gitCommitSha?: string, gitRespositoryUrl?: string) => ({
       arch,
       cli_version: cliVersion,
       ...(gitCommitSha && {git_commit_sha: gitCommitSha}),
@@ -248,32 +243,29 @@ describe('unity-symbols upload', () => {
     test('uploads correct multipart payloads without repository', async () => {
       ;(uploadMultipartHelper as jest.Mock).mockResolvedValue('')
 
-      const {exitCode, context} = await runCommand((cmd) => {        
+      await runCommand((cmd) => {
         cmd['android'] = true
         cmd['symbolsLocation'] = `${fixtureDir}/androidSymbols`
       })
 
-      console.log(context.stdout.toString())
-
       expect(uploadMultipartHelper).toHaveBeenCalledTimes(4)
 
       // Possible metadata values
-      let possibleMetadata = [
+      const possibleMetadata = [
         JSON.stringify(getExpectedMetadata('aarch64')),
-        JSON.stringify(getExpectedMetadata('arm'))
+        JSON.stringify(getExpectedMetadata('arm')),
       ]
-      let calls = (uploadMultipartHelper as jest.Mock).mock.calls
+      const calls = (uploadMultipartHelper as jest.Mock).mock.calls
       calls.forEach((call) => {
-        let content = call[1].content as Map<string, MultipartValue>
+        const content = call[1].content as Map<string, MultipartValue>
         expect(content).toBeTruthy()
-        
-        let file = content.get('ndk_symbol_file')
-        let baseFilename = file!['options']['filename']
-        expect(['libmain.so','libunity.so']).toContain(baseFilename)
-        let event = content.get('event')
+
+        const file = content.get('ndk_symbol_file')
+        const baseFilename = file!['options']['filename']
+        expect(['libmain.so', 'libunity.so']).toContain(baseFilename)
 
         expect(possibleMetadata).toContain((content.get('event') as MultipartStringValue).value)
-      })      
+      })
     })
 
     test('uploads correct multipart payloads with repository', async () => {
@@ -281,27 +273,23 @@ describe('unity-symbols upload', () => {
       ;(getRepositoryData as jest.Mock).mockResolvedValueOnce({
         hash: 'fake-git-hash',
         remote: 'fake-git-remote',
-        trackedFilesMatcher: new TrackedFilesMatcher([
-          './Assets/Scripts/Behavior.cs',
-        ]),
+        trackedFilesMatcher: new TrackedFilesMatcher(['./Assets/Scripts/Behavior.cs']),
       })
 
-      const {exitCode} = await runCommand((cmd) => {
+      await runCommand((cmd) => {
         cmd['android'] = true
         cmd['symbolsLocation'] = `${fixtureDir}/androidSymbols`
       })
 
-      let possibleMetadata = [
+      const possibleMetadata = [
         JSON.stringify(getExpectedMetadata('aarch64', 'fake-git-hash', 'fake-git-remote')),
-        JSON.stringify(getExpectedMetadata('arm', 'fake-git-hash', 'fake-git-remote'))
+        JSON.stringify(getExpectedMetadata('arm', 'fake-git-hash', 'fake-git-remote')),
       ]
 
       const expectedRepository = {
         data: [
           {
-            files: [
-              './Assets/Scripts/Behavior.cs',              
-            ],
+            files: ['./Assets/Scripts/Behavior.cs'],
             hash: 'fake-git-hash',
             repository_url: 'fake-git-remote',
           },
@@ -309,17 +297,20 @@ describe('unity-symbols upload', () => {
         version: 1,
       }
 
-      let calls = (uploadMultipartHelper as jest.Mock).mock.calls
+      const calls = (uploadMultipartHelper as jest.Mock).mock.calls
       calls.forEach((call) => {
-        let content = call[1].content as Map<string, MultipartValue>
+        const content = call[1].content as Map<string, MultipartValue>
         expect(content).toBeTruthy()
-        
-        let file = content.get('ndk_symbol_file')
-        let baseFilename = file!['options']['filename']
-        expect(['libmain.so','libunity.so']).toContain(baseFilename)
-        let event = content.get('event')
+
+        const file = content.get('ndk_symbol_file')
+        const baseFilename = file!['options']['filename']
+        expect(['libmain.so', 'libunity.so']).toContain(baseFilename)
 
         expect(possibleMetadata).toContain((content.get('event') as MultipartStringValue).value)
+        const repoValue = content.get('repository') as MultipartStringValue
+        expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
+        expect(repoValue.options.filename).toBe('repository')
+        expect(repoValue.options.contentType).toBe('application/json')
       })
     })
   })
