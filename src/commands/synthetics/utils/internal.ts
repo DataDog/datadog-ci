@@ -246,7 +246,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
             if (subKey === 'append') {
               acc['cookies'].append = parseOverrideValue(value, 'boolean') as boolean
             } else {
-              throw new Error(`Invalid subkey for ${key}`)
+              throw new Error(`The path "${key}.${subKey}" is invalid. Did you mean \`--override cookies=...\`?`)
             }
           } else {
             acc['cookies'].value = parseOverrideValue(value, 'string') as string
