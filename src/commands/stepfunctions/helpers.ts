@@ -80,7 +80,7 @@ export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineComma
   return `LogsDeliveryAccessPolicy-${stepFunction.name}`
 }
 
-export const injectContextIntoLambdaPayload = async (
+export const injectContextIntoTasks = async (
   describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   stepFunctionsClient: SFNClient,
   context: BaseContext,
@@ -94,16 +94,8 @@ export const injectContextIntoLambdaPayload = async (
   for (const stepName in definitionObj.States) {
     if (definitionObj.States.hasOwnProperty(stepName)) {
       const step = definitionObj.States[stepName]
-      if (shouldUpdateStepForTracesMerging(step)) {
-        updateStepObject(step)
-        definitionHasBeenUpdated = true
-      } else if (step.Resource?.startsWith('arn:aws:lambda')) {
-        context.stdout.write(
-          `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace. 
-          To merge lambda trace(s) with Step Functions trace, please consider using the latest integration. 
-          More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
-        )
-      }
+      definitionHasBeenUpdated = injectContextForLambdaFunctions(step, context, stepName)
+      definitionHasBeenUpdated = injectContextForStepFunctions(step)
     }
   }
   if (definitionHasBeenUpdated) {
@@ -117,9 +109,18 @@ export const injectContextIntoLambdaPayload = async (
   }
 }
 
-export const updateStepObject = ({Parameters}: StepType): void => {
+export const addTraceContextToLambdaParameters = ({Parameters}: StepType): void => {
   if (Parameters) {
     Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
+  }
+}
+
+export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType): void => {
+  if (Parameters) {
+    if (!Parameters.Input) {
+      Parameters.Input = {}
+    }
+    Parameters.Input['CONTEXT.$'] = 'States.JsonMerge($$, $, false)'
   }
 }
 
@@ -135,6 +136,34 @@ export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
     }
     // default payload
     if (step.Parameters['Payload.$'] === '$') {
+      return true
+    }
+  }
+
+  return false
+}
+
+// Truth table
+// Input                    | Expected
+// -------------------------|---------
+// Empty object             | true
+// undefined                | true
+// not object               | false
+// object without CONTEXT.$ | true
+// object with CONTEXT.$    | false
+export const shouldUpdateStepForStepFunctionContextInjection = (step: StepType): boolean => {
+  // is default lambda api
+  if (step.Resource?.startsWith('arn:aws:states:::states:startExecution')) {
+    if (!step.Parameters) {
+      return false
+    }
+    if (!step.Parameters.Input) {
+      return true
+    }
+    if (typeof step.Parameters.Input !== 'object') {
+      return false
+    }
+    if (!step.Parameters.Input['CONTEXT.$']) {
       return true
     }
   }
@@ -160,5 +189,35 @@ export type StepType = {
 export type ParametersType = {
   'Payload.$'?: string
   FunctionName?: string
+  StateMachineArn?: string
   TableName?: string
+  Input?: {
+    'CONTEXT.$'?: string
+  }
+}
+
+const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
+  if (shouldUpdateStepForTracesMerging(step)) {
+    addTraceContextToLambdaParameters(step)
+
+    return true
+  } else if (step.Resource?.startsWith('arn:aws:lambda')) {
+    context.stdout.write(
+      `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace. 
+          To merge lambda trace(s) with Step Functions trace, please consider using the latest integration. 
+          More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
+    )
+  }
+
+  return false
+}
+
+export const injectContextForStepFunctions = (step: StepType): boolean => {
+  if (shouldUpdateStepForStepFunctionContextInjection(step)) {
+    addTraceContextToStepFunctionParameters(step)
+
+    return true
+  }
+
+  return false
 }
