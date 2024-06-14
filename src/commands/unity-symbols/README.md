@@ -45,8 +45,7 @@ datadog unity-symbols upload --android
 | Parameter | Condition | Description |
 |-----------|-----------|-------------|
 | `--ios` or `--android` | One is required | Specify the platform we are uploading symbols for, iOS or Android |
-| `--variant` | Optional, Android Only | Specify the variant that was built. Defaults to `release` |
-| `--symbols-location`  | Optional, iOS Only | The location of of your dSYMs, `build_id` and `LineNumberMappings.json` file.  Defaults to `datadogSymbols`. |
+| `--symbols-location`  | Optional | The location of your `dSYMs`, `.sos`, `build_id` and `LineNumberMappings.json` file.  Defaults to `datadogSymbols` on iOS and `/unityLibrary/symbols` on Android. |
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
