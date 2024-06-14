@@ -199,6 +199,19 @@ describe('stepfunctions command helpers tests', () => {
       }
       expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeTruthy()
     })
+
+    test('is false when Input is an object that contains a CONTEXT key', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {'CONTEXT.$': 'blah'},
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeFalsy()
+    })
   })
 
   describe('inject context for StepFunctions', () => {
