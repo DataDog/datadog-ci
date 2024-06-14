@@ -46,6 +46,9 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           defaultTestOverrides: {},
+          // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+          global: {},
+          locations: [],
           pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
@@ -72,6 +75,9 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           defaultTestOverrides: {},
+          // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+          global: {},
+          locations: [],
           pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
@@ -122,15 +128,30 @@ describe('run-test', () => {
     })
 
     test.each([
+      // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+      [
+        'locations in global config only (deprecated)',
+        {global: {locations: ['global-location-1']}},
+        {locations: ['global-location-1']},
+      ],
+      [
+        'locations at root level only (deprecated)',
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+        {locations: ['envvar-location-1', 'envvar-location-2']},
+      ],
+      [
+        'locations in global (deprecated), defaultTestOverrides and at the root level',
+        {
+          global: {locations: ['global-location-1']},
+          defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']},
+          locations: ['envvar-location-1', 'envvar-location-2'],
+        },
+        {locations: ['defaultTestOverrides-location-1']},
+      ],
       [
         'locations in defaultTestOverrides only',
         {defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']}},
         {locations: ['defaultTestOverrides-location-1']},
-      ],
-      [
-        'locations at root level only',
-        {locations: ['envvar-location-1', 'envvar-location-2']},
-        {locations: ['envvar-location-1', 'envvar-location-2']},
       ],
       [
         'locations in both defaultTestOverrides and at the root level',
@@ -191,7 +212,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          defaultTestOverrides: configOverride,
+          global: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
@@ -372,7 +393,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
+          global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to get presigned URL: could not query https://app.datadoghq.com/example')
@@ -404,7 +425,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
+          global: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to upload mobile application: could not query https://app.datadoghq.com/example')
