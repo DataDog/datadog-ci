@@ -13,7 +13,7 @@ import {
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean, toNumber, toExecutionRule} from '../utils/internal'
+import {toBoolean, toNumber, toExecutionRule, toStringObject} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -73,14 +73,19 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
         DATADOG_SYNTHETICS_TUNNEL: 'false',
-        DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
-        DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
         DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password',
+        DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username',
         DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body',
         DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType',
+        DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1;cookie2;cookie3',
+        DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+        DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_HEADERS: "{'Content-Type': 'application/json', 'Authorization': 'Bearer token'}",
+        DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
         DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
         DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
         DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
@@ -100,15 +105,24 @@ describe('run-test', () => {
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
-          deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-          mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
           allowInsecureCertificates: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+          basicAuth: {
+            password: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD,
+            username: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
+          },
           body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
           bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+          cookies: {
+            value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+            append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+          },
           defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+          deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+          headers: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+          mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
@@ -225,12 +239,18 @@ describe('run-test', () => {
       }
       const defaultTestOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
+        basicAuth: {
+          password: 'password',
+          username: 'username',
+        },
         body: 'a body',
         bodyType: 'bodyType',
+        cookies: 'name1=value1;name2=value2;',
         defaultStepTimeout: 42,
         deviceIds: ['chrome.laptop_large'],
         executionRule: ExecutionRule.BLOCKING,
         followRedirects: true,
+        headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
         pollingTimeout: 42,
         resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
@@ -248,7 +268,6 @@ describe('run-test', () => {
       command['appKey'] = overrideCLI.appKey
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
-      command['deviceIds'] = defaultTestOverrides.deviceIds
       command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
@@ -262,11 +281,18 @@ describe('run-test', () => {
       command['testSearchQuery'] = overrideCLI.testSearchQuery
       command['overrides'] = [
         `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+        `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
+        `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
         `body=${defaultTestOverrides.body}`,
         `bodyType=${defaultTestOverrides.bodyType}`,
+        `cookies=${defaultTestOverrides.cookies}`,
+        `cookies.append=true`,
         `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+        `deviceIds=${defaultTestOverrides.deviceIds}`,
         `executionRule=${defaultTestOverrides.executionRule}`,
         `followRedirects=${defaultTestOverrides.followRedirects}`,
+        `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+        `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
         `retry.count=${defaultTestOverrides.retry?.count}`,
         `retry.interval=${defaultTestOverrides.retry?.interval}`,
         `startUrl=${defaultTestOverrides.startUrl}`,
@@ -290,12 +316,21 @@ describe('run-test', () => {
         jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
+          basicAuth: {
+            password: 'password',
+            username: 'username',
+          },
           body: 'a body',
           bodyType: 'bodyType',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
           defaultStepTimeout: 42,
           deviceIds: ['chrome.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
           followRedirects: true,
+          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,

@@ -5,6 +5,7 @@ import {
   toBoolean,
   toExecutionRule,
   toNumber,
+  toStringObject,
   validateAndParseOverrides,
 } from '../../utils/internal'
 
@@ -96,6 +97,35 @@ describe('utils', () => {
     ]
     test.each(cases)('toExecutionRule(%s) should return %s', (input, expectedOutput) => {
       expect(toExecutionRule(input)).toEqual(expectedOutput)
+    })
+  })
+
+  describe('toObject', () => {
+    const cases: [string | undefined, {[key: string]: string} | undefined][] = [
+      ['{"key1":"value1","key2":"value2"}', {key1: 'value1', key2: 'value2'}],
+      ['{"key1": "value1", "key2": "value2"}', {key1: 'value1', key2: 'value2'}],
+      [
+        `{
+        "key1": "value1",
+        "key2": "value2"
+      }`,
+        {key1: 'value1', key2: 'value2'},
+      ], // Multiline JSON should be supported
+      ["{'key1': 'value1', 'key2': 'value2'}", {key1: 'value1', key2: 'value2'}], // Single quotes should be supported
+      ['{"key1":"value1"}', {key1: 'value1'}],
+      ['{}', {}],
+      ['', undefined],
+      ['invalid json', undefined],
+      ['{"key1": "value1", "key2": 2}', undefined], // Non-string value should result in undefined
+      ['null', undefined],
+      ['42', undefined],
+      [undefined, undefined],
+      ['   ', undefined],
+      ['{"key1": "value1", "key2": "value2"} extra', undefined], // Extra text should result in undefined
+    ]
+
+    test.each(cases)('toObject(%s) should return %s', (input, expectedOutput) => {
+      expect(toStringObject(input)).toEqual(expectedOutput)
     })
   })
 
