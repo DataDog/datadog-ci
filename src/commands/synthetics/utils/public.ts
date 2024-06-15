@@ -1,4 +1,5 @@
 import {exec} from 'child_process'
+import EventEmitter from 'events'
 import * as fs from 'fs'
 import * as path from 'path'
 import process from 'process'
@@ -19,6 +20,7 @@ import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
   BrowserServerResult,
+  EventReporter,
   ExecutionRule,
   LocationsMapping,
   MainReporter,
@@ -371,6 +373,56 @@ export const getResultDuration = (result: ServerResult): number => {
   }
 
   return 0
+}
+
+export const getEventReporter = (reporter: MainReporter): EventReporter => {
+  const eventEmitter = new EventEmitter()
+
+  return {
+    error: (error) => {
+      reporter.error(error)
+      eventEmitter.emit('error', error)
+    },
+    initErrors: (errors) => {
+      reporter.initErrors(errors)
+      eventEmitter.emit('initErrors', errors)
+    },
+    log: (log) => {
+      reporter.log(log)
+      eventEmitter.emit('log', log)
+    },
+    reportStart: (timings) => {
+      reporter.reportStart(timings)
+      eventEmitter.emit('reportStart', timings)
+    },
+    resultEnd: (result, baseUrl, batchId) => {
+      reporter.resultEnd(result, baseUrl, batchId)
+      eventEmitter.emit('resultEnd', result, baseUrl, batchId)
+    },
+    resultReceived: (result) => {
+      reporter.resultReceived(result)
+      eventEmitter.emit('resultReceived', result)
+    },
+    runEnd: (summary, baseUrl, orgSettings) => {
+      reporter.runEnd(summary, baseUrl, orgSettings)
+      eventEmitter.emit('runEnd', summary, baseUrl, orgSettings)
+    },
+    testTrigger: (test, testId, executionRule, testOverrides) => {
+      reporter.testTrigger(test, testId, executionRule, testOverrides)
+      eventEmitter.emit('testTrigger', test, testId, executionRule, testOverrides)
+    },
+    testWait: (test) => {
+      reporter.testWait(test)
+      eventEmitter.emit('testWait', test)
+    },
+    testsWait: (tests, baseUrl, batchId, skippedCount) => {
+      reporter.testsWait(tests, baseUrl, batchId, skippedCount)
+      eventEmitter.emit('testsWait', tests, baseUrl, batchId, skippedCount)
+    },
+    on: (event, listener) => eventEmitter.on(event, listener),
+    off: (event, listener) => eventEmitter.off(event, listener),
+    once: (event, listener) => eventEmitter.once(event, listener),
+  }
 }
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({

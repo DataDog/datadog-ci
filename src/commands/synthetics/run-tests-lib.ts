@@ -4,6 +4,7 @@ import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
+  EventReporter,
   MainReporter,
   Reporter,
   Result,
@@ -33,6 +34,7 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
+  getEventReporter,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -219,6 +221,7 @@ export const executeWithDetails = async (
   runConfig: WrapperConfig,
   {jUnitReport, reporters, runId, suites}: ExecuteOptions
 ): Promise<{
+  eventReporter: EventReporter
   results: Result[]
   summary: Summary
   exitCode: 0 | 1
@@ -262,6 +265,8 @@ export const executeWithDetails = async (
   }
 
   const mainReporter = getReporter(localReporters)
+  const eventReporter = getEventReporter(mainReporter)
+
   const {results, summary} = await executeTests(mainReporter, localConfig, suites)
 
   const orgSettings = await getOrgSettings(mainReporter, localConfig)
@@ -283,6 +288,7 @@ export const executeWithDetails = async (
     results,
     summary,
     exitCode,
+    eventReporter,
   }
 }
 

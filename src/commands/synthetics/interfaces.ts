@@ -20,6 +20,12 @@ export interface MainReporter {
 
 export type Reporter = Partial<MainReporter>
 
+export type EventReporter = MainReporter & {
+  on: <K extends keyof MainReporter>(event: K, listener: (...args: Parameters<MainReporter[K]>) => void) => void
+  off: <K extends keyof MainReporter>(event: K, listener: (...args: Parameters<MainReporter[K]>) => void) => void
+  once: <K extends keyof MainReporter>(event: K, listener: (...args: Parameters<MainReporter[K]>) => void) => void
+}
+
 export interface BaseServerResult {
   failure?: {
     code: string
