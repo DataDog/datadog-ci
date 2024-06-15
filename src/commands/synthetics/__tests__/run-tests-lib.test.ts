@@ -572,7 +572,7 @@ describe('run-test', () => {
       jest.restoreAllMocks()
       jest
         .spyOn(runTests, 'executeWithDetails')
-        .mockReturnValue(Promise.resolve({results: [], summary: {} as Summary, exitCode: 0}))
+        .mockReturnValue(Promise.resolve({results: [], summary: {} as Summary, exitCode: 0, eventReporter: {} as any}))
     })
 
     test('should call executeWithDetails', async () => {

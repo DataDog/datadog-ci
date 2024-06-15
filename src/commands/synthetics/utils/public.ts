@@ -419,9 +419,9 @@ export const getEventReporter = (reporter: MainReporter): EventReporter => {
       reporter.testsWait(tests, baseUrl, batchId, skippedCount)
       eventEmitter.emit('testsWait', tests, baseUrl, batchId, skippedCount)
     },
-    on: (event, listener) => eventEmitter.on(event, listener),
-    off: (event, listener) => eventEmitter.off(event, listener),
-    once: (event, listener) => eventEmitter.once(event, listener),
+    on: (event, listener) => eventEmitter.on(event, listener as (...args: any[]) => void),
+    off: (event, listener) => eventEmitter.off(event, listener as (...args: any[]) => void),
+    once: (event, listener) => eventEmitter.once(event, listener as (...args: any[]) => void),
   }
 }
 
