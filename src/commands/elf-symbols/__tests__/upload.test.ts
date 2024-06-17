@@ -91,6 +91,25 @@ describe('elf-symbols upload', () => {
       ])
     })
 
+    test('should accept elf file with only dynamic symbols if --dynsym option is passed', async () => {
+      const command = createCommand(UploadCommand)
+      command['uploadDynamicSymbolTable'] = true
+      const files = await command['getElfSymbolFiles'](fixtureDir)
+
+      expect(files.map((f) => f.filename)).toEqual([
+        `${fixtureDir}/.debug/dyn_aarch64.debug`,
+        `${fixtureDir}/dyn_aarch64`,
+        `${fixtureDir}/dyn_aarch64_nobuildid`,
+        `${fixtureDir}/dyn_x86_64`,
+        `${fixtureDir}/exec_aarch64`,
+        `${fixtureDir}/exec_arm_big`,
+        `${fixtureDir}/exec_arm_little`,
+        `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
+        `${fixtureDir}/go_x86_64_only_go_build_id`,
+        `${fixtureDir}/go_x86_64_only_go_build_id.debug`,
+      ])
+    })
+
     test('should throw an error when input is a single non-elf file', async () => {
       const command = createCommand(UploadCommand)
       await expect(command['getElfSymbolFiles'](`${fixtureDir}/non_elf_file`)).rejects.toThrow()
@@ -132,7 +151,8 @@ describe('elf-symbols upload', () => {
         'fake-gnu-build-id',
         'fake-go-build-id',
         'fake-file-hash',
-        'x86_64'
+        'x86_64',
+        'symbol_table'
       )
 
       expect(metadata).toEqual({
@@ -144,6 +164,7 @@ describe('elf-symbols upload', () => {
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
         platform: 'elf',
+        symbol_source: 'symbol_table',
         type: 'elf_symbol_file',
       })
     })
@@ -162,6 +183,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -171,6 +193,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
       ]
 
@@ -204,6 +227,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -213,6 +237,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -222,6 +247,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
           go_build_id: '',
           arch: 'x86_64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -231,6 +257,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '623209afd6c408f9009e57fad28782f056112daf',
           go_build_id: '',
           arch: 'arm',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -240,6 +267,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
           go_build_id: '',
           arch: 'arm',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -249,6 +277,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
       ]
 

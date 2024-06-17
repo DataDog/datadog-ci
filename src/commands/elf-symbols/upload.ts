@@ -57,6 +57,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
+  private uploadDynamicSymbolTable = Option.Boolean('--dynsym', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
@@ -147,7 +148,27 @@ export class UploadCommand extends Command {
     return undefined
   }
 
-  private getMappingMetadata(gnuBuildId: string, goBuildId: string, fileHash: string, arch: string): MappingMetadata {
+  private getElfSymbolSource(elfFileMetadata: ElfFileMetadata): string {
+    if (elfFileMetadata.hasDebugInfo) {
+      return 'debug_info'
+    }
+    if (elfFileMetadata.hasSymbolTable) {
+      return 'symbol_table'
+    }
+    if (elfFileMetadata.hasDynamicSymbolTable) {
+      return 'dynamic_symbol_table'
+    }
+
+    return 'none'
+  }
+
+  private getMappingMetadata(
+    gnuBuildId: string,
+    goBuildId: string,
+    fileHash: string,
+    arch: string,
+    symbolSource: string
+  ): MappingMetadata {
     return {
       arch,
       gnu_build_id: gnuBuildId,
@@ -157,6 +178,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       platform: 'elf',
+      symbol_source: symbolSource,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
@@ -229,7 +251,11 @@ export class UploadCommand extends Command {
           reportFailure(`Skipped ${path} because it has no build id`)
           continue
         }
-        if (!metadata.hasDebugInfo && !metadata.hasSymbols) {
+        if (
+          !metadata.hasDebugInfo &&
+          !metadata.hasSymbolTable &&
+          (!metadata.hasDynamicSymbolTable || !this.uploadDynamicSymbolTable)
+        ) {
           reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
           continue
         }
@@ -249,7 +275,11 @@ export class UploadCommand extends Command {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
-        if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbols && !existing.hasSymbols)) {
+        if (
+          (metadata.hasDebugInfo && !existing.hasDebugInfo) ||
+          (metadata.hasSymbolTable && !existing.hasSymbolTable) ||
+          (metadata.hasDynamicSymbolTable && !existing.hasDynamicSymbolTable) // this probably should never happen
+        ) {
           // if we have a duplicate build_id, we keep the one with debug info and symbols
           this.context.stderr.write(
             renderWarning(
@@ -291,7 +321,8 @@ export class UploadCommand extends Command {
           fileMetadata.gnuBuildId,
           fileMetadata.goBuildId,
           fileMetadata.fileHash,
-          fileMetadata.arch
+          fileMetadata.arch,
+          this.getElfSymbolSource(fileMetadata)
         )
         const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)

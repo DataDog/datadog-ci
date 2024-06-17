@@ -720,7 +720,8 @@ describe('elf', () => {
         goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
-        hasSymbols: true,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: true,
         hasCode: true,
       })
 
@@ -735,7 +736,8 @@ describe('elf', () => {
         goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
-        hasSymbols: true,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: true,
         hasCode: false,
       })
 
@@ -750,7 +752,8 @@ describe('elf', () => {
         goBuildId: '',
         type: 'DYN',
         hasDebugInfo: true,
-        hasSymbols: true,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: true,
         hasCode: true,
       })
 
@@ -765,7 +768,8 @@ describe('elf', () => {
         fileHash: '70c9cab66acf4f5c715119b0999c20a4',
         type: 'DYN',
         hasDebugInfo: false,
-        hasSymbols: false,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: false,
         hasCode: true,
       })
 
@@ -780,7 +784,8 @@ describe('elf', () => {
         fileHash: '7d39634381df8bf0bb7101f36e78fea2',
         type: 'DYN',
         hasDebugInfo: false,
-        hasSymbols: false,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: false,
         hasCode: true,
       })
 
@@ -795,7 +800,8 @@ describe('elf', () => {
         fileHash: '3c8e0a68a99a3a03836d225a33ac1f8d',
         type: 'EXEC',
         hasDebugInfo: true,
-        hasSymbols: true,
+        hasDynamicSymbolTable: false,
+        hasSymbolTable: true,
         hasCode: true,
       })
     })

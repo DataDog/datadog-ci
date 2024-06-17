@@ -24,7 +24,8 @@ export type ElfFileMetadata = {
   fileHash: string
   type: string
   hasDebugInfo: boolean
-  hasSymbols: boolean
+  hasDynamicSymbolTable: boolean
+  hasSymbolTable: boolean
   hasCode: boolean
   error?: Error
 }
@@ -430,14 +431,15 @@ export const isSupportedElfType = (type: string): boolean => {
 
 export const getSectionInfo = (
   sections: SectionHeader[]
-): {hasDebugInfo: boolean; hasSymbols: boolean; hasCode: boolean} => {
+): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
   const hasDebugInfo = sections.some((section) => section.name === '.debug_info')
-  const hasSymbols = sections.some((section) => section.name === '.symtab')
+  const hasSymbolTable = sections.some((section) => section.name === '.symtab')
+  const hasDynamicSymbolTable = sections.some((section) => section.name === '.dynsym')
   const hasCode = sections.some(
     (section) => section.name === '.text' && section.sh_type === SectionHeaderType.SHT_PROGBITS
   )
 
-  return {hasDebugInfo, hasSymbols, hasCode}
+  return {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode}
 }
 
 export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetadata> => {
@@ -452,7 +454,8 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     fileHash: '',
     type: '',
     hasDebugInfo: false,
-    hasSymbols: false,
+    hasSymbolTable: false,
+    hasDynamicSymbolTable: false,
     hasCode: false,
   }
 
@@ -477,14 +480,22 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
 
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
     const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
-    const {hasDebugInfo, hasSymbols, hasCode} = getSectionInfo(sectionHeaders)
+    const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode} = getSectionInfo(sectionHeaders)
     let fileHash = ''
     if (hasCode) {
       // Only compute file hash if the file has code:
       // if the file has no code, it is likely a debug info file and its hash is useless
       fileHash = await computeFileHash(filename)
     }
-    Object.assign(metadata, {fileHash, gnuBuildId, goBuildId, hasDebugInfo, hasSymbols, hasCode})
+    Object.assign(metadata, {
+      fileHash,
+      gnuBuildId,
+      goBuildId,
+      hasDebugInfo,
+      hasSymbolTable,
+      hasDynamicSymbolTable,
+      hasCode,
+    })
   } catch (error) {
     metadata.error = error
   } finally {
