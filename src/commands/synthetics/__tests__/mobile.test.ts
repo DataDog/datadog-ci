@@ -224,12 +224,12 @@ describe('mobile', () => {
       ])
     })
 
-    test('setUploadedAppFileName', () => {
+    test('setUploadedAppFileNameAndExtractedMetadata', () => {
       const cache = new mobile.AppUploadCache()
       cache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
-      cache.setUploadedAppFileName('appPath1', 'appId1', 'fileName')
+      cache.setUploadedAppFileName('appPath1', 'appId1', 'fileName', {key: 'value'})
 
-      expect(cache.getUploadedAppFileName('appPath1', 'appId1')).toBe('fileName')
+      expect(cache.getUploadedAppFileName('appPath1', 'appId1')).toEqual({fileName: 'fileName', extractedMetadata: {key: 'value'}})
     })
   })
 
@@ -237,13 +237,15 @@ describe('mobile', () => {
     test('mobileApplicationVersionFilePath', () => {
       const test = getMobileTest()
       const overriddenConfig = getTestPayload({public_id: test.public_id})
-      mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication.applicationId, 'fileName')
+      const extractedMetadata = {key: 'value'}
+      mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication.applicationId, 'fileName', undefined, extractedMetadata)
 
       expect(overriddenConfig.mobileApplication).toEqual({
         applicationId: test.options.mobileApplication.applicationId,
         referenceId: 'fileName',
         referenceType: 'temporary',
       })
+      expect(overriddenConfig.appExtractedMetadata).toEqual(extractedMetadata)
     })
 
     test('mobileApplicationVersion', () => {
@@ -266,11 +268,13 @@ describe('mobile', () => {
     test('Temporary takes precedence over version', () => {
       const test = getMobileTest()
       const overriddenConfig = getTestPayload({public_id: test.public_id})
+      const extractedMetadata = {key: 'value'}
       mobile.overrideMobileConfig(
         overriddenConfig,
         test.options.mobileApplication.applicationId,
         'fileName',
-        'androidVersionId'
+        'androidVersionId',
+        extractedMetadata
       )
 
       expect(overriddenConfig.mobileApplication).toEqual({
@@ -278,6 +282,7 @@ describe('mobile', () => {
         referenceId: 'fileName',
         referenceType: 'temporary',
       })
+      expect(overriddenConfig.appExtractedMetadata).toEqual(extractedMetadata)
     })
   })
 
@@ -335,10 +340,10 @@ describe('mobile', () => {
       expect(appUploadReporterReportSuccessSpy).toHaveBeenCalledTimes(1)
       expect(overrideMobileConfigSpy).toHaveBeenCalledTimes(5)
       expect(overrideMobileConfigSpy.mock.calls).toEqual([
-        [testsAndConfigsOverride[0].overriddenConfig, 'appId1', 'fileName-appId1', undefined],
-        [testsAndConfigsOverride[1].overriddenConfig, 'appId2', 'fileName-appId2', undefined],
-        [testsAndConfigsOverride[2].overriddenConfig, 'appId1', 'fileName-appId1', undefined],
-        [testsAndConfigsOverride[3].overriddenConfig, 'appId3', 'fileName-appId3', undefined],
+        [testsAndConfigsOverride[0].overriddenConfig, 'appId1', 'fileName-appId1', undefined, {metadataKey: 'metadataValue'}],
+        [testsAndConfigsOverride[1].overriddenConfig, 'appId2', 'fileName-appId2', undefined, {metadataKey: 'metadataValue'}],
+        [testsAndConfigsOverride[2].overriddenConfig, 'appId1', 'fileName-appId1', undefined, {metadataKey: 'metadataValue'}],
+        [testsAndConfigsOverride[3].overriddenConfig, 'appId3', 'fileName-appId3', undefined, {metadataKey: 'metadataValue'}],
         [
           testsAndConfigsOverride[4].overriddenConfig,
           'appId4',
