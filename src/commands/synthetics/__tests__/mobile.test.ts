@@ -229,7 +229,10 @@ describe('mobile', () => {
       cache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
       cache.setUploadedAppFileName('appPath1', 'appId1', 'fileName', {key: 'value'})
 
-      expect(cache.getUploadedAppFileName('appPath1', 'appId1')).toEqual({fileName: 'fileName', extractedMetadata: {key: 'value'}})
+      expect(cache.getUploadedAppFileName('appPath1', 'appId1')).toEqual({
+        fileName: 'fileName',
+        extractedMetadata: {key: 'value'},
+      })
     })
   })
 
@@ -238,7 +241,13 @@ describe('mobile', () => {
       const test = getMobileTest()
       const overriddenConfig = getTestPayload({public_id: test.public_id})
       const extractedMetadata = {key: 'value'}
-      mobile.overrideMobileConfig(overriddenConfig, test.options.mobileApplication.applicationId, 'fileName', undefined, extractedMetadata)
+      mobile.overrideMobileConfig(
+        overriddenConfig,
+        test.options.mobileApplication.applicationId,
+        'fileName',
+        undefined,
+        extractedMetadata
+      )
 
       expect(overriddenConfig.mobileApplication).toEqual({
         applicationId: test.options.mobileApplication.applicationId,
@@ -340,10 +349,34 @@ describe('mobile', () => {
       expect(appUploadReporterReportSuccessSpy).toHaveBeenCalledTimes(1)
       expect(overrideMobileConfigSpy).toHaveBeenCalledTimes(5)
       expect(overrideMobileConfigSpy.mock.calls).toEqual([
-        [testsAndConfigsOverride[0].overriddenConfig, 'appId1', 'fileName-appId1', undefined, {metadataKey: 'metadataValue'}],
-        [testsAndConfigsOverride[1].overriddenConfig, 'appId2', 'fileName-appId2', undefined, {metadataKey: 'metadataValue'}],
-        [testsAndConfigsOverride[2].overriddenConfig, 'appId1', 'fileName-appId1', undefined, {metadataKey: 'metadataValue'}],
-        [testsAndConfigsOverride[3].overriddenConfig, 'appId3', 'fileName-appId3', undefined, {metadataKey: 'metadataValue'}],
+        [
+          testsAndConfigsOverride[0].overriddenConfig,
+          'appId1',
+          'fileName-appId1',
+          undefined,
+          {metadataKey: 'metadataValue'},
+        ],
+        [
+          testsAndConfigsOverride[1].overriddenConfig,
+          'appId2',
+          'fileName-appId2',
+          undefined,
+          {metadataKey: 'metadataValue'},
+        ],
+        [
+          testsAndConfigsOverride[2].overriddenConfig,
+          'appId1',
+          'fileName-appId1',
+          undefined,
+          {metadataKey: 'metadataValue'},
+        ],
+        [
+          testsAndConfigsOverride[3].overriddenConfig,
+          'appId3',
+          'fileName-appId3',
+          undefined,
+          {metadataKey: 'metadataValue'},
+        ],
         [
           testsAndConfigsOverride[4].overriddenConfig,
           'appId4',

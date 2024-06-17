@@ -170,7 +170,12 @@ export class AppUploadCache {
     return this.cache[appPath][appId]
   }
 
-  public setUploadedAppFileName(appPath: string, appId: string, fileName: string, extractedMetadata?: MobileAppExtractedMetadata): void {
+  public setUploadedAppFileName(
+    appPath: string,
+    appId: string,
+    fileName: string,
+    extractedMetadata?: MobileAppExtractedMetadata
+  ): void {
     this.cache[appPath][appId] = {fileName, extractedMetadata}
   }
 }
@@ -268,7 +273,12 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
     appUploadReporter.renderProgress(appsToUpload.length - index)
     try {
       const {appUploadResponse, fileName} = await uploadMobileApplication(api, item.appPath, item.appId)
-      appUploadCache.setUploadedAppFileName(item.appPath, item.appId, fileName, appUploadResponse.valid_app_result?.extracted_metadata)
+      appUploadCache.setUploadedAppFileName(
+        item.appPath,
+        item.appId,
+        fileName,
+        appUploadResponse.valid_app_result?.extracted_metadata
+      )
     } catch (error) {
       appUploadReporter.reportFailure(item)
       throw error
@@ -284,7 +294,13 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
       const cacheEntry = appPath ? appUploadCache.getUploadedAppFileName(appPath, appId) : undefined
       const fileName = cacheEntry?.fileName
       const extractedMetadata = cacheEntry?.extractedMetadata
-      overrideMobileConfig(item.overriddenConfig, appId, fileName, userConfigOverride.mobileApplicationVersion, extractedMetadata)
+      overrideMobileConfig(
+        item.overriddenConfig,
+        appId,
+        fileName,
+        userConfigOverride.mobileApplicationVersion,
+        extractedMetadata
+      )
     }
   }
 }
