@@ -23,7 +23,7 @@ import {
   isValidArn,
   parseArn,
   getStepFunctionLogGroupArn,
-  injectContextIntoLambdaPayload,
+  injectContextIntoTasks,
 } from './helpers'
 
 const cliVersion = version
@@ -60,6 +60,7 @@ export class InstrumentStepFunctionsCommand extends Command {
     '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
     false
   )
+  private propagateUpstreamTrace = Option.Boolean('--propagate-upstream-trace', false)
 
   public async execute() {
     let validationError = false
@@ -350,15 +351,10 @@ export class InstrumentStepFunctionsCommand extends Command {
         hasChanges = true
       }
 
-      if (this.mergeStepFunctionAndLambdaTraces) {
+      if (this.mergeStepFunctionAndLambdaTraces || this.propagateUpstreamTrace) {
         // Not putting the update operation into the business logic of logs subscription. This will
         // add additional API call, but it would also allow easier testing and cleaner code.
-        await injectContextIntoLambdaPayload(
-          describeStateMachineCommandOutput,
-          stepFunctionsClient,
-          this.context,
-          this.dryRun
-        )
+        await injectContextIntoTasks(describeStateMachineCommandOutput, stepFunctionsClient, this.context, this.dryRun)
       }
     }
     if (!hasChanges) {
