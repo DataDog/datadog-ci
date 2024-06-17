@@ -46,7 +46,7 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           defaultTestOverrides: {},
-          // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+          // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
           locations: [],
           pollingTimeout: 2 * 60 * 1000,
@@ -75,7 +75,7 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           defaultTestOverrides: {},
-          // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+          // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
           locations: [],
           pollingTimeout: 2 * 60 * 1000,
@@ -128,7 +128,7 @@ describe('run-test', () => {
     })
 
     test.each([
-      // TODO SYNTH-12989: Clean up deprecated `global`and `locations`
+      // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
       [
         'locations in global config only (deprecated)',
         {global: {locations: ['global-location-1']}},
