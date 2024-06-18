@@ -4,6 +4,7 @@ import fs from 'fs'
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {CiError, CriticalError} from './errors'
 import {
+  MobileAppExtractedMetadata,
   MobileAppUploadResult,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
@@ -133,8 +134,10 @@ export const uploadMobileApplication = async (
   return {appUploadResponse, fileName: multipartPresignedUrlsResponse.file_name}
 }
 
+type AppUploadCacheEntry = {fileName: string; extractedMetadata?: MobileAppExtractedMetadata}
+
 export class AppUploadCache {
-  private cache: {[applicationFilePath: string]: {[applicationId: string]: string | undefined}} = {}
+  private cache: {[applicationFilePath: string]: {[applicationId: string]: AppUploadCacheEntry | undefined}} = {}
 
   public setAppCacheKeys(triggerConfigs: TriggerConfig[], testsAndConfigsOverride: MobileTestWithOverride[]): void {
     for (const [index, item] of testsAndConfigsOverride.entries()) {
@@ -163,12 +166,17 @@ export class AppUploadCache {
     return appsToUpload
   }
 
-  public getUploadedAppFileName(appPath: string, appId: string): string | undefined {
+  public getUploadedAppFileName(appPath: string, appId: string): AppUploadCacheEntry | undefined {
     return this.cache[appPath][appId]
   }
 
-  public setUploadedAppFileName(appPath: string, appId: string, fileName: string): void {
-    this.cache[appPath][appId] = fileName
+  public setUploadedAppFileName(
+    appPath: string,
+    appId: string,
+    fileName: string,
+    extractedMetadata?: MobileAppExtractedMetadata
+  ): void {
+    this.cache[appPath][appId] = {fileName, extractedMetadata}
   }
 }
 
@@ -176,7 +184,8 @@ export const overrideMobileConfig = (
   overriddenTest: TestPayload,
   appId: string,
   tempFileName?: string,
-  mobileApplicationVersion?: string
+  mobileApplicationVersion?: string,
+  extractedMetadata?: MobileAppExtractedMetadata
 ) => {
   if (tempFileName) {
     overriddenTest.mobileApplication = {
@@ -184,6 +193,7 @@ export const overrideMobileConfig = (
       referenceId: tempFileName,
       referenceType: 'temporary',
     }
+    overriddenTest.appExtractedMetadata = extractedMetadata
   } else if (mobileApplicationVersion) {
     overriddenTest.mobileApplication = {
       applicationId: appId,
@@ -262,8 +272,13 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
   for (const [index, item] of appsToUpload.entries()) {
     appUploadReporter.renderProgress(appsToUpload.length - index)
     try {
-      const {fileName} = await uploadMobileApplication(api, item.appPath, item.appId)
-      appUploadCache.setUploadedAppFileName(item.appPath, item.appId, fileName)
+      const {appUploadResponse, fileName} = await uploadMobileApplication(api, item.appPath, item.appId)
+      appUploadCache.setUploadedAppFileName(
+        item.appPath,
+        item.appId,
+        fileName,
+        appUploadResponse.valid_app_result?.extracted_metadata
+      )
     } catch (error) {
       appUploadReporter.reportFailure(item)
       throw error
@@ -276,8 +291,16 @@ export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
       const appId = item.test.options.mobileApplication.applicationId
       const userConfigOverride = triggerConfigs[index].testOverrides ?? {}
       const appPath = userConfigOverride.mobileApplicationVersionFilePath
-      const fileName = appPath && appUploadCache.getUploadedAppFileName(appPath, appId)
-      overrideMobileConfig(item.overriddenConfig, appId, fileName, userConfigOverride.mobileApplicationVersion)
+      const cacheEntry = appPath ? appUploadCache.getUploadedAppFileName(appPath, appId) : undefined
+      const fileName = cacheEntry?.fileName
+      const extractedMetadata = cacheEntry?.extractedMetadata
+      overrideMobileConfig(
+        item.overriddenConfig,
+        appId,
+        fileName,
+        userConfigOverride.mobileApplicationVersion,
+        extractedMetadata
+      )
     }
   }
 }

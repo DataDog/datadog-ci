@@ -356,6 +356,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
+  appExtractedMetadata?: MobileAppExtractedMetadata
 }
 
 export interface BatchOptions {
@@ -532,8 +533,10 @@ type MobileInvalidAppResult = {
   invalid_message: string
 }
 
+export type MobileAppExtractedMetadata = Record<string, unknown>
+
 type MobileValidAppResult = {
-  extracted_metadata: Record<string, unknown>
+  extracted_metadata: MobileAppExtractedMetadata
   app_version_uuid: string
 }
 

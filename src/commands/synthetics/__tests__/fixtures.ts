@@ -639,6 +639,12 @@ export const MOBILE_PRESIGNED_UPLOAD_PARTS: MobileApplicationUploadPart[] = [
 export const APP_UPLOAD_POLL_RESULTS: MobileAppUploadResult = {
   status: 'complete',
   is_valid: true,
+  valid_app_result: {
+    app_version_uuid: 'appVersionUuid',
+    extracted_metadata: {
+      metadataKey: 'metadataValue',
+    },
+  },
 }
 
 export const APP_UPLOAD_SIZE_AND_PARTS = {
