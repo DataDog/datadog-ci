@@ -193,9 +193,9 @@ jobs:
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
-    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
+    # `macos-latest-large` is an x64 image, and we need it to run the standalone tests
     # https://github.com/actions/runner-images#available-images
-    runs-on: macos-latest
+    runs-on: macos-latest-large
     steps:
       - uses: actions/checkout@v4
       - name: Install node
@@ -214,7 +214,7 @@ jobs:
         run: yarn dist-standalone:test
 
   standalone-binary-test-macos-arm:
-    name: Test standalone binary in macOS
+    name: Test standalone binary in ARM macOS
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

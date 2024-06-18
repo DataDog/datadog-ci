@@ -152,9 +152,9 @@ jobs:
             })
 
   build-binary-macos:
-    # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
+    # `macos-latest-large` is an x64 image, and we need it to run the standalone tests
     # https://github.com/actions/runner-images#available-images
-    runs-on: macos-latest
+    runs-on: macos-latest-large
     needs: create-draft-release
     steps:
       - uses: actions/checkout@v4
