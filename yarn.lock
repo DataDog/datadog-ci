@@ -1969,7 +1969,7 @@ __metadata:
     typanion: ^3.14.0
     typescript: 5.1.6
     uuid: ^9.0.0
-    ws: 7.5.10
+    ws: ^7.5.10
     xml2js: 0.5.0
     yamux-js: 0.1.2
   bin:
@@ -10962,7 +10962,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:7.5.10":
+"ws@npm:^7.5.10":
   version: 7.5.10
   resolution: "ws@npm:7.5.10"
   peerDependencies:
