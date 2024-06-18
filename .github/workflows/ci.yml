@@ -159,7 +159,7 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: npm install -g yarn
-        name: Install Yarn  # Yarn is not installed by default in this runner
+        name: Install Yarn # Yarn is not installed by default in this runner
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -195,6 +195,26 @@ jobs:
     name: Test standalone binary in macOS
     # macOS-latest is an arm64 image, but the standalone binary is built against `node14-macos-x64` (downloaded by `pkg`)
     # https://github.com/actions/runner-images#available-images
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.11.0 # Use newer version to build the standalone binary
+      - run: yarn install --immutable
+      - run: yarn build
+      - name: Create standalone binary
+        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
+      - name: Remove dist and src folder to check that binary can stand alone
+        run: |
+          rm -rf dist
+          rm -rf src
+      - name: Test generated standalone binary
+        run: yarn dist-standalone:test
+
+  standalone-binary-test-macos-arm:
+    name: Test standalone binary in macOS
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
