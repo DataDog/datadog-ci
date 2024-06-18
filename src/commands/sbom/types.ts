@@ -108,5 +108,6 @@ export interface ScaRequest {
   dependencies: Dependency[]
   service: string
   env: string
+  scan_source: 'ci'
   tags: Record<string, string>
 }

@@ -176,5 +176,6 @@ export const generatePayload = (
     dependencies,
     service,
     env,
+    scan_source: 'ci',
   }
 }
