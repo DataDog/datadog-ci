@@ -51,3 +51,31 @@ export const warnIfDeprecatedConfigUsed = (suites: Suite[], reporter?: MainRepor
     )
   }
 }
+
+export const moveLocationsToTestOverrides = (
+  config: RunTestsCommandConfig,
+  reporter?: MainReporter,
+  warnDeprecatedLocations = false
+): RunTestsCommandConfig => {
+  const isLocationsUsedInRoot = (config.locations ?? []).length !== 0
+  const isLocationsUsedInDefaultTestOverrides = (config.defaultTestOverrides?.locations ?? []).length !== 0
+
+  if (isLocationsUsedInRoot && warnDeprecatedLocations) {
+    reporter?.error(
+      "The 'locations' property should not be used at the root level. Please use it to 'defaultTestOverrides' instead.\n If 'locations' is used in both places, only the one in 'defaultTestOverrides' is used!\n"
+    )
+  }
+
+  // If locations exist in root and not in defaultTestOverrides, move them to defaultTestOverrides
+  if (isLocationsUsedInRoot && !isLocationsUsedInDefaultTestOverrides) {
+    return {
+      ...config,
+      defaultTestOverrides: {
+        ...config.defaultTestOverrides,
+        locations: config.locations,
+      },
+    }
+  }
+
+  return config
+}

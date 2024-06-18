@@ -472,7 +472,9 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   global?: UserConfigOverride
   jUnitReport?: string
   defaultTestOverrides?: UserConfigOverride
-  locations: string[]
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+  /** @deprecated This property should only be used inside of `defaultTestOverrides`. */
+  locations?: string[]
   mobileApplicationVersionFilePath?: string
   pollingTimeout: number
   publicIds: string[]

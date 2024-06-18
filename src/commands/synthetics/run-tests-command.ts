@@ -6,7 +6,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {moveLocationsToTestOverrides, replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -41,6 +41,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   global: {},
   defaultTestOverrides: {},
   jUnitReport: '',
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
   locations: [],
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
@@ -230,6 +231,9 @@ export class RunTestsCommand extends Command {
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
+    // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+    this.config = moveLocationsToTestOverrides(this.config, this.reporter)
+
     // Override with ENV variables
     this.config = deepExtend(
       this.config,
@@ -243,7 +247,6 @@ export class RunTestsCommand extends Command {
         failOnTimeout: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
         jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
-        locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
         selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: process.env.DATADOG_SUBDOMAIN,
@@ -284,6 +287,10 @@ export class RunTestsCommand extends Command {
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
         headers: toStringObject(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        locations:
+          process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
+          process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'
@@ -316,7 +323,7 @@ export class RunTestsCommand extends Command {
       })
     )
 
-    // Override with Global CLI parameters
+    // Override for defaultTestOverrides CLI parameters
     const validatedOverrides = validateAndParseOverrides(this.overrides)
     const cliOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
@@ -350,6 +357,7 @@ export class RunTestsCommand extends Command {
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,
         headers: validatedOverrides.headers,
+        locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         pollingTimeout:
