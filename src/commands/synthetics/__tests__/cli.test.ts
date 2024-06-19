@@ -236,6 +236,7 @@ describe('run-test', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
         variableStrings: ['key=value'],
       }
       const defaultTestOverrides: UserConfigOverride = {
@@ -263,6 +264,7 @@ describe('run-test', () => {
         startUrl: 'startUrl',
         startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
         testTimeout: 42,
+        variables: {var1: 'value1', var2: 'value2'},
       }
 
       const command = createCommand(RunTestsCommand)
@@ -303,6 +305,8 @@ describe('run-test', () => {
         `testTimeout=${defaultTestOverrides.testTimeout}`,
         'resourceUrlSubstitutionRegexes=regex1',
         'resourceUrlSubstitutionRegexes=regex42',
+        `variables.var1=${defaultTestOverrides.variables?.var1}`,
+        `variables.var2=${defaultTestOverrides.variables?.var2}`,
       ]
 
       await command['resolveConfig']()
@@ -345,6 +349,7 @@ describe('run-test', () => {
           startUrl: 'startUrl',
           startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
           testTimeout: 42,
+          variables: {var1: 'value1', var2: 'value2'},
         },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',

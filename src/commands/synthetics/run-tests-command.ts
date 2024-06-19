@@ -50,6 +50,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
   variableStrings: [],
 }
 
@@ -143,6 +144,7 @@ export class RunTestsCommand extends Command {
   private tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
   private reporter!: MainReporter
@@ -299,6 +301,7 @@ export class RunTestsCommand extends Command {
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
         testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
+        variables: toStringObject(process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
       })
     )
 
@@ -366,7 +369,9 @@ export class RunTestsCommand extends Command {
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
         testTimeout: validatedOverrides.testTimeout,
-        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        variables:
+          validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
       })
     )
 
