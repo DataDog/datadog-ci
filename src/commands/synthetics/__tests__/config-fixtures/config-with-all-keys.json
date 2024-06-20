@@ -1,45 +1,34 @@
 {
   "apiKey": "fake_api_key",
   "appKey": "fake_app_key",
+  "batchTimeout": 1,
   "configPath": "fake-datadog-ci.json",
   "datadogSite": "datadoghq.eu",
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": false,
-  "files": [
-    "my-new-file"
-  ],
+  "files": ["my-new-file"],
   "jUnitReport": "junit-report.xml",
   "global": {
-    "deviceIds": [
-      "chrome.laptop_large"
-    ],
-    "locations": [
-      "us-east-1"
-    ],
+    "deviceIds": ["chrome.laptop_large"],
+    "locations": ["us-east-1"],
     "pollingTimeout": 2,
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk"
   },
   "defaultTestOverrides": {
-    "deviceIds": [
-      "chrome.laptop_large"
-    ],
-    "locations": [
-      "us-east-1"
-    ],
-    "pollingTimeout": 2,
+    "deviceIds": ["chrome.laptop_large"],
+    "locations": ["us-east-1"],
+    "pollingTimeout": 3,
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk"
   },
   "locations": [],
-  "pollingTimeout": 1,
+  "pollingTimeout": 4,
   "proxy": {
     "protocol": "https"
   },
-  "publicIds": [
-    "ran-dom-id"
-  ],
+  "publicIds": ["ran-dom-id"],
   "selectiveRerun": true,
   "subdomain": "ppa",
   "testSearchQuery": "a-search-query",

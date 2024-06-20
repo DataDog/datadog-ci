@@ -122,7 +122,6 @@ describe('run-test', () => {
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
           headers: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
@@ -170,9 +169,10 @@ describe('run-test', () => {
     })
 
     test('override from config file', async () => {
-      const overrideConfigFile: RunTestsCommandConfig = {
+      const expectedConfig: RunTestsCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
+        batchTimeout: 1,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
@@ -191,12 +191,13 @@ describe('run-test', () => {
         defaultTestOverrides: {
           deviceIds: ['chrome.laptop_large'],
           locations: ['us-east-1'],
-          pollingTimeout: 2,
+          pollingTimeout: 3,
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
         // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         locations: [],
+        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
         pollingTimeout: 1,
         proxy: {
           protocol: 'https',
@@ -213,7 +214,7 @@ describe('run-test', () => {
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
-      expect(command['config']).toEqual(overrideConfigFile)
+      expect(command['config']).toEqual(expectedConfig)
     })
 
     test('override from CLI', async () => {
@@ -254,7 +255,8 @@ describe('run-test', () => {
         headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
         locations: ['us-east-1'],
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-        pollingTimeout: 42,
+        // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
+        pollingTimeout: 3,
         resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
         retry: {
           count: 5,
@@ -277,6 +279,8 @@ describe('run-test', () => {
       command['jUnitReport'] = overrideCLI.jUnitReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
+      // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
+      command['pollingTimeout'] = overrideCLI.pollingTimeout
       command['publicIds'] = overrideCLI.publicIds
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
@@ -310,6 +314,7 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
+        batchTimeout: 1,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
@@ -337,7 +342,6 @@ describe('run-test', () => {
           locations: ['us-east-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           retry: {
             count: 5,
             interval: 42,
@@ -347,6 +351,58 @@ describe('run-test', () => {
           testTimeout: 42,
         },
         publicIds: ['ran-dom-id'],
+        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
+        pollingTimeout: 1, // also set for backwards compatibility
+        subdomain: 'new-sub-domain',
+        testSearchQuery: 'a-search-query',
+        tunnel: true,
+      })
+
+      // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
+      command['batchTimeout'] = 2 // when both are used, `batchTimeout` takes precedence
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        apiKey: 'fake_api_key',
+        appKey: 'fake_app_key',
+        batchTimeout: 2,
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        datadogSite: 'datadoghq.eu',
+        failOnCriticalErrors: true,
+        failOnMissingTests: true,
+        failOnTimeout: false,
+        files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
+        defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          basicAuth: {
+            password: 'password',
+            username: 'username',
+          },
+          body: 'a body',
+          bodyType: 'bodyType',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          defaultStepTimeout: 42,
+          deviceIds: ['chrome.laptop_large'],
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
+          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
+          locations: ['us-east-1'],
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+          retry: {
+            count: 5,
+            interval: 42,
+          },
+          startUrl: 'startUrl',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
+          testTimeout: 42,
+        },
+        publicIds: ['ran-dom-id'],
+        pollingTimeout: 2, // still set to the correct value for backwards compatibility
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
@@ -375,7 +431,7 @@ describe('run-test', () => {
         datadogSite: 'us5.datadoghq.com',
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
-          pollingTimeout: 111,
+          pollingTimeout: 1,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
         },
       }))
@@ -388,26 +444,49 @@ describe('run-test', () => {
       const command = createCommand(RunTestsCommand)
       command['apiKey'] = 'api_key_cli'
       command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
-      command['pollingTimeout'] = 333
+      command['pollingTimeout'] = 2
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
+        batchTimeout: 2,
         datadogSite: 'us5.datadoghq.com',
         global: {
-          pollingTimeout: 111,
+          pollingTimeout: 1,
           mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
         },
         defaultTestOverrides: {
-          pollingTimeout: 333,
+          pollingTimeout: 1,
           mobileApplicationVersionFilePath: './path/to/application_cli.apk',
         },
+        pollingTimeout: 2,
+      })
+
+      command['batchTimeout'] = 3
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        apiKey: 'api_key_cli',
+        appKey: 'app_key_env',
+        batchTimeout: 3,
+        datadogSite: 'us5.datadoghq.com',
+        global: {
+          pollingTimeout: 1,
+          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        },
+        defaultTestOverrides: {
+          pollingTimeout: 1,
+          mobileApplicationVersionFilePath: './path/to/application_cli.apk',
+        },
+        pollingTimeout: 3,
       })
     })
 
     test('parameters override precedence: global < ENV < test file', async () => {
+      // keep pollingTimeout
+
       const triggerTests = jest.fn(() => {
         throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
@@ -461,7 +540,6 @@ describe('run-test', () => {
         ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-2'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
         })
       )
 
@@ -475,7 +553,6 @@ describe('run-test', () => {
         ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-3'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
         })
       )
       // Same, but with 2 locations.
@@ -488,7 +565,6 @@ describe('run-test', () => {
         ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-3', 'aws:us-east-4'],
           mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
         })
       )
 
@@ -503,23 +579,8 @@ describe('run-test', () => {
         ...getExpectedTestsToTriggerArguments({
           locations: ['aws:us-east-1'],
           mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
         })
       )
-    })
-
-    test('pass command pollingTimeout as global override if undefined', async () => {
-      const command = createCommand(RunTestsCommand)
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {followRedirects: false},
-        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
-        pollingTimeout: 333,
-      })
     })
   })
 
@@ -747,7 +808,7 @@ describe('upload-application', () => {
     })
 
     test('override from config file', async () => {
-      const overrideConfigFile: UploadApplicationCommandConfig = {
+      const expectedConfig: UploadApplicationCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json',
@@ -763,7 +824,7 @@ describe('upload-application', () => {
       command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
 
       await command['resolveConfig']()
-      expect(command['config']).toEqual(overrideConfigFile)
+      expect(command['config']).toEqual(expectedConfig)
     })
 
     test('override from CLI', async () => {

@@ -6,7 +6,11 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {moveLocationsToTestOverrides, replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {
+  moveLocationsToTestOverrides,
+  replaceGlobalWithDefaultTestOverrides,
+  replacePollingTimeoutWithBatchTimeout,
+} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -26,11 +30,14 @@ import {
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
-export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
+export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
+/** @deprecated Please use `DEFAULT_BATCH_TIMEOUT` instead. */
+export const DEFAULT_POLLING_TIMEOUT = DEFAULT_BATCH_TIMEOUT
 
 export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
+  batchTimeout: DEFAULT_BATCH_TIMEOUT,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
@@ -43,6 +50,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   jUnitReport: '',
   // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
   locations: [],
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
@@ -123,7 +131,13 @@ export class RunTestsCommand extends Command {
   private overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
   })
+  // TODO SYNTH-12989: Clean up deprecated `--pollingTimeout` in favor of `--batchTimeout`
+  /** @deprecated This is deprecated, please use `--batchTimeout` instead. */
   private pollingTimeout = Option.String('--pollingTimeout', {
+    description: 'Deprecated. Please use `--batchTimeout` instead.',
+    validator: validation.isInteger(),
+  })
+  private batchTimeout = Option.String('--batchTimeout', {
     description:
       'The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
     validator: validation.isInteger(),
@@ -240,6 +254,7 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
+        batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
         configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
@@ -303,11 +318,19 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with CLI parameters
+    const batchTimeout = replacePollingTimeoutWithBatchTimeout(
+      this.config,
+      this.reporter,
+      false,
+      this.batchTimeout,
+      this.pollingTimeout
+    )
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
         apiKey: this.apiKey,
         appKey: this.appKey,
+        batchTimeout,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
@@ -316,6 +339,8 @@ export class RunTestsCommand extends Command {
         files: this.files,
         jUnitReport: this.jUnitReport,
         publicIds: this.publicIds,
+        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+        pollingTimeout: batchTimeout,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
@@ -323,7 +348,7 @@ export class RunTestsCommand extends Command {
       })
     )
 
-    // Override for defaultTestOverrides CLI parameters
+    // Override defaultTestOverrides with CLI parameters
     const validatedOverrides = validateAndParseOverrides(this.overrides)
     const cliOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
@@ -360,8 +385,6 @@ export class RunTestsCommand extends Command {
         locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        pollingTimeout:
-          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
