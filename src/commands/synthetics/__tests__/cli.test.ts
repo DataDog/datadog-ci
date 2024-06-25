@@ -3,8 +3,6 @@ import {Cli} from 'clipanion/lib/advanced'
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
-import {DATADOG_API_KEY_REG_EXP} from '../../lambda/constants'
-
 import * as api from '../api'
 import {
   ExecutionRule,
@@ -365,7 +363,7 @@ describe('run-test', () => {
     })
 
     // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-    test('deprecated: make sure variableStrings override from CLI still works', async () => {
+    test("CLI parameter '--variable' still works (deprecated)", async () => {
       const command = createCommand(RunTestsCommand)
       command['variableStrings'] = ['var1=value1', 'var2=value2']
       await command['resolveConfig']()

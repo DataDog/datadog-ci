@@ -145,6 +145,7 @@ export class RunTestsCommand extends Command {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
   // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+  /** @deprecated This is deprecated, please use ``--override variables.NAME=VALUE` instead. */
   private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
 
   private reporter!: MainReporter
