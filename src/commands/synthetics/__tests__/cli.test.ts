@@ -3,6 +3,8 @@ import {Cli} from 'clipanion/lib/advanced'
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
+import {DATADOG_API_KEY_REG_EXP} from '../../lambda/constants'
+
 import * as api from '../api'
 import {
   ExecutionRule,
@@ -92,6 +94,7 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
         DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
+        DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'var1': 'value1', 'var2': 'value2'}",
       }
 
       process.env = overrideEnv
@@ -133,6 +136,7 @@ describe('run-test', () => {
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
           testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
+          variables: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
         },
         failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -237,7 +241,7 @@ describe('run-test', () => {
         testSearchQuery: 'a-search-query',
         tunnel: true,
         // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variableStrings: ['key=value'],
+        variableStrings: ['var3=value3','var4=value4'],
       }
       const defaultTestOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
@@ -283,6 +287,8 @@ describe('run-test', () => {
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
+      // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+      command['variableStrings'] = overrideCLI.variableStrings
       command['overrides'] = [
         `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
         `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
@@ -355,6 +361,20 @@ describe('run-test', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+      })
+    })
+
+    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+    test('deprecated: make sure variableStrings override from CLI still works', async () => {
+      const command = createCommand(RunTestsCommand)
+      command['variableStrings'] = ['var1=value1','var2=value2']
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        defaultTestOverrides: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          variables: {var1: 'value1', var2: 'value2'},
+        },
       })
     })
 
