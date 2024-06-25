@@ -259,7 +259,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         case 'headers':
         case 'variables':
           if (subKey) {
-            const stringObject: StringObject = acc[key] = acc[key] ?? {} // acc[key] could be undefined, because of potential js Proxy
+            const stringObject: StringObject = (acc[key] = acc[key] ?? {}) // acc[key] could be undefined, because of potential js Proxy
             stringObject[subKey] = value
           } else {
             throw new Error(`No subkey found for ${key}`)

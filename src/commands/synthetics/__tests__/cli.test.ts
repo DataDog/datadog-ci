@@ -241,7 +241,7 @@ describe('run-test', () => {
         testSearchQuery: 'a-search-query',
         tunnel: true,
         // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variableStrings: ['var3=value3','var4=value4'],
+        variableStrings: ['var3=value3', 'var4=value4'],
       }
       const defaultTestOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
@@ -367,7 +367,7 @@ describe('run-test', () => {
     // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
     test('deprecated: make sure variableStrings override from CLI still works', async () => {
       const command = createCommand(RunTestsCommand)
-      command['variableStrings'] = ['var1=value1','var2=value2']
+      command['variableStrings'] = ['var1=value1', 'var2=value2']
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
