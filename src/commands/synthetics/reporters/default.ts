@@ -250,14 +250,32 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
   if (hasResult(execution)) {
-    const {result} = execution
+    const {result, passed, retries, test} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+    const attempt = getAttemptSuffix(passed, retries, test)
 
-    return ` - ${location}${device}`
+    return ` - ${location}${device}${attempt}`
   }
 
   return ''
+}
+
+const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
+  const currentAttempt = retries + 1
+  const maxAttempts = (test.options.retry?.count ?? 0) + 1
+
+  if (maxAttempts === 1) {
+    // No need to talk about "attempts" if retries aren't configured.
+    return ''
+  }
+
+  if (passed && retries === 0) {
+    // No need to display anything if the test passed on the first attempt
+    return ''
+  }
+
+  return ` (attempt ${currentAttempt} of ${maxAttempts})`
 }
 
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
