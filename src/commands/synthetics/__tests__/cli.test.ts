@@ -13,7 +13,7 @@ import {
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean, toNumber, toExecutionRule, toStringObject} from '../utils/internal'
+import {toBoolean, toNumber, toExecutionRule, toStringMap} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -121,7 +121,7 @@ describe('run-test', () => {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-          headers: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+          headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -134,7 +134,7 @@ describe('run-test', () => {
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
           testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
-          variables: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+          variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
         },
         failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),

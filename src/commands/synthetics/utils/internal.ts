@@ -90,7 +90,7 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
   return undefined
 }
 
-export const toStringObject = (env: string | undefined): StringMap | undefined => {
+export const toStringMap = (env: string | undefined): StringMap | undefined => {
   if (env === undefined) {
     return undefined
   }
@@ -113,7 +113,6 @@ export const toStringObject = (env: string | undefined): StringMap | undefined =
   }
 }
 
-// create type for {[key: string]: string}
 type StringMap = {[key: string]: string}
 
 type AccumulatorBaseConfigOverride = Omit<
@@ -255,12 +254,12 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           }
           break
 
-        // Convert to StringObject
+        // Convert to StringMap
         case 'headers':
         case 'variables':
           if (subKey) {
-            const stringMap: StringMap = (acc[key] = acc[key] ?? {}) // acc[key] could be undefined, because of potential js Proxy
-            stringMap[subKey] = value
+            acc[key] = acc[key] ?? {} // acc[key] could be undefined, because of potential js Proxy
+            ;(acc[key] as StringMap)[subKey] = value
           } else {
             throw new Error(`No subkey found for ${key}`)
           }
