@@ -58,12 +58,10 @@ import {apiConstructor, APIHelper} from '../../api'
 import {CiError, CiErrorCode, CriticalError, BatchTimeoutRunawayError} from '../../errors'
 import {
   BaseResult,
-  BaseResultInBatch,
   Batch,
   ExecutionRule,
   PollResult,
   Result,
-  ResultInBatch,
   SelectiveRerunDecision,
   ServerResult,
   SyntheticsCIConfig,
@@ -82,6 +80,9 @@ import {
   getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
+  getFailedResultInBatch,
+  getInProgressResultInBatch,
+  getPassedResultInBatch,
   getResults,
   getSummary,
   MOCK_BASE_URL,
@@ -806,14 +807,15 @@ describe('utils', () => {
     })
 
     const batch: Batch = getBatch()
-    const apiTest = getApiTest(batch.results[0].test_public_id)
+    const apiTest = getApiTest('pid')
     const incompleteServerResult = ({eventType: 'created'} as unknown) as ServerResult
     const result: Result = {
       executionRule: ExecutionRule.BLOCKING,
       location: mockLocation.display_name,
       passed: true,
       result: getBrowserServerResult({passed: true}),
-      resultId: (batch.results[0] as BaseResultInBatch).result_id,
+      resultId: 'rid',
+      retries: 0,
       selectiveRerun: undefined,
       test: apiTest,
       timedOut: false,
@@ -881,19 +883,20 @@ describe('utils', () => {
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
-      // First ('in_progress')
+      // === STEP 1 === (batch 'in_progress')
       waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
           status: 'in_progress',
           results: [
             // First test
-            {...batch.results[0], status: 'in_progress'},
-            {...batch.results[0], status: 'in_progress', result_id: 'rid-2'},
+            {...getInProgressResultInBatch()},
+            {...getInProgressResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
+        pollResultsImplementation: async () => [deepExtend({}, pollResult)],
       })
 
       const resultsPromise = utils.waitForResults(
@@ -926,18 +929,18 @@ describe('utils', () => {
         0
       )
 
-      // Second ('in_progress')
+      // === STEP 2 === (batch 'in_progress')
       waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
           status: 'in_progress',
           results: [
             // First test
-            {...batch.results[0], status: 'in_progress'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getInProgressResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -964,18 +967,18 @@ describe('utils', () => {
         0
       )
 
-      // Third ('in_progress')
+      // === STEP 3 === (batch 'in_progress')
       waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
           status: 'in_progress',
           results: [
             // First test
-            {...batch.results[0], status: 'passed'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getPassedResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -995,17 +998,17 @@ describe('utils', () => {
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
-      // Last ('passed')
+      // === STEP 4 === (batch 'passed')
       mockApi({
         getBatchImplementation: async () => ({
           status: 'passed',
           results: [
             // First test
-            {...batch.results[0], status: 'passed'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getPassedResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'passed', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [
           deepExtend({}, pollResult),
@@ -1040,11 +1043,11 @@ describe('utils', () => {
           status: 'in_progress',
           results: [
             // First test
-            {...batch.results[0], status: 'in_progress'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getInProgressResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2', result: incompleteServerResult}],
       })
@@ -1091,11 +1094,11 @@ describe('utils', () => {
           status: 'in_progress',
           results: [
             // First test
-            {...batch.results[0], status: 'passed'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getPassedResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'in_progress', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [
           {...pollResult, result: incompleteServerResult}, // not available yet
@@ -1121,11 +1124,11 @@ describe('utils', () => {
           status: 'passed',
           results: [
             // First test
-            {...batch.results[0], status: 'passed'},
-            {...batch.results[0], status: 'passed', result_id: 'rid-2'},
+            {...getPassedResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...batch.results[0], status: 'passed', test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ] as ResultInBatch[],
+            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+          ],
         }),
         pollResultsImplementation: async () => [
           {...pollResult, result: incompleteServerResult}, // still not available
@@ -1168,7 +1171,7 @@ describe('utils', () => {
     test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
       mockApi({
         getBatchImplementation: async () => ({
-          results: [batch.results[0], {...batch.results[0], result_id: '3'}],
+          results: [getPassedResultInBatch(), {...getPassedResultInBatch(), result_id: '3'}],
           status: 'passed',
         }),
         pollResultsImplementation: async () => [
@@ -1198,10 +1201,7 @@ describe('utils', () => {
       mockApi({
         getBatchImplementation: async () => ({
           status: 'failed',
-          results: [
-            {...batch.results[0]},
-            {...batch.results[0], status: 'failed', result_id: '3', timed_out: true},
-          ] as ResultInBatch[],
+          results: [{...getPassedResultInBatch()}, {...getFailedResultInBatch(), result_id: '3', timed_out: true}],
         }),
         pollResultsImplementation: async () => [
           {...pollResult, result: {...pollResult.result}},
@@ -1252,10 +1252,9 @@ describe('utils', () => {
         getBatchImplementation: async () => ({
           status: 'in_progress',
           results: [
-            {...batch.results[0]},
-            // eslint-disable-next-line no-null/no-null -- the endpoint `/synthetics/ci/batch/:batch_id` can return null
-            {...batch.results[0], status: 'in_progress', result_id: '3', timed_out: null},
-          ] as ResultInBatch[],
+            {...getPassedResultInBatch()},
+            {...getInProgressResultInBatch(), result_id: '3'}, // `timed_out: null`
+          ],
         }),
         pollResultsImplementation: async () => [
           {...pollResult, result: {...pollResult.result}},
@@ -1309,7 +1308,7 @@ describe('utils', () => {
       mockApi({
         getBatchImplementation: async () => ({
           status: 'failed',
-          results: [{...batch.results[0], status: 'failed', timed_out: true}] as ResultInBatch[],
+          results: [{...getFailedResultInBatch(), timed_out: true}],
         }),
         pollResultsImplementation: async () => [
           {
@@ -1353,7 +1352,7 @@ describe('utils', () => {
     test('results should be timed out if batch result is timed out', async () => {
       const batchWithTimeoutResult: Batch = {
         ...batch,
-        results: [{...batch.results[0], status: 'failed', timed_out: true}] as ResultInBatch[],
+        results: [{...getFailedResultInBatch(), timed_out: true}],
       }
 
       mockApi({getBatchImplementation: async () => batchWithTimeoutResult})
@@ -1415,9 +1414,9 @@ describe('utils', () => {
       const batchWithTimeoutResult: Batch = {
         ...batch,
         results: [
-          batch.results[0],
-          {...batch.results[0], status: 'failed', timed_out: true, result_id: pollTimeoutResult.resultID},
-        ] as ResultInBatch[],
+          {...getPassedResultInBatch()},
+          {...getFailedResultInBatch(), timed_out: true, result_id: pollTimeoutResult.resultID},
+        ],
       }
 
       mockApi({

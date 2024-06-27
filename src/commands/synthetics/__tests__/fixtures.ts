@@ -37,6 +37,7 @@ import {
   MobileApplicationUploadPartResponse,
   TriggerConfig,
   MobileTestWithOverride,
+  BaseResultInBatch,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -190,6 +191,7 @@ const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'>
   location: 'Frankfurt (AWS)',
   passed: true,
   resultId,
+  retries: 0,
   test,
   timedOut: false,
   timestamp: 1,
@@ -229,6 +231,7 @@ export const getTimedOutBrowserResult = (): Result => ({
     steps: [],
   },
   resultId: '1',
+  retries: 0,
   test: getBrowserTest(),
   timedOut: true,
   timestamp: 1,
@@ -288,6 +291,7 @@ export const getFailedBrowserResult = (): Result => ({
     ],
   },
   resultId: '1',
+  retries: 0,
   test: getBrowserTest(),
   timedOut: false,
   timestamp: 1,
@@ -504,17 +508,40 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
   return results
 }
 
+export const getInProgressResultInBatch = (): BaseResultInBatch => {
+  return {
+    execution_rule: ExecutionRule.BLOCKING,
+    location: mockLocation.name,
+    result_id: 'rid',
+    // eslint-disable-next-line no-null/no-null
+    retries: null,
+    status: 'in_progress',
+    test_public_id: 'pid',
+    // eslint-disable-next-line no-null/no-null
+    timed_out: null,
+  }
+}
+
+export const getPassedResultInBatch = (): BaseResultInBatch => {
+  return {
+    ...getInProgressResultInBatch(),
+    retries: 0,
+    status: 'passed',
+    timed_out: false,
+  }
+}
+
+export const getFailedResultInBatch = (): BaseResultInBatch => {
+  return {
+    ...getInProgressResultInBatch(),
+    retries: 0,
+    status: 'failed',
+    timed_out: false,
+  }
+}
+
 export const getBatch = (): Batch => ({
-  results: [
-    {
-      execution_rule: ExecutionRule.BLOCKING,
-      location: mockLocation.name,
-      result_id: 'rid',
-      status: 'passed',
-      test_public_id: 'pid',
-      timed_out: false,
-    },
-  ],
+  results: [getPassedResultInBatch()],
   status: 'passed',
 })
 
