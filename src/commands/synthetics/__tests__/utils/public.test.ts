@@ -1409,7 +1409,7 @@ describe('utils', () => {
       expect(utils.wait).toHaveBeenCalledTimes(2)
     })
 
-    test('correct number of pass and timeout results', async () => {
+    test('correct number of passed and timed out results', async () => {
       const pollTimeoutResult: PollResult = {...deepExtend({}, pollResult), resultID: 'another-id'}
       const batchWithTimeoutResult: Batch = {
         ...batch,
