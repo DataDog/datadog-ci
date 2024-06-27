@@ -186,11 +186,11 @@ export const hasResultPassed = (
     return true
   }
 
-  if (typeof serverResult.passed !== 'undefined') {
+  if (serverResult.passed !== undefined) {
     return serverResult.passed
   }
 
-  if (typeof serverResult.failure !== 'undefined') {
+  if (serverResult.failure !== undefined) {
     return false
   }
 

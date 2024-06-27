@@ -84,6 +84,7 @@ import {
   getInProgressResultInBatch,
   getPassedResultInBatch,
   getResults,
+  getSkippedResultInBatch,
   getSummary,
   MOCK_BASE_URL,
   MockedReporter,
@@ -998,16 +999,23 @@ describe('utils', () => {
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
-      // === STEP 4 === (batch 'passed')
+      // === STEP 4 === (batch 'in_progress')
+      waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
-          status: 'passed',
+          status: 'in_progress',
           results: [
             // First test
             {...getPassedResultInBatch()},
             {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
-            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
+            {
+              ...getInProgressResultInBatch(), // stays in progress
+              retries: 0, // `retries` is set => first attempt failed, but will be fast retried
+              test_public_id: 'other-public-id',
+              timed_out: false,
+              result_id: 'rid-3',
+            },
           ],
         }),
         pollResultsImplementation: async () => [
@@ -1017,18 +1025,142 @@ describe('utils', () => {
         ],
       })
 
-      expect(await resultsPromise).toEqual([result, {...result, resultId: 'rid-2'}, {...result, resultId: 'rid-3'}])
+      await waiter.promise
 
       // One result received
       expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(3, {
         ...batch.results[0],
-        status: 'passed',
+        status: 'in_progress',
         test_public_id: 'other-public-id',
         result_id: 'rid-3',
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
+      // Now waiting for 1 test
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+
+      // === STEP 5 === (batch 'passed')
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'passed',
+          results: [
+            // First test
+            {...getPassedResultInBatch()},
+            {...getPassedResultInBatch(), result_id: 'rid-2'},
+            // Second test
+            {...getPassedResultInBatch(), retries: 1, test_public_id: 'other-public-id', result_id: 'rid-3-final'},
+          ],
+        }),
+        pollResultsImplementation: async () => [
+          deepExtend({}, pollResult),
+          deepExtend({}, pollResult, {resultID: 'rid-2'}),
+          deepExtend({}, pollResult, {resultID: 'rid-3-final'}),
+        ],
+      })
+
+      expect(await resultsPromise).toEqual([
+        result,
+        {...result, resultId: 'rid-2'},
+        {...result, resultId: 'rid-3-final', retries: 1},
+      ])
+
+      // One result received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(4, {
+        ...batch.results[0],
+        status: 'passed',
+        test_public_id: 'other-public-id',
+        result_id: 'rid-3-final',
+        retries: 1,
+      })
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+        4,
+        {...result, resultId: 'rid-3-final', retries: 1},
+        MOCK_BASE_URL,
+        'bid'
+      )
       // Do not report when there are no tests to wait anymore
-      expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
+      expect(mockReporter.testsWait).toHaveBeenCalledTimes(5)
+    })
+
+    test('skipped results are reported as received', async () => {
+      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+
+      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
+
+      // === STEP 1 === (batch 'in_progress')
+      waiter.start()
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'in_progress',
+          results: [
+            // First test
+            {...getSkippedResultInBatch()}, // skipped by selective re-run
+            // Second test
+            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
+          ],
+        }),
+        pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2'}],
+      })
+
+      const resultsPromise = utils.waitForResults(
+        api,
+        trigger,
+        tests,
+        {
+          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
+          failOnCriticalErrors: false,
+          maxPollingTimeout: 120000,
+          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
+        },
+        mockReporter
+      )
+
+      // Wait for the 2 tests (initial)
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+
+      await waiter.promise
+
+      // The skipped result is received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
+        ...getSkippedResultInBatch(),
+      })
+      // And marked as passed because it's selective re-run
+      const skippedResult: Result = {
+        executionRule: ExecutionRule.SKIPPED,
+        passed: true,
+        resultId: '123',
+        selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: '123'},
+        test: result.test,
+        timedOut: false,
+      }
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, skippedResult, MOCK_BASE_URL, 'bid')
+      // Now waiting for the remaining test
+      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 1)
+
+      // === STEP 2 === (batch 'passed')
+      mockApi({
+        getBatchImplementation: async () => ({
+          status: 'passed',
+          results: [
+            // First test
+            {...getSkippedResultInBatch()},
+            // Second test
+            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
+          ],
+        }),
+        pollResultsImplementation: async () => [deepExtend({}, pollResult, {resultID: 'rid-2'})],
+      })
+
+      expect(await resultsPromise).toEqual([{...skippedResult}, {...result, resultId: 'rid-2'}])
+
+      // One result received
+      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
+        ...batch.results[0],
+        status: 'passed',
+        test_public_id: 'other-public-id',
+        result_id: 'rid-2',
+      })
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.testsWait).toHaveBeenCalledTimes(2)
     })
 
     test('should wait for incomplete results', async () => {
@@ -1036,7 +1168,7 @@ describe('utils', () => {
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
-      // First ('in_progress')
+      // === STEP 1 === (batch 'in_progress')
       waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
@@ -1087,7 +1219,7 @@ describe('utils', () => {
         0
       )
 
-      // Third ('in_progress')
+      // === STEP 2 === (batch 'in_progress')
       waiter.start()
       mockApi({
         getBatchImplementation: async () => ({
@@ -1118,7 +1250,7 @@ describe('utils', () => {
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
-      // Last ('passed')
+      // === STEP 3 === (batch 'passed')
       mockApi({
         getBatchImplementation: async () => ({
           status: 'passed',
@@ -1243,8 +1375,6 @@ describe('utils', () => {
 
       // Failed directly.
       expect(utils.wait).toHaveBeenCalledTimes(0)
-
-      jest.useRealTimers()
     })
 
     test('results should be timed out with a different error if the backend did not say so', async () => {

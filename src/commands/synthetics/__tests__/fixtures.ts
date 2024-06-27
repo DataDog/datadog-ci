@@ -38,6 +38,7 @@ import {
   TriggerConfig,
   MobileTestWithOverride,
   BaseResultInBatch,
+  ResultInBatchSkippedBySelectiveRerun,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -517,6 +518,23 @@ export const getInProgressResultInBatch = (): BaseResultInBatch => {
     retries: null,
     status: 'in_progress',
     test_public_id: 'pid',
+    // eslint-disable-next-line no-null/no-null
+    timed_out: null,
+  }
+}
+
+export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun => {
+  return {
+    test_public_id: 'pid',
+    execution_rule: ExecutionRule.SKIPPED,
+    // eslint-disable-next-line no-null/no-null
+    retries: null,
+    status: 'skipped',
+    selective_rerun: {
+      decision: 'skip',
+      reason: 'passed',
+      linked_result_id: '123',
+    },
     // eslint-disable-next-line no-null/no-null
     timed_out: null,
   }
