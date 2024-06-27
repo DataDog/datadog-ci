@@ -195,7 +195,7 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
         },
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations: [],
         // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
         pollingTimeout: 1,
@@ -229,7 +229,7 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 1,
         publicIds: ['ran-dom-id'],
@@ -358,7 +358,7 @@ describe('run-test', () => {
         tunnel: true,
       })
 
-      // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
+      // TODO SYNTH-12989: Merge those 2 test cases when `pollingTimeout` is removed
       command['batchTimeout'] = 2 // when both are used, `batchTimeout` takes precedence
       await command['resolveConfig']()
       expect(command['config']).toEqual({
@@ -485,8 +485,6 @@ describe('run-test', () => {
     })
 
     test('parameters override precedence: global < ENV < test file', async () => {
-      // keep pollingTimeout
-
       const triggerTests = jest.fn(() => {
         throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })

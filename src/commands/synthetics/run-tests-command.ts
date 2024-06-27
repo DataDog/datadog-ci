@@ -48,7 +48,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   global: {},
   defaultTestOverrides: {},
   jUnitReport: '',
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
   locations: [],
   // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
@@ -102,6 +102,11 @@ export class RunTestsCommand extends Command {
 
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  private batchTimeout = Option.String('--batchTimeout', {
+    description:
+      'The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+    validator: validation.isInteger(),
+  })
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
   // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
   private deviceIds = Option.Array('--deviceIds', {
@@ -132,14 +137,10 @@ export class RunTestsCommand extends Command {
     description: 'Override specific test properties.',
   })
   // TODO SYNTH-12989: Clean up deprecated `--pollingTimeout` in favor of `--batchTimeout`
-  /** @deprecated This is deprecated, please use `--batchTimeout` instead. */
+  /** @deprecated This CLI parameter is deprecated, please use `--batchTimeout` instead. */
   private pollingTimeout = Option.String('--pollingTimeout', {
-    description: 'Deprecated. Please use `--batchTimeout` instead.',
-    validator: validation.isInteger(),
-  })
-  private batchTimeout = Option.String('--batchTimeout', {
     description:
-      'The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+      '**DEPRECATED** The duration (in milliseconds) after which `datadog-ci` stops polling for test results. Please use `--batchTimeout` instead.',
     validator: validation.isInteger(),
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
@@ -245,7 +246,7 @@ export class RunTestsCommand extends Command {
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
-    // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+    // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
     this.config = moveLocationsToTestOverrides(this.config, this.reporter)
 
     // Override with ENV variables
@@ -302,7 +303,7 @@ export class RunTestsCommand extends Command {
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
         headers: toStringObject(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations:
           process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
           process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),

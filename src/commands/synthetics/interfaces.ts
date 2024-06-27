@@ -477,12 +477,12 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   global?: UserConfigOverride
   jUnitReport?: string
   defaultTestOverrides?: UserConfigOverride
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-  /** @deprecated This property should only be used inside of `defaultTestOverrides`. */
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+  /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
   locations?: string[]
   mobileApplicationVersionFilePath?: string
   // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` instead. */
+  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
   pollingTimeout?: number
   publicIds: string[]
   selectiveRerun: boolean

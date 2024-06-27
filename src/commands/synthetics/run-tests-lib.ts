@@ -67,7 +67,7 @@ export const executeTests = async (
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
 
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
   config = moveLocationsToTestOverrides(config, reporter, true)
 
   // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`

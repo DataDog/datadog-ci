@@ -591,7 +591,7 @@ export const runTests = async (
   selectiveRerun = false,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<Trigger> => {
-  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed from datadog-ci
+  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
   // Although the backend is backwards compatible, let's stop sending deprecated properties
   const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
 
