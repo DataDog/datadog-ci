@@ -90,7 +90,7 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
   return undefined
 }
 
-export const toStringObject = (env: string | undefined): {[key: string]: string} | undefined => {
+export const toStringMap = (env: string | undefined): StringMap | undefined => {
   if (env === undefined) {
     return undefined
   }
@@ -106,12 +106,14 @@ export const toStringObject = (env: string | undefined): {[key: string]: string}
         }
       }
 
-      return parsed as {[key: string]: string}
+      return parsed as StringMap
     }
   } catch (error) {
     return undefined
   }
 }
+
+type StringMap = {[key: string]: string}
 
 type AccumulatorBaseConfigOverride = Omit<
   UserConfigOverride,
@@ -122,7 +124,6 @@ type AccumulatorBaseConfigOverride = Omit<
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
   | 'tunnel'
-  | 'variables'
 > & {
   retry?: Partial<RetryConfig>
   basicAuth?: Partial<BasicAuthCredentials>
@@ -253,11 +254,12 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           }
           break
 
-        // Convert to {[key: string]: string}
+        // Convert to StringMap
         case 'headers':
+        case 'variables':
           if (subKey) {
-            acc['headers'] = acc['headers'] ?? {}
-            acc['headers'][subKey] = value
+            acc[key] = acc[key] ?? {}
+            ;(acc[key] as StringMap)[subKey] = value
           } else {
             throw new Error(`No subkey found for ${key}`)
           }

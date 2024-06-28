@@ -13,7 +13,7 @@ import {
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean, toNumber, toExecutionRule, toStringObject} from '../utils/internal'
+import {toBoolean, toNumber, toExecutionRule, toStringMap} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -92,6 +92,7 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
         DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
         DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
+        DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'var1': 'value1', 'var2': 'value2'}",
       }
 
       process.env = overrideEnv
@@ -120,7 +121,7 @@ describe('run-test', () => {
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
           executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-          headers: toStringObject(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+          headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
           pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -133,6 +134,7 @@ describe('run-test', () => {
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
           testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
+          variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
         },
         failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -236,7 +238,8 @@ describe('run-test', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
-        variableStrings: ['key=value'],
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        variableStrings: ['var3=value3', 'var4=value4'],
       }
       const defaultTestOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
@@ -263,6 +266,7 @@ describe('run-test', () => {
         startUrl: 'startUrl',
         startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
         testTimeout: 42,
+        variables: {var1: 'value1', var2: 'value2'},
       }
 
       const command = createCommand(RunTestsCommand)
@@ -281,6 +285,8 @@ describe('run-test', () => {
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
+      // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+      command['variableStrings'] = overrideCLI.variableStrings
       command['overrides'] = [
         `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
         `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
@@ -303,6 +309,8 @@ describe('run-test', () => {
         `testTimeout=${defaultTestOverrides.testTimeout}`,
         'resourceUrlSubstitutionRegexes=regex1',
         'resourceUrlSubstitutionRegexes=regex42',
+        `variables.var1=${defaultTestOverrides.variables?.var1}`,
+        `variables.var2=${defaultTestOverrides.variables?.var2}`,
       ]
 
       await command['resolveConfig']()
@@ -345,11 +353,26 @@ describe('run-test', () => {
           startUrl: 'startUrl',
           startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
           testTimeout: 42,
+          variables: {var1: 'value1', var2: 'value2'},
         },
         publicIds: ['ran-dom-id'],
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+      })
+    })
+
+    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+    test("CLI parameter '--variable' still works (deprecated)", async () => {
+      const command = createCommand(RunTestsCommand)
+      command['variableStrings'] = ['var1=value1', 'var2=value2']
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        defaultTestOverrides: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          variables: {var1: 'value1', var2: 'value2'},
+        },
       })
     })
 

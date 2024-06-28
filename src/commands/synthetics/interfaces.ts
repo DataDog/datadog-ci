@@ -483,6 +483,8 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+  /** @deprecated This property is deprecated, please use `variables` inside of `defaultTestOverrides`. */
   variableStrings: string[]
 }
 

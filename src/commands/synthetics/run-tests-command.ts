@@ -12,7 +12,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringObject} from './utils/internal'
+import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringMap} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -50,6 +50,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
   variableStrings: [],
 }
 
@@ -96,8 +97,10 @@ export class RunTestsCommand extends Command {
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
   // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+  /** @deprecated This is deprecated, please use `--override deviceIds="dev1;dev2;..."` instead. */
   private deviceIds = Option.Array('--deviceIds', {
-    description: 'Override the mobile device(s) to run your mobile test.',
+    description:
+      '**DEPRECATED** Override the mobile device(s) to run your mobile test. Use `--override deviceIds="dev1;dev2;..."` instead.',
   })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
@@ -143,7 +146,11 @@ export class RunTestsCommand extends Command {
   private tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
-  private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+  /** @deprecated This is deprecated, please use `--override variables.NAME=VALUE` instead. */
+  private variableStrings = Option.Array('-v,--variable', {
+    description: '**DEPRECATED** Pass a variable override. Use `--override variables.NAME=VALUE` instead.',
+  })
 
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
@@ -286,7 +293,7 @@ export class RunTestsCommand extends Command {
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-        headers: toStringObject(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+        headers: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
         // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         locations:
           process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
@@ -299,6 +306,7 @@ export class RunTestsCommand extends Command {
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
         testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
+        variables: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
       })
     )
 
@@ -366,7 +374,9 @@ export class RunTestsCommand extends Command {
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
         testTimeout: validatedOverrides.testTimeout,
-        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        variables:
+          validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
       })
     )
 

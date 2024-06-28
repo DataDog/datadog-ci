@@ -5,7 +5,7 @@ import {
   toBoolean,
   toExecutionRule,
   toNumber,
-  toStringObject,
+  toStringMap,
   validateAndParseOverrides,
 } from '../../utils/internal'
 
@@ -125,7 +125,7 @@ describe('utils', () => {
     ]
 
     test.each(cases)('toObject(%s) should return %s', (input, expectedOutput) => {
-      expect(toStringObject(input)).toEqual(expectedOutput)
+      expect(toStringMap(input)).toEqual(expectedOutput)
     })
   })
 
