@@ -208,7 +208,7 @@ describe('getCIEnv', () => {
     expect(() => {
       getCIEnv()
     }).toThrow(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
     )
   })
 
