@@ -63,6 +63,7 @@ describe('run-test', () => {
         DATADOG_APP_KEY: 'fake_app_key',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
+        DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
         DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
         DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
         DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
@@ -102,6 +103,7 @@ describe('run-test', () => {
         ...DEFAULT_COMMAND_CONFIG,
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
+        batchTimeout: 1,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
@@ -138,6 +140,7 @@ describe('run-test', () => {
         failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+        pollingTimeout: 1, // also set for backwards compatibility
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
         selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
