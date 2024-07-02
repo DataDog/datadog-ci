@@ -54,6 +54,12 @@ export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[
 
 export const gitBranch = async (git: simpleGit.SimpleGit): Promise<BranchSummary> => git.branch()
 
+export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string> => {
+  const branch = await git.raw(['branch', '--show-current'])
+
+  return branch.trim()
+}
+
 export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
 
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
@@ -61,3 +67,9 @@ export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<s
 
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
+
+export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<string[]> => {
+  const gitShas = await git.raw(['log', branchName, '--not', '--remotes', '--format=%H', '-n', '10'])
+
+  return gitShas.split(/\r\n|\r|\n/).filter(Boolean) // split by new line and discarding empty lines
+}
