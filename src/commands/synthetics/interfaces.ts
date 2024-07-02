@@ -93,10 +93,10 @@ export type PollResultMap = {[resultId: string]: PollResult}
 export type ResultDisplayInfo = {
   getLocation: (datacenterId: string, test: Test) => string
   options: {
+    batchTimeout: number
     datadogSite: string
     failOnCriticalErrors?: boolean
     failOnTimeout?: boolean
-    maxPollingTimeout: number
     subdomain: string
   }
   tests: Test[]
@@ -345,6 +345,8 @@ export interface BaseConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
   pollingTimeout?: number
   resourceUrlSubstitutionRegexes?: string[]
   retry?: RetryConfig
@@ -366,6 +368,7 @@ export interface ServerConfigOverride extends BaseConfigOverride {
 }
 
 export interface BatchOptions {
+  batch_timeout?: number
   selective_rerun?: boolean
 }
 
@@ -470,6 +473,7 @@ export interface SyntheticsCIConfig extends APIHelperConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
+  batchTimeout?: number
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
   failOnTimeout: boolean
@@ -479,11 +483,13 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   global?: UserConfigOverride
   jUnitReport?: string
   defaultTestOverrides?: UserConfigOverride
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-  /** @deprecated This property should only be used inside of `defaultTestOverrides`. */
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+  /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
   locations?: string[]
   mobileApplicationVersionFilePath?: string
-  pollingTimeout: number
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
+  pollingTimeout?: number
   publicIds: string[]
   selectiveRerun: boolean
   subdomain: string

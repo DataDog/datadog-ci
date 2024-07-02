@@ -20,11 +20,11 @@ const POLLING_INTERVAL = 5000 // In ms
 export const waitForBatchToFinish = async (
   api: APIHelper,
   batchId: string,
-  maxPollingTimeout: number,
+  batchTimeout: number,
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
-  const safeDeadline = Date.now() + maxPollingTimeout + 3 * POLLING_INTERVAL
+  const safeDeadline = Date.now() + batchTimeout + 3 * POLLING_INTERVAL
   const emittedResultIds = new Set<string>()
   let oldIncompleteResultIds = new Set<string>()
 
