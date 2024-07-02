@@ -92,6 +92,12 @@ export class DeploymentCorrelateCommand extends Command {
       ])
     }
 
+    if (this.configurationRepo === undefined || this.configurationRepo === '') {
+      this.logger.error('Could not retrive repository URL, check out a repository or provide it with --config-repo')
+
+      return 1
+    }
+
     await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], localCommitShas, ciEnv, this.config.apiKey)
   }
 
