@@ -386,6 +386,7 @@ export class RunTestsCommand extends Command {
         locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+        resourceUrlSubstitutionRegexes: validatedOverrides.resourceUrlSubstitutionRegexes,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
@@ -412,7 +413,7 @@ export class RunTestsCommand extends Command {
       typeof this.config.defaultTestOverrides?.cookies === 'object' &&
       !this.config.defaultTestOverrides.cookies.value
     ) {
-      throw new Error('Cookies value cannot be empty')
+      throw new CiError('INVALID_CONFIG', 'Cookies value cannot be empty.')
     }
   }
 }

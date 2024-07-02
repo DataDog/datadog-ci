@@ -128,8 +128,8 @@ describe('run-test', () => {
             ';'
           ),
           retry: {
-            count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
-            interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+            count: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT)!,
+            interval: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL)!,
           },
           startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
           startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
@@ -345,6 +345,7 @@ describe('run-test', () => {
           locations: ['us-east-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
           retry: {
             count: 5,
             interval: 42,
@@ -396,6 +397,7 @@ describe('run-test', () => {
           locations: ['us-east-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
           retry: {
             count: 5,
             interval: 42,
