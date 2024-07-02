@@ -19,10 +19,10 @@ export class DeploymentCorrelateCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Correlate gitOps CD deployments with CI pipelines.',
+    description: 'Correlate GitOps CD deployments with CI pipelines.',
     details: `
-      This command will correlate the pipeline with a gitOps CD deployment.\n
-      It does not work for every setup, see README for details.
+      This command will correlate the pipeline with a GitOps CD deployment.\n
+      See README for additional details.
     `,
     examples: [['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd']],
   })

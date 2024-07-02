@@ -37,8 +37,7 @@ triggered a deployment, and which deployments were triggered by a pipeline.
 
 #### When to call the command
 
-In order for the command to work properly, you first need to commit changes to the configuration repository (where the Kubernetes manifests are) from
-the CI before calling the command:
+In order for the command to work properly, it needs to be called between when the configuration changes are committed and when they are pushed to the configuration repository (where the Kubernetes manifests are). The flow should be similar to the following:
 
 1. Make the changes to the configuration (for example, updating a image tag).
 2. Run `git commit -m "updating my kubernetes configuration"`.
