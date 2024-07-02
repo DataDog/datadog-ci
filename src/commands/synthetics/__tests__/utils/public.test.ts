@@ -1127,9 +1127,9 @@ describe('utils', () => {
         trigger,
         tests,
         {
+          batchTimeout: 120000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 120000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
