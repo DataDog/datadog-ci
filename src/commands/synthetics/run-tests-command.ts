@@ -386,6 +386,8 @@ export class RunTestsCommand extends Command {
         locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+        pollingTimeout: batchTimeout,
         resourceUrlSubstitutionRegexes: validatedOverrides.resourceUrlSubstitutionRegexes,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
