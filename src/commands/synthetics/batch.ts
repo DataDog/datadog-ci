@@ -12,7 +12,7 @@ import {
   ResultInBatch,
   Test,
 } from './interfaces'
-import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId} from './utils/internal'
+import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId, hasRetries} from './utils/internal'
 import {wait, getAppBaseURL, hasResultPassed} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -25,7 +25,7 @@ export const waitForBatchToFinish = async (
   reporter: MainReporter
 ): Promise<Result[]> => {
   const safeDeadline = Date.now() + batchTimeout + 3 * POLLING_INTERVAL
-  const emittedResultIndexes = new Set<number>()
+  const emittedResultIds = new Set<string>()
   let oldIncompleteResultIds = new Set<string>()
 
   while (true) {
@@ -36,7 +36,7 @@ export const waitForBatchToFinish = async (
     // But `safeDeadlineReached` is a safety in case it fails to do that on time.
     const shouldContinuePolling = batch.status === 'in_progress' && !safeDeadlineReached
 
-    const newlyReceivedResults = reportReceivedResults(batch, emittedResultIndexes, reporter)
+    const newlyReceivedResults = reportReceivedResults(batch, emittedResultIds, reporter)
 
     const resultIdsToFetch = getResultIdsToFetch(
       shouldContinuePolling,
@@ -51,7 +51,7 @@ export const waitForBatchToFinish = async (
       shouldContinuePolling,
       batch,
       newlyReceivedResults,
-      emittedResultIndexes,
+      emittedResultIds,
       oldIncompleteResultIds,
       incompleteResultIds,
       reporter
@@ -93,7 +93,7 @@ const getResultsToReport = (
   shouldContinuePolling: boolean,
   batch: Batch,
   newlyReceivedResults: ResultInBatch[],
-  emittedResultIndexes: Set<number>,
+  emittedResultIds: Set<string>,
   oldIncompleteResultIds: Set<string>,
   incompleteResultIds: Set<string>,
   reporter: MainReporter
@@ -114,7 +114,7 @@ const getResultsToReport = (
   //  - Still in progress (from the batch POV): they were never emitted.
   //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
   const residualResults = excludeSkipped(batch.results).filter(
-    (r, index) => !emittedResultIndexes.has(index) || incompleteResultIds.has(r.result_id)
+    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id)
   )
 
   const errors: string[] = []
@@ -131,12 +131,16 @@ const getResultsToReport = (
   return resultsToReport.concat(residualResults)
 }
 
-const reportReceivedResults = (batch: Batch, emittedResultIndexes: Set<number>, reporter: MainReporter) => {
+const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string>, reporter: MainReporter) => {
   const receivedResults: ResultInBatch[] = []
 
   for (const [index, result] of batch.results.entries()) {
-    if (result.status !== 'in_progress' && !emittedResultIndexes.has(index)) {
-      emittedResultIndexes.add(index)
+    // Skipped results aren't reported in detail in the terminal output, but they are still reported by `resultReceived()`.
+    const resultId = result.status === 'skipped' ? `skipped-${index}` : result.result_id
+
+    // The result is reported if it has a final status, or if it's a non-final result.
+    if ((result.status !== 'in_progress' || hasRetries(result)) && !emittedResultIds.has(resultId)) {
+      emittedResultIds.add(resultId)
       reporter.resultReceived(result)
       receivedResults.push(result)
     }
@@ -244,6 +248,7 @@ const getResultFromBatch = (
     ),
     result: pollResult.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
+    retries: resultInBatch.retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
     test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,

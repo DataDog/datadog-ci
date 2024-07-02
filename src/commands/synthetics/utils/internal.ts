@@ -29,6 +29,16 @@ export const hasResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
 }
 
+/**
+ * Most properties (like `retries`) are populated by the backend as soon as we receive a result, even if it's a non-final result.
+ *
+ * If the test is configured to be retried and the first attempt fails,
+ * `retries` is set to `0` and the result is kept `in_progress` until the final result is received.
+ */
+export const hasRetries = (result: ResultInBatch): result is ResultInBatch & {retries: number} => {
+  return Number.isInteger(result.retries)
+}
+
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch
 ): result is ResultInBatchSkippedBySelectiveRerun => {

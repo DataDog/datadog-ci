@@ -133,6 +133,8 @@ export interface BaseResult {
   passed: boolean
   result: ServerResult
   resultId: string
+  // Number of retries, including this result.
+  retries: number
   selectiveRerun?: SelectiveRerunDecision
   // Original test for this result, including overrides if any.
   test: Test
@@ -141,7 +143,7 @@ export interface BaseResult {
 }
 
 // Inside this type, `.resultId` is a linked result ID from a previous batch.
-export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'timestamp'> & {
+export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'retries' | 'timestamp'> & {
   executionRule: ExecutionRule.SKIPPED
   selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
 }
@@ -154,6 +156,7 @@ export interface BaseResultInBatch {
   execution_rule: ExecutionRule
   location: string
   result_id: string
+  retries: number | null
   selective_rerun?: SelectiveRerunDecision
   status: Status
   test_public_id: string
@@ -250,6 +253,9 @@ export interface ServerTest {
     min_location_failed: number
     mobileApplication?: MobileApplication
     tick_every: number
+    retry?: {
+      count?: number
+    }
   }
   overall_state: number
   overall_state_modified: string
