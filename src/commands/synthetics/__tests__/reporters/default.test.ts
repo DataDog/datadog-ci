@@ -226,6 +226,7 @@ describe('Default reporter', () => {
       opts: {
         executionRule: ExecutionRule
         passed?: boolean
+        retries?: number
         selectiveRerun?: SelectiveRerunDecision
       },
       test: Test
@@ -247,7 +248,12 @@ describe('Default reporter', () => {
 
       if (passed !== undefined) {
         result.passed = passed
-        result.result = {...result.result, ...(passed ? {} : {failure}), passed}
+        result.result = {
+          ...result.result,
+          ...(passed ? {} : {failure}),
+          passed,
+        }
+        result.retries = opts.retries ?? 0
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
       }
@@ -260,6 +266,14 @@ describe('Default reporter', () => {
     }
 
     const apiTest = getApiTest('aaa-aaa-aaa')
+    const retryableApiTest: Test = {
+      ...apiTest,
+      options: {
+        ...apiTest.options,
+        retry: {count: 2},
+      },
+    }
+
     const cases = [
       {
         description: '1 API test, 1 location, 1 result: success',
@@ -322,6 +336,17 @@ describe('Default reporter', () => {
               },
               apiTest
             ),
+          ],
+        },
+      },
+      {
+        description: '1 API test, 3 attempts (2 failed, then passed)',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            createApiResult('1', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 0}, retryableApiTest),
+            createApiResult('2', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 1}, retryableApiTest),
+            createApiResult('3', {executionRule: ExecutionRule.BLOCKING, passed: true, retries: 2}, retryableApiTest),
           ],
         },
       },
