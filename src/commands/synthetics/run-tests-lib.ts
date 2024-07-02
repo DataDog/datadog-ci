@@ -208,8 +208,17 @@ export const getTriggerConfigs = async (
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map((id) => {
-    const testFromSearchQuery = testsFromSearchQuery.find((test) => test.id === id)
-    const testFromTestConfigs = testsFromTestConfigs.find((test) => test.id === id)
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+    let testFromSearchQuery
+    if (testIndexFromSearchQuery >= 0) {
+      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
+    }
+
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    let testFromTestConfigs
+    if (testIndexFromTestConfigs >= 0) {
+      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
+    }
 
     return {
       id,

@@ -648,6 +648,7 @@ export const retry = async <T, E extends Error>(
   return trier()
 }
 
+// TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
 export const parseVariablesFromCli = (
   variableArguments: string[] = [],
   logFunction: (log: string) => void

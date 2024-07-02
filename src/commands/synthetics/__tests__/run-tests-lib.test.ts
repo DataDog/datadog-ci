@@ -70,7 +70,7 @@ describe('run-test', () => {
           selectiveRerun: false,
           subdomain: 'app',
           tunnel: false,
-          variableStrings: [],
+          variableStrings: [], // deprecated
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
     })
@@ -99,6 +99,7 @@ describe('run-test', () => {
           selectiveRerun: false,
           subdomain: 'app',
           tunnel: false,
+          // TODO SYNTH-12989: Clean up deprecated `variableStrings`
           variableStrings: [],
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
@@ -845,6 +846,86 @@ describe('run-test', () => {
         {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
       ])
       expect(getSuitesMock).toHaveBeenCalled()
+    })
+    test('should handle test configurations with the same test ID correctly', async () => {
+      const conf5 = {
+        tests: [
+          {
+            id: 'abc-abc-abc',
+            testOverrides: {
+              allowInsecureCertificates: true,
+              basicAuth: {username: 'test', password: 'test'},
+              body: '{"fakeContent":true}',
+              bodyType: 'application/json',
+              cookies: 'name1=value1;name2=value2;',
+              defaultStepTimeout: 15,
+              deviceIds: ['chrome.laptop_large'],
+              executionRule: 'non-blocking',
+              followRedirects: true,
+              headers: {NEW_HEADER: 'NEW VALUE'},
+              locations: ['aws:us-east-1'],
+              mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
+              mobileApplicationVersionFilePath: 'path/to/application.apk',
+              pollingTimeout: 30000,
+              retry: {count: 2, interval: 300},
+              testTimeout: 300,
+              variables: {MY_VARIABLE: 'new title'},
+            },
+          },
+          {
+            id: 'abc-abc-abc',
+            testOverrides: {
+              executionRule: 'skipped',
+            },
+          },
+        ],
+      }
+      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
+        {
+          content: conf5,
+          name: 'Suite with duplicate IDs',
+        },
+      ]) as any)
+
+      const defaultTestOverrides = {locations: ['aws:us-east-1'], startUrl: 'fakeUrl'}
+
+      await expect(
+        runTests.getTriggerConfigs(fakeApi, {...ciConfig, defaultTestOverrides}, mockReporter)
+      ).resolves.toEqual([
+        {
+          testOverrides: {
+            allowInsecureCertificates: true,
+            basicAuth: {username: 'test', password: 'test'},
+            body: '{"fakeContent":true}',
+            bodyType: 'application/json',
+            cookies: 'name1=value1;name2=value2;',
+            defaultStepTimeout: 15,
+            deviceIds: ['chrome.laptop_large'],
+            executionRule: 'non-blocking',
+            followRedirects: true,
+            headers: {NEW_HEADER: 'NEW VALUE'},
+            locations: ['aws:us-east-1'],
+            mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
+            mobileApplicationVersionFilePath: 'path/to/application.apk',
+            pollingTimeout: 30000,
+            retry: {count: 2, interval: 300},
+            testTimeout: 300,
+            variables: {MY_VARIABLE: 'new title'},
+            startUrl: 'fakeUrl',
+          },
+          id: 'abc-abc-abc',
+          suite: 'Suite with duplicate IDs',
+        },
+        {
+          testOverrides: {
+            executionRule: 'skipped',
+            startUrl: 'fakeUrl',
+            locations: ['aws:us-east-1'],
+          },
+          id: 'abc-abc-abc',
+          suite: 'Suite with duplicate IDs',
+        },
+      ])
     })
   })
 })
