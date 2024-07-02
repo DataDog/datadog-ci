@@ -73,7 +73,7 @@ export const renderCommandSummary = (statuses: UploadStatus[], duration: number,
 }
 
 export const renderMustSupplyPlatform = () =>
-  chalk.red(`${ICONS.FAILED} Error: must supply either iOS or Android as your platform.\n`)
+  chalk.red(`${ICONS.FAILED} Error: Must supply either iOS or Android as your platform.\n`)
 
 export const renderUseOnlyOnePlatform = () =>
   chalk.red(`${ICONS.FAILED} Error: Only supply either iOS or Android as your platform, not both.\n`)
