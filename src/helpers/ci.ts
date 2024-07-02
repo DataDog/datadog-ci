@@ -264,12 +264,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_URL,
       GIT_URL_1,
       DD_CUSTOM_TRACE_ID,
+      DD_CUSTOM_PARENT_ID,
       NODE_NAME,
       NODE_LABELS,
     } = env
 
     tags = {
-      [CI_ENV_VARS]: JSON.stringify({DD_CUSTOM_TRACE_ID}),
       [CI_PIPELINE_ID]: BUILD_TAG,
       [CI_PIPELINE_NUMBER]: BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILD_URL,
@@ -279,6 +279,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: GIT_URL || GIT_URL_1,
       [GIT_BRANCH]: JENKINS_GIT_BRANCH,
       [CI_NODE_NAME]: NODE_NAME,
+      [CI_ENV_VARS]: JSON.stringify({
+        DD_CUSTOM_TRACE_ID,
+        DD_CUSTOM_PARENT_ID,
+      }),
     }
 
     if (NODE_LABELS) {
