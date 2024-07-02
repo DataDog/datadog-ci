@@ -110,10 +110,10 @@ export class RunTestsCommand extends Command {
   })
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
   // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-  /** @deprecated This is deprecated, please use `--override deviceIds="dev1;dev2;..."` instead. */
+  /** @deprecated This CLI parameter is deprecated, please use `--override deviceIds="dev1;dev2;..."` instead. */
   private deviceIds = Option.Array('--deviceIds', {
     description:
-      '**DEPRECATED** Override the mobile device(s) to run your mobile test. Use `--override deviceIds="dev1;dev2;..."` instead.',
+      '**DEPRECATED** Override the mobile device(s) to run your mobile test. Please use `--override deviceIds="dev1;dev2;..."` instead.',
   })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
@@ -162,9 +162,9 @@ export class RunTestsCommand extends Command {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
   // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-  /** @deprecated This is deprecated, please use `--override variables.NAME=VALUE` instead. */
+  /** @deprecated This CLI parameter is deprecated, please use `--override variables.NAME=VALUE` instead. */
   private variableStrings = Option.Array('-v,--variable', {
-    description: '**DEPRECATED** Pass a variable override. Use `--override variables.NAME=VALUE` instead.',
+    description: '**DEPRECATED** Pass a variable override. Please use `--override variables.NAME=VALUE` instead.',
   })
 
   private reporter!: MainReporter
