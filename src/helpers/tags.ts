@@ -35,6 +35,7 @@ export const GIT_COMMIT_MESSAGE = 'git.commit.message'
 export const GIT_SHA = 'git.commit.sha'
 export const GIT_TAG = 'git.tag'
 export const GIT_HEAD_SHA = 'git.commit.head_sha'
+export const GIT_BASE_REF = 'git.commit.base_ref'
 
 // General
 export const SPAN_TYPE = 'span.type'

@@ -24,6 +24,7 @@ import {
   GIT_SHA,
   GIT_TAG,
   GIT_HEAD_SHA,
+  GIT_BASE_REF,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
@@ -264,6 +265,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
       if (headSha) {
         tags[GIT_HEAD_SHA] = headSha
+        tags[GIT_BASE_REF] = GITHUB_BASE_REF
       }
     }
   }
