@@ -14,6 +14,7 @@ import {pick} from '../../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
 import {waitForBatchToFinish} from '../batch'
+import {replaceConfigWithTestOverrides} from '../compatibility'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
@@ -34,17 +35,20 @@ import {
   SyntheticsCIConfig,
   SyntheticsOrgSettings,
   Test,
+  TestNotFound,
   TestPayload,
+  TestSkipped,
+  TestWithOverride,
   Trigger,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {uploadApplicationAndOverrideConfig} from '../mobile'
-import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
+import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasResult} from './internal'
+import {getOverriddenExecutionRule, hasResult, isMobileTestWithOverride} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -75,24 +79,24 @@ export const getOverriddenConfig = (
   test: Test,
   publicId: string,
   reporter: MainReporter,
-  config?: UserConfigOverride
+  testOverrides?: UserConfigOverride
 ): TestPayload => {
   let overriddenConfig: TestPayload = {
     public_id: publicId,
   }
 
-  if (!config || !Object.keys(config).length) {
+  if (!testOverrides || !Object.keys(testOverrides).length) {
     return overriddenConfig
   }
 
-  const executionRule = getOverriddenExecutionRule(test, config)
+  const executionRule = getOverriddenExecutionRule(test, testOverrides)
   if (executionRule) {
     overriddenConfig.executionRule = executionRule
   }
 
   overriddenConfig = {
     ...overriddenConfig,
-    ...pick(config, [
+    ...pick(testOverrides, [
       'allowInsecureCertificates',
       'basicAuth',
       'body',
@@ -113,11 +117,23 @@ export const getOverriddenConfig = (
     ]),
   }
 
-  if ((test.type === 'browser' || test.subtype === 'http') && config.startUrl) {
-    overriddenConfig.startUrl = template(config.startUrl, {...process.env})
+  if ((test.type === 'browser' || test.subtype === 'http') && testOverrides.startUrl) {
+    overriddenConfig.startUrl = template(testOverrides.startUrl, {...process.env})
   }
 
   return overriddenConfig
+}
+
+export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
+  return Object.keys(testOverrides).reduce((count, configKey) => {
+    // We always send a value for `pollingTimeout` to the backend, even when the user doesn't override it.
+    // In that case, it shouldn't be counted.
+    if (configKey === 'pollingTimeout' && testOverrides[configKey] === DEFAULT_POLLING_TIMEOUT) {
+      return count
+    }
+
+    return count + 1
+  }, 0)
 }
 
 export const setCiTriggerApp = (source: string): void => {
@@ -170,11 +186,11 @@ export const hasResultPassed = (
     return true
   }
 
-  if (typeof serverResult.passed !== 'undefined') {
+  if (serverResult.passed !== undefined) {
     return serverResult.passed
   }
 
-  if (typeof serverResult.failure !== 'undefined') {
+  if (serverResult.failure !== undefined) {
     return false
   }
 
@@ -407,10 +423,10 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
       }
     }
   },
-  testTrigger: (test, testId, executionRule, config) => {
+  testTrigger: (test, testId, executionRule, testOverrides) => {
     for (const reporter of reporters) {
       if (typeof reporter.testTrigger === 'function') {
-        reporter.testTrigger(test, testId, executionRule, config)
+        reporter.testTrigger(test, testId, executionRule, testOverrides)
       }
     }
   },
@@ -430,25 +446,25 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-type NotFound = {errorMessage: string}
-type Skipped = {overriddenConfig: TestPayload}
-type TestWithOverride = {test: Test; overriddenConfig: TestPayload}
-
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
-  {config, id, suite}: TriggerConfig,
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  {config, testOverrides, id, suite}: TriggerConfig,
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-): Promise<NotFound | Skipped | TestWithOverride> => {
+): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
   const normalizedId = normalizePublicId(id)
 
   if (!normalizedId) {
     throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)
   }
 
-  const testResult = await getTest(api, {config, id: normalizedId, suite})
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  testOverrides = replaceConfigWithTestOverrides(config, testOverrides)
+
+  const testResult = await getTest(api, {id: normalizedId, suite})
   if ('errorMessage' in testResult) {
     summary.testsNotFound.add(normalizedId)
 
@@ -456,11 +472,11 @@ export const getTestAndOverrideConfig = async (
   }
 
   const {test} = testResult
-  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, config)
+  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, testOverrides)
   const testExecutionRule = test?.options?.ci?.executionRule
   const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 
-  reporter.testTrigger(test, normalizedId, executionRule, config)
+  reporter.testTrigger(test, normalizedId, executionRule, testOverrides)
   if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 
@@ -505,6 +521,13 @@ export const getTestsToTrigger = async (
   isTunnelEnabled?: boolean
 ) => {
   const errorMessages: string[] = []
+
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  triggerConfigs = triggerConfigs.map((triggerConfig) => ({
+    ...triggerConfig,
+    testOverrides: replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides),
+  }))
+
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
   // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
   if (triggerFromSearch && triggerConfigs.length > MAX_TESTS_TO_TRIGGER) {
@@ -523,32 +546,11 @@ export const getTestsToTrigger = async (
     )
   )
 
-  // Keep track of uploaded applications to avoid uploading them twice.
-  const uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]} = {}
-
-  for (const item of testsAndConfigsOverride) {
-    // Ignore not found and skipped tests.
-    if ('errorMessage' in item || !('test' in item)) {
-      continue
-    }
-
-    const {test, overriddenConfig} = item
-
-    if (test.type === 'mobile') {
-      const {config: userConfigOverride} = triggerConfigs.find(({id}) => id === test.public_id)!
-      try {
-        await uploadApplicationAndOverrideConfig(
-          api,
-          test,
-          userConfigOverride,
-          overriddenConfig,
-          uploadedApplicationByPath
-        )
-      } catch (e) {
-        throw new CriticalError('UPLOAD_MOBILE_APPLICATION_TESTS_FAILED', e.message)
-      }
-    }
-  }
+  await uploadMobileApplicationsAndUpdateOverrideConfigs(
+    api,
+    triggerConfigs,
+    testsAndConfigsOverride.filter(isMobileTestWithOverride)
+  )
 
   const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
@@ -644,6 +646,7 @@ export const retry = async <T, E extends Error>(
   return trier()
 }
 
+// TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
 export const parseVariablesFromCli = (
   variableArguments: string[] = [],
   logFunction: (log: string) => void

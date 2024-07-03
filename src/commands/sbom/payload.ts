@@ -104,7 +104,7 @@ export const generatePayload = (
   if (jsonContent) {
     if (jsonContent['components']) {
       for (const component of jsonContent['components']) {
-        if (!component['type'] || !component['name'] || !component['version']) {
+        if (!component['type'] || !component['name']) {
           continue
         }
         if (component['type'] !== 'library') {
@@ -150,7 +150,7 @@ export const generatePayload = (
         const dependency: Dependency = {
           name: component['name'],
           group: component['group'] || undefined,
-          version: component['version'],
+          version: component['version'] || undefined,
           language: lang,
           licenses: [],
           purl,

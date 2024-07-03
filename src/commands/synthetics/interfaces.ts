@@ -133,6 +133,8 @@ export interface BaseResult {
   passed: boolean
   result: ServerResult
   resultId: string
+  // Number of retries, including this result.
+  retries: number
   selectiveRerun?: SelectiveRerunDecision
   // Original test for this result, including overrides if any.
   test: Test
@@ -141,7 +143,7 @@ export interface BaseResult {
 }
 
 // Inside this type, `.resultId` is a linked result ID from a previous batch.
-export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'timestamp'> & {
+export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'retries' | 'timestamp'> & {
   executionRule: ExecutionRule.SKIPPED
   selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
 }
@@ -154,6 +156,7 @@ export interface BaseResultInBatch {
   execution_rule: ExecutionRule
   location: string
   result_id: string
+  retries: number | null
   selective_rerun?: SelectiveRerunDecision
   status: Status
   test_public_id: string
@@ -250,6 +253,9 @@ export interface ServerTest {
     min_location_failed: number
     mobileApplication?: MobileApplication
     tick_every: number
+    retry?: {
+      count?: number
+    }
   }
   overall_state: number
   overall_state_modified: string
@@ -356,6 +362,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
+  appExtractedMetadata?: MobileAppExtractedMetadata
 }
 
 export interface BatchOptions {
@@ -373,12 +380,37 @@ export interface TestPayload extends ServerConfigOverride {
   public_id: string
 }
 
+export interface TestNotFound {
+  errorMessage: string
+}
+
+export interface TestSkipped {
+  overriddenConfig: TestPayload
+}
+
+export interface TestWithOverride {
+  test: Test
+  overriddenConfig: TestPayload
+}
+
+export interface MobileTestWithOverride extends TestWithOverride {
+  test: Test & {
+    type: 'mobile'
+    options: {
+      mobileApplication: MobileApplication
+    }
+  }
+}
+
 export interface BasicAuthCredentials {
   password: string
   username: string
 }
 export interface TriggerConfig {
-  config: UserConfigOverride
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  /** @deprecated This property is deprecated, please use `testOverrides` instead. */
+  config?: UserConfigOverride
+  testOverrides?: UserConfigOverride
   id: string
   suite?: string
 }
@@ -442,8 +474,14 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
-  global: UserConfigOverride
-  locations: string[]
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
+  global?: UserConfigOverride
+  jUnitReport?: string
+  defaultTestOverrides?: UserConfigOverride
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+  /** @deprecated This property should only be used inside of `defaultTestOverrides`. */
+  locations?: string[]
   mobileApplicationVersionFilePath?: string
   pollingTimeout: number
   publicIds: string[]
@@ -451,6 +489,8 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+  /** @deprecated This property is deprecated, please use `variables` inside of `defaultTestOverrides`. */
   variableStrings: string[]
 }
 
@@ -484,6 +524,42 @@ export interface MultipartPresignedUrlsResponse {
       [key: string]: string
     }
   }
+}
+
+export type MobileApplicationNewVersionParams = {
+  originalFileName: string
+  versionName: string
+  isLatest: boolean
+}
+
+export type AppUploadDetails = {appId: string; appPath: string; versionName?: string}
+
+type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
+
+type MobileInvalidAppResult = {
+  invalid_reason: string
+  invalid_message: string
+}
+
+export type MobileAppExtractedMetadata = Record<string, unknown>
+
+type MobileValidAppResult = {
+  extracted_metadata: MobileAppExtractedMetadata
+  app_version_uuid: string
+}
+
+type MobileUserErrorResult = {
+  user_error_reason: string
+  user_error_message: string
+}
+
+export type MobileAppUploadResult = {
+  status: MobileAppValidationStatus
+  is_valid?: boolean
+  org_uuid?: string
+  invalid_app_result?: MobileInvalidAppResult
+  valid_app_result?: MobileValidAppResult
+  user_error_result?: MobileUserErrorResult
 }
 
 // Not the entire response, but only what's needed.

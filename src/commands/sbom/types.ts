@@ -82,7 +82,7 @@ export interface Locations {
 
 export interface Dependency {
   name: string
-  version: string
+  version: undefined | string
   group: undefined | string
   language: DependencyLanguage
   licenses: DependencyLicense[]

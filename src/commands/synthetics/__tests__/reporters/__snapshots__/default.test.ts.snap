@@ -32,6 +32,29 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, 
 "
 `;
 
+exports[`Default reporter resultEnd 1 API test, 3 attempts (2 failed, then passed) 1`] = `
+"[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m (attempt 1 of 3)
+  • Total duration: 123 ms - View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m 
+  [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
+[1m[31m  - Assertion failed:[39m[22m
+[1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
+
+[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m (attempt 2 of 3)
+  • Total duration: 123 ms - View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&batch_id=123&from_ci=true[39m[22m 
+  [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
+[1m[31m  - Assertion failed:[39m[22m
+[1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
+
+[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m (attempt 3 of 3)
+  • Total duration: 123 ms - View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=3&batch_id=123&from_ci=true[39m[22m 
+  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
+
+"
+`;
+
 exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI run) 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
   • Total duration: 123 ms - View test run details:
@@ -92,7 +115,7 @@ exports[`Default reporter runEnd Case with 2 passed results, of which 1 comes fr
 "View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
-• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m0[22m failed[39m
+• Test Results: [32m[1m2[22m passed ([1m1[22m in a previous CI batch)[39m, [31m[1m0[22m failed[39m
 • Selective re-run: ran 1 out of 2 tests
 • Total Duration: 9m 28s
 "
@@ -103,7 +126,7 @@ exports[`Default reporter runEnd Complex case with all the tests and results out
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 
 [1mContinuous Testing Summary:[22m
-• Test Results: [32m[1m2[22m passed ([1m1[22m in previous CI run)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
+• Test Results: [32m[1m2[22m passed ([1m1[22m in a previous CI batch)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
 • Selective re-run: ran 5 out of 6 tests
 • Total Duration: 9m 28s
 "
@@ -153,67 +176,67 @@ exports[`Default reporter runEnd does not communicate for uncapped orgs 1`] = `
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(1 config override)[39m
+exports[`Default reporter testTrigger Blocking test, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Blocking test, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Blocking test, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Blocking test, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m"
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 config override)[39m
+exports[`Default reporter testTrigger Non-blocking test from Datadog, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Non-blocking test from Datadog, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test from Datadog, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Non-blocking test from Datadog, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking)
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test, with 1 config override 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 config override)[39m
+exports[`Default reporter testTrigger Non-blocking test, with 1 test override 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(1 test override)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Non-blocking test, with 2 config overrides 1`] = `
-"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 config overrides)[39m
+exports[`Default reporter testTrigger Non-blocking test, with 2 test overrides 1`] = `
+"[[1m[2maaa-bbb-ccc[22m[22m] Found test "[32m[1mRequest on example.org[22m[39m" (non-blocking) [90m(2 test overrides)[39m
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, with 1 config override 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, with 1 test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, with 2 config overrides 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, with 2 test overrides 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test from Datadog, without config overwrite 1`] = `
+exports[`Default reporter testTrigger Skipped test from Datadog, without test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m" because of execution rule configuration in Datadog
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test, with 1 config override 1`] = `
+exports[`Default reporter testTrigger Skipped test, with 1 test override 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m"
 "
 `;
 
-exports[`Default reporter testTrigger Skipped test, with 2 config overrides 1`] = `
+exports[`Default reporter testTrigger Skipped test, with 2 test overrides 1`] = `
 "[[1m[2maaa-bbb-ccc[22m[22m] Skipped test "[33m[2mRequest on example.org[22m[39m"
 "
 `;

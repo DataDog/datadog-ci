@@ -13,7 +13,6 @@ import {
   Batch,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   Payload,
   PollResult,
   MultipartPresignedUrlsResponse,
@@ -22,6 +21,8 @@ import {
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
+  MobileAppUploadResult,
+  MobileApplicationNewVersionParams,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -29,7 +30,7 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
-// SYNTH-13709: Use the `Retry-After` header.
+// TODO SYNTH-13709: Use the `Retry-After` header.
 const DELAY_BETWEEN_429_RETRIES = 5000 // In ms
 
 interface BackendError {
@@ -220,7 +221,8 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
       request
     )
 
-    const quotedEtag = resp.headers.etag as string
+    // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
+    const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
 
     return {
       ETag: quotedEtag.replace(/"/g, ''),
@@ -232,40 +234,44 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
 }
 
 export const completeMultipartMobileApplicationUpload = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<void>
+  request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>
 ) => async (
   applicationId: string,
   uploadId: string,
   key: string,
-  uploadPartResponses: MobileApplicationUploadPartResponse[]
-) => {
-  await retryRequest(
+  uploadPartResponses: MobileApplicationUploadPartResponse[],
+  newVersionParams?: MobileApplicationNewVersionParams
+): Promise<string> => {
+  const resp = await retryRequest(
     {
       data: {
         key,
+        newVersionParams,
         parts: uploadPartResponses,
         uploadId,
+        validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
     },
     request
   )
+
+  return resp.data.job_id
 }
 
-const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
-  version: MobileApplicationVersion
-) => {
-  const resp = await retryRequest(
+export const pollMobileApplicationUploadResponse = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
+) => async (jobId: string): Promise<MobileAppUploadResult> => {
+  const response = await retryRequest(
     {
-      data: version,
-      method: 'POST',
-      url: `/synthetics/mobile/applications/versions`,
+      method: 'GET',
+      url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
     },
     request
   )
 
-  return resp.data
+  return response.data
 }
 
 const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
@@ -348,7 +354,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
-    createMobileVersion: createMobileVersion(requestUnstable),
+    pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
 }
 
@@ -370,4 +376,9 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })
+}
+
+const isAzureUrl = (presignedUrl: string) => {
+  // https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob-from-url?tabs=microsoft-entra-id#request
+  return presignedUrl.includes('.blob.core.windows.net')
 }

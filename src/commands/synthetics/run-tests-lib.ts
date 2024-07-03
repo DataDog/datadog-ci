@@ -1,6 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {moveLocationsToTestOverrides, replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -58,6 +59,12 @@ export const executeTests = async (
       await tunnel.stop()
     }
   }
+
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
+
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+  config = moveLocationsToTestOverrides(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
@@ -135,7 +142,9 @@ export const executeTests = async (
   }
 
   try {
-    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const maxPollingTimeout = Math.max(
+      ...triggerConfigs.map((t) => t.testOverrides?.pollingTimeout || config.pollingTimeout)
+    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
@@ -172,9 +181,7 @@ export const getTriggerConfigs = async (
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
   // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
-  const defaultTestConfigOverrides = config.global
-  // TODO: Clean up locations as part of SYNTH-12989
-  const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
+  const defaultTestConfigOverrides = config.defaultTestOverrides
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
   // Grab the tests returned by the search query (or `[]` if not given).
@@ -191,17 +198,25 @@ export const getTriggerConfigs = async (
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map((id) => {
-    const testFromSearchQuery = testsFromSearchQuery.find((test) => test.id === id)
-    const testFromTestConfigs = testsFromTestConfigs.find((test) => test.id === id)
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+    let testFromSearchQuery
+    if (testIndexFromSearchQuery >= 0) {
+      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
+    }
+
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    let testFromTestConfigs
+    if (testIndexFromTestConfigs >= 0) {
+      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
+    }
 
     return {
       id,
       ...testFromSearchQuery,
       ...testFromTestConfigs,
-      config: {
+      testOverrides: {
         ...defaultTestConfigOverrides,
-        ...testConfigOverridesFromEnv,
-        ...testFromTestConfigs?.config,
+        ...testFromTestConfigs?.testOverrides,
       },
     }
   })

@@ -74,39 +74,39 @@ describe('Default reporter', () => {
     const testId = 'aaa-bbb-ccc'
 
     const cases: [string, ExecutionRule, UserConfigOverride][] = [
-      ['Blocking test, without config overwrite', ExecutionRule.BLOCKING, {}],
-      ['Blocking test, with 1 config override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
-      ['Blocking test, with 2 config overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
-      ['Non-blocking test from Datadog, without config overwrite', ExecutionRule.NON_BLOCKING, {}],
-      ['Non-blocking test from Datadog, with 1 config override', ExecutionRule.NON_BLOCKING, {startUrl: 'foo'}],
+      ['Blocking test, without test override', ExecutionRule.BLOCKING, {}],
+      ['Blocking test, with 1 test override', ExecutionRule.BLOCKING, {startUrl: 'foo'}],
+      ['Blocking test, with 2 test overrides', ExecutionRule.BLOCKING, {startUrl: 'foo', body: 'hello'}],
+      ['Non-blocking test from Datadog, without test override', ExecutionRule.NON_BLOCKING, {}],
+      ['Non-blocking test from Datadog, with 1 test override', ExecutionRule.NON_BLOCKING, {startUrl: 'foo'}],
       [
-        'Non-blocking test from Datadog, with 2 config overrides',
+        'Non-blocking test from Datadog, with 2 test overrides',
         ExecutionRule.NON_BLOCKING,
         {startUrl: 'foo', body: 'hello'},
       ],
       [
-        'Non-blocking test, with 1 config override',
+        'Non-blocking test, with 1 test override',
         ExecutionRule.NON_BLOCKING,
         {executionRule: ExecutionRule.NON_BLOCKING},
       ],
       [
-        'Non-blocking test, with 2 config overrides',
+        'Non-blocking test, with 2 test overrides',
         ExecutionRule.NON_BLOCKING,
         {startUrl: 'foo', executionRule: ExecutionRule.NON_BLOCKING},
       ],
-      ['Skipped test, with 1 config override', ExecutionRule.SKIPPED, {executionRule: ExecutionRule.SKIPPED}],
+      ['Skipped test, with 1 test override', ExecutionRule.SKIPPED, {executionRule: ExecutionRule.SKIPPED}],
       [
-        'Skipped test, with 2 config overrides',
+        'Skipped test, with 2 test overrides',
         ExecutionRule.SKIPPED,
         {startUrl: 'foo', executionRule: ExecutionRule.SKIPPED},
       ],
-      ['Skipped test from Datadog, without config overwrite', ExecutionRule.SKIPPED, {}],
-      ['Skipped test from Datadog, with 1 config override', ExecutionRule.SKIPPED, {startUrl: 'foo'}],
-      ['Skipped test from Datadog, with 2 config overrides', ExecutionRule.SKIPPED, {startUrl: 'foo', body: 'hello'}],
+      ['Skipped test from Datadog, without test override', ExecutionRule.SKIPPED, {}],
+      ['Skipped test from Datadog, with 1 test override', ExecutionRule.SKIPPED, {startUrl: 'foo'}],
+      ['Skipped test from Datadog, with 2 test overrides', ExecutionRule.SKIPPED, {startUrl: 'foo', body: 'hello'}],
     ]
 
-    test.each(cases)('%s', (title, executionRule, config) => {
-      reporter.testTrigger(testObject, testId, executionRule, config)
+    test.each(cases)('%s', (title, executionRule, testOverrides) => {
+      reporter.testTrigger(testObject, testId, executionRule, testOverrides)
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })
@@ -226,6 +226,7 @@ describe('Default reporter', () => {
       opts: {
         executionRule: ExecutionRule
         passed?: boolean
+        retries?: number
         selectiveRerun?: SelectiveRerunDecision
       },
       test: Test
@@ -247,7 +248,12 @@ describe('Default reporter', () => {
 
       if (passed !== undefined) {
         result.passed = passed
-        result.result = {...result.result, ...(passed ? {} : {failure}), passed}
+        result.result = {
+          ...result.result,
+          ...(passed ? {} : {failure}),
+          passed,
+        }
+        result.retries = opts.retries ?? 0
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
       }
@@ -260,6 +266,14 @@ describe('Default reporter', () => {
     }
 
     const apiTest = getApiTest('aaa-aaa-aaa')
+    const retryableApiTest: Test = {
+      ...apiTest,
+      options: {
+        ...apiTest.options,
+        retry: {count: 2},
+      },
+    }
+
     const cases = [
       {
         description: '1 API test, 1 location, 1 result: success',
@@ -322,6 +336,17 @@ describe('Default reporter', () => {
               },
               apiTest
             ),
+          ],
+        },
+      },
+      {
+        description: '1 API test, 3 attempts (2 failed, then passed)',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            createApiResult('1', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 0}, retryableApiTest),
+            createApiResult('2', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 1}, retryableApiTest),
+            createApiResult('3', {executionRule: ExecutionRule.BLOCKING, passed: true, retries: 2}, retryableApiTest),
           ],
         },
       },

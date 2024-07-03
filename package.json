@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "2.33.1",
+  "version": "2.38.1",
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
@@ -108,7 +108,7 @@
     "tiny-async-pool": "^2.1.0",
     "typanion": "^3.14.0",
     "uuid": "^9.0.0",
-    "ws": "7.4.6",
+    "ws": "^7.5.10",
     "xml2js": "0.5.0",
     "yamux-js": "0.1.2"
   },
@@ -138,7 +138,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "aws-sdk-client-mock": "^2.1.1",
     "aws-sdk-client-mock-jest": "^2.1.1",
-    "dd-trace": "^3.54.0",
+    "dd-trace": "3.58.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "2.7.0",

@@ -1,21 +1,37 @@
 import fs from 'fs'
-import path from 'path'
+import path, {basename} from 'path'
 
 import {Command, Option} from 'clipanion'
+import glob from 'glob'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {DEFAULT_CONFIG_PATHS, performSubCommand, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import {
+  DEFAULT_CONFIG_PATHS,
+  buildPath,
+  performSubCommand,
+  resolveConfigFromFileAndEnvironment,
+} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
 import * as dsyms from '../dsyms/upload'
+import {createUniqueTmpDirectory} from '../dsyms/utils'
+import * as elf from '../elf-symbols/elf'
 
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
-import {IL2CPP_MAPPING_FILE_NAME, MappingMetadata, TYPE_IL2CPP_MAPPING, VALUE_NAME_IL2CPP_MAPPING} from './interfaces'
+import {
+  IL2CPP_MAPPING_FILE_NAME,
+  MappingMetadata,
+  TYPE_IL2CPP_MAPPING,
+  TYPE_NDK_SYMBOL_FILE,
+  VALUE_NAME_IL2CPP_MAPPING,
+  VALUE_NAME_NDK_SYMBOL_FILE,
+} from './interfaces'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
@@ -24,9 +40,12 @@ import {
   renderGeneralizedError,
   renderGitWarning,
   renderMissingBuildId,
+  renderMissingDir,
   renderMissingIL2CPPMappingFile as renderMissingIl2CppMappingFile,
+  renderMustSupplyPlatform,
   renderRetriedUpload,
   renderUpload,
+  renderUseOnlyOnePlatform,
 } from './renderer'
 
 export class UploadCommand extends Command {
@@ -47,7 +66,10 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
-  private symbolsLocation = Option.String('--symbols-location', './datadogSymbols')
+  private symbolsLocation = Option.String('--symbols-location', undefined)
+  private android = Option.Boolean('--android', false)
+  private ios = Option.Boolean('--ios', false)
+  private skipIl2Cpp = Option.Boolean('--skip-il2cpp', false)
 
   private buildId?: string
   private cliVersion = version
@@ -63,7 +85,7 @@ export class UploadCommand extends Command {
 
     const initialTime = Date.now()
 
-    this.context.stdout.write(renderCommandInfo(this.dryRun, this.buildId!, this.symbolsLocation))
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.buildId!, this.symbolsLocation!))
 
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
@@ -86,8 +108,15 @@ export class UploadCommand extends Command {
 
     const callResults: UploadStatus[] = []
     try {
-      callResults.push(await this.performDsymUpload())
-      callResults.push(await this.performIl2CppMappingUpload())
+      if (this.ios) {
+        callResults.push(await this.performDsymUpload())
+      } else if (this.android) {
+        callResults.push(...(await this.performSoUpload()))
+      }
+
+      if (!this.skipIl2Cpp) {
+        callResults.push(await this.performIl2CppMappingUpload())
+      }
 
       const totalTime = (Date.now() - initialTime) / 1000
 
@@ -139,13 +168,14 @@ export class UploadCommand extends Command {
     return undefined
   }
 
-  private getMappingMetadata(): MappingMetadata {
+  private getMappingMetadata(type: string, arch?: string): MappingMetadata {
     return {
+      arch,
       cli_version: this.cliVersion,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       build_id: this.buildId!,
-      type: TYPE_IL2CPP_MAPPING,
+      type,
     }
   }
 
@@ -161,7 +191,7 @@ export class UploadCommand extends Command {
   }
 
   private async performDsymUpload() {
-    const dsymUploadCommand = ['dsyms', 'upload', this.symbolsLocation]
+    const dsymUploadCommand = ['dsyms', 'upload', this.symbolsLocation!]
     dsymUploadCommand.push('--max-concurrency')
     dsymUploadCommand.push(`${this.maxConcurrency}`)
     if (this.dryRun) {
@@ -177,7 +207,7 @@ export class UploadCommand extends Command {
   }
 
   private async getBuildId(): Promise<number> {
-    const buildIdPath = path.join(this.symbolsLocation, 'build_id')
+    const buildIdPath = path.join(this.symbolsLocation!, 'build_id')
     if (!fs.existsSync(buildIdPath)) {
       this.context.stderr.write(renderMissingBuildId(buildIdPath))
 
@@ -194,8 +224,90 @@ export class UploadCommand extends Command {
     return 0
   }
 
+  private async performSoUpload(): Promise<UploadStatus[]> {
+    const metricsLogger = this.getMetricsLogger(['platform:unity'])
+    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+
+    const soFiles = glob.sync(buildPath(this.symbolsLocation!, '**/*.so'))
+    this.context.stdout.write(`${soFiles}`)
+
+    const tmpDirectory = await createUniqueTmpDirectory()
+
+    const requestBuilder = getUnityRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    try {
+      const results = await doWithMaxConcurrency(this.maxConcurrency, soFiles, async (soFileName) => {
+        const elfMetadata = await elf.getElfFileMetadata(soFileName)
+
+        if (this.dryRun) {
+          this.context.stdout.write(`[DRYRUN] ${renderUpload(`Symbol File (${elfMetadata.arch})`, soFileName)}`)
+
+          return UploadStatus.Success
+        }
+
+        const tempDir = buildPath(tmpDirectory, elfMetadata.arch)
+        const tempFilePath = buildPath(tempDir, basename(soFileName))
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir)
+        }
+        await elf.copyElfDebugInfo(soFileName, tempFilePath, elfMetadata, true)
+
+        const metadata = this.getMappingMetadata(TYPE_NDK_SYMBOL_FILE, elfMetadata.arch)
+        const baseFilename = path.basename(soFileName)
+
+        this.context.stdout.write(`[] ${tempFilePath}\n`)
+
+        const payload = {
+          content: new Map<string, MultipartValue>([
+            [
+              'event',
+              {
+                type: 'string',
+                value: JSON.stringify(metadata),
+                options: {filename: 'event', contentType: 'application/json'},
+              },
+            ],
+            [VALUE_NAME_NDK_SYMBOL_FILE, {type: 'file', path: tempFilePath, options: {filename: baseFilename}}],
+          ]),
+        }
+        if (this.gitData !== undefined) {
+          payload.content.set('repository', this.getGitDataPayload(this.gitData))
+        }
+
+        return uploadMultipartHelper(requestBuilder, payload, {
+          apiKeyValidator,
+          onError: (e) => {
+            this.context.stdout.write(renderFailedUpload(soFileName, e.message))
+            metricsLogger.logger.increment('failed', 1)
+          },
+          onRetry: (e, attempts) => {
+            this.context.stdout.write(renderRetriedUpload(soFileName, e.message, attempts))
+            metricsLogger.logger.increment('retries', 1)
+          },
+          onUpload: () => {
+            this.context.stdout.write(renderUpload(`Symbol File (${elfMetadata.arch})`, soFileName))
+          },
+          retries: 5,
+          useGzip: true,
+        })
+      })
+
+      return results
+    } catch (error) {
+      this.context.stdout.write(`ERROR: ${error}`)
+    } finally {
+      try {
+        await metricsLogger.flush()
+      } catch (err) {
+        this.context.stdout.write(`WARN: ${err}\n`)
+      }
+    }
+
+    return []
+  }
+
   private async performIl2CppMappingUpload(): Promise<UploadStatus> {
-    const il2cppMappingPath = path.join(this.symbolsLocation, 'LineNumberMappings.json')
+    const il2cppMappingPath = path.join(this.symbolsLocation!, 'LineNumberMappings.json')
+
     if (!fs.existsSync(il2cppMappingPath)) {
       this.context.stderr.write(renderMissingIl2CppMappingFile(il2cppMappingPath))
 
@@ -212,7 +324,7 @@ export class UploadCommand extends Command {
       return UploadStatus.Skipped
     }
 
-    const metadata = this.getMappingMetadata()
+    const metadata = this.getMappingMetadata(TYPE_IL2CPP_MAPPING)
 
     const payload = {
       content: new Map<string, MultipartValue>([
@@ -263,9 +375,33 @@ export class UploadCommand extends Command {
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
 
+    if (!this.ios && !this.android) {
+      this.context.stderr.write(renderMustSupplyPlatform())
+
+      return false
+    }
+
+    if (this.ios && this.android) {
+      this.context.stderr.write(renderUseOnlyOnePlatform())
+
+      return false
+    }
+
+    if (this.symbolsLocation === undefined) {
+      if (this.ios) {
+        this.symbolsLocation = './datadogSymbols'
+      } else if (this.android) {
+        this.symbolsLocation = './unityLibrary/symbols'
+      }
+    }
+
     if (!this.symbolsLocation) {
       this.context.stderr.write(renderArgumentMissingError('symbols-location'))
       parametersOkay = false
+    } else if (!fs.existsSync(this.symbolsLocation)) {
+      this.context.stderr.write(renderMissingDir(this.symbolsLocation))
+
+      return false
     }
 
     if (await this.getBuildId()) {
