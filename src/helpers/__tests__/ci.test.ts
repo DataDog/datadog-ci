@@ -207,9 +207,7 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
-    )
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported')
   })
 
   test('buildkite', () => {
