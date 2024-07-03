@@ -1,3 +1,4 @@
+import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from './interfaces'
 import type {AxiosResponse} from 'axios'
 
 import chalk from 'chalk'
@@ -8,12 +9,11 @@ import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {GIT_HEAD_SHA, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
-import {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -84,8 +84,18 @@ export class GateEvaluateCommand extends Command {
   }
 
   public async execute() {
+    const options: PayloadOptions = {
+      dryRun: this.dryRun,
+      noWait: this.noWait,
+    }
+
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
+    const headSha = spanTags[GIT_HEAD_SHA]
+    if (headSha) {
+      options.pull_request_sha = headSha
+    }
+
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
     const startTimeMs = new Date().getTime()
@@ -94,10 +104,7 @@ export class GateEvaluateCommand extends Command {
       spanTags,
       userScope,
       startTimeMs,
-      options: {
-        dryRun: this.dryRun,
-        noWait: this.noWait,
-      },
+      options,
     }
 
     return this.evaluateRules(api, payload)

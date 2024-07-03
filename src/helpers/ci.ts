@@ -23,9 +23,16 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  GIT_HEAD_SHA,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
-import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveInfoFromRepository} from './utils'
+import {
+  normalizeRef,
+  removeEmptyValues,
+  removeUndefinedValues,
+  filterSensitiveInfoFromRepository,
+  getGitHeadShaFromGitHubWebhookPayload,
+} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -218,6 +225,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_REPOSITORY,
       GITHUB_SERVER_URL,
       GITHUB_RUN_ATTEMPT,
+      GITHUB_BASE_REF,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
@@ -248,6 +256,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
       }),
+    }
+    if (GITHUB_BASE_REF) { // it's a pull_request or pull_request_target trigger
+      const headSha = getGitHeadShaFromGitHubWebhookPayload()
+      if (headSha) {
+        tags[GIT_HEAD_SHA] = headSha
+      }
     }
   }
 
