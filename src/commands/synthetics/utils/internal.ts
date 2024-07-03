@@ -210,13 +210,8 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         // Convert to string[]
         case 'deviceIds':
         case 'locations':
-          acc[key] = parseOverrideValue(value, 'string[]') as string[]
-          break
-
-        // Special parsing for resourceUrlSubstitutionRegexes
         case 'resourceUrlSubstitutionRegexes':
-          acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
-          acc['resourceUrlSubstitutionRegexes'].push(value)
+          acc[key] = parseOverrideValue(value, 'string[]') as string[]
           break
 
         // Convert to ExecutionRule

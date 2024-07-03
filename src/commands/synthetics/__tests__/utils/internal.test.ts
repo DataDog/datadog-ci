@@ -187,8 +187,7 @@ describe('utils', () => {
           'body=a body with spaces',
           'defaultStepTimeout=300',
           'followRedirects=False',
-          'resourceUrlSubstitutionRegexes=s/(https://www.)(.*)/$1extra-$2',
-          'resourceUrlSubstitutionRegexes=https://example.com(.*)|http://subdomain.example.com$1',
+          'resourceUrlSubstitutionRegexes=s/(https://www.)(.*)/$1extra-$2;https://example.com(.*)|http://subdomain.example.com$1',
         ]
         const parsedOverrides = validateAndParseOverrides(overrides)
 
