@@ -21,6 +21,7 @@ export const evaluateGateRules = (
           no_wait: evaluateRequest.options.noWait,
           dry_run: evaluateRequest.options.dryRun,
           is_last_retry: evaluateRequest.options.isLastRetry,
+          pull_request_sha: evaluateRequest.options.pull_request_sha,
         },
       },
     },

@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
 import {createCommand} from '../../../helpers/__tests__/fixtures'
@@ -349,6 +351,43 @@ describe('evaluate', () => {
           expectLastRetry(api)
           expect(response).toBe(1)
         })
+    })
+
+    test('should include head SHA if it is a pull_request or pull_request_target event', async () => {
+      const HEAD_SHA = '1234567'
+      const fakeWebhookPayloadPath = './event.json'
+      const oldEnvGitHubActions = process.env.GITHUB_ACTIONS
+      const oldEnvGitHubEventPath = process.env.GITHUB_EVENT_PATH
+      const oldEnvGitHubBaseRef = process.env.GITHUB_BASE_REF
+      process.env.GITHUB_ACTIONS = '1'
+      process.env.GITHUB_EVENT_PATH = fakeWebhookPayloadPath
+      process.env.GITHUB_BASE_REF = 'main' // only set in pull_request and pull_request_target events
+
+      fs.writeFileSync(
+        fakeWebhookPayloadPath,
+        JSON.stringify({
+          pull_request: {
+            head: {
+              sha: HEAD_SHA,
+            },
+          },
+        })
+      )
+
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stderr: {write}} as any)
+      command['timeoutInSeconds'] = 1
+      command['failIfUnavailable'] = true
+      command['getApiHelper'] = jest.fn().mockReturnValue(api)
+      jest.spyOn(api, 'evaluateGateRules').mockResolvedValueOnce(waitMockResponse(100))
+
+      await command.execute()
+      expect((api.evaluateGateRules as jest.Mock).mock.calls[0][0].options.pull_request_sha).toEqual(HEAD_SHA)
+
+      process.env.GITHUB_ACTIONS = oldEnvGitHubActions
+      process.env.GITHUB_EVENT_PATH = oldEnvGitHubEventPath
+      process.env.GITHUB_BASE_REF = oldEnvGitHubBaseRef
+      fs.unlinkSync(fakeWebhookPayloadPath)
     })
   })
 })

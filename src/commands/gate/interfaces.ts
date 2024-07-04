@@ -1,8 +1,7 @@
-import {Writable} from 'stream'
-
 import type {AxiosPromise} from 'axios'
+import type {Writable} from 'stream'
 
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   requestId: string
@@ -16,6 +15,7 @@ export interface PayloadOptions {
   dryRun: boolean
   noWait: boolean
   isLastRetry?: boolean
+  pull_request_sha?: string
 }
 
 export interface EvaluationResponsePayload {

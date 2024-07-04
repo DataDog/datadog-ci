@@ -1,5 +1,5 @@
 import {exec} from 'child_process'
-import fs, {existsSync} from 'fs'
+import fs, {existsSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
@@ -412,3 +412,24 @@ export const execute = (cmd: string, cwd?: string): Promise<{stderr: string; std
     cwd,
     maxBuffer: 5 * 1024 * 5000,
   })
+
+type GitHubWebhookPayload = {
+  pull_request: {
+    head: {
+      sha: string
+    }
+  }
+}
+
+export const getGitHeadShaFromGitHubWebhookPayload = () => {
+  if (!process.env.GITHUB_EVENT_PATH) {
+    return ''
+  }
+  try {
+    const parsedContents = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
+
+    return parsedContents.pull_request.head.sha
+  } catch (e) {
+    return ''
+  }
+}
