@@ -370,6 +370,7 @@ export class RunTestsCommand extends Command {
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
         pollingTimeout:
           this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
+        resourceUrlSubstitutionRegexes: validatedOverrides.resourceUrlSubstitutionRegexes,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
