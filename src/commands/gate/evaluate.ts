@@ -101,7 +101,7 @@ export class GateEvaluateCommand extends Command {
       if (headSha) {
         options.pull_request_sha = headSha
       } else {
-        this.logger.warn('Detected a pull request run but HEAD commit SHA could not be calculated')
+        this.logger.warn('Detected a pull request run but HEAD commit SHA could not be extracted.')
       }
     }
 

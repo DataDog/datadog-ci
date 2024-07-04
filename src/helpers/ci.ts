@@ -261,11 +261,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     if (GITHUB_BASE_REF) {
       // GITHUB_BASE_REF is defined if it's a pull_request or pull_request_target trigger
+      tags[GIT_BASE_REF] = GITHUB_BASE_REF
       const headSha = getGitHeadShaFromGitHubWebhookPayload()
 
       if (headSha) {
         tags[GIT_HEAD_SHA] = headSha
-        tags[GIT_BASE_REF] = GITHUB_BASE_REF
       }
     }
   }
