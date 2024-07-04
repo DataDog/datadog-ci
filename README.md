@@ -137,7 +137,7 @@ curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/d
 #### Windows
 
 ```sh
-Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64" -OutFile "datadog-ci.exe"
 ```
 
 Then, you can run `datadog-ci` commands normally:
