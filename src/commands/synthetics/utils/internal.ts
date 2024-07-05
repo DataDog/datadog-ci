@@ -104,7 +104,7 @@ export const toStringMap = (env: string | undefined): StringMap | undefined => {
   if (env === undefined) {
     return undefined
   }
-  const cleanedEnv = env.replace(/'/g, '"').replace(/\s/g, '')
+  const cleanedEnv = env.replace(/'/g, '"')
 
   try {
     const parsed = JSON.parse(cleanedEnv)
