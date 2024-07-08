@@ -247,7 +247,7 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
-        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // I added this but was it really necessary? Useful if we want to know in the end which config file was used.
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),

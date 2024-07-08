@@ -61,7 +61,7 @@
   "proxy": {
     "protocol": "https"
   },
-  "publicIds": ["ran-dom-id"],
+  "publicIds": ["ran-dom-id1"],
   "selectiveRerun": true,
   "subdomain": "ppa",
   "testSearchQuery": "a-search-query",
