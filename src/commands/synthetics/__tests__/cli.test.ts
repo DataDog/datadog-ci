@@ -451,7 +451,7 @@ describe('run-test', () => {
 
     // TODO: Since we have "n choose k" = "4 choose 2" = ⁴C₂ = 6 possible combinations of "A < B",
     //       we should refactor the following 2 tests into 6 smaller tests, each testing a single override behavior.
-    describe('override precedence config file < ENV < CLI < test file', () => {
+    describe('override precedence - config file < ENV < CLI < test file', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
@@ -602,7 +602,7 @@ describe('run-test', () => {
           testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
           tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
 
-          // Added to make the test work, should be removed in the future when cleaning up
+          // All the following variables should be removed in the future, as they are either deprecated or misaligned (no ENV variable for now)
           // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
           global: {},
           // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
@@ -749,6 +749,7 @@ describe('run-test', () => {
 
         expect(command['config']).toEqual(expectedCLIOverrideResult)
       })
+
       test('ENV < CLI', async () => {
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => baseConfig)
 
