@@ -63,14 +63,26 @@ Using a global configuration file is one of the ways to configure datadog-ci. To
 
 See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
 
+<!--
+  The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
+  If want to update them please update the doc and the relevant integrations as well.
+-->
+
 `apiKey`
 : The API key used to query the Datadog API.
 
 `appKey`
 : The application key used to query the Datadog API.
 
+`batchTimeout`
+: **Type**: integer<br>
+The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
+
 `datadogSite`
 : The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+
+`defaultTestOverrides`
+: Overrides for Synthetic tests applied to all tests.
 
 `failOnCriticalErrors`
 : A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
@@ -84,18 +96,17 @@ See below for the list of advanced options in the global configuration file. For
 `files`
 : Glob patterns to detect Synthetic test [configuration files](#test-files).
 
-`defaultTestOverrides`
-: Overrides for Synthetic tests applied to all tests.
+`jUnitReport`
+: The filename for a JUnit report if you want to generate one.
 
 `mobileApplicationVersionFilePath`
 : Override the application version for all Synthetic mobile application tests.
 
-`batchTimeout`
-: **Type**: integer<br>
-The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
-
 `proxy`
 : The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
+
+`publicIds`
+: List of IDs for the Synthetic tests you want to trigger.
 
 `selectiveRerun`
 : A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
