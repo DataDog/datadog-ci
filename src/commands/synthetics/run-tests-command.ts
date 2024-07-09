@@ -40,13 +40,13 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   batchTimeout: DEFAULT_BATCH_TIMEOUT,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  defaultTestOverrides: {},
   failOnCriticalErrors: false,
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
-  defaultTestOverrides: {},
   jUnitReport: '',
   // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
   locations: [],
