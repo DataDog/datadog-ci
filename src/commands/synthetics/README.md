@@ -63,20 +63,37 @@ Using a global configuration file is one of the ways to configure datadog-ci. To
 
 See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
 
+### List of configurations
+
 <!--
   The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
   If want to update them please update the doc and the relevant integrations as well.
 -->
 
-`apiKey`
-: The API key used to query the Datadog API.
+#### `apiKey`
+globalConfig: `apiKey`, env: `DATADOG_API_KEY`, cli `--apiKey`
 
-`appKey`
-: The application key used to query the Datadog API.
+The API key used to query the Datadog API.
 
-`batchTimeout`
-: **Type**: integer<br>
-The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
+* Global Config: `"apiKey": "<API_KEY>"`
+* ENV variable: `DATADOG_API_KEY="<API_KEY>"`
+* CLI param: `--apiKey "<API_KEY>"`
+
+#### `appKey`
+
+The application key used to query the Datadog API.
+
+* Global Config: `"appKey": "<APPLICATION_KEY>"`
+* ENV variable:  `DATADOG_APP_KEY="<APPLICATION_KEY>"`
+* CLI param: `--appKey "<APPLICATION_KEY>"`
+
+#### `batchTimeout`
+
+The duration (integer in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
+
+* Global Config: `"batchTimeout": 180000`
+* ENV variable: `DATADOG_SYNTHETICS_BATCH_TIMEOUT=180000`
+* CLI param: `--batchTimeout 180000`
 
 `datadogSite`
 : The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
@@ -105,8 +122,13 @@ The duration (in milliseconds) after which `datadog-ci` stops waiting for test r
 `proxy`
 : The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
 
-`publicIds`
-: List of IDs for the Synthetic tests you want to trigger.
+#### `publicIds`
+
+List of IDs for the Synthetic tests you want to trigger.
+
+* Global Config: `"publicIds": ["abc-def-ghi", "123-456-789"]`
+* ENV variable: `DATADOG_SYNTHETICS_PUBLIC_IDS="abc-def-ghi;123-456-789"`
+* CLI param: `-p "abc-def-ghi" --public-id "123-456-789"`
 
 `selectiveRerun`
 : A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
