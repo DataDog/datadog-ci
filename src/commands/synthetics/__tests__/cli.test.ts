@@ -516,6 +516,21 @@ describe('run-test', () => {
       })
     })
 
+    test("Root config file 'pollingTimeout' still works (deprecated)", async () => {
+      const command = createCommand(RunTestsCommand)
+      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        batchTimeout: 333,
+        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        global: {followRedirects: false},
+        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
+        pollingTimeout: 333,
+      })
+    })
+
     // We have 2 code paths that handle different levels of configuration overrides:
     //  1)  config file (configuration of datadog-ci)             <   ENV (environment variables)   <   CLI (command flags)
     //  2)  global (global config object, aka. `config.global`)   <   ENV (environment variables)   <   test file (test configuration)
