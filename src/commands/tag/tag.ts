@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
+import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
