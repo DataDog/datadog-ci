@@ -44,7 +44,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
-import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
@@ -107,6 +107,7 @@ export const getOverriddenConfig = (
       'followRedirects',
       'headers',
       'locations',
+      // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
       'pollingTimeout',
       'resourceUrlSubstitutionRegexes',
       'retry',
@@ -126,6 +127,7 @@ export const getOverriddenConfig = (
 
 export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
   return Object.keys(testOverrides).reduce((count, configKey) => {
+    // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
     // We always send a value for `pollingTimeout` to the backend, even when the user doesn't override it.
     // In that case, it shouldn't be counted.
     if (configKey === 'pollingTimeout' && testOverrides[configKey] === DEFAULT_POLLING_TIMEOUT) {
@@ -333,13 +335,7 @@ export const waitForResults = async (
     tests,
   }
 
-  const results = await waitForBatchToFinish(
-    api,
-    trigger.batch_id,
-    options.maxPollingTimeout,
-    resultDisplayInfo,
-    reporter
-  )
+  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
 
   if (tunnel && !isTunnelConnected) {
     reporter.error('The tunnel has stopped working, this may have affected the results.')
@@ -592,11 +588,17 @@ export const getTestsToTrigger = async (
 export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
-  selectiveRerun = false
+  selectiveRerun = false,
+  batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<Trigger> => {
+  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
+  // Although the backend is backwards compatible, let's stop sending deprecated properties
+  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
+
   const payload: Payload = {
-    tests: testsToTrigger,
+    tests,
     options: {
+      batch_timeout: batchTimeout,
       selective_rerun: selectiveRerun,
     },
   }

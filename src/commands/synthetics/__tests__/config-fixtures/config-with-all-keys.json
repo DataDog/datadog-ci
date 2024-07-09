@@ -1,6 +1,7 @@
 {
   "apiKey": "fake_api_key",
   "appKey": "fake_app_key",
+  "batchTimeout": 1,
   "configPath": "fake-datadog-ci.json",
   "datadogSite": "datadoghq.eu",
   "failOnCriticalErrors": true,
@@ -49,7 +50,7 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
-    "pollingTimeout": 2,
+    "pollingTimeout": 3,
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
@@ -57,7 +58,7 @@
     "variables": {"titleVariable": "new value"}
   },
   "locations": [],
-  "pollingTimeout": 1,
+  "pollingTimeout": 4,
   "proxy": {
     "protocol": "https"
   },

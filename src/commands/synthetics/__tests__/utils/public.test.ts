@@ -265,6 +265,27 @@ describe('utils', () => {
       expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
     })
 
+    test('runTests api call does not send deprecated properties', async () => {
+      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
+
+      const testsPayloadSpy = jest.fn()
+      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+        testsPayloadSpy(request.data.tests)
+        if (request.url === '/synthetics/tests/trigger/ci') {
+          return {data: fakeTrigger}
+        }
+      }) as any)
+
+      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING, pollingTimeout: 1}])
+      expect(testsPayloadSpy).toHaveBeenCalledWith([
+        {
+          public_id: fakeId,
+          executionRule: ExecutionRule.NON_BLOCKING,
+          // no pollingTimeout
+        },
+      ])
+    })
+
     test('should run test with publicId from url', async () => {
       jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
       const output = await utils.runTests(api, [
@@ -869,9 +890,9 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 120000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 120000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -905,9 +926,9 @@ describe('utils', () => {
         trigger,
         tests,
         {
+          batchTimeout: 120000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 120000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
@@ -1106,9 +1127,9 @@ describe('utils', () => {
         trigger,
         tests,
         {
+          batchTimeout: 120000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 120000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
@@ -1189,9 +1210,9 @@ describe('utils', () => {
         trigger,
         tests,
         {
+          batchTimeout: 120000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 120000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
@@ -1318,9 +1339,9 @@ describe('utils', () => {
         trigger,
         [result.test, result.test],
         {
+          batchTimeout: 0,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: false,
-          maxPollingTimeout: 0,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter
@@ -1358,9 +1379,9 @@ describe('utils', () => {
           trigger,
           [result.test, result.test],
           {
+            batchTimeout: 3000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 3000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1412,9 +1433,9 @@ describe('utils', () => {
           trigger,
           [result.test, result.test],
           {
+            batchTimeout: 3000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 3000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1459,9 +1480,9 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 0,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 0,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1493,9 +1514,9 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 120000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 120000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1526,9 +1547,9 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 120000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
-            maxPollingTimeout: 120000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1560,10 +1581,10 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 2000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
             failOnCriticalErrors: false,
             failOnTimeout: false,
-            maxPollingTimeout: 2000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1608,9 +1629,9 @@ describe('utils', () => {
         trigger,
         [result.test],
         {
+          batchTimeout: 2000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: true,
-          maxPollingTimeout: 2000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter,
@@ -1632,9 +1653,9 @@ describe('utils', () => {
         trigger,
         [result.test],
         {
+          batchTimeout: 2000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: true,
-          maxPollingTimeout: 2000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter,
@@ -1650,9 +1671,9 @@ describe('utils', () => {
         trigger,
         [newTest],
         {
+          batchTimeout: 2000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: true,
-          maxPollingTimeout: 2000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter,
@@ -1667,9 +1688,9 @@ describe('utils', () => {
         trigger,
         [newTest],
         {
+          batchTimeout: 2000,
           datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
           failOnCriticalErrors: true,
-          maxPollingTimeout: 2000,
           subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
         },
         mockReporter,
@@ -1691,8 +1712,8 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 2000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            maxPollingTimeout: 2000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
@@ -1717,8 +1738,8 @@ describe('utils', () => {
           trigger,
           [result.test],
           {
+            batchTimeout: 2000,
             datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            maxPollingTimeout: 2000,
             subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
           },
           mockReporter
