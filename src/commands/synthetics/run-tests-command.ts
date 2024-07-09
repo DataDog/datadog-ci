@@ -263,7 +263,7 @@ export class RunTestsCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
-        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
         failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -309,7 +309,6 @@ export class RunTestsCommand extends Command {
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-        headers: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
         // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations:
           process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
@@ -322,9 +321,15 @@ export class RunTestsCommand extends Command {
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
         testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
-        variables: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
       })
     )
+    // We do not want to extend headers and variables, but rather override them completely
+    if (process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS) {
+      this.config.defaultTestOverrides.headers = toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS)
+    }
+    if (process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES) {
+      this.config.defaultTestOverrides.variables = toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES)
+    }
 
     // Override with CLI parameters
     const batchTimeout = replacePollingTimeoutWithBatchTimeout(
@@ -390,7 +395,6 @@ export class RunTestsCommand extends Command {
         deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,
-        headers: validatedOverrides.headers,
         locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
@@ -401,11 +405,18 @@ export class RunTestsCommand extends Command {
         startUrl: validatedOverrides.startUrl,
         startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
         testTimeout: validatedOverrides.testTimeout,
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variables:
-          validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
       })
     )
+
+    // We do not want to extend headers and variables, but rather override them completely
+    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+    if (validatedOverrides.headers) {
+      this.config.defaultTestOverrides.headers = validatedOverrides.headers
+    }
+    if (validatedOverrides.variables || this.variableStrings) {
+      this.config.defaultTestOverrides.variables =
+        validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log))
+    }
 
     if (typeof this.config.files === 'string') {
       this.reporter.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')

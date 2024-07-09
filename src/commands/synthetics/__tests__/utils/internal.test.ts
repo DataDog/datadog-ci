@@ -100,7 +100,7 @@ describe('utils', () => {
     })
   })
 
-  describe('toObject', () => {
+  describe('toStringMap', () => {
     const cases: [string | undefined, {[key: string]: string} | undefined][] = [
       ['{"key1":"value1","key2":"value2"}', {key1: 'value1', key2: 'value2'}],
       ['{"key1": "value1", "key2": "value2"}', {key1: 'value1', key2: 'value2'}],
@@ -112,6 +112,10 @@ describe('utils', () => {
         {key1: 'value1', key2: 'value2'},
       ], // Multiline JSON should be supported
       ["{'key1': 'value1', 'key2': 'value2'}", {key1: 'value1', key2: 'value2'}], // Single quotes should be supported
+      [
+        "{'key1': 'value with space 1', 'key2': 'value with space 2'}",
+        {key1: 'value with space 1', key2: 'value with space 2'},
+      ], // Values with spaces should also be supported
       ['{"key1":"value1"}', {key1: 'value1'}],
       ['{}', {}],
       ['', undefined],
@@ -124,7 +128,7 @@ describe('utils', () => {
       ['{"key1": "value1", "key2": "value2"} extra', undefined], // Extra text should result in undefined
     ]
 
-    test.each(cases)('toObject(%s) should return %s', (input, expectedOutput) => {
+    test.each(cases)('toStringMap(%s) should return %s', (input, expectedOutput) => {
       expect(toStringMap(input)).toEqual(expectedOutput)
     })
   })
@@ -187,8 +191,7 @@ describe('utils', () => {
           'body=a body with spaces',
           'defaultStepTimeout=300',
           'followRedirects=False',
-          'resourceUrlSubstitutionRegexes=s/(https://www.)(.*)/$1extra-$2',
-          'resourceUrlSubstitutionRegexes=https://example.com(.*)|http://subdomain.example.com$1',
+          'resourceUrlSubstitutionRegexes=s/(https://www.)(.*)/$1extra-$2;https://example.com(.*)|http://subdomain.example.com$1',
         ]
         const parsedOverrides = validateAndParseOverrides(overrides)
 

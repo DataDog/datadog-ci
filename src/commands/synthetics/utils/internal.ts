@@ -104,7 +104,7 @@ export const toStringMap = (env: string | undefined): StringMap | undefined => {
   if (env === undefined) {
     return undefined
   }
-  const cleanedEnv = env.replace(/'/g, '"').replace(/\s/g, '')
+  const cleanedEnv = env.replace(/'/g, '"')
 
   try {
     const parsed = JSON.parse(cleanedEnv)
@@ -211,13 +211,8 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
         // Convert to string[]
         case 'deviceIds':
         case 'locations':
-          acc[key] = parseOverrideValue(value, 'string[]') as string[]
-          break
-
-        // Special parsing for resourceUrlSubstitutionRegexes
         case 'resourceUrlSubstitutionRegexes':
-          acc['resourceUrlSubstitutionRegexes'] = acc['resourceUrlSubstitutionRegexes'] ?? []
-          acc['resourceUrlSubstitutionRegexes'].push(value)
+          acc[key] = parseOverrideValue(value, 'string[]') as string[]
           break
 
         // Convert to ExecutionRule

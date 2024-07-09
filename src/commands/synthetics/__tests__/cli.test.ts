@@ -86,6 +86,9 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_HEADERS: "{'Content-Type': 'application/json', 'Authorization': 'Bearer token'}",
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
+        DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'us-east-1;us-west-1',
         DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
         DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
         DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
@@ -124,6 +127,7 @@ describe('run-test', () => {
           executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
           followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
           headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+          locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
           pollingTimeout: 1,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -188,18 +192,52 @@ describe('run-test', () => {
         jUnitReport: 'junit-report.xml',
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
+          allowInsecureCertificates: true,
+          basicAuth: {username: 'test', password: 'test'},
+          body: '{"fakeContent":true}',
+          bodyType: 'application/json',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          defaultStepTimeout: 10000,
           deviceIds: ['chrome.laptop_large'],
-          locations: ['us-east-1'],
-          pollingTimeout: 2, // not overridden (backwards compatibility not supported)
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
+          headers: {'<NEW_HEADER>': '<NEW_VALUE>'},
+          locations: ['aws:us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: 2, // not overridden (backwards compatibility not supported)
+          retry: {count: 2, interval: 300},
+          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
+          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
+          testTimeout: 200000,
+          variables: {titleVariable: 'new value'},
         },
         defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          basicAuth: {username: 'test', password: 'test'},
+          body: '{"fakeContent":true}',
+          bodyType: 'application/json',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          defaultStepTimeout: 10000,
           deviceIds: ['chrome.laptop_large'],
-          locations: ['us-east-1'],
-          pollingTimeout: 1,
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
+          headers: {'<NEW_HEADER>': '<NEW_VALUE>'},
+          locations: ['aws:us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: 1,
+          retry: {count: 2, interval: 300},
+          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
+          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
+          testTimeout: 200000,
+          variables: {titleVariable: 'new value'},
         },
         // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations: [],
@@ -208,11 +246,12 @@ describe('run-test', () => {
         proxy: {
           protocol: 'https',
         },
-        publicIds: ['ran-dom-id'],
+        publicIds: ['ran-dom-id1'],
         selectiveRerun: true,
         subdomain: 'ppa',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
         variableStrings: [],
       }
 
@@ -225,7 +264,7 @@ describe('run-test', () => {
 
     test('override from CLI', async () => {
       // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-      const cliOverrides: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1, // not used in the first test case
@@ -236,10 +275,9 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 2,
-        publicIds: ['ran-dom-id'],
+        publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -248,7 +286,7 @@ describe('run-test', () => {
         variableStrings: ['var3=value3', 'var4=value4'],
       }
       /** Values passed to `--override`. */
-      const cliOverrideParameter: UserConfigOverride = {
+      const defaultTestOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {
           password: 'password',
@@ -258,15 +296,18 @@ describe('run-test', () => {
         bodyType: 'bodyType',
         cookies: 'name1=value1;name2=value2;',
         defaultStepTimeout: 42,
-        deviceIds: ['chrome.laptop_large'],
+        deviceIds: ['chrome.laptop_large', 'chrome.laptop_small', 'firefox.laptop_large'],
         executionRule: ExecutionRule.BLOCKING,
         followRedirects: true,
         headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
-        locations: ['us-east-1'],
+        locations: ['us-east-1', 'us-west-1'],
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
         // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
         pollingTimeout: 3,
-        resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
+        resourceUrlSubstitutionRegexes: [
+          's/(https://www.)(.*)/$1extra-$2',
+          'https://example.com(.*)|http://subdomain.example.com$1',
+        ],
         retry: {
           count: 5,
           interval: 42,
@@ -278,52 +319,54 @@ describe('run-test', () => {
       }
 
       const command = createCommand(RunTestsCommand)
-      command['apiKey'] = cliOverrides.apiKey
-      command['appKey'] = cliOverrides.appKey
+      command['apiKey'] = overrideCLI.apiKey
+      command['appKey'] = overrideCLI.appKey
       // `command['batchTimeout']` not used in the first test case
-      command['configPath'] = cliOverrides.configPath
-      command['datadogSite'] = cliOverrides.datadogSite
-      command['failOnCriticalErrors'] = cliOverrides.failOnCriticalErrors
-      command['failOnMissingTests'] = cliOverrides.failOnMissingTests
-      command['failOnTimeout'] = cliOverrides.failOnTimeout
-      command['files'] = cliOverrides.files
-      command['jUnitReport'] = cliOverrides.jUnitReport
-      command['mobileApplicationVersion'] = cliOverrideParameter.mobileApplicationVersion
-      command['mobileApplicationVersionFilePath'] = cliOverrides.mobileApplicationVersionFilePath
+      command['configPath'] = overrideCLI.configPath
+      command['datadogSite'] = overrideCLI.datadogSite
+      // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+      command['deviceIds'] = ['my-old-device']
+      command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+      command['failOnMissingTests'] = overrideCLI.failOnMissingTests
+      command['failOnTimeout'] = overrideCLI.failOnTimeout
+      command['files'] = overrideCLI.files
+      command['jUnitReport'] = overrideCLI.jUnitReport
+      command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
+      command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
       // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-      command['pollingTimeout'] = cliOverrides.pollingTimeout
-      command['publicIds'] = cliOverrides.publicIds
-      command['subdomain'] = cliOverrides.subdomain
-      command['tunnel'] = cliOverrides.tunnel
-      command['testSearchQuery'] = cliOverrides.testSearchQuery
+      command['pollingTimeout'] = overrideCLI.pollingTimeout
+      command['publicIds'] = overrideCLI.publicIds
+      command['selectiveRerun'] = overrideCLI.selectiveRerun
+      command['subdomain'] = overrideCLI.subdomain
+      command['tunnel'] = overrideCLI.tunnel
+      command['testSearchQuery'] = overrideCLI.testSearchQuery
       // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-      command['variableStrings'] = cliOverrides.variableStrings
+      command['variableStrings'] = overrideCLI.variableStrings
       command['overrides'] = [
-        `allowInsecureCertificates=${cliOverrideParameter.allowInsecureCertificates}`,
-        `basicAuth.password=${cliOverrideParameter.basicAuth?.password}`,
-        `basicAuth.username=${cliOverrideParameter.basicAuth?.username}`,
-        `body=${cliOverrideParameter.body}`,
-        `bodyType=${cliOverrideParameter.bodyType}`,
-        `cookies=${cliOverrideParameter.cookies}`,
+        `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+        `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
+        `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
+        `body=${defaultTestOverrides.body}`,
+        `bodyType=${defaultTestOverrides.bodyType}`,
+        `cookies=${defaultTestOverrides.cookies}`,
         `cookies.append=true`,
-        `defaultStepTimeout=${cliOverrideParameter.defaultStepTimeout}`,
-        `deviceIds=${cliOverrideParameter.deviceIds}`,
-        `executionRule=${cliOverrideParameter.executionRule}`,
-        `followRedirects=${cliOverrideParameter.followRedirects}`,
-        `headers.Content-Type=${cliOverrideParameter.headers ? cliOverrideParameter.headers['Content-Type'] : ''}`,
-        `headers.Authorization=${cliOverrideParameter.headers?.Authorization}`,
-        `locations=${cliOverrideParameter.locations}`,
+        `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+        `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
+        `executionRule=${defaultTestOverrides.executionRule}`,
+        `followRedirects=${defaultTestOverrides.followRedirects}`,
+        `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+        `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
+        `locations=${defaultTestOverrides.locations?.join(';')}`,
         // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        `pollingTimeout=${cliOverrideParameter.pollingTimeout}`,
-        `retry.count=${cliOverrideParameter.retry?.count}`,
-        `retry.interval=${cliOverrideParameter.retry?.interval}`,
-        `startUrl=${cliOverrideParameter.startUrl}`,
-        `startUrlSubstitutionRegex=${cliOverrideParameter.startUrlSubstitutionRegex}`,
-        `testTimeout=${cliOverrideParameter.testTimeout}`,
-        'resourceUrlSubstitutionRegexes=regex1',
-        'resourceUrlSubstitutionRegexes=regex42',
-        `variables.var1=${cliOverrideParameter.variables?.var1}`,
-        `variables.var2=${cliOverrideParameter.variables?.var2}`,
+        `pollingTimeout=${defaultTestOverrides.pollingTimeout}`,
+        `retry.count=${defaultTestOverrides.retry?.count}`,
+        `retry.interval=${defaultTestOverrides.retry?.interval}`,
+        `startUrl=${defaultTestOverrides.startUrl}`,
+        `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+        `testTimeout=${defaultTestOverrides.testTimeout}`,
+        `resourceUrlSubstitutionRegexes=${defaultTestOverrides.resourceUrlSubstitutionRegexes?.join(';')}`,
+        `variables.var1=${defaultTestOverrides.variables?.var1}`,
+        `variables.var2=${defaultTestOverrides.variables?.var2}`,
       ]
 
       await command['resolveConfig']()
@@ -352,16 +395,19 @@ describe('run-test', () => {
             append: true,
           },
           defaultStepTimeout: 42,
-          deviceIds: ['chrome.laptop_large'],
+          deviceIds: ['chrome.laptop_large', 'chrome.laptop_small', 'firefox.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
           followRedirects: true,
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
-          locations: ['us-east-1'],
+          locations: ['us-east-1', 'us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
           pollingTimeout: 2, // overridden by CLI
-          resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
+          resourceUrlSubstitutionRegexes: [
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
           retry: {
             count: 5,
             interval: 42,
@@ -371,16 +417,17 @@ describe('run-test', () => {
           testTimeout: 42,
           variables: {var1: 'value1', var2: 'value2'},
         },
-        publicIds: ['ran-dom-id'],
+        publicIds: ['ran-dom-id2'],
         // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
         pollingTimeout: 2, // also set for backwards compatibility
+        selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
       })
 
       // TODO SYNTH-12989: Merge those 2 test cases when `pollingTimeout` is removed
-      command['batchTimeout'] = cliOverrides.batchTimeout // when both are used, `batchTimeout` takes precedence
+      command['batchTimeout'] = overrideCLI.batchTimeout // when both are used, `batchTimeout` takes precedence
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
@@ -407,16 +454,19 @@ describe('run-test', () => {
             append: true,
           },
           defaultStepTimeout: 42,
-          deviceIds: ['chrome.laptop_large'],
+          deviceIds: ['chrome.laptop_large', 'chrome.laptop_small', 'firefox.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
           followRedirects: true,
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
-          locations: ['us-east-1'],
+          locations: ['us-east-1', 'us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
           pollingTimeout: 1, // overridden by CLI
-          resourceUrlSubstitutionRegexes: ['regex1', 'regex42'],
+          resourceUrlSubstitutionRegexes: [
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
           retry: {
             count: 5,
             interval: 42,
@@ -429,11 +479,26 @@ describe('run-test', () => {
             var2: 'value2',
           },
         },
-        publicIds: ['ran-dom-id'],
+        publicIds: ['ran-dom-id2'],
         pollingTimeout: 1, // still set to the correct value for backwards compatibility
+        selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
+      })
+    })
+
+    // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+    test("CLI parameter '--deviceIds' still works (deprecated)", async () => {
+      const command = createCommand(RunTestsCommand)
+      command['deviceIds'] = ['dev1', 'dev2']
+      await command['resolveConfig']()
+      expect(command['config']).toEqual({
+        ...DEFAULT_COMMAND_CONFIG,
+        defaultTestOverrides: {
+          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+          deviceIds: ['dev1', 'dev2'],
+        },
       })
     })
 
@@ -464,65 +529,481 @@ describe('run-test', () => {
 
     // TODO: Since we have "n choose k" = "4 choose 2" = ⁴C₂ = 6 possible combinations of "A < B",
     //       we should refactor the following 2 tests into 6 smaller tests, each testing a single override behavior.
-
-    test('override from config file < ENV < CLI', async () => {
-      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
-        ...baseConfig,
-        apiKey: 'api_key_config_file',
-        appKey: 'app_key_config_file',
-        datadogSite: 'us5.datadoghq.com',
+    describe('override precedence - config file < ENV < CLI < test file', () => {
+      const configFile = {
+        apiKey: 'config_file_api_key',
+        appKey: 'config_file_app_key',
+        datadogSite: 'us3.datadoghq.com',
+        failOnCriticalErrors: false,
+        failOnMissingTests: false,
+        failOnTimeout: false,
+        files: ['from_config_file.json'],
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {
-          pollingTimeout: 1,
-          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
+        global: {},
+        defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          basicAuth: {
+            username: 'config-file-username',
+            password: 'config-file-password',
+          },
+          body: '{"fakeContentFromConfigFile":true}',
+          bodyType: 'application/json-from-config-file',
+          cookies: {
+            value: 'cookie1-from-config-file=cookie1-value;cookie2-from-config-file=cookie2-value;',
+            append: true,
+          },
+          defaultStepTimeout: 10000,
+          deviceIds: ['chrome.laptop_large_from_config_file', 'chrome.laptop_small_from_config_file'],
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
+          headers: {'Config-File': 'This is a mess'},
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000-config-file',
+          mobileApplicationVersionFilePath: './path/to/application-from-config-file.apk',
+          pollingTimeout: 2,
+          retry: {count: 2, interval: 300},
+          resourceUrlSubstitutionRegexes: ['regex1-from-config-file', 'regex2-from-config-file'],
+          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
+          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
+          testTimeout: 200000,
+          variables: {titleVariable: 'config file value'},
         },
-      }))
-
-      process.env = {
-        DATADOG_API_KEY: 'api_key_env',
-        DATADOG_APP_KEY: 'app_key_env',
+        jUnitReport: 'junit-report-from-config-file.xml',
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        locations: ['location_1_from_config_file', 'location_2_from_config_file'],
+        pollingTimeout: DEFAULT_POLLING_TIMEOUT,
+        proxy: {protocol: 'http'},
+        publicIds: ['public-id-from-config-file'],
+        selectiveRerun: false,
+        subdomain: 'subdomain_from_config_file',
+        testSearchQuery: 'a-search-query-from-config-file',
+        tunnel: false,
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        variableStrings: ['configVar1=configValue1', 'configVar2=configValue2'],
       }
 
-      const command = createCommand(RunTestsCommand)
-      command['apiKey'] = 'api_key_cli'
-      command['mobileApplicationVersionFilePath'] = './path/to/application_cli.apk'
-      command['pollingTimeout'] = 2
+      test('config file < ENV', async () => {
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+          ...baseConfig,
+          ...configFile,
+        }))
 
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        apiKey: 'api_key_cli',
-        appKey: 'app_key_env',
-        batchTimeout: 2,
-        datadogSite: 'us5.datadoghq.com',
-        global: {
-          pollingTimeout: 1, // not overridden (backwards compatibility not supported)
-          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
-        },
-        defaultTestOverrides: {
-          pollingTimeout: 2,
-          mobileApplicationVersionFilePath: './path/to/application_cli.apk',
-        },
-        pollingTimeout: 2,
+        const overrideEnv = {
+          DATADOG_API_KEY: 'env_api_key',
+          DATADOG_APP_KEY: 'env_app_key',
+          DATADOG_SITE: 'us5.datadoghq.com',
+          DATADOG_SUBDOMAIN: 'subdomain_from_env',
+          DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
+          DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
+          DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
+          DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
+          DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
+          DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
+          DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
+          DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
+          DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
+          DATADOG_SYNTHETICS_TUNNEL: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'NON_BLOCKING',
+          DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'false',
+          DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
+            "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
+          DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
+          DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1-from-env;regex2-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex',
+          DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'var1': 'value1', 'var2': 'value2'}",
+        }
+
+        const expectedEnvOverrideResult = {
+          apiKey: overrideEnv.DATADOG_API_KEY,
+          appKey: overrideEnv.DATADOG_APP_KEY,
+          batchTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+          configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
+          datadogSite: overrideEnv.DATADOG_SITE,
+          defaultTestOverrides: {
+            allowInsecureCertificates: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+            basicAuth: {
+              password: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD,
+              username: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
+            },
+            body: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY,
+            bodyType: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+            cookies: {
+              value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+              append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+            },
+            defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
+            deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
+            executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
+            followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+            headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+            // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+            locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
+            mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+            pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+            resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
+              ';'
+            ),
+            retry: {
+              count: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+              interval: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+            },
+            startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
+            startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
+            testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
+            variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+
+            // Added to make the test work, should be changed in the future when cleaning up
+            mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
+          },
+          failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+          failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+          failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
+          files: overrideEnv.DATADOG_SYNTHETICS_FILES?.split(';'),
+          jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
+          publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
+          selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
+          subdomain: overrideEnv.DATADOG_SUBDOMAIN,
+          testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
+          tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
+
+          // All the following variables should be removed in the future, as they are either deprecated or misaligned (no ENV variable for now)
+          // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+          global: {},
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          locations: configFile.locations,
+          pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+          proxy: configFile.proxy,
+          variableStrings: configFile.variableStrings,
+        }
+
+        process.env = overrideEnv
+
+        const command = createCommand(RunTestsCommand)
+        await command['resolveConfig']()
+        expect(command['config']).toEqual(expectedEnvOverrideResult)
       })
 
-      command['batchTimeout'] = 3
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        apiKey: 'api_key_cli',
-        appKey: 'app_key_env',
-        batchTimeout: 3,
-        datadogSite: 'us5.datadoghq.com',
-        global: {
-          pollingTimeout: 1, // not overridden (backwards compatibility not supported)
-          mobileApplicationVersionFilePath: './path/to/application_config_file.apk',
-        },
-        defaultTestOverrides: {
-          pollingTimeout: 3,
-          mobileApplicationVersionFilePath: './path/to/application_cli.apk',
-        },
-        pollingTimeout: 3,
+      test('config file < CLI', async () => {
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => ({
+          ...baseConfig,
+          ...configFile,
+        }))
+
+        const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+          apiKey: 'cli_api_key',
+          appKey: 'cli_app_key',
+          batchTimeout: 1,
+          configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file-from-cli.json',
+          datadogSite: 'datadoghq.eu',
+          failOnCriticalErrors: true,
+          failOnMissingTests: true,
+          failOnTimeout: true,
+          files: ['new-file-from-cli'],
+          jUnitReport: 'junit-report-from-cli.xml',
+          mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
+          pollingTimeout: 10,
+          publicIds: ['public-id-from-cli'],
+          selectiveRerun: true,
+          subdomain: 'subdomain-from-cli',
+          testSearchQuery: 'a-search-query-from-cli',
+          tunnel: true,
+          // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+          variableStrings: ['cliVar3=value3', 'cliVar4=value4'],
+        }
+        const defaultTestOverrides: UserConfigOverride = {
+          allowInsecureCertificates: false,
+          basicAuth: {
+            password: 'password-cli',
+            username: 'username-cli',
+          },
+          body: '{"fakeContentFromCLI":true}',
+          bodyType: 'application/json-from-cli',
+          cookies: {
+            value: 'cli1=value1;cli2=value2;',
+            append: false,
+          },
+          defaultStepTimeout: 11,
+          deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
+          executionRule: ExecutionRule.NON_BLOCKING,
+          followRedirects: false,
+          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
+          locations: ['cli-loc-1', 'cli-loc-2'],
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000-cli',
+          pollingTimeout: 12,
+          resourceUrlSubstitutionRegexes: [
+            'cli-regex',
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
+          retry: {
+            count: 13,
+            interval: 14,
+          },
+          startUrl: 'startUrl-from-cli',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex-from-cli',
+          testTimeout: 15,
+          variables: {cliVar1: 'value1', cliVar2: 'value2'},
+        }
+
+        type Cookies = {value: string; append: boolean}
+
+        const command = createCommand(RunTestsCommand)
+        command['apiKey'] = overrideCLI.apiKey
+        command['appKey'] = overrideCLI.appKey
+        command['batchTimeout'] = overrideCLI.batchTimeout
+        command['configPath'] = overrideCLI.configPath
+        command['datadogSite'] = overrideCLI.datadogSite
+        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        command['deviceIds'] = ['my-old-device']
+        command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+        command['failOnMissingTests'] = overrideCLI.failOnMissingTests
+        command['failOnTimeout'] = overrideCLI.failOnTimeout
+        command['files'] = overrideCLI.files
+        command['jUnitReport'] = overrideCLI.jUnitReport
+        command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
+        command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
+        command['pollingTimeout'] = overrideCLI.pollingTimeout
+        command['publicIds'] = overrideCLI.publicIds
+        command['selectiveRerun'] = overrideCLI.selectiveRerun
+        command['subdomain'] = overrideCLI.subdomain
+        command['tunnel'] = overrideCLI.tunnel
+        command['testSearchQuery'] = overrideCLI.testSearchQuery
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        command['variableStrings'] = overrideCLI.variableStrings
+        command['overrides'] = [
+          `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+          `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
+          `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
+          `body=${defaultTestOverrides.body}`,
+          `bodyType=${defaultTestOverrides.bodyType}`,
+          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+          `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
+          `executionRule=${defaultTestOverrides.executionRule}`,
+          `followRedirects=${defaultTestOverrides.followRedirects}`,
+          `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+          `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
+          `locations=${defaultTestOverrides.locations?.join(';')}`,
+          `retry.count=${defaultTestOverrides.retry?.count}`,
+          `retry.interval=${defaultTestOverrides.retry?.interval}`,
+          `startUrl=${defaultTestOverrides.startUrl}`,
+          `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+          `testTimeout=${defaultTestOverrides.testTimeout}`,
+          `resourceUrlSubstitutionRegexes=${defaultTestOverrides.resourceUrlSubstitutionRegexes?.join(';')}`,
+          `variables.cliVar1=${defaultTestOverrides.variables?.cliVar1}`,
+          `variables.cliVar2=${defaultTestOverrides.variables?.cliVar2}`,
+        ]
+
+        await command['resolveConfig']()
+
+        // TODO SYNTH-12989: Clean up deprecated `global`, `location`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy`, etc.
+        // This fixes are only here for the test to run, and to maintain backward compatibility.
+        const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
+        const expectedCLIOverrideResult = {
+          ...filteredOverrideCLI,
+          locations: configFile.locations,
+          global: {},
+          defaultTestOverrides: {
+            ...defaultTestOverrides,
+            mobileApplicationVersionFilePath,
+            pollingTimeout: filteredOverrideCLI.batchTimeout,
+          },
+          pollingTimeout: filteredOverrideCLI.batchTimeout,
+          proxy: configFile.proxy,
+          variableStrings: configFile.variableStrings,
+        }
+
+        expect(command['config']).toEqual(expectedCLIOverrideResult)
+      })
+
+      test('ENV < CLI', async () => {
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => baseConfig)
+
+        const overrideEnv = {
+          DATADOG_API_KEY: 'env_api_key',
+          DATADOG_APP_KEY: 'env_app_key',
+          DATADOG_SITE: 'us5.datadoghq.com',
+          DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
+          DATADOG_SUBDOMAIN: 'subdomain_from_env',
+          DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
+          DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
+          DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
+          DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
+          DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
+          DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
+          DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
+          DATADOG_SYNTHETICS_TUNNEL: 'false',
+          DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
+          DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
+            "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
+          DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: 'env-00000000-0000-0000-0000-000000000000',
+          DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'env-regex1;env-regex2',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'envVar1': 'value1', 'envVar2': 'value2'}",
+        }
+
+        const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+          apiKey: 'cli_api_key',
+          appKey: 'cli_app_key',
+          batchTimeout: 1,
+          configPath: 'path/to/config_from_cli.json',
+          datadogSite: 'datadoghq.eu',
+          failOnCriticalErrors: false,
+          failOnMissingTests: false,
+          failOnTimeout: false,
+          files: ['file-from-cli-1;file-from-cli-2'],
+          jUnitReport: 'junit-report-from-cli.xml',
+          mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
+          pollingTimeout: 10,
+          publicIds: ['public-id-from-cli-1', 'public-id-from-cli-2'],
+          selectiveRerun: false,
+          subdomain: 'subdomain-from-cli',
+          testSearchQuery: 'a-search-query-from-cli',
+          tunnel: true,
+          // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+          variableStrings: ['cliVar3=value3', 'cliVar4=value4'],
+        }
+        const defaultTestOverrides: UserConfigOverride = {
+          allowInsecureCertificates: false,
+          basicAuth: {
+            password: 'password-cli',
+            username: 'username-cli',
+          },
+          body: 'a body from cli',
+          bodyType: 'bodyType from cli',
+          cookies: {
+            value: 'cli1=value1;cli2=value2;',
+            append: false,
+          },
+          defaultStepTimeout: 11,
+          deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
+          executionRule: ExecutionRule.NON_BLOCKING,
+          followRedirects: false,
+          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
+          locations: ['cli-loc-1', 'cli-loc-2'],
+          mobileApplicationVersion: 'cli-00000000-0000-0000-0000-000000000000',
+          pollingTimeout: 12,
+          resourceUrlSubstitutionRegexes: [
+            'from-cli-regex1',
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
+          retry: {
+            count: 13,
+            interval: 14,
+          },
+          startUrl: 'startUrl-from-cli',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex-from-cli',
+          testTimeout: 15,
+          variables: {cliVar1: 'value1', cliVar2: 'value2'},
+        }
+
+        process.env = overrideEnv
+
+        type Cookies = {value: string; append: boolean}
+
+        const command = createCommand(RunTestsCommand)
+        command['apiKey'] = overrideCLI.apiKey
+        command['appKey'] = overrideCLI.appKey
+        command['batchTimeout'] = overrideCLI.batchTimeout
+        command['configPath'] = overrideCLI.configPath
+        command['datadogSite'] = overrideCLI.datadogSite
+        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        command['deviceIds'] = ['my-old-device']
+        command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
+        command['failOnMissingTests'] = overrideCLI.failOnMissingTests
+        command['failOnTimeout'] = overrideCLI.failOnTimeout
+        command['files'] = overrideCLI.files
+        command['jUnitReport'] = overrideCLI.jUnitReport
+        command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
+        command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
+        command['pollingTimeout'] = overrideCLI.pollingTimeout
+        command['publicIds'] = overrideCLI.publicIds
+        command['selectiveRerun'] = overrideCLI.selectiveRerun
+        command['subdomain'] = overrideCLI.subdomain
+        command['tunnel'] = overrideCLI.tunnel
+        command['testSearchQuery'] = overrideCLI.testSearchQuery
+        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+        command['variableStrings'] = overrideCLI.variableStrings
+        command['overrides'] = [
+          `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+          `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
+          `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
+          `body=${defaultTestOverrides.body}`,
+          `bodyType=${defaultTestOverrides.bodyType}`,
+          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+          `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
+          `executionRule=${defaultTestOverrides.executionRule}`,
+          `followRedirects=${defaultTestOverrides.followRedirects}`,
+          `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+          `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
+          `locations=${defaultTestOverrides.locations?.join(';')}`,
+          `retry.count=${defaultTestOverrides.retry?.count}`,
+          `retry.interval=${defaultTestOverrides.retry?.interval}`,
+          `startUrl=${defaultTestOverrides.startUrl}`,
+          `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+          `testTimeout=${defaultTestOverrides.testTimeout}`,
+          `resourceUrlSubstitutionRegexes=${defaultTestOverrides.resourceUrlSubstitutionRegexes?.join(';')}`,
+          `variables.cliVar1=${defaultTestOverrides.variables?.cliVar1}`,
+          `variables.cliVar2=${defaultTestOverrides.variables?.cliVar2}`,
+        ]
+
+        await command['resolveConfig']()
+
+        // TODO SYNTH-12989: Clean up deprecated `global`, `location`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy` etc.
+        // This fixes are only here for the test to run, and to maintain backward compatibility.
+        const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
+        const expectedCLIOverrideResult = {
+          ...filteredOverrideCLI,
+          locations: [],
+          global: {},
+          defaultTestOverrides: {
+            ...defaultTestOverrides,
+            mobileApplicationVersionFilePath,
+            pollingTimeout: filteredOverrideCLI.batchTimeout,
+          },
+          pollingTimeout: filteredOverrideCLI.batchTimeout,
+          proxy: {protocol: 'http'},
+          variableStrings: [],
+        }
+        expect(command['config']).toEqual(expectedCLIOverrideResult)
       })
     })
 

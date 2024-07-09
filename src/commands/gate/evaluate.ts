@@ -1,3 +1,4 @@
+import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from './interfaces'
 import type {AxiosResponse} from 'axios'
 
 import chalk from 'chalk'
@@ -7,13 +8,13 @@ import {v4 as uuidv4} from 'uuid'
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
+import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {GIT_HEAD_SHA, GIT_BASE_REF, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
-import {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload} from './interfaces'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -77,6 +78,8 @@ export class GateEvaluateCommand extends Command {
   private userScope = Option.Array('--scope')
   private tags = Option.Array('--tags')
 
+  private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
+
   private config = {
     apiKey: process.env.DD_API_KEY,
     appKey: process.env.DD_APP_KEY,
@@ -84,8 +87,24 @@ export class GateEvaluateCommand extends Command {
   }
 
   public async execute() {
+    const options: PayloadOptions = {
+      dryRun: this.dryRun,
+      noWait: this.noWait,
+    }
+
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
+    const headRef = spanTags[GIT_BASE_REF]
+
+    if (headRef) {
+      const headSha = spanTags[GIT_HEAD_SHA]
+      if (headSha) {
+        options.pull_request_sha = headSha
+      } else {
+        this.logger.warn('Detected a pull request run but HEAD commit SHA could not be extracted.')
+      }
+    }
+
     const userScope = this.userScope ? parseScope(this.userScope) : {}
 
     const startTimeMs = new Date().getTime()
@@ -94,10 +113,7 @@ export class GateEvaluateCommand extends Command {
       spanTags,
       userScope,
       startTimeMs,
-      options: {
-        dryRun: this.dryRun,
-        noWait: this.noWait,
-      },
+      options,
     }
 
     return this.evaluateRules(api, payload)
