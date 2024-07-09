@@ -199,10 +199,9 @@ In addition to the global configuration file and CLI arguments, you can configur
 | latest               | `DATADOG_SYNTHETICS_LATEST`                  |
 | mobileApplicationId  | `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID`   |
 
-
 ### Command line options
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL. 
+If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
 
 For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
 
@@ -210,11 +209,13 @@ For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the
 export DATADOG_SUBDOMAIN="myorg"
 ```
 
-You can use `DATADOG_SYNTHETICS_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
+You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
 
 ```bash
-export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
+export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 ```
+
+**Note** The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
 
 ### API
 
