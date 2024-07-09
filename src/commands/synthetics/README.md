@@ -35,22 +35,27 @@ yarn add --dev @datadog/datadog-ci
 
 To setup the client, your Datadog API and application keys need to be configured. These keys can be defined in three different ways:
 
-1. Defined as environment variables:
+1. Defined in a [global JSON configuration file](#global-configuration-file-options):
 
-   ```bash
-   export DATADOG_API_KEY="<API_KEY>"
-   export DATADOG_APP_KEY="<APPLICATION_KEY>"
-   ```
+    ```json
+    {
+      "apiKey": "<API_KEY>",
+      "appKey": "<APPLICATION_KEY>",
+    }
+    ```
 
-2. Passed to the CLI when running your tests:
+2. Defined as environment variables:
 
-   ```bash
-   yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
-   ```
+    ```bash
+    export DATADOG_API_KEY="<API_KEY>"
+    export DATADOG_APP_KEY="<APPLICATION_KEY>"
+    ```
 
-3. Or defined in a [global JSON configuration file](#global-configuration-file-options):
+3. Passed to the CLI when running your tests:
 
-   Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog uses the default filename of `datadog-ci.json`. 
+    ```bash
+    yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
+    ```
 
 ### Global configuration file options
 
