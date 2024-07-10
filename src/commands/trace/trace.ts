@@ -1,4 +1,4 @@
-import { exec, spawn } from "child_process";
+import {exec, spawn} from 'child_process'
 import crypto from 'crypto'
 import os from 'os'
 
@@ -7,7 +7,6 @@ import {Command, Option} from 'clipanion'
 
 import {getCIProvider, getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
@@ -164,19 +163,7 @@ export class TraceCommand extends Command {
   }
 
   private async reportCustomSpan(payload: Payload) {
-    const api = this.getApiHelper()
-    try {
-      await retryRequest(() => api.reportCustomSpan(payload), {
-        onRetry: (e, attempt) => {
-          this.context.stderr.write(
-            chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${e.message}\n`)
-          )
-        },
-        retries: 5,
-      })
-    } catch (error) {
-      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
-    }
+    console.log(payload)
   }
 
   private signalToNumber(signal: NodeJS.Signals | null): number | undefined {
