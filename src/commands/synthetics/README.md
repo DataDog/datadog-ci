@@ -540,7 +540,7 @@ Additional helpful documentation, links, and articles:
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
-[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
+[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/example-global-config.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
 
 <!--
