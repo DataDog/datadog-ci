@@ -1,4 +1,4 @@
-import {spawn, exec} from 'child_process'
+import {spawn} from 'child_process'
 import crypto from 'crypto'
 import os from 'os'
 
@@ -60,19 +60,6 @@ export class TraceCommand extends Command {
 
       return 1
     }
-    exec(`echo \${{matrix.os}}`, (err1, stdout1, stderr1) => {
-      if (err1) {
-        console.error(`Error: ${err1.message}`)
-
-        return
-      }
-      if (stderr1) {
-        console.error(`Error: ${stderr1}`)
-
-        return
-      }
-      console.log(`Output: ${stdout1}`)
-    })
 
     const [command, ...args] = this.command
     const id = crypto.randomBytes(5).toString('hex')
