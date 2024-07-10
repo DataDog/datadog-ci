@@ -71,7 +71,6 @@ See below for the list of advanced options in the global configuration file. For
 -->
 
 #### `apiKey`
-globalConfig: `apiKey`, env: `DATADOG_API_KEY`, cli `--apiKey`
 
 The API key used to query the Datadog API.
 
@@ -144,7 +143,7 @@ List of IDs for the Synthetic tests you want to trigger.
 
 **Note**: The `pollingTimeout` option and `--pollingTimeout` CLI parameter are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
 
-#### Use a proxy
+### Use a proxy
 
 It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
 
@@ -160,10 +159,6 @@ For example:
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "batchTimeout": 180000,
   "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1.
-  "failOnCriticalErrors": false,
-  "failOnMissingTests": false,
-  "failOnTimeout": true,
-  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
@@ -182,6 +177,10 @@ For example:
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "variables": {"titleVariable": "new value"},
   },
+  "failOnCriticalErrors": false,
+  "failOnMissingTests": false,
+  "failOnTimeout": true,
+  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "proxy": {
     "auth": {
       "username": "login",
@@ -252,10 +251,6 @@ For example:
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "batchTimeout": 180000,
   "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
-  "failOnCriticalErrors": true,
-  "failOnMissingTests": true,
-  "failOnTimeout": true,
-  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
@@ -276,6 +271,10 @@ For example:
     "testTimeout": 300,
     "variables": {"NEW_VARIABLE": "NEW VARIABLE"}
   },
+  "failOnCriticalErrors": true,
+  "failOnMissingTests": true,
+  "failOnTimeout": true,
+  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "proxy": {
     "auth": {
       "username": "login",
