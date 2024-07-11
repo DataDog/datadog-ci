@@ -69,22 +69,6 @@ In addition to the global configuration file and CLI arguments, you can configur
 
 ### Command line options
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
-
-For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
-
-```bash
-export DATADOG_SUBDOMAIN="myorg"
-```
-
-You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
-
-```bash
-export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
-```
-
-**Note** The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
-
 ### API
 
 By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a [test configuration file](#test-files).
@@ -135,6 +119,7 @@ For example:
   "tunnel": true
 }
 ```
+
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 
 ### Use a proxy
@@ -379,6 +364,27 @@ Use [Local and Staging Environments](#use-local-and-staging-environments) to exe
 - `--failOnTimeout` (or `--no-failOnTimeout`) makes the CI fail (or pass) if one of the results exceeds its test timeout.
 - `--failOnCriticalErrors` makes the CI fail if tests were not triggered or if results could not be fetched.
 - `--failOnMissingTests` makes the CI fail if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a test file) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).
+
+### Configure a custom subdomain
+
+If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
+
+For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
+
+```bash
+export DATADOG_SUBDOMAIN="myorg"
+```
+
+### Configure custom locations
+
+You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
+
+```bash
+export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
+```
+
+**Note** The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
+
 
 ### Test files
 
