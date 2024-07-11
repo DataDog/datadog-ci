@@ -219,6 +219,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_REPOSITORY,
       GITHUB_SERVER_URL,
       GITHUB_RUN_ATTEMPT,
+      DD_GITHUB_JOB_NAME,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
@@ -248,6 +249,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
+        DD_GITHUB_JOB_NAME,
       }),
     }
   }
