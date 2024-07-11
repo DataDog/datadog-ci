@@ -18,7 +18,11 @@ jobs:
       - name: At least one label required
         uses: mheap/github-action-required-labels@v5
         with:
-          mode: exactly
+          # If a PR has multiple labels, its category in the release notes will be the first one
+          # in the `categories` list in `.github/release.yml` to match any of the PR's labels.
+          #
+          # Example: `synthetics, documentation` would be categorized as "Documentation".
+          mode: minimum
           count: 1
           labels: |
             dependencies
