@@ -149,7 +149,7 @@ export const executeTests = async (
   }
 
   if (trigger.selective_rerun_rate_limited) {
-    reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.')
+    reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
   }
 
   try {

@@ -580,7 +580,7 @@ describe('run-test', () => {
       })
 
       expect(mockReporter.error).toHaveBeenCalledWith(
-        'The selective re-run feature was rate-limited. All tests will be re-run.'
+        'The selective re-run feature was rate-limited. All tests will be re-run.\n\n'
       )
     })
   })
