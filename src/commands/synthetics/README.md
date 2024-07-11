@@ -245,27 +245,7 @@ For example:
 
 ### Configuring with Environment Variables
 
-In addition to the global configuration file and CLI arguments, you can configure the following properties using environment variables:
-
-| Property             | Environment Variable                         |
-| -------------------- | -------------------------------------------- |
-| apiKey               | `DATADOG_API_KEY`                            |
-| appKey               | `DATADOG_APP_KEY`                            |
-| configPath           | `DATADOG_SYNTHETICS_CONFIG_PATH`             |
-| batchTimeout         | `DATADOG_SYNTHETICS_BATCH_TIMEOUT`           |
-| datadogSite          | `DATADOG_SITE`                               |
-| failOnCriticalErrors | `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS` |
-| failOnMissingTests   | `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS`   |
-| failOnTimeout        | `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT`         |
-| files                | `DATADOG_SYNTHETICS_FILES`                   |
-| jUnitReport          | `DATADOG_SYNTHETICS_JUNIT_REPORT`            |
-| publicIds            | `DATADOG_SYNTHETICS_PUBLIC_IDS`              |
-| selectiveRerun       | `DATADOG_SYNTHETICS_SELECTIVE_RERUN`         |
-| subdomain            | `DATADOG_SUBDOMAIN`                          |
-| testSearchQuery      | `DATADOG_SYNTHETICS_TEST_SEARCH_QUERY`       |
-| tunnel               | `DATADOG_SYNTHETICS_TUNNEL`                  |
-| latest               | `DATADOG_SYNTHETICS_LATEST`                  |
-| mobileApplicationId  | `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID`   |
+In addition to the global configuration file and CLI arguments, you can configure all properties using environment variables.
 
 ### Command line options
 
