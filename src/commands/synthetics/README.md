@@ -63,34 +63,6 @@ Using a global configuration file is one of the ways to configure datadog-ci. To
 
 See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
 
-### Use a proxy
-
-It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
-
-As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
-
-**Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
-
-For example:
-
-```jsonc
-{
-  "apiKey": "<DATADOG_API_KEY>",
-  "appKey": "<DATADOG_APPLICATION_KEY>",
-  "proxy": {
-    "auth": {
-      "username": "login",
-      "password": "pwd"
-    },
-    "host": "127.0.0.1",
-    "port": 3128,
-    "protocol": "http"
-  }
-}
-```
-
-**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
-
 ### Configuring with Environment Variables
 
 In addition to the global configuration file and CLI arguments, you can configure all properties using environment variables.
@@ -164,6 +136,35 @@ For example:
 }
 ```
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+
+### Use a proxy
+
+It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
+
+As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
+
+**Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
+
+For example:
+
+```jsonc
+{
+  "apiKey": "<DATADOG_API_KEY>",
+  "appKey": "<DATADOG_APPLICATION_KEY>",
+  "proxy": {
+    "auth": {
+      "username": "login",
+      "password": "pwd"
+    },
+    "host": "127.0.0.1",
+    "port": 3128,
+    "protocol": "http"
+  }
+}
+```
+
+**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+
 
 ## Run tests
 
