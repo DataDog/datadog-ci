@@ -94,32 +94,85 @@ The duration (integer in milliseconds) after which `datadog-ci` stops waiting fo
 * ENV variable: `DATADOG_SYNTHETICS_BATCH_TIMEOUT=180000`
 * CLI param: `--batchTimeout 180000`
 
-`datadogSite`
-: The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+#### `configPath`
 
-`defaultTestOverrides`
-: Overrides for Synthetic tests applied to all tests.
+The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
 
-`failOnCriticalErrors`
-: A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
+* Global Config: N/A
+* ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
+* CLI param: `--config global-config.json`
 
-`failOnMissingTests`
-: A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
+#### `datadogSite`
 
-`failOnTimeout`
-: A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
+The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
-`files`
-: Glob patterns to detect Synthetic test [configuration files](#test-files).
+* Global Config: `"datadogSite": "datadoghq.com"`
+* ENV variable: `DATADOG_SITE=datadoghq.com`
+* CLI param: `--datadogSite datadoghq.com`
 
-`jUnitReport`
-: The filename for a JUnit report if you want to generate one.
+#### `defaultTestOverrides`
 
-`mobileApplicationVersionFilePath`
-: Override the application version for all Synthetic mobile application tests.
+Overrides for Synthetic tests applied to all tests.
 
-`proxy`
-: The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
+* Global Config: See `testOverrides` part of [Test files](#test-files) for an example.
+* ENV variable: N/A
+* CLI param: N/A
+
+#### `failOnCriticalErrors`
+
+A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
+
+* Global Config: `"failOnCriticalErrors": true`
+* ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS=true`
+* CLI param: `--failOnCriticalErrors`
+
+#### `failOnMissingTests`
+
+A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
+
+* Global Config: `"failOnMissingTests": true`
+* ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS=true`
+* CLI param: `--failOnMissingTests`
+
+#### `failOnTimeout`
+
+A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
+
+* Global Config: `"failOnTimeout": true`
+* ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT=true`
+* CLI param: `--failOnTimeout`
+
+#### `files`
+
+Glob patterns to detect Synthetic test [configuration files](#test-files).
+
+* Global Config: `"files": ["{,!(node_modules)/**/}*.synthetics.json"]`
+* ENV variable: `DATADOG_SYNTHETICS_FILES"{,!(node_modules)/**/}*.synthetics.json"`
+* CLI param: `-f "{,!(node_modules)/**/}*.synthetics.json"` / `--files "{,!(node_modules)/**/}*.synthetics.json"`
+
+#### `jUnitReport`
+
+The filename for a JUnit report if you want to generate one.
+
+* Global Config: `"jUnitReport": "e2e-test-junit"`
+* ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit"`
+* CLI param:`-j "e2e-test-junit"` / `--jUnitReport "e2e-test-junit"`
+
+#### `mobileApplicationVersionFilePath`
+
+Override the application version for all Synthetic mobile application tests.
+
+* Global Config: `"mobileApplicationVersionFilePath": "path/to/application.apk"`
+* ENV variable: Not Available
+* CLI param: `--mobileApp "path/to/application.apk"` / `--mobileApplicationVersionFilePath "path/to/application.apk"`
+
+#### `proxy`
+
+The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
+
+* Global Config: See [Use a proxy](#use-a-proxy) for an example.
+* ENV variable: N/A
+* CLI param: N/A
 
 #### `publicIds`
 
@@ -129,17 +182,37 @@ List of IDs for the Synthetic tests you want to trigger.
 * ENV variable: `DATADOG_SYNTHETICS_PUBLIC_IDS="abc-def-ghi;123-456-789"`
 * CLI param: `-p "abc-def-ghi" --public-id "123-456-789"`
 
-`selectiveRerun`
-: A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
+#### `selectiveRerun`
 
-`subdomain`
-: The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
+A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
 
-`testSearchQuery`
-: Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
+* Global Config: `"selectiveRerun": true,`
+* ENV variable: `DATADOG_SYNTHETICS_SELECTIVE_RERUN=true`
+* CLI param: `--selectiveRerun`
 
-`tunnel`
-: Use [Local and Staging Environments](#use-local-and-staging-environments) to execute your test batch.
+#### `subdomain`
+
+The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
+
+* Global Config: `"subdomain": "myorg"`
+* ENV variable: `DATADOG_SUBDOMAIN="myorg"`
+* CLI param: `--subdomain "myorg"`
+
+#### `testSearchQuery`
+
+Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
+
+* Global Config: `"testSearchQuery": "tag:e2e-tests"`
+* ENV variable: `DATADOG_SYNTHETICS_TEST_SEARCH_QUERY="tag:e2e-tests"`
+* CLI param: `-s "tag:e2e-tests"` / `--search "tag:e2e-tests"`
+
+#### `tunnel`
+
+Use [Local and Staging Environments](#use-local-and-staging-environments) to execute your test batch.
+
+* Global Config: `"tunnel": true`
+* ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
+* CLI param: `-t` / `--tunnel`
 
 **Note**: The `pollingTimeout` option and `--pollingTimeout` CLI parameter are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
 
