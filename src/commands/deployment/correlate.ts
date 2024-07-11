@@ -8,8 +8,6 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import { TagCommand } from "../tag/tag";
-import { CONTAINS_DEPLOYMENT_TAG } from "./constants";
 
 /**
  * This command collects environment variables and git information to correlate commits from the
@@ -98,20 +96,6 @@ export class DeploymentCorrelateCommand extends Command {
       this.logger.error('Could not retrive repository URL, check out a repository or provide it with --config-repo')
 
       return 1
-    }
-
-    const tagPipelineCommand = new TagCommand()
-    tagPipelineCommand.setLevel('pipeline')
-    tagPipelineCommand.setTags([CONTAINS_DEPLOYMENT_TAG])
-    tagPipelineCommand.setSilent(false)
-    tagPipelineCommand.context = this.context
-    if (this.dryRun) {
-      tagPipelineCommand.setNoFail(true)
-    }
-
-    const tagCommandExitCode = await tagPipelineCommand.execute()
-    if (tagCommandExitCode !== 0) {
-      return tagCommandExitCode
     }
 
     await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], localCommitShas, ciEnv, this.config.apiKey)

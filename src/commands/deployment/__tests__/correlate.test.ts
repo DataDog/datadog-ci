@@ -24,9 +24,6 @@ describe('execute', () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
       CI_COMMIT_SHA: 'abcdef',
-      CI_PROJECT_URL: 'https://gitlab.com/DataDog/example',
-      CI_PIPELINE_ID: '1',
-      CI_JOB_ID: '1',
     }
     const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
     expect(code).toBe(1)
@@ -36,13 +33,19 @@ describe('execute', () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
       CI_REPOSITORY_URL: 'https://github.com/DataDog/example',
-      CI_PROJECT_URL: 'https://gitlab.com/DataDog/example',
-      CI_PIPELINE_ID: '1',
-      CI_JOB_ID: '1',
     }
     const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Could not extract the source git commit sha')
+  })
+  test('valid with minimal data', async () => {
+    const envVars = {
+      GITLAB_CI: 'placeholder',
+      CI_REPOSITORY_URL: 'https://github.com/DataDog/example',
+      CI_COMMIT_SHA: 'abcdef',
+    }
+    const {context: _, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
+    expect(code).toBe(0)
   })
   test('valid', async () => {
     const envVars = {
