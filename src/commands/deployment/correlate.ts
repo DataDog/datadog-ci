@@ -8,8 +8,10 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import { TagCommand } from "../tag/tag";
-import { CONTAINS_DEPLOYMENT_TAG } from "./constants";
+
+import {TagCommand} from '../tag/tag'
+
+import {CONTAINS_DEPLOYMENT_TAG} from './constants'
 
 /**
  * This command collects environment variables and git information to correlate commits from the
