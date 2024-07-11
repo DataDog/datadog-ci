@@ -224,36 +224,12 @@ As the [`proxy-agent` library][2] is used to configure the proxy, the supported 
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
-For example: 
+For example:
 
 ```jsonc
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "batchTimeout": 180000,
-  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1.
-  "defaultTestOverrides": {
-    "allowInsecureCertificates": true,
-    "basicAuth": {"username": "test", "password": "test"},
-    "body": "{\"fakeContent\":true}",
-    "bodyType": "application/json",
-    "cookies": "name1=value1;name2=value2;",
-    "deviceIds": ["laptop_large"],
-    "followRedirects": true,
-    "headers": {"<NEW_HEADER>": "<NEW_VALUE>"},
-    "locations": ["aws:us-west-1"],
-    "mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff",
-    "mobileApplicationVersionFilePath": "path/to/application.apk",
-    "retry": {"count": 2, "interval": 300},
-    "executionRule": "blocking",
-    "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
-    "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
-    "variables": {"titleVariable": "new value"},
-  },
-  "failOnCriticalErrors": false,
-  "failOnMissingTests": false,
-  "failOnTimeout": true,
-  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "proxy": {
     "auth": {
       "username": "login",
@@ -262,9 +238,7 @@ For example:
     "host": "127.0.0.1",
     "port": 3128,
     "protocol": "http"
-  },
-  "subdomain": "subdomainname",
-  "tunnel": true
+  }
 }
 ```
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
