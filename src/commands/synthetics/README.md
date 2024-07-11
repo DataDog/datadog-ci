@@ -220,7 +220,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
 
-### List of configurations
+### List of Configurations
 
 <!--
   The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
@@ -539,19 +539,84 @@ You can also see the outcome of test executions directly in your CI as your test
 
 This command uploads a new version to an **existing** mobile application.
 
-### Command line options
+### List of Configurations
 
-`--mobileApplicationId`
-: The ID of the application you want to upload the new version to.
+<!--
+  The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
+  If want to update them please update the doc and the relevant integrations as well.
+-->
 
-`--mobileApplicationVersionFilePath`
-: The path to your mobile application (`.apk` or `.ipa`).
+#### `apiKey`
 
-`--versionName`
-: The name of the new version. It has to be unique.
+The API key used to query the Datadog API.
 
-`--latest`
-: If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
+* Global Config: `"apiKey": "<API_KEY>"`
+* ENV variable: `DATADOG_API_KEY="<API_KEY>"`
+* CLI param: `--apiKey "<API_KEY>"`
+
+#### `appKey`
+
+The application key used to query the Datadog API.
+
+* Global Config: `"appKey": "<APPLICATION_KEY>"`
+* ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
+* CLI param: `--appKey "<APPLICATION_KEY>"`
+
+#### `configPath`
+
+The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
+
+* Global Config: N/A
+* ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
+* CLI param: `--config global-config.json`
+
+#### `datadogSite`
+
+The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+
+* Global Config: `"datadogSite": "datadoghq.com"`
+* ENV variable: `DATADOG_SITE=datadoghq.com`
+* CLI param: `--datadogSite datadoghq.com`
+
+#### `latest`
+
+If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
+
+* Global Config: `"latest": true,`
+* ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
+* CLI param: `--latest`
+
+#### `mobileApplicationId`
+
+The ID of the application you want to upload the new version to.
+
+* Global Config: `"mobileApplicationId": "123-123-123"`
+* ENV variable: `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID=123-123-123`
+* CLI param: `--mobileApplicationId 123-123-123`
+
+#### `mobileApplicationVersionFilePath`
+
+The path to your mobile application (`.apk` or `.ipa`).
+
+* Global Config: `"mobileApplicationVersionFilePath": example/test.apk`
+* ENV variable: Not Available
+* CLI param: `--mobileApplicationVersionFilePath example/test.apk`
+
+#### `proxy`
+
+The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
+
+* Global Config: See [Use a proxy](#use-a-proxy) for an example.
+* ENV variable: N/A
+* CLI param: N/A
+
+#### `versionName`
+
+The name of the new version. It has to be unique.
+
+* Global Config: `"versionName": "example"`
+* ENV variable: `DATADOG_SYNTHETICS_VERSION_NAME=example`
+* CLI param: `--versionName example`
 
 Example:
 
