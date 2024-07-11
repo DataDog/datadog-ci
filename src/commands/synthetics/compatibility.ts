@@ -50,7 +50,7 @@ export const replacePollingTimeoutWithBatchTimeout = (
 ): number | undefined => {
   // At this point, `global` should already have been moved to `defaultTestOverrides`
   const pollingTimeout = pollingTimeoutCliParam ?? config.defaultTestOverrides?.pollingTimeout ?? config.pollingTimeout
-  const isPollingTimeoutUsed = pollingTimeout !== DEFAULT_POLLING_TIMEOUT
+  const isPollingTimeoutUsed = pollingTimeout !== undefined && pollingTimeout !== DEFAULT_POLLING_TIMEOUT
 
   if (isPollingTimeoutUsed && warnDeprecatedPollingTimeout) {
     reporter.error(

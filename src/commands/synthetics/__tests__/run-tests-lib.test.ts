@@ -551,6 +551,38 @@ describe('run-test', () => {
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
+
+    test('log when selective re-run is rate-limited', async () => {
+      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
+          overriddenTestsToTrigger: [],
+          tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
+        })
+      )
+      jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
+        batch_id: 'bid',
+        locations: [],
+        selective_rerun_rate_limited: true,
+      }))
+
+      const apiHelper = {
+        getBatch: () => ({results: []}),
+        getTunnelPresignedURL: () => ({url: 'url'}),
+        pollResults: () => [getApiResult('1', getApiTest())],
+        triggerTests: () => mockTestTriggerResponse,
+      }
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
+
+      await runTests.executeTests(mockReporter, {
+        ...ciConfig,
+        publicIds: ['aaa-aaa-aaa'],
+      })
+
+      expect(mockReporter.error).toHaveBeenCalledWith(
+        'The selective re-run feature was rate-limited. All tests will be re-run.\n\n'
+      )
+    })
   })
 
   describe('executeWithDetails', () => {

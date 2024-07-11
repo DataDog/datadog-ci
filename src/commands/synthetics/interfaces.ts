@@ -320,6 +320,7 @@ export interface LocationsMapping {
 export interface Trigger {
   batch_id: string
   locations: Location[]
+  selective_rerun_rate_limited?: boolean
 }
 
 export interface RetryConfig {
