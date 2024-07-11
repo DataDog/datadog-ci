@@ -542,8 +542,6 @@ describe('run-test', () => {
     //
     // (config file < ENV < CLI < test file) => execute tests
 
-    // TODO: Since we have "n choose k" = "4 choose 2" = ⁴C₂ = 6 possible combinations of "A < B",
-    //       we should refactor the following 2 tests into 6 smaller tests, each testing a single override behavior.
     describe('override precedence - config file < ENV < CLI < test file', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
