@@ -1,7 +1,12 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {CiError, CriticalError} from './errors'
+import {
+  moveLocationsToTestOverrides,
+  replaceGlobalWithDefaultTestOverrides,
+  replacePollingTimeoutWithBatchTimeout,
+} from './compatibility'
+import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
   Reporter,
@@ -14,17 +19,16 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
-  UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
+import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
 import {
   getReporter,
   getOrgSettings,
-  getSuites,
   getTestsToTrigger,
   InitialSummary,
   renderResults,
@@ -33,7 +37,6 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
-  normalizePublicId,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -60,6 +63,15 @@ export const executeTests = async (
       await tunnel.stop()
     }
   }
+
+  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
+
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+  config = moveLocationsToTestOverrides(config, reporter, true)
+
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+  config.batchTimeout = replacePollingTimeoutWithBatchTimeout(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
@@ -130,21 +142,26 @@ export const executeTests = async (
 
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun)
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
   try {
-    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    // TODO SYNTH-12989: Remove the `maxPollingTimeout` calculation when `pollingTimeout` is removed
+    const maxPollingTimeout = Math.max(
+      ...triggerConfigs.map(
+        (t) => config.batchTimeout || t.testOverrides?.pollingTimeout || config.pollingTimeout || DEFAULT_BATCH_TIMEOUT
+      )
+    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
       api,
       trigger,
       tests,
-      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, maxPollingTimeout},
+      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout: maxPollingTimeout},
       reporter,
       tunnel
     )
@@ -157,39 +174,28 @@ export const executeTests = async (
       },
     }
   } catch (error) {
+    if (error instanceof BatchTimeoutRunawayError) {
+      throw error
+    }
+
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }
 }
 
-const getTestListBySearchQuery = async (
-  api: APIHelper,
-  globalConfigOverride: UserConfigOverride,
-  testSearchQuery: string
-) => {
-  const testSearchResults = await api.searchTests(testSearchQuery)
-
-  return testSearchResults.tests.map((test) => ({
-    config: globalConfigOverride,
-    id: test.public_id,
-    suite: `Query: ${testSearchQuery}`,
-  }))
-}
 export const getTriggerConfigs = async (
   api: APIHelper,
   config: RunTestsCommandConfig,
   reporter: MainReporter,
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
-  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and cli params
-  const defaultTestConfigOverrides = config.global
-  // TODO: Clean up locations as part of SYNTH-12989
-  const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
+  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
+  const defaultTestConfigOverrides = config.defaultTestOverrides
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-  // Grab the test defined from the search query. Their config will contain the suite name, and the search query itself.
-  const testsFromSearchQuery = config.testSearchQuery ? await getTestsFromSearchQuery(api, config, reporter) : []
+  // Grab the tests returned by the search query (or `[]` if not given).
+  const testsFromSearchQuery = await getTestsFromSearchQuery(api, config)
 
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
@@ -202,62 +208,30 @@ export const getTriggerConfigs = async (
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map((id) => {
-    const testFromSearchQuery = testsFromSearchQuery.find((test) => test.id === id)
-    const testFromTestConfigs = testsFromTestConfigs.find((test) => test.id === id)
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+    let testFromSearchQuery
+    if (testIndexFromSearchQuery >= 0) {
+      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
+    }
+
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    let testFromTestConfigs
+    if (testIndexFromTestConfigs >= 0) {
+      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
+    }
 
     return {
       id,
       ...testFromSearchQuery,
       ...testFromTestConfigs,
-      config: {
+      testOverrides: {
         ...defaultTestConfigOverrides,
-        ...testConfigOverridesFromEnv,
-        ...testFromTestConfigs?.config,
+        ...testFromTestConfigs?.testOverrides,
       },
     }
   })
 
   return triggerConfigs
-}
-
-const getTestsFromSearchQuery = async (api: APIHelper, config: RunTestsCommandConfig, reporter: MainReporter) => {
-  const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery || '')
-
-  if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
-    reporter.error(
-      `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-    )
-  }
-
-  if (testsToTriggerBySearchQuery.length === 0) {
-    throw new CiError('NO_TESTS_TO_RUN')
-  }
-
-  return testsToTriggerBySearchQuery
-}
-
-const getTestConfigs = async (
-  config: RunTestsCommandConfig,
-  reporter: MainReporter,
-  suites: Suite[] = []
-): Promise<TriggerConfig[]> => {
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
-    .reduce((acc, val) => acc.concat(val), [])
-    .filter((suite) => !!suite.content.tests)
-
-  suites.push(...suitesFromFiles)
-
-  const testConfigs = suites
-    .map((suite) =>
-      suite.content.tests.map((test) => ({
-        config: test.config,
-        id: normalizePublicId(test.id) ?? '',
-        suite: suite.name,
-      }))
-    )
-    .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-
-  return testConfigs
 }
 
 export const executeWithDetails = async (

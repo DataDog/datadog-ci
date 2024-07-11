@@ -13,7 +13,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {getSpanTags} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
@@ -28,10 +28,9 @@ import {
   renderFailedUpload,
   renderInvalidFile,
   renderFilesNotFound,
+  renderMissingSpan,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
-
-const errorCodesStopUpload = [400, 403]
 
 const validateSarif = (sarifReportPath: string) => {
   const ajv = new Ajv({allErrors: true})
@@ -121,6 +120,16 @@ export class UploadSarifReportCommand extends Command {
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
     const spanTags = await getSpanTags(this.config, this.tags)
+
+    // Check if we have all the mandatory git fields
+    const spanTagsKeys = Object.keys(spanTags)
+    const filteredSpanTags = spanTagsKeys.filter((key) => mandatoryGitFields[key])
+    if (filteredSpanTags.length !== Object.keys(mandatoryGitFields).length) {
+      this.context.stdout.write(renderMissingSpan('missing span tags (CI, git, or user-provided tags)'))
+
+      return 1
+    }
+
     const payloads = await this.getMatchingSarifReports(spanTags)
 
     if (payloads.length === 0) {
@@ -129,8 +138,10 @@ export class UploadSarifReportCommand extends Command {
       return 1
     }
 
+    const sha = spanTags[GIT_SHA] || 'sha-not-found'
+    const env = this.config.env || 'env-not-set'
     this.context.stdout.write(
-      renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun, this.noVerify)
+      renderCommandInfo(this.basePaths, this.service, env, sha, this.maxConcurrency, this.dryRun, this.noVerify)
     )
     const upload = (p: Payload) => this.uploadSarifReport(api, p)
 
@@ -139,9 +150,7 @@ export class UploadSarifReportCommand extends Command {
     await doWithMaxConcurrency(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
-    this.context.stdout.write(
-      renderSuccessfulCommand(payloads.length, totalTimeSeconds, spanTags, this.service, this.config.env)
-    )
+    this.context.stdout.write(renderSuccessfulCommand(payloads.length, totalTimeSeconds))
   }
 
   private async uploadSarifReport(api: APIHelper, sarifReport: Payload) {
@@ -163,13 +172,7 @@ export class UploadSarifReportCommand extends Command {
       )
     } catch (error) {
       this.context.stderr.write(renderFailedUpload(sarifReport, error))
-      if (error.message) {
-        // If it's an axios error
-        if (!errorCodesStopUpload.includes(error.response.status)) {
-          // And a status code that should not stop the whole upload, just return
-          return
-        }
-      }
+
       throw error
     }
   }

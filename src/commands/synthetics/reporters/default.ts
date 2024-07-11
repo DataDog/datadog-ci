@@ -17,7 +17,7 @@ import {
   Summary,
   Test,
   UserConfigOverride,
-  Batch,
+  ResultInBatch,
 } from '../interfaces'
 import {hasResult} from '../utils/internal'
 import {
@@ -25,6 +25,7 @@ import {
   getResultDuration,
   getResultOutcome,
   getResultUrl,
+  getTestOverridesCount,
   isDeviceIdSet,
   isResultSkippedBySelectiveRerun,
   PASSED_RESULT_OUTCOMES,
@@ -32,6 +33,8 @@ import {
   readableOperation,
   ResultOutcome,
 } from '../utils/public'
+
+import {ICONS} from './constants'
 
 // Step rendering
 
@@ -49,13 +52,6 @@ const renderStepDuration = (duration: number) => {
   const color = getColor()
 
   return `${color(duration.toString())}ms`
-}
-
-const ICONS = {
-  FAILED: chalk.bold.red('✖'),
-  FAILED_NON_BLOCKING: chalk.bold.yellow('✖'),
-  SKIPPED: chalk.bold.yellow('⇢'),
-  SUCCESS: chalk.bold.green('✓'),
 }
 
 const renderStepIcon = (step: Step) => {
@@ -203,7 +199,7 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
-const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
   const {executionRule, test: overriddenTest, resultId, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
@@ -229,18 +225,18 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
     const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
     const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
-    const resultInfo = `  ⎋${durationText} View test run details: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
-    outputLines.push(resultInfo)
+    outputLines.push(`  •${durationText} View test run details:`)
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`)
   }
 
   if (isResultSkippedBySelectiveRerun(execution)) {
-    const resultUrl = getResultUrl(baseUrl, test, resultId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
 
-    const resultInfo = `  ${setColor('◂')} Successful result from previous CI run: ${chalk.dim.cyan(resultUrl)}`
-    outputLines.push(resultInfo)
+    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)
   } else {
     const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
 
@@ -254,14 +250,32 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) =
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
   if (hasResult(execution)) {
-    const {result} = execution
+    const {result, passed, retries, test} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+    const attempt = getAttemptSuffix(passed, retries, test)
 
-    return ` - ${location}${device}`
+    return ` - ${location}${device}${attempt}`
   }
 
   return ''
+}
+
+const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
+  const currentAttempt = retries + 1
+  const maxAttempts = (test.options.retry?.count ?? 0) + 1
+
+  if (maxAttempts === 1) {
+    // No need to talk about "attempts" if retries aren't configured.
+    return ''
+  }
+
+  if (passed && retries === 0) {
+    // No need to display anything if the test passed on the first attempt
+    return ''
+  }
+
+  return ` (attempt ${currentAttempt} of ${maxAttempts})`
 }
 
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
@@ -311,13 +325,13 @@ export class DefaultReporter implements MainReporter {
     )
   }
 
-  public resultEnd(result: Result, baseUrl: string) {
+  public resultEnd(result: Result, baseUrl: string, batchId: string) {
     // Stop the spinner so it doesn't show multiple times in a burst of received results.
     this.testWaitSpinner?.stop()
-    this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
+    this.write(renderExecutionResult(result.test, result, baseUrl, batchId) + '\n\n')
   }
 
-  public resultReceived(result: Batch['results'][0]): void {
+  public resultReceived(result: ResultInBatch): void {
     return
   }
 
@@ -329,7 +343,7 @@ export class DefaultReporter implements MainReporter {
     const runSummary = []
 
     if (summary.previouslyPassed) {
-      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in previous CI run)`))
+      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in a previous CI batch)`))
     } else {
       runSummary.push(green(`${b(summary.passed)} passed`))
     }
@@ -413,7 +427,10 @@ export class DefaultReporter implements MainReporter {
     const testCountText = pluralize('test', tests.length)
     const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
 
-    const text = `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+    const text =
+      tests.length > 0
+        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+        : 'Waiting for the batch to end…\n'
 
     if (this.testWaitSpinner) {
       // Only refresh the spinner when the text changes.
@@ -442,14 +459,14 @@ export class DefaultReporter implements MainReporter {
     test: Pick<Test, 'name'>,
     testId: string,
     executionRule: ExecutionRule,
-    config: UserConfigOverride
+    testOverrides: UserConfigOverride
   ) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
       if (executionRule === ExecutionRule.SKIPPED) {
         // Test is either skipped from datadog-ci config or from test config
-        const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
+        const isSkippedByCIConfig = testOverrides.executionRule === ExecutionRule.SKIPPED
         if (isSkippedByCIConfig) {
           return `Skipped test "${chalk.yellow.dim(test.name)}"`
         } else {
@@ -464,16 +481,16 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    const getConfigOverridesPart = () => {
-      const nbConfigsOverridden = Object.keys(config).length
+    const getTestOverridesPart = () => {
+      const nbConfigsOverridden = getTestOverridesCount(testOverrides)
       if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 
-      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} test ${pluralize('override', nbConfigsOverridden)})`)
     }
 
-    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
+    this.write(`${idDisplay} ${getMessage()}${getTestOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {

@@ -1,9 +1,9 @@
 import {createServer} from 'http'
 import {AddressInfo} from 'net'
 
-import type {AxiosError, AxiosResponse} from 'axios'
+import type {AxiosResponse} from 'axios'
 
-import axios from 'axios'
+import axios, {AxiosError} from 'axios'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
@@ -22,6 +22,7 @@ import {
   MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
   mockTestTriggerResponse,
+  APP_UPLOAD_POLL_RESULTS,
 } from './fixtures'
 
 describe('dd-api', () => {
@@ -108,6 +109,7 @@ describe('dd-api', () => {
         makeApiRequest: () => api.getBatch('batch-id'),
         name: 'get batch' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
@@ -115,30 +117,35 @@ describe('dd-api', () => {
           api.getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTunnelPresignedURL(['test-id']),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTest('public-id'),
         name: 'get test' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.pollResults(['result-id']),
         name: 'poll results' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.searchTests('search query'),
         name: 'search tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
@@ -146,20 +153,22 @@ describe('dd-api', () => {
           api.triggerTests({tests: [{public_id: '123-456-789', executionRule: ExecutionRule.NON_BLOCKING}]}),
         name: 'trigger tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getSyntheticsOrgSettings(),
         name: 'get settings' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
     ]
 
     test.each(cases)(
-      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 5xx: $shouldBeRetriedOn5xx)',
-      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn5xx}) => {
-        const serverError = new Error('Server Error') as AxiosError
+      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
+      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
+        const serverError = new AxiosError('Server Error')
 
         const requestMock = jest.fn().mockImplementation(() => {
           throw serverError
@@ -174,6 +183,18 @@ describe('dd-api', () => {
           await expect(requestPromise).rejects.toThrow('Server Error')
 
           expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
+
+        requestMock.mockClear()
+
+        {
+          serverError.response = {status: 429} as AxiosResponse
+
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow('Server Error')
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn429 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
         }
 
         requestMock.mockClear()
@@ -244,10 +265,15 @@ describe('dd-api', () => {
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
     const api = apiConstructor(apiConfiguration)
     const {uploadMobileApplicationPart} = api
-    await uploadMobileApplicationPart(
+    const result = await uploadMobileApplicationPart(
       MOBILE_PRESIGNED_UPLOAD_PARTS,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
     )
+
+    expect(result).toEqual([
+      {ETag: '123', PartNumber: 1},
+      {ETag: '123', PartNumber: 2},
+    ])
 
     const callArg = mockRequest.mock.calls[0][0]
     expect(callArg.url).toBe(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls[1])
@@ -255,9 +281,38 @@ describe('dd-api', () => {
     spy.mockRestore()
   })
 
-  test('should complete presigned mobile application upload', async () => {
+  test('should return empty ETag when doing azure part upload', async () => {
     const mockRequest = jest.fn()
+    mockRequest.mockReturnValue({status: 200, headers: {}})
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {uploadMobileApplicationPart} = api
+
+    const urls = {
+      1: 'https://myaccount.blob.core.windows.net/mycontainer/myblob1',
+      2: 'https://myaccount.blob.core.windows.net/mycontainer/myblob2',
+    }
+
+    const result = await uploadMobileApplicationPart(MOBILE_PRESIGNED_UPLOAD_PARTS, {
+      ...MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params,
+      // override fixture with azure urls
+      urls,
+    })
+
+    expect(result).toEqual([
+      {ETag: '', PartNumber: 1},
+      {ETag: '', PartNumber: 2},
+    ])
+
+    const callArg = mockRequest.mock.calls[0][0]
+    expect(callArg.url).toBe(urls[1])
+    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+    spy.mockRestore()
+  })
+
+  test('should complete presigned mobile application upload', async () => {
+    const jobId = 'fake_job_id'
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: {job_id: jobId}})) as any)
     const api = apiConstructor(apiConfiguration)
     const {completeMultipartMobileApplicationUpload} = api
 
@@ -269,14 +324,27 @@ describe('dd-api', () => {
       })
     )
 
-    await completeMultipartMobileApplicationUpload(
+    const result = await completeMultipartMobileApplicationUpload(
       appId,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
       MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
       partUploadResponses
     )
 
-    expect(mockRequest).toHaveBeenCalled()
+    expect(result).toBe(jobId)
+    spy.mockRestore()
+  })
+
+  test('should poll for app upload validation', async () => {
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {pollMobileApplicationUploadResponse} = api
+
+    const jobId = 'jobId'
+
+    const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
+
+    expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
     spy.mockRestore()
   })
 

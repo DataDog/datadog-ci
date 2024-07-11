@@ -18,6 +18,7 @@ export interface Payload {
   error_message: string
   exit_code: number
   is_error: boolean
+  measures: Partial<Record<string, number>>
   name: string
   start_time: string
   tags: Partial<Record<string, string>>

@@ -1,14 +1,39 @@
+# See CODEOWNERS for the source of truth.
+
 policy:
   - section:
       - id: [command]
         label:
-          - name: 'ci-app'
-            keys: ['junit', 'metric', 'tag', 'trace']
-          - name: 'rum'
-            keys: ['dsyms', 'flutter-symbols', 'react-native']
-          - name: 'serverless'
-            keys: ['lambda']
-          - name: 'source-code-integration'
-            keys: ['git-metadata', 'sourcemaps']
-          - name: 'synthetics'
-            keys: ['synthetics']
+          - name: ci-visibility
+            keys:
+              - junit
+              - gate
+              - metric
+              - tag
+              - trace
+              - dora
+              - deployment
+          - name: static-analysis
+            keys:
+              - sarif
+              - sbom
+          - name: profiling
+            keys:
+              - elf-symbols
+          - name: rum
+            keys:
+              - dsyms
+              - unity-symbols
+              - react-native
+              - sourcemaps
+          - name: serverless
+            keys:
+              - lambda
+              - stepfunctions
+              - cloud-run
+          - name: source-code-integration
+            keys:
+              - git-metadata
+          - name: synthetics
+            keys:
+              - synthetics

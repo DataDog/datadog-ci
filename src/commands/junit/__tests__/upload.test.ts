@@ -249,6 +249,58 @@ describe('upload', () => {
         )
       )
     })
+    test('should fetch nested folders', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['**/junit/**/*.xml'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {},
+        {},
+        {},
+        {},
+        {}
+      )
+      const fileNames = files.map((file) => file.xmlPath)
+
+      expect(fileNames).toEqual([
+        'src/commands/junit/__tests__/fixtures/go-report.xml',
+        'src/commands/junit/__tests__/fixtures/java-report.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      ])
+    })
+    test('should fetch nested folders and ignore non xml files', async () => {
+      const context = createMockContext()
+      const command = new UploadJUnitXMLCommand()
+      const files = await command['getMatchingJUnitXMLFiles'].call(
+        {
+          basePaths: ['**/junit/**'],
+          config: {},
+          context,
+          service: 'service',
+        },
+        {},
+        {},
+        {},
+        {},
+        {}
+      )
+      const fileNames = files.map((file) => file.xmlPath)
+
+      expect(fileNames).toEqual([
+        'src/commands/junit/__tests__/fixtures/go-report.xml',
+        'src/commands/junit/__tests__/fixtures/java-report.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
+      ])
+    })
   })
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
@@ -506,9 +558,21 @@ describe('execute', () => {
     expect(output[3]).toContain('service: test-service')
   })
 
-  test('without git metadata', async () => {
+  test('with git metadata without argument (default value is true)', async () => {
     const {context, code} = await runCLI([
       '--verbose',
+      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+    ])
+    const output = context.stdout.toString().split(os.EOL)
+    expect(id).toHaveBeenCalled()
+    expect(code).toBe(0)
+    expect(output[5]).toContain('Syncing git metadata')
+  })
+
+  test('without git metadata (with argument)', async () => {
+    const {context, code} = await runCLI([
+      '--verbose',
+      '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -517,7 +581,19 @@ describe('execute', () => {
     expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
 
-  test('with git metadata', async () => {
+  test('without git metadata (with argument set to 1)', async () => {
+    const {context, code} = await runCLI([
+      '--verbose',
+      '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
+      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+    ])
+    const output = context.stdout.toString().split(os.EOL)
+    expect(id).not.toHaveBeenCalled()
+    expect(code).toBe(0)
+    expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
+  })
+
+  test('with git metadata (with argument set to 0)', async () => {
     const {context, code} = await runCLI([
       '--skip-git-metadata-upload=0',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',

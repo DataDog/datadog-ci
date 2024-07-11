@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {DATADOG_SITE_GOV} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {ICONS} from '../../helpers/formatting'
@@ -88,7 +87,8 @@ export class UploadCommand extends Command {
     }
 
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      apiKey: this.config.apiKey,
+      datadogSite,
       defaultTags: [`cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.report_commits.',
     })
@@ -125,12 +125,7 @@ export class UploadCommand extends Command {
         metricsLogger.logger.increment('gitdb.success', 1)
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
       } catch (err) {
-        if (!this.isTargetingGov()) {
-          this.logger.warn(`Could not write to GitDB: ${err}`)
-        } else {
-          // Skip the warning for Gov DC since git sync is not available there yet.
-          this.logger.warn(`Not writing to GitDB: not available for gov`)
-        }
+        this.logger.warn(`Could not write to GitDB: ${err}`)
       }
     }
 
@@ -206,7 +201,7 @@ export class UploadCommand extends Command {
       apiKey,
       baseUrl: getBaseIntakeUrl(),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci git-metadata'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
@@ -218,9 +213,5 @@ export class UploadCommand extends Command {
       apiKey,
       baseUrl: 'https://' + apiHost,
     })
-  }
-
-  private isTargetingGov(): boolean {
-    return process.env.DATADOG_SITE === DATADOG_SITE_GOV
   }
 }

@@ -9,6 +9,8 @@ import {EndpointError} from './api'
 import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
+import {AppUploadReporter} from './reporters/mobile/app-upload'
+import {toBoolean} from './utils/internal'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
@@ -60,7 +62,7 @@ export class UploadApplicationCommand extends Command {
       'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
   })
 
-  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation during unit tests
+  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
@@ -75,9 +77,9 @@ export class UploadApplicationCommand extends Command {
       return 1
     }
 
+    const appUploadReporter = new AppUploadReporter(this.context)
     try {
-      const version = await uploadMobileApplicationVersion(this.config)
-      this.logger.info(`Created new version ${version.version_name}, with version ID: ${version.id}`)
+      await uploadMobileApplicationVersion(this.config, appUploadReporter)
     } catch (error) {
       if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
         this.logger.error(`Error: ${error.message}`)
@@ -90,8 +92,10 @@ export class UploadApplicationCommand extends Command {
   private async resolveConfig() {
     // Defaults < file < ENV < CLI
     try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
       this.config = await resolveConfigFromFile(this.config, {
-        configPath: this.configPath,
+        configPath: overrideConfigPath,
         defaultConfigPaths: [this.config.configPath],
       })
     } catch (error) {
@@ -105,7 +109,11 @@ export class UploadApplicationCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
+        mobileApplicationId: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID,
+        versionName: process.env.DATADOG_SYNTHETICS_VERSION_NAME,
+        latest: toBoolean(process.env.DATADOG_SYNTHETICS_LATEST),
       })
     )
 

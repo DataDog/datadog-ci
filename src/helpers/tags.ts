@@ -34,6 +34,8 @@ export const GIT_COMMIT_COMMITTER_NAME = 'git.commit.committer.name'
 export const GIT_COMMIT_MESSAGE = 'git.commit.message'
 export const GIT_SHA = 'git.commit.sha'
 export const GIT_TAG = 'git.tag'
+export const GIT_HEAD_SHA = 'git.commit.head_sha'
+export const GIT_BASE_REF = 'git.commit.base_ref'
 
 // General
 export const SPAN_TYPE = 'span.type'
@@ -51,7 +53,7 @@ const parseNumericTag = (numericTag: string | undefined): number | undefined => 
  * Receives an array of the form ['key:value', 'key2:value2']
  * and returns an object of the form {key: 'value', key2: 'value2'}
  */
-export const parseTags = (tags: string[]) => {
+export const parseTags = (tags: string[]): Record<string, string> => {
   try {
     return tags.reduce((acc, keyValuePair) => {
       if (!keyValuePair.includes(':')) {
@@ -105,6 +107,14 @@ export const parseMetrics = (tags: string[]) => {
 }
 
 /**
+ * The repository URL is mandatory in processing for the following commands: sarif and sbom.
+ * Note: for sarif uploads, this will fail silent on the backend.
+ */
+export const mandatoryGitFields: Record<string, boolean> = {
+  [GIT_REPOSITORY_URL]: true,
+}
+
+/**
  * Get the tags to upload results in CI for the following commands: sarif and sbom.
  * @param config - the configuration of the CLI
  * @param additionalTags - additional tags passed, generally from the command line.
@@ -120,7 +130,7 @@ export const getSpanTags = async (config: DatadogCiConfig, additionalTags: strin
   return {
     ...gitSpanTags,
     ...ciSpanTags,
-    ...userGitSpanTags,
+    ...userGitSpanTags, // User-provided git tags have precedence over the ones we get from the git command
     ...cliTags,
     ...envVarTags,
     ...(config.env ? {env: config.env} : {}),

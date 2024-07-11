@@ -56,11 +56,13 @@ export class DeploymentMarkCommand extends Command {
     tagJobCommand.setLevel('job')
     tagJobCommand.setTags(this.createJobDeploymentTags())
     tagJobCommand.context = this.context
+    tagJobCommand.setSilent(false)
 
     const tagPipelineCommand = new TagCommand()
     tagPipelineCommand.setLevel('pipeline')
     tagPipelineCommand.setTags(this.createPipelineDeploymentTags())
     tagPipelineCommand.context = this.context
+    tagPipelineCommand.setSilent(true)
 
     if (this.noFail) {
       tagJobCommand.setNoFail(true)

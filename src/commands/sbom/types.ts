@@ -1,4 +1,5 @@
 export enum DependencyLanguage {
+  DOTNET = 'dotnet',
   NPM = 'node',
   PYTHON = 'python',
   PHP = 'php',
@@ -48,13 +49,45 @@ export enum DependencyLicense {
   ZLIB = 'Zlib',
 }
 
+// Location represents the location object stored in a file from osv-scanner.
+// {\"file_name\":\"package-lock.json\",\"line_start\":19328,\"line_end\":19336,\"column_start\":9,\"column_end\":10}}
+export interface LocationFromFile {
+  file_name: string
+  line_start: number
+  line_end: number
+  column_start: number
+  column_end: number
+}
+
+// The position is a position start/end sent to the backend
+export interface Position {
+  line: number
+  col: number
+}
+
+// The location object set by osv-scanner
+export interface Location {
+  file_name: string
+  start: Position
+  end: Position
+}
+
+// All the locations for the dependency
+export interface Locations {
+  block: undefined | Location
+  namespace: undefined | Location
+  name: undefined | Location
+  version: undefined | Location
+}
+
 export interface Dependency {
   name: string
-  version: string
+  version: undefined | string
   group: undefined | string
   language: DependencyLanguage
   licenses: DependencyLicense[]
   purl: string
+  locations: undefined | Locations[]
 }
 
 export interface CommitInformation {

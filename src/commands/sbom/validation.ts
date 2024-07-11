@@ -22,12 +22,13 @@ export const getValidator = (): Ajv => {
 }
 
 /**
- * Validate an SBOM file.
+ * Validate an SBOM file against the SBOM CycloneDX schema.
+ *
  * @param path - the path of the file to validate
  * @param ajv - an instance of Ajv fully initialized and ready to use.
  * @param debug - if we need to show debug information
  */
-export const validateSbomFile = (path: string, ajv: Ajv, debug: boolean): boolean => {
+export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boolean): boolean => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
@@ -57,7 +58,7 @@ export const validateSbomFile = (path: string, ajv: Ajv, debug: boolean): boolea
       if (debug) {
         errors15.forEach((message) => {
           process.stderr.write(
-            `Error while validating file ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
+            `Error while validating file against CycloneDX 1.5: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
           )
         })
       }
@@ -69,7 +70,7 @@ export const validateSbomFile = (path: string, ajv: Ajv, debug: boolean): boolea
       if (debug) {
         errors14.forEach((message) => {
           process.stderr.write(
-            `Error while validating file ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
+            `Error while validating file against CycloneDX 1.4: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
           )
         })
       }
@@ -83,4 +84,51 @@ export const validateSbomFile = (path: string, ajv: Ajv, debug: boolean): boolea
 
     return false
   }
+}
+
+/**
+ * Validate an SBOM file again what we need.
+ * @param path - the path of the file to validate
+ * @param debug - if we need to show debug information
+ */
+export const validateFileAgainstToolRequirements = (path: string, debug: boolean): boolean => {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
+    if (!fileContent) {
+      return false
+    }
+
+    const components = fileContent['components']
+
+    for (const component of components) {
+      if (!component['type']) {
+        return false
+      }
+
+      if (component['type'] === 'library') {
+        const name = component['name']
+
+        if (!!component['version']) {
+          continue
+        }
+
+        if (!component['purl']) {
+          if (debug) {
+            process.stderr.write(`Component ${name} has no purl\n`)
+          }
+
+          return false
+        }
+      }
+    }
+  } catch (error) {
+    if (debug) {
+      process.stderr.write(`Error while reading file: ${error.message}\n`)
+    }
+
+    return false
+  }
+
+  return true
 }

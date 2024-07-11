@@ -18,7 +18,11 @@ yarn launch synthetics run-tests --config dev/global.config.json
 - [jest](https://github.com/facebook/jest): Tests are written in Jest.
 - [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning.
 
-### Repository structure
+### Creating a new command
+
+Follow the [Structure](#structure) below for any commands you add. Then, don't forget the [Things to update](#things-to-update) in the project.
+
+#### Structure
 
 Commands are stored in the [src/commands](src/commands) folder.
 
@@ -33,8 +37,6 @@ src/
          ├── README.md
          └── index.ts
 ```
-
-Documentation of the command must be placed in the README.md file, the [current README](/README.md) must be updated to link to the new command README.
 
 The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
 
@@ -52,9 +54,32 @@ export class HelloWorldCommand extends Command {
 module.exports = [HelloWorldCommand]
 ```
 
-Lastly, test files must be created in the `__tests__/` folder. `jest` is used to run the tests and a CI has been set using GitHub Actions to ensure all tests are passing when merging a Pull Request.
+Lastly, unit tests must be created in the `__tests__/` folder. The tests can then be launched with the `yarn test` command: it finds all files with a filename ending in `.test.ts` in the repo and executes them.
 
-The tests can then be launched through the `yarn test` command, it will find all files with a filename ending in `.test.ts` in the repo and execute them.
+#### Beta command
+
+If your command is related to a beta product or feature, or you want to test out the command first, you can mark your command as beta.
+
+To do so, add your command's name to the [`BETA_COMMANDS` array](https://github.com/DataDog/datadog-ci/blob/35c54e1d1e991d21461084ef2e346ca1c6bb7ea6/src/cli.ts#L8).
+
+Users have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1` to use the command. Make sure to document this in your command's README for visibility. This should be removed once the command goes out of beta.
+
+Optionally, you can create a pre-release for your command by following the [Pre-Release Process](#pre-release-process) instructions below.
+
+#### Things to update
+
+- The [Usage section in the root README](README.md#usage) must be updated to link to:
+  - The new command's README.
+  - And 📚 should link to the official Datadog documentation site.
+  - **Note:** If your command is beta, use the [Beta commands](README.md#beta-commands) section instead.
+
+- The command should be added under the right product in the [CODEOWNERS](.github/CODEOWNERS) file to ensure the right people are notified when a PR is opened.
+  - If you are only adding a sub-command (e.g. `datadog-ci <existing-command> <new-sub-command>`), no changes are required.
+
+- If you are adding a command for a new product, you should:
+  - Create a label [here](https://github.com/DataDog/datadog-ci/issues/labels) and add it to [`pr-required-labels.yml`](.github/workflows/pr-required-labels.yml).
+  - Update [`advanced-issue-labeler.yml`](.github/advanced-issue-labeler.yml).
+  - Update the `changelog` configuration in [`release.yml`](.github/release.yml).
 
 ### Continuous Integration tests
 
@@ -90,16 +115,17 @@ To release a new version of `datadog-ci`:
 2. Update the `package.json` version to `X.X.X`, commit the change `vX.X.X` and tag it with `git tag vX.X.X`.
    - You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
 4. Push the branch **along with the tag** with `git push --tags origin name-of-the-branch`, create a PR, and get at least one approval.
-   - [Create a draft GitHub Release (prefilled link)](https://github.com/DataDog/datadog-ci/releases/new?title=%3Csame-as-tag%3E&body=%3C!--%20Use%20the%20%22Generate%20release%20notes%22%20button%20at%20the%20top%20right,%20then%20categorize%20the%20changes%20--%3E) and **save it as a draft**.
-   - Please categorize the changes by product or "Documentation" / "Dependencies" / "Chores". You can find commands grouped by product in the [`.github/CODEOWNERS`](https://github.com/DataDog/datadog-ci/blob/master/.github/CODEOWNERS) file.
-   - Copy the categorized release notes, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
-   - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1047).
+   - **Find and open** the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/publish-release.yml).
+   - Copy the release notes from the summary, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
+   - Add the `release` label to your PR.
+   - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1215).
 5. Once you've received at least one approval, merge the PR **with the "Create a merge commit" strategy**.
-   - You may notice that some **_GitLab_** jobs are pending, this is expected (see **step 7**). You can merge the PR when *only those jobs* are left.
+   - You may notice that a **GitHub** job is waiting for an approval, and some **_GitLab_** jobs are pending: this is expected (see **step 6 and 8**). You can merge the PR when *only those jobs* are left.
    - The "Create a merge commit" strategy is required for **step 7**, and for the GitHub Release to point to an existing commit once the PR is merged.
-6. Go back to your draft GitHub Release, and publish it.
-7. Once the release is published, [this GitHub Workflow](https://github.com/DataDog/datadog-ci/actions/workflows/release.yml) publishes the NPM package and adds binaries to the release's assets. Wait for it to succeed.
-8. When the NPM package is published, go to the [_GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
+6. The `npm-publish` job is waiting for an approval: accept it and wait for it and its downstream jobs to succeed.
+7. Go to the draft GitHub Release, and publish it as **latest**.
+   - There should be 3 binaries available in the release's assets.
+8. Finally, go to the [_GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
    - Make sure all the jobs and downstream jobs succeed.
 
 Thanks for creating a release! 🎉

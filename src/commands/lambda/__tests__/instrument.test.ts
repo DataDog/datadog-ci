@@ -212,7 +212,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'dotnet6',
+              Runtime: 'dotnet8',
             },
           },
         })

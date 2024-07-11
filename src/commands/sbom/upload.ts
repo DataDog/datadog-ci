@@ -1,20 +1,25 @@
 import fs from 'fs'
 import process from 'process'
 
-import type {AxiosPromise, AxiosResponse} from 'axios'
-
 import Ajv from 'ajv'
-import chalk from 'chalk'
+import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {getSpanTags} from '../../helpers/tags'
-
-import {getBaseUrl} from '../junit/utils'
+import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
+import {
+  renderDuplicateUpload,
+  renderFailedUpload,
+  renderInvalidFile,
+  renderInvalidPayload,
+  renderMissingSpan,
+  renderSuccessfulCommand,
+  renderUploading,
+} from './renderer'
 import {ScaRequest} from './types'
-import {getValidator, validateSbomFile} from './validation'
+import {getValidator, validateFileAgainstToolRequirements, validateSbomFileAgainstSchema} from './validation'
 
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
@@ -70,7 +75,13 @@ export class UploadSbomCommand extends Command {
     }
 
     if (!this.config.apiKey) {
-      this.context.stderr.write('API key not defined\n')
+      this.context.stderr.write('API key not defined, define the environment variable DD_API_KEY.\n')
+
+      return 1
+    }
+
+    if (!this.config.appKey) {
+      this.context.stderr.write('APP key not defined, define the environment variable DD_APP_KEY.\n')
 
       return 1
     }
@@ -83,49 +94,68 @@ export class UploadSbomCommand extends Command {
 
     const tags = await getSpanTags(this.config, this.tags)
 
+    // Check if we have all the mandatory git fields
+    const spanTagsKeys = Object.keys(tags)
+    const filteredSpanTags = spanTagsKeys.filter((key) => mandatoryGitFields[key])
+    if (filteredSpanTags.length !== Object.keys(mandatoryGitFields).length) {
+      this.context.stdout.write(renderMissingSpan('missing span tags (CI, git, or user-provided tags)'))
+
+      return 1
+    }
+
     const validator: Ajv = getValidator()
+
+    const startTimeMs = Date.now()
     for (const basePath of this.basePaths) {
       if (this.debug) {
         this.context.stdout.write(`Processing file ${basePath}\n`)
       }
 
-      if (!validateSbomFile(basePath, validator, !!this.debug)) {
-        this.context.stdout.write(`File ${chalk.red.bold(basePath)} is not a valid SBOM file.\n`)
+      if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
+        if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+          this.context.stdout.write(renderInvalidFile(basePath))
 
-        return 1
+          return 1
+        } else {
+          this.context.stdout.write(
+            'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
+          )
+        }
       }
 
-      const filePath = basePath
       const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
 
       // Upload content
       try {
         const scaPayload = generatePayload(jsonContent, tags, service, environment)
         if (!scaPayload) {
-          console.log(`Cannot generate payload for file ${filePath}`)
+          this.context.stdout.write(renderInvalidPayload(basePath))
+
           continue
         }
-
-        const startTimeMs = Date.now()
-        const response = await api(scaPayload)
-        const endTimeMs = Date.now()
+        this.context.stdout.write(renderUploading(basePath))
+        await api(scaPayload)
         if (this.debug) {
-          this.context.stdout.write(`Upload done, status: ${response.status}\n`)
+          this.context.stdout.write(`Upload done for ${basePath}.\n`)
+        }
+      } catch (error) {
+        if (isAxiosError(error)) {
+          if (error.response?.status === 409) {
+            const sha = tags[GIT_SHA] || 'sha-not-found'
+            this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
+
+            return 0
+          }
         }
 
-        const apiTimeMs = endTimeMs - startTimeMs
-        this.context.stdout.write(`File ${basePath} successfully uploaded in ${apiTimeMs} ms\n`)
-      } catch (error) {
-        process.stderr.write(`Error while writing the payload: ${error.message}\n`)
-        if (error.response) {
-          process.stderr.write(`API status: ${error.response.status}\n`)
-        }
+        this.context.stderr.write(renderFailedUpload(basePath, error))
 
         return 1
       }
     }
 
-    this.context.stdout.write(`Upload finished, results available on ${getBaseUrl()}ci/code-analysis\n`)
+    const uploadTimeMs = (Date.now() - startTimeMs) / 1000
+    this.context.stdout.write(renderSuccessfulCommand(this.basePaths.length, uploadTimeMs))
 
     return 0
   }

@@ -216,9 +216,9 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  public resultEnd(result: Result, baseUrl: string) {
+  public resultEnd(result: Result, baseUrl: string, batchId: string) {
     const suite = this.getSuiteByName(result.test.suite)
-    const testCase = this.getTestCase(result, baseUrl)
+    const testCase = this.getTestCase(result, baseUrl, batchId)
 
     if (isResultSkippedBySelectiveRerun(result)) {
       return this.addTestCaseToSuite(suite, testCase)
@@ -488,10 +488,10 @@ export class JUnitReporter implements Reporter {
     return existingSuite
   }
 
-  private getTestCase(result: Result, baseUrl: string): XMLTestCase {
+  private getTestCase(result: Result, baseUrl: string, batchId: string): XMLTestCase {
     const test = result.test
     const resultOutcome = getResultOutcome(result)
-    const resultUrl = getResultUrl(baseUrl, test, result.resultId)
+    const resultUrl = getResultUrl(baseUrl, test, result.resultId, batchId)
 
     const passed = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
 

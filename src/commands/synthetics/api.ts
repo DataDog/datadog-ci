@@ -2,6 +2,8 @@ import {stringify} from 'querystring'
 
 import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
+import {isAxiosError} from 'axios'
+
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {CriticalError} from './errors'
@@ -11,7 +13,6 @@ import {
   Batch,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   Payload,
   PollResult,
   MultipartPresignedUrlsResponse,
@@ -20,6 +21,8 @@ import {
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
+  MobileAppUploadResult,
+  MobileApplicationNewVersionParams,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -27,6 +30,8 @@ import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 const MAX_RETRIES = 3
 const DELAY_BETWEEN_RETRIES = 500 // In ms
 const LARGE_DELAY_BETWEEN_RETRIES = 1000 // In ms
+// TODO SYNTH-13709: Use the `Retry-After` header.
+const DELAY_BETWEEN_429_RETRIES = 5000 // In ms
 
 interface BackendError {
   errors: string[]
@@ -65,7 +70,8 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
     },
-    request
+    request,
+    {retryOn429: true}
   )
 
   return resp.data
@@ -76,7 +82,8 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>
     {
       url: `/synthetics/tests/${testId}`,
     },
-    request
+    request,
+    {retryOn429: true}
   )
 
   return resp.data
@@ -116,7 +123,10 @@ const getSyntheticsOrgSettings = (
 const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
   batchId: string
 ): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, retryOn5xxOr404Errors)
+  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
+    retryOn404: true,
+    retryOn429: true,
+  })
 
   const serverBatch = resp.data.data
 
@@ -137,7 +147,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
       url: '/synthetics/tests/poll_results',
     },
     request,
-    retryOn5xxOr404Errors
+    {retryOn404: true, retryOn429: true}
   )
 
   return resp.data.results
@@ -211,7 +221,8 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
       request
     )
 
-    const quotedEtag = resp.headers.etag as string
+    // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
+    const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
 
     return {
       ETag: quotedEtag.replace(/"/g, ''),
@@ -223,86 +234,107 @@ const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => Axio
 }
 
 export const completeMultipartMobileApplicationUpload = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<void>
+  request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>
 ) => async (
   applicationId: string,
   uploadId: string,
   key: string,
-  uploadPartResponses: MobileApplicationUploadPartResponse[]
-) => {
-  await retryRequest(
+  uploadPartResponses: MobileApplicationUploadPartResponse[],
+  newVersionParams?: MobileApplicationNewVersionParams
+): Promise<string> => {
+  const resp = await retryRequest(
     {
       data: {
         key,
+        newVersionParams,
         parts: uploadPartResponses,
         uploadId,
+        validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
       },
       method: 'POST',
       url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
     },
     request
   )
+
+  return resp.data.job_id
 }
 
-const createMobileVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<MobileApplicationVersion>) => async (
-  version: MobileApplicationVersion
-) => {
-  const resp = await retryRequest(
+export const pollMobileApplicationUploadResponse = (
+  request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
+) => async (jobId: string): Promise<MobileAppUploadResult> => {
+  const response = await retryRequest(
     {
-      data: version,
-      method: 'POST',
-      url: `/synthetics/mobile/applications/versions`,
+      method: 'GET',
+      url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
     },
     request
   )
 
-  return resp.data
+  return response.data
 }
 
-type RetryPolicy = (retries: number, error: AxiosError) => number | undefined
+const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
 
-const retryOn5xxErrors: RetryPolicy = (retries, error) => {
-  // Retry on Node.js errors for both retry policies.
+export type RetryPolicy = {
+  retryOn404?: boolean | undefined
+  retryOn429?: boolean | undefined
+}
+
+export const determineRetryDelay = (
+  retries: number,
+  error: Error,
+  retryPolicy: RetryPolicy = {retryOn404: false, retryOn429: false}
+) => {
+  // Always retry on Node.js errors
   if (retries < MAX_RETRIES && isNodeError(error)) {
     return LARGE_DELAY_BETWEEN_RETRIES
   }
 
+  // Always retry on 5xx
   if (retries < MAX_RETRIES && is5xxError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
-}
 
-const retryOn5xxOr404Errors: RetryPolicy = (retries, error) => {
-  const retryOn5xxDelay = retryOn5xxErrors(retries, error)
-  if (retryOn5xxDelay) {
-    return retryOn5xxDelay
-  }
-
-  if (retries < MAX_RETRIES && isNotFoundError(error)) {
+  // Retry on 404
+  if (retryPolicy.retryOn404 && retries < MAX_RETRIES && isNotFoundError(error)) {
     return DELAY_BETWEEN_RETRIES
   }
+
+  // Retry on 429
+  if (retryPolicy.retryOn429 && retries < MAX_RETRIES && isTooManyRequestsError(error)) {
+    return retryWithJitter(DELAY_BETWEEN_429_RETRIES)
+  }
 }
 
-const getErrorHttpStatus = (error: AxiosError | EndpointError) =>
-  'status' in error ? error.status : error.response?.status
+const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
 
-export const isForbiddenError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 403
+const getErrorHttpStatus = (error: Error): number | undefined =>
+  isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined
 
-export const isNotFoundError = (error: AxiosError | EndpointError) => getErrorHttpStatus(error) === 404
+export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
+
+export const isNotFoundError = (error: Error): boolean => getErrorHttpStatus(error) === 404
+
+export const isTooManyRequestsError = (error: Error): boolean => getErrorHttpStatus(error) === 429
 
 export const isNodeError = (error: unknown): error is NodeJS.ErrnoException => !!error && 'code' in (error as Error)
 
-export const is5xxError = (error: AxiosError | EndpointError) => {
+export const is5xxError = (error: Error): boolean => {
   const statusCode = getErrorHttpStatus(error)
 
-  return statusCode && statusCode >= 500 && statusCode <= 599
+  return statusCode && statusCode >= 500 && statusCode <= 599 ? true : false
 }
 
 const retryRequest = <T>(
   args: AxiosRequestConfig,
   request: (args: AxiosRequestConfig) => AxiosPromise<T>,
-  retryPolicy: RetryPolicy = retryOn5xxErrors
-) => retry(() => request(args), retryPolicy)
+  statusCodesToRetryOn?: RetryPolicy
+) =>
+  retry(
+    () => request(args),
+    (retries, e) => determineRetryDelay(retries, e, statusCodesToRetryOn)
+  )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
   const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
@@ -322,7 +354,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
-    createMobileVersion: createMobileVersion(requestUnstable),
+    pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
 }
 
@@ -344,4 +376,9 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })
+}
+
+const isAzureUrl = (presignedUrl: string) => {
+  // https://learn.microsoft.com/en-us/rest/api/storageservices/put-blob-from-url?tabs=microsoft-entra-id#request
+  return presignedUrl.includes('.blob.core.windows.net')
 }

@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "typeRoots": ["./node_modules/@types/", "./src/types"],
     "module": "commonjs",
     "declaration": true,
     "sourceMap": true,
@@ -11,9 +10,6 @@
     "noImplicitAny": true,
     "moduleResolution": "node",
     "baseUrl": "./",
-    "paths": {
-      "*": ["node_modules/*"]
-    },
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
     "esModuleInterop": true,

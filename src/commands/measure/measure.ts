@@ -1,3 +1,5 @@
+import type {AxiosError} from 'axios'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -52,7 +54,6 @@ export class MeasureCommand extends Command {
   }
 
   public async execute() {
-    console.log(this.path)
     if (this.path[0] === 'metric') {
       this.context.stdout.write(
         chalk.yellow(`[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n`)
@@ -81,14 +82,6 @@ export class MeasureCommand extends Command {
     try {
       const measures = parseMeasures(rawMeasures)
       const {provider, ciEnv} = getCIEnv()
-      // For Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
-      if (provider === 'buddy' && this.level === 'job') {
-        this.context.stderr.write(
-          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
-        )
-
-        return 1
-      }
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
       if (exitStatus !== 0 && this.noFail) {
@@ -153,11 +146,18 @@ export class MeasureCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send measures: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send measures: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }

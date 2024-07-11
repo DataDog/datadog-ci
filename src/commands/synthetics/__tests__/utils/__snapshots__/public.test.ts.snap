@@ -5,7 +5,7 @@ exports[`utils getTestsToTrigger too many tests to trigger trim and warn if from
   "calls": [
     [
       [
-        "[33mMore than [1m100[22m tests returned by search query, only the first [1m100[22m were fetched.[39m
+        "[33mThe search query returned 110 tests, only the first [1m100[22m will be triggered.[39m
 [33m[39m",
       ],
     ],

@@ -10,6 +10,8 @@ import {
   buildLogAccessPolicyName,
   shouldUpdateStepForTracesMerging,
   StepType,
+  injectContextForStepFunctions,
+  shouldUpdateStepForStepFunctionContextInjection,
 } from '../helpers'
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
@@ -169,6 +171,64 @@ describe('stepfunctions command helpers tests', () => {
       expect(arnObject.region).toBe('us-east-1')
       expect(arnObject.accountId).toBe('000000000000')
       expect(arnObject.resourceName).toBe('ExampleStepFunction')
+    })
+  })
+
+  describe('shouldUpdateStepForStepFunctionContextInjection', () => {
+    test('is true for an empty object', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {},
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeTruthy()
+    })
+
+    test('is true for undefined', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeTruthy()
+    })
+
+    test('is false when Input is an object that contains a CONTEXT key', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {'CONTEXT.$': 'blah'},
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeFalsy()
+    })
+  })
+
+  describe('inject context for StepFunctions', () => {
+    test('injects context into a step function invocation', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {},
+        },
+        End: true,
+      }
+
+      const changed = injectContextForStepFunctions(step)
+      expect(changed).toBeTruthy()
+      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
     })
   })
 
