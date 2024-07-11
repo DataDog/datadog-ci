@@ -1020,18 +1020,53 @@ describe('run-test', () => {
         }
         expect(command['config']).toEqual(expectedCLIOverrideResult)
       })
-    })
 
-    test('parameters override precedence: global < ENV < test file', async () => {
+      const overrideTestConfig = {
+        allowInsecureCertificates: false,
+        basicAuth: {
+          password: 'password-test-file',
+          username: 'username-test-file',
+        },
+        body: 'a body from test file',
+        bodyType: 'bodyType from test file',
+        cookies: {
+          value: 'test-file1=value1;test-file2=value2;',
+          append: false,
+        },
+        defaultStepTimeout: 31,
+        deviceIds: [
+          'chrome.laptop_large_from_test_file',
+          'chrome.laptop_small_from_test_file',
+          'firefox.laptop_large_from_test_file',
+        ],
+        executionRule: ExecutionRule.NON_BLOCKING,
+        followRedirects: false,
+        headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from test file'},
+        locations: ['test-file-loc-1', 'test-file-loc-2'],
+        mobileApplicationVersion: 'test-file-00000000-0000-0000-0000-000000000000',
+        pollingTimeout: 32,
+        resourceUrlSubstitutionRegexes: [
+          'from-test-file-regex1',
+          's/(https://www.)(.*)/$1extra-$2',
+          'https://example.com(.*)|http://subdomain.example.com$1',
+        ],
+        retry: {
+          count: 33,
+          interval: 34,
+        },
+        startUrl: 'startUrl-from-test-file',
+        startUrlSubstitutionRegex: 'startUrlSubstitutionRegex-from-test-file',
+        testTimeout: 35,
+        variables: {testFileVar1: 'value1', testFileVar2: 'value2'},
+      }
+
       const triggerTests = jest.fn(() => {
         throw getAxiosHttpError(502, {message: 'Bad Gateway'})
       })
-
       const apiHelper = mockApi({
         getTest: jest.fn(async () => ({...getApiTest('publicId')})),
         triggerTests,
       })
-
       const getExpectedTestsToTriggerArguments = (
         testOverrides: Partial<UserConfigOverride>
       ): Parameters<typeof utils['getTestsToTrigger']> => {
@@ -1047,80 +1082,155 @@ describe('run-test', () => {
           expect.anything(),
         ]
       }
-
-      const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
-
-      const write = jest.fn()
-      const command = createCommand(RunTestsCommand, {stderr: {write}})
-
-      // Test file (empty config for now)
       const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', testOverrides: {}}]}}
-      jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
-      jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
-      jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
 
-      // Global
-      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-      command['config'].global = {
-        locations: ['aws:us-east-2'],
-        mobileApplicationVersionFilePath: './path/to/application_global.apk',
-      }
-      command['config'].defaultTestOverrides = {
-        locations: ['aws:us-east-2'],
-        mobileApplicationVersionFilePath: './path/to/application_global.apk',
-      }
+      test('config file < test file', async () => {
+        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const command = createCommand(RunTestsCommand)
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => {
+          return {
+            ...baseConfig,
+            defaultTestOverrides: {
+              ...configFile.defaultTestOverrides,
+              mobileApplicationVersionFilePath: undefined,
+            },
+            testSearchQuery: undefined,
+          }
+        })
+        jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+        jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
 
-      expect(await command.execute()).toBe(0)
-      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
-        1,
-        ...getExpectedTestsToTriggerArguments({
-          locations: ['aws:us-east-2'],
-          mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-        })
-      )
+        testFile.content.tests[0].testOverrides = overrideTestConfig
 
-      // Global < ENV
-      process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3',
-      }
-      expect(await command.execute()).toBe(0)
-      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
-        2,
-        ...getExpectedTestsToTriggerArguments({
-          locations: ['aws:us-east-3'],
-          mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-        })
-      )
-      // Same, but with 2 locations.
-      process.env = {
-        DATADOG_SYNTHETICS_LOCATIONS: 'aws:us-east-3;aws:us-east-4',
-      }
-      expect(await command.execute()).toBe(0)
-      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
-        3,
-        ...getExpectedTestsToTriggerArguments({
-          locations: ['aws:us-east-3', 'aws:us-east-4'],
-          mobileApplicationVersionFilePath: './path/to/application_global.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-        })
-      )
+        expect(await command.execute()).toBe(0)
+        expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+          1,
+          ...getExpectedTestsToTriggerArguments(overrideTestConfig)
+        )
+      })
+      test('ENV < test file', async () => {
+        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const command = createCommand(RunTestsCommand)
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
+        jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+        jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
 
-      // ENV < test file
-      testFile.content.tests[0].testOverrides = {
-        locations: ['aws:us-east-1'],
-        mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
-      }
-      expect(await command.execute()).toBe(0)
-      expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
-        4,
-        ...getExpectedTestsToTriggerArguments({
-          locations: ['aws:us-east-1'],
-          mobileApplicationVersionFilePath: './path/to/application_test_file.apk',
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
-        })
-      )
+        testFile.content.tests[0].testOverrides = overrideTestConfig
+
+        const testOverrideEnv = {
+          DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD: 'password-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME: 'username-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY: 'body-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
+          DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
+            "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
+          DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
+          DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: 'env-00000000-0000-0000-0000-000000000000',
+          DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'env-regex1;env-regex2',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT: '5',
+          DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL: '100',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL: 'startUrl-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX: 'startUrlSubstitutionRegex-from-env',
+          DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT: '42',
+          DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'envVar1': 'value1', 'envVar2': 'value2'}",
+        }
+
+        process.env = testOverrideEnv
+
+        expect(await command.execute()).toBe(0)
+        expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+          1,
+          ...getExpectedTestsToTriggerArguments(overrideTestConfig)
+        )
+      })
+      test('CLI < test file', async () => {
+        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const command = createCommand(RunTestsCommand)
+        jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
+        jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
+        jest.spyOn(utils, 'getSuites').mockResolvedValue([testFile])
+
+        const defaultTestOverrides: UserConfigOverride = {
+          allowInsecureCertificates: false,
+          basicAuth: {
+            password: 'password-cli',
+            username: 'username-cli',
+          },
+          body: 'a body from cli',
+          bodyType: 'bodyType from cli',
+          cookies: {
+            value: 'cli1=value1;cli2=value2;',
+            append: false,
+          },
+          defaultStepTimeout: 11,
+          deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
+          executionRule: ExecutionRule.NON_BLOCKING,
+          followRedirects: false,
+          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
+          locations: ['cli-loc-1', 'cli-loc-2'],
+          mobileApplicationVersion: 'cli-00000000-0000-0000-0000-000000000000',
+          pollingTimeout: 12,
+          resourceUrlSubstitutionRegexes: [
+            'from-cli-regex1',
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
+          retry: {
+            count: 13,
+            interval: 14,
+          },
+          startUrl: 'startUrl-from-cli',
+          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex-from-cli',
+          testTimeout: 15,
+          variables: {cliVar1: 'value1', cliVar2: 'value2'},
+        }
+
+        type Cookies = {value: string; append: boolean}
+
+        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        command['deviceIds'] = ['my-old-device']
+        command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
+        command['overrides'] = [
+          `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
+          `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
+          `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
+          `body=${defaultTestOverrides.body}`,
+          `bodyType=${defaultTestOverrides.bodyType}`,
+          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
+          `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
+          `executionRule=${defaultTestOverrides.executionRule}`,
+          `followRedirects=${defaultTestOverrides.followRedirects}`,
+          `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+          `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
+          `locations=${defaultTestOverrides.locations?.join(';')}`,
+          `retry.count=${defaultTestOverrides.retry?.count}`,
+          `retry.interval=${defaultTestOverrides.retry?.interval}`,
+          `startUrl=${defaultTestOverrides.startUrl}`,
+          `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
+          `testTimeout=${defaultTestOverrides.testTimeout}`,
+          `resourceUrlSubstitutionRegexes=${defaultTestOverrides.resourceUrlSubstitutionRegexes?.join(';')}`,
+          `variables.cliVar1=${defaultTestOverrides.variables?.cliVar1}`,
+          `variables.cliVar2=${defaultTestOverrides.variables?.cliVar2}`,
+        ]
+
+        await command['resolveConfig']()
+        expect(await command.execute()).toBe(0)
+        expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
+          1,
+          ...getExpectedTestsToTriggerArguments(overrideTestConfig)
+        )
+      })
     })
   })
 
