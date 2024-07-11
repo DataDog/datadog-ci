@@ -54,7 +54,7 @@ To setup the client, your Datadog API and application keys need to be configured
 
 ### Global configuration file options
 
-Create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
+Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
 See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
 
@@ -202,8 +202,8 @@ export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 ### API
 
-By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a Test Config file.
-The default value for the Global Configuration file is `datadog-ci.json`. If you name you global config file that you don't need to use the `--config` flag, the file will be automatically picked up.
+By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a [test configuration file](#test-files).
+The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
 For example:
 
@@ -512,7 +512,7 @@ You can also pass these options in a configuration file:
 }
 ```
 
-They can also be added the same global configuration file as used for the run-tests command.
+These options can also be added to the same global configuration file used for the run-tests command.
 
 Pass this config file to the command with the `--config` flag:
 
@@ -520,7 +520,7 @@ Pass this config file to the command with the `--config` flag:
 datadog-ci synthetics upload-application --config global-config.json
 ```
 
-The default value for the Global Configuration file is `datadog-ci.json`. If you name you global config file that you don't need to use the `--config` flag, the file will be automatically picked up.
+The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
 ## Further reading
 
