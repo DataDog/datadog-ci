@@ -419,32 +419,229 @@ Your test files must be named with a `.synthetics.json` suffix.
   ]
 }
 ```
+
 **Note**: The `config` field from the global configuration file is deprecated in favor of `testOverrides`.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
 All options under the `testOverrides` key are optional and allow overriding of the test configuration as stored in Datadog. These options can also be set with environment variables starting with `DATADOG_SYNTHETICS_OVERRIDE_`, or with the `--override` CLI parameter following this pattern: `--override option=value`.
 
-| Options                            | Type             | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `allowInsecureCertificates`        | Boolean          | Disable certificate checks in Synthetic API and Browser tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `basicAuth`                        | Object           | Credentials to provide if basic authentication is required.<br><br>- `username` (String): The username for basic authentication.<br>- `password` (String): The password for basic authentication.<br><br>  With `--override`, use `basicAuth.username` and `basicAuth.password`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `body`                             | String           | Data to send in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `bodyType`                         | String           | Content type for the data to send in an API test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `cookies`                          | String or object | Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).<br><br>- If this is a string, it is used to replace the original cookies.<br>- If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies. <br><br> With `--override`, use `cookies` and `cookies.append`.                                                                                                                                                                                                                                                                                                                                                                                               |
-| `defaultStepTimeout`               | Number           | The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `deviceIds`                        | Array            | A list of devices to run the browser test on.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `executionRule`                    | String           | The execution rule for the test defines the behavior of the CLI in case of a failing test.<br><br>- `blocking`: The CLI returns an error if the test fails.<br>- `non_blocking`: The CLI only prints a warning if the test fails.<br>- `skipped`: The test is not executed at all.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `followRedirects`                  | Boolean          | Indicates whether or not to follow HTTP redirections in Synthetic API tests.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `headers`                          | Object           | The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace. <br><br> With `--override`, use `headers.<YOUR_HEADER>`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `locations`                        | Array            | A list of locations to run the test from.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `mobileApplicationVersion`         | String           | Override the default mobile application version for a Synthetic mobile application test. The version must be uploaded and available within Datadog.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `mobileApplicationVersionFilePath` | String           | Override the application version for a Synthetic mobile application test.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `retry`                            | Object           | The retry policy for the test.<br><br>- `count` (Integer): The number of attempts to perform in case of test failure.<br>- `interval` (Integer): The interval between attempts in milliseconds. <br><br> With `--override`, use `retry.count` and `retry.interval`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `startUrl`                         | String           | The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `startUrlSubstitutionRegex`        | String           | The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. <br><br>If the URL contains variables, this regex applies after the interpolation of the variables. <br><br>There are two possible formats: <br><br>- `your_regex\|your_substitution`: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs. For example, `https://example.com(.*)\|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`. <br>- `s/your_regex/your_substitution/modifiers`: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`. |
-| `testTimeout`                      | Number           | The maximum duration of a browser test in seconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `variables`                        | Object           | The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace. <br><br> With `--override`, use `variables.NAME=VALUE`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+#### `allowInsecureCertificates` (Boolean)
+
+Disable certificate checks in Synthetic API and Browser tests.
+
+Configuration options:
+
+* Test Config: `"allowInsecureCertificates": true`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES=true`
+* CLI param: `--override allowInsecureCertificates=true`
+
+#### `basicAuth` (Object)
+
+Credentials to provide if basic authentication is required.
+
+* `username` (String): The username for basic authentication.
+* `password` (String): The password for basic authentication.
+
+Configuration options:
+
+* Test Config: `"basicAuth": {"username": "test_username", "password": "test_password"}`
+* ENV variable:
+  * `DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME=test_username`
+  * `DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD=test_password`
+* CLI param:
+  * `--override basicAuth.username=test_username`
+  * `--override basicAuth.password=test_password`
+
+#### `body` (String)
+
+Data to send in an API test.
+
+Configuration options:
+
+* Test Config: `"body": "{\"fakeContent\":true}"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_BODY={"fakeContent":true}`
+* CLI param: `--override body={"fakeContent":true}`
+
+#### `bodyType` (String)
+
+Content type for the data to send in an API test.
+
+Configuration options:
+
+* Test Config: `"bodyType": "application/json"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE=application/json`
+* CLI param: `--override bodyType=application/json`
+
+#### `cookies` (String or object)
+
+Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
+
+* If this is a string, it is used to replace the original cookies as `append` defaults to `false`.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of append, it is appended or replaces the original cookies.
+
+Configuration options:
+
+* Test Config: `"cookies": "name1=value1;name2=value2"` (equivalent to `"append": false`) or `"cookies": {"append": true, "value": "name1=value1;name2=value2"}`
+* ENV variable:
+  * `DATADOG_SYNTHETICS_OVERRIDE_COOKIES="name1=value1;name2=value2"`
+  * `DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND=true`
+* CLI param:
+  * `--override cookies="name1=value1;name2=value2"`
+  * `--override cookies.append=true`
+
+#### `defaultStepTimeout` (Number)
+
+The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.
+
+Configuration options:
+
+* Test Config: `"defaultStepTimeout": 15`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT=15`
+* CLI param: `--override defaultStepTimeout=15`
+
+#### `deviceIds` (Array)
+
+A list of devices to run the browser test on. The values that it can take can be found in [this piece of Datadog documentation][11].
+
+Configuration options:
+
+* Test Config: `"deviceIds": ["chrome.laptop_large", "firefox.tablet"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS=["chrome.laptop_large", "firefox.tablet"]`
+* CLI param: `--override deviceIds=["chrome.laptop_large", "firefox.tablet"]`
+
+#### `executionRule` (String)
+
+The execution rule for the test defines the behavior of the CLI in case of a failing test.
+It could take one of the following values:
+
+* `blocking`: The CLI returns an error if the test fails.
+* `non_blocking`: The CLI only prints a warning if the test fails.
+* `skipped`: The test is not executed at all.
+
+Configuration options:
+
+* Test Config: `"executionRule": "skipped"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE=skipped`
+* CLI param: `--override executionRule=skipped`
+
+#### `followRedirects` (Boolean)
+
+Indicates whether or not to follow HTTP redirections in Synthetic API tests.
+
+Configuration options:
+
+* Test Config: `"followRedirects": true`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS=true`
+* CLI param: `--override followRedirects=true`
+
+#### `headers` (Object)
+
+The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace.
+
+Configuration options:
+
+* Test Config: `"headers": {"NEW_HEADER_1": "NEW VALUE 1", "NEW_HEADER_2": "NEW VALUE 2"}`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_HEADERS='{"NEW_HEADER_1":"NEW VALUE 1", "NEW_HEADER_2":"NEW VALUE 2"}'` (**note** that this is a valid JSON)
+* CLI param:
+  * `--override headers.NEW_HEADER_1="NEW VALUE 1"`
+  * `--override headers.NEW_HEADER_2="NEW VALUE 2"`
+
+#### `locations` (Array)
+
+A list of locations to run the test from. The specific values that it can take for your org can be found [by opening this link][12].
+
+Configuration options:
+
+* Test Config: `"locations": ["aws:us-east-1", "gcp:europe-west3"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS=["aws:us-east-1", "gcp:europe-west3"]`
+* CLI param: `--override locations=["aws:us-east-1", "gcp:europe-west3"]`
+
+#### `mobileApplicationVersion` (String)
+
+Override the default mobile application version for a Synthetic mobile application test. The version must be uploaded and available within Datadog.
+
+Configuration options:
+
+* Test Config: `"mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION=01234567-8888-9999-abcd-efffffffffff`
+* CLI param: `--mobileApplicationVersion=01234567-8888-9999-abcd-efffffffffff`
+
+#### `mobileApplicationVersionFilePath` (String)
+
+Override the application version for a Synthetic mobile application test.
+
+Configuration options:
+
+* Test Config: `"mobileApplicationVersionFilePath": "path/to/application.apk"`
+* ENV variable: Not Available
+* CLI param: `--mobileApplicationVersionFilePath=path/to/application.apk`
+
+#### `retry` (Object)
+
+The retry policy for the test. The 2 possible attributes for this object are independent:
+
+* `count` (Integer): The number of attempts to perform in case of test failure.
+* `interval` (Integer): The interval between attempts in milliseconds.
+
+Configuration options:
+
+* Test Config: `"retry": {"count": 2, "interval": 300}`
+* ENV variable:
+  * `DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT=2`
+  * `DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL=300`
+* CLI param:
+  * `--override retry.count=2`
+  * `--override retry.interval=300`
+
+#### `startUrl` (String)
+
+The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.
+
+Configuration options:
+
+* Test Config: `"startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL="{{URL}}?static_hash={{STATIC_HASH}}"`
+* CLI param: `--override startUrl="{{URL}}?static_hash={{STATIC_HASH}}"`
+
+#### `startUrlSubstitutionRegex` (String)
+
+The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override startUrl.
+
+If the URL contains variables, this regex applies after the interpolation of the variables.
+
+There are two possible formats:
+
+* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
+* **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
+
+Configuration options:
+
+* Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX="s/(https://www.)(.*)/$1extra-$2/"`
+* CLI param: `--override startUrlSubstitutionRegex="s/(https://www.)(.*)/$1extra-$2/"`
+
+#### `testTimeout` (Number)
+
+The maximum duration of a browser test in seconds.
+
+Configuration options:
+
+* Test Config: `"testTimeout": 300`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT=300`
+* CLI param: `--override testTimeout=300`
+
+#### `variables` (Object)
+
+The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.
+
+Configuration options:
+
+* Test Config: `"variables": {"NEW_VARIABLE_1": "NEW VARIABLE 1", "NEW_VARIABLE_2": "NEW VARIABLE 2"}`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_VARIABLES='{"NEW_VARIABLE_1":"NEW VARIABLE 1", "NEW_VARIABLE_2":"NEW VARIABLE 2"}'` (**note** that this is a valid JSON)
+* CLI param:
+  * `--override variables.NEW_VARIABLE_1="NEW VARIABLE 1"`
+  * `--override variables.NEW_VARIABLE_2="NEW VARIABLE 2"`
 
 **Note**: The `pollingTimeout` option is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
 
@@ -679,6 +876,8 @@ Additional helpful documentation, links, and articles:
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/example-global-config.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
+[11]: https://registry.terraform.io/providers/DataDog/datadog/latest/docs/resources/synthetics_test#device_ids
+[12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 
 <!--
   This page is single-sourced:
