@@ -59,9 +59,9 @@ To setup the client, your Datadog API and application keys need to be configured
 
 ### Global configuration file options
 
-Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
+Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
-See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
+See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#list-of-configurations) and [upload-application command](#list-of-configurations-1). For an example configuration file, see this [`example-global-config.json` file][9].
 
 ### Configuring with Environment Variables
 
@@ -150,8 +150,7 @@ For example:
 
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 
-
-## Run tests
+## Run Tests Command
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or specify the tests you want to run using the `-p,--public-id` flag.
 
@@ -226,7 +225,7 @@ The API key used to query the Datadog API.
 The application key used to query the Datadog API.
 
 * Global Config: `"appKey": "<APPLICATION_KEY>"`
-* ENV variable:  `DATADOG_APP_KEY="<APPLICATION_KEY>"`
+* ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
 * CLI param: `--appKey "<APPLICATION_KEY>"`
 
 #### `batchTimeout`
