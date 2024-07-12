@@ -663,99 +663,6 @@ Configuration options:
 
 **Note**: The `pollingTimeout` option is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
 
-## Use local and staging environments
-
-You can combine variable overrides with [Local and Staging Environments][3] to run tests within your development environment. This connection ensures that all test requests sent through the CLI are automatically routed through the `datadog-ci` client. 
-
-This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
-
-## End-to-end testing process
-
-To verify the Synthetics command works as expected, trigger a test run and verify it returns 0:
-
-```bash
-export DATADOG_API_KEY='<API_KEY>'
-export DATADOG_APP_KEY='<APPLICATION_KEY>'
-
-yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
-```
-
-Successful output should look like this:
-
-```bash
-[abc-def-ghi] Trigger test "Check on testing.website"
-[abc-def-ghi] Waiting results for "Check on testing.website"
-
-
-=== REPORT ===
-Took 11546ms
-
-✓ [abc-def-ghi] | Check on testing.website
-  ✓ location: Frankfurt (AWS)
-    ⎋  total duration: 28.9 ms - result url: https://app.datadoghq.com/synthetics/details/abc-def-ghi?resultId=123456789123456789
-    ✓ GET - https://testing.website
-```
-
-### Reporters
-
-Two reporters are supported out-of-the-box:
-
-1. `stdout`
-2. JUnit
-
-To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
-
-```bash
-yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
-```
-
-Reporters can hook themselves into the `MainReporter` of the command.
-
-### Available hooks
-
-| Hook name        | Parameters                                                                               | Description                                                     |
-| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                          | Called for logging.                                             |
-| `error`          | `(error: string)`                                                                        | Called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                     | Called whenever an error occurs during the tests parsing phase. |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | Called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
-| `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
-| `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
-| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
-
-## View test results
-
-You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Testing Results Explorer][4] or clicking on a test on the [**Tests** page][5].
-
-You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
-
-```bash
-  yarn datadog-ci synthetics run-tests --config global-config.json
-  yarn run v1.22.4
-  $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config global-config.json
-  Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
-
-  Got test files:
-    - user.synthetics.json
-
-  [2cj-h3c-39x] Trigger test "Test CI connection"
-  [2cj-h3c-39x] Waiting results for "Test CI connection"
-
-  === REPORT ===
-  Took 2242ms
-
-  x  [2cj-h3c-39x] | Test CI connection
-    * location: 30019
-      ⎋ total duration: 32.6 ms - result url: https://app.datadoghq.com/synthetics/details/2cj-h3c-39x?resultId=122140688175981634
-      x GET - https://www.datadoghq.com
-        [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}] 
-  error Command failed with exit code 1.
-  info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
-```
-
 ## Upload Application Command
 
 This command uploads a new version to an **existing** mobile application.
@@ -882,6 +789,99 @@ datadog-ci synthetics upload-application --config global-config.json
 ```
 
 The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
+
+## Use local and staging environments
+
+You can combine variable overrides with [Local and Staging Environments][3] to run tests within your development environment. This connection ensures that all test requests sent through the CLI are automatically routed through the `datadog-ci` client. 
+
+This allows you to run tests with end-to-end encryption at every stage of your software development lifecycle, from pre-production environments to your production system.
+
+## End-to-end testing process
+
+To verify the Synthetics command works as expected, trigger a test run and verify it returns 0:
+
+```bash
+export DATADOG_API_KEY='<API_KEY>'
+export DATADOG_APP_KEY='<APPLICATION_KEY>'
+
+yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
+```
+
+Successful output should look like this:
+
+```bash
+[abc-def-ghi] Trigger test "Check on testing.website"
+[abc-def-ghi] Waiting results for "Check on testing.website"
+
+
+=== REPORT ===
+Took 11546ms
+
+✓ [abc-def-ghi] | Check on testing.website
+  ✓ location: Frankfurt (AWS)
+    ⎋  total duration: 28.9 ms - result url: https://app.datadoghq.com/synthetics/details/abc-def-ghi?resultId=123456789123456789
+    ✓ GET - https://testing.website
+```
+
+### Reporters
+
+Two reporters are supported out-of-the-box:
+
+1. `stdout`
+2. JUnit
+
+To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
+
+```bash
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
+```
+
+Reporters can hook themselves into the `MainReporter` of the command.
+
+### Available hooks
+
+| Hook name        | Parameters                                                                               | Description                                                     |
+| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                          | Called for logging.                                             |
+| `error`          | `(error: string)`                                                                        | Called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                     | Called whenever an error occurs during the tests parsing phase. |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | Called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
+| `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
+| `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
+| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
+
+## View test results
+
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Testing Results Explorer][4] or clicking on a test on the [**Tests** page][5].
+
+You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
+
+```bash
+  yarn datadog-ci synthetics run-tests --config global-config.json
+  yarn run v1.22.4
+  $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config global-config.json
+  Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
+
+  Got test files:
+    - user.synthetics.json
+
+  [2cj-h3c-39x] Trigger test "Test CI connection"
+  [2cj-h3c-39x] Waiting results for "Test CI connection"
+
+  === REPORT ===
+  Took 2242ms
+
+  x  [2cj-h3c-39x] | Test CI connection
+    * location: 30019
+      ⎋ total duration: 32.6 ms - result url: https://app.datadoghq.com/synthetics/details/2cj-h3c-39x?resultId=122140688175981634
+      x GET - https://www.datadoghq.com
+        [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}] 
+  error Command failed with exit code 1.
+  info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
+```
 
 ## Further reading
 
