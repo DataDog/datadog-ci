@@ -217,6 +217,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 The API key used to query the Datadog API.
 
 Configuration options:
+
 * Global Config: `"apiKey": "<API_KEY>"`
 * ENV variable: `DATADOG_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
@@ -226,6 +227,7 @@ Configuration options:
 The application key used to query the Datadog API.
 
 Configuration options:
+
 * Global Config: `"appKey": "<APPLICATION_KEY>"`
 * ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
 * CLI param: `--appKey "<APPLICATION_KEY>"`
@@ -235,6 +237,7 @@ Configuration options:
 The duration (integer in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
 
 Configuration options:
+
 * Global Config: `"batchTimeout": 180000`
 * ENV variable: `DATADOG_SYNTHETICS_BATCH_TIMEOUT=180000`
 * CLI param: `--batchTimeout 180000`
@@ -244,6 +247,7 @@ Configuration options:
 The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
 
 Configuration options:
+
 * Global Config: N/A
 * ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
 * CLI param: `--config global-config.json`
@@ -253,6 +257,7 @@ Configuration options:
 The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 Configuration options:
+
 * Global Config: `"datadogSite": "datadoghq.com"`
 * ENV variable: `DATADOG_SITE=datadoghq.com`
 * CLI param: `--datadogSite datadoghq.com`
@@ -262,6 +267,7 @@ Configuration options:
 Overrides for Synthetic tests applied to all tests.
 
 Configuration options:
+
 * Global Config: See `testOverrides` part of [Test files](#test-files) for an example.
 * ENV variable: N/A
 * CLI param: N/A
@@ -271,6 +277,7 @@ Configuration options:
 A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
 
 Configuration options:
+
 * Global Config: `"failOnCriticalErrors": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS=true`
 * CLI param: `--failOnCriticalErrors`
@@ -280,6 +287,7 @@ Configuration options:
 A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
 
 Configuration options:
+
 * Global Config: `"failOnMissingTests": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS=true`
 * CLI param: `--failOnMissingTests`
@@ -289,6 +297,7 @@ Configuration options:
 A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
 
 Configuration options:
+
 * Global Config: `"failOnTimeout": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT=true`
 * CLI param: `--failOnTimeout`
@@ -298,6 +307,7 @@ Configuration options:
 Glob patterns to detect Synthetic test [configuration files](#test-files).
 
 Configuration options:
+
 * Global Config: `"files": ["{,!(node_modules)/**/}*.synthetics.json"]`
 * ENV variable: `DATADOG_SYNTHETICS_FILES="{,!(node_modules)/**/}*.synthetics.json"`
 * CLI param: `-f "{,!(node_modules)/**/}*.synthetics.json"` / `--files "{,!(node_modules)/**/}*.synthetics.json"`
@@ -307,6 +317,7 @@ Configuration options:
 The filename for a JUnit report if you want to generate one.
 
 Configuration options:
+
 * Global Config: `"jUnitReport": "e2e-test-junit"`
 * ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit"`
 * CLI param:`-j "e2e-test-junit"` / `--jUnitReport "e2e-test-junit"`
@@ -316,6 +327,7 @@ Configuration options:
 Override the application version for all Synthetic mobile application tests.
 
 Configuration options:
+
 * Global Config: `"mobileApplicationVersionFilePath": "path/to/application.apk"`
 * ENV variable: Not Available
 * CLI param: `--mobileApp "path/to/application.apk"` / `--mobileApplicationVersionFilePath "path/to/application.apk"`
@@ -325,6 +337,7 @@ Configuration options:
 The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
 
 Configuration options:
+
 * Global Config: See [Use a proxy](#use-a-proxy) for an example.
 * ENV variable: N/A
 * CLI param: N/A
@@ -334,6 +347,7 @@ Configuration options:
 List of IDs for the Synthetic tests you want to trigger.
 
 Configuration options:
+
 * Global Config: `"publicIds": ["abc-def-ghi", "123-456-789"]`
 * ENV variable: `DATADOG_SYNTHETICS_PUBLIC_IDS="abc-def-ghi;123-456-789"`
 * CLI param: `-p "abc-def-ghi" --public-id "123-456-789"`
@@ -343,6 +357,7 @@ Configuration options:
 A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
 
 Configuration options:
+
 * Global Config: `"selectiveRerun": true,`
 * ENV variable: `DATADOG_SYNTHETICS_SELECTIVE_RERUN=true`
 * CLI param: `--selectiveRerun`
@@ -352,6 +367,7 @@ Configuration options:
 The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
 
 Configuration options:
+
 * Global Config: `"subdomain": "myorg"`
 * ENV variable: `DATADOG_SUBDOMAIN="myorg"`
 * CLI param: `--subdomain "myorg"`
@@ -361,6 +377,7 @@ Configuration options:
 Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
 
 Configuration options:
+
 * Global Config: `"testSearchQuery": "tag:e2e-tests"`
 * ENV variable: `DATADOG_SYNTHETICS_TEST_SEARCH_QUERY="tag:e2e-tests"`
 * CLI param: `-s "tag:e2e-tests"` / `--search "tag:e2e-tests"`
@@ -370,6 +387,7 @@ Configuration options:
 Use [Local and Staging Environments](#use-local-and-staging-environments) to execute your test batch.
 
 Configuration options:
+
 * Global Config: `"tunnel": true`
 * ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
 * CLI param: `-t` / `--tunnel`
@@ -679,6 +697,7 @@ This command uploads a new version to an **existing** mobile application.
 The API key used to query the Datadog API.
 
 Configuration options:
+
 * Global Config: `"apiKey": "<API_KEY>"`
 * ENV variable: `DATADOG_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
@@ -688,6 +707,7 @@ Configuration options:
 The application key used to query the Datadog API.
 
 Configuration options:
+
 * Global Config: `"appKey": "<APPLICATION_KEY>"`
 * ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
 * CLI param: `--appKey "<APPLICATION_KEY>"`
@@ -697,6 +717,7 @@ Configuration options:
 The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
 
 Configuration options:
+
 * Global Config: N/A
 * ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
 * CLI param: `--config global-config.json`
@@ -706,6 +727,7 @@ Configuration options:
 The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 Configuration options:
+
 * Global Config: `"datadogSite": "datadoghq.com"`
 * ENV variable: `DATADOG_SITE=datadoghq.com`
 * CLI param: `--datadogSite datadoghq.com`
@@ -715,6 +737,7 @@ Configuration options:
 If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
 
 Configuration options:
+
 * Global Config: `"latest": true,`
 * ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
 * CLI param: `--latest`
@@ -724,6 +747,7 @@ Configuration options:
 The ID of the application you want to upload the new version to.
 
 Configuration options:
+
 * Global Config: `"mobileApplicationId": "123-123-123"`
 * ENV variable: `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID=123-123-123`
 * CLI param: `--mobileApplicationId 123-123-123`
@@ -733,6 +757,7 @@ Configuration options:
 The path to your mobile application (`.apk` or `.ipa`).
 
 Configuration options:
+
 * Global Config: `"mobileApplicationVersionFilePath": example/test.apk`
 * ENV variable: Not Available
 * CLI param: `--mobileApplicationVersionFilePath example/test.apk`
@@ -742,6 +767,7 @@ Configuration options:
 The proxy to be used for outgoing connections to Datadog. `host` and `port` keys are mandatory arguments, the `protocol` key defaults to `http`. Supported values for the `protocol` key are `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The library used to configure the proxy is the [proxy-agent][2] library.
 
 Configuration options:
+
 * Global Config: See [Use a proxy](#use-a-proxy) for an example.
 * ENV variable: N/A
 * CLI param: N/A
@@ -751,6 +777,7 @@ Configuration options:
 The name of the new version. It has to be unique.
 
 Configuration options:
+
 * Global Config: `"versionName": "example"`
 * ENV variable: `DATADOG_SYNTHETICS_VERSION_NAME=example`
 * CLI param: `--versionName example`
@@ -887,11 +914,11 @@ You can also see the outcome of test executions directly in your CI as your test
 
 Additional helpful documentation, links, and articles:
 
-- [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
-- [Learn about Continuous Testing and CI/CD][7]
-- [Learn about Mobile Application Testing][10]
-- [Learn about the Synthetic Monitoring & Testing Results Explorer][8]
-- [Learn about Testing Local and Staging Environments][3]
+* [Use Datadog's GitHub Action to add continuous testing to your workflows][6]
+* [Learn about Continuous Testing and CI/CD][7]
+* [Learn about Mobile Application Testing][10]
+* [Learn about the Synthetic Monitoring & Testing Results Explorer][8]
+* [Learn about Testing Local and Staging Environments][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
 [2]: https://github.com/TooTallNate/node-proxy-agent
