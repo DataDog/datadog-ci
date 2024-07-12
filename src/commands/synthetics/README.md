@@ -54,9 +54,9 @@ To setup the client, your Datadog API and application keys need to be configured
 
 ### Global configuration file options
 
-When you run your tests, use the `--config` flag on the command line to specify the path to the global configuration file.
+Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
-See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`global.config.json` file][9].
+See below for the list of advanced options in the global configuration file. For an example configuration file, see this [`example-global-config.json` file][9].
 
 `apiKey`
 : The API key used to query the Datadog API.
@@ -202,7 +202,8 @@ export DATADOG_SYNTHETICS_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 ### API
 
-By default, `datadog-ci` runs at the root of the working directory and finds `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder). The tool loads `datadog-ci.json`, which can be overridden through the `--config` argument.
+By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a [test configuration file](#test-files).
+The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
 For example:
 
@@ -418,7 +419,7 @@ Two reporters are supported out-of-the-box:
 To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
 
 ```bash
-yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global.config.json --jUnitReport e2e-test-junit
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
 ```
 
 Reporters can hook themselves into the `MainReporter` of the command.
@@ -445,9 +446,9 @@ You can see results for CI batches by clicking on a batch in the [Synthetic Moni
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
 ```bash
-  yarn datadog-ci synthetics run-tests --config synthetics.global.json
+  yarn datadog-ci synthetics run-tests --config global-config.json
   yarn run v1.22.4
-  $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config synthetics.global.json
+  $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config global-config.json
   Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
 
   Got test files:
@@ -485,8 +486,9 @@ This command uploads a new version to an **existing** mobile application.
 
 `--latest`
 : If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
- 
+
 Example:
+
 ```bash
 datadog-ci synthetics upload-application                \
   --mobileApplicationId '123-123-123'                   \
@@ -498,6 +500,7 @@ datadog-ci synthetics upload-application                \
 ### Using the global configuration file
 
 You can also pass these options in a configuration file:
+
 ```json
 {
   "apiKey": "<DATADOG_API_KEY>",
@@ -509,10 +512,15 @@ You can also pass these options in a configuration file:
 }
 ```
 
-And pass it to the command with the `--config` flag:
+These options can also be added to the same global configuration file used for the run-tests command.
+
+Pass this config file to the command with the `--config` flag:
+
 ```bash
-datadog-ci synthetics upload-application --config global.config.json
+datadog-ci synthetics upload-application --config global-config.json
 ```
+
+The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
 ## Further reading
 
@@ -532,7 +540,7 @@ Additional helpful documentation, links, and articles:
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
-[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/global.config.json
+[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/example-global-config.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
 
 <!--
