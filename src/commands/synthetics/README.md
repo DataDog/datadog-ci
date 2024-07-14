@@ -57,22 +57,11 @@ To setup the client, your Datadog API and application keys need to be configured
 
 ### Global configuration file options
 
-Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
+Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
 See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#list-of-configurations) and [upload-application command](#list-of-configurations-1). For an example configuration file, see this [`example-global-config.json` file][9].
 
-### Configuring with Environment Variables
-
-In addition to the global configuration file and CLI arguments, you can configure all properties using environment variables.
-
-### Command line options
-
-### API
-
-By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a [test configuration file](#test-files).
-The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
-
-For example:
+Example:
 
 ```jsonc
 {
@@ -119,6 +108,34 @@ For example:
 ```
 
 **Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+
+### Environment Variables
+
+In addition to the global configuration file, you can configure all properties using environment variables. If a property is defined in both the global configuration file and as an environment variable, the environment variable takes precedence.
+
+Example:
+
+```bash
+export DATADOG_SITE=datadoghq.com
+```
+
+### Command line options
+
+The CLI provides another way to set options and configure the behavior of datadog-ci. These options will override the global configuration file and environment variables.
+
+Example:
+
+```bash
+yarn datadog-ci synthetics run-tests --public-id pub-lic-id1
+```
+
+The priority of the 3 forms of configuration is as follows:
+
+```yml
+Global Config < Environment variables < CLI parameters
+```
+
+### API
 
 ### Use a proxy
 
