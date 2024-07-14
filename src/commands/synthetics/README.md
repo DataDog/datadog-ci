@@ -135,7 +135,9 @@ The priority of the 3 forms of configuration is as follows:
 Global Config < Environment variables < CLI parameters
 ```
 
-### API
+### Using datadog-ci as a library
+
+You can also use the `datadog-ci` package as a library in your Node.js application. To do so, import the package and use the `execute()` function for either `runTests` or `uploadApplication`.
 
 ### Use a proxy
 
