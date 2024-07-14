@@ -441,17 +441,26 @@ export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 **Note** The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
 
-
 ### Test files
 
-Your test files must be named with a `.synthetics.json` suffix. 
+Test configuration files offer a way to configure individual tests differently than the general way defined through the other forms of configuration. It can also be used to configure multiple runs of the same test with different configurations.
+
+The Test configuration file takes priority over the other forms of configuration such as the global configuration file, environment variables, and CLI parameters. So to add it to the structure mentioned above it would look like this:
+
+``` yml
+Global Config < Environment variables < CLI parameters < Test Config
+```
+
+By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a test configuration file. This can be manually configured with the [`files` parameter](#files).
+
+Example Test configuration file:
 
 ```jsonc
 // myTest.synthetics.json
 {
   "tests": [
     {
-      "id": "<TEST_PUBLIC_ID>",
+      "id": "<TEST_PUBLIC_ID_1>",
       "testOverrides": {
         "allowInsecureCertificates": true,
         "basicAuth": {"username": "test", "password": "test"},
@@ -472,12 +481,20 @@ Your test files must be named with a `.synthetics.json` suffix.
         "testTimeout": 300,
         "variables": {"MY_VARIABLE": "new title"}
       }
+    },
+    {
+      "id": "<TEST_PUBLIC_ID_2>",
+      "testOverrides": {
+        "allowInsecureCertificates": true,
+        ...
+        "variables": {"MY_VARIABLE": "new title"}
+      }
     }
   ]
 }
 ```
 
-**Note**: The `config` field from the global configuration file is deprecated in favor of `testOverrides`.
+**Note**: The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
