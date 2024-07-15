@@ -148,6 +148,10 @@ export const executeTests = async (
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
+  if (trigger.selective_rerun_rate_limited) {
+    reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
+  }
+
   try {
     // TODO SYNTH-12989: Remove the `maxPollingTimeout` calculation when `pollingTimeout` is removed
     const maxPollingTimeout = Math.max(

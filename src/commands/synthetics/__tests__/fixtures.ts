@@ -72,6 +72,7 @@ export const mockReporter: MainReporter = {
 export const ciConfig: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
+  batchTimeout: 2 * 60 * 1000,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
@@ -82,7 +83,6 @@ export const ciConfig: RunTestsCommandConfig = {
   global: {},
   defaultTestOverrides: {},
   locations: [],
-  pollingTimeout: 2 * 60 * 1000,
   proxy: {protocol: 'http'},
   publicIds: [],
   selectiveRerun: false,

@@ -48,6 +48,9 @@
     "{,!(node_modules)/**/}*.synthetics.json"
   ],
   "jUnitReport": "e2e-test-junit",
+  "latest": true,
+  "mobileApplicationId": "example-abc",
+  "mobileApplicationVersionFilePath": "example_path/example_app.apk",
   "proxy": {
     "auth": {
       "username": "login",
@@ -64,5 +67,6 @@
   "selectiveRerun": true,
   "subdomain": "myorg",
   "testSearchQuery": "tag:e2e-tests",
-  "tunnel": true
+  "tunnel": true,
+  "versionName": "example"
 }
