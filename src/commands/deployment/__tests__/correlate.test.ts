@@ -36,7 +36,7 @@ describe('execute', () => {
     }
     const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
     expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain('Could not extract the source git commit sha')
+    expect(context.stdout.toString()).toContain('Could not extract the commit SHA from the CI environment variables')
   })
   test('valid with minimal data', async () => {
     const envVars = {
