@@ -39,9 +39,9 @@ triggered a deployment, and which deployments were triggered by a pipeline.
 
 In order for the command to work properly, it needs to be called between when the configuration changes are committed and when they are pushed to the configuration repository (where the Kubernetes manifests are). The flow should be similar to the following:
 
-1. Make the changes to the configuration (for example, updating a image tag).
-2. Run `git commit -m "updating my kubernetes configuration"`.
-3. Run `datadog-ci deployment correlate --provider <cd_provider>` (you can refer to the command syntax below).
+1. Make the changes to the configuration (for example, update a image tag).
+2. Run `git commit -m "update kubernetes configuration"`.
+3. Run `datadog-ci deployment correlate --provider <cd_provider>` (refer to the command syntax below).
 4. Run `git push`.
 
 If you are using [argo cd image updater][3], this command does not work since it relies on making the changes using `git commit`. 
