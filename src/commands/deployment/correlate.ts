@@ -159,7 +159,7 @@ export class DeploymentCorrelateCommand extends Command {
       return false
     }
     if (!tags[GIT_SHA]) {
-      this.logger.error('Could not extract the source git commit sha from the CI environment variables')
+      this.logger.error('Could not extract the commit SHA from the CI environment variables')
 
       return false
     }
