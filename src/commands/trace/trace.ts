@@ -2,6 +2,7 @@ import {spawn} from 'child_process'
 import crypto from 'crypto'
 import os from 'os'
 
+import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -146,10 +147,6 @@ export class TraceCommand extends Command {
     return `https://${site}`
   }
 
-  private getEnvironmentVars(keys: string[]): Record<string, string> {
-    return keys.filter((key) => key in process.env).reduce((accum, key) => ({...accum, [key]: process.env[key]!}), {})
-  }
-
   private async reportCustomSpan(payload: Payload) {
     const api = this.getApiHelper()
     try {
@@ -162,7 +159,7 @@ export class TraceCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(chalk.red(`Failed to report custom span: ${error.message}\n`))
+      this.handleError(error as AxiosError)
     }
   }
 
@@ -172,5 +169,12 @@ export class TraceCommand extends Command {
     }
 
     return os.constants.signals[signal] + 128
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Failed to report custom span: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }
