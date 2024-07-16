@@ -137,7 +137,12 @@ Global Config < Environment variables < CLI parameters
 
 ### Using datadog-ci as a library
 
-You can also use the `datadog-ci` package as a library in your Node.js application. To do so, import the package and use the `execute()` function for either `runTests` or `uploadApplication`.
+You can also use the `datadog-ci` package as a library in your Node.js application to trigger tests. To do so, import the package from the Synthetics `run-tests` command and call the `executeWithDetails()` function.
+
+``` javascript
+import { executeWithDetails } from '@datadog/datadog-ci/dist/commands/synthetics/run-tests-lib';
+const { results, summary } = await runTests.executeWithDetails(...)
+```
 
 ### Use a proxy
 
