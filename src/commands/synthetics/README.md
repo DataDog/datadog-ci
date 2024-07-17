@@ -107,8 +107,6 @@ Example:
 }
 ```
 
-**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
-
 ### Environment Variables
 
 In addition to the global configuration file, you can configure all properties using environment variables. If a property is defined in both the global configuration file and as an environment variable, the environment variable takes precedence.
@@ -170,7 +168,17 @@ For example:
 }
 ```
 
-**Note**: The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+### Deprecated fields
+
+We're in the process of cleaning up and further aligning datadog-ci's synthetics commands. As part of this we have started marking some fields as deprecated. They are still in a backwards compatible state, but that will change in the future as we are planning on releasing a new major version, so we strongly recommend you migrate away from using the deprecated fields.
+
+The following is a list of the changes:
+
+* The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
+* The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
+* The `pollingTimeout` option and `--pollingTimeout` CLI parameter, that were on the **Global Configuration** level, are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
+* The `pollingTimeout` option, on the **Test Configuration** level, is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
+* The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
 
 ## Run Tests Command
 
@@ -302,7 +310,7 @@ Configuration options:
 
 * Global Config: `"failOnCriticalErrors": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS=true`
-* CLI param: `--failOnCriticalErrors`
+* CLI param: `--failOnCriticalErrors` / `--no-failOnCriticalErrors`
 
 #### `failOnMissingTests`
 
@@ -312,17 +320,17 @@ Configuration options:
 
 * Global Config: `"failOnMissingTests": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS=true`
-* CLI param: `--failOnMissingTests`
+* CLI param: `--failOnMissingTests` / `--no-failOnMissingTests`
 
 #### `failOnTimeout`
 
-A boolean flag that fails the CI job if at least one test exceeds the default test timeout. The default is set to `true`.
+A boolean flag that fails the CI job if at least one test exceeds the default batch timeout. The default is set to `true`.
 
 Configuration options:
 
 * Global Config: `"failOnTimeout": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT=true`
-* CLI param: `--failOnTimeout`
+* CLI param: `--failOnTimeout` / `--no-failOnTimeout`
 
 #### `files`
 
@@ -336,13 +344,13 @@ Configuration options:
 
 #### `jUnitReport`
 
-The filename for a JUnit report if you want to generate one.
+The filename for a JUnit report if you want to generate one. The file created will be an XML file.
 
 Configuration options:
 
-* Global Config: `"jUnitReport": "e2e-test-junit"`
-* ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit"`
-* CLI param:`-j "e2e-test-junit"` / `--jUnitReport "e2e-test-junit"`
+* Global Config: `"jUnitReport": "e2e-test-junit.xml"`
+* ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit.xml"`
+* CLI param:`-j "e2e-test-junit.xml"` / `--jUnitReport "e2e-test-junit.xml"`
 
 #### `mobileApplicationVersionFilePath`
 
@@ -382,7 +390,7 @@ Configuration options:
 
 * Global Config: `"selectiveRerun": true,`
 * ENV variable: `DATADOG_SYNTHETICS_SELECTIVE_RERUN=true`
-* CLI param: `--selectiveRerun`
+* CLI param: `--selectiveRerun` / `--no-selectiveRerun`
 
 #### `subdomain`
 
@@ -396,7 +404,7 @@ Configuration options:
 
 #### `testSearchQuery`
 
-Pass a query to select which Synthetic tests to run. If you are running tests in the CLI, use the `-s` flag.
+Pass a query to select which Synthetic tests to run.
 
 Configuration options:
 
@@ -412,15 +420,7 @@ Configuration options:
 
 * Global Config: `"tunnel": true`
 * ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
-* CLI param: `-t` / `--tunnel`
-
-**Note**: The `pollingTimeout` option and `--pollingTimeout` CLI parameter are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
-
-### Failure modes flags
-
-* `--failOnTimeout` (or `--no-failOnTimeout`) makes the CI fail (or pass) if one of the results exceeds its test timeout.
-* `--failOnCriticalErrors` makes the CI fail if tests were not triggered or if results could not be fetched.
-* `--failOnMissingTests` makes the CI fail if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a test file) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).
+* CLI param: `-t` / `--tunnel` / `--no-tunnel`
 
 ### Configure a StartUrl
 
@@ -444,13 +444,11 @@ You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations wh
 export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 ```
 
-**Note** The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
-
 ### Test files
 
-Test configuration files offer a way to configure individual tests differently than the general way defined through the other forms of configuration. It can also be used to configure multiple runs of the same test with different configurations.
+Test configuration files let you customize individual tests or set up multiple runs of the same test with different settings, beyond what you can do with other configuration methods.
 
-The Test configuration file takes priority over the other forms of configuration such as the global configuration file, environment variables, and CLI parameters. So to add it to the structure mentioned above it would look like this:
+These files take precedence over global configuration files, environment variables, and CLI parameters. So, the priority order including test configurations is as follows:
 
 ``` yml
 Global Config < Environment variables < CLI parameters < Test Config
@@ -499,8 +497,6 @@ Example Test configuration file:
 }
 ```
 
-**Note**: The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
-
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
 All options under the `testOverrides` key are optional and allow overriding of the test configuration as stored in Datadog. These options can also be set with environment variables starting with `DATADOG_SYNTHETICS_OVERRIDE_`, or with the `--override` CLI parameter following this pattern: `--override option=value`.
@@ -511,7 +507,7 @@ Disable certificate checks in Synthetic API and Browser tests.
 
 Configuration options:
 
-* Test Config: `"allowInsecureCertificates": true`
+* Global/Test Config: `"allowInsecureCertificates": true`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES=true`
 * CLI param: `--override allowInsecureCertificates=true`
 
@@ -524,7 +520,7 @@ Credentials to provide if basic authentication is required.
 
 Configuration options:
 
-* Test Config: `"basicAuth": {"username": "test_username", "password": "test_password"}`
+* Global/Test Config: `"basicAuth": {"username": "test_username", "password": "test_password"}`
 * ENV variable:
   * `DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME=test_username`
   * `DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD=test_password`
@@ -538,7 +534,7 @@ Data to send in an API test.
 
 Configuration options:
 
-* Test Config: `"body": "{\"fakeContent\":true}"`
+* Global/Test Config: `"body": "{\"fakeContent\":true}"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_BODY={"fakeContent":true}`
 * CLI param: `--override body={"fakeContent":true}`
 
@@ -548,7 +544,7 @@ Content type for the data to send in an API test.
 
 Configuration options:
 
-* Test Config: `"bodyType": "application/json"`
+* Global/Test Config: `"bodyType": "application/json"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE=application/json`
 * CLI param: `--override bodyType=application/json`
 
@@ -556,12 +552,12 @@ Configuration options:
 
 Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
 
-* If this is a string, it is used to replace the original cookies as `append` defaults to `false`.
+* If this is a string, it is used to replace the original cookies.
 * If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of append, it is appended or replaces the original cookies.
 
 Configuration options:
 
-* Test Config: `"cookies": "name1=value1;name2=value2"` (equivalent to `"append": false`) or `"cookies": {"append": true, "value": "name1=value1;name2=value2"}`
+* Global/Test Config: `"cookies": "name1=value1;name2=value2"` (equivalent to `"append": false`) or `"cookies": {"append": true, "value": "name1=value1;name2=value2"}`
 * ENV variable:
   * `DATADOG_SYNTHETICS_OVERRIDE_COOKIES="name1=value1;name2=value2"`
   * `DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND=true`
@@ -575,7 +571,7 @@ The maximum duration of steps in seconds for browser tests, which does not overr
 
 Configuration options:
 
-* Test Config: `"defaultStepTimeout": 15`
+* Global/Test Config: `"defaultStepTimeout": 15`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT=15`
 * CLI param: `--override defaultStepTimeout=15`
 
@@ -585,7 +581,7 @@ A list of devices to run the browser test on. The values that it can take can be
 
 Configuration options:
 
-* Test Config: `"deviceIds": ["chrome.laptop_large", "firefox.tablet"]`
+* Global/Test Config: `"deviceIds": ["chrome.laptop_large", "firefox.tablet"]`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS=["chrome.laptop_large", "firefox.tablet"]`
 * CLI param: `--override deviceIds=["chrome.laptop_large", "firefox.tablet"]`
 
@@ -600,7 +596,7 @@ It could take one of the following values:
 
 Configuration options:
 
-* Test Config: `"executionRule": "skipped"`
+* Global/Test Config: `"executionRule": "skipped"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE=skipped`
 * CLI param: `--override executionRule=skipped`
 
@@ -610,7 +606,7 @@ Indicates whether or not to follow HTTP redirections in Synthetic API tests.
 
 Configuration options:
 
-* Test Config: `"followRedirects": true`
+* Global/Test Config: `"followRedirects": true`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS=true`
 * CLI param: `--override followRedirects=true`
 
@@ -620,8 +616,8 @@ The headers to replace in the test. This object should contain keys as the name 
 
 Configuration options:
 
-* Test Config: `"headers": {"NEW_HEADER_1": "NEW VALUE 1", "NEW_HEADER_2": "NEW VALUE 2"}`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_HEADERS='{"NEW_HEADER_1":"NEW VALUE 1", "NEW_HEADER_2":"NEW VALUE 2"}'` (**note** that this is a valid JSON)
+* Global/Test Config: `"headers": {"NEW_HEADER_1": "NEW VALUE 1", "NEW_HEADER_2": "NEW VALUE 2"}`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_HEADERS='{"NEW_HEADER_1":"NEW VALUE 1", "NEW_HEADER_2":"NEW VALUE 2"}'` (**note** this must be a valid JSON)
 * CLI param:
   * `--override headers.NEW_HEADER_1="NEW VALUE 1"`
   * `--override headers.NEW_HEADER_2="NEW VALUE 2"`
@@ -632,7 +628,7 @@ A list of locations to run the test from. The specific values that it can take f
 
 Configuration options:
 
-* Test Config: `"locations": ["aws:us-east-1", "gcp:europe-west3"]`
+* Global/Test Config: `"locations": ["aws:us-east-1", "gcp:europe-west3"]`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS=["aws:us-east-1", "gcp:europe-west3"]`
 * CLI param: `--override locations=["aws:us-east-1", "gcp:europe-west3"]`
 
@@ -642,7 +638,7 @@ Override the default mobile application version for a Synthetic mobile applicati
 
 Configuration options:
 
-* Test Config: `"mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff"`
+* Global/Test Config: `"mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION=01234567-8888-9999-abcd-efffffffffff`
 * CLI param: `--mobileApplicationVersion=01234567-8888-9999-abcd-efffffffffff`
 
@@ -652,7 +648,7 @@ Override the application version for a Synthetic mobile application test.
 
 Configuration options:
 
-* Test Config: `"mobileApplicationVersionFilePath": "path/to/application.apk"`
+* Global/Test Config: `"mobileApplicationVersionFilePath": "path/to/application.apk"`
 * ENV variable: Not Available
 * CLI param: `--mobileApplicationVersionFilePath=path/to/application.apk`
 
@@ -665,7 +661,7 @@ The retry policy for the test. The 2 possible attributes for this object are ind
 
 Configuration options:
 
-* Test Config: `"retry": {"count": 2, "interval": 300}`
+* Global/Test Config: `"retry": {"count": 2, "interval": 300}`
 * ENV variable:
   * `DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT=2`
   * `DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL=300`
@@ -679,7 +675,7 @@ The new start URL to provide to the test. Variables specified in brackets (for e
 
 Configuration options:
 
-* Test Config: `"startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"`
+* Global/Test Config: `"startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL="{{URL}}?static_hash={{STATIC_HASH}}"`
 * CLI param: `--override startUrl="{{URL}}?static_hash={{STATIC_HASH}}"`
 
@@ -696,7 +692,7 @@ There are two possible formats:
 
 Configuration options:
 
-* Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
+* Global/Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX="s/(https://www.)(.*)/$1extra-$2/"`
 * CLI param: `--override startUrlSubstitutionRegex="s/(https://www.)(.*)/$1extra-$2/"`
 
@@ -706,7 +702,7 @@ The maximum duration of a browser test in seconds.
 
 Configuration options:
 
-* Test Config: `"testTimeout": 300`
+* Global/Test Config: `"testTimeout": 300`
 * ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT=300`
 * CLI param: `--override testTimeout=300`
 
@@ -716,13 +712,11 @@ The variables to replace in the test. This object should contain key as the name
 
 Configuration options:
 
-* Test Config: `"variables": {"NEW_VARIABLE_1": "NEW VARIABLE 1", "NEW_VARIABLE_2": "NEW VARIABLE 2"}`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_VARIABLES='{"NEW_VARIABLE_1":"NEW VARIABLE 1", "NEW_VARIABLE_2":"NEW VARIABLE 2"}'` (**note** that this is a valid JSON)
+* Global/Test Config: `"variables": {"NEW_VARIABLE_1": "NEW VARIABLE 1", "NEW_VARIABLE_2": "NEW VARIABLE 2"}`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_VARIABLES='{"NEW_VARIABLE_1":"NEW VARIABLE 1", "NEW_VARIABLE_2":"NEW VARIABLE 2"}'` (**note** this must be a valid JSON)
 * CLI param:
   * `--override variables.NEW_VARIABLE_1="NEW VARIABLE 1"`
   * `--override variables.NEW_VARIABLE_2="NEW VARIABLE 2"`
-
-**Note**: The `pollingTimeout` option is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
 
 ## Upload Application Command
 
