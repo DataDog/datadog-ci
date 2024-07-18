@@ -57,7 +57,7 @@ To setup the client, your Datadog API and application keys need to be configured
 
 ### Global configuration file options
 
-Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
+Using a global configuration file (Global Config) is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
 See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#run-tests-command) and [upload-application command](#upload-application-command). For an example configuration file, see this [`example-global-config.json` file][9].
 
@@ -446,7 +446,7 @@ export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 ### Test files
 
-Test configuration files let you customize individual tests or set up multiple runs of the same test with different settings, beyond what you can do with other configuration methods.
+Test configuration files (Test Config) let you customize individual tests or set up multiple runs of the same test with different settings, beyond what you can do with other configuration methods.
 
 These files take precedence over global configuration files, environment variables, and CLI parameters. The priority order including test configurations is as follows:
 
