@@ -59,7 +59,7 @@ To setup the client, your Datadog API and application keys need to be configured
 
 Using a global configuration file (Global Config) is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
-See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#run-tests-command) and [upload-application command](#upload-application-command). For an example configuration file, see this [`example-global-config.json` file][9].
+See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#run-tests-command) and [upload-application command](#upload-application-command). For an example configuration file, see this [`global-config-complete-example.json` file][9].
 
 Example:
 
@@ -973,7 +973,7 @@ Additional helpful documentation, links, and articles:
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
-[9]: https://github.com/DataDog/datadog-ci/blob/master/.github/workflows/e2e/example-global-config.json
+[9]: https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/examples/global-config-complete-example.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
 [11]: https://registry.terraform.io/providers/DataDog/datadog/latest/docs/resources/synthetics_test#device_ids
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
