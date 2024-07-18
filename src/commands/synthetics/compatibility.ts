@@ -106,7 +106,7 @@ export const moveLocationsToTestOverrides = (
 
   if (isLocationsUsedInRoot && warnDeprecatedLocations) {
     reporter.error(
-      "The 'locations' property should not be used at the root level of the global configuration file. Please put it in 'defaultTestOverrides' instead.\n If 'locations' is used in both places, only the one in 'defaultTestOverrides' is used!\n"
+      "The 'locations' property should not be used at the root level of the global configuration file. Please put it in 'defaultTestOverrides' instead.\n If 'locations' exists in both places, only the one in 'defaultTestOverrides' is used!\n"
     )
   }
 
