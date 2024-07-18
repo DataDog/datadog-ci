@@ -967,7 +967,7 @@ Additional helpful documentation, links, and articles:
 * [Learn about Testing Local and Staging Environments][3]
 
 [1]: https://www.npmjs.com/package/@datadog/datadog-ci
-[2]: https://github.com/TooTallNate/node-proxy-agent
+[2]: https://github.com/TooTallNate/proxy-agents/tree/main/packages/proxy-agent
 [3]: https://docs.datadoghq.com/continuous_testing/environments/
 [4]: https://app.datadoghq.com/synthetics/explorer/
 [5]: https://app.datadoghq.com/synthetics/tests
