@@ -777,7 +777,7 @@ Configuration options:
 
 * Global Config: `"latest": true,`
 * ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
-* CLI param: `--latest`
+* CLI param: `--latest` / `--no-latest`
 
 #### `mobileApplicationId`
 
