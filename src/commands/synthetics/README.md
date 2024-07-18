@@ -138,8 +138,9 @@ Global Config < Environment variables < CLI parameters
 You can also use the `datadog-ci` package as a library in your Node.js application to trigger tests. To do so, import the package from the Synthetics `run-tests` command and call the `executeWithDetails()` function.
 
 ``` javascript
-import { executeWithDetails } from '@datadog/datadog-ci/dist/commands/synthetics/run-tests-lib';
-const { results, summary } = await runTests.executeWithDetails(...)
+import { synthetics } from '@datadog/datadog-ci';
+
+const { results, summary } = await synthetics.executeTests(...)
 ```
 
 ### Use a proxy
