@@ -23,7 +23,7 @@ import {
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
+import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG, DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
 import {
@@ -250,11 +250,6 @@ export const executeWithDetails = async (
   const localConfig = {
     ...DEFAULT_COMMAND_CONFIG,
     ...runConfig,
-  }
-
-  // We don't want to have default globs in case suites are given.
-  if (!runConfig.files && suites?.length) {
-    localConfig.files = []
   }
 
   // Handle reporters for the run.

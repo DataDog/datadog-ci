@@ -767,12 +767,11 @@ describe('run-test', () => {
         )
       ).resolves.toEqual([
         {
-          testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl, locations},
           id: 'abc-def-ghi',
-          suite: 'Suite 1',
         },
         {
-          testOverrides: {startUrl, locations: ['aws:ap-northeast-1']},
+          testOverrides: {startUrl, locations},
           id: '123-456-789',
         },
       ])

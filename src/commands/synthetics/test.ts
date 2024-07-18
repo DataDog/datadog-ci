@@ -7,6 +7,7 @@ import {
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
+import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {getSuites, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
@@ -14,7 +15,16 @@ export const getTestConfigs = async (
   reporter: MainReporter,
   suites: Suite[] = []
 ): Promise<TriggerConfig[]> => {
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
+  const files = [...config.files]
+
+  // Only auto-discover with the default glob if the user doesn't give any clue what to run.
+  // If they give publicIds (only), they might be in their home directory so we shouldn't auto-discover for performance reasons.
+  // If they give publicIds and files, then the test overrides from those test files will be applied to the given publicIds.
+  if (config.publicIds.length === 0 && files.length === 0 && suites.length === 0) {
+    files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
+  }
+
+  const suitesFromFiles = (await Promise.all(files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 
