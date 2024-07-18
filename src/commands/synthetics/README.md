@@ -59,7 +59,7 @@ To setup the client, your Datadog API and application keys need to be configured
 
 Using a global configuration file is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
-See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#list-of-configurations) and [upload-application command](#list-of-configurations-1). For an example configuration file, see this [`example-global-config.json` file][9].
+See each command's list of configurations below for the list of advanced options in the global configuration file relevant to each [run-tests command](#run-tests-command) and [upload-application command](#upload-application-command). For an example configuration file, see this [`example-global-config.json` file][9].
 
 Example:
 
@@ -170,7 +170,7 @@ For example:
 
 ### Deprecated fields
 
-We're in the process of cleaning up and further aligning datadog-ci's synthetics commands. As part of this we have started marking some fields as deprecated. They are still in a backwards compatible state, but that will change in the future as we are planning on releasing a new major version, so we strongly recommend you migrate away from using the deprecated fields.
+Datadog is streamlining and enhancing the datadog-ci synthetics commands. In this effort, certain fields have been marked as deprecated. While these fields remain backwards compatible for now, they will not be supported with the release of a new major version. We highly advise transitioning away from these deprecated fields.
 
 The following is a list of the changes:
 
@@ -178,7 +178,7 @@ The following is a list of the changes:
 * The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
 * The `pollingTimeout` option and `--pollingTimeout` CLI parameter, that were on the **Global Configuration** level, are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
 * The `pollingTimeout` option, on the **Test Configuration** level, is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
-* The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favour of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
+* The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favor of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
 
 ## Run Tests Command
 
@@ -274,7 +274,7 @@ Configuration options:
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
+The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
 
 Configuration options:
 
@@ -422,7 +422,7 @@ Configuration options:
 * ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
 * CLI param: `-t` / `--tunnel` / `--no-tunnel`
 
-### Configure a StartUrl
+### Configure a start URL
 
 To configure which URL your test starts on, provide a `startUrl` to your test object. Build your own starting URL with any part of your test's original starting URL and include environment variables.
 
@@ -438,7 +438,7 @@ export DATADOG_SUBDOMAIN="myorg"
 
 ### Configure custom locations
 
-You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations where your tests run. Locations should be separated with `;`. The configuration in [test files](#test-files) takes precedence over other overrides.
+You can use `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS` to override the locations where your tests run. Locations should be separated with a semicolon (`;`). The configuration in [test files](#test-files) takes precedence over other overrides.
 
 ```bash
 export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
@@ -448,7 +448,7 @@ export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 Test configuration files let you customize individual tests or set up multiple runs of the same test with different settings, beyond what you can do with other configuration methods.
 
-These files take precedence over global configuration files, environment variables, and CLI parameters. So, the priority order including test configurations is as follows:
+These files take precedence over global configuration files, environment variables, and CLI parameters. The priority order including test configurations is as follows:
 
 ``` yml
 Global Config < Environment variables < CLI parameters < Test Config
@@ -456,7 +456,7 @@ Global Config < Environment variables < CLI parameters < Test Config
 
 By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a test configuration file. This can be manually configured with the [`files` parameter](#files).
 
-Example Test configuration file:
+Example:
 
 ```jsonc
 // myTest.synthetics.json
@@ -499,7 +499,7 @@ Example Test configuration file:
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
-All options under the `testOverrides` key are optional and allow overriding of the test configuration as stored in Datadog. These options can also be set with environment variables starting with `DATADOG_SYNTHETICS_OVERRIDE_`, or with the `--override` CLI parameter following this pattern: `--override option=value`.
+All options under the `testOverrides` (and thus also `defaultTestOverrides`) key are optional and allow overriding of the test configuration as stored in Datadog. These options can also be set with environment variables starting with `DATADOG_SYNTHETICS_OVERRIDE_`, or with the `--override` CLI parameter following this pattern: `--override option=value`.
 
 #### `allowInsecureCertificates` (Boolean)
 
@@ -577,7 +577,7 @@ Configuration options:
 
 #### `deviceIds` (Array)
 
-A list of devices to run the browser test on. The values that it can take can be found in [this piece of Datadog documentation][11].
+A list of devices to run the browser test on. The values that it can take can be found in the [Datadog Synthetics Terraform documentation][11].
 
 Configuration options:
 
@@ -588,7 +588,7 @@ Configuration options:
 #### `executionRule` (String)
 
 The execution rule for the test defines the behavior of the CLI in case of a failing test.
-It could take one of the following values:
+It accepts one of the following values:
 
 * `blocking`: The CLI returns an error if the test fails.
 * `non_blocking`: The CLI only prints a warning if the test fails.
@@ -612,7 +612,7 @@ Configuration options:
 
 #### `headers` (Object)
 
-The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace.
+This object specifies the headers to be replaced in the test. It should have keys representing the names of the headers to be replaced, and values indicating the new header values.
 
 Configuration options:
 
@@ -624,7 +624,7 @@ Configuration options:
 
 #### `locations` (Array)
 
-A list of locations to run the test from. The specific values that it can take for your org can be found [by opening this link][12].
+A list of locations to run the test from. The specific values that it can accept for your org can be found [here][12].
 
 Configuration options:
 
@@ -708,7 +708,7 @@ Configuration options:
 
 #### `variables` (Object)
 
-The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.
+This object defines the variables to be substituted in the test. It should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
 
 Configuration options:
 
@@ -751,7 +751,7 @@ Configuration options:
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration/?tab=npm#global-configuration-file-options ) for more details.
+The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
 
 Configuration options:
 
@@ -973,4 +973,4 @@ Additional helpful documentation, links, and articles:
 <!--
   This page is single-sourced:
   https://github.com/DataDog/documentation/blob/7007931530baf7da59310e7224a26dc9a71c53c5/local/bin/py/build/configurations/pull_config_preview.yaml#L315
-->
+-->
