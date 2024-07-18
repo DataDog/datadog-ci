@@ -674,6 +674,8 @@ export DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;aws:us-east-2"
 
 Test configuration files (Test Config) let you customize individual tests or set up multiple runs of the same test with different settings, beyond what you can do with other configuration methods.
 
+You can find a list of all these options in the [test overrides](#test-overrides) section.
+
 These files take precedence over global configuration files, environment variables, and CLI parameters. The priority order including test configurations is as follows:
 
 ``` yml
@@ -681,7 +683,6 @@ Global Config < Environment variables < CLI parameters < Test Config
 ```
 
 By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a test configuration file. This can be manually configured with the [`files` parameter](#files).
-
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
