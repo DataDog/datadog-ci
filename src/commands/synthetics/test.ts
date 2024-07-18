@@ -19,7 +19,7 @@ export const getTestConfigs = async (
 
   // Only auto-discover with the default glob if the user doesn't give any clue what to run.
   // If they give publicIds (only), they might be in their home directory so we shouldn't auto-discover for performance reasons.
-  // If they give publicIds and files, then the test overrides from those test files will be applied to the given publicIds.
+  // If they give publicIds and files, then only the given publicIds are run and the test config files are applied on them.
   if (config.publicIds.length === 0 && files.length === 0 && suites.length === 0) {
     files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
   }
