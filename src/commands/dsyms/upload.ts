@@ -3,7 +3,7 @@ import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
+import {glob} from 'glob'
 
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
