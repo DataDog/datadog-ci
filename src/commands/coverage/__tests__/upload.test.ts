@@ -35,8 +35,8 @@ describe('upload', () => {
       })
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
-      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
 
       const output = context.stdout.toString()
       expect(output).toContain(
@@ -96,8 +96,8 @@ describe('upload', () => {
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
-      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
       expect(fileNames[2]).toEqual('./src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml')
     })
 
@@ -130,9 +130,9 @@ describe('upload', () => {
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames).toEqual([
-        'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
-        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-        'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
     })
 
@@ -148,9 +148,9 @@ describe('upload', () => {
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames).toEqual([
-        'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
-        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-        'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
+        './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
     })
   })

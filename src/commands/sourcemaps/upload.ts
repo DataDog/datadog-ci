@@ -3,7 +3,7 @@ import {URL} from 'url'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
+import {glob} from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
