@@ -13,4 +13,5 @@ export interface MappingMetadata {
   file_hash: string
   symbol_source: string
   type: string
+  replace_existing: boolean
 }

@@ -50,3 +50,5 @@ If location is a file, command will split debug info from it and upload them to 
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
 | `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
+| `--dynsym` | Optional | Upload dynamic symbol information if debug information and standard symbol table are not present. |
+| `--replace-existing` | Optional | Replace existing debug information (default behavior is to keep existing debug information). |

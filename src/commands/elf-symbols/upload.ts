@@ -58,6 +58,7 @@ export class UploadCommand extends Command {
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
   private uploadDynamicSymbolTable = Option.Boolean('--dynsym', false)
+  private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
@@ -179,6 +180,7 @@ export class UploadCommand extends Command {
       git_repository_url: this.gitData?.remote,
       platform: 'elf',
       symbol_source: symbolSource,
+      replace_existing: this.replaceExisting,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
