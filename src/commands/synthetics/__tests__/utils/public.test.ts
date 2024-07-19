@@ -46,7 +46,7 @@ import type * as path from 'path'
 
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
-import glob from 'glob'
+import {glob} from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
@@ -112,10 +112,10 @@ describe('utils', () => {
       file2: '{"tests":"file2"}',
     }
 
+    jest.spyOn(glob, 'glob').mockResolvedValue(FILES)
     ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
       callback(undefined, FILES_CONTENT[path])
     )
-    ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
     ;(child_process.exec as any).mockImplementation(
       (command: string, callback: (error: any, stdout: string, stderr: string) => void) => callback(undefined, '.', '')
     )

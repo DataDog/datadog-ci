@@ -231,11 +231,11 @@ describe('unity-symbols upload', () => {
       expect(errorOutput).toBe(renderMissingDir(`${fixtureDir}/missing-dir`))
     })
 
-    const getExpectedMetadata = (arch: string, gitCommitSha?: string, gitRespositoryUrl?: string) => ({
+    const getExpectedMetadata = (arch: string, gitCommitSha?: string, gitRepositoryUrl?: string) => ({
       arch,
       cli_version: cliVersion,
       ...(gitCommitSha && {git_commit_sha: gitCommitSha}),
-      ...(gitRespositoryUrl && {git_repository_url: gitRespositoryUrl}),
+      ...(gitRepositoryUrl && {git_repository_url: gitRepositoryUrl}),
       build_id: 'fake-build-id',
       type: 'ndk_symbol_file',
     })
