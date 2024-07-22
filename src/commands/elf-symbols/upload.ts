@@ -57,7 +57,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
-  private uploadDynamicSymbolTable = Option.Boolean('--dynsym', false)
+  private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--dynsym', false)
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
@@ -256,7 +256,7 @@ export class UploadCommand extends Command {
         if (
           !metadata.hasDebugInfo &&
           !metadata.hasSymbolTable &&
-          (!metadata.hasDynamicSymbolTable || !this.uploadDynamicSymbolTable)
+          (!metadata.hasDynamicSymbolTable || !this.acceptDynamicSymbolTableAsSymbolSource)
         ) {
           reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
           continue

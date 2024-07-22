@@ -93,7 +93,7 @@ describe('elf-symbols upload', () => {
 
     test('should accept elf file with only dynamic symbols if --dynsym option is passed', async () => {
       const command = createCommand(UploadCommand)
-      command['uploadDynamicSymbolTable'] = true
+      command['acceptDynamicSymbolTableAsSymbolSource'] = true
       const files = await command['getElfSymbolFiles'](fixtureDir)
 
       expect(files.map((f) => f.filename)).toEqual([
@@ -166,12 +166,29 @@ describe('elf-symbols upload', () => {
         platform: 'elf',
         symbol_source: 'symbol_table',
         type: 'elf_symbol_file',
+        replace_existing: false,
       })
+
+      command['replaceExisting'] = true
+      const metadataReplaceExisting = command['getMappingMetadata'](
+        'fake-gnu-build-id',
+        'fake-go-build-id',
+        'fake-file-hash',
+        'x86_64',
+        'symbol_table'
+      )
+
+      expect(metadataReplaceExisting).toEqual({...metadata, replace_existing: true})
     })
 
     test('uploads correct multipart payload with multiple locations', async () => {
       const {exitCode} = await runCommand((cmd) => {
-        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`, `${fixtureDir}/exec_aarch64`]
+        cmd['symbolsLocations'] = [
+          `${fixtureDir}/dyn_aarch64`,
+          `${fixtureDir}/exec_aarch64`,
+          `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
+        ]
+        cmd['acceptDynamicSymbolTableAsSymbolSource'] = true
       })
 
       const expectedMetadata = [
@@ -184,6 +201,7 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -194,6 +212,18 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
+        },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          file_hash: '70c9cab66acf4f5c715119b0999c20a4',
+          gnu_build_id: '6a5e565db576fe96acd8ab12bf857eb36f8afdf4',
+          go_build_id: 'tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn',
+          arch: 'x86_64',
+          symbol_source: 'dynamic_symbol_table',
+          replace_existing: false,
         },
       ]
 
@@ -228,6 +258,7 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -238,6 +269,7 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -248,6 +280,7 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'x86_64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -258,16 +291,18 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'arm',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          file_hash: 'f984122099288eea0f23e7444dd9076c',
+          file_hash: '708ef04fdf761682c36bc4c062420c37',
           gnu_build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
           go_build_id: '',
           arch: 'arm',
-          symbol_source: 'debug_info',
+          symbol_source: 'symbol_table',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -278,6 +313,7 @@ describe('elf-symbols upload', () => {
           go_build_id: '',
           arch: 'aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
       ]
 
