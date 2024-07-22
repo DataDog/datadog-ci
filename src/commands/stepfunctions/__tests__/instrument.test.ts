@@ -18,7 +18,7 @@ describe('stepfunctions instrument test', () => {
     aws = require('../awsCommands')
     helpers = require('../helpers')
     helpers.applyChanges = jest.fn().mockImplementation(() => false)
-    helpers.injectContextIntoLambdaPayload = jest.fn().mockImplementation()
+    helpers.injectContextIntoTasks = jest.fn().mockImplementation()
     cli = new Cli()
     cli.register(InstrumentStepFunctionsCommand)
   })
@@ -474,7 +474,7 @@ describe('stepfunctions instrument test', () => {
         ],
         context
       )
-      expect(helpers.injectContextIntoLambdaPayload).toHaveBeenCalledTimes(1)
+      expect(helpers.injectContextIntoTasks).toHaveBeenCalledTimes(1)
       expect(exitCode).toBe(0)
     })
 
@@ -490,7 +490,7 @@ describe('stepfunctions instrument test', () => {
         ],
         context
       )
-      expect(helpers.injectContextIntoLambdaPayload).toHaveBeenCalledTimes(0)
+      expect(helpers.injectContextIntoTasks).toHaveBeenCalledTimes(0)
       expect(exitCode).toBe(0)
     })
   })

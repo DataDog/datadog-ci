@@ -4,13 +4,15 @@ import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
 import {pluralize} from '../../helpers/utils'
 
+import {MappingMetadata} from './interfaces'
+
 export interface UploadInfo {
   fileType: string
   location: string
   platform: string
 }
 
-export const renderCommandInfo = (dryRun: boolean, symbolsLocation: string) => {
+export const renderCommandInfo = (dryRun: boolean, symbolsLocations: string[]) => {
   let fullString = ''
   if (dryRun) {
     fullString += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD SYMBOLS\n`)
@@ -18,7 +20,7 @@ export const renderCommandInfo = (dryRun: boolean, symbolsLocation: string) => {
   const startStr = chalk.green('Starting upload. \n')
 
   fullString += startStr
-  fullString += chalk.green(`Uploading symbols from location ${symbolsLocation}\n`)
+  fullString += chalk.green(`Uploading symbols from location(s): ${symbolsLocations.join(' ')}\n`)
 
   fullString += chalk.green(
     `After upload is successful symbol files will be processed and ready to use within the next 5 minutes.\n`
@@ -108,5 +110,8 @@ export const renderRetriedUpload = (filePath: string, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying upload ${sourcemapPathBold}: ${errorMessage}\n`)
 }
 
-export const renderUpload = (filePath: string, buildId: string): string =>
-  `Uploading debug info for ELF file ${filePath} with buildId ${buildId}\n`
+export const renderUpload = (filePath: string, metadata: MappingMetadata): string =>
+  `Uploading debug info for ELF file ${filePath} (arch:${metadata.arch || 'none'} \
+GNUBuildID:${metadata.gnu_build_id || 'none'} \
+GoBuildID:${metadata.go_build_id || 'none'} \
+FileHash:${metadata.file_hash || 'none'})\n`

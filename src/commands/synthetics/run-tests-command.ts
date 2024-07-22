@@ -6,12 +6,17 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {
+  moveLocationsToTestOverrides,
+  replaceGlobalWithDefaultTestOverrides,
+  replacePollingTimeoutWithBatchTimeout,
+} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
+import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringMap} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -25,27 +30,35 @@ import {
 
 export const MAX_TESTS_TO_TRIGGER = 100
 
-export const DEFAULT_POLLING_TIMEOUT = 30 * 60 * 1000
+export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
+/** @deprecated Please use `DEFAULT_BATCH_TIMEOUT` instead. */
+export const DEFAULT_POLLING_TIMEOUT = DEFAULT_BATCH_TIMEOUT
 
 export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
+  batchTimeout: DEFAULT_BATCH_TIMEOUT,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  defaultTestOverrides: {},
   failOnCriticalErrors: false,
   failOnMissingTests: false,
   failOnTimeout: true,
   files: ['{,!(node_modules)/**/}*.synthetics.json'],
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
-  defaultTestOverrides: {},
+  jUnitReport: '',
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
   locations: [],
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
   selectiveRerun: false,
   subdomain: 'app',
+  testSearchQuery: '',
   tunnel: false,
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
   variableStrings: [],
 }
 
@@ -90,9 +103,17 @@ export class RunTestsCommand extends Command {
 
   private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  private batchTimeout = Option.String('--batchTimeout', {
+    description:
+      'The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+    validator: validation.isInteger(),
+  })
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+  /** @deprecated This CLI parameter is deprecated, please use `--override deviceIds="dev1;dev2;..."` instead. */
   private deviceIds = Option.Array('--deviceIds', {
-    description: 'Override the mobile device(s) to run your mobile test.',
+    description:
+      '**DEPRECATED** Override the mobile device(s) to run your mobile test. Please use `--override deviceIds="dev1;dev2;..."` instead.',
   })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
@@ -115,9 +136,14 @@ export class RunTestsCommand extends Command {
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',
   })
+  private overrides = Option.Array('--override', {
+    description: 'Override specific test properties.',
+  })
+  // TODO SYNTH-12989: Clean up deprecated `--pollingTimeout` in favor of `--batchTimeout`
+  /** @deprecated This CLI parameter is deprecated, please use `--batchTimeout` instead. */
   private pollingTimeout = Option.String('--pollingTimeout', {
     description:
-      'The duration (in milliseconds) after which `datadog-ci` stops polling for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+      '**DEPRECATED** The duration (in milliseconds) after which `datadog-ci` stops polling for test results. Please use `--batchTimeout` instead.',
     validator: validation.isInteger(),
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
@@ -135,19 +161,16 @@ export class RunTestsCommand extends Command {
   private tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
-  private variableStrings = Option.Array('-v,--variable', {description: 'Pass a variable override.'})
+  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+  /** @deprecated This CLI parameter is deprecated, please use `--override variables.NAME=VALUE` instead. */
+  private variableStrings = Option.Array('-v,--variable', {
+    description: '**DEPRECATED** Pass a variable override. Please use `--override variables.NAME=VALUE` instead.',
+  })
 
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   public async execute() {
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
-
-    if (this.jUnitReport) {
-      reporters.push(new JUnitReporter(this))
-    }
-
     try {
       await this.resolveConfig()
     } catch (error) {
@@ -156,6 +179,19 @@ export class RunTestsCommand extends Command {
       }
 
       return 1
+    }
+
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
+
+    if (this.config.jUnitReport) {
+      reporters.push(
+        new JUnitReporter({
+          context: this.context,
+          jUnitReport: this.config.jUnitReport,
+          runName: this.runName,
+        })
+      )
     }
 
     const startTime = Date.now()
@@ -197,8 +233,10 @@ export class RunTestsCommand extends Command {
 
     // Override with config file variables (e.g. datadog-ci.json)
     try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
       this.config = await resolveConfigFromFile(this.config, {
-        configPath: this.configPath,
+        configPath: overrideConfigPath,
         defaultConfigPaths: [this.config.configPath],
       })
     } catch (error) {
@@ -207,8 +245,16 @@ export class RunTestsCommand extends Command {
       }
     }
 
+    // Convert cookies to object
+    if (typeof this.config.defaultTestOverrides?.cookies === 'string') {
+      this.config.defaultTestOverrides.cookies = {value: this.config.defaultTestOverrides.cookies}
+    }
+
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
+
+    // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+    this.config = moveLocationsToTestOverrides(this.config, this.reporter)
 
     // Override with ENV variables
     this.config = deepExtend(
@@ -216,34 +262,99 @@ export class RunTestsCommand extends Command {
       removeUndefinedValues({
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
+        batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
-        locations: process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
+        failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
+        failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
+        failOnTimeout: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
+        files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
+        jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
+        publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
+        selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: process.env.DATADOG_SUBDOMAIN,
+        testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
+        tunnel: toBoolean(process.env.DATADOG_SYNTHETICS_TUNNEL),
       })
     )
 
     // Override with OVERRIDE ENV variables
+    const envOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+        interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+      })
+    )
+    const envOverrideBasicAuth = deepExtend(
+      this.config.defaultTestOverrides?.basicAuth ?? {},
+      removeUndefinedValues({
+        password: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_PASSWORD,
+        username: process.env.DATADOG_SYNTHETICS_OVERRIDE_BASIC_AUTH_USERNAME,
+      })
+    )
+    const envOverrideCookies = removeUndefinedValues({
+      append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+      value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
+    })
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
+        allowInsecureCertificates: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
+        basicAuth: Object.keys(envOverrideBasicAuth).length > 0 ? envOverrideBasicAuth : undefined,
+        body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
+        bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
+        cookies: Object.keys(envOverrideCookies).length > 0 ? envOverrideCookies : undefined,
+        defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
+        executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
+        followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+        locations:
+          process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
+          process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
+        resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
+          ';'
+        ),
+        retry: Object.keys(envOverrideRetryConfig).length > 0 ? envOverrideRetryConfig : undefined,
+        startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
+        startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
+        testTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
       })
     )
+    // We do not want to extend headers and variables, but rather override them completely
+    if (process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS) {
+      this.config.defaultTestOverrides.headers = toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS)
+    }
+    if (process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES) {
+      this.config.defaultTestOverrides.variables = toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES)
+    }
 
     // Override with CLI parameters
+    const batchTimeout = replacePollingTimeoutWithBatchTimeout(
+      this.config,
+      this.reporter,
+      false,
+      this.batchTimeout,
+      this.pollingTimeout
+    )
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
         apiKey: this.apiKey,
         appKey: this.appKey,
+        batchTimeout,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
+        jUnitReport: this.jUnitReport,
         publicIds: this.publicIds,
+        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+        pollingTimeout: batchTimeout,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
@@ -251,18 +362,61 @@ export class RunTestsCommand extends Command {
       })
     )
 
-    // Override with Global CLI parameters
+    // Override defaultTestOverrides with CLI parameters
+    const validatedOverrides = validateAndParseOverrides(this.overrides)
+    const cliOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: validatedOverrides.retry?.count,
+        interval: validatedOverrides.retry?.interval,
+      })
+    )
+    const cliOverrideBasicAuth = deepExtend(
+      this.config.defaultTestOverrides?.basicAuth ?? {},
+      removeUndefinedValues({
+        password: validatedOverrides.basicAuth?.password,
+        username: validatedOverrides.basicAuth?.username,
+      })
+    )
+    const cliOverrideCookies = removeUndefinedValues({
+      append: validatedOverrides.cookies?.append,
+      value: validatedOverrides.cookies?.value,
+    })
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
-        deviceIds: this.deviceIds,
+        allowInsecureCertificates: validatedOverrides.allowInsecureCertificates,
+        basicAuth: Object.keys(cliOverrideBasicAuth).length > 0 ? cliOverrideBasicAuth : undefined,
+        body: validatedOverrides.body,
+        bodyType: validatedOverrides.bodyType,
+        cookies: Object.keys(cliOverrideCookies).length > 0 ? cliOverrideCookies : undefined,
+        defaultStepTimeout: validatedOverrides.defaultStepTimeout,
+        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
+        deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
+        executionRule: validatedOverrides.executionRule,
+        followRedirects: validatedOverrides.followRedirects,
+        locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        variables: parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log)),
-        pollingTimeout:
-          this.pollingTimeout ?? this.config.defaultTestOverrides?.pollingTimeout ?? this.config.pollingTimeout,
+        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+        pollingTimeout: batchTimeout,
+        resourceUrlSubstitutionRegexes: validatedOverrides.resourceUrlSubstitutionRegexes,
+        retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
+        startUrl: validatedOverrides.startUrl,
+        startUrlSubstitutionRegex: validatedOverrides.startUrlSubstitutionRegex,
+        testTimeout: validatedOverrides.testTimeout,
       })
     )
+
+    // We do not want to extend headers and variables, but rather override them completely
+    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
+    if (validatedOverrides.headers) {
+      this.config.defaultTestOverrides.headers = validatedOverrides.headers
+    }
+    if (validatedOverrides.variables || this.variableStrings) {
+      this.config.defaultTestOverrides.variables =
+        validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log))
+    }
 
     if (typeof this.config.files === 'string') {
       this.reporter.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
@@ -276,6 +430,13 @@ export class RunTestsCommand extends Command {
           this.config.datadogSite
         )}) must match one of the sites supported by Datadog.\nFor more information, see "Site parameter" in our documentation: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site`
       )
+    }
+
+    if (
+      typeof this.config.defaultTestOverrides?.cookies === 'object' &&
+      !this.config.defaultTestOverrides.cookies.value
+    ) {
+      throw new CiError('INVALID_CONFIG', 'Cookies value cannot be empty.')
     }
   }
 }

@@ -1,6 +1,11 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
+import {
+  replaceConfigWithTestOverrides,
+  warnIfDeprecatedConfigUsed,
+  warnIfDeprecatedPollingTimeoutUsed,
+} from './compatibility'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
 import {getSuites, normalizePublicId} from './utils/public'
 
@@ -15,10 +20,14 @@ export const getTestConfigs = async (
 
   suites.push(...suitesFromFiles)
 
+  warnIfDeprecatedConfigUsed(suites, reporter)
+  warnIfDeprecatedPollingTimeoutUsed(suites, reporter)
+
   const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => ({
-        config: test.config,
+        // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+        testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
         id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
       }))
@@ -42,7 +51,7 @@ export const getTestsFromSearchQuery = async (
   const testSearchResults = await api.searchTests(testSearchQuery)
 
   return testSearchResults.tests.map((test) => ({
-    config: defaultTestOverrides ?? {},
+    testOverrides: defaultTestOverrides ?? {},
     id: test.public_id,
     suite: `Query: ${testSearchQuery}`,
   }))

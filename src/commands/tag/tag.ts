@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
+import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
@@ -79,15 +79,6 @@ export class TagCommand extends Command {
 
     try {
       const {provider, ciEnv} = getCIEnv()
-      // For BuddyWorks only the pipeline level is supported as there is no way to identify the job from the runner.
-      if (provider === 'buddy' && this.level === 'job') {
-        this.context.stderr.write(
-          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
-        )
-
-        return 1
-      }
-
       const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" name="AllTests">
+    <testsuite name="MySuite2" tests="1" errors="0" filepath="src/commands/junit/hello">
+        <testcase name="test1"/>
+        <testcase name="test2" time="7.746">
+                <system-out><![CDATA[Running testDivision...
+                Dividing 10 by 2...
+                Result: 5.0
+                ]]></system-out>
+        </testcase>
+        <testcase name="test3"/>
+    </testsuite>
+</testsuites>

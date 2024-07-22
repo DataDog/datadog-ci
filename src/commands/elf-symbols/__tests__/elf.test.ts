@@ -724,8 +724,8 @@ describe('elf', () => {
         hasCode: true,
       })
 
-      expect(await getElfFileMetadata(`${fixtureDir}/dyn_aarch64.debug`)).toEqual({
-        filename: `${fixtureDir}/dyn_aarch64.debug`,
+      expect(await getElfFileMetadata(`${fixtureDir}/.debug/dyn_aarch64.debug`)).toEqual({
+        filename: `${fixtureDir}/.debug/dyn_aarch64.debug`,
         isElf: true,
         littleEndian: true,
         elfClass: 64,
@@ -841,7 +841,7 @@ describe('elf', () => {
       const testFiles = [
         'dyn_aarch64',
         'exec_aarch64',
-        'dyn_aarch64.debug',
+        '.debug/dyn_aarch64.debug',
         'go_x86_64_only_go_build_id',
         'go_x86_64_only_go_build_id.debug',
         'exec_arm_big',

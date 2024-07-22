@@ -23,9 +23,17 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  GIT_HEAD_SHA,
+  GIT_BASE_REF,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
-import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveInfoFromRepository} from './utils'
+import {
+  normalizeRef,
+  removeEmptyValues,
+  removeUndefinedValues,
+  filterSensitiveInfoFromRepository,
+  getGitHeadShaFromGitHubWebhookPayload,
+} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -46,7 +54,6 @@ export const CI_ENGINES = {
 
 export const PROVIDER_TO_DISPLAY_NAME = {
   github: 'GitHub Actions',
-  buddy: 'Buddy',
 }
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
@@ -220,6 +227,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_SERVER_URL,
       GITHUB_RUN_ATTEMPT,
       DD_GITHUB_JOB_NAME,
+      GITHUB_BASE_REF,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
@@ -251,6 +259,16 @@ export const getCISpanTags = (): SpanTags | undefined => {
         GITHUB_RUN_ATTEMPT,
         DD_GITHUB_JOB_NAME,
       }),
+    }
+
+    if (GITHUB_BASE_REF) {
+      // GITHUB_BASE_REF is defined if it's a pull_request or pull_request_target trigger
+      tags[GIT_BASE_REF] = GITHUB_BASE_REF
+      const headSha = getGitHeadShaFromGitHubWebhookPayload()
+
+      if (headSha) {
+        tags[GIT_HEAD_SHA] = headSha
+      }
     }
   }
 
@@ -743,13 +761,6 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     }
   }
 
-  if (process.env.BUDDY) {
-    return {
-      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
-      provider: 'buddy',
-    }
-  }
-
   if (process.env.TEAMCITY_VERSION) {
     return {
       ciEnv: filterEnv(['DATADOG_BUILD_ID']),
@@ -772,7 +783,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   }
 
   throw new Error(
-    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
   )
 }
 

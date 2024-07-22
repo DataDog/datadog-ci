@@ -1,0 +1,72 @@
+{
+  "apiKey": "<DATADOG_API_KEY>",
+  "appKey": "<DATADOG_APPLICATION_KEY>",
+  "batchTimeout": 180000,
+  "datadogSite": "datadoghq.com",
+  "defaultTestOverrides": {
+    "allowInsecureCertificates": true,
+    "basicAuth": {
+      "username": "test",
+      "password": "test"
+    },
+    "body": "{\"fakeContent\":true}",
+    "bodyType": "application/json",
+    "cookies": "name1=value1;name2=value2",
+    "defaultStepTimeout": 15,
+    "deviceIds": [
+      "chrome.laptop_large",
+      "firefox.tablet"
+    ],
+    "executionRule": "skipped",
+    "followRedirects": true,
+    "headers": {
+      "NEW_HEADER_1": "NEW VALUE 1",
+      "NEW_HEADER_2": "NEW VALUE 2"
+    },
+    "locations": [
+      "aws:us-east-1",
+      "gcp:europe-west3"
+    ],
+    "mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff",
+    "mobileApplicationVersionFilePath": "path/to/application.apk",
+    "retry": {
+      "count": 2,
+      "interval": 300
+    },
+    "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+    "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
+    "testTimeout": 300,
+    "variables": {
+      "NEW_VARIABLE_1": "NEW VARIABLE 1",
+      "NEW_VARIABLE_2": "NEW VARIABLE 2"
+    }
+  },
+  "failOnCriticalErrors": true,
+  "failOnMissingTests": true,
+  "failOnTimeout": true,
+  "files": [
+    "{,!(node_modules)/**/}*.synthetics.json"
+  ],
+  "jUnitReport": "e2e-test-junit",
+  "latest": true,
+  "mobileApplicationId": "example-abc",
+  "mobileApplicationVersionFilePath": "example_path/example_app.apk",
+  "proxy": {
+    "auth": {
+      "username": "login",
+      "password": "pwd"
+    },
+    "host": "127.0.0.1",
+    "port": 3128,
+    "protocol": "http"
+  },
+  "publicIds": [
+    "abc-def-ghi",
+    "123-456-789"
+  ],
+  "selectiveRerun": true,
+  "subdomain": "myorg",
+  "testSearchQuery": "tag:e2e-tests",
+  "tunnel": true,
+  "versionName": "example"
+}

@@ -1,7 +1,11 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {
+  moveLocationsToTestOverrides,
+  replaceGlobalWithDefaultTestOverrides,
+  replacePollingTimeoutWithBatchTimeout,
+} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -19,7 +23,7 @@ import {
 } from './interfaces'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
+import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
 import {
@@ -62,6 +66,12 @@ export const executeTests = async (
 
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
+
+  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
+  config = moveLocationsToTestOverrides(config, reporter, true)
+
+  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+  config.batchTimeout = replacePollingTimeoutWithBatchTimeout(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
@@ -132,21 +142,30 @@ export const executeTests = async (
 
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun)
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
+  if (trigger.selective_rerun_rate_limited) {
+    reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
+  }
+
   try {
-    const maxPollingTimeout = Math.max(...triggerConfigs.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    // TODO SYNTH-12989: Remove the `maxPollingTimeout` calculation when `pollingTimeout` is removed
+    const maxPollingTimeout = Math.max(
+      ...triggerConfigs.map(
+        (t) => config.batchTimeout || t.testOverrides?.pollingTimeout || config.pollingTimeout || DEFAULT_BATCH_TIMEOUT
+      )
+    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
     const results = await waitForResults(
       api,
       trigger,
       tests,
-      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, maxPollingTimeout},
+      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout: maxPollingTimeout},
       reporter,
       tunnel
     )
@@ -177,8 +196,6 @@ export const getTriggerConfigs = async (
 ): Promise<TriggerConfig[]> => {
   // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
   const defaultTestConfigOverrides = config.defaultTestOverrides
-  // TODO SYNTH-12989: Clean up `locations`
-  const testConfigOverridesFromEnv = config.locations?.length ? {locations: config.locations} : {}
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
   // Grab the tests returned by the search query (or `[]` if not given).
@@ -195,17 +212,25 @@ export const getTriggerConfigs = async (
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map((id) => {
-    const testFromSearchQuery = testsFromSearchQuery.find((test) => test.id === id)
-    const testFromTestConfigs = testsFromTestConfigs.find((test) => test.id === id)
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+    let testFromSearchQuery
+    if (testIndexFromSearchQuery >= 0) {
+      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
+    }
+
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    let testFromTestConfigs
+    if (testIndexFromTestConfigs >= 0) {
+      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
+    }
 
     return {
       id,
       ...testFromSearchQuery,
       ...testFromTestConfigs,
-      config: {
+      testOverrides: {
         ...defaultTestConfigOverrides,
-        ...testConfigOverridesFromEnv,
-        ...testFromTestConfigs?.config,
+        ...testFromTestConfigs?.testOverrides,
       },
     }
   })

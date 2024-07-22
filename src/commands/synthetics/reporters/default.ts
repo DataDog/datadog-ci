@@ -34,6 +34,8 @@ import {
   ResultOutcome,
 } from '../utils/public'
 
+import {ICONS} from './constants'
+
 // Step rendering
 
 const renderStepDuration = (duration: number) => {
@@ -50,13 +52,6 @@ const renderStepDuration = (duration: number) => {
   const color = getColor()
 
   return `${color(duration.toString())}ms`
-}
-
-const ICONS = {
-  FAILED: chalk.bold.red('✖'),
-  FAILED_NON_BLOCKING: chalk.bold.yellow('✖'),
-  SKIPPED: chalk.bold.yellow('⇢'),
-  SUCCESS: chalk.bold.green('✓'),
 }
 
 const renderStepIcon = (step: Step) => {
@@ -255,14 +250,32 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
   if (hasResult(execution)) {
-    const {result} = execution
+    const {result, passed, retries, test} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+    const attempt = getAttemptSuffix(passed, retries, test)
 
-    return ` - ${location}${device}`
+    return ` - ${location}${device}${attempt}`
   }
 
   return ''
+}
+
+const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
+  const currentAttempt = retries + 1
+  const maxAttempts = (test.options.retry?.count ?? 0) + 1
+
+  if (maxAttempts === 1) {
+    // No need to talk about "attempts" if retries aren't configured.
+    return ''
+  }
+
+  if (passed && retries === 0) {
+    // No need to display anything if the test passed on the first attempt
+    return ''
+  }
+
+  return ` (attempt ${currentAttempt} of ${maxAttempts})`
 }
 
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
@@ -446,14 +459,14 @@ export class DefaultReporter implements MainReporter {
     test: Pick<Test, 'name'>,
     testId: string,
     executionRule: ExecutionRule,
-    config: UserConfigOverride
+    testOverrides: UserConfigOverride
   ) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
       if (executionRule === ExecutionRule.SKIPPED) {
         // Test is either skipped from datadog-ci config or from test config
-        const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
+        const isSkippedByCIConfig = testOverrides.executionRule === ExecutionRule.SKIPPED
         if (isSkippedByCIConfig) {
           return `Skipped test "${chalk.yellow.dim(test.name)}"`
         } else {
@@ -468,17 +481,16 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    // TODO SYNTH-12972: Rename "config override" to "test override" in the code AND the reported message
-    const getConfigOverridesPart = () => {
-      const nbConfigsOverridden = getTestOverridesCount(config)
+    const getTestOverridesPart = () => {
+      const nbConfigsOverridden = getTestOverridesCount(testOverrides)
       if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 
-      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} test ${pluralize('override', nbConfigsOverridden)})`)
     }
 
-    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
+    this.write(`${idDisplay} ${getMessage()}${getTestOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {

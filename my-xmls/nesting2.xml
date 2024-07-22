@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite name="TestSuite1" tests="2" failures="0" errors="0" skipped="0">
+        <testcase name="TestCase1" classname="com.example.tests.TestSuite1" time="0.01"/>
+        <testcase name="TestCase2" classname="com.example.tests.TestSuite1" time="0.02"/>
+    </testsuite>
+
+    <testsuite name="TestSuite2" tests="3" failures="1" errors="0" skipped="0">
+        <testcase name="TestCase1" classname="com.example.tests.TestSuite2" time="0.01">
+            <failure type="AssertionError">All failed1</failure>
+        </testcase>
+        <testcase name="TestCase2" classname="com.example.tests.TestSuite2" time="0.02">
+            <failure type="AssertionError">All failed2</failure>
+        </testcase>
+        <testcase name="TestCase3" classname="com.example.tests.TestSuite2" time="0.03">
+            <failure type="AssertionError">All failed3</failure>
+        </testcase>
+    </testsuite>
+
+    <testsuite name="TestSuite3" tests="1" failures="0" errors="0" skipped="0">
+        <testsuite name="NestedSuite1" tests="2" failures="0" errors="0" skipped="0">
+            <testcase name="TestCase1" classname="com.example.tests.NestedSuite1" time="0.01"/>
+            <testcase name="TestCase2" classname="com.example.tests.NestedSuite1" time="0.02">
+                <failure type="AssertionError">NestedSuite1 Test failed</failure>
+            </testcase>
+        </testsuite>
+
+        <testsuite name="NestedSuite2" tests="1" failures="0" errors="0" skipped="0">
+            <testcase name="TestCase1" classname="com.example.tests.NestedSuite2" time="0.01">
+                <failure type="AssertionError">NestedSuite2 test failed</failure>
+            </testcase>
+        </testsuite>
+
+        <testsuite name="NestedSuite3" tests="3" failures="0" errors="0" skipped="0">
+            <testcase name="TestCase1" classname="com.example.tests.NestedSuite3" time="0.01"/>
+            <testcase name="TestCase2" classname="com.example.tests.NestedSuite3" time="0.02"/>
+            <testcase name="TestCase3" classname="com.example.tests.NestedSuite3" time="0.03"/>
+            <testsuite name="NestedNestedSuite" tests="2" failures="0" errors="0" skipped="0">
+                <testcase name="NestedTestCase1" classname="com.example.tests.NestedNestedSuite" time="0.01"/>
+                <testcase name="NestedTestCase2" classname="com.example.tests.NestedNestedSuite" time="0.02"/>
+            </testsuite>
+        </testsuite>
+        <testcase name="TestCaseTopSuite3" classname="com.example.tests.NestedNestedSuite" time="0.005"/>
+    </testsuite>
+</testsuites>

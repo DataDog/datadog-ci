@@ -2,19 +2,26 @@ import * as crypto from 'crypto'
 import fs from 'fs'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
-import {CiError} from './errors'
+import {CiError, CriticalError} from './errors'
 import {
+  MobileAppExtractedMetadata,
+  MobileAppUploadResult,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
-  MobileApplicationVersion,
   MultipartPresignedUrlsResponse,
-  Test,
   TestPayload,
   UploadApplicationCommandConfig,
-  UserConfigOverride,
+  MobileApplicationNewVersionParams,
+  TriggerConfig,
+  AppUploadDetails,
+  MobileTestWithOverride,
 } from './interfaces'
+import {AppUploadReporter} from './reporters/mobile/app-upload'
+import {wait} from './utils/public'
 
 const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
+export const APP_UPLOAD_POLLING_INTERVAL = 1000 // 1 second
+export const MAX_APP_UPLOAD_POLLING_TIMEOUT = 5 * 60 * 1000 // 5 minutes
 
 export const getSizeAndPartsFromFile = async (
   filePath: string
@@ -45,16 +52,17 @@ export const getSizeAndPartsFromFile = async (
   }
 }
 
-export const uploadMobileApplications = async (
+export const uploadMobileApplication = async (
   api: APIHelper,
   applicationPathToUpload: string,
-  mobileApplicationId: string
-): Promise<string> => {
+  applicationId: string,
+  newVersionParams?: MobileApplicationNewVersionParams
+): Promise<{appUploadResponse: MobileAppUploadResult; fileName: string}> => {
   const {appSize, parts} = await getSizeAndPartsFromFile(applicationPathToUpload)
 
   let multipartPresignedUrlsResponse: MultipartPresignedUrlsResponse
   try {
-    multipartPresignedUrlsResponse = await api.getMobileApplicationPresignedURLs(mobileApplicationId, appSize, parts)
+    multipartPresignedUrlsResponse = await api.getMobileApplicationPresignedURLs(applicationId, appSize, parts)
   } catch (e) {
     throw new EndpointError(`Failed to get presigned URL: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
@@ -70,8 +78,15 @@ export const uploadMobileApplications = async (
   }
 
   const {upload_id: uploadId, key} = multipartPresignedUrlsResponse.multipart_presigned_urls_params
+  let jobId: string
   try {
-    await api.completeMultipartMobileApplicationUpload(mobileApplicationId, uploadId, key, uploadPartResponses)
+    jobId = await api.completeMultipartMobileApplicationUpload(
+      applicationId,
+      uploadId,
+      key,
+      uploadPartResponses,
+      newVersionParams
+    )
   } catch (e) {
     throw new EndpointError(
       `Failed to complete upload mobile application: ${formatBackendErrors(e)}\n`,
@@ -79,105 +94,119 @@ export const uploadMobileApplications = async (
     )
   }
 
-  return multipartPresignedUrlsResponse.file_name
-}
+  let appUploadResponse: MobileAppUploadResult
+  const maxPollingDate = Date.now() + MAX_APP_UPLOAD_POLLING_TIMEOUT
+  while (true) {
+    if (Date.now() >= maxPollingDate) {
+      throw new CriticalError('MOBILE_APP_UPLOAD_TIMEOUT', 'Timeout while polling for mobile application upload')
+    }
+    try {
+      appUploadResponse = await api.pollMobileApplicationUploadResponse(jobId)
+    } catch (e) {
+      throw new EndpointError(`Failed to validate mobile application: ${formatBackendErrors(e)}\n`, e.response?.status)
+    }
 
-export const uploadApplication = async (
-  api: APIHelper,
-  applicationPathToUpload: string,
-  testApplicationId: string,
-  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
-) => {
-  const fileName = await uploadMobileApplications(api, applicationPathToUpload, testApplicationId)
-  if (!(applicationPathToUpload in uploadedApplicationByPath)) {
-    uploadedApplicationByPath[applicationPathToUpload] = []
+    if (appUploadResponse.status !== 'pending') {
+      break
+    }
+
+    await wait(APP_UPLOAD_POLLING_INTERVAL)
   }
 
-  uploadedApplicationByPath[applicationPathToUpload].push({
-    applicationId: testApplicationId,
-    fileName,
-  })
+  if (appUploadResponse.status === 'complete' && !appUploadResponse.is_valid) {
+    throw new CriticalError(
+      'INVALID_MOBILE_APP',
+      `Mobile application failed validation for reason: ${appUploadResponse.invalid_app_result?.invalid_message}`
+    )
+  }
+
+  if (appUploadResponse.status === 'user_error') {
+    throw new CriticalError(
+      'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
+      `Mobile application failed validation for reason: ${appUploadResponse.user_error_result?.user_error_message}`
+    )
+  }
+
+  if (appUploadResponse.status === 'error') {
+    throw new CriticalError('UNKNOWN_MOBILE_APP_UPLOAD_FAILURE', `Unknown mobile application upload error.`)
+  }
+
+  return {appUploadResponse, fileName: multipartPresignedUrlsResponse.file_name}
+}
+
+type AppUploadCacheEntry = {fileName: string; extractedMetadata?: MobileAppExtractedMetadata}
+
+export class AppUploadCache {
+  private cache: {[applicationFilePath: string]: {[applicationId: string]: AppUploadCacheEntry | undefined}} = {}
+
+  public setAppCacheKeys(triggerConfigs: TriggerConfig[], testsAndConfigsOverride: MobileTestWithOverride[]): void {
+    for (const [index, item] of testsAndConfigsOverride.entries()) {
+      if ('test' in item && item.test.type === 'mobile' && !('errorMessage' in item)) {
+        const appId = item.test.options.mobileApplication.applicationId
+        const userConfigOverride = triggerConfigs[index].testOverrides ?? {}
+        const appPath = userConfigOverride.mobileApplicationVersionFilePath
+        if (appPath && (!this.cache[appPath] || !this.cache[appPath][appId])) {
+          this.cache[appPath] = {
+            ...(this.cache[appPath] || {}),
+            [appId]: undefined,
+          }
+        }
+      }
+    }
+  }
+
+  public getAppsToUpload(): AppUploadDetails[] {
+    const appsToUpload: AppUploadDetails[] = []
+    for (const appPath of Object.keys(this.cache)) {
+      for (const appId of Object.keys(this.cache[appPath])) {
+        appsToUpload.push({appId, appPath})
+      }
+    }
+
+    return appsToUpload
+  }
+
+  public getUploadedAppFileName(appPath: string, appId: string): AppUploadCacheEntry | undefined {
+    return this.cache[appPath][appId]
+  }
+
+  public setUploadedAppFileName(
+    appPath: string,
+    appId: string,
+    fileName: string,
+    extractedMetadata?: MobileAppExtractedMetadata
+  ): void {
+    this.cache[appPath][appId] = {fileName, extractedMetadata}
+  }
 }
 
 export const overrideMobileConfig = (
-  userConfigOverride: UserConfigOverride,
   overriddenTest: TestPayload,
-  test: Test,
-  localApplicationOverride?: {applicationId: string; fileName: string}
+  appId: string,
+  tempFileName?: string,
+  mobileApplicationVersion?: string,
+  extractedMetadata?: MobileAppExtractedMetadata
 ) => {
-  if (localApplicationOverride) {
+  if (tempFileName) {
     overriddenTest.mobileApplication = {
-      applicationId: localApplicationOverride.applicationId,
-      referenceId: localApplicationOverride.fileName,
+      applicationId: appId,
+      referenceId: tempFileName,
       referenceType: 'temporary',
     }
-  } else if (userConfigOverride.mobileApplicationVersion) {
+    overriddenTest.appExtractedMetadata = extractedMetadata
+  } else if (mobileApplicationVersion) {
     overriddenTest.mobileApplication = {
-      applicationId: test.options.mobileApplication!.applicationId,
-      referenceId: userConfigOverride.mobileApplicationVersion,
+      applicationId: appId,
+      referenceId: mobileApplicationVersion,
       referenceType: 'version',
     }
   }
 }
 
-export const shouldUploadApplication = (
-  applicationPathToUpload: string,
-  testApplicationId: string,
-  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
-): boolean =>
-  !(applicationPathToUpload in uploadedApplicationByPath) ||
-  !uploadedApplicationByPath[applicationPathToUpload].some(({applicationId}) => applicationId === testApplicationId)
-
-export const uploadApplicationAndOverrideConfig = async (
-  api: APIHelper,
-  test: Test,
-  userConfigOverride: UserConfigOverride,
-  overriddenTestsToTrigger: TestPayload,
-  uploadedApplicationByPath: {[applicationFilePath: string]: {applicationId: string; fileName: string}[]}
-): Promise<void> => {
-  const testApplicationId = test.options.mobileApplication!.applicationId
-  if (
-    userConfigOverride.mobileApplicationVersionFilePath &&
-    shouldUploadApplication(
-      userConfigOverride.mobileApplicationVersionFilePath,
-      testApplicationId,
-      uploadedApplicationByPath
-    )
-  ) {
-    await uploadApplication(
-      api,
-      userConfigOverride.mobileApplicationVersionFilePath,
-      testApplicationId,
-      uploadedApplicationByPath
-    )
-  }
-
-  const localApplicationOverride = userConfigOverride.mobileApplicationVersionFilePath
-    ? uploadedApplicationByPath[userConfigOverride.mobileApplicationVersionFilePath].find(
-        ({applicationId}) => applicationId === testApplicationId
-      )
-    : undefined
-
-  overrideMobileConfig(userConfigOverride, overriddenTestsToTrigger, test, localApplicationOverride)
-}
-
-export const createNewMobileVersion = async (
-  api: APIHelper,
-  version: MobileApplicationVersion
-): Promise<MobileApplicationVersion> => {
-  let newVersion: MobileApplicationVersion
-  try {
-    newVersion = await api.createMobileVersion(version)
-  } catch (e) {
-    throw new EndpointError(`Failed create new Mobile Version: ${formatBackendErrors(e)}\n`, e.response?.status)
-  }
-
-  return newVersion
-}
-
 export const uploadMobileApplicationVersion = async (
-  config: UploadApplicationCommandConfig
-): Promise<MobileApplicationVersion> => {
+  config: UploadApplicationCommandConfig,
+  appUploadReporter: AppUploadReporter
+): Promise<MobileAppUploadResult> => {
   const api = getApiHelper(config)
 
   if (!config.mobileApplicationVersionFilePath) {
@@ -189,23 +218,89 @@ export const uploadMobileApplicationVersion = async (
   }
 
   if (!config.versionName) {
-    throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required')
+    throw new CiError('MISSING_MOBILE_VERSION_NAME', 'Version name is required.')
   }
   config.latest = config.latest ?? false
 
-  const fileName = await uploadMobileApplications(
-    api,
-    config.mobileApplicationVersionFilePath,
-    config.mobileApplicationId
-  )
+  const newVersionParams = {
+    originalFileName: config.mobileApplicationVersionFilePath,
+    versionName: config.versionName,
+    isLatest: config.latest,
+  } as MobileApplicationNewVersionParams
 
-  const version = await createNewMobileVersion(api, {
-    file_name: fileName,
-    application_id: config.mobileApplicationId,
-    original_file_name: config.mobileApplicationVersionFilePath,
-    version_name: config.versionName,
-    is_latest: config.latest,
-  })
+  const appRenderingInfo = {
+    appId: config.mobileApplicationId,
+    appPath: config.mobileApplicationVersionFilePath,
+    versionName: config.versionName,
+  }
+  appUploadReporter.start([appRenderingInfo])
+  appUploadReporter.renderProgress(1)
+  let appUploadResponse: MobileAppUploadResult
+  try {
+    ;({appUploadResponse} = await uploadMobileApplication(
+      api,
+      config.mobileApplicationVersionFilePath,
+      config.mobileApplicationId,
+      newVersionParams
+    ))
+    appUploadReporter.reportSuccess()
+  } catch (error) {
+    appUploadReporter.reportFailure(appRenderingInfo)
+    throw error
+  }
 
-  return version
+  return appUploadResponse
+}
+
+export const uploadMobileApplicationsAndUpdateOverrideConfigs = async (
+  api: APIHelper,
+  triggerConfigs: TriggerConfig[],
+  testsAndConfigsOverride: MobileTestWithOverride[]
+): Promise<void> => {
+  if (!testsAndConfigsOverride.length) {
+    return
+  }
+  if (!triggerConfigs.filter((config) => config.testOverrides?.mobileApplicationVersionFilePath).length) {
+    return
+  }
+  const appUploadCache = new AppUploadCache()
+  const appUploadReporter = new AppUploadReporter(process)
+  appUploadCache.setAppCacheKeys(triggerConfigs, testsAndConfigsOverride)
+  const appsToUpload = appUploadCache.getAppsToUpload()
+
+  appUploadReporter.start(appsToUpload, true)
+  for (const [index, item] of appsToUpload.entries()) {
+    appUploadReporter.renderProgress(appsToUpload.length - index)
+    try {
+      const {appUploadResponse, fileName} = await uploadMobileApplication(api, item.appPath, item.appId)
+      appUploadCache.setUploadedAppFileName(
+        item.appPath,
+        item.appId,
+        fileName,
+        appUploadResponse.valid_app_result?.extracted_metadata
+      )
+    } catch (error) {
+      appUploadReporter.reportFailure(item)
+      throw error
+    }
+  }
+  appUploadReporter.reportSuccess()
+
+  for (const [index, item] of testsAndConfigsOverride.entries()) {
+    if ('test' in item) {
+      const appId = item.test.options.mobileApplication.applicationId
+      const userConfigOverride = triggerConfigs[index].testOverrides ?? {}
+      const appPath = userConfigOverride.mobileApplicationVersionFilePath
+      const cacheEntry = appPath ? appUploadCache.getUploadedAppFileName(appPath, appId) : undefined
+      const fileName = cacheEntry?.fileName
+      const extractedMetadata = cacheEntry?.extractedMetadata
+      overrideMobileConfig(
+        item.overriddenConfig,
+        appId,
+        fileName,
+        userConfigOverride.mobileApplicationVersion,
+        extractedMetadata
+      )
+    }
+  }
 }

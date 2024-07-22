@@ -49,7 +49,7 @@ export class UploadCommand extends Command {
     details: `
             This command will upload debug info from all Elf files found recursively in the given location in order to symbolicate profiles
         `,
-    examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload']],
+    examples: [['Upload debug infos for all Elf files in the current directory', 'datadog-ci elf-symbols upload .']],
   })
 
   private disableGit = Option.Boolean('--disable-git', false)
@@ -57,7 +57,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
-  private symbolsLocation = Option.String('--symbols-location', './')
+  private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
   private config: Record<string, string> = {
@@ -72,7 +72,7 @@ export class UploadCommand extends Command {
 
     const initialTime = Date.now()
 
-    this.context.stdout.write(renderCommandInfo(this.dryRun, this.symbolsLocation))
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.symbolsLocations))
 
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
@@ -173,14 +173,22 @@ export class UploadCommand extends Command {
   }
 
   private async getElfSymbolFiles(symbolsLocation: string): Promise<ElfFileMetadata[]> {
-    let files: string[] = []
-    let reportFailure
+    let paths: string[] = []
+    let reportFailure: (message: string) => void
 
-    if (fs.statSync(symbolsLocation).isDirectory()) {
-      files = glob.sync(buildPath(symbolsLocation, '**'), {nodir: true})
+    const stat = await fs.promises.stat(symbolsLocation)
+    if (stat.isDirectory()) {
+      // strict: false is needed to avoid throwing an error if a directory is not readable
+      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, strict: false, silent: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
+
+      // throw an error if top-level directory is not readable
+      // eslint-disable-next-line no-bitwise
+      await fs.promises.access(symbolsLocation, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+        throw Error(`Directory ${symbolsLocation} is not readable`)
+      })
     } else {
-      files = [symbolsLocation]
+      paths = [symbolsLocation]
       // in single file mode, we want to report failures as errors
       reportFailure = (message: string) => {
         throw Error(message)
@@ -188,34 +196,41 @@ export class UploadCommand extends Command {
     }
 
     const filesMetadata: ElfFileMetadata[] = []
-    for (const file of files) {
-      // check that path is a file and is an ELF file
-      if (fs.lstatSync(file).isFile()) {
-        const metadata = await getElfFileMetadata(file)
+    for (const path of paths) {
+      const pathStat = await fs.promises.lstat(path)
+      if (pathStat.isDirectory()) {
+        // check if directory is readable and if not emit a warning
+        // eslint-disable-next-line no-bitwise
+        await fs.promises.access(path, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+          reportFailure(`Skipped directory ${path} because it is not readable`)
+        })
+      } else if (pathStat.isFile()) {
+        // check that path is a file and is an ELF file
+        const metadata = await getElfFileMetadata(path)
 
         // handle all possible failures
         if (!metadata.isElf) {
-          reportFailure(`Input location ${file} is not an ELF file`)
+          reportFailure(`Input location ${path} is not an ELF file`)
           continue
         }
         if (metadata.error) {
-          reportFailure(`Error reading ELF file ${file}: ${metadata.error.message}`)
+          reportFailure(`Error reading ELF file ${path}: ${metadata.error.message}`)
           continue
         }
         if (!isSupportedElfType(metadata.type)) {
-          reportFailure(`Skipped ${file} because its not an executable, nor a shared library`)
+          reportFailure(`Skipped ${path} because its not an executable, nor a shared library`)
           continue
         }
         if (!isSupportedArch(metadata.arch)) {
-          reportFailure(`Skipped ${file} because it has an unsupported architecture (${metadata.arch})`)
+          reportFailure(`Skipped ${path} because it has an unsupported architecture (${metadata.arch})`)
           continue
         }
         if (!(metadata.gnuBuildId || metadata.goBuildId || metadata.fileHash)) {
-          reportFailure(`Skipped ${file} because it has no build id`)
+          reportFailure(`Skipped ${path} because it has no build id`)
           continue
         }
         if (!metadata.hasDebugInfo && !metadata.hasSymbols) {
-          reportFailure(`Skipped ${file} because it has no debug info, nor symbols`)
+          reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
           continue
         }
         filesMetadata.push(metadata)
@@ -262,7 +277,9 @@ export class UploadCommand extends Command {
     const metricsLogger = this.getMetricsLogger()
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
-    let elfFilesMetadata = await this.getElfSymbolFiles(this.symbolsLocation)
+    let elfFilesMetadata = (
+      await Promise.all(this.symbolsLocations.map((location) => this.getElfSymbolFiles(location)))
+    ).flat()
     elfFilesMetadata = this.removeBuildIdDuplicates(elfFilesMetadata)
 
     const requestBuilder = getElfRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
@@ -276,14 +293,12 @@ export class UploadCommand extends Command {
           fileMetadata.fileHash,
           fileMetadata.arch
         )
-        const outputFilename = getOutputFilenameFromBuildId(
-          fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
-        )
+        const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
         await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
 
         if (this.dryRun) {
-          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, getBuildId(fileMetadata))}`)
+          this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
 
           return UploadStatus.Success
         }
@@ -324,7 +339,7 @@ export class UploadCommand extends Command {
             metricsLogger.logger.increment('retries', 1)
           },
           onUpload: () => {
-            this.context.stdout.write(renderUpload(fileMetadata.filename, getBuildId(fileMetadata)))
+            this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
           },
           retries: 5,
           useGzip: true,
@@ -360,19 +375,21 @@ export class UploadCommand extends Command {
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
 
-    if (!this.symbolsLocation) {
-      this.context.stderr.write(renderArgumentMissingError('symbols-location'))
+    if (!this.symbolsLocations || this.symbolsLocations.length === 0) {
+      this.context.stderr.write(renderArgumentMissingError('symbols locations'))
       parametersOkay = false
     } else {
-      if (fs.existsSync(this.symbolsLocation)) {
-        const stats = fs.statSync(this.symbolsLocation)
-        if (!stats.isDirectory() && !stats.isFile()) {
-          this.context.stderr.write(renderInvalidSymbolsLocation(this.symbolsLocation))
+      for (const symbolsLocation of this.symbolsLocations) {
+        if (fs.existsSync(symbolsLocation)) {
+          const stats = fs.statSync(symbolsLocation)
+          if (!stats.isDirectory() && !stats.isFile()) {
+            this.context.stderr.write(renderInvalidSymbolsLocation(symbolsLocation))
+            parametersOkay = false
+          }
+        } else {
+          this.context.stderr.write(renderInvalidSymbolsLocation(symbolsLocation))
           parametersOkay = false
         }
-      } else {
-        this.context.stderr.write(renderInvalidSymbolsLocation(this.symbolsLocation))
-        parametersOkay = false
       }
     }
 

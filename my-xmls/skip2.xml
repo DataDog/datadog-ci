@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+    <testsuite name="TestSuite1" tests="1" failures="0" errors="0" skipped="1">
+        <testsuite name="NestedSuite1" tests="2" failures="0" errors="0" skipped="2">
+            <testcase name="TestCase1" classname="com.example.tests.NestedSuite1" time="0.01">
+                <skipped>Test skipped for a reason.</skipped>
+            </testcase>
+            <testcase name="TestCase2" classname="com.example.tests.NestedSuite1" time="0.02">
+                <skipped>Another test skipped.</skipped>
+            </testcase>
+        </testsuite>
+        <testcase name="TestCaseTopSuite3" classname="com.example.tests.Suite" time="0.005">
+            <skipped>Another test skipped 2</skipped>
+        </testcase>
+    </testsuite>
+    <testsuite name="TestSuite2" tests="2" failures="0" errors="0" skipped="0">
+        <testcase name="TestCase1" classname="com.example.tests.TestSuite2" time="0.01"/>
+        <testcase name="TestCase2" classname="com.example.tests.TestSuite2" time="0.02"/>
+    </testsuite>
+</testsuites>
