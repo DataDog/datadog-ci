@@ -6,7 +6,7 @@ import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {getCIProvider, getCISpanTags} from '../../helpers/ci'
+import { CI_ENGINES, getCIProvider, getCISpanTags } from "../../helpers/ci";
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
@@ -48,6 +48,7 @@ export class TraceCommand extends Command {
   private measures = Option.Array('--measures')
   private name = Option.String('--name')
   private noFail = Option.Boolean('--no-fail')
+  private dryRun = Option.Boolean('--dry-run')
   private tags = Option.Array('--tags')
 
   private config = {
@@ -93,6 +94,13 @@ export class TraceCommand extends Command {
       this.context.stdout.write(
         `Unsupported CI provider "${provider}". Supported providers are: ${SUPPORTED_PROVIDERS.join(', ')}\n`
       )
+      if (this.noFail) {
+        this.context.stdout.write(
+          `Unsupported CI provider "${provider}". Will stop and succeed since --no-fail was provided\n`
+        )
+
+        return 0
+      }
 
       return 1
     }
@@ -148,6 +156,11 @@ export class TraceCommand extends Command {
   }
 
   private async reportCustomSpan(payload: Payload) {
+    if (this.dryRun) {
+      this.context.stdout.write(`${chalk.green.bold('[DRY-RUN]')} Reporting custom span: ${JSON.stringify(payload)}\n`)
+
+      return
+    }
     const api = this.getApiHelper()
     try {
       await retryRequest(() => api.reportCustomSpan(payload), {
