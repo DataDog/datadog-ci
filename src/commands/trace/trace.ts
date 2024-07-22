@@ -6,7 +6,7 @@ import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import { CI_ENGINES, getCIProvider, getCISpanTags } from "../../helpers/ci";
+import {getCIProvider, getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
