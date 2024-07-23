@@ -145,18 +145,25 @@ const { results, summary } = await synthetics.executeTests(...)
 
 ### Use a proxy
 
-It is possible to configure a proxy to be used for outgoing connections to Datadog using the `proxy` key of the global configuration file.
+It is possible to configure a proxy to be used for outgoing connections to Datadog. You can do this by using the `proxy` key of the global configuration file or the `HTTPS_PROXY` environment variable.
+
+⚠️**Note:** This is the only exception where the the global configuration file takes precedence over environment variable and there is no option to set this through the CLI.
 
 As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
 
-**Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
+To be able to use a proxy you'll first need to set the CA certificate so datadog-ci can trust your proxy. You can do this by setting the `NODE_EXTRA_CA_CERTS` environment variable to the path of your CA certificate. Otherwise, you might get a `unable to verify the first certificate` error.
 
-For example:
+```bash
+export NODE_EXTRA_CA_CERTS=/path/to/your-ca-cert.pem
+```
+
+When using the Global Config `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
+
+Example:
 
 ```jsonc
 {
-  "apiKey": "<DATADOG_API_KEY>",
-  "appKey": "<DATADOG_APPLICATION_KEY>",
+  ...
   "proxy": {
     "auth": {
       "username": "login",
@@ -165,8 +172,24 @@ For example:
     "host": "127.0.0.1",
     "port": 3128,
     "protocol": "http"
-  }
+  },
+  ...
 }
+```
+
+The format used for the `HTTPS_PROXY` environment variable is `<protocol>://<username>:<password>@<host>:<port>`, as described by the [proxy-from-env][13] library that [`proxy-agent` library][2] uses for parsing env variables .
+The `HTTPS_PROXY` variable is used instead of the `HTTP_PROXY` one, because the Datadog API uses the HTTPS protocol.
+
+Example:
+
+```bash
+export HTTPS_PROXY=http://login:pwd@127.0.0.1:3128
+```
+
+In case you want to confirm that the proxy is being used, you can set the `DEBUG` environment variable to `proxy-agent` like this:
+
+```bash
+DEBUG=proxy-agent yarn datadog-ci synthetics run-tests
 ```
 
 ### Deprecated fields
@@ -206,7 +229,7 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+⚠️**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "Yarn" xxx -->
@@ -231,7 +254,7 @@ You can use `--files` (shorthand `-f`) to override the default glob pattern (whi
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+⚠️**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
@@ -370,7 +393,7 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 **Configuration options**
 
 * Global Config: See [Use a proxy](#use-a-proxy) for an example.
-* ENV variable: N/A
+* ENV variable: `HTTPS_PROXY=http://login:pwd@127.0.0.1:3128`
 * CLI param: N/A
 
 #### `publicIds`
@@ -978,6 +1001,7 @@ Additional helpful documentation, links, and articles:
 [10]: https://docs.datadoghq.com/mobile_app_testing/
 [11]: https://registry.terraform.io/providers/DataDog/datadog/latest/docs/resources/synthetics_test#device_ids
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
+[13]: https://www.npmjs.com/package/proxy-from-env#external-resources
 
 <!--
   This page is single-sourced:
