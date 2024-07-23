@@ -127,7 +127,7 @@ describe('trace', () => {
         '\\"CODEBUILD_BUILD_ARN\\":\\"arn:aws:codebuild:us-west-2:123456789012:build/MyProjectName:6a8f0d8a\\"'
       )
     })
-    test('should detect the buidlkite environment', async () => {
+    test('should detect the buildkite environment', async () => {
       const {context, code} = await runCLI([], {
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'abc',
