@@ -28,7 +28,6 @@ datadog-ci trace --name "Say Hello" -- echo "Hello World"
 Additionally you might configure the `trace` command with environment variables:
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_ENV`: you may choose the environment you want your test results to appear in.
 - `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
 - `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 
