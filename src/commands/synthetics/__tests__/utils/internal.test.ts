@@ -216,6 +216,28 @@ describe('utils', () => {
         const overrides = ['defaultStepTimeout=notANumber']
         expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid number value: notANumber')
       })
+
+      it('should suggest correction for invalid case of valid keys', () => {
+        let overrides = ['startURL=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: startURL. Did you mean: startUrl?')
+
+        // resourceUrlSubstitutionRegexe is missing the plural "s"
+        overrides = ['resourceUrlSubstitutionRegexe=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow(
+          'Invalid key: resourceUrlSubstitutionRegexe. Did you mean: resourceUrlSubstitutionRegexes?'
+        )
+
+        overrides = ['startUrlSubstitution=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow(
+          'Invalid key: startUrlSubstitution. Did you mean: startUrlSubstitutionRegex?'
+        )
+
+        overrides = ['startUrlS=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: startUrlS. Did you mean: startUrl?')
+
+        overrides = ['startUrlSub=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: startUrlSub. Did you mean: startUrl?')
+      })
     })
   })
 })

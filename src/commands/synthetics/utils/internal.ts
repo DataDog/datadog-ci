@@ -16,6 +16,8 @@ import {
 
 import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
 
+const levenshtein = require('fast-levenshtein')
+
 export const getOverriddenExecutionRule = (
   test?: Test,
   testOverrides?: UserConfigOverride
@@ -140,6 +142,26 @@ type AccumulatorBaseConfigOverride = Omit<
   cookies?: Partial<Exclude<UserConfigOverride['cookies'], string>>
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
+const allOverrideKeys = [
+  'cookies',
+  'retry',
+  'basicAuth',
+  'allowInsecureCertificates',
+  'body',
+  'bodyType',
+  'defaultStepTimeout',
+  'deviceIds',
+  'executionRule',
+  'followRedirects',
+  'headers',
+  'locations',
+  'pollingTimeout',
+  'resourceUrlSubstitutionRegexes',
+  'startUrl',
+  'startUrlSubstitutionRegex',
+  'testTimeout',
+  'variables',
+]
 type TestOverrideValueType = boolean | number | string | string[] | ExecutionRule
 type ValidTestOverrideValueTypeName = 'boolean' | 'number' | 'string' | 'string[]' | 'ExecutionRule'
 
@@ -272,7 +294,15 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           break
 
         default:
-          throw new Error(`Invalid key: ${key}`)
+          const closestKey = allOverrideKeys.reduce((prev, curr) =>
+            levenshtein.get(curr, key) < levenshtein.get(prev, key) ? curr : prev
+          )
+
+          if (levenshtein.get(closestKey, key) > 5) {
+            throw new Error(`Invalid key: ${key}`)
+          }
+
+          throw new Error(`Invalid key: ${key}. Did you mean: ${closestKey}?`)
       }
 
       return acc
