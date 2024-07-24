@@ -145,19 +145,19 @@ const { results, summary } = await synthetics.executeTests(...)
 
 ### Use a proxy
 
-It is possible to configure a proxy to be used for outgoing connections to Datadog. You can do this by using the `proxy` key of the global configuration file or the `HTTPS_PROXY` environment variable.
+You can configure a proxy to be used for outgoing connections to Datadog. To do this, use the `proxy` key of the global configuration file or the `HTTPS_PROXY` environment variable.
 
-⚠️**Note:** This is the only exception where the the global configuration file takes precedence over environment variable and there is no option to set this through the CLI.
+⚠️**Note**: This is the only exception where the the global configuration file takes precedence over the environment variable. There is no option to set this through the CLI.
 
 As the [`proxy-agent` library][2] is used to configure the proxy, the supported protocols include `http`, `https`, `socks`, `socks4`, `socks4a`, `socks5`, `socks5h`, `pac+data`, `pac+file`, `pac+ftp`, `pac+http`, and `pac+https`. The `proxy` key of the global configuration file is passed to a new `proxy-agent` instance, which means the same configuration for the library is supported.
 
-To be able to use a proxy you'll first need to set the CA certificate so datadog-ci can trust your proxy. You can do this by setting the `NODE_EXTRA_CA_CERTS` environment variable to the path of your CA certificate. Otherwise, you might get a `unable to verify the first certificate` error.
+To use a proxy, you need to first set the CA certificate so datadog-ci trusts your proxy. You can do this by setting the `NODE_EXTRA_CA_CERTS` environment variable to the path of your CA certificate. Otherwise, you might get a `unable to verify the first certificate` error.
 
 ```bash
 export NODE_EXTRA_CA_CERTS=/path/to/your-ca-cert.pem
 ```
 
-When using the Global Config `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
+When using the global configuration, `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
 Example:
 
@@ -177,7 +177,7 @@ Example:
 }
 ```
 
-The format used for the `HTTPS_PROXY` environment variable is `<protocol>://<username>:<password>@<host>:<port>`, as described by the [proxy-from-env][13] library that [`proxy-agent` library][2] uses for parsing env variables .
+The format used for the `HTTPS_PROXY` environment variable is `<protocol>://<username>:<password>@<host>:<port>`, as described by the [proxy-from-env][13] library that [`proxy-agent` library][2] uses for parsing env variables.
 The `HTTPS_PROXY` variable is used instead of the `HTTP_PROXY` one, because the Datadog API uses the HTTPS protocol.
 
 Example:
@@ -186,7 +186,7 @@ Example:
 export HTTPS_PROXY=http://login:pwd@127.0.0.1:3128
 ```
 
-In case you want to confirm that the proxy is being used, you can set the `DEBUG` environment variable to `proxy-agent` like this:
+If you want to confirm that a proxy is being used, you can set the `DEBUG` environment variable to `proxy-agent` like this:
 
 ```bash
 DEBUG=proxy-agent yarn datadog-ci synthetics run-tests
