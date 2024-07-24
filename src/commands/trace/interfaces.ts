@@ -1,31 +1,29 @@
 import type {AxiosPromise, AxiosResponse} from 'axios'
 
-import {CI_ENGINES} from '../../helpers/ci'
+export const CIRCLECI = 'circleci'
+export const JENKINS = 'jenkins'
 
-export const SUPPORTED_PROVIDERS = [
-  CI_ENGINES.GITHUB,
-  CI_ENGINES.GITLAB,
-  CI_ENGINES.JENKINS,
-  CI_ENGINES.CIRCLECI,
-  CI_ENGINES.AWSCODEPIPELINE,
-  CI_ENGINES.AZURE,
-  CI_ENGINES.BUILDKITE,
-] as const
+export const SUPPORTED_PROVIDERS = [CIRCLECI, JENKINS] as const
 export type Provider = typeof SUPPORTED_PROVIDERS[number]
 
 export interface Payload {
-  ci_provider: string
-  span_id: string
   command: string
-  name: string
-  start_time: string
+  custom: {
+    id: string
+    parent_id?: string
+  }
+  // Data is a map of CI-provider-specific environment variables
+  data: Record<string, string>
   end_time: string
   error_message: string
   exit_code: number
-  tags: Partial<Record<string, string>>
+  is_error: boolean
   measures: Partial<Record<string, number>>
+  name: string
+  start_time: string
+  tags: Partial<Record<string, string>>
 }
 
 export interface APIHelper {
-  reportCustomSpan(customSpan: Payload): AxiosPromise<AxiosResponse>
+  reportCustomSpan(customSpan: Payload, provider: Provider): AxiosPromise<AxiosResponse>
 }

@@ -1,5 +1,7 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
@@ -9,18 +11,27 @@ import {Payload} from './interfaces'
 const maxBodyLength = Infinity
 
 export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  customSpan: Payload
+  customSpan: Payload,
+  provider: string
 ) => {
+  const gitSpanTags = await getGitMetadata()
+  const userGitSpanTags = getUserGitSpanTags()
+
   return request({
     data: {
-      data: {
-        type: 'ci_app_custom_span',
-        attributes: customSpan,
+      ...customSpan,
+      tags: {
+        ...gitSpanTags,
+        ...userGitSpanTags,
+        ...customSpan.tags,
       },
+    },
+    headers: {
+      'X-Datadog-CI-Custom-Event': provider,
     },
     maxBodyLength,
     method: 'POST',
-    url: '/api/intake/ci/custom_spans',
+    url: 'api/v2/webhook',
   })
 }
 
