@@ -7,6 +7,7 @@ import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-da
 import {MultipartFileValue, MultipartPayload, MultipartStringValue, UploadStatus} from '../../../helpers/upload'
 import {version} from '../../../helpers/version'
 
+import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
 import {UploadCommand} from '../upload'
@@ -128,12 +129,22 @@ describe('elf-symbols upload', () => {
         trackedFilesMatcher: new TrackedFilesMatcher([]),
       }
 
-      const metadata = command['getMappingMetadata'](
-        'fake-gnu-build-id',
-        'fake-go-build-id',
-        'fake-file-hash',
-        'x86_64'
-      )
+      const elfFileMatadata = {
+        arch: 'x86_64',
+        filename: './a/b/c/fake-filename',
+        isElf: true,
+        littleEndian: true,
+        elfClass: ElfClass.ELFCLASS64,
+        hasDebugInfo: false,
+        hasDynamicSymbolTable: true,
+        hasSymbolTable: true,
+        hasCode: true,
+        gnuBuildId: 'fake-gnu-build-id',
+        goBuildId: 'fake-go-build-id',
+        fileHash: 'fake-file-hash',
+        elfType: 'EXEC',
+      }
+      const metadata = command['getMappingMetadata'](elfFileMatadata)
 
       expect(metadata).toEqual({
         arch: 'x86_64',

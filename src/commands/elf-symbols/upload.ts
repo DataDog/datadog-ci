@@ -147,12 +147,12 @@ export class UploadCommand extends Command {
     return undefined
   }
 
-  private getMappingMetadata(gnuBuildId: string, goBuildId: string, fileHash: string, arch: string): MappingMetadata {
+  private getMappingMetadata(elfFileMetadata: ElfFileMetadata): MappingMetadata {
     return {
-      arch,
-      gnu_build_id: gnuBuildId,
-      go_build_id: goBuildId,
-      file_hash: fileHash,
+      arch: elfFileMetadata.arch,
+      gnu_build_id: elfFileMetadata.gnuBuildId,
+      go_build_id: elfFileMetadata.goBuildId,
+      file_hash: elfFileMetadata.fileHash,
       cli_version: this.cliVersion,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
@@ -287,12 +287,7 @@ export class UploadCommand extends Command {
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
-        const metadata = this.getMappingMetadata(
-          fileMetadata.gnuBuildId,
-          fileMetadata.goBuildId,
-          fileMetadata.fileHash,
-          fileMetadata.arch
-        )
+        const metadata = this.getMappingMetadata(fileMetadata)
         const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
         await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
