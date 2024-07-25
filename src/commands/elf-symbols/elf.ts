@@ -22,7 +22,7 @@ export type ElfFileMetadata = {
   gnuBuildId: string
   goBuildId: string
   fileHash: string
-  type: string
+  elfType: string
   hasDebugInfo: boolean
   hasSymbols: boolean
   hasCode: boolean
@@ -450,7 +450,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     gnuBuildId: '',
     goBuildId: '',
     fileHash: '',
-    type: '',
+    elfType: '',
     hasDebugInfo: false,
     hasSymbols: false,
     hasCode: false,
@@ -466,12 +466,12 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
       metadata.littleEndian = elfHeader!.littleEndian
       metadata.elfClass = elfHeader!.elfClass === ElfClass.ELFCLASS64 ? 64 : 32
       metadata.arch = MACHINE_TYPES_DESCRIPTION[elfHeader!.e_machine as MachineType]
-      metadata.type = ELF_TYPES_DESCRIPTION[elfHeader!.e_type as ElfFileType]
+      metadata.elfType = ELF_TYPES_DESCRIPTION[elfHeader!.e_type as ElfFileType]
     }
     metadata.error = error
     metadata.isElf = isElf
 
-    if (!isElf || error || !isSupportedArch(metadata.arch) || !isSupportedElfType(metadata.type)) {
+    if (!isElf || error || !isSupportedArch(metadata.arch) || !isSupportedElfType(metadata.elfType)) {
       return metadata
     }
 

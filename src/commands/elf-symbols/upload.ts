@@ -217,7 +217,7 @@ export class UploadCommand extends Command {
           reportFailure(`Error reading ELF file ${path}: ${metadata.error.message}`)
           continue
         }
-        if (!isSupportedElfType(metadata.type)) {
+        if (!isSupportedElfType(metadata.elfType)) {
           reportFailure(`Skipped ${path} because its not an executable, nor a shared library`)
           continue
         }
