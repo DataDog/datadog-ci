@@ -12,5 +12,6 @@ export interface MappingMetadata {
   go_build_id: string
   file_hash: string
   symbol_source: string
+  filename: string
   type: string
 }

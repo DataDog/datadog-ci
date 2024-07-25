@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
@@ -172,6 +173,7 @@ export class UploadCommand extends Command {
       git_repository_url: this.gitData?.remote,
       platform: 'elf',
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
+      filename: path.basename(elfFileMetadata.filename),
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
@@ -211,41 +213,41 @@ export class UploadCommand extends Command {
     }
 
     const filesMetadata: ElfFileMetadata[] = []
-    for (const path of paths) {
-      const pathStat = await fs.promises.lstat(path)
+    for (const p of paths) {
+      const pathStat = await fs.promises.lstat(p)
       if (pathStat.isDirectory()) {
         // check if directory is readable and if not emit a warning
         // eslint-disable-next-line no-bitwise
-        await fs.promises.access(path, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
-          reportFailure(`Skipped directory ${path} because it is not readable`)
+        await fs.promises.access(p, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+          reportFailure(`Skipped directory ${p} because it is not readable`)
         })
       } else if (pathStat.isFile()) {
         // check that path is a file and is an ELF file
-        const metadata = await getElfFileMetadata(path)
+        const metadata = await getElfFileMetadata(p)
 
         // handle all possible failures
         if (!metadata.isElf) {
-          reportFailure(`Input location ${path} is not an ELF file`)
+          reportFailure(`Input location ${p} is not an ELF file`)
           continue
         }
         if (metadata.error) {
-          reportFailure(`Error reading ELF file ${path}: ${metadata.error.message}`)
+          reportFailure(`Error reading ELF file ${p}: ${metadata.error.message}`)
           continue
         }
         if (!isSupportedElfType(metadata.elfType)) {
-          reportFailure(`Skipped ${path} because its not an executable, nor a shared library`)
+          reportFailure(`Skipped ${p} because its not an executable, nor a shared library`)
           continue
         }
         if (!isSupportedArch(metadata.arch)) {
-          reportFailure(`Skipped ${path} because it has an unsupported architecture (${metadata.arch})`)
+          reportFailure(`Skipped ${p} because it has an unsupported architecture (${metadata.arch})`)
           continue
         }
         if (!(metadata.gnuBuildId || metadata.goBuildId || metadata.fileHash)) {
-          reportFailure(`Skipped ${path} because it has no build id`)
+          reportFailure(`Skipped ${p} because it has no build id`)
           continue
         }
         if (!metadata.hasDebugInfo && !metadata.hasSymbolTable) {
-          reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
+          reportFailure(`Skipped ${p} because it has no debug info, nor symbols`)
           continue
         }
         filesMetadata.push(metadata)
