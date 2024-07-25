@@ -92,6 +92,25 @@ describe('elf-symbols upload', () => {
       ])
     })
 
+    test('should accept elf file with only dynamic symbols if --dynsym option is passed', async () => {
+      const command = createCommand(UploadCommand)
+      command['acceptDynamicSymbolTableAsSymbolSource'] = true
+      const files = await command['getElfSymbolFiles'](fixtureDir)
+
+      expect(files.map((f) => f.filename)).toEqual([
+        `${fixtureDir}/.debug/dyn_aarch64.debug`,
+        `${fixtureDir}/dyn_aarch64`,
+        `${fixtureDir}/dyn_aarch64_nobuildid`,
+        `${fixtureDir}/dyn_x86_64`,
+        `${fixtureDir}/exec_aarch64`,
+        `${fixtureDir}/exec_arm_big`,
+        `${fixtureDir}/exec_arm_little`,
+        `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
+        `${fixtureDir}/go_x86_64_only_go_build_id`,
+        `${fixtureDir}/go_x86_64_only_go_build_id.debug`,
+      ])
+    })
+
     test('should throw an error when input is a single non-elf file', async () => {
       const command = createCommand(UploadCommand)
       await expect(command['getElfSymbolFiles'](`${fixtureDir}/non_elf_file`)).rejects.toThrow()
@@ -169,7 +188,12 @@ describe('elf-symbols upload', () => {
 
     test('uploads correct multipart payload with multiple locations', async () => {
       const {exitCode} = await runCommand((cmd) => {
-        cmd['symbolsLocations'] = [`${fixtureDir}/dyn_aarch64`, `${fixtureDir}/exec_aarch64`]
+        cmd['symbolsLocations'] = [
+          `${fixtureDir}/dyn_aarch64`,
+          `${fixtureDir}/exec_aarch64`,
+          `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
+        ]
+        cmd['acceptDynamicSymbolTableAsSymbolSource'] = true
       })
 
       const expectedMetadata = [
@@ -195,6 +219,18 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
+        },
+        {
+          cli_version: cliVersion,
+          platform: 'elf',
+          type: 'elf_symbol_file',
+          file_hash: '70c9cab66acf4f5c715119b0999c20a4',
+          gnu_build_id: '6a5e565db576fe96acd8ab12bf857eb36f8afdf4',
+          go_build_id: 'tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn',
+          arch: 'x86_64',
+          filename: 'go_x86_64_both_gnu_and_go_build_id',
+          symbol_source: 'dynamic_symbol_table',
           replace_existing: false,
         },
       ]

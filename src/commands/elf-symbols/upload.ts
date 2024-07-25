@@ -58,6 +58,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
+  private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--dynsym', false)
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
@@ -248,7 +249,11 @@ export class UploadCommand extends Command {
           reportFailure(`Skipped ${p} because it has no build id`)
           continue
         }
-        if (!metadata.hasDebugInfo && !metadata.hasSymbolTable) {
+        if (
+          !metadata.hasDebugInfo &&
+          !metadata.hasSymbolTable &&
+          (!metadata.hasDynamicSymbolTable || !this.acceptDynamicSymbolTableAsSymbolSource)
+        ) {
           reportFailure(`Skipped ${p} because it has no debug info, nor symbols`)
           continue
         }
@@ -268,7 +273,11 @@ export class UploadCommand extends Command {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
-        if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbolTable && !existing.hasSymbolTable)) {
+        if (
+          (metadata.hasDebugInfo && !existing.hasDebugInfo) ||
+          (metadata.hasSymbolTable && !existing.hasSymbolTable) ||
+          (metadata.hasDynamicSymbolTable && !existing.hasDynamicSymbolTable) // this probably should never happen
+        ) {
           // if we have a duplicate build_id, we keep the one with debug info and symbols
           this.context.stderr.write(
             renderWarning(
