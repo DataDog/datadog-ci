@@ -151,14 +151,6 @@ const SUPPORTED_ARCHS = [
   MACHINE_TYPES_DESCRIPTION[MachineType.EM_ARM],
 ]
 const SUPPORTED_ELF_TYPES = [ELF_TYPES_DESCRIPTION[ElfFileType.ET_DYN], ELF_TYPES_DESCRIPTION[ElfFileType.ET_EXEC]]
-const BFD_TARGET_FOR_ARCH: Record<string, string> = {
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64]]: 'elf64-littleaarch64',
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]]: 'elf64-x86_64',
-}
-const GENERIC_BFD_TARGET_FOR_ARCH: Partial<Record<string, string>> = {
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64]]: 'elf64-little',
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]]: 'elf64-little',
-}
 
 const getBFDTargetForArch = (arch: string, littleEndian: boolean, elfClass: number): string => {
   if (arch === MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]) {
