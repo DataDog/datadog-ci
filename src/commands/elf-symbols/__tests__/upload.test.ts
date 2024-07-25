@@ -158,7 +158,13 @@ describe('elf-symbols upload', () => {
         symbol_source: 'symbol_table',
         filename: 'fake-filename',
         type: 'elf_symbol_file',
+        replace_existing: false,
       })
+
+      command['replaceExisting'] = true
+      const metadataReplaceExisting = command['getMappingMetadata'](elfFileMatadata)
+
+      expect(metadataReplaceExisting).toEqual({...metadata, replace_existing: true})
     })
 
     test('uploads correct multipart payload with multiple locations', async () => {
@@ -177,6 +183,7 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'exec_aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -188,6 +195,7 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
       ]
 
@@ -223,6 +231,7 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'exec_aarch64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -234,6 +243,7 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64.debug',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -245,6 +255,7 @@ describe('elf-symbols upload', () => {
           arch: 'x86_64',
           filename: 'dyn_x86_64',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -256,6 +267,7 @@ describe('elf-symbols upload', () => {
           arch: 'arm',
           filename: 'exec_arm_big',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -267,6 +279,7 @@ describe('elf-symbols upload', () => {
           arch: 'arm',
           filename: 'exec_arm_little',
           symbol_source: 'symbol_table',
+          replace_existing: false,
         },
         {
           cli_version: cliVersion,
@@ -278,6 +291,7 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64_nobuildid',
           symbol_source: 'debug_info',
+          replace_existing: false,
         },
       ]
 

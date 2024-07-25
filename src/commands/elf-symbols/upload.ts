@@ -58,6 +58,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
+  private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
@@ -174,6 +175,7 @@ export class UploadCommand extends Command {
       platform: 'elf',
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
       filename: path.basename(elfFileMetadata.filename),
+      replace_existing: this.replaceExisting,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }

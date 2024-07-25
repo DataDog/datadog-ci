@@ -14,4 +14,5 @@ export interface MappingMetadata {
   symbol_source: string
   filename: string
   type: string
+  replace_existing: boolean
 }
