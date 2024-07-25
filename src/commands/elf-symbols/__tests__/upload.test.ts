@@ -155,6 +155,7 @@ describe('elf-symbols upload', () => {
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
         platform: 'elf',
+        symbol_source: 'symbol_table',
         type: 'elf_symbol_file',
       })
     })
@@ -173,6 +174,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -182,6 +184,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
       ]
 
@@ -215,6 +218,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '32cc243a7921912e295d578637cff3a0b8a4c627',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -224,6 +228,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -233,6 +238,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
           go_build_id: '',
           arch: 'x86_64',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
@@ -242,15 +248,17 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '623209afd6c408f9009e57fad28782f056112daf',
           go_build_id: '',
           arch: 'arm',
+          symbol_source: 'debug_info',
         },
         {
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
-          file_hash: 'f984122099288eea0f23e7444dd9076c',
+          file_hash: '708ef04fdf761682c36bc4c062420c37',
           gnu_build_id: '18c30e2d7200682b5ab36c83060c9d6fcd083a3a',
           go_build_id: '',
           arch: 'arm',
+          symbol_source: 'symbol_table',
         },
         {
           cli_version: cliVersion,
@@ -260,6 +268,7 @@ describe('elf-symbols upload', () => {
           gnu_build_id: '',
           go_build_id: '',
           arch: 'aarch64',
+          symbol_source: 'debug_info',
         },
       ]
 

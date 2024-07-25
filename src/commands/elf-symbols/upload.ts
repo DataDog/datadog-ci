@@ -147,6 +147,20 @@ export class UploadCommand extends Command {
     return undefined
   }
 
+  private getElfSymbolSource(elfFileMetadata: ElfFileMetadata): string {
+    if (elfFileMetadata.hasDebugInfo) {
+      return 'debug_info'
+    }
+    if (elfFileMetadata.hasSymbolTable) {
+      return 'symbol_table'
+    }
+    if (elfFileMetadata.hasDynamicSymbolTable) {
+      return 'dynamic_symbol_table'
+    }
+
+    return 'none'
+  }
+
   private getMappingMetadata(elfFileMetadata: ElfFileMetadata): MappingMetadata {
     return {
       arch: elfFileMetadata.arch,
@@ -157,6 +171,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       platform: 'elf',
+      symbol_source: this.getElfSymbolSource(elfFileMetadata),
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
