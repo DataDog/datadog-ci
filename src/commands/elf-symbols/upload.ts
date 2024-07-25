@@ -229,7 +229,7 @@ export class UploadCommand extends Command {
           reportFailure(`Skipped ${path} because it has no build id`)
           continue
         }
-        if (!metadata.hasDebugInfo && !metadata.hasSymbols) {
+        if (!metadata.hasDebugInfo && !metadata.hasSymbolTable) {
           reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
           continue
         }
@@ -249,7 +249,7 @@ export class UploadCommand extends Command {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
-        if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbols && !existing.hasSymbols)) {
+        if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbolTable && !existing.hasSymbolTable)) {
           // if we have a duplicate build_id, we keep the one with debug info and symbols
           this.context.stderr.write(
             renderWarning(
