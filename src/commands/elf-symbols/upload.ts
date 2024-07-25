@@ -44,7 +44,7 @@ export class UploadCommand extends Command {
   public static paths = [['elf-symbols', 'upload']]
 
   public static usage = Command.Usage({
-    category: 'RUM',
+    category: 'Profiling',
     description: 'Upload Elf debug info files to Datadog.',
     details: `
             This command will upload debug info from all Elf files found recursively in the given location in order to symbolicate profiles
