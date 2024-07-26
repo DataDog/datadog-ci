@@ -3,7 +3,7 @@ import {EOL, platform} from 'os'
 import path from 'path'
 
 import {Cli} from 'clipanion/lib/advanced'
-import glob from 'glob'
+import {glob} from 'glob'
 
 import * as APIKeyHelpers from '../../../helpers/apikey'
 import {buildPath} from '../../../helpers/utils'
@@ -308,13 +308,13 @@ describe('execute', () => {
     expect(output[4]).toContain('Will use temporary intermediate directory: ')
     expect(output[5]).toContain('Will use temporary upload directory: ')
     expect(output[6]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
     )
     expect(output[8]).toContain(
-      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
     expect(output[11]).toContain('Handled 3 dSYMs with success')
   })
@@ -334,13 +334,13 @@ describe('execute', () => {
     expect(output[4]).toContain('Will use temporary intermediate directory: ')
     expect(output[5]).toContain('Will use temporary upload directory: ')
     expect(output[6]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
     )
     expect(output[8]).toContain(
-      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
     expect(output[11]).toContain('Handled 3 dSYMs with success')
   })
@@ -362,13 +362,13 @@ describe('execute', () => {
     expect(output[4]).toContain('Will use temporary intermediate directory: ')
     expect(output[5]).toContain('Will use temporary upload directory: ')
     expect(output[6]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
     )
     expect(output[8]).toContain(
-      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+      'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
     expect(output[11]).toContain('Handled 3 dSYMs with success')
   })
