@@ -152,7 +152,7 @@ export class TraceCommand extends Command {
   private getBaseIntakeUrl() {
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
 
-    return `https://${site}`
+    return `https://api.${site}`
   }
 
   private async reportCustomSpan(payload: Payload) {
