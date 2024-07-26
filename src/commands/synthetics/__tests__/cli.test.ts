@@ -1214,7 +1214,7 @@ describe('run-test', () => {
           `locations=${defaultTestOverrides.locations?.join(';')}`,
           `retry.count=${defaultTestOverrides.retry?.count}`,
           `retry.interval=${defaultTestOverrides.retry?.interval}`,
-          `startURl=${defaultTestOverrides.startUrl}`,
+          `startUrl=${defaultTestOverrides.startUrl}`,
           `startUrlSubstitutionRegex=${defaultTestOverrides.startUrlSubstitutionRegex}`,
           `testTimeout=${defaultTestOverrides.testTimeout}`,
           `resourceUrlSubstitutionRegexes=${defaultTestOverrides.resourceUrlSubstitutionRegexes?.join(';')}`,
@@ -1222,7 +1222,7 @@ describe('run-test', () => {
           `variables.cliVar2=${defaultTestOverrides.variables?.cliVar2}`,
         ]
 
-        // await command['resolveConfig']()
+        await command['resolveConfig']()
         expect(await command.execute()).toBe(0)
         expect(getTestsToTriggerMock).toHaveBeenNthCalledWith(
           1,
