@@ -17,9 +17,9 @@ export const getTestConfigs = async (
 ): Promise<TriggerConfig[]> => {
   const files = [...config.files]
 
-  // Only auto-discover with the default glob if the user doesn't give any clue what to run.
-  // If they give publicIds (only), they might be in their home directory so we shouldn't auto-discover for performance reasons.
-  // If they give publicIds and files, then only the given publicIds are run and the test config files are applied on them.
+  // Only auto-discover with the default glob when the user **doesn't give any clue** about which tests to run.
+  // If they give any clue (e.g. `publicIds`) without explicitly passing `files`,
+  // they might be running the command from their home folder so we shouldn't auto-discover for performance reasons.
   if (config.publicIds.length === 0 && files.length === 0 && suites.length === 0 && !config.testSearchQuery) {
     files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
   }
