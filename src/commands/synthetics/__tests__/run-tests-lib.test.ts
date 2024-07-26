@@ -752,7 +752,7 @@ describe('run-test', () => {
     })
 
     test('should override and execute only publicIds that were defined in the global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const defaultTestOverrides = {locations, startUrl}
 
       await expect(
@@ -775,6 +775,36 @@ describe('run-test', () => {
           id: '123-456-789',
         },
       ])
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(0)
+    })
+
+    test('should override and execute only publicIds that were defined in the global config and use given globs', async () => {
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const defaultTestOverrides = {locations, startUrl}
+      const files = ['glob']
+
+      await expect(
+        runTests.getTriggerConfigs(
+          fakeApi,
+          {
+            ...ciConfig,
+            defaultTestOverrides,
+            files,
+            publicIds: ['abc-def-ghi'],
+          },
+          mockReporter
+        )
+      ).resolves.toEqual([
+        {
+          testOverrides: {startUrl, locations, deviceIds: ['chrome.laptop_large']},
+          id: 'abc-def-ghi',
+          suite: 'Suite 1',
+        },
+      ])
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(1)
+      expect(getSuitesMock).toHaveBeenCalledWith('glob', mockReporter)
     })
 
     test('should search tests and extend global config', async () => {
@@ -878,6 +908,7 @@ describe('run-test', () => {
       ])
       expect(getSuitesMock).toHaveBeenCalled()
     })
+
     test('should handle test configurations with the same test ID correctly', async () => {
       const conf5 = {
         tests: [
