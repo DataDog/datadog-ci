@@ -7,7 +7,7 @@ import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
+import {glob} from 'glob'
 
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
@@ -195,7 +195,7 @@ export class UploadSarifReportCommand extends Command {
         return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
       }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.sarif')))
+      return acc.concat(glob.sync(buildPath(basePath, '*.sarif'), {dotRelative: true}))
     }, [])
 
     const validUniqueFiles = [...new Set(sarifReports)].filter((sarifReport) => {
