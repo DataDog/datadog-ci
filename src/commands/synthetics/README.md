@@ -160,7 +160,6 @@ export NODE_EXTRA_CA_CERTS=/path/to/your-ca-cert.pem
 When using the global configuration, `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
 Example:
-Example:
 
 ```jsonc
 {
