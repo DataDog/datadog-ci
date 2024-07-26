@@ -151,7 +151,7 @@ As the [`proxy-agent` library][2] is used to configure the proxy, the supported 
 
 **Note**: `host` and `port` keys are mandatory arguments and the `protocol` key defaults to `http` if not defined.
 
-For example:
+Example:
 
 ```jsonc
 {
@@ -689,7 +689,10 @@ To determine which tests to run, one or more of those options may be passed to `
 
 If none of these options is passed, `datadog-ci` auto-discovers test configuration files with the `{,!(node_modules)/**/}*.synthetics.json` glob pattern (every file ending with `.synthetics.json`, except for those in the `node_modules` folder).
 
-**Note**: The file search starts from the current working directory, so it may be slow if the command is run from a big directory, like a home folder. For better performance, use the options above to specify the tests, or refine the glob pattern with the [`files` option](#files).
+**Note**: The file search starts from the current working directory, so it may be slow if the command is run from a large directory, like a home folder. If file search command is too slow, consider:
+- Using the above options to specify the tests (this will disable the file search),
+- Or refining the glob pattern with the [`files` option](#files).
+  - For example, by using `*` instead of `**` or by adding a specific folder to the pattern.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 
