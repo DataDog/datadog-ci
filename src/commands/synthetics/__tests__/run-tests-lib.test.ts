@@ -721,8 +721,8 @@ describe('run-test', () => {
       }),
     } as any
 
-    test('should extend global config and execute all tests from test config files when no publicIds were defined', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+    test('should extend global config and execute all tests from test config files when no clue what to run', async () => {
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const defaultTestOverrides = {locations, startUrl}
 
       await expect(
@@ -749,10 +749,13 @@ describe('run-test', () => {
           suite: 'Suite 4',
         },
       ])
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(1)
+      expect(getSuitesMock).toHaveBeenCalledWith('{,!(node_modules)/**/}*.synthetics.json', mockReporter)
     })
 
     test('should override and execute only publicIds that were defined in the global config', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites')
       const defaultTestOverrides = {locations, startUrl}
 
       await expect(
@@ -808,7 +811,7 @@ describe('run-test', () => {
     })
 
     test('should search tests and extend global config', async () => {
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites')
       const defaultTestOverrides = {locations, startUrl}
       const searchQuery = 'fake search'
 
@@ -829,6 +832,8 @@ describe('run-test', () => {
           suite: 'Query: fake search',
         },
       ])
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(0)
     })
 
     test('should not use testSearchQuery if global config has defined publicIds', async () => {
@@ -849,19 +854,50 @@ describe('run-test', () => {
       ])
     })
 
+    test('should search tests with testSearchQuery and use given globs', async () => {
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+
+      const defaultTestOverrides = {startUrl}
+      const searchQuery = 'fake search'
+      const files = ['glob']
+
+      await expect(
+        runTests.getTriggerConfigs(
+          fakeApi,
+          {
+            ...ciConfig,
+            defaultTestOverrides,
+            files,
+            testSearchQuery: searchQuery,
+          },
+          mockReporter
+        )
+      ).resolves.toEqual([
+        {
+          testOverrides: {startUrl},
+          id: 'stu-vwx-yza',
+          suite: 'Query: fake search',
+        },
+      ])
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(1)
+      expect(getSuitesMock).toHaveBeenCalledWith('glob', mockReporter)
+    })
+
     test('should use given globs to get tests list', async () => {
       const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
       const defaultTestOverrides = {startUrl}
       const files = ['new glob', 'another one']
 
       await runTests.getTriggerConfigs(fakeApi, {...ciConfig, defaultTestOverrides, files}, mockReporter)
+
       expect(getSuitesMock).toHaveBeenCalledTimes(2)
       expect(getSuitesMock).toHaveBeenCalledWith('new glob', mockReporter)
       expect(getSuitesMock).toHaveBeenCalledWith('another one', mockReporter)
     })
 
     test('should return tests from provided suites with overrides', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites')
       const defaultTestOverrides = {startUrl}
       const files: string[] = []
 
@@ -871,6 +907,7 @@ describe('run-test', () => {
         mockReporter,
         fakeSuites
       )
+
       expect(tests).toEqual([
         {
           testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl},
@@ -881,7 +918,8 @@ describe('run-test', () => {
         {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf3.tests[0].id, suite: fakeSuites[2].name},
         {testOverrides: {startUrl: 'theFakestUrl'}, id: conf4.tests[0].id, suite: fakeSuites[3].name},
       ])
-      expect(getSuitesMock).not.toHaveBeenCalled()
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(0)
     })
 
     test('should merge getSuites and user provided suites', async () => {
@@ -898,6 +936,7 @@ describe('run-test', () => {
         mockReporter,
         userSuites
       )
+
       expect(tests).toEqual([
         {
           testOverrides: {deviceIds: ['chrome.laptop_large'], startUrl},
@@ -906,7 +945,9 @@ describe('run-test', () => {
         },
         {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
       ])
-      expect(getSuitesMock).toHaveBeenCalled()
+
+      expect(getSuitesMock).toHaveBeenCalledTimes(1)
+      expect(getSuitesMock).toHaveBeenCalledWith('glob', mockReporter)
     })
 
     test('should handle test configurations with the same test ID correctly', async () => {
