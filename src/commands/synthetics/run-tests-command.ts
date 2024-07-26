@@ -175,14 +175,14 @@ export class RunTestsCommand extends Command {
   public async execute() {
     const reporters: Reporter[] = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
-    
+
     try {
       await this.resolveConfig()
     } catch (error) {
       if (error instanceof CiError) {
         reportCiError(error, this.reporter)
       }
-      
+
       return 1
     }
 
@@ -368,8 +368,7 @@ export class RunTestsCommand extends Command {
     let validatedOverrides
     try {
       validatedOverrides = validateAndParseOverrides(this.overrides)
-    }
-    catch (error) {
+    } catch (error) {
       throw new CiError('INVALID_CONFIG', error.message)
     }
     const cliOverrideRetryConfig = deepExtend(
