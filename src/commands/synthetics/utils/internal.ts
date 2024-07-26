@@ -142,7 +142,7 @@ type AccumulatorBaseConfigOverride = Omit<
   cookies?: Partial<Exclude<UserConfigOverride['cookies'], string>>
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
-const allOverrideKeys = [
+const allOverrideKeys: AccumulatorBaseConfigOverrideKey[] = [
   'cookies',
   'retry',
   'basicAuth',

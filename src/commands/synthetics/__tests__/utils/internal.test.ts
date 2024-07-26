@@ -237,6 +237,14 @@ describe('utils', () => {
 
         overrides = ['startUrlSub=blah']
         expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: startUrlSub. Did you mean: startUrl?')
+        
+        // Levenshtein distance > 5 should not suggest a correction
+        overrides = ['startUrlSubsti=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: startUrlSubsti')
+
+        // resourceUrlSubstitutionRegexes or startUrlSubstitutionRegexes : We can't make a suggestion
+        overrides = ['UrlSubstitutionRegexes=blah']
+        expect(() => validateAndParseOverrides(overrides)).toThrow('Invalid key: UrlSubstitutionRegexes')
       })
     })
   })
