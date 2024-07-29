@@ -34,6 +34,8 @@ export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
 /** @deprecated Please use `DEFAULT_BATCH_TIMEOUT` instead. */
 export const DEFAULT_POLLING_TIMEOUT = DEFAULT_BATCH_TIMEOUT
 
+export const DEFAULT_TEST_CONFIG_FILES_GLOB = '{,!(node_modules)/**/}*.synthetics.json'
+
 export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
@@ -44,7 +46,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnCriticalErrors: false,
   failOnMissingTests: false,
   failOnTimeout: true,
-  files: ['{,!(node_modules)/**/}*.synthetics.json'],
+  files: [],
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   jUnitReport: '',

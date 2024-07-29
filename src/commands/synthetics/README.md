@@ -206,7 +206,7 @@ The following is a list of the changes:
 
 ## Run Tests Command
 
-You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (or all the tests associated to the path specified in your [global configuration file](#global-configuration-file-options)) or specify the tests you want to run using the `-p,--public-id` flag.
+You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (see [test files](#test-files)) or specify the tests you want to run using the `-p,--public-id` flag.
 
 <!-- xxx tabs xxx -->
 <!-- xxx tab "NPM" xxx -->
@@ -229,32 +229,32 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append the command associated to your `datadog-ci-synthetics` script with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file-options), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "Yarn" xxx -->
 
 Run tests by executing the CLI through **Yarn**:
 
-The `run-tests` sub-command runs the tests discovered in the folder according to the `files` configuration key. It accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
+The `run-tests` sub-command accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
 ```bash
 yarn datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
-It is also possible to trigger tests corresponding to a search query by using the flag `--search` (or shorthand `-s`). With this option, the overrides defined in your [global configuration file](#global-configuration-file-options) apply to all tests discovered with the search query.
+It is also possible to trigger tests corresponding to a search query by using the `--search` (or shorthand `-s`) argument. With this option, the overrides defined in your [global configuration file](#global-configuration-file-options) apply to all tests discovered with the search query.
 
 ```bash
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests'
 ```
 
-You can use `--files` (shorthand `-f`) to override the default glob pattern (which would match all `**/*.synthetics.json` files) when you want to discover only a subset of the tests.
+You can use `--files` (shorthand `-f`) to override the default glob pattern (which would match all `**/*.synthetics.json` files).
 
 ```bash
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
 ```
 
-**Note**: If you are launching your tests with a custom global configuration file, append your command with `--config <PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file-options), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
@@ -358,7 +358,7 @@ A boolean flag that fails the CI job if at least one test exceeds the default ba
 
 #### `files`
 
-Glob patterns to detect Synthetic test [configuration files](#test-files).
+Glob patterns to detect Synthetic [test configuration files](#test-files).
 
 **Configuration options**
 
@@ -705,7 +705,17 @@ These files take precedence over global configuration files, environment variabl
 Global Config < Environment variables < CLI parameters < Test Config
 ```
 
-By default, `datadog-ci` runs at the root of the working directory and looks for `{,!(node_modules)/**/}*.synthetics.json` files (every file ending with `.synthetics.json`, except for those in the `node_modules` folder) to find a test configuration file. This can be manually configured with the [`files` parameter](#files).
+To determine which tests to run, one or more of those options may be passed to `datadog-ci`:
+- The [`files` option](#files)
+- The [`publicIds` option](#publicids)
+- The [`testSearchQuery` option](#testsearchquery)
+
+If none of these options is passed, `datadog-ci` auto-discovers test configuration files with the `{,!(node_modules)/**/}*.synthetics.json` glob pattern (every file ending with `.synthetics.json`, except for those in the `node_modules` folder).
+
+**Note**: The file search starts from the current working directory, so it may be slow if the command is run from a large directory, like a home folder. If file search command is too slow, consider:
+- Using the above options to specify the tests (this will disable the file search),
+- Or refining the glob pattern with the [`files` option](#files).
+  - For example, by using `*` instead of `**` or by adding a specific folder to the pattern.
 
 The `<TEST_PUBLIC_ID>` can be either the identifier of the test found in the URL of a test details page (for example, for `https://app.datadoghq.com/synthetics/details/abc-def-ghi`, it would be `abc-def-ghi`) or the full URL to the details page (for example, directly `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
 

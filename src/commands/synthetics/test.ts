@@ -7,6 +7,7 @@ import {
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
+import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {getSuites, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
@@ -14,7 +15,16 @@ export const getTestConfigs = async (
   reporter: MainReporter,
   suites: Suite[] = []
 ): Promise<TriggerConfig[]> => {
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
+  const files = [...config.files]
+
+  // Only auto-discover with the default glob when the user **doesn't give any clue** about which tests to run.
+  // If they give any clue (e.g. `publicIds`) without explicitly passing `files`,
+  // they might be running the command from their home folder so we shouldn't auto-discover for performance reasons.
+  if (config.publicIds.length === 0 && files.length === 0 && suites.length === 0 && !config.testSearchQuery) {
+    files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
+  }
+
+  const suitesFromFiles = (await Promise.all(files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
 

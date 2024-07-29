@@ -252,11 +252,6 @@ export const executeWithDetails = async (
     ...runConfig,
   }
 
-  // We don't want to have default globs in case suites are given.
-  if (!runConfig.files && suites?.length) {
-    localConfig.files = []
-  }
-
   // Handle reporters for the run.
   const localReporters: Reporter[] = []
   // If the config asks for specific reporters.
