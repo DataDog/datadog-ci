@@ -281,13 +281,6 @@ export class RunTestsCommand extends Command {
     )
 
     // Override with OVERRIDE ENV variables
-    const envOverrideRetryConfig = deepExtend(
-      this.config.defaultTestOverrides?.retry ?? {},
-      removeUndefinedValues({
-        count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
-        interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
-      })
-    )
     const envOverrideBasicAuth = deepExtend(
       this.config.defaultTestOverrides?.basicAuth ?? {},
       removeUndefinedValues({
@@ -299,6 +292,13 @@ export class RunTestsCommand extends Command {
       append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
       value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
     })
+    const envOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
+        interval: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({
@@ -366,13 +366,6 @@ export class RunTestsCommand extends Command {
 
     // Override defaultTestOverrides with CLI parameters
     const validatedOverrides = validateAndParseOverrides(this.overrides)
-    const cliOverrideRetryConfig = deepExtend(
-      this.config.defaultTestOverrides?.retry ?? {},
-      removeUndefinedValues({
-        count: validatedOverrides.retry?.count,
-        interval: validatedOverrides.retry?.interval,
-      })
-    )
     const cliOverrideBasicAuth = deepExtend(
       this.config.defaultTestOverrides?.basicAuth ?? {},
       removeUndefinedValues({
@@ -384,6 +377,13 @@ export class RunTestsCommand extends Command {
       append: validatedOverrides.cookies?.append,
       value: validatedOverrides.cookies?.value,
     })
+    const cliOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: validatedOverrides.retry?.count,
+        interval: validatedOverrides.retry?.interval,
+      })
+    )
     this.config.defaultTestOverrides = deepExtend(
       this.config.defaultTestOverrides,
       removeUndefinedValues({

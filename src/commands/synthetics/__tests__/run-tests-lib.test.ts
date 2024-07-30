@@ -85,11 +85,11 @@ describe('run-test', () => {
           appKey: '',
           configPath: 'datadog-ci.json',
           datadogSite: 'datadoghq.com',
+          defaultTestOverrides: {},
           failOnCriticalErrors: false,
           failOnMissingTests: false,
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
-          defaultTestOverrides: {},
           // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
           locations: [],

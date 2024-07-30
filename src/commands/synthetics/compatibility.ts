@@ -1,6 +1,50 @@
 import {MainReporter, RunTestsCommandConfig, Suite, UserConfigOverride} from './interfaces'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT} from './run-tests-command'
 
+export const moveLocationsToTestOverrides = (
+  config: RunTestsCommandConfig,
+  reporter: MainReporter,
+  warnDeprecatedLocations = false
+): RunTestsCommandConfig => {
+  const isLocationsUsedInRoot = (config.locations ?? []).length !== 0
+  // At this point, `global` should already have been moved to `defaultTestOverrides`
+  const isLocationsUsedInDefaultTestOverrides = (config.defaultTestOverrides?.locations ?? []).length !== 0
+
+  if (isLocationsUsedInRoot && warnDeprecatedLocations) {
+    reporter.error(
+      "The 'locations' property should not be used at the root level of the global configuration file. Please put it in 'defaultTestOverrides' instead.\n If 'locations' exists in both places, only the one in 'defaultTestOverrides' is used!\n"
+    )
+  }
+
+  // If the user hasn't migrated and is still using `locations` at the root level, move it in the `defaultTestOverrides`
+  if (!isLocationsUsedInDefaultTestOverrides && isLocationsUsedInRoot) {
+    return {
+      ...config,
+      defaultTestOverrides: {
+        ...config.defaultTestOverrides,
+        locations: config.locations,
+      },
+    }
+  }
+
+  return config
+}
+
+export const replaceConfigWithTestOverrides = (
+  config: UserConfigOverride | undefined,
+  testOverrides: UserConfigOverride | undefined
+): UserConfigOverride => {
+  const isConfigUsed = Object.keys(config ?? {}).length !== 0
+  const isTestOverridesUsed = Object.keys(testOverrides ?? {}).length !== 0
+
+  // If the user hasn't migrated and is still using `config` in test files, use `config`
+  if (!isTestOverridesUsed && isConfigUsed) {
+    return config ?? {}
+  }
+
+  return testOverrides ?? {}
+}
+
 export const replaceGlobalWithDefaultTestOverrides = (
   config: RunTestsCommandConfig,
   reporter: MainReporter,
@@ -24,21 +68,6 @@ export const replaceGlobalWithDefaultTestOverrides = (
   }
 
   return config
-}
-
-export const replaceConfigWithTestOverrides = (
-  config: UserConfigOverride | undefined,
-  testOverrides: UserConfigOverride | undefined
-): UserConfigOverride => {
-  const isConfigUsed = Object.keys(config ?? {}).length !== 0
-  const isTestOverridesUsed = Object.keys(testOverrides ?? {}).length !== 0
-
-  // If the user hasn't migrated and is still using `config` in test files, use `config`
-  if (!isTestOverridesUsed && isConfigUsed) {
-    return config ?? {}
-  }
-
-  return testOverrides ?? {}
 }
 
 export const replacePollingTimeoutWithBatchTimeout = (
@@ -93,33 +122,4 @@ export const warnIfDeprecatedPollingTimeoutUsed = (suites: Suite[], reporter: Ma
       "The 'pollingTimeout' property is deprecated. Please use 'batchTimeout' in the global configuration file or '--batchTimeout' instead.\nIf both 'pollingTimeout' and 'batchTimeout' properties exist, 'batchTimeout' is used!\n"
     )
   }
-}
-
-export const moveLocationsToTestOverrides = (
-  config: RunTestsCommandConfig,
-  reporter: MainReporter,
-  warnDeprecatedLocations = false
-): RunTestsCommandConfig => {
-  const isLocationsUsedInRoot = (config.locations ?? []).length !== 0
-  // At this point, `global` should already have been moved to `defaultTestOverrides`
-  const isLocationsUsedInDefaultTestOverrides = (config.defaultTestOverrides?.locations ?? []).length !== 0
-
-  if (isLocationsUsedInRoot && warnDeprecatedLocations) {
-    reporter.error(
-      "The 'locations' property should not be used at the root level of the global configuration file. Please put it in 'defaultTestOverrides' instead.\n If 'locations' exists in both places, only the one in 'defaultTestOverrides' is used!\n"
-    )
-  }
-
-  // If the user hasn't migrated and is still using `locations` at the root level, move it in the `defaultTestOverrides`
-  if (!isLocationsUsedInDefaultTestOverrides && isLocationsUsedInRoot) {
-    return {
-      ...config,
-      defaultTestOverrides: {
-        ...config.defaultTestOverrides,
-        locations: config.locations,
-      },
-    }
-  }
-
-  return config
 }
