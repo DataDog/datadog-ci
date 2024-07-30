@@ -44,19 +44,25 @@ export class EndpointError extends Error {
   }
 }
 
-export const formatBackendErrors = (requestError: AxiosError<BackendError>) => {
+export const formatBackendErrors = (requestError: AxiosError<BackendError>, scopeName?: string) => {
   if (requestError.response?.data?.errors) {
     const serverHead = `query on ${requestError.config?.baseURL}${requestError.config?.url} returned:`
     const errors = requestError.response.data.errors
+    const reportMessage = []
     if (errors.length > 1) {
-      const formattedErrors = errors.map((message: string) => `  - ${message}`)
-
-      return `${serverHead}\n${formattedErrors.join('\n')}`
+      reportMessage.push(serverHead)
+      reportMessage.push(...errors.map((message: string) => `  - ${message}`))
     } else if (errors.length) {
-      return `${serverHead} "${errors[0]}"`
+      reportMessage.push(`${serverHead} "${errors[0]}"`)
     } else {
-      return `error querying ${requestError.config?.baseURL}${requestError.config?.url}`
+      reportMessage.push(`error querying ${requestError.config?.baseURL}${requestError.config?.url}`)
     }
+
+    if (requestError.response.status === 403 && scopeName) {
+      reportMessage.push(`Is the APP key granted the ${scopeName} scope?`)
+    }
+
+    return reportMessage.join('\n')
   }
 
   return `could not query ${requestError.config?.baseURL}${requestError.config?.url}\n${requestError.message}`
