@@ -220,7 +220,9 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
   const outputLines = [resultIdentification]
 
-  // Unhealthy test results don't have a duration or result URL
+  // Unhealthy test results don't have a duration or result URL.
+  // On the other hand, timed out retries still have the data from the last received result,
+  // so we don't show the duration or result URL to avoid confusion.
   if (hasResult(execution) && !execution.result.unhealthy && !execution.timedOutRetry) {
     const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
@@ -276,6 +278,7 @@ const getAttemptSuffix = (passed: boolean, retries: number, test: Test, timedOut
   }
 
   if (timedOutRetry) {
+    // The attempt number of the last received result + 1, in order to refer to the retry.
     return ` (attempt ${currentAttempt + 1} of ${maxAttempts})`
   }
 
