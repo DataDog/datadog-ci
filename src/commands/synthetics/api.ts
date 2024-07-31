@@ -59,7 +59,7 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>, scop
     }
 
     if (requestError.response.status === 403 && scopeName) {
-      reportMessage.push(`Is the APP key granted the ${scopeName} scope?`)
+      reportMessage.push(`Is the App key granted the ${scopeName} scope?`)
     }
 
     return reportMessage.join('\n')
