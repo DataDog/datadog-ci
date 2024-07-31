@@ -508,4 +508,11 @@ describe('formatBackendErrors', () => {
     const requestError = getAxiosHttpError(403, {message: 'Forbidden'})
     expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
   })
+
+  test('missing scope error', () => {
+    const requestError = getAxiosHttpError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
+    expect(formatBackendErrors(requestError, 'synthetics_default_settings_read')).toBe(
+      'query on https://app.datadoghq.com/example returned:\n  - Forbidden\n  - Failed permission authorization checks\nIs the App key granted the synthetics_default_settings_read scope?'
+    )
+  })
 })
