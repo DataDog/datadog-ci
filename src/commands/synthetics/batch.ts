@@ -89,6 +89,8 @@ const getResultIdsToFetch = (
   return getResultIds(newlyReceivedResults).concat(...oldIncompleteResultIds)
 }
 
+type ResultToReport = ResultInBatch & {timedOutRetry?: boolean}
+
 const getResultsToReport = (
   shouldContinuePolling: boolean,
   batch: Batch,
@@ -97,7 +99,7 @@ const getResultsToReport = (
   oldIncompleteResultIds: Set<string>,
   incompleteResultIds: Set<string>,
   reporter: MainReporter
-): ResultInBatch[] => {
+): ResultToReport[] => {
   const newlyCompleteResults = excludeSkipped(batch.results).filter(
     (r) => oldIncompleteResultIds.has(r.result_id) && !incompleteResultIds.has(r.result_id)
   )
@@ -113,14 +115,21 @@ const getResultsToReport = (
   // Residual results are either:
   //  - Still in progress (from the batch POV): they were never emitted.
   //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
+  //  - Or still non-final: a fast retry was expected, show a warning.
   const residualResults = excludeSkipped(batch.results).filter(
-    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id)
+    (r) =>
+      !emittedResultIds.has(r.result_id) ||
+      incompleteResultIds.has(r.result_id) ||
+      (emittedResultIds.has(r.result_id) && r.timed_out)
   )
 
   const errors: string[] = []
   for (const result of residualResults) {
     if (!result.timed_out) {
       errors.push(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+    } else if (emittedResultIds.has(result.result_id) && result.timed_out) {
+      errors.push(`A fast retry was expected for initial result ${result.result_id}, but the batch timed out.`)
+      ;(result as ResultToReport).timedOutRetry = true
     }
   }
 
@@ -205,7 +214,7 @@ const reportWaitingTests = (
 }
 
 const getResultFromBatch = (
-  resultInBatch: ResultInBatch,
+  resultInBatch: ResultToReport,
   pollResultMap: PollResultMap,
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached = false
@@ -253,6 +262,7 @@ const getResultFromBatch = (
     test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
+    timedOutRetry: resultInBatch.timedOutRetry,
   }
 }
 
