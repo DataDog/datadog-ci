@@ -320,6 +320,7 @@ export interface LocationsMapping {
 export interface Trigger {
   batch_id: string
   locations: Location[]
+  selective_rerun_rate_limited?: boolean
 }
 
 export interface RetryConfig {
@@ -472,8 +473,9 @@ export interface APIHelperConfig {
 export interface SyntheticsCIConfig extends APIHelperConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
-  configPath: string
   batchTimeout?: number
+  configPath: string
+  defaultTestOverrides?: UserConfigOverride
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
   failOnTimeout: boolean
@@ -482,7 +484,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
   global?: UserConfigOverride
   jUnitReport?: string
-  defaultTestOverrides?: UserConfigOverride
   // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
   /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
   locations?: string[]

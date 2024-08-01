@@ -290,7 +290,7 @@ export const getOrgSettings = async (
   try {
     return await apiHelper.getSyntheticsOrgSettings()
   } catch (e) {
-    reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
+    reporter.error(`Failed to get settings: ${formatBackendErrors(e, 'synthetics_default_settings_read')}`)
   }
 }
 
