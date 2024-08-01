@@ -1,6 +1,5 @@
 import fs from 'fs'
 
-
 import type {ErrorObject} from 'ajv'
 
 import Ajv from 'ajv'
