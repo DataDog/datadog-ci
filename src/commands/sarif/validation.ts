@@ -39,7 +39,7 @@ export const validateSarif = (sarifReportPath: string) => {
  * Functions that looks for errors specific to how Datadog processes SARIF file. This way, we
  * show the error directly to the user instead of uploading a file we cannot process in our backend.
  *
- * The function returns undefined if everything is good, otherwise, it returns the error to show.
+ * The function returns a list of errors to show. The return value is empty if there is no error.
  *
  * @param filePath - the path of the SARIF file.
  */
