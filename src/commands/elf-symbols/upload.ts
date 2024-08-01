@@ -171,6 +171,7 @@ export class UploadCommand extends Command {
       go_build_id: elfFileMetadata.goBuildId,
       file_hash: elfFileMetadata.fileHash,
       cli_version: this.cliVersion,
+      cli: 'datadog-ci',
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       platform: 'elf',

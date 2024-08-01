@@ -170,6 +170,7 @@ describe('elf-symbols upload', () => {
         gnu_build_id: 'fake-gnu-build-id',
         go_build_id: 'fake-go-build-id',
         file_hash: 'fake-file-hash',
+        cli: 'datadog-ci',
         cli_version: cliVersion,
         git_commit_sha: 'fake-git-hash',
         git_repository_url: 'fake-git-remote',
@@ -198,6 +199,7 @@ describe('elf-symbols upload', () => {
 
       const expectedMetadata = [
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -210,6 +212,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -222,6 +225,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -258,6 +262,7 @@ describe('elf-symbols upload', () => {
 
       const expectedMetadata = [
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -270,6 +275,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -282,6 +288,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -294,6 +301,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -306,6 +314,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
@@ -318,6 +327,7 @@ describe('elf-symbols upload', () => {
           replace_existing: false,
         },
         {
+          cli: 'datadog-ci',
           cli_version: cliVersion,
           platform: 'elf',
           type: 'elf_symbol_file',
