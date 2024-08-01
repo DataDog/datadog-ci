@@ -1,10 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 
-import type {ErrorObject} from 'ajv'
-
-import Ajv from 'ajv'
-import addFormats from 'ajv-formats'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
@@ -19,7 +15,6 @@ import * as validation from '../../helpers/validation'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
-import sarifJsonSchema from './json-schema/sarif-schema-2.1.0.json'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,
@@ -31,28 +26,7 @@ import {
   renderMissingSpan,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
-
-const validateSarif = (sarifReportPath: string) => {
-  const ajv = new Ajv({allErrors: true})
-  addFormats(ajv)
-  const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
-  try {
-    const sarifReportContent = JSON.parse(String(fs.readFileSync(sarifReportPath)))
-    const valid = sarifJsonSchemaValidate(sarifReportContent)
-    if (!valid) {
-      const errors = sarifJsonSchemaValidate.errors || []
-      const errorMessages = errors.map((error: ErrorObject) => {
-        return `${error.instancePath}: ${error.message}`
-      })
-
-      return errorMessages.join('\n')
-    }
-  } catch (error) {
-    return error.message
-  }
-
-  return undefined
-}
+import {checkForError, validateSarif} from './validation'
 
 export class UploadSarifReportCommand extends Command {
   public static paths = [['sarif', 'upload']]
@@ -205,7 +179,14 @@ export class UploadSarifReportCommand extends Command {
 
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(sarifReport, validationErrorMessage))
+        this.context.stdout.write(renderInvalidFile(sarifReport, [validationErrorMessage]))
+
+        return false
+      }
+
+      const potentialErrors = checkForError(sarifReport)
+      if (potentialErrors.length > 0) {
+        this.context.stdout.write(renderInvalidFile(sarifReport, potentialErrors))
 
         return false
       }
