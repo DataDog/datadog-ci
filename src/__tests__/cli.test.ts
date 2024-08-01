@@ -44,7 +44,7 @@ describe('cli', () => {
         expect(command.usage?.description).toMatch(/\.$/)
 
         // Please uppercase the first letter of the category and description.
-        expect(command.usage?.category?.charAt(0)).toStrictEqual(command.usage?.category?.charAt(0).toUpperCase())
+        expect(command.usage?.category?.charAt(0)).toStrictEqual("asd")
         expect(command.usage?.description?.charAt(0)).toStrictEqual(command.usage?.description?.charAt(0).toUpperCase())
       })
     })
