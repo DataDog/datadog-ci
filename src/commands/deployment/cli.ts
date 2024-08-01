@@ -1,3 +1,4 @@
+import {DeploymentCorrelateCommand} from './correlate'
 import {DeploymentMarkCommand} from './mark'
 
-module.exports = [DeploymentMarkCommand]
+module.exports = [DeploymentMarkCommand, DeploymentCorrelateCommand]
