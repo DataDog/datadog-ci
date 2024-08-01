@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import glob from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
@@ -199,7 +199,7 @@ export class UploadCommand extends Command {
   }
 
   private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
-    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'), {dotRelative: true})
+    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
 
     return symbolPaths
   }

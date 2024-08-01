@@ -49,10 +49,10 @@ describe('upload', () => {
       )
 
       expect(firstFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
       expect(secondFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
 
       const output = context.stdout.toString()
@@ -128,10 +128,10 @@ describe('upload', () => {
         {}
       )
       expect(firstFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
       })
       expect(secondFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/go-report.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/java-report.xml',
       })
       expect(thirdFile).toMatchObject({
         xmlPath: './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
@@ -154,10 +154,10 @@ describe('upload', () => {
         {}
       )
       expect(firstFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
       })
       expect(secondFile).toMatchObject({
-        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        xmlPath: './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
       })
     })
     test('should not have repeated files', async () => {
@@ -268,11 +268,11 @@ describe('upload', () => {
       const fileNames = files.map((file) => file.xmlPath)
 
       expect(fileNames).toEqual([
-        './src/commands/junit/__tests__/fixtures/java-report.xml',
-        './src/commands/junit/__tests__/fixtures/go-report.xml',
-        './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
-        './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
-        './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/go-report.xml',
+        'src/commands/junit/__tests__/fixtures/java-report.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
       ])
     })
     test('should fetch nested folders and ignore non xml files', async () => {
@@ -294,11 +294,11 @@ describe('upload', () => {
       const fileNames = files.map((file) => file.xmlPath)
 
       expect(fileNames).toEqual([
-        './src/commands/junit/__tests__/fixtures/java-report.xml',
-        './src/commands/junit/__tests__/fixtures/go-report.xml',
-        './src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
-        './src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
-        './src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/go-report.xml',
+        'src/commands/junit/__tests__/fixtures/java-report.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml',
+        'src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml',
+        'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
       ])
     })
   })
