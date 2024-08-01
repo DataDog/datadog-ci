@@ -13,13 +13,17 @@ const ICONS = {
   INFO: 'ℹ️',
 }
 
-export const renderInvalidFile = (sarifReport: string, errorMessage: string) => {
+export const renderInvalidFile = (sarifReport: string, errorMessages: string[]) => {
   let fullStr = ''
   const reportPath = `[${chalk.bold.dim(sarifReport)}]`
 
   fullStr += chalk.red(`${ICONS.FAILED} Invalid SARIF report file ${reportPath}.\n`)
   fullStr += chalk.red(`The report is not a valid JSON or is not compliant with the SARIF json schema v2.1.0.\n`)
-  fullStr += chalk.red(`Errors: ${errorMessage}\n`)
+
+  fullStr += chalk.red(`Error(s) found:\n`)
+  for (const errorMessage of errorMessages) {
+    fullStr += chalk.red(` - ${errorMessage}\n`)
+  }
 
   return fullStr
 }

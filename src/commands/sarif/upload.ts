@@ -179,16 +179,14 @@ export class UploadSarifReportCommand extends Command {
 
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(sarifReport, validationErrorMessage))
+        this.context.stdout.write(renderInvalidFile(sarifReport, [validationErrorMessage]))
 
         return false
       }
 
       const potentialErrors = checkForError(sarifReport)
       if (potentialErrors.length > 0) {
-        for (const potentialError of potentialErrors) {
-          this.context.stdout.write(renderInvalidFile(sarifReport, potentialError))
-        }
+        this.context.stdout.write(renderInvalidFile(sarifReport, potentialErrors))
 
         return false
       }
