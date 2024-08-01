@@ -43,8 +43,9 @@ export const validateSarif = (sarifReportPath: string) => {
  *
  * @param filePath - the path of the SARIF file.
  */
-export const checkForError = (filePath: string): undefined|string => {
+export const checkForError = (filePath: string): string[] => {
   const report: any = JSON.parse(String(fs.readFileSync(filePath)))
+  const res: string[] = []
 
   if ('runs' in report) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -62,17 +63,18 @@ export const checkForError = (filePath: string): undefined|string => {
       if ('results' in run) {
         for (const result of run['results']) {
           if (!('ruleId' in result)) {
-            return 'a result should have a ruleId'
+            res.push('a result should have a ruleId')
+            continue
           }
           // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
           const ruleId: string = result['ruleId']
           if (rules.indexOf(ruleId) === -1) {
-            return `result references rule ${ruleId} but rule not found in the tool section`
+            res.push(`result references rule ${ruleId} but rule not found in the tool section`)
           }
         }
       }
     }
   }
 
-  return undefined
+  return res
 }

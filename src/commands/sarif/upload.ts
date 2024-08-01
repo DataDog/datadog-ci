@@ -184,9 +184,11 @@ export class UploadSarifReportCommand extends Command {
         return false
       }
 
-      const potentialError = checkForError(sarifReport)
-      if (potentialError) {
-        this.context.stdout.write(renderInvalidFile(sarifReport, potentialError))
+      const potentialErrors = checkForError(sarifReport)
+      if (potentialErrors.length > 0) {
+        for (const potentialError of potentialErrors) {
+          this.context.stdout.write(renderInvalidFile(sarifReport, potentialError))
+        }
 
         return false
       }
