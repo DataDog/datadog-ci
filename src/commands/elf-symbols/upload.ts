@@ -166,15 +166,15 @@ export class UploadCommand extends Command {
 
   private getMappingMetadata(elfFileMetadata: ElfFileMetadata): MappingMetadata {
     return {
+      cli_version: this.cliVersion,
+      origin_version: this.cliVersion,
+      origin: 'datadog-ci',
       arch: elfFileMetadata.arch,
       gnu_build_id: elfFileMetadata.gnuBuildId,
       go_build_id: elfFileMetadata.goBuildId,
       file_hash: elfFileMetadata.fileHash,
-      cli_version: this.cliVersion,
-      cli: 'datadog-ci',
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
-      platform: 'elf',
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
       filename: path.basename(elfFileMetadata.filename),
       replace_existing: this.replaceExisting,
