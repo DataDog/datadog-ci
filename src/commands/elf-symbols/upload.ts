@@ -177,7 +177,7 @@ export class UploadCommand extends Command {
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
       filename: path.basename(elfFileMetadata.filename),
-      replace_existing: this.replaceExisting,
+      overwrite: this.replaceExisting,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }

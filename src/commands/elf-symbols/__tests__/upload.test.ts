@@ -34,6 +34,7 @@ const commonMetadata = {
   origin: 'datadog-ci',
   origin_version: cliVersion,
   type: 'elf_symbol_file',
+  overwrite: false,
 }
 
 describe('elf-symbols upload', () => {
@@ -181,13 +182,12 @@ describe('elf-symbols upload', () => {
         git_repository_url: 'fake-git-remote',
         symbol_source: 'symbol_table',
         filename: 'fake-filename',
-        replace_existing: false,
       })
 
       command['replaceExisting'] = true
       const metadataReplaceExisting = command['getMappingMetadata'](elfFileMatadata)
 
-      expect(metadataReplaceExisting).toEqual({...metadata, replace_existing: true})
+      expect(metadataReplaceExisting).toEqual({...metadata, overwrite: true})
     })
 
     test('uploads correct multipart payload with multiple locations', async () => {
@@ -209,7 +209,6 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'exec_aarch64',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -219,7 +218,6 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -229,7 +227,6 @@ describe('elf-symbols upload', () => {
           arch: 'x86_64',
           filename: 'go_x86_64_both_gnu_and_go_build_id',
           symbol_source: 'dynamic_symbol_table',
-          replace_existing: false,
         },
       ]
 
@@ -263,7 +260,6 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'exec_aarch64',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -273,7 +269,6 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64.debug',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -283,7 +278,6 @@ describe('elf-symbols upload', () => {
           arch: 'x86_64',
           filename: 'dyn_x86_64',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -293,7 +287,6 @@ describe('elf-symbols upload', () => {
           arch: 'arm',
           filename: 'exec_arm_big',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -303,7 +296,6 @@ describe('elf-symbols upload', () => {
           arch: 'arm',
           filename: 'exec_arm_little',
           symbol_source: 'symbol_table',
-          replace_existing: false,
         },
         {
           ...commonMetadata,
@@ -313,7 +305,6 @@ describe('elf-symbols upload', () => {
           arch: 'aarch64',
           filename: 'dyn_aarch64_nobuildid',
           symbol_source: 'debug_info',
-          replace_existing: false,
         },
       ]
 
