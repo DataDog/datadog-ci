@@ -6108,7 +6108,7 @@ __metadata:
     strnum: ^1.0.5
   bin:
     fxparser: src/cli/cli.js
-  checksum: ad33a4b5165a0ffcb6e17ae78825bd4619a8298844a8a8408f2ea141a0d2d9439d18865dc5254162f09fe54d510ff18e5d5c0a190869cab21fc745ee66be816b
+  checksum: f440c01cd141b98789ae777503bcb6727393296094cc82924ae9f88a5b971baa4eec7e65306c7e07746534caa661fc83694ff437d9012dc84dee39dfbfaab947
   languageName: node
   linkType: hard
 
@@ -6401,7 +6401,7 @@ __metadata:
     https-proxy-agent: ^7.0.1
     is-stream: ^2.0.0
     node-fetch: ^2.6.9
-  checksum: 4d4a8db32d833f8012435e2016cb0c919cac288e821bf81f877504e4284ef12b444cd903448e738c4031cd5219adf1e8d68e7df2b3dba774db9fde27f71109d4
+  checksum: 7316ea45cb1fc84d2725d675a6f23fc68c5dfa53b437b89c2596e3219a1bf32ee48f57242b670ebad515c9644d45cc7b2b7ef9063fa50a86de54e1a5a6433999
   languageName: node
   linkType: hard
 
@@ -6627,7 +6627,7 @@ __metadata:
     protobufjs: ^7.3.2
     retry-request: ^7.0.0
     uuid: ^9.0.1
-  checksum: bc7e0da01f0494ae4b9fb2c5dd3a81089e7e18228ad26e6d985da7bb9e8df9f77c4c5cf794bd48bdd7b5930700ba17771f37e7ffdc5e0a749702f8f69697e825
+  checksum: e6a6946645d3290bf04c2815d091037ff24ef41bd3f8d9eaab802c82adc86b05fe665dc36181a79972292350a01a5e203e0f42dfa3498bf084caee99a16a8207
   languageName: node
   linkType: hard
 
@@ -8238,15 +8238,6 @@ jschardet@latest:
   dependencies:
     yallist: ^3.0.2
   checksum: c154ae1cbb0c2206d1501a0e94df349653c92c8cbb25236d7e85190bcaf4567a03ac6eb43166fabfa36fd35623694da7233e88d9601fbf411a9a481d85dbd2cb
-  languageName: node
-  linkType: hard
-
-"lru-cache@npm:^6.0.0":
-  version: 6.0.0
-  resolution: "lru-cache@npm:6.0.0"
-  dependencies:
-    yallist: ^4.0.0
-  checksum: f97f499f898f23e4585742138a22f22526254fdba6d75d41a1c2526b3b6cc5747ef59c5612ba7375f42aca4f8461950e925ba08c991ead0651b4918b7c978297
   languageName: node
   linkType: hard
 
@@ -10784,15 +10775,6 @@ jschardet@latest:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^10.0.0":
-  version: 10.0.0
-  resolution: "uuid@npm:10.0.0"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 4b81611ade2885d2313ddd8dc865d93d8dccc13ddf901745edca8f86d99bc46d7a330d678e7532e7ebf93ce616679fb19b2e3568873ac0c14c999032acb25869
   languageName: node
   linkType: hard
 
