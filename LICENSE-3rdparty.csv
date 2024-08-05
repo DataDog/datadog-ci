@@ -22,6 +22,7 @@ Component,Origin,Licence,Copyright
 @types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
 @types/retry,dev,MIT,Copyright Stan Goldmann and BendingBender.
+@types/rimraf,dev,MIT,Copyright Carlos Ballesteros Velasco <https://github.com/soywiz> and contributors
 @types/semver,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
@@ -39,6 +40,7 @@ datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
 deep-extend,import,MIT,"Copyright (c) 2013-2018, Viacheslav Lotsmanov"
 deep-object-diff,import,MIT,Copyright (c) 2016-present Matt Phillips
+fast-levenshtein,import,MIT,Copyright (c) 2013 Ramesh Nair
 fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 fuzzy,import,MIT,Copyright (c) 2012 Matt York

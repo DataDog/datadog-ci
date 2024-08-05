@@ -2,7 +2,7 @@ import fs from 'fs'
 import path, {basename} from 'path'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import glob from 'glob'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'

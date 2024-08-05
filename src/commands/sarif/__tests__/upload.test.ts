@@ -59,11 +59,11 @@ describe('upload', () => {
 
       expect(firstFile).toMatchObject({
         service: 'service',
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(secondFile).toMatchObject({
         service: 'service',
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
 
       const getInvalidJsonUnexpectedTokenErrorMessage = () => {
@@ -79,19 +79,17 @@ describe('upload', () => {
 
       const output = context.stdout.toString()
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', 'Unexpected end of JSON input')
+        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
       )
       expect(output).toContain(
-        renderInvalidFile(
-          './src/commands/sarif/__tests__/fixtures/invalid.sarif',
-          getInvalidJsonUnexpectedTokenErrorMessage()
-        )
+        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid.sarif', [
+          getInvalidJsonUnexpectedTokenErrorMessage(),
+        ])
       )
       expect(output).toContain(
-        renderInvalidFile(
-          './src/commands/sarif/__tests__/fixtures/invalid-result.sarif',
-          "/runs/0/results/0: must have required property 'message'"
-        )
+        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid-result.sarif', [
+          "/runs/0/results/0: must have required property 'message'",
+        ])
       )
     })
     test('should allow single files', async () => {
@@ -146,11 +144,11 @@ describe('upload', () => {
       )
       expect(firstFile).toMatchObject({
         service: 'service',
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(secondFile).toMatchObject({
         service: 'service',
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
       expect(thirdFile).toMatchObject({
         service: 'service',

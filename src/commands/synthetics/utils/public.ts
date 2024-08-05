@@ -5,7 +5,7 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import {glob} from 'glob'
+import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
@@ -238,7 +238,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
-  const files: string[] = await glob(GLOB)
+  const files: string[] = await promisify(glob)(GLOB)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
@@ -290,7 +290,7 @@ export const getOrgSettings = async (
   try {
     return await apiHelper.getSyntheticsOrgSettings()
   } catch (e) {
-    reporter.error(`Failed to get settings: ${formatBackendErrors(e)}`)
+    reporter.error(`Failed to get settings: ${formatBackendErrors(e, 'synthetics_default_settings_read')}`)
   }
 }
 

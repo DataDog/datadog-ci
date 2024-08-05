@@ -173,6 +173,9 @@ export class RunTestsCommand extends Command {
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   public async execute() {
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
+
     try {
       await this.resolveConfig()
     } catch (error) {
@@ -182,9 +185,6 @@ export class RunTestsCommand extends Command {
 
       return 1
     }
-
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
 
     if (this.config.jUnitReport) {
       reporters.push(
@@ -365,7 +365,19 @@ export class RunTestsCommand extends Command {
     )
 
     // Override defaultTestOverrides with CLI parameters
-    const validatedOverrides = validateAndParseOverrides(this.overrides)
+    let validatedOverrides
+    try {
+      validatedOverrides = validateAndParseOverrides(this.overrides)
+    } catch (error) {
+      throw new CiError('INVALID_CONFIG', error.message)
+    }
+    const cliOverrideRetryConfig = deepExtend(
+      this.config.defaultTestOverrides?.retry ?? {},
+      removeUndefinedValues({
+        count: validatedOverrides.retry?.count,
+        interval: validatedOverrides.retry?.interval,
+      })
+    )
     const cliOverrideBasicAuth = deepExtend(
       this.config.defaultTestOverrides?.basicAuth ?? {},
       removeUndefinedValues({

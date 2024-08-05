@@ -2,7 +2,7 @@ import {promises} from 'fs'
 import {tmpdir} from 'os'
 import path from 'path'
 
-import {rimraf} from 'rimraf'
+import rimraf from 'rimraf'
 
 import {buildPath, execute} from '../../helpers/utils'
 
@@ -25,9 +25,8 @@ export const createUniqueTmpDirectory = async (): Promise<string> => {
   return directoryPath
 }
 
-export const deleteDirectory = async (directoryPath: string): Promise<void> => {
-  await rimraf(directoryPath)
-}
+export const deleteDirectory = async (directoryPath: string): Promise<void> =>
+  new Promise((resolve, reject) => rimraf(directoryPath, () => resolve()))
 
 export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
   const cwd = path.dirname(directoryPath)

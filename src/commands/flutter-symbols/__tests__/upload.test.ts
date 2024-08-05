@@ -129,10 +129,10 @@ describe('flutter-symbol upload', () => {
       const files = command['getFlutterSymbolFiles'](searchDir)
 
       expect(files).toEqual([
-        `${searchDir}/app.ios-arm64.symbols`,
-        `${searchDir}/app.android-x64.symbols`,
-        `${searchDir}/app.android-arm64.symbols`,
         `${searchDir}/app.android-arm.symbols`,
+        `${searchDir}/app.android-arm64.symbols`,
+        `${searchDir}/app.android-x64.symbols`,
+        `${searchDir}/app.ios-arm64.symbols`,
       ])
     })
   })

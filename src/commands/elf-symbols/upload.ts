@@ -1,7 +1,7 @@
 import fs from 'fs'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import glob from 'glob'
 
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
@@ -178,7 +178,8 @@ export class UploadCommand extends Command {
 
     const stat = await fs.promises.stat(symbolsLocation)
     if (stat.isDirectory()) {
-      paths = await glob(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
+      // strict: false is needed to avoid throwing an error if a directory is not readable
+      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, strict: false, silent: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable
