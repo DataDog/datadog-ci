@@ -371,13 +371,6 @@ export class RunTestsCommand extends Command {
     } catch (error) {
       throw new CiError('INVALID_CONFIG', error.message)
     }
-    const cliOverrideRetryConfig = deepExtend(
-      this.config.defaultTestOverrides?.retry ?? {},
-      removeUndefinedValues({
-        count: validatedOverrides.retry?.count,
-        interval: validatedOverrides.retry?.interval,
-      })
-    )
     const cliOverrideBasicAuth = deepExtend(
       this.config.defaultTestOverrides?.basicAuth ?? {},
       removeUndefinedValues({
