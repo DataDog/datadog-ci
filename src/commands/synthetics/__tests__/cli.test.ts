@@ -70,6 +70,8 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'false',
         DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
         DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
+        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+        DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
         DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
@@ -86,8 +88,6 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
         DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_HEADERS: "{'Content-Type': 'application/json', 'Authorization': 'Bearer token'}",
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-        DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
         DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'us-east-1;us-west-1',
         DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
         DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1;regex2',
@@ -185,11 +185,34 @@ describe('run-test', () => {
         batchTimeout: 1,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
+        defaultTestOverrides: {
+          allowInsecureCertificates: true,
+          basicAuth: {username: 'test', password: 'test'},
+          body: '{"fakeContent":true}',
+          bodyType: 'application/json',
+          cookies: {
+            value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          defaultStepTimeout: 10000,
+          deviceIds: ['chrome.laptop_large'],
+          executionRule: ExecutionRule.BLOCKING,
+          followRedirects: true,
+          headers: {'<NEW_HEADER>': '<NEW_VALUE>'},
+          locations: ['aws:us-west-1'],
+          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
+          mobileApplicationVersionFilePath: './path/to/application.apk',
+          pollingTimeout: 1,
+          retry: {count: 2, interval: 300},
+          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
+          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
+          testTimeout: 200000,
+          variables: {titleVariable: 'new value'},
+        },
         failOnCriticalErrors: true,
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        jUnitReport: 'junit-report.xml',
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           allowInsecureCertificates: true,
@@ -215,30 +238,7 @@ describe('run-test', () => {
           testTimeout: 200000,
           variables: {titleVariable: 'new value'},
         },
-        defaultTestOverrides: {
-          allowInsecureCertificates: true,
-          basicAuth: {username: 'test', password: 'test'},
-          body: '{"fakeContent":true}',
-          bodyType: 'application/json',
-          cookies: {
-            value: 'name1=value1;name2=value2;',
-            append: true,
-          },
-          defaultStepTimeout: 10000,
-          deviceIds: ['chrome.laptop_large'],
-          executionRule: ExecutionRule.BLOCKING,
-          followRedirects: true,
-          headers: {'<NEW_HEADER>': '<NEW_VALUE>'},
-          locations: ['aws:us-west-1'],
-          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-          mobileApplicationVersionFilePath: './path/to/application.apk',
-          pollingTimeout: 1,
-          retry: {count: 2, interval: 300},
-          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
-          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
-          testTimeout: 200000,
-          variables: {titleVariable: 'new value'},
-        },
+        jUnitReport: 'junit-report.xml',
         // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations: [],
         // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
@@ -377,11 +377,6 @@ describe('run-test', () => {
         batchTimeout: 2,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
-        failOnCriticalErrors: true,
-        failOnMissingTests: true,
-        failOnTimeout: false,
-        files: ['new-file'],
-        jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
           basicAuth: {
@@ -417,6 +412,11 @@ describe('run-test', () => {
           testTimeout: 42,
           variables: {var1: 'value1', var2: 'value2'},
         },
+        failOnCriticalErrors: true,
+        failOnMissingTests: true,
+        failOnTimeout: false,
+        files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
         publicIds: ['ran-dom-id2'],
         // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
         pollingTimeout: 2, // also set for backwards compatibility
@@ -436,11 +436,6 @@ describe('run-test', () => {
         batchTimeout: 1,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
-        failOnCriticalErrors: true,
-        failOnMissingTests: true,
-        failOnTimeout: false,
-        files: ['new-file'],
-        jUnitReport: 'junit-report.xml',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
           basicAuth: {
@@ -479,6 +474,11 @@ describe('run-test', () => {
             var2: 'value2',
           },
         },
+        failOnCriticalErrors: true,
+        failOnMissingTests: true,
+        failOnTimeout: false,
+        files: ['new-file'],
+        jUnitReport: 'junit-report.xml',
         publicIds: ['ran-dom-id2'],
         pollingTimeout: 1, // still set to the correct value for backwards compatibility
         selectiveRerun: true,
@@ -547,12 +547,6 @@ describe('run-test', () => {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
         datadogSite: 'us3.datadoghq.com',
-        failOnCriticalErrors: false,
-        failOnMissingTests: false,
-        failOnTimeout: false,
-        files: ['from_config_file.json'],
-        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {},
         defaultTestOverrides: {
           allowInsecureCertificates: true,
           basicAuth: {
@@ -580,6 +574,12 @@ describe('run-test', () => {
           testTimeout: 200000,
           variables: {titleVariable: 'config file value'},
         },
+        failOnCriticalErrors: false,
+        failOnMissingTests: false,
+        failOnTimeout: false,
+        files: ['from_config_file.json'],
+        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
+        global: {},
         jUnitReport: 'junit-report-from-config-file.xml',
         // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         locations: ['location_1_from_config_file', 'location_2_from_config_file'],
@@ -612,6 +612,8 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -629,8 +631,6 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'false',
           DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
             "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: '00000000-0000-0000-0000-000000000000',
           DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'regex1-from-env;regex2-from-env',
@@ -860,6 +860,8 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
+          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
+          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -877,8 +879,6 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
             "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: 'env-00000000-0000-0000-0000-000000000000',
           DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'env-regex1;env-regex2',
