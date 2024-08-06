@@ -20,7 +20,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
@@ -46,7 +46,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
@@ -72,7 +72,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -93,7 +93,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -114,7 +114,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -139,7 +139,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -162,7 +162,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -188,7 +188,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -212,7 +212,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 
@@ -278,7 +278,7 @@ describe('generation of payload', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [])
+    const tags = await getSpanTags(config, [], true)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
 

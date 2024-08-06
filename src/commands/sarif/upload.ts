@@ -62,6 +62,7 @@ export class UploadSarifReportCommand extends Command {
   private service = Option.String('--service')
   private tags = Option.Array('--tags')
   private noVerify = Option.Boolean('--no-verify', false)
+  private noCiTags = Option.Boolean('--no-ci-tags', false)
 
   private config: DatadogCiConfig = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -93,7 +94,7 @@ export class UploadSarifReportCommand extends Command {
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
-    const spanTags = await getSpanTags(this.config, this.tags)
+    const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
     // Check if we have all the mandatory git fields
     const spanTagsKeys = Object.keys(spanTags)
