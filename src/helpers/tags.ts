@@ -118,9 +118,14 @@ export const mandatoryGitFields: Record<string, boolean> = {
  * Get the tags to upload results in CI for the following commands: sarif and sbom.
  * @param config - the configuration of the CLI
  * @param additionalTags - additional tags passed, generally from the command line.
+ * @param includeCiTags - include CI tags or not
  */
-export const getSpanTags = async (config: DatadogCiConfig, additionalTags: string[] | undefined): Promise<SpanTags> => {
-  const ciSpanTags = getCISpanTags()
+export const getSpanTags = async (
+  config: DatadogCiConfig,
+  additionalTags: string[] | undefined,
+  includeCiTags: boolean
+): Promise<SpanTags> => {
+  const ciSpanTags = includeCiTags ? getCISpanTags() : []
   const gitSpanTags = await getGitMetadata()
   const userGitSpanTags = getUserGitSpanTags()
 

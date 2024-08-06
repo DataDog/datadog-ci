@@ -45,7 +45,8 @@ describe('getSpanTags', () => {
         env: process.env.DD_ENV,
         envVarTags: process.env.DD_TAGS,
       },
-      undefined
+      undefined,
+      true
     )
     expect(spanTags).toMatchObject({
       env: 'ci',
@@ -60,7 +61,8 @@ describe('getSpanTags', () => {
         env: undefined,
         envVarTags: undefined,
       },
-      ['key1:value1', 'key2:value2']
+      ['key1:value1', 'key2:value2'],
+      true
     )
     expect(spanTags).toMatchObject({
       key1: 'value1',

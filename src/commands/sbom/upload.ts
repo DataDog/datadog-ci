@@ -38,6 +38,7 @@ export class UploadSbomCommand extends Command {
   private env = Option.String('--env')
   private tags = Option.Array('--tags')
   private debug = Option.Boolean('--debug')
+  private noCiTags = Option.Boolean('--no-ci-tags', false)
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -92,7 +93,7 @@ export class UploadSbomCommand extends Command {
       this.config.appKey
     )
 
-    const tags = await getSpanTags(this.config, this.tags)
+    const tags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
     // Check if we have all the mandatory git fields
     const spanTagsKeys = Object.keys(tags)
