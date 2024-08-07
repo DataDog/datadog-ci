@@ -58,7 +58,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
-  private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--dynsym', false)
+  private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--upload-dynamic-symbols', false)
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 

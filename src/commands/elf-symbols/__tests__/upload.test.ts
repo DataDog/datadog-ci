@@ -99,7 +99,7 @@ describe('elf-symbols upload', () => {
       ])
     })
 
-    test('should accept elf file with only dynamic symbols if --dynsym option is passed', async () => {
+    test('should accept elf file with only dynamic symbols if --upload-dynamic-symbols option is passed', async () => {
       const command = createCommand(UploadCommand)
       command['acceptDynamicSymbolTableAsSymbolSource'] = true
       const files = await command['getElfSymbolFiles'](fixtureDir)
