@@ -57,9 +57,9 @@ export class UploadSarifReportCommand extends Command {
 
   private basePaths = Option.Rest({required: 1})
   private dryRun = Option.Boolean('--dry-run', false)
-  private env = Option.String('--env')
+  private env = Option.String('--env', 'ci')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private service = Option.String('--service')
+  private service = Option.String('--service', 'datadog-ci')
   private tags = Option.Array('--tags')
   private noVerify = Option.Boolean('--no-verify', false)
   private noCiTags = Option.Boolean('--no-ci-tags', false)
@@ -71,15 +71,6 @@ export class UploadSarifReportCommand extends Command {
   }
 
   public async execute() {
-    if (!this.service) {
-      this.service = process.env.DD_SERVICE
-    }
-
-    if (!this.service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
 
@@ -196,7 +187,7 @@ export class UploadSarifReportCommand extends Command {
     })
 
     return validUniqueFiles.map((sarifReport) => ({
-      service: this.service!,
+      service: this.service,
       reportPath: sarifReport,
       spanTags,
     }))
