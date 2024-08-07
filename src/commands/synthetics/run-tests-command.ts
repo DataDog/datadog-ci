@@ -99,6 +99,8 @@ export class RunTestsCommand extends Command {
 
   public configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
   public jUnitReport = Option.String('-j,--jUnitReport', {description: 'Pass a path to a JUnit report file.'})
+  // TODO SYNTH-12989: Clean up deprecated `--runName`
+  /** @deprecated This CLI parameter is deprecated */
   public runName = Option.String('-n,--runName', {
     description: 'A name for this run, which will be included in the JUnit report file.',
   })
