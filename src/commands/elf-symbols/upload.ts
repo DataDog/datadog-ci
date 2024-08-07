@@ -1,4 +1,5 @@
 import fs from 'fs'
+import path from 'path'
 
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
@@ -44,7 +45,7 @@ export class UploadCommand extends Command {
   public static paths = [['elf-symbols', 'upload']]
 
   public static usage = Command.Usage({
-    category: 'RUM',
+    category: 'Profiling',
     description: 'Upload Elf debug info files to Datadog.',
     details: `
             This command will upload debug info from all Elf files found recursively in the given location in order to symbolicate profiles
@@ -57,6 +58,8 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
+  private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--upload-dynamic-symbols', false)
+  private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
@@ -147,16 +150,34 @@ export class UploadCommand extends Command {
     return undefined
   }
 
-  private getMappingMetadata(gnuBuildId: string, goBuildId: string, fileHash: string, arch: string): MappingMetadata {
+  private getElfSymbolSource(elfFileMetadata: ElfFileMetadata): string {
+    if (elfFileMetadata.hasDebugInfo) {
+      return 'debug_info'
+    }
+    if (elfFileMetadata.hasSymbolTable) {
+      return 'symbol_table'
+    }
+    if (elfFileMetadata.hasDynamicSymbolTable) {
+      return 'dynamic_symbol_table'
+    }
+
+    return 'none'
+  }
+
+  private getMappingMetadata(elfFileMetadata: ElfFileMetadata): MappingMetadata {
     return {
-      arch,
-      gnu_build_id: gnuBuildId,
-      go_build_id: goBuildId,
-      file_hash: fileHash,
       cli_version: this.cliVersion,
+      origin_version: this.cliVersion,
+      origin: 'datadog-ci',
+      arch: elfFileMetadata.arch,
+      gnu_build_id: elfFileMetadata.gnuBuildId,
+      go_build_id: elfFileMetadata.goBuildId,
+      file_hash: elfFileMetadata.fileHash,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
-      platform: 'elf',
+      symbol_source: this.getElfSymbolSource(elfFileMetadata),
+      filename: path.basename(elfFileMetadata.filename),
+      overwrite: this.replaceExisting,
       type: TYPE_ELF_DEBUG_INFOS,
     }
   }
@@ -196,41 +217,45 @@ export class UploadCommand extends Command {
     }
 
     const filesMetadata: ElfFileMetadata[] = []
-    for (const path of paths) {
-      const pathStat = await fs.promises.lstat(path)
+    for (const p of paths) {
+      const pathStat = await fs.promises.lstat(p)
       if (pathStat.isDirectory()) {
         // check if directory is readable and if not emit a warning
         // eslint-disable-next-line no-bitwise
-        await fs.promises.access(path, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
-          reportFailure(`Skipped directory ${path} because it is not readable`)
+        await fs.promises.access(p, fs.constants.R_OK | fs.constants.X_OK).catch(() => {
+          reportFailure(`Skipped directory ${p} because it is not readable`)
         })
       } else if (pathStat.isFile()) {
         // check that path is a file and is an ELF file
-        const metadata = await getElfFileMetadata(path)
+        const metadata = await getElfFileMetadata(p)
 
         // handle all possible failures
         if (!metadata.isElf) {
-          reportFailure(`Input location ${path} is not an ELF file`)
+          reportFailure(`Input location ${p} is not an ELF file`)
           continue
         }
         if (metadata.error) {
-          reportFailure(`Error reading ELF file ${path}: ${metadata.error.message}`)
+          reportFailure(`Error reading ELF file ${p}: ${metadata.error.message}`)
           continue
         }
-        if (!isSupportedElfType(metadata.type)) {
-          reportFailure(`Skipped ${path} because its not an executable, nor a shared library`)
+        if (!isSupportedElfType(metadata.elfType)) {
+          reportFailure(`Skipped ${p} because its not an executable, nor a shared library`)
           continue
         }
         if (!isSupportedArch(metadata.arch)) {
-          reportFailure(`Skipped ${path} because it has an unsupported architecture (${metadata.arch})`)
+          reportFailure(`Skipped ${p} because it has an unsupported architecture (${metadata.arch})`)
           continue
         }
         if (!(metadata.gnuBuildId || metadata.goBuildId || metadata.fileHash)) {
-          reportFailure(`Skipped ${path} because it has no build id`)
+          reportFailure(`Skipped ${p} because it has no build id`)
           continue
         }
-        if (!metadata.hasDebugInfo && !metadata.hasSymbols) {
-          reportFailure(`Skipped ${path} because it has no debug info, nor symbols`)
+        if (
+          !metadata.hasDebugInfo &&
+          !metadata.hasSymbolTable &&
+          (!metadata.hasDynamicSymbolTable || !this.acceptDynamicSymbolTableAsSymbolSource)
+        ) {
+          reportFailure(`Skipped ${p} because it has no debug info, nor symbols`)
           continue
         }
         filesMetadata.push(metadata)
@@ -249,7 +274,11 @@ export class UploadCommand extends Command {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
-        if ((metadata.hasDebugInfo && !existing.hasDebugInfo) || (metadata.hasSymbols && !existing.hasSymbols)) {
+        if (
+          (metadata.hasDebugInfo && !existing.hasDebugInfo) ||
+          (metadata.hasSymbolTable && !existing.hasSymbolTable) ||
+          (metadata.hasDynamicSymbolTable && !existing.hasDynamicSymbolTable) // this probably should never happen
+        ) {
           // if we have a duplicate build_id, we keep the one with debug info and symbols
           this.context.stderr.write(
             renderWarning(
@@ -287,12 +316,7 @@ export class UploadCommand extends Command {
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
-        const metadata = this.getMappingMetadata(
-          fileMetadata.gnuBuildId,
-          fileMetadata.goBuildId,
-          fileMetadata.fileHash,
-          fileMetadata.arch
-        )
+        const metadata = this.getMappingMetadata(fileMetadata)
         const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
         await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)

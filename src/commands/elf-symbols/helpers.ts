@@ -8,7 +8,7 @@ export const getElfRequestBuilder = (apiKey: string, cliVersion: string, site: s
     apiKey,
     baseUrl: getBaseSourcemapIntakeUrl(site),
     headers: new Map([
-      ['DD-EVP-ORIGIN', 'datadog-ci elf-symbols'],
+      ['DD-EVP-ORIGIN', 'datadog-ci_elf-symbols'],
       ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
     overrideUrl: 'api/v2/srcmap',

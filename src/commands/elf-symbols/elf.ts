@@ -22,9 +22,10 @@ export type ElfFileMetadata = {
   gnuBuildId: string
   goBuildId: string
   fileHash: string
-  type: string
+  elfType: string
   hasDebugInfo: boolean
-  hasSymbols: boolean
+  hasDynamicSymbolTable: boolean
+  hasSymbolTable: boolean
   hasCode: boolean
   error?: Error
 }
@@ -150,14 +151,6 @@ const SUPPORTED_ARCHS = [
   MACHINE_TYPES_DESCRIPTION[MachineType.EM_ARM],
 ]
 const SUPPORTED_ELF_TYPES = [ELF_TYPES_DESCRIPTION[ElfFileType.ET_DYN], ELF_TYPES_DESCRIPTION[ElfFileType.ET_EXEC]]
-const BFD_TARGET_FOR_ARCH: Record<string, string> = {
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64]]: 'elf64-littleaarch64',
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]]: 'elf64-x86_64',
-}
-const GENERIC_BFD_TARGET_FOR_ARCH: Partial<Record<string, string>> = {
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_AARCH64]]: 'elf64-little',
-  [MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]]: 'elf64-little',
-}
 
 const getBFDTargetForArch = (arch: string, littleEndian: boolean, elfClass: number): string => {
   if (arch === MACHINE_TYPES_DESCRIPTION[MachineType.EM_X86_64]) {
@@ -430,14 +423,15 @@ export const isSupportedElfType = (type: string): boolean => {
 
 export const getSectionInfo = (
   sections: SectionHeader[]
-): {hasDebugInfo: boolean; hasSymbols: boolean; hasCode: boolean} => {
+): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
   const hasDebugInfo = sections.some((section) => section.name === '.debug_info')
-  const hasSymbols = sections.some((section) => section.name === '.symtab')
+  const hasSymbolTable = sections.some((section) => section.name === '.symtab')
+  const hasDynamicSymbolTable = sections.some((section) => section.name === '.dynsym')
   const hasCode = sections.some(
     (section) => section.name === '.text' && section.sh_type === SectionHeaderType.SHT_PROGBITS
   )
 
-  return {hasDebugInfo, hasSymbols, hasCode}
+  return {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode}
 }
 
 export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetadata> => {
@@ -450,9 +444,10 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     gnuBuildId: '',
     goBuildId: '',
     fileHash: '',
-    type: '',
+    elfType: '',
     hasDebugInfo: false,
-    hasSymbols: false,
+    hasSymbolTable: false,
+    hasDynamicSymbolTable: false,
     hasCode: false,
   }
 
@@ -466,25 +461,33 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
       metadata.littleEndian = elfHeader!.littleEndian
       metadata.elfClass = elfHeader!.elfClass === ElfClass.ELFCLASS64 ? 64 : 32
       metadata.arch = MACHINE_TYPES_DESCRIPTION[elfHeader!.e_machine as MachineType]
-      metadata.type = ELF_TYPES_DESCRIPTION[elfHeader!.e_type as ElfFileType]
+      metadata.elfType = ELF_TYPES_DESCRIPTION[elfHeader!.e_type as ElfFileType]
     }
     metadata.error = error
     metadata.isElf = isElf
 
-    if (!isElf || error || !isSupportedArch(metadata.arch) || !isSupportedElfType(metadata.type)) {
+    if (!isElf || error || !isSupportedArch(metadata.arch) || !isSupportedElfType(metadata.elfType)) {
       return metadata
     }
 
     const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
     const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
-    const {hasDebugInfo, hasSymbols, hasCode} = getSectionInfo(sectionHeaders)
+    const {hasDebugInfo, hasSymbolTable, hasDynamicSymbolTable, hasCode} = getSectionInfo(sectionHeaders)
     let fileHash = ''
     if (hasCode) {
       // Only compute file hash if the file has code:
       // if the file has no code, it is likely a debug info file and its hash is useless
       fileHash = await computeFileHash(filename)
     }
-    Object.assign(metadata, {fileHash, gnuBuildId, goBuildId, hasDebugInfo, hasSymbols, hasCode})
+    Object.assign(metadata, {
+      fileHash,
+      gnuBuildId,
+      goBuildId,
+      hasDebugInfo,
+      hasSymbolTable,
+      hasDynamicSymbolTable,
+      hasCode,
+    })
   } catch (error) {
     metadata.error = error
   } finally {
