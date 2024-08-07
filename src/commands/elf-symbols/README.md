@@ -40,7 +40,7 @@ Run the following command to upload all the necessary files:
 DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload --symbols-location ~/your/build/bin/
 ```
 
-If location is a directory, command will be scan it recursively looking for Elf files, and for each Elf file, it will split the debug infos and upload it to Datadog.
+If location is a directory, command will scan it recursively looking for Elf files, and for each Elf file, it will split the debug infos and upload it to Datadog.
 If location is a file, command will split debug info from it and upload them to Datadog.
 
 | Parameter | Condition | Description |
