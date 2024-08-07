@@ -40,7 +40,7 @@ Run the following command to upload all the necessary files:
 DD_BETA_COMMANDS_ENABLED=1 datadog-ci elf-symbols upload --symbols-location ~/your/build/bin/
 ```
 
-If location is a directory, command will be scan it recursively looking for Elf files, and for each Elf file, it will split the debug infos and upload it to Datadog.
+If location is a directory, command will be scanned recursively looking for Elf files, and for each Elf file, it will split the debug infos and upload it to Datadog.
 If location is a file, command will split debug info from it and upload them to Datadog.
 
 | Parameter | Condition | Description |
@@ -48,5 +48,5 @@ If location is a file, command will split debug info from it and upload them to 
 | `--symbols-location`  | Optional  | The location of of your Elf files.  Defaults to `./`. |
 | `--dry-run` | Optional | Run the command without the final step of uploading. All other checks are performed. |
 | `--max-concurrency` | Optional | The number of concurrent uploads to the API. Defaults to 20. |
-| `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
+| `--disable-git`    | Optional | Prevents the command from invoking Git in the current working directory and sends repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map). |
 | `--repository-url` | Optional | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`. |
