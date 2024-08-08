@@ -20,10 +20,10 @@ For example:
 datadog-ci sarif upload --service my-service --tags key1:value1 --tags key2:value2 sarif-reports/go-reports sarif-reports/java-reports sarif-report/single-report.sarif
 ```
 
-- The positional arguments are the directories or file paths in which the SARIF reports are located. If you pass a folder, the CLI looks for all `.sarif` files in it.
-- `--service` (default: `DD_SERVICE` env var) should be set to the name of the service you're uploading SARIF reports for.
+The positional arguments are the directories or file paths in which the SARIF reports are located. If you pass a folder, the CLI looks for all `.sarif` files in it.
+- `--service` should be set to the name of the service you're uploading SARIF reports from.
 - `--tags` is a array of key value pairs of the form `key:value`. This parameter sets global tags applied to all results. The upload process merges the tags passed on the command line with the tags in the `DD_TAGS` environment variable. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `--env` (default: `DD_ENV` env var) is a string that represents the environment in which you want your tests to appear.
+- `--env` is a string that represents the environment in which you want your tests to appear.
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): runs the command without the final upload step. All other checks are performed.
 - `--no-verify` (default: `false`): runs the command without performing report validation on the CLI.
@@ -33,10 +33,8 @@ datadog-ci sarif upload --service my-service --tags key1:value1 --tags key2:valu
 Additionally, you may configure the `sarif` command with environment variables:
 
 - `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_ENV`: The environment in which your test results appear.
-- `DD_SERVICE`: Specify a service.
 - `DD_TAGS`: Set global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `DATADOG_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
+- `DATADOG_SITE` or `DD_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
 ### Optional dependencies
 
