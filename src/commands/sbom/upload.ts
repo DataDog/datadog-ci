@@ -34,8 +34,8 @@ export class UploadSbomCommand extends Command {
   })
 
   private basePaths = Option.Rest({required: 1})
-  private service = Option.String('--service')
-  private env = Option.String('--env')
+  private service = Option.String('--service', 'datadog-ci')
+  private env = Option.String('--env', 'ci')
   private tags = Option.Array('--tags')
   private debug = Option.Boolean('--debug')
   private noCiTags = Option.Boolean('--no-ci-tags', false)
@@ -52,22 +52,9 @@ export class UploadSbomCommand extends Command {
    * compliant with their schema and upload them to datadog.
    */
   public async execute() {
-    const service: string | undefined = this.service || process.env.DD_SERVICE
+    const service: string = this.service
 
-    if (!service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
-
-    const environment: string | undefined = this.env || this.config.env
-    this.config.env = environment
-
-    if (!environment) {
-      this.context.stderr.write('Missing env\n')
-
-      return 1
-    }
+    const environment = this.env
 
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
