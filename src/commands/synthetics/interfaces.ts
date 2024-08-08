@@ -140,6 +140,7 @@ export interface BaseResult {
   test: Test
   timedOut: boolean
   timestamp: number
+  timedOutRetry?: boolean
 }
 
 // Inside this type, `.resultId` is a linked result ID from a previous batch.

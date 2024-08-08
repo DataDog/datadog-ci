@@ -220,8 +220,10 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
   const outputLines = [resultIdentification]
 
-  // Unhealthy test results don't have a duration or result URL
-  if (hasResult(execution) && !execution.result.unhealthy) {
+  // Unhealthy test results don't have a duration or result URL.
+  // On the other hand, timed out retries still have the data from the last received result,
+  // so we don't show the duration or result URL to avoid confusion.
+  if (hasResult(execution) && !execution.result.unhealthy && !execution.timedOutRetry) {
     const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
@@ -250,10 +252,10 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
   if (hasResult(execution)) {
-    const {result, passed, retries, test} = execution
+    const {result, passed, retries, test, timedOutRetry} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
-    const attempt = getAttemptSuffix(passed, retries, test)
+    const attempt = getAttemptSuffix(passed, retries, test, timedOutRetry)
 
     return ` - ${location}${device}${attempt}`
   }
@@ -261,7 +263,7 @@ const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk)
   return ''
 }
 
-const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
+const getAttemptSuffix = (passed: boolean, retries: number, test: Test, timedOutRetry?: boolean) => {
   const currentAttempt = retries + 1
   const maxAttempts = (test.options.retry?.count ?? 0) + 1
 
@@ -273,6 +275,11 @@ const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
   if (passed && retries === 0) {
     // No need to display anything if the test passed on the first attempt
     return ''
+  }
+
+  if (timedOutRetry) {
+    // The attempt number of the last received result + 1, in order to refer to the retry.
+    return ` (attempt ${currentAttempt + 1} of ${maxAttempts})`
   }
 
   return ` (attempt ${currentAttempt} of ${maxAttempts})`

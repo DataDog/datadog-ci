@@ -12,7 +12,12 @@ import {
   ResultInBatch,
   Test,
 } from './interfaces'
-import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId, hasRetries} from './utils/internal'
+import {
+  isResultInBatchSkippedBySelectiveRerun,
+  getResultIdOrLinkedResultId,
+  isNonFinalResult,
+  isTimedOutRetry,
+} from './utils/internal'
 import {wait, getAppBaseURL, hasResultPassed} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
@@ -89,6 +94,8 @@ const getResultIdsToFetch = (
   return getResultIds(newlyReceivedResults).concat(...oldIncompleteResultIds)
 }
 
+type ResultToReport = ResultInBatch & {timedOutRetry?: boolean}
+
 const getResultsToReport = (
   shouldContinuePolling: boolean,
   batch: Batch,
@@ -97,7 +104,7 @@ const getResultsToReport = (
   oldIncompleteResultIds: Set<string>,
   incompleteResultIds: Set<string>,
   reporter: MainReporter
-): ResultInBatch[] => {
+): ResultToReport[] => {
   const newlyCompleteResults = excludeSkipped(batch.results).filter(
     (r) => oldIncompleteResultIds.has(r.result_id) && !incompleteResultIds.has(r.result_id)
   )
@@ -110,17 +117,25 @@ const getResultsToReport = (
     return resultsToReport
   }
 
-  // Residual results are either:
-  //  - Still in progress (from the batch POV): they were never emitted.
-  //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
+  // Residual results were either:
+  //  - Never emitted by datadog-ci: manually report it.
+  //  - Still incomplete (the poll results endpoint didn't find it): log a warning and report with incomplete data
+  //  - Timed out although fast retries were configured: log a warning and report with incomplete data
   const residualResults = excludeSkipped(batch.results).filter(
-    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id)
+    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id) || isTimedOutRetry(r)
   )
 
   const errors: string[] = []
+
   for (const result of residualResults) {
     if (!result.timed_out) {
-      errors.push(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+      errors.push(
+        `The information for result ${result.result_id} of test ${result.test_public_id} was incomplete at the end of the batch.`
+      )
+    } else if (isTimedOutRetry(result)) {
+      errors.push(
+        `A retry was expected for initial result ${result.result_id} of test ${result.test_public_id}, but the batch timed out.`
+      )
     }
   }
 
@@ -138,8 +153,8 @@ const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string>, repo
     // Skipped results aren't reported in detail in the terminal output, but they are still reported by `resultReceived()`.
     const resultId = result.status === 'skipped' ? `skipped-${index}` : result.result_id
 
-    // The result is reported if it has a final status, or if it's a non-final result.
-    if ((result.status !== 'in_progress' || hasRetries(result)) && !emittedResultIds.has(resultId)) {
+    // The result is reported if it has a final status, or if it's still in progress but a failed attempt arrived.
+    if ((result.status !== 'in_progress' || isNonFinalResult(result)) && !emittedResultIds.has(resultId)) {
       emittedResultIds.add(resultId)
       reporter.resultReceived(result)
       receivedResults.push(result)
@@ -213,6 +228,7 @@ const getResultFromBatch = (
   const {getLocation, options, tests} = resultDisplayInfo
 
   const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
+  const timedOutRetry = isTimedOutRetry(resultInBatch)
 
   const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
@@ -231,6 +247,9 @@ const getResultFromBatch = (
 
   if (safeDeadlineReached) {
     pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
+    pollResult.result.passed = false
+  } else if (timedOutRetry) {
+    pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'}
     pollResult.result.passed = false
   } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
@@ -253,6 +272,7 @@ const getResultFromBatch = (
     test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,
     timestamp: pollResult.timestamp,
+    timedOutRetry,
   }
 }
 
