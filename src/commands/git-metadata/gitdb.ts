@@ -320,7 +320,7 @@ const generatePackFilesForCommits = async (log: Logger, commits: string[]): Prom
     log.warn(`Failed generation of packfiles in tmpdir: ${err}`)
     log.warn(`Generating them in ${process.cwd()} instead`)
 
-    return generatePackfiles(process.cwd())
+    return await generatePackfiles(process.cwd())
   }
 }
 
