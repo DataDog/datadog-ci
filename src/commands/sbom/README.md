@@ -31,7 +31,8 @@ The following environment variables must be defined:
 
 When developing software, you can try with the following command:
 
-```bashyarn launch sbom upload --service <your-service> --env <your-environment> /path/to/sbom.json
+```bash
+yarn launch sbom upload --service <your-service> --env <your-environment> /path/to/sbom.json
 ```
 
 ## Further reading
