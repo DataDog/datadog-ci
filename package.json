@@ -68,7 +68,7 @@
     "@aws-sdk/client-iam": "^3.535.0",
     "@aws-sdk/client-lambda": "^3.536.0",
     "@aws-sdk/client-sfn": "^3.535.0",
-    "@aws-sdk/core": "^3.535.0",
+    "@aws-sdk/core": "^3.621.0",
     "@aws-sdk/credential-provider-ini": "^3.535.0",
     "@aws-sdk/credential-providers": "^3.535.0",
     "@google-cloud/logging": "^11.0.0",
