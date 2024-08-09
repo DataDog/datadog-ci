@@ -344,15 +344,20 @@ export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefi
 
 // Removes sensitive info from the given git remote url and normalizes the url prefix.
 // "git@github.com:" and "https://github.com/" prefixes will be normalized into "github.com/"
-export const filterAndFormatGithubRemote = (rawRemote: string | undefined): string | undefined => {
+export const filterAndFormatGitRemote = (rawRemote: string | undefined): string | undefined => {
   rawRemote = filterSensitiveInfoFromRepository(rawRemote)
   if (!rawRemote) {
     return rawRemote
   }
-  rawRemote = rawRemote.replace(/git@github\.com:|https:\/\/github\.com\//, 'github.com/')
+  rawRemote = rawRemote.replace(/(git@|https:\/\/)([^/^:]+)(:([\d]+))?(:|\/)/, '$2/')
 
   return rawRemote
 }
+
+/**
+ * @deprecated Use filterAndFormatGitRemote instead
+ */
+export const filterAndFormatGithubRemote = filterAndFormatGitRemote
 
 export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I): Promise<number> => {
   const initialTime = Date.now()
