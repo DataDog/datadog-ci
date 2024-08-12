@@ -302,7 +302,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
             throw new Error(`Invalid key: ${key}`)
           }
 
-          throw new Error(`Invalid key: ${key}. Did you mean: ${closestKey}?`)
+          throw new Error(`Invalid key: ${key}. Did you mean \`${closestKey}\`?`)
       }
 
       return acc
