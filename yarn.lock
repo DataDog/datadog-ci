@@ -1888,8 +1888,8 @@ __metadata:
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
-    "@google-cloud/logging": ^11.0.0
-    "@google-cloud/run": ^1.0.2
+    "@google-cloud/logging": ^11.1.0
+    "@google-cloud/run": ^1.4.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
     "@smithy/property-provider": ^2.0.12
     "@smithy/util-retry": ^2.0.4
@@ -2108,7 +2108,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google-cloud/logging@npm:^11.0.0":
+"@google-cloud/logging@npm:^11.1.0":
   version: 11.1.0
   resolution: "@google-cloud/logging@npm:11.1.0"
   dependencies:
@@ -2155,7 +2155,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google-cloud/run@npm:^1.0.2":
+"@google-cloud/run@npm:^1.4.0":
   version: 1.4.0
   resolution: "@google-cloud/run@npm:1.4.0"
   dependencies:
