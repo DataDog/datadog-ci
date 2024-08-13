@@ -73,7 +73,7 @@ exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI ru
 "
 `;
 
-exports[`Default reporter resultEnd 3 Browser test: failed blocking, timed out, global failure 1`] = `
+exports[`Default reporter resultEnd 3 Browser tests: failed blocking, timed out, global failure 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
   • Total duration: 20000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?batch_id=123&from_ci=true[39m[22m 
@@ -97,6 +97,28 @@ exports[`Default reporter resultEnd 3 Browser test: failed blocking, timed out, 
   • View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?batch_id=123&from_ci=true[39m[22m 
 [31m    [[1mFAILURE_CODE[22m] - [2mFailure message[22m[39m
+
+"
+`;
+
+exports[`Default reporter resultEnd Incomplete API and Browser tests - passed and failed 1`] = `
+"[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  • View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m 
+  [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
+
+[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  • View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&batch_id=123&from_ci=true[39m[22m 
+  [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
+
+[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mbbb-bbb-bbb[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  • View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/bbb-bbb-bbb/result/3?batch_id=123&from_ci=true[39m[22m 
+
+[1m[32m✓[39m[22m [[1m[2mbbb-bbb-bbb[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
+  • View test run details:
+    ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/bbb-bbb-bbb/result/4?batch_id=123&from_ci=true[39m[22m 
 
 "
 `;
@@ -242,13 +264,19 @@ exports[`Default reporter testTrigger Skipped test, with 2 test overrides 1`] = 
 `;
 
 exports[`Default reporter testsWait outputs triggered tests 1`] = `
-"- Waiting for [1m[36m11[39m[22m tests [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
+"View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
+
+
+- Waiting for [1m[36m11[39m[22m tests [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
 
 "
 `;
 
 exports[`Default reporter testsWait outputs triggered tests with skipped count 1`] = `
-"- Waiting for [1m[36m11[39m[22m tests (skipping [1m[36m3[39m[22m already successful) [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
+"View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
+
+
+- Waiting for [1m[36m11[39m[22m tests (skipping [1m[36m3[39m[22m already successful) [90m(abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, abc-def-ghi, …)[39m…
 
 "
 `;

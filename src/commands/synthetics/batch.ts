@@ -12,8 +12,13 @@ import {
   ResultInBatch,
   Test,
 } from './interfaces'
-import {isResultInBatchSkippedBySelectiveRerun, getResultIdOrLinkedResultId, hasRetries} from './utils/internal'
-import {wait, getAppBaseURL, hasResultPassed} from './utils/public'
+import {
+  isResultInBatchSkippedBySelectiveRerun,
+  getResultIdOrLinkedResultId,
+  hasRetries,
+  hasResultPassed,
+} from './utils/internal'
+import {wait, getAppBaseURL} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
 
@@ -237,15 +242,12 @@ const getResultFromBatch = (
     pollResult.result.passed = false
   }
 
+  const isUnhealthy = pollResult.result.unhealthy ?? false
+
   return {
     executionRule: resultInBatch.execution_rule,
     location: getLocation(resultInBatch.location, test),
-    passed: hasResultPassed(
-      pollResult.result,
-      hasTimedOut,
-      options.failOnCriticalErrors ?? false,
-      options.failOnTimeout ?? false
-    ),
+    passed: hasResultPassed(resultInBatch, isUnhealthy, hasTimedOut, options),
     result: pollResult.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
     retries: resultInBatch.retries || 0,

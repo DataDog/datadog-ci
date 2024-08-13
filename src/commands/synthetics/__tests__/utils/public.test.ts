@@ -81,6 +81,7 @@ import {
   getBatch,
   getBrowserServerResult,
   getFailedResultInBatch,
+  getIncompleteServerResult,
   getInProgressResultInBatch,
   getPassedResultInBatch,
   getResults,
@@ -698,7 +699,7 @@ describe('utils', () => {
     })
   })
 
-  describe('hasResultPassed', () => {
+  describe('hasResultPassed (deprecated)', () => {
     test('complete result', () => {
       const result: ServerResult = {
         device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
@@ -707,11 +708,11 @@ describe('utils', () => {
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false, false, true)).toBeTruthy()
-      expect(utils.hasResultPassed(result, false, true, true)).toBeTruthy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
+      expect(utils.hasResultPassed(result, false, true, true)).toBe(true)
       result.passed = false
-      expect(utils.hasResultPassed(result, false, false, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
+      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
     })
 
     test('result with error', () => {
@@ -726,8 +727,8 @@ describe('utils', () => {
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, false, false, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
+      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
     })
 
     test('result with unhealthy result', () => {
@@ -743,8 +744,8 @@ describe('utils', () => {
         stepDetails: [],
         unhealthy: true,
       }
-      expect(utils.hasResultPassed(result, false, false, true)).toBeTruthy()
-      expect(utils.hasResultPassed(result, false, true, true)).toBeFalsy()
+      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
+      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
     })
 
     test('result with timeout result', () => {
@@ -755,8 +756,8 @@ describe('utils', () => {
         startUrl: '',
         stepDetails: [],
       }
-      expect(utils.hasResultPassed(result, true, true, true)).toBeFalsy()
-      expect(utils.hasResultPassed(result, true, true, false)).toBeTruthy()
+      expect(utils.hasResultPassed(result, true, true, true)).toBe(false)
+      expect(utils.hasResultPassed(result, true, true, false)).toBe(true)
     })
   })
 
@@ -830,7 +831,6 @@ describe('utils', () => {
 
     const batch: Batch = getBatch()
     const apiTest = getApiTest('pid')
-    const incompleteServerResult = ({eventType: 'created'} as unknown) as ServerResult
     const result: Result = {
       executionRule: ExecutionRule.BLOCKING,
       location: mockLocation.display_name,
@@ -1055,7 +1055,12 @@ describe('utils', () => {
         test_public_id: 'other-public-id',
         result_id: 'rid-3',
       })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(3, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
+      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+        3,
+        {...result, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
+        MOCK_BASE_URL,
+        'bid'
+      )
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
@@ -1202,7 +1207,9 @@ describe('utils', () => {
             {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
           ],
         }),
-        pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2', result: incompleteServerResult}],
+        pollResultsImplementation: async () => [
+          {...pollResult, resultID: 'rid-2', result: getIncompleteServerResult()},
+        ],
       })
 
       const resultsPromise = utils.waitForResults(
@@ -1254,7 +1261,7 @@ describe('utils', () => {
           ],
         }),
         pollResultsImplementation: async () => [
-          {...pollResult, result: incompleteServerResult}, // not available yet
+          {...pollResult, result: getIncompleteServerResult()}, // not available yet
           deepExtend({}, pollResult, {resultID: 'rid-2'}), // just became available
         ],
       })
@@ -1271,27 +1278,27 @@ describe('utils', () => {
       // Now waiting for 1 test
       expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
-      // === STEP 3 === (batch 'passed')
+      // === STEP 3 === (batch 'failed')
       mockApi({
         getBatchImplementation: async () => ({
-          status: 'passed',
+          status: 'failed', // nothing to do with the fact that the result is incomplete
           results: [
             // First test
-            {...getPassedResultInBatch()},
+            {...getFailedResultInBatch()},
             {...getPassedResultInBatch(), result_id: 'rid-2'},
             // Second test
             {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
           ],
         }),
         pollResultsImplementation: async () => [
-          {...pollResult, result: incompleteServerResult}, // still not available
+          {...pollResult, result: getIncompleteServerResult()}, // still not available
           deepExtend({}, pollResult, {resultID: 'rid-2'}),
           deepExtend({}, pollResult, {resultID: 'rid-3'}),
         ],
       })
 
       expect(await resultsPromise).toEqual([
-        {...result, resultId: 'rid', result: incompleteServerResult},
+        {...result, resultId: 'rid', passed: false, result: getIncompleteServerResult()},
         {...result, resultId: 'rid-2'},
         {...result, resultId: 'rid-3'},
       ])
@@ -1306,10 +1313,15 @@ describe('utils', () => {
       // Result 3 was available instantly
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
 
-      // Result 1 never became available
+      // Result 1 never became available (but the backend says it did not pass)
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
-        {...result, resultId: 'rid', result: incompleteServerResult},
+        {
+          ...result,
+          passed: false,
+          resultId: 'rid',
+          result: getIncompleteServerResult(),
+        },
         MOCK_BASE_URL,
         'bid'
       )
