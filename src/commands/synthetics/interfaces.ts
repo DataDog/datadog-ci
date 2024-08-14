@@ -151,6 +151,7 @@ export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'resul
 export type Result = BaseResult | ResultSkippedBySelectiveRerun
 
 type Status = 'passed' | 'failed' | 'in_progress' | 'skipped'
+type BatchStatus = 'passed' | 'failed' | 'in_progress'
 
 export interface BaseResultInBatch {
   execution_rule: ExecutionRule
@@ -176,7 +177,7 @@ export type ResultInBatch = BaseResultInBatch | ResultInBatchSkippedBySelectiveR
 
 export interface Batch {
   results: ResultInBatch[]
-  status: Status
+  status: BatchStatus
 }
 
 type ServerResultInBatch = BaseResultInBatch | SkippedResultInBatch
@@ -185,7 +186,7 @@ export interface ServerBatch {
   // The batch from the server contains skipped results, which we're going to remove since we don't
   // care about skipped results internally (except when they are skipped by a selective re-run).
   results: ServerResultInBatch[]
-  status: Status
+  status: BatchStatus
 }
 
 export interface Vitals {

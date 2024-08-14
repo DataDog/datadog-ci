@@ -27,6 +27,26 @@ export const getOverriddenExecutionRule = (
   }
 }
 
+export const hasResultPassed = (
+  result: ResultInBatch,
+  isUnhealthy: boolean,
+  hasTimedOut: boolean,
+  options: {
+    failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
+  }
+): boolean => {
+  if (isUnhealthy && !options.failOnCriticalErrors) {
+    return true
+  }
+
+  if (hasTimedOut && !options.failOnTimeout) {
+    return true
+  }
+
+  return result.status === 'passed'
+}
+
 export const hasResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
 }

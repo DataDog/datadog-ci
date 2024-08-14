@@ -16,7 +16,10 @@ import {DefaultReporter} from '../../reporters/default'
 import {
   getApiResult,
   getApiTest,
+  getBrowserResult,
+  getBrowserTest,
   getFailedBrowserResult,
+  getIncompleteServerResult,
   getSummary,
   getTimedOutBrowserResult,
   MOCK_BASE_URL,
@@ -40,6 +43,10 @@ describe('Default reporter', () => {
     },
   }
   const reporter = new DefaultReporter(mockContext as {context: BaseContext})
+
+  afterEach(() => {
+    reporter['removeSpinner']()
+  })
 
   it('should log for each hook', () => {
     type ReporterCall = {[Fn in keyof MainReporter]: [Fn, Parameters<MainReporter[Fn]>, number]}[keyof MainReporter]
@@ -216,15 +223,19 @@ describe('Default reporter', () => {
         expect(clearLine).toHaveBeenCalled()
       }
       expect(simulatedTerminalOutput).toMatchSnapshot()
+
+      // Clean up
+      ttyReporter['removeSpinner']()
     })
   })
   /* eslint-enable jest/no-conditional-expect */
 
   describe('resultEnd', () => {
-    const createApiResult = (
+    const createFakeResult = (
       resultId: string,
       opts: {
-        executionRule: ExecutionRule
+        executionRule?: ExecutionRule
+        incomplete?: boolean
         passed?: boolean
         retries?: number
         selectiveRerun?: SelectiveRerunDecision
@@ -241,10 +252,9 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      const {executionRule, passed, selectiveRerun} = opts
+      const {executionRule, incomplete, passed, retries, selectiveRerun} = opts
 
-      const result = getApiResult(resultId, test)
-      result.executionRule = executionRule
+      const result = test.type === 'api' ? getApiResult(resultId, test) : getBrowserResult(resultId, test)
 
       if (passed !== undefined) {
         result.passed = passed
@@ -253,19 +263,28 @@ describe('Default reporter', () => {
           ...(passed ? {} : {failure}),
           passed,
         }
-        result.retries = opts.retries ?? 0
+        result.retries = retries ?? 0
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
+      }
+
+      if (executionRule) {
+        result.executionRule = executionRule
       }
 
       if (selectiveRerun) {
         result.selectiveRerun = selectiveRerun
       }
 
+      if (incomplete) {
+        result.result = getIncompleteServerResult()
+      }
+
       return result
     }
 
     const apiTest = getApiTest('aaa-aaa-aaa')
+    const browserTest = getBrowserTest('bbb-bbb-bbb')
     const retryableApiTest: Test = {
       ...apiTest,
       options: {
@@ -287,14 +306,14 @@ describe('Default reporter', () => {
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
-            createApiResult('1', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
-            createApiResult('2', {executionRule: ExecutionRule.NON_BLOCKING, passed: false}, apiTest),
-            createApiResult('3', {executionRule: ExecutionRule.BLOCKING, passed: false}, apiTest),
+            createFakeResult('1', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
+            createFakeResult('2', {executionRule: ExecutionRule.NON_BLOCKING, passed: false}, apiTest),
+            createFakeResult('3', {executionRule: ExecutionRule.BLOCKING, passed: false}, apiTest),
           ],
         },
       },
       {
-        description: '3 Browser test: failed blocking, timed out, global failure',
+        description: '3 Browser tests: failed blocking, timed out, global failure',
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
@@ -318,8 +337,8 @@ describe('Default reporter', () => {
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
-            createApiResult('1001', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
-            createApiResult(
+            createFakeResult('1001', {executionRule: ExecutionRule.BLOCKING, passed: true}, apiTest),
+            createFakeResult(
               '0002',
               {
                 executionRule: ExecutionRule.SKIPPED,
@@ -327,7 +346,7 @@ describe('Default reporter', () => {
               },
               apiTest
             ),
-            createApiResult(
+            createFakeResult(
               '1003',
               {
                 executionRule: ExecutionRule.BLOCKING,
@@ -344,9 +363,21 @@ describe('Default reporter', () => {
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
-            createApiResult('1', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 0}, retryableApiTest),
-            createApiResult('2', {executionRule: ExecutionRule.BLOCKING, passed: false, retries: 1}, retryableApiTest),
-            createApiResult('3', {executionRule: ExecutionRule.BLOCKING, passed: true, retries: 2}, retryableApiTest),
+            createFakeResult('1', {passed: false, retries: 0}, retryableApiTest),
+            createFakeResult('2', {passed: false, retries: 1}, retryableApiTest),
+            createFakeResult('3', {passed: true, retries: 2}, retryableApiTest),
+          ],
+        },
+      },
+      {
+        description: 'Incomplete API and Browser tests - passed and failed',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            createFakeResult('1', {incomplete: true, passed: false}, apiTest),
+            createFakeResult('2', {incomplete: true, passed: true}, apiTest),
+            createFakeResult('3', {incomplete: true, passed: false}, browserTest),
+            createFakeResult('4', {incomplete: true, passed: true}, browserTest),
           ],
         },
       },

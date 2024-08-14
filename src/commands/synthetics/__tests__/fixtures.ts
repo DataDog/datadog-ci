@@ -39,6 +39,7 @@ import {
   MobileTestWithOverride,
   BaseResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
+  ServerResult,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -211,6 +212,10 @@ export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<A
   ...getBaseResult(resultId, test),
   result: getApiServerResult(resultOpts),
 })
+
+export const getIncompleteServerResult = (): ServerResult => {
+  return ({eventType: 'created'} as unknown) as ServerResult
+}
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
   device: {height: 1100, id: 'chrome.laptop_large', width: 1440},

@@ -174,6 +174,9 @@ export const isTestSupportedByTunnel = (test: Test) => {
   )
 }
 
+/**
+ * @deprecated The concept of `ServerResult` is internal and not the source of truth for a result's status. This function has no public equivalent.
+ */
 export const hasResultPassed = (
   serverResult: ServerResult,
   hasTimedOut: boolean,

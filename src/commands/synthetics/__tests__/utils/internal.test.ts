@@ -1,6 +1,7 @@
-import {ExecutionRule} from '../../interfaces'
+import {ExecutionRule, ResultInBatch} from '../../interfaces'
 import {
   getOverriddenExecutionRule,
+  hasResultPassed,
   parseOverrideValue,
   toBoolean,
   toExecutionRule,
@@ -38,6 +39,31 @@ describe('utils', () => {
         ).toEqual(expectedRule)
       }
     )
+  })
+
+  describe('hasResultPassed', () => {
+    test('result', () => {
+      const result = {status: 'passed'} as ResultInBatch
+      expect(hasResultPassed(result, false, false, {failOnCriticalErrors: false, failOnTimeout: true})).toBe(true)
+      expect(hasResultPassed(result, false, false, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(true)
+      result.status = 'failed'
+      expect(hasResultPassed(result, false, false, {failOnCriticalErrors: false, failOnTimeout: true})).toBe(false)
+      expect(hasResultPassed(result, false, false, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(false)
+    })
+
+    test('unhealthy result', () => {
+      const result = {} as ResultInBatch
+      const isUnhealthy = true // comes from the server result
+      expect(hasResultPassed(result, isUnhealthy, false, {failOnCriticalErrors: false, failOnTimeout: true})).toBe(true)
+      expect(hasResultPassed(result, isUnhealthy, false, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(false)
+    })
+
+    test('timed out result', () => {
+      const result = {} as ResultInBatch
+      const hasTimedOut = true // batch timed out or safe deadline
+      expect(hasResultPassed(result, false, hasTimedOut, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(false)
+      expect(hasResultPassed(result, false, hasTimedOut, {failOnCriticalErrors: true, failOnTimeout: false})).toBe(true)
+    })
   })
 
   describe('toBoolean', () => {
