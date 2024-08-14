@@ -5,11 +5,9 @@ import type {AxiosResponse} from 'axios'
 
 import axios, {AxiosError} from 'axios'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
-
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
-import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as utils from '../utils/public'
 
@@ -23,17 +21,11 @@ import {
   mockSearchResponse,
   mockTestTriggerResponse,
   APP_UPLOAD_POLL_RESULTS,
+  getMockApiConfiguration,
 } from './fixtures'
 
 describe('dd-api', () => {
-  const apiConfiguration: APIConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseIntake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
+  const apiConfiguration = getMockApiConfiguration()
   const LOCATION = {
     display_name: 'fake location',
     id: 42,

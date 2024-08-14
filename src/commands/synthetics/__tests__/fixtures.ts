@@ -40,6 +40,7 @@ import {
   BaseResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   ServerResult,
+  APIConfiguration,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -608,17 +609,17 @@ export const getMobileTest = (publicId = 'abc-def-ghi', appId = 'mobileAppUuid')
   type: 'mobile',
 })
 
-export const getApiHelper = () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
+export const getMockApiConfiguration = (): APIConfiguration => ({
+  apiKey: '123',
+  appKey: '123',
+  baseIntakeUrl: 'http://baseIntake',
+  baseUnstableUrl: 'http://baseUnstable',
+  baseUrl: 'http://base',
+  proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+})
 
-  return apiConstructor(apiConfiguration)
+export const getApiHelper = () => {
+  return apiConstructor(getMockApiConfiguration())
 }
 
 export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
