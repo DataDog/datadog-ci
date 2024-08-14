@@ -14,10 +14,7 @@ const maxBodyLength = Infinity
  * Get the function to upload our results to the intake.
  * @param apiKey
  */
-export const getApiHelper = (
-  apiKey: string,
-  appKey: string
-): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
+export const getApiHelper = (apiKey: string): ((scaRequest: ScaRequest) => AxiosPromise<AxiosResponse>) => {
   /**
    * function used to marshall and send the data
    * @param request - the AXIOS element used to send the request
@@ -49,7 +46,7 @@ export const getApiHelper = (
   // Get the intake name
   const url = getBaseUrl()
   // Get the AXIOS request/response function
-  const requestIntake = getRequestBuilder({baseUrl: url, apiKey, appKey})
+  const requestIntake = getRequestBuilder({baseUrl: url, apiKey})
 
   return uploadSBomPayload(requestIntake)
 }

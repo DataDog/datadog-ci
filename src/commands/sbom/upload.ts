@@ -42,7 +42,6 @@ export class UploadSbomCommand extends Command {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY || '',
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
   }
@@ -68,17 +67,8 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    if (!this.config.appKey) {
-      this.context.stderr.write('APP key not defined, define the environment variable DD_APP_KEY.\n')
-
-      return 1
-    }
-
     // Get the API helper to send the payload
-    const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(
-      this.config.apiKey,
-      this.config.appKey
-    )
+    const api: (sbomPayload: ScaRequest) => AxiosPromise<AxiosResponse> = getApiHelper(this.config.apiKey)
 
     const tags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 

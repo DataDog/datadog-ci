@@ -24,7 +24,6 @@ datadog-ci sbom upload <path/to/sbom.json>
 The following environment variables must be defined:
 
  - `DD_SITE`: the [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
- - `DD_APP_KEY`: the App key to use
  - `DD_API_KEY`: the API key to use
 
 ## Development
