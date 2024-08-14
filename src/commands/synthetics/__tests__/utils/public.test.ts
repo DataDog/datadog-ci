@@ -1313,7 +1313,7 @@ describe('utils', () => {
       // Result 3 was available instantly
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
 
-      // Result 1 never became available (but the backend says it did not pass)
+      // Result 1 never became available (but the batch says it did not pass)
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
         {
