@@ -67,6 +67,8 @@ jobs:
     name: End-to-end test the package
     runs-on: ubuntu-latest
     needs: build-and-test
+    env:
+      FORCE_COLOR: 1
 
     steps:
       - uses: actions/checkout@v4
