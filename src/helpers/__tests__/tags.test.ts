@@ -1,5 +1,32 @@
+import {BaseContext} from 'clipanion'
+
 import {SpanTags} from '../interfaces'
-import {parseTags, parseMetrics, getSpanTags} from '../tags'
+import {parseTags, parseMetrics, getSpanTags, parseTagsFile} from '../tags'
+
+const fixturesPath = './src/helpers/__tests__/tags-fixtures'
+const createMockContext = (): BaseContext => {
+  let out = ''
+  let err = ''
+
+  return {
+    stderr: {
+      toString: () => err,
+      write: (input: string) => {
+        err += input
+
+        return true
+      },
+    },
+    stdout: {
+      toString: () => out,
+      write: (input: string) => {
+        out += input
+
+        return true
+      },
+    },
+  } as BaseContext
+}
 
 describe('parseTags', () => {
   test('falls back to empty object if invalid format', () => {
@@ -12,6 +39,52 @@ describe('parseTags', () => {
   })
   test('should not include invalid key:value pairs', () => {
     expect(parseTags(['key1:value1', 'key2:value2', 'invalidkeyvalue'])).toEqual({key1: 'value1', key2: 'value2'})
+  })
+})
+
+describe('validateAndParseTagsFile', () => {
+  test('valid', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-valid.json`)
+    expect(valid).toBe(true)
+    expect(tags).toEqual({foo: 'hello', bar: 'world'})
+  })
+  test('valid with metric warning', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-with-metric.json`)
+    expect(valid).toBe(true)
+    expect(tags).toEqual({tag1: 'value1', tag2: 'value2', tag3: 'value3', tag4: 'value4', metric_mistake: '123'})
+    expect(context.stdout.toString()).toContain("[WARN] tag 'metric_mistake' was not a string, converting to string")
+  })
+  test('empty file path', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, '')
+    expect(valid).toBe(true)
+    expect(tags).toEqual({})
+  })
+  test('undefined file path', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, undefined)
+    expect(valid).toBe(true)
+    expect(tags).toEqual({})
+  })
+  test('file does not exist', () => {
+    const context = createMockContext()
+    const [_, valid] = parseTagsFile(context, 'non-existent-file.json')
+    expect(valid).toBe(false)
+    expect(context.stderr.toString()).toContain("[ERROR] file 'non-existent-file.json' does not exist")
+  })
+  test('path points to folder', () => {
+    const context = createMockContext()
+    const [_, valid] = parseTagsFile(context, `${fixturesPath}/invalid`)
+    expect(valid).toBe(false)
+    expect(context.stderr.toString()).toContain('did not point to a file')
+  })
+  test('file is not a JSON', () => {
+    const context = createMockContext()
+    const [_, valid] = parseTagsFile(context, `${fixturesPath}/invalid/not-a-json.yaml`)
+    expect(valid).toBe(false)
+    expect(context.stderr.toString()).toContain('is not a JSON file')
   })
 })
 

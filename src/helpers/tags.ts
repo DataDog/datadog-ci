@@ -1,4 +1,12 @@
 // Build
+import fs from 'fs'
+import path from 'path'
+
+import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
+
+import {isFile} from '../commands/junit/utils'
+
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
@@ -104,6 +112,50 @@ export const parseMetrics = (tags: string[]) => {
   } catch (e) {
     return {}
   }
+}
+
+export const parseTagsFile = (
+  context: BaseContext,
+  tagsFile: string | undefined
+): [Record<string, string>, boolean] => {
+  if (!tagsFile || tagsFile === '') {
+    return [{}, true]
+  }
+  tagsFile = path.posix.normalize(tagsFile) // resolve relative paths
+  if (!fs.existsSync(tagsFile)) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${tagsFile}' does not exist\n`)
+
+    return [{}, false]
+  }
+  if (!isFile(tagsFile)) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} path '${tagsFile}' did not point to a file\n`)
+
+    return [{}, false]
+  }
+  if (path.extname(tagsFile) !== '.json') {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${tagsFile}' is not a JSON file\n`)
+
+    return [{}, false]
+  }
+  const fileContent = String(fs.readFileSync(tagsFile))
+  let tags: Record<string, string>
+  try {
+    tags = JSON.parse(fileContent) as Record<string, string>
+  } catch (error) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} could not parse JSON file '${tagsFile}': ${error}\n`)
+
+    return [{}, false]
+  }
+
+  // We want to ensure that all tags are strings
+  for (const key in tags) {
+    if (typeof tags[key] !== 'string') {
+      context.stdout.write(`${chalk.yellow.bold('[WARN]')} tag '${key}' was not a string, converting to string\n`)
+      tags[key] = String(tags[key])
+    }
+  }
+
+  return [tags, true]
 }
 
 /**

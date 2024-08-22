@@ -3,7 +3,7 @@ import {Command, Option} from 'clipanion'
 
 import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export class TagCommand extends Command {
@@ -26,6 +26,7 @@ export class TagCommand extends Command {
   private noFail = Option.Boolean('--no-fail')
   private silent = Option.Boolean('--silent')
   private tags = Option.Array('--tags')
+  private tagsFile = Option.String('--tags-file')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -48,6 +49,10 @@ export class TagCommand extends Command {
     this.silent = silent
   }
 
+  public setTagsFile(tagsFile: string) {
+    this.tagsFile = tagsFile
+  }
+
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
@@ -64,9 +69,15 @@ export class TagCommand extends Command {
       }
     }
 
+    const [tagsFile, valid] = parseTagsFile(this.context, this.tagsFile)
+    if (!valid) {
+      return 1
+    }
+
     const tags = {
       ...(this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}),
       ...(this.tags ? parseTags(this.tags) : {}),
+      ...tagsFile,
     }
 
     if (Object.keys(tags).length === 0) {
