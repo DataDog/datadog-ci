@@ -5,6 +5,7 @@ import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
+import { AxiosError } from "axios";
 
 export class TagCommand extends Command {
   public static paths = [['tag']]
@@ -155,11 +156,18 @@ export class TagCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send tags: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }
