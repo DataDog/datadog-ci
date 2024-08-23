@@ -23,7 +23,7 @@ export const renderInvalidPayload = (sbomReport: string) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
   let fullStr = ''
   fullStr += chalk.red(`Cannot generate payload for file ${reportPath}.\n`)
-  fullStr += chalk.red(`Make sure you run the command inside a git repository\n`)
+  fullStr += chalk.red(`Make sure you run the command inside a git repository and the SBOM file is valid\n`)
 
   return fullStr
 }
