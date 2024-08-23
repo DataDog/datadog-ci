@@ -33,7 +33,7 @@ export class UploadSbomCommand extends Command {
     examples: [['Upload the SBOM file sbom.json', 'datadog-ci sbom upload --service my-service file.sbom']],
   })
 
-  private basePaths = Option.Rest({required: 1})
+  private basePath = Option.String()
   private service = Option.String('--service', 'datadog-ci')
   private env = Option.String('--env', 'ci')
   private tags = Option.Array('--tags')
@@ -56,7 +56,7 @@ export class UploadSbomCommand extends Command {
 
     const environment = this.env
 
-    if (!this.basePaths || !this.basePaths.length) {
+    if (!this.basePath || !this.basePath.length) {
       this.context.stderr.write('Missing basePath\n')
 
       return 1
@@ -93,14 +93,9 @@ export class UploadSbomCommand extends Command {
 
     const validator: Ajv = getValidator()
 
-    if (this.basePaths.length !== 1) {
-      this.context.stdout.write(`Please only enter one path, ${this.basePaths.length} paths provided\n`)
-
-      return 1
-    }
-
     const startTimeMs = Date.now()
-    const basePath = this.basePaths[0]
+    const basePath = this.basePath
+
     if (this.debug) {
       this.context.stdout.write(`Processing file ${basePath}\n`)
     }
@@ -148,7 +143,7 @@ export class UploadSbomCommand extends Command {
     }
 
     const uploadTimeMs = (Date.now() - startTimeMs) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(this.basePaths.length, uploadTimeMs))
+    this.context.stdout.write(renderSuccessfulCommand(this.basePath.length, uploadTimeMs))
 
     return 0
   }
