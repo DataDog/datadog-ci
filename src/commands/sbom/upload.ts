@@ -93,53 +93,58 @@ export class UploadSbomCommand extends Command {
 
     const validator: Ajv = getValidator()
 
+    if (this.basePaths.length !== 1) {
+      this.context.stdout.write(`Please only enter one path, ${this.basePaths.length} paths provided\n`)
+
+      return 1
+    }
+
     const startTimeMs = Date.now()
-    for (const basePath of this.basePaths) {
-      if (this.debug) {
-        this.context.stdout.write(`Processing file ${basePath}\n`)
+    const basePath = this.basePaths[0]
+    if (this.debug) {
+      this.context.stdout.write(`Processing file ${basePath}\n`)
+    }
+
+    if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
+      if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+        this.context.stdout.write(renderInvalidFile(basePath))
+
+        return 1
+      } else {
+        this.context.stdout.write(
+          'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
+        )
       }
+    }
 
-      if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
-        if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
-          this.context.stdout.write(renderInvalidFile(basePath))
+    const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
 
-          return 1
-        } else {
-          this.context.stdout.write(
-            'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
-          )
-        }
-      }
-
-      const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
-
-      // Upload content
-      try {
-        const scaPayload = generatePayload(jsonContent, tags, service, environment)
-        if (!scaPayload) {
-          this.context.stdout.write(renderInvalidPayload(basePath))
-
-          continue
-        }
-        this.context.stdout.write(renderUploading(basePath))
-        await api(scaPayload)
-        if (this.debug) {
-          this.context.stdout.write(`Upload done for ${basePath}.\n`)
-        }
-      } catch (error) {
-        if (isAxiosError(error)) {
-          if (error.response?.status === 409) {
-            const sha = tags[GIT_SHA] || 'sha-not-found'
-            this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
-
-            return 0
-          }
-        }
-
-        this.context.stderr.write(renderFailedUpload(basePath, error))
+    // Upload content
+    try {
+      const scaPayload = generatePayload(jsonContent, tags, service, environment)
+      if (!scaPayload) {
+        this.context.stdout.write(renderInvalidPayload(basePath))
 
         return 1
       }
+      this.context.stdout.write(renderUploading(basePath))
+      await api(scaPayload)
+      if (this.debug) {
+        this.context.stdout.write(`Upload done for ${basePath}.\n`)
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 409) {
+          const sha = tags[GIT_SHA] || 'sha-not-found'
+          this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
+
+          return 0
+        }
+      }
+
+      this.context.stderr.write(renderFailedUpload(basePath, error))
+
+      return 1
     }
 
     const uploadTimeMs = (Date.now() - startTimeMs) / 1000
