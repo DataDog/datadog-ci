@@ -1,7 +1,7 @@
 import {BaseContext} from 'clipanion'
 
 import {SpanTags} from '../interfaces'
-import {parseTags, parseMetrics, getSpanTags, parseTagsFile} from '../tags'
+import {parseTags, parseMetrics, getSpanTags, parseTagsFile, parseMeasuresFile} from '../tags'
 
 const fixturesPath = './src/helpers/__tests__/tags-fixtures'
 const createMockContext = (): BaseContext => {
@@ -42,19 +42,31 @@ describe('parseTags', () => {
   })
 })
 
-describe('validateAndParseTagsFile', () => {
+describe('parseTagsFile', () => {
   test('valid', () => {
     const context = createMockContext()
     const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-valid.json`)
     expect(valid).toBe(true)
     expect(tags).toEqual({foo: 'hello', bar: 'world'})
   })
-  test('valid with metric warning', () => {
+  test('valid but ignores data', () => {
     const context = createMockContext()
-    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-with-metric.json`)
+    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-mixed.json`)
     expect(valid).toBe(true)
-    expect(tags).toEqual({tag1: 'value1', tag2: 'value2', tag3: 'value3', tag4: 'value4', metric_mistake: '123'})
+    expect(tags).toEqual({
+      tag1: 'value1',
+      metric_mistake: '123',
+      my_boolean: 'true',
+      tag4: 'value4',
+    })
     expect(context.stdout.toString()).toContain("[WARN] tag 'metric_mistake' was not a string, converting to string")
+  })
+  test('nested fields should be removed', () => {
+    const context = createMockContext()
+    const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-with-nested-fields.json`)
+    expect(valid).toBe(true)
+    expect(tags).toEqual({bar: 'world'})
+    expect(context.stdout.toString()).toContain("[WARN] tag 'foo' had nested fields which will be ignored")
   })
   test('empty file path', () => {
     const context = createMockContext()
@@ -104,6 +116,22 @@ describe('parseMetrics', () => {
   })
   test('should not include invalid key:value pairs', () => {
     expect(parseMetrics(['key1:123', 'key2:321', 'invalidkeyvalue', 'key3:a'])).toEqual({key1: 123, key2: 321})
+  })
+})
+
+describe('parseMetricsFile', () => {
+  test('valid', () => {
+    const context = createMockContext()
+    const [measures, valid] = parseMeasuresFile(context, `${fixturesPath}/measures-valid.json`)
+    expect(valid).toBe(true)
+    expect(measures).toEqual({foo: 123, bar: 456})
+  })
+  test('valid but ignores data', () => {
+    const context = createMockContext()
+    const [measures, valid] = parseMeasuresFile(context, `${fixturesPath}/measures-mixed.json`)
+    expect(valid).toBe(true)
+    expect(measures).toEqual({measure: 888})
+    expect(context.stdout.toString()).toContain('ignoring field')
   })
 })
 

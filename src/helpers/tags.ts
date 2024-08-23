@@ -114,6 +114,17 @@ export const parseMetrics = (tags: string[]) => {
   }
 }
 
+/**
+ * Receives a filepath to a JSON file that contains tags in the form of:
+ * {
+ *  "key": "value",
+ *  "key2": "value2"
+ * }
+ * and returns a record of the form {key: 'value', key2: 'value2'}
+ * Numbers are converted to strings and nested objects are ignored.
+ * @param context - the context of the CLI, used to write to stdout and stderr
+ * @param tagsFile - the path to the JSON file
+ */
 export const parseTagsFile = (
   context: BaseContext,
   tagsFile: string | undefined
@@ -121,23 +132,12 @@ export const parseTagsFile = (
   if (!tagsFile || tagsFile === '') {
     return [{}, true]
   }
-  tagsFile = path.posix.normalize(tagsFile) // resolve relative paths
-  if (!fs.existsSync(tagsFile)) {
-    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${tagsFile}' does not exist\n`)
 
+  const fileContent = readJsonFile(context, tagsFile)
+  if (fileContent === '') {
     return [{}, false]
   }
-  if (!isFile(tagsFile)) {
-    context.stderr.write(`${chalk.red.bold('[ERROR]')} path '${tagsFile}' did not point to a file\n`)
 
-    return [{}, false]
-  }
-  if (path.extname(tagsFile) !== '.json') {
-    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${tagsFile}' is not a JSON file\n`)
-
-    return [{}, false]
-  }
-  const fileContent = String(fs.readFileSync(tagsFile))
   let tags: Record<string, string>
   try {
     tags = JSON.parse(fileContent) as Record<string, string>
@@ -149,13 +149,55 @@ export const parseTagsFile = (
 
   // We want to ensure that all tags are strings
   for (const key in tags) {
-    if (typeof tags[key] !== 'string') {
+    if (typeof tags[key] === 'object') {
+      context.stdout.write(`${chalk.yellow.bold('[WARN]')} tag '${key}' had nested fields which will be ignored\n`)
+      delete tags[key]
+    } else if (typeof tags[key] !== 'string') {
       context.stdout.write(`${chalk.yellow.bold('[WARN]')} tag '${key}' was not a string, converting to string\n`)
       tags[key] = String(tags[key])
     }
   }
 
   return [tags, true]
+}
+
+/**
+ * Similar to `parseTagsFile` but it's assumed that numbers are received
+ * If a field is not a number, it will be ignored
+ * @param context - the context of the CLI, used to write to stdout and stderr
+ * @param measuresFile - the path to the JSON file
+ */
+export const parseMeasuresFile = (
+  context: BaseContext,
+  measuresFile: string | undefined
+): [Record<string, number>, boolean] => {
+  if (!measuresFile || measuresFile === '') {
+    return [{}, true]
+  }
+
+  const fileContent = readJsonFile(context, measuresFile)
+  if (fileContent === '') {
+    return [{}, false]
+  }
+
+  let measures: Record<string, number>
+  try {
+    measures = JSON.parse(fileContent) as Record<string, number>
+  } catch (error) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} could not parse JSON file '${measuresFile}': ${error}\n`)
+
+    return [{}, false]
+  }
+
+  // We want to ensure that all tags are strings
+  for (const key in measures) {
+    if (typeof measures[key] !== 'number') {
+      context.stdout.write(`${chalk.yellow.bold('[WARN]')} ignoring field '${key}' because it was not a number\n`)
+      delete measures[key]
+    }
+  }
+
+  return [measures, true]
 }
 
 /**
@@ -192,4 +234,25 @@ export const getSpanTags = async (
     ...envVarTags,
     ...(config.env ? {env: config.env} : {}),
   }
+}
+
+const readJsonFile = (context: BaseContext, filename: string): string => {
+  filename = path.posix.normalize(filename) // resolve relative paths
+  if (!fs.existsSync(filename)) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${filename}' does not exist\n`)
+
+    return ''
+  }
+  if (!isFile(filename)) {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} path '${filename}' did not point to a file\n`)
+
+    return ''
+  }
+  if (path.extname(filename) !== '.json') {
+    context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${filename}' is not a JSON file\n`)
+
+    return ''
+  }
+
+  return String(fs.readFileSync(filename))
 }

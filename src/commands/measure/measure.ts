@@ -3,8 +3,9 @@ import type {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
+import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
+import {parseMeasuresFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export const parseMeasures = (measures: string[]) =>
@@ -41,12 +42,14 @@ export class MeasureCommand extends Command {
         'Tag the current CI job with a command runtime',
         'datadog-ci measure --level job --measures command.runtime:67.1',
       ],
+      ['Add measures in bulk using a JSON file', 'datadog-ci measure --level job --measures-file my_measures.json'],
     ],
   })
 
   private level = Option.String('--level')
   private metrics = Option.Array('--metrics', {hidden: true})
   private measures = Option.Array('--measures')
+  private measuresFile = Option.String('--measures-file')
   private noFail = Option.Boolean('--no-fail')
 
   private config = {
@@ -66,8 +69,9 @@ export class MeasureCommand extends Command {
       return 1
     }
 
-    if ((!this.measures || this.measures.length === 0) && (!this.metrics || this.metrics.length === 0)) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} --measures is required\n`)
+    const cliMeasures: string[] | undefined = this.measures || this.metrics
+    if (!cliMeasures && !this.measuresFile) {
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} --measures or --measures-file is required\n`)
 
       return 1
     }
@@ -78,9 +82,25 @@ export class MeasureCommand extends Command {
       )
     }
 
-    const rawMeasures = (this.measures || this.metrics)!
+    const [measuresFromFile, valid] = parseMeasuresFile(this.context, this.measuresFile)
+    if (!valid) {
+      // we should fail if attempted to read measures from a file and failed
+      return 1
+    }
+
+    const measures: Record<string, number> = {
+      ...(cliMeasures ? parseMeasures(cliMeasures) : {}),
+      ...measuresFromFile,
+    }
+
+    if (Object.keys(measures).length === 0) {
+      // This can happen for example if the measures file is provided but is empty
+      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} No measures found\n`)
+
+      return 1
+    }
+
     try {
-      const measures = parseMeasures(rawMeasures)
       const {provider, ciEnv} = getCIEnv()
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)

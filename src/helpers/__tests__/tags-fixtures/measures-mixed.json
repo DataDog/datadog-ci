@@ -1,0 +1,8 @@
+{
+  "tag": "test",
+  "nested": {
+    "measure": 123
+  },
+  "my_bool": true,
+  "measure": 888
+}

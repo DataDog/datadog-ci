@@ -1,7 +1,6 @@
 {
   "tag1": "value1",
-  "tag2": "value2",
-  "tag3": "value3",
   "metric_mistake": 123,
+  "my_boolean": true,
   "tag4": "value4"
 }

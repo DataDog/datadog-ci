@@ -20,6 +20,7 @@ export class TagCommand extends Command {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
+      ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })
 
@@ -50,10 +51,6 @@ export class TagCommand extends Command {
     this.silent = silent
   }
 
-  public setTagsFile(tagsFile: string) {
-    this.tagsFile = tagsFile
-  }
-
   public async execute() {
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
@@ -70,20 +67,23 @@ export class TagCommand extends Command {
       }
     }
 
-    const [tagsFile, valid] = parseTagsFile(this.context, this.tagsFile)
+    const [tagsFromFile, valid] = parseTagsFile(this.context, this.tagsFile)
     if (!valid) {
+      // we should fail if attempted to read tags from a file and failed
       return 1
     }
 
     const tags = {
       ...(this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}),
       ...(this.tags ? parseTags(this.tags) : {}),
-      ...tagsFile,
+      ...tagsFromFile,
     }
 
     if (Object.keys(tags).length === 0) {
       this.context.stderr.write(
-        `${chalk.red.bold('[ERROR]')} DD_TAGS environment variable or --tags command line argument is required\n`
+        `${chalk.red.bold(
+          '[ERROR]'
+        )} DD_TAGS environment variable, --tags or --tags-file command line argument is required\n`
       )
 
       return 1
