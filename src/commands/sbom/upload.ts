@@ -143,7 +143,7 @@ export class UploadSbomCommand extends Command {
     }
 
     const uploadTimeMs = (Date.now() - startTimeMs) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(this.basePath.length, uploadTimeMs))
+    this.context.stdout.write(renderSuccessfulCommand(uploadTimeMs))
 
     return 0
   }
