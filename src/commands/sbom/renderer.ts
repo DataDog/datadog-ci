@@ -21,8 +21,11 @@ export const renderInvalidFile = (sbomReport: string) => {
 
 export const renderInvalidPayload = (sbomReport: string) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
+  let fullStr = ''
+  fullStr += chalk.red(`Cannot generate payload for file ${reportPath}.\n`)
+  fullStr += chalk.red(`Make sure you run the command inside a git repository and the SBOM file is valid\n`)
 
-  return chalk.red(`Cannot generate payload for file ${reportPath}.\n`)
+  return fullStr
 }
 
 export const renderMissingSpan = (errorMessage: string) => {
@@ -62,9 +65,9 @@ export const renderFailedUpload = (sbomReport: string, error: any) => {
 
 export const renderUploading = (sbomReport: string): string => `Uploading SBOM report in ${sbomReport}\n`
 
-export const renderSuccessfulCommand = (fileCount: number, duration: number) => {
+export const renderSuccessfulCommand = (duration: number) => {
   let fullStr = ''
-  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
+  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded file in ${duration} seconds.\n`)
   fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getBaseUrl()}ci/code-analysis\n`)
   fullStr += chalk.green(
     '=================================================================================================\n'

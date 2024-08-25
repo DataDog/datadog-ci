@@ -33,7 +33,7 @@ export class UploadSbomCommand extends Command {
     examples: [['Upload the SBOM file sbom.json', 'datadog-ci sbom upload --service my-service file.sbom']],
   })
 
-  private basePaths = Option.Rest({required: 1})
+  private basePath = Option.String()
   private service = Option.String('--service', 'datadog-ci')
   private env = Option.String('--env', 'ci')
   private tags = Option.Array('--tags')
@@ -56,7 +56,7 @@ export class UploadSbomCommand extends Command {
 
     const environment = this.env
 
-    if (!this.basePaths || !this.basePaths.length) {
+    if (!this.basePath || !this.basePath.length) {
       this.context.stderr.write('Missing basePath\n')
 
       return 1
@@ -94,56 +94,56 @@ export class UploadSbomCommand extends Command {
     const validator: Ajv = getValidator()
 
     const startTimeMs = Date.now()
-    for (const basePath of this.basePaths) {
-      if (this.debug) {
-        this.context.stdout.write(`Processing file ${basePath}\n`)
-      }
+    const basePath = this.basePath
 
-      if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
-        if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
-          this.context.stdout.write(renderInvalidFile(basePath))
+    if (this.debug) {
+      this.context.stdout.write(`Processing file ${basePath}\n`)
+    }
 
-          return 1
-        } else {
-          this.context.stdout.write(
-            'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
-          )
-        }
-      }
-
-      const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
-
-      // Upload content
-      try {
-        const scaPayload = generatePayload(jsonContent, tags, service, environment)
-        if (!scaPayload) {
-          this.context.stdout.write(renderInvalidPayload(basePath))
-
-          continue
-        }
-        this.context.stdout.write(renderUploading(basePath))
-        await api(scaPayload)
-        if (this.debug) {
-          this.context.stdout.write(`Upload done for ${basePath}.\n`)
-        }
-      } catch (error) {
-        if (isAxiosError(error)) {
-          if (error.response?.status === 409) {
-            const sha = tags[GIT_SHA] || 'sha-not-found'
-            this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
-
-            return 0
-          }
-        }
-
-        this.context.stderr.write(renderFailedUpload(basePath, error))
+    if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
+      if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+        this.context.stdout.write(renderInvalidFile(basePath))
 
         return 1
+      } else {
+        this.context.stdout.write(
+          'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
+        )
       }
     }
 
+    const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
+
+    // Upload content
+    try {
+      const scaPayload = generatePayload(jsonContent, tags, service, environment)
+      if (!scaPayload) {
+        this.context.stdout.write(renderInvalidPayload(basePath))
+
+        return 1
+      }
+      this.context.stdout.write(renderUploading(basePath))
+      await api(scaPayload)
+      if (this.debug) {
+        this.context.stdout.write(`Upload done for ${basePath}.\n`)
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        if (error.response?.status === 409) {
+          const sha = tags[GIT_SHA] || 'sha-not-found'
+          this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
+
+          return 0
+        }
+      }
+
+      this.context.stderr.write(renderFailedUpload(basePath, error))
+
+      return 1
+    }
+
     const uploadTimeMs = (Date.now() - startTimeMs) / 1000
-    this.context.stdout.write(renderSuccessfulCommand(this.basePaths.length, uploadTimeMs))
+    this.context.stdout.write(renderSuccessfulCommand(uploadTimeMs))
 
     return 0
   }
