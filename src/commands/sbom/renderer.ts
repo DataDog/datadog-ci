@@ -51,6 +51,15 @@ export const renderDuplicateUpload = (sha: string, env: string, service: string)
   return fullStr
 }
 
+export const renderNoDefaultBranch = (repositoryUrl: string) => {
+  let fullStr = ''
+
+  fullStr += chalk.red(`Default branch not found for repository ${repositoryUrl}\n`)
+  fullStr += chalk.red(`Define a default branch in the repository settings on Datadog and run the analysis again\n`)
+
+  return fullStr
+}
+
 export const renderFailedUpload = (sbomReport: string, error: any) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 

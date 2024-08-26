@@ -5,7 +5,7 @@ import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, mandatoryGitFields, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
@@ -15,6 +15,7 @@ import {
   renderInvalidFile,
   renderInvalidPayload,
   renderMissingSpan,
+  renderNoDefaultBranch,
   renderSuccessfulCommand,
   renderUploading,
 } from './renderer'
@@ -134,6 +135,13 @@ export class UploadSbomCommand extends Command {
           this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
 
           return 0
+        }
+
+        if (error.response?.status === 412) {
+          const repositoryUrl = tags[GIT_REPOSITORY_URL] || 'url-not-found'
+          this.context.stderr.write(renderNoDefaultBranch(repositoryUrl))
+
+          return 1
         }
       }
 
