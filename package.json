@@ -96,6 +96,7 @@
     "inquirer-checkbox-plus-prompt": "^1.4.2",
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
+    "open": "^8.4.2",
     "ora": "5.4.1",
     "proxy-agent": "^6.4.0",
     "rimraf": "^3.0.2",

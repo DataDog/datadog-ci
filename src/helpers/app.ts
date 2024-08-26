@@ -1,6 +1,6 @@
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'
 
-export const getCommonAppBaseURL = (datadogSite: string, subdomain: string) => {
+export const getCommonAppBaseURL = (datadogSite: string, subdomain?: string) => {
   const validSubdomain = subdomain || DEFAULT_DATADOG_SUBDOMAIN
   const datadogSiteParts = datadogSite.split('.')
 
