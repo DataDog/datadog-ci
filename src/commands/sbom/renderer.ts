@@ -55,7 +55,10 @@ export const renderNoDefaultBranch = (repositoryUrl: string) => {
   let fullStr = ''
 
   fullStr += chalk.red(`Default branch not found for repository ${repositoryUrl}\n`)
-  fullStr += chalk.red(`Define a default branch in the repository settings on Datadog and run the analysis again\n`)
+  fullStr += chalk.red(`Fix this issue by either:\n`)
+  fullStr += chalk.red(` - define a default branch in the repository settings on Datadog\n`)
+  fullStr += chalk.red(` - push result from your default branch first\n\n`)
+  fullStr += chalk.red(`Run an analysis once the issue is resolved\n`)
 
   return fullStr
 }
