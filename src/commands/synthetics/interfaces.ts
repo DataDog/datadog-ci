@@ -87,6 +87,12 @@ export interface PollResult {
 
 export type PollResultMap = {[resultId: string]: PollResult}
 
+export interface FastTestPollResult {
+  checkId: string
+  result: ServerResult
+  timestamp: number
+}
+
 /**
  * Information required to convert a `PollResult` to a `Result`.
  */
@@ -378,6 +384,27 @@ export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
   options?: BatchOptions
+}
+
+export interface FastTestPayload {
+  message: string
+  name: string
+  tags: string[]
+  subtype: string
+  type: string
+  locations: string[]
+  config: {
+    assertions: any[]
+    request: {
+      method: string
+      url: string
+      timeout: number
+    }
+  }
+  options: {
+    tick_every: number
+    httpVersion: string
+  }
 }
 
 export interface TestPayload extends ServerConfigOverride {

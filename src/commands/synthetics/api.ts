@@ -23,6 +23,8 @@ import {
   Trigger,
   MobileAppUploadResult,
   MobileApplicationNewVersionParams,
+  FastTestPollResult,
+  FastTestPayload,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -81,6 +83,23 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   )
 
   return resp.data
+}
+
+const triggerFastTests = (request: (args: AxiosRequestConfig) => AxiosPromise<{fast_check_id: string}>) => async (
+  data: FastTestPayload
+) => {
+  const resp = await retryRequest(
+    {
+      data,
+      headers: {'X-Trigger-App': ciTriggerApp},
+      method: 'POST',
+      url: '/synthetics/tests/fast',
+    },
+    request,
+    {retryOn429: true}
+  )
+
+  return resp.data.fast_check_id
 }
 
 const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string) => {
@@ -157,6 +176,23 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
   )
 
   return resp.data.results
+}
+
+const pollFastTestResults = (request: (args: AxiosRequestConfig) => AxiosPromise<FastTestPollResult[]>) => async (
+  fastCheckId: string
+) => {
+  const resp = await retryRequest(
+    {
+      params: {
+        uuid: fastCheckId,
+      },
+      url: `/synthetics/tests/fast/events`,
+    },
+    request,
+    {retryOn404: true, retryOn429: true}
+  )
+
+  return resp.data
 }
 
 const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
@@ -356,8 +392,10 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
+    pollFastTestResults: pollFastTestResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
+    triggerFastTests: triggerFastTests(request),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),

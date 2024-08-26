@@ -15,7 +15,7 @@ import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {executeTests} from './run-tests-lib'
+import {executeEphemeralTest, executeTests} from './run-tests-lib'
 import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringMap} from './utils/internal'
 import {
   getExitReason,
@@ -119,6 +119,9 @@ export class RunTestsCommand extends Command {
     description:
       '**DEPRECATED** Override the mobile device(s) to run your mobile test. Please use `--override deviceIds="dev1;dev2;..."` instead.',
   })
+  private ephemeralTests = Option.Array('-e,--ephemeral', {
+    description: `Glob pattern to detect Synthetic ephemeral test ${$2('configuration files')}}.`,
+  })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
       'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
@@ -186,6 +189,21 @@ export class RunTestsCommand extends Command {
       }
 
       return 1
+    }
+
+    if (this.ephemeralTests) {
+      for (const ephemeralTest of this.ephemeralTests) {
+        console.log('Running ephemeral test in file ' + ephemeralTest)
+        try {
+          await executeEphemeralTest(ephemeralTest, this.config)
+        } catch (error) {
+          console.log(error)
+
+          return 1
+        }
+      }
+
+      return 0
     }
 
     if (this.config.jUnitReport) {

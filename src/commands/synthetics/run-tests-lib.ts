@@ -1,4 +1,4 @@
-import {getProxyAgent} from '../../helpers/utils'
+import {getProxyAgent, resolveConfigFromFile} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {
@@ -8,6 +8,8 @@ import {
 } from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
+  FastTestPayload,
+  FastTestPollResult,
   MainReporter,
   Reporter,
   Result,
@@ -26,6 +28,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
+import {waitForFastTestResult} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -44,6 +47,25 @@ type ExecuteOptions = {
   reporters?: (SupportedReporter | Reporter)[]
   runId?: string
   suites?: Suite[]
+}
+
+export const executeEphemeralTest = async (
+  ephemeralTest: string,
+  config: RunTestsCommandConfig
+): Promise<{payload: FastTestPayload; result: FastTestPollResult}> => {
+  const api = getApiHelper(config)
+  const ephemeralTestPath = `__synthetics__/${ephemeralTest}`
+
+  const payload = (await resolveConfigFromFile({}, {configPath: ephemeralTestPath})) as FastTestPayload
+  console.log('Test definition:', payload)
+
+  const fastCheckId = await api.triggerFastTests(payload)
+  const result = await waitForFastTestResult(api, fastCheckId)
+  if (result.result.passed) {
+    console.log('Test passed')
+  }
+
+  return {payload, result}
 }
 
 export const executeTests = async (

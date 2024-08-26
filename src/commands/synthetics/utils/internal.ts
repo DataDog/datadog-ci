@@ -1,7 +1,9 @@
+import {APIHelper} from '../api'
 import {
   BaseResult,
   BasicAuthCredentials,
   ExecutionRule,
+  FastTestPollResult,
   MobileTestWithOverride,
   Result,
   ResultInBatch,
@@ -14,7 +16,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 
-import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
+import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun, wait} from './public'
 
 const levenshtein = require('fast-levenshtein')
 
@@ -331,4 +333,23 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   )
 
   return parsedOverrides
+}
+
+export const waitForFastTestResult = async (
+  api: APIHelper,
+  fastTestId: string,
+  timeout = 60000
+): Promise<FastTestPollResult> => {
+  const startTime = Date.now()
+
+  while (Date.now() - startTime < timeout) {
+    const results = await api.pollFastTestResults(fastTestId)
+    if (results && results.length > 0) {
+      return results[0]
+    }
+
+    await wait(5000)
+  }
+
+  throw new Error('Timed out waiting for fast test result')
 }
