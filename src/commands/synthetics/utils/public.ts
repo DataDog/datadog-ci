@@ -243,7 +243,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
-  const files: string[] = await promisify(glob)(GLOB, {absolute: true})
+  const files: string[] = await promisify(glob)(GLOB)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
@@ -264,8 +264,9 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
             return {name: suiteName, content: JSON.parse(content)}
           case '.js':
           case '.ts':
+            const absolutePath = path.resolve(process.cwd(), file)
             const jiti = createJiti(process.cwd())
-            const data = jiti(file).default
+            const data = jiti(absolutePath).default
             const testDefinitions = Array.isArray(data) ? data : [data]
 
             return {

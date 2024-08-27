@@ -472,7 +472,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
+          overriddenTestsToTrigger: [{public_id: 'aaa-aaa-aaa'}],
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -488,13 +488,13 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+          publicIds: ['aaa-aaa-aaa'],
           tunnel: true,
         })
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
-          '[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+          '[aaa-aaa-aaa] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
@@ -515,7 +515,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
+          overriddenTestsToTrigger: [{public_id: 'aaa-aaa-aaa'}],
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'publicId'} as any],
         })
       )
@@ -556,7 +556,7 @@ describe('run-test', () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
-          overriddenTestsToTrigger: [],
+          overriddenTestsToTrigger: [{public_id: 'aaa-aaa-aaa'}],
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
         })
       )
@@ -751,7 +751,7 @@ describe('run-test', () => {
       ])
 
       expect(getSuitesMock).toHaveBeenCalledTimes(1)
-      expect(getSuitesMock).toHaveBeenCalledWith('{,!(node_modules)/**/}*.synthetics.json', mockReporter)
+      expect(getSuitesMock).toHaveBeenCalledWith('{,!(node_modules)/**/}*.synthetics.{json,js,ts}', mockReporter)
     })
 
     test('should override and execute only publicIds that were defined in the global config', async () => {

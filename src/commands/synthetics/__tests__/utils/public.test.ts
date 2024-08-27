@@ -106,25 +106,26 @@ describe('utils', () => {
   const api = apiConstructor(apiConfiguration)
 
   describe('getSuites', () => {
-    const GLOB = 'testGlob'
-    const FILES = ['file1', 'file2']
-    const FILES_CONTENT = {
-      file1: '{"tests":"file1"}',
-      file2: '{"tests":"file2"}',
+    const files = ['file1.json', 'file2.json']
+    const contentByName = {
+      'file1.json': '{"tests":[]}',
+      'file2.json': '{"tests":[]}',
     }
 
-    ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
-      callback(undefined, FILES_CONTENT[path])
+    ;(fs.readFile as any).mockImplementation((path: 'file1.json' | 'file2.json', opts: any, callback: any) =>
+      callback(undefined, contentByName[path])
     )
-    ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => callback(undefined, FILES))
+    ;(glob as any).mockImplementation((query: string, callback: (e: any, v: any) => void) => {
+      callback(undefined, files)
+    })
     ;(child_process.exec as any).mockImplementation(
       (command: string, callback: (error: any, stdout: string, stderr: string) => void) => callback(undefined, '.', '')
     )
 
     test('should get suites', async () => {
-      const suites = await utils.getSuites(GLOB, mockReporter)
+      const suites = await utils.getSuites('some glob', mockReporter)
       expect(JSON.stringify(suites)).toBe(
-        `[{"name":"file1","content":${FILES_CONTENT.file1}},{"name":"file2","content":${FILES_CONTENT.file2}}]`
+        `[{"name":"file1.json","content":${contentByName['file1.json']}},{"name":"file2.json","content":${contentByName['file2.json']}}]`
       )
     })
   })
