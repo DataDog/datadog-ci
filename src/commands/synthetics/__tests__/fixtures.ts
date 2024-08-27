@@ -633,7 +633,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
     pollFastTestResults: jest.fn(),
     searchTests: jest.fn(),
     triggerTests: jest.fn(),
-    triggerFastTests: jest.fn(),
+    triggerFastTest: jest.fn(),
     uploadMobileApplicationPart: jest.fn(),
     completeMultipartMobileApplicationUpload: jest.fn(),
     pollMobileApplicationUploadResponse: jest.fn(),

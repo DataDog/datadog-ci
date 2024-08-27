@@ -1,6 +1,6 @@
-import {getProxyAgent, resolveConfigFromFile} from '../../helpers/utils'
+import {getProxyAgent} from '../../helpers/utils'
 
-import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {APIHelper, formatBackendErrors, getApiHelper, isForbiddenError} from './api'
 import {
   moveLocationsToTestOverrides,
   replaceGlobalWithDefaultTestOverrides,
@@ -8,8 +8,7 @@ import {
 } from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
-  FastTestPayload,
-  FastTestPollResult,
+  FastTest,
   MainReporter,
   Reporter,
   Result,
@@ -47,25 +46,6 @@ type ExecuteOptions = {
   reporters?: (SupportedReporter | Reporter)[]
   runId?: string
   suites?: Suite[]
-}
-
-export const executeEphemeralTest = async (
-  ephemeralTest: string,
-  config: RunTestsCommandConfig
-): Promise<{payload: FastTestPayload; result: FastTestPollResult}> => {
-  const api = getApiHelper(config)
-  const ephemeralTestPath = `__synthetics__/${ephemeralTest}`
-
-  const payload = (await resolveConfigFromFile({}, {configPath: ephemeralTestPath})) as FastTestPayload
-  console.log('Test definition:', payload)
-
-  const fastCheckId = await api.triggerFastTests(payload)
-  const result = await waitForFastTestResult(api, fastCheckId)
-  if (result.result.passed) {
-    console.log('Test passed')
-  }
-
-  return {payload, result}
 }
 
 export const executeTests = async (
@@ -107,7 +87,7 @@ export const executeTests = async (
 
   let testsToTriggerResult: {
     initialSummary: InitialSummary
-    overriddenTestsToTrigger: TestPayload[]
+    overriddenTestsToTrigger: (TestPayload | FastTest)[]
     tests: Test[]
   }
 
@@ -154,7 +134,9 @@ export const executeTests = async (
 
       const tunnelInfo = await tunnel.start()
       overriddenTestsToTrigger.forEach((testToTrigger) => {
-        testToTrigger.tunnel = tunnelInfo
+        if ('public_id' in testToTrigger) {
+          testToTrigger.tunnel = tunnelInfo
+        }
       })
     } catch (error) {
       await stopTunnel()
@@ -162,16 +144,35 @@ export const executeTests = async (
     }
   }
 
-  let trigger: Trigger
-  try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
-  } catch (error) {
-    await stopTunnel()
-    throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
+  const testsToTriggerInBatch = overriddenTestsToTrigger.filter((t) => 'public_id' in t)
+  const fastTestsToTrigger = overriddenTestsToTrigger.filter((t) => 'isFastTest' in t)
+
+  let trigger: Trigger | undefined
+  if (testsToTriggerInBatch.length > 0) {
+    try {
+      trigger = await runTests(api, testsToTriggerInBatch, config.selectiveRerun, config.batchTimeout)
+    } catch (error) {
+      await stopTunnel()
+      throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
+    }
   }
 
-  if (trigger.selective_rerun_rate_limited) {
+  if (trigger?.selective_rerun_rate_limited) {
     reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
+  }
+
+  const fastCheckIds: string[] = []
+  for (const fastTest of fastTestsToTrigger) {
+    try {
+      const fastCheckId = await api.triggerFastTest({
+        ...fastTest.test,
+        type: `fast-${fastTest.test.type}`,
+      })
+      fastCheckIds.push(fastCheckId)
+      reporter.log(`Fast test triggered: ${fastCheckId}\n`)
+    } catch (error) {
+      throw new CriticalError('TRIGGER_TESTS_FAILED', formatBackendErrors(error))
+    }
   }
 
   try {
@@ -183,20 +184,32 @@ export const executeTests = async (
     )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
-    const results = await waitForResults(
-      api,
-      trigger,
-      tests,
-      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout: maxPollingTimeout},
-      reporter,
-      tunnel
+    const results = testsToTriggerInBatch.length
+      ? await waitForResults(
+          api,
+          trigger!,
+          tests,
+          {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout: maxPollingTimeout},
+          reporter,
+          tunnel
+        )
+      : []
+
+    const fastTestResults = await Promise.all(
+      fastCheckIds.map((fastCheckId) => waitForFastTestResult(api, fastCheckId))
     )
+
+    if (fastTestResults.length > 0) {
+      for (const fastTestResult of fastTestResults) {
+        reporter.log(`Fast test result: ${JSON.stringify(fastTestResult)}\n\n`)
+      }
+    }
 
     return {
       results,
       summary: {
         ...initialSummary,
-        batchId: trigger.batch_id,
+        batchId: trigger?.batch_id ?? 'no-batch', // XXX: This is temporary, and will be removed when batches support ephemeral tests.
       },
     }
   } catch (error) {
@@ -225,22 +238,24 @@ export const getTriggerConfigs = async (
 
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
-  const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
-  const testIdsFromTestConfigs = testsFromTestConfigs.map(({id}) => id)
+  const testIdsFromSearchQuery = testsFromSearchQuery.flatMap((t) => ('id' in t ? [t.id] : []))
+  const testIdsFromTestConfigs = testsFromTestConfigs.flatMap((t) => ('id' in t ? [t.id] : []))
 
   // Take the list of tests from the first source that defines it, by order of precedence
   const testIdsToTrigger =
     [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
+  const fastTestsToTrigger = testsFromTestConfigs.filter((t) => 'testDefinition' in t)
+
   // Create the overrides required for the list of tests to trigger
-  const triggerConfigs = testIdsToTrigger.map((id) => {
-    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+  const triggerConfigs = testIdsToTrigger.map<TriggerConfig>((id) => {
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => 'id' in t && t.id === id)
     let testFromSearchQuery
-    if (testIndexFromSearchQuery >= 0) {
+    if (testIndexFromSearchQuery === 0) {
       testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
     }
 
-    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => 'id' in t && t.id === id)
     let testFromTestConfigs
     if (testIndexFromTestConfigs >= 0) {
       testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
@@ -257,7 +272,12 @@ export const getTriggerConfigs = async (
     }
   })
 
-  return triggerConfigs
+  const fastTestTriggerConfigs = fastTestsToTrigger.map<TriggerConfig>((testFromTestConfigs) => ({
+    ...testFromTestConfigs,
+    testDefinition: testFromTestConfigs.testDefinition,
+  }))
+
+  return triggerConfigs.concat(fastTestTriggerConfigs)
 }
 
 export const executeWithDetails = async (

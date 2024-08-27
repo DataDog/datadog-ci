@@ -6,6 +6,7 @@ import {promisify} from 'util'
 
 import chalk from 'chalk'
 import glob from 'glob'
+import createJiti from 'jiti'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
@@ -20,6 +21,7 @@ import {
   APIHelperConfig,
   BrowserServerResult,
   ExecutionRule,
+  FastTest,
   LocationsMapping,
   MainReporter,
   Operator,
@@ -241,7 +243,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
-  const files: string[] = await promisify(glob)(GLOB)
+  const files: string[] = await promisify(glob)(GLOB, {absolute: true})
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
@@ -250,13 +252,33 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
   return Promise.all(
     files.map(async (file) => {
+      const extension = path.extname(file)
+
       try {
-        const content = await promisify(fs.readFile)(file, 'utf8')
         const suiteName = await getFilePathRelativeToRepo(file)
 
-        return {name: suiteName, content: JSON.parse(content)}
+        switch (extension) {
+          case '.json':
+            const content = await promisify(fs.readFile)(file, 'utf8')
+
+            return {name: suiteName, content: JSON.parse(content)}
+          case '.js':
+          case '.ts':
+            const jiti = createJiti(process.cwd())
+            const data = jiti(file).default
+            const testDefinitions = Array.isArray(data) ? data : [data]
+
+            return {
+              name: suiteName,
+              content: {
+                tests: testDefinitions.map((testDefinition) => ({testDefinition})),
+              },
+            }
+          default:
+            throw new Error(`Unsupported extension for test file ${file}`)
+        }
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${file}`)
+        throw new Error(`Unable to read and parse the test file ${file}: ${e.message}`)
       }
     })
   )
@@ -448,22 +470,29 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
 // XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  {config, testOverrides, id, suite}: TriggerConfig,
+  triggerConfig: TriggerConfig,
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
-  const normalizedId = normalizePublicId(id)
+): Promise<TestNotFound | TestSkipped | TestWithOverride | FastTest> => {
+  if ('testDefinition' in triggerConfig) {
+    return {
+      test: triggerConfig.testDefinition,
+      isFastTest: true,
+    }
+  }
 
+  const {id, suite} = triggerConfig
+
+  const normalizedId = normalizePublicId(id)
   if (!normalizedId) {
     throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)
   }
 
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  testOverrides = replaceConfigWithTestOverrides(config, testOverrides)
+  const testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
 
-  const testResult = await getTest(api, {id: normalizedId, suite})
+  const testResult = await getTest(api, normalizedId, suite)
   if ('errorMessage' in testResult) {
     summary.testsNotFound.add(normalizedId)
 
@@ -551,7 +580,7 @@ export const getTestsToTrigger = async (
     testsAndConfigsOverride.filter(isMobileTestWithOverride)
   )
 
-  const overriddenTestsToTrigger: TestPayload[] = []
+  const overriddenTestsToTrigger: (TestPayload | FastTest)[] = []
   const waitedTests: Test[] = []
   testsAndConfigsOverride.forEach((item) => {
     if ('errorMessage' in item) {
@@ -560,6 +589,10 @@ export const getTestsToTrigger = async (
 
     if ('overriddenConfig' in item) {
       overriddenTestsToTrigger.push(item.overriddenConfig)
+    }
+
+    if ('isFastTest' in item) {
+      overriddenTestsToTrigger.push(item)
     }
 
     if ('test' in item) {
@@ -618,7 +651,7 @@ export const runTests = async (
     return await api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => t.public_id).join(',')
+    const testIds = tests.map((t) => t.public_id).join(',')
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }

@@ -1,6 +1,6 @@
 {
   "batchTimeout": 240000,
-  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
+  "files": ["{,!(node_modules)/**/}*.synthetics.{json,ts}"],
   "failOnCriticalErrors": true,
   "failOnMissingTests": true
 }

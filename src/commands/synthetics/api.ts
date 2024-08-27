@@ -24,7 +24,6 @@ import {
   MobileAppUploadResult,
   MobileApplicationNewVersionParams,
   FastTestPollResult,
-  FastTestPayload,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -85,8 +84,8 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   return resp.data
 }
 
-const triggerFastTests = (request: (args: AxiosRequestConfig) => AxiosPromise<{fast_check_id: string}>) => async (
-  data: FastTestPayload
+const triggerFastTest = (request: (args: AxiosRequestConfig) => AxiosPromise<{fast_check_id: string}>) => async (
+  data: ServerTest
 ) => {
   const resp = await retryRequest(
     {
@@ -395,7 +394,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     pollFastTestResults: pollFastTestResults(request),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
-    triggerFastTests: triggerFastTests(request),
+    triggerFastTest: triggerFastTest(request),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),

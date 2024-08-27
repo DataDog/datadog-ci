@@ -228,6 +228,7 @@ export interface Step {
   }[]
 }
 
+// TODO: clean this up and only keep what datadog-ci needs
 export interface ServerTest {
   config: {
     assertions: Assertion[]
@@ -240,7 +241,7 @@ export interface ServerTest {
       timeout: number
       url: string
     }
-    steps?: {subtype: string}[]
+    steps?: {subtype: string}[] // For multi-step API tests
     variables: string[]
   }
   created_at: string
@@ -386,27 +387,6 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface FastTestPayload {
-  message: string
-  name: string
-  tags: string[]
-  subtype: string
-  type: string
-  locations: string[]
-  config: {
-    assertions: any[]
-    request: {
-      method: string
-      url: string
-      timeout: number
-    }
-  }
-  options: {
-    tick_every: number
-    httpVersion: string
-  }
-}
-
 export interface TestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
   public_id: string
@@ -425,6 +405,11 @@ export interface TestWithOverride {
   overriddenConfig: TestPayload
 }
 
+export interface FastTest {
+  test: Test
+  isFastTest: boolean // XXX: This is temporary, and will be removed when batches support ephemeral tests.
+}
+
 export interface MobileTestWithOverride extends TestWithOverride {
   test: Test & {
     type: 'mobile'
@@ -438,14 +423,20 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-export interface TriggerConfig {
+export type TriggerConfig = {
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   /** @deprecated This property is deprecated, please use `testOverrides` instead. */
   config?: UserConfigOverride
   testOverrides?: UserConfigOverride
-  id: string
   suite?: string
-}
+} & (
+  | {
+      id: string
+    }
+  | {
+      testDefinition: Test
+    }
+)
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',

@@ -35,11 +35,17 @@ export const getTestConfigs = async (
 
   const testConfigs = suites
     .map((suite) =>
-      suite.content.tests.map((test) => ({
+      suite.content.tests.map<TriggerConfig>((test) => ({
         // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
         testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
-        id: normalizePublicId(test.id) ?? '',
         suite: suite.name,
+        ...('id' in test
+          ? {
+              id: normalizePublicId(test.id) ?? '',
+            }
+          : {
+              testDefinition: test.testDefinition,
+            }),
       }))
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
@@ -50,7 +56,7 @@ export const getTestConfigs = async (
 export const getTestsFromSearchQuery = async (
   api: APIHelper,
   config: Pick<RunTestsCommandConfig, 'defaultTestOverrides' | 'testSearchQuery'>
-): Promise<TriggerConfig[] | []> => {
+): Promise<TriggerConfig[]> => {
   const {defaultTestOverrides, testSearchQuery} = config
 
   // Empty search queries are not allowed.
@@ -69,11 +75,12 @@ export const getTestsFromSearchQuery = async (
 
 export const getTest = async (
   api: APIHelper,
-  {id, suite}: TriggerConfig
+  publicId: string,
+  suite?: string
 ): Promise<{test: Test} | {errorMessage: string}> => {
   try {
     const test = {
-      ...(await api.getTest(id)),
+      ...(await api.getTest(publicId)),
       suite,
     }
 
@@ -82,7 +89,7 @@ export const getTest = async (
     if (isNotFoundError(error)) {
       const errorMessage = formatBackendErrors(error)
 
-      return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
+      return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
