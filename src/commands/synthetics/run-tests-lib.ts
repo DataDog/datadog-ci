@@ -172,7 +172,8 @@ export const executeTests = async (
       fastCheckIds.push(fastCheckId)
       reporter.log(`Fast test triggered: ${fastCheckId}\n`)
     } catch (error) {
-      throw new CriticalError('TRIGGER_TESTS_FAILED', formatBackendErrors(error))
+      reporter.error(`Failed to trigger fast test: ${formatBackendErrors(error)}\n`)
+      continue
     }
   }
 
