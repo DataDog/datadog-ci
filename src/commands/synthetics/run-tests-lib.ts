@@ -8,6 +8,7 @@ import {
 } from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
+  EphemeralTriggerConfig,
   FastTest,
   MainReporter,
   Reporter,
@@ -144,8 +145,8 @@ export const executeTests = async (
     }
   }
 
-  const testsToTriggerInBatch = overriddenTestsToTrigger.filter((t) => 'public_id' in t)
-  const fastTestsToTrigger = overriddenTestsToTrigger.filter((t) => 'isFastTest' in t)
+  const testsToTriggerInBatch = overriddenTestsToTrigger.filter((t): t is TestPayload => 'public_id' in t)
+  const fastTestsToTrigger = overriddenTestsToTrigger.filter((t): t is FastTest => 'isFastTest' in t)
 
   let trigger: Trigger | undefined
   if (testsToTriggerInBatch.length > 0) {
@@ -245,7 +246,7 @@ export const getTriggerConfigs = async (
   const testIdsToTrigger =
     [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
-  const fastTestsToTrigger = testsFromTestConfigs.filter((t) => 'testDefinition' in t)
+  const fastTestsToTrigger = testsFromTestConfigs.filter((t): t is EphemeralTriggerConfig => 'testDefinition' in t)
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map<TriggerConfig>((id) => {
@@ -272,7 +273,7 @@ export const getTriggerConfigs = async (
     }
   })
 
-  const fastTestTriggerConfigs = fastTestsToTrigger.map<TriggerConfig>((testFromTestConfigs) => ({
+  const fastTestTriggerConfigs = fastTestsToTrigger.map<EphemeralTriggerConfig>((testFromTestConfigs) => ({
     ...testFromTestConfigs,
     testDefinition: testFromTestConfigs.testDefinition,
   }))

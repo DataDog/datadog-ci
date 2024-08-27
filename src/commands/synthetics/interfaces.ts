@@ -423,20 +423,19 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-export type TriggerConfig = {
+
+type BaseTriggerConfig = {
+  id: string
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   /** @deprecated This property is deprecated, please use `testOverrides` instead. */
   config?: UserConfigOverride
   testOverrides?: UserConfigOverride
   suite?: string
-} & (
-  | {
-      id: string
-    }
-  | {
-      testDefinition: Test
-    }
-)
+}
+export type EphemeralTriggerConfig = Omit<BaseTriggerConfig, 'id'> & {
+  testDefinition: Test
+}
+export type TriggerConfig = BaseTriggerConfig | EphemeralTriggerConfig
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',

@@ -35,18 +35,23 @@ export const getTestConfigs = async (
 
   const testConfigs = suites
     .map((suite) =>
-      suite.content.tests.map<TriggerConfig>((test) => ({
-        // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-        testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
-        suite: suite.name,
-        ...('id' in test
-          ? {
-              id: normalizePublicId(test.id) ?? '',
-            }
-          : {
-              testDefinition: test.testDefinition,
-            }),
-      }))
+      suite.content.tests.map<TriggerConfig>((test) => {
+        const testOverrides = replaceConfigWithTestOverrides(test.config, test.testOverrides)
+
+        if ('id' in test) {
+          return {
+            id: normalizePublicId(test.id) ?? '',
+            testOverrides,
+            suite: suite.name,
+          }
+        }
+
+        return {
+          testDefinition: test.testDefinition,
+          testOverrides,
+          suite: suite.name,
+        }
+      })
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
