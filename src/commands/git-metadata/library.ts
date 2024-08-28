@@ -1,15 +1,10 @@
 import {SimpleGit} from 'simple-git'
 
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
-import {version} from '../../helpers/version'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
-import {CommitInfo} from './interfaces'
 
 export const isGitRepo = async (): Promise<boolean> => {
   try {
@@ -47,10 +42,7 @@ export const uploadGitCommitHash = async (
   const simpleGit = await newSimpleGit()
   const payload = await getCommitInfo(simpleGit, repositoryURL)
 
-  return Promise.all([
-    syncGitDB(simpleGit, apiKey, datadogSite, payload.remote),
-    uploadToSrcmapTrack(apiKey, datadogSite, payload),
-  ]).then(() => [payload.remote, payload.hash])
+  return syncGitDB(simpleGit, apiKey, datadogSite, payload.remote).then(() => [payload.remote, payload.hash])
 }
 
 const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: string, repositoryURL: string) => {
@@ -63,52 +55,4 @@ const syncGitDB = async (simpleGit: SimpleGit, apiKey: string, datadogSite: stri
   })
 
   await uploadToGitDB(log, requestBuilder, simpleGit, false, repositoryURL)
-}
-
-// uploadToSrcmapTrack uploads the payload with tracked files to the sourcemap intake
-// this will be deprecated in the future, as we're transitioning to GitDB
-const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload: CommitInfo) => {
-  const apiKeyValidator = newApiKeyValidator({
-    apiKey,
-    datadogSite,
-  })
-  const requestBuilder = getRequestBuilder({
-    apiKey,
-    baseUrl: 'https://sourcemap-intake.' + datadogSite,
-    headers: new Map([
-      ['DD-EVP-ORIGIN', 'datadog-ci_sci'],
-      ['DD-EVP-ORIGIN-VERSION', version],
-    ]),
-    overrideUrl: 'api/v2/srcmap',
-  })
-
-  const status = await uploadRepository(requestBuilder, version)(payload, {
-    apiKeyValidator,
-    onError: (e) => {
-      throw e
-    },
-    onRetry: () => {
-      // Do nothing
-    },
-    onUpload: () => {
-      return
-    },
-    retries: 5,
-  })
-
-  if (status !== UploadStatus.Success) {
-    throw new Error('Error uploading commit information.')
-  }
-}
-
-export const uploadRepository = (
-  requestBuilder: RequestBuilder,
-  libraryVersion: string
-): ((commitInfo: CommitInfo, opts: UploadOptions) => Promise<UploadStatus>) => async (
-  commitInfo: CommitInfo,
-  opts: UploadOptions
-) => {
-  const payload = commitInfo.asMultipartPayload(libraryVersion)
-
-  return upload(requestBuilder)(payload, opts)
 }

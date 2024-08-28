@@ -2,7 +2,7 @@ import chalk from 'chalk'
 
 import {ICONS} from '../../helpers/formatting'
 
-import {CommitInfo} from './interfaces'
+import {CommitInfo} from './git'
 
 export const renderConfigurationError = (error: Error) => `${ICONS.FAILED} Configuration error: ${error}.`
 

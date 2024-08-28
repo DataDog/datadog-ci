@@ -1,29 +1,18 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {InvalidConfigurationError} from '../../helpers/errors'
-import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
-import {UploadStatus} from '../../helpers/upload'
+import {getMetricsLogger} from '../../helpers/metrics'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {version} from '../../helpers/version'
 
-import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
-import {getCommitInfo, newSimpleGit} from './git'
+import {apiHost, datadogSite} from './api'
+import {newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
-import {CommitInfo} from './interfaces'
-import {uploadRepository} from './library'
-import {
-  renderCommandInfo,
-  renderConfigurationError,
-  renderDryRunWarning,
-  renderFailedUpload,
-  renderRetriedUpload,
-  renderSuccessfulCommand,
-} from './renderer'
+import {renderConfigurationError, renderDryRunWarning, renderSuccessfulCommand} from './renderer'
 
 export class UploadCommand extends Command {
   public static paths = [['git-metadata', 'upload']]
@@ -35,9 +24,9 @@ export class UploadCommand extends Command {
       This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
       See README for details.
 
-      Option --git-sync is DEPRECATED and will be removed in a future version.
+      Options --git-sync and --no-gitsync are DEPRECATED and will be removed in a future version.
     `,
-    examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
+    examples: [['Upload the current commit details', 'datadog-ci git-metadata upload']],
   })
 
   private repositoryURL = Option.String('--repository-url')
@@ -85,6 +74,11 @@ export class UploadCommand extends Command {
     if (this.gitSync) {
       this.logger.warn('Option --git-sync is deprecated as it is now the default behavior')
     }
+    if (this.noGitSync) {
+      this.logger.warn('Option --no-gitsync is deprecated. This command run was a no-op.')
+
+      return 0
+    }
 
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
@@ -99,23 +93,8 @@ export class UploadCommand extends Command {
     })
 
     const apiRequestBuilder = this.getApiRequestBuilder(this.config.apiKey)
-    const srcmapRequestBuilder = this.getSrcmapRequestBuilder(this.config.apiKey)
 
     let inError = false
-    try {
-      this.logger.info('Uploading list of tracked files...')
-      const elapsed = await timedExecAsync(this.uploadToSrcmapTrack.bind(this), {
-        requestBuilder: srcmapRequestBuilder,
-        apiKeyValidator,
-        metricsLogger,
-      })
-      metricsLogger.logger.increment('sci.success', 1)
-      this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully uploaded tracked files in ${elapsed} seconds.`)
-    } catch (err) {
-      this.logger.error(`Failed upload of tracked files: ${err}`)
-      inError = true
-    }
-
     if (!this.noGitSync) {
       try {
         this.logger.info('Syncing GitDB...')
@@ -125,7 +104,8 @@ export class UploadCommand extends Command {
         metricsLogger.logger.increment('gitdb.success', 1)
         this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Successfully synced git DB in ${elapsed} seconds.`)
       } catch (err) {
-        this.logger.warn(`Could not write to GitDB: ${err}`)
+        this.logger.error(`Could not write to GitDB: ${err}`)
+        inError = true
       }
     }
 
@@ -146,66 +126,6 @@ export class UploadCommand extends Command {
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
     await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.repositoryURL)
-  }
-
-  private async uploadToSrcmapTrack(opts: {
-    requestBuilder: RequestBuilder
-    apiKeyValidator: ApiKeyValidator
-    metricsLogger: MetricsLogger
-  }) {
-    const generatePayload = async () => {
-      try {
-        return await getCommitInfo(await newSimpleGit(), this.repositoryURL)
-      } catch (e) {
-        if (e instanceof Error) {
-          this.logger.error(renderFailedUpload(e.message))
-        }
-        throw e
-      }
-    }
-
-    const sendPayload = async (commit: CommitInfo) => {
-      let status
-      if (this.dryRun) {
-        status = UploadStatus.Success
-      } else {
-        status = await uploadRepository(opts.requestBuilder, this.cliVersion)(commit, {
-          apiKeyValidator: opts.apiKeyValidator,
-          onError: (e) => {
-            this.logger.error(renderFailedUpload(e.message))
-            opts.metricsLogger.logger.increment('sci.failed', 1)
-          },
-          onRetry: (e, attempt) => {
-            this.logger.warn(renderRetriedUpload(e.message, attempt))
-            opts.metricsLogger.logger.increment('sci.retries', 1)
-          },
-          onUpload: () => {
-            return
-          },
-          retries: 5,
-        })
-      }
-      if (status !== UploadStatus.Success) {
-        this.logger.error(`${ICONS.FAILED} Error uploading commit information.`)
-        throw new Error('Could not upload commit information')
-      }
-    }
-
-    const payload = await generatePayload()
-    this.logger.info(renderCommandInfo(payload))
-    await sendPayload(payload)
-  }
-
-  private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
-    return getRequestBuilder({
-      apiKey,
-      baseUrl: getBaseIntakeUrl(),
-      headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
-        ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
-      ]),
-      overrideUrl: 'api/v2/srcmap',
-    })
   }
 
   private getApiRequestBuilder(apiKey: string): RequestBuilder {

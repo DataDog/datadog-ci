@@ -4,7 +4,17 @@ import * as simpleGit from 'simple-git'
 
 import {gitRemote} from '../../helpers/git/get-git-data'
 
-import {CommitInfo} from './interfaces'
+export class CommitInfo {
+  public hash: string
+  public remote: string
+  public trackedFiles: string[]
+
+  constructor(hash: string, remote: string, trackedFiles: string[]) {
+    this.hash = hash
+    this.remote = remote
+    this.trackedFiles = trackedFiles
+  }
+}
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
