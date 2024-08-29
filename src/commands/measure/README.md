@@ -26,6 +26,7 @@ datadog-ci measure --level job --measures binary.size:1024
     "another_measure": 123
   }
   ```
+  The JSON should be flat (without nested objects or arrays) and the values should be numbers.
   If a measure is present in both the `--measures` and the `--measures-file` command line arguments, the value from the `--measures` argument takes precedence.
 
 ### Environment variables
