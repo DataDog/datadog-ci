@@ -212,7 +212,7 @@ export const renderEphemeralResult = (test: Test, execution: Result, baseUrl: st
   const testLabel = `${executionRuleText}${chalk.bold(test.name)}`
 
   const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
-  const resultIdentification = `${icon}${testLabel}${resultIdentificationSuffix}`
+  const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
 
   const outputLines = [resultIdentification]
 
