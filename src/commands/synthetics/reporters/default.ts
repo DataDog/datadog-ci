@@ -468,7 +468,7 @@ export class DefaultReporter implements MainReporter {
       testsList.push('…')
     }
 
-    const testsDisplay = batchId === 'no-batch' ? '' : chalk.gray(` (${testsList.join(', ')})`)
+    const testsDisplay = batchId === 'no-batch' ? '' : ` ${chalk.gray(`(${testsList.join(', ')})`)}`
     const testCountText = pluralize('test', tests.length)
     const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
 
