@@ -1,4 +1,4 @@
-import {APIHelper} from '../api'
+import {APIHelper, getApiHelper} from '../api'
 import {
   BaseResult,
   BasicAuthCredentials,
@@ -10,6 +10,7 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  SyntheticsCIConfig,
   Test,
   TestNotFound,
   TestSkipped,
@@ -353,4 +354,15 @@ export const waitForFastTestResult = async (
   }
 
   throw new Error('Timed out waiting for fast test result')
+}
+
+export const fetchApiOrBrowserTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
+  const apiHelper = getApiHelper(config)
+
+  const test = await apiHelper.getTest(publicId)
+  if (test.type === 'browser') {
+    return apiHelper.getBrowserTest(publicId)
+  }
+
+  return test
 }

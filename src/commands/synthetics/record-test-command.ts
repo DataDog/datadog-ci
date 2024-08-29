@@ -8,11 +8,10 @@ import open from 'open'
 import {getCommonAppBaseURL} from '../../helpers/app'
 import * as validation from '../../helpers/validation'
 
-import {getApiHelper} from './api'
 import {EphemeralTriggerConfig, Test} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
-import {getTriggerConfigs} from './run-tests-lib'
+import {getTestConfigs} from './test'
 import {getReporter} from './utils/public'
 
 // XXX: we may want to rename this command to `edit-test`, so that it can also be used for API tests
@@ -44,18 +43,15 @@ export class RecordTestCommand extends Command {
   public async execute() {
     console.log('Recording a new Synthetic browser test on Datadog...\n')
 
-    const apiKey = process.env.DD_API_KEY ?? process.env.DATADOG_API_KEY ?? ''
-    const appKey = process.env.DD_APP_KEY ?? process.env.DATADOG_APP_KEY ?? ''
     const datadogSite = this.datadogSite ?? 'datadoghq.com'
-    const api = getApiHelper({apiKey, appKey, datadogSite, proxy: {protocol: 'http'}})
 
     const reporter = getReporter([new DefaultReporter(this)])
     const config = {...DEFAULT_COMMAND_CONFIG, files: this.files ?? []}
 
-    const triggerConfigs = await getTriggerConfigs(api, config, reporter)
+    const testConfigs = await getTestConfigs(config, reporter)
 
     // XXX: should we allow the user to edit non-ephemeral tests?
-    const ephemeralTests = triggerConfigs.filter((t): t is EphemeralTriggerConfig => 'testDefinition' in t)
+    const ephemeralTests = testConfigs.filter((t): t is EphemeralTriggerConfig => 'testDefinition' in t)
 
     const answers = await inquirer.prompt<inquirer.Answers>([
       {

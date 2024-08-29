@@ -113,6 +113,18 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>
   return resp.data
 }
 
+const getBrowserTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string) => {
+  const resp = await retryRequest(
+    {
+      url: `/synthetics/tests/browser/${testId}`,
+    },
+    request,
+    {retryOn429: true}
+  )
+
+  return resp.data
+}
+
 const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (
   query: string
 ) => {
@@ -388,6 +400,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getBatch: getBatch(request),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(request),
+    getBrowserTest: getBrowserTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
