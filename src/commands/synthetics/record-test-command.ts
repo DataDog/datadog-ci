@@ -81,18 +81,25 @@ export class RecordTestCommand extends Command {
 
     const {server, port} = await startServer(this.port)
 
-    const params = new URLSearchParams({port: port.toString()})
+    const params = new URLSearchParams()
     if (shouldCreateNew && this.startUrl) {
       params.append('startUrl', formatUrl(this.startUrl))
+    } else if (!shouldCreateNew) {
+      params.append('port', port.toString())
     }
 
     const baseUrl = getCommonAppBaseURL(datadogSite, this.subdomain)
-    const quickRecorderLink = `${baseUrl}synthetics/browser/quick-recorder?${params.toString()}`
+
+    const queryString = params.toString()
+    const quickRecorderLink = `${baseUrl}synthetics/browser/quick-recorder${queryString ? `?${queryString}` : ''}`
 
     console.log('Opening the quick recorder in your browser:', quickRecorderLink)
     await open(quickRecorderLink)
 
-    if (!shouldCreateNew) {
+    if (shouldCreateNew) {
+      server.close()
+      console.log()
+    } else {
       const selectedTriggerConfig = answers.testToEdit as EphemeralTriggerConfig
       console.log(`Serving the selected test on port ${port}...\n`)
       await serveSelectedTest(server, selectedTriggerConfig.testDefinition)
