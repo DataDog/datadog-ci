@@ -1,0 +1,118 @@
+[
+  {
+    "resourceName": "view-traces-on-dashboard-http-status-code-to-http-status-code",
+    "testDefinition": {
+      "name": "View Traces on Dashboard: 'http.status_code' to '@http.status_code'",
+      "type": "browser",
+      "message": "Some message",
+      "config": {
+        "request": {
+          "method": "GET",
+          "url": "https://synthetics-ci.datadoghq.com/apm/home"
+        },
+        "assertions": []
+      },
+      "locations": [
+        "aws:eu-central-1"
+      ],
+      "options": {
+        "device_ids": [
+          "chrome.laptop_large"
+        ],
+        "tick_every": 60
+      },
+      "steps": [
+        {
+          "name": "[ci][standard] Connect as standard user.",
+          "type": "playSubTest",
+          "params": {
+            "playingTabId": -1,
+            "subtestPublicId": "nib-vri-fy7"
+          }
+        },
+        {
+          "name": "Test that the attribute is in the header",
+          "type": "assertElementContent",
+          "params": {
+            "check": "contains",
+            "value": "@http.status_code",
+            "element": {
+              "targetOuterHTML": "<code class=\"druids_typography_code__code druids_typography_code__code--is-string\">env:staging AND service:synthtracer AND resource_name:inverse AND @http.status_code:200 operation_name:synthtracer</c",
+              "multiLocator": {
+                "ab": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"a\"][1]",
+                "at": "/descendant::*[@href=\"/assert-download-file\"]",
+                "cl": "/*[local-name()=\"html\"]/*[local-name()=\"body\"]/*[local-name()=\"a\"][1]",
+                "co": "[{\"text\":\"self-download\",\"textType\":\"directText\"}]",
+                "ro": "//*[text()[normalize-space(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')) = \"self-download\"]]",
+                "clt": "/descendant::*[text()[normalize-space(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')) = \"self-download\"]]"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "testOverrides": {},
+    "suite": ".github/workflows/e2e/tests.synthetics.ts"
+  },
+  {
+    "resourceName": "home-to-app-analytics",
+    "testDefinition": {
+      "name": "Home to App Analytics",
+      "type": "browser",
+      "message": "Some message",
+      "config": {
+        "request": {
+          "method": "GET",
+          "url": "https://synthetics-ci.datadoghq.com/apm/home"
+        },
+        "assertions": []
+      },
+      "locations": [
+        "aws:eu-central-1"
+      ],
+      "options": {
+        "device_ids": [
+          "chrome.laptop_large"
+        ],
+        "tick_every": 60
+      },
+      "steps": [
+        {
+          "name": "[ci][standard] Connect as standard user.",
+          "type": "playSubTest",
+          "params": {
+            "playingTabId": -1,
+            "subtestPublicId": "nib-vri-fy7"
+          }
+        },
+        {
+          "type": "click",
+          "name": "Click on link \"Traces\"",
+          "params": {
+            "element": {
+              "targetOuterHTML": "<span class=\"druids_layout_flex-item\">Traces</span>",
+              "multiLocator": {
+                "ab": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"a\"][1]",
+                "at": "/descendant::*[@href=\"/assert-download-file\"]",
+                "cl": "/*[local-name()=\"html\"]/*[local-name()=\"body\"]/*[local-name()=\"a\"][1]",
+                "co": "[{\"text\":\"self-download\",\"textType\":\"directText\"}]",
+                "ro": "//*[text()[normalize-space(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')) = \"self-download\"]]",
+                "clt": "/descendant::*[text()[normalize-space(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')) = \"self-download\"]]"
+              }
+            }
+          }
+        },
+        {
+          "type": "assertCurrentUrl",
+          "name": "Should navigate to the Traces page",
+          "params": {
+            "check": "contains",
+            "value": "{{ BASE_URL_WITHOUT_SUBDOMAIN }}/apm/traces"
+          }
+        }
+      ]
+    },
+    "testOverrides": {},
+    "suite": ".github/workflows/e2e/tests.synthetics.ts"
+  }
+]

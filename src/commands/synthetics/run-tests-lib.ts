@@ -1,3 +1,5 @@
+import {writeFile} from 'fs/promises'
+
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, formatBackendErrors, getApiHelper, isForbiddenError} from './api'
@@ -9,6 +11,7 @@ import {
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   EphemeralTriggerConfig,
+  ExecutionRule,
   FastTest,
   MainReporter,
   Reporter,
@@ -23,7 +26,7 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
-import {DefaultReporter, getTunnelReporter} from './reporters/default'
+import {DefaultReporter, getTunnelReporter, renderEphemeralResult} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
@@ -40,6 +43,7 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
+  getAppBaseURL,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -162,15 +166,14 @@ export const executeTests = async (
     reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
   }
 
-  const fastCheckIds: string[] = []
+  const fastChecks: Record<string, Test> = {}
   for (const fastTest of fastTestsToTrigger) {
     try {
       const fastCheckId = await api.triggerFastTest({
         ...fastTest.test,
         type: `fast-${fastTest.test.type}`,
       })
-      fastCheckIds.push(fastCheckId)
-      reporter.log(`Fast test triggered: ${fastCheckId}\n`)
+      fastChecks[fastCheckId] = fastTest.test
     } catch (error) {
       reporter.error(`Failed to trigger fast test: ${formatBackendErrors(error)}\n`)
       continue
@@ -197,15 +200,42 @@ export const executeTests = async (
         )
       : []
 
-    const fastTestResults = await Promise.all(
-      fastCheckIds.map((fastCheckId) => waitForFastTestResult(api, fastCheckId))
-    )
-
-    if (fastTestResults.length > 0) {
-      for (const fastTestResult of fastTestResults) {
-        reporter.log(`Fast test result: ${JSON.stringify(fastTestResult)}\n\n`)
-      }
+    const baseUrl = getAppBaseURL(config)
+    if (!testsToTriggerInBatch.length) {
+      reporter.testsWait(Object.values(fastChecks), baseUrl, 'no-batch')
     }
+
+    await Promise.all(
+      Object.keys(fastChecks).map(async (fastCheckId) => {
+        const pollResult = await waitForFastTestResult(api, fastCheckId)
+
+        if (pollResult.result.passed) {
+          initialSummary.passed += 1
+        } else if (pollResult.result.unhealthy) {
+          initialSummary.criticalErrors += 1
+        } else if (pollResult.result.failure) {
+          initialSummary.failed += 1
+        }
+
+        const test = fastChecks[fastCheckId]
+
+        const result: Result = {
+          executionRule: ExecutionRule.BLOCKING,
+          location: 'Frankfurt (AWS)', // XXX: we don't have the location yet
+          passed: pollResult.result.passed,
+          result: pollResult.result,
+          test,
+          resultId: pollResult.checkId, // XXX: change this
+          timestamp: pollResult.timestamp,
+          retries: 0,
+          timedOut: false,
+        }
+
+        await writeFile(`./result-${fastCheckId}.json`, JSON.stringify(pollResult, undefined, 2))
+
+        reporter.log(renderEphemeralResult(test, result, baseUrl, 'no-batch') + '\n\n')
+      })
+    )
 
     return {
       results,

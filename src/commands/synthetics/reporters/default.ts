@@ -199,6 +199,51 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
+export const renderEphemeralResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
+  const {executionRule, test: overriddenTest, timedOut} = execution
+
+  const resultOutcome = getResultOutcome(execution)
+  const [icon, setColor] = getResultIconAndColor(resultOutcome)
+
+  const executionRuleText = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
+    ? ''
+    : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
+
+  const testLabel = `${executionRuleText}${chalk.bold(test.name)}`
+
+  const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
+  const resultIdentification = `${icon}${testLabel}${resultIdentificationSuffix}`
+
+  const outputLines = [resultIdentification]
+
+  // Unhealthy test results don't have a duration or result URL
+  if (hasResult(execution) && !execution.result.unhealthy) {
+    const duration = getResultDuration(execution.result)
+    const durationText = duration ? ` Total duration: ${duration} ms -` : ''
+
+    const resultUrl = `${baseUrl}/synthetics/result` // getResultUrl(baseUrl, test, resultId, batchId)
+    const resultUrlStatus = timedOut ? '(not yet received)' : ''
+
+    outputLines.push(`  •${durationText} View test run details:`)
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`)
+  }
+
+  if (isResultSkippedBySelectiveRerun(execution)) {
+    const resultUrl = `${baseUrl}/synthetics/result` // getResultUrl(baseUrl, test, resultId, batchId)
+
+    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)
+  } else {
+    const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
+
+    if (resultOutcomeText) {
+      outputLines.push(resultOutcomeText)
+    }
+  }
+
+  return outputLines.join('\n')
+}
+
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
   const {executionRule, test: overriddenTest, resultId, timedOut} = execution
   const resultOutcome = getResultOutcome(execution)
@@ -423,13 +468,13 @@ export class DefaultReporter implements MainReporter {
       testsList.push('…')
     }
 
-    const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+    const testsDisplay = batchId === 'no-batch' ? '' : chalk.gray(` (${testsList.join(', ')})`)
     const testCountText = pluralize('test', tests.length)
     const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
 
     const text =
       tests.length > 0
-        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText}${testsDisplay}…\n`
         : 'Waiting for the batch to end…\n'
 
     if (this.testWaitSpinner) {

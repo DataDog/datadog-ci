@@ -339,7 +339,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
 export const waitForFastTestResult = async (
   api: APIHelper,
   fastTestId: string,
-  timeout = 60000
+  timeout = 600000
 ): Promise<FastTestPollResult> => {
   const startTime = Date.now()
 
