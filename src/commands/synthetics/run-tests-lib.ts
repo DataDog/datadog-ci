@@ -225,7 +225,7 @@ export const executeTests = async (
           passed: pollResult.result.passed,
           result: pollResult.result,
           test,
-          resultId: pollResult.checkId, // XXX: change this
+          resultId: pollResult.result.initialResultID ?? '',
           timestamp: pollResult.timestamp,
           retries: 0,
           timedOut: false,

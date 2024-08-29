@@ -200,7 +200,7 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 export const renderEphemeralResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
-  const {executionRule, test: overriddenTest, timedOut} = execution
+  const {executionRule, test: overriddenTest, resultId, timedOut} = execution
 
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
@@ -221,7 +221,7 @@ export const renderEphemeralResult = (test: Test, execution: Result, baseUrl: st
     const duration = getResultDuration(execution.result)
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
-    const resultUrl = `${baseUrl}/synthetics/result` // getResultUrl(baseUrl, test, resultId, batchId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
     const resultUrlStatus = timedOut ? '(not yet received)' : ''
 
     outputLines.push(`  •${durationText} View test run details:`)
@@ -229,7 +229,7 @@ export const renderEphemeralResult = (test: Test, execution: Result, baseUrl: st
   }
 
   if (isResultSkippedBySelectiveRerun(execution)) {
-    const resultUrl = `${baseUrl}/synthetics/result` // getResultUrl(baseUrl, test, resultId, batchId)
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
 
     outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
     outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)

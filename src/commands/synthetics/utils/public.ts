@@ -724,8 +724,16 @@ export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
 export const getResultUrl = (baseUrl: string, test: Test, resultId: string, batchId: string) => {
-  const ciQueryParam = `batch_id=${batchId}&from_ci=true`
+  if (batchId === 'no-batch') {
+    if (test.type === 'browser') {
+      return `${baseUrl}synthetics/details/result/${resultId}`
+    }
+
+    return `${baseUrl}synthetics/explorer`
+  }
+
   const testDetailUrl = `${baseUrl}synthetics/details/${test.public_id}`
+  const ciQueryParam = `batch_id=${batchId}&from_ci=true`
   if (test.type === 'browser') {
     return `${testDetailUrl}/result/${resultId}?${ciQueryParam}`
   }

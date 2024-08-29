@@ -27,6 +27,7 @@ export interface BaseServerResult {
   }
   passed: boolean
   unhealthy?: boolean
+  initialResultID?: string
 }
 
 export interface Device {

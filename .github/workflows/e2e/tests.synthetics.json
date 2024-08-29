@@ -23,7 +23,7 @@
         "subtype": "http",
         "message": "",
         "tags": [],
-        "locations": ["aws:eu-west-3"],
+        "locations": ["aws:eu-central-1"],
         "config": {
           "assertions": [],
           "request": {
