@@ -3,6 +3,8 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {MeasureCommand, parseMeasures} from '../measure'
 
+const fixturesPath = './src/commands/measure/__tests__/fixtures'
+
 const makeCLI = () => {
   const cli = new Cli()
   cli.register(MeasureCommand)
@@ -54,7 +56,7 @@ describe('parse measures', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (level: string, measures: string[], env: Record<string, string>) => {
+  const runCLI = async (level: string, measures: string[], env: Record<string, string>, extraArgs: string[] = []) => {
     const cli = makeCLI()
     const context = createMockContext() as any
     process.env = {
@@ -68,7 +70,7 @@ describe('execute', () => {
       measuresList.push(t)
     })
 
-    const code = await cli.run(['measure', '--level', level, ...measuresList], context)
+    const code = await cli.run(['measure', '--level', level, ...extraArgs, ...measuresList], context)
 
     return {context, code}
   }
@@ -82,7 +84,24 @@ describe('execute', () => {
   test('should fail if no measures provided', async () => {
     const {context, code} = await runCLI('pipeline', [], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
     expect(code).toBe(1)
-    expect(context.stderr.toString()).toContain('--measures is required')
+    expect(context.stderr.toString()).toContain('[ERROR] --measures or --measures-file is required')
+  })
+
+  test('should fail if measure file is provided but there are no measures', async () => {
+    const {context, code} = await runCLI('pipeline', [], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'}, [
+      '--measures-file',
+      `${fixturesPath}/empty.json`,
+    ])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('No measures found')
+  })
+
+  test('should fail if measure file is provided but it is invalid', async () => {
+    const {code} = await runCLI('pipeline', [], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'}, [
+      '--measures-file',
+      `${fixturesPath}/invalid.json`,
+    ])
+    expect(code).toBe(1)
   })
 
   test('should fail if not running in a supported provider', async () => {

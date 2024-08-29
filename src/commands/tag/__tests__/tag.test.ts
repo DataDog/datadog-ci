@@ -2,6 +2,8 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {TagCommand} from '../tag'
 
+const fixturesPath = './src/commands/tag/__tests__/fixtures'
+
 const makeCLI = () => {
   const cli = new Cli()
   cli.register(TagCommand)
@@ -59,8 +61,21 @@ describe('execute', () => {
     const {context, code} = await runCLI('pipeline', [], {})
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
-      'DD_TAGS environment variable or --tags command line argument is required'
+      '[ERROR] DD_TAGS environment variable, --tags or --tags-file command line argument is required'
     )
+  })
+
+  test('should fail if --tags-file is provided but does not contain any tags', async () => {
+    const {context, code} = await runCLI('pipeline', [], {}, ['--tags-file', `${fixturesPath}/empty.json`])
+    expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain(
+      '[ERROR] DD_TAGS environment variable, --tags or --tags-file command line argument is required'
+    )
+  })
+
+  test('should fail if --tags-file is provided but it is invalid', async () => {
+    const {code} = await runCLI('pipeline', [], {}, ['--tags-file', `${fixturesPath}/invalid.json`])
+    expect(code).toBe(1)
   })
 
   test('should fail if not running in a supported provider', async () => {

@@ -1,9 +1,10 @@
+import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {getCIEnv} from '../../helpers/ci'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export class TagCommand extends Command {
@@ -19,6 +20,7 @@ export class TagCommand extends Command {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
+      ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })
 
@@ -26,6 +28,7 @@ export class TagCommand extends Command {
   private noFail = Option.Boolean('--no-fail')
   private silent = Option.Boolean('--silent')
   private tags = Option.Array('--tags')
+  private tagsFile = Option.String('--tags-file')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -64,14 +67,23 @@ export class TagCommand extends Command {
       }
     }
 
+    const [tagsFromFile, valid] = parseTagsFile(this.context, this.tagsFile)
+    if (!valid) {
+      // we should fail if attempted to read tags from a file and failed
+      return 1
+    }
+
     const tags = {
       ...(this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}),
       ...(this.tags ? parseTags(this.tags) : {}),
+      ...tagsFromFile,
     }
 
     if (Object.keys(tags).length === 0) {
       this.context.stderr.write(
-        `${chalk.red.bold('[ERROR]')} DD_TAGS environment variable or --tags command line argument is required\n`
+        `${chalk.red.bold(
+          '[ERROR]'
+        )} DD_TAGS environment variable, --tags or --tags-file command line argument is required\n`
       )
 
       return 1
@@ -144,11 +156,18 @@ export class TagCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send tags: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }

@@ -20,6 +20,15 @@ datadog-ci measure --level job --measures binary.size:1024
 - `--no-fail` (default: `false`) will prevent the measure command from failing if there are issues submitting the data.
 - `--measures` is an array of key value pairs of the shape `key:value`. This will be the measures added to the pipeline or job span.
   The `value` must be a number
+- `--measures-file` is a path to a file containing the measures to be added to the pipeline or job span. The file should be a JSON file with the following structure:
+  ```json
+  {
+    "image.size": 5000,
+    "another_measure": 123
+  }
+  ```
+  The JSON should be flat (without nested objects or arrays) and the values should be numbers.
+  If a measure is present in both the `--measures` and the `--measures-file` command line arguments, the value from the `--measures` argument takes precedence.
 
 ### Environment variables
 
