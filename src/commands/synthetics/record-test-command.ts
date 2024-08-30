@@ -69,7 +69,7 @@ export class RecordTestCommand extends Command {
         type: 'list',
         when: (current) => current.createOrEdit === 'edit',
         choices: ephemeralTests.map((t) => ({
-          name: t.testDefinition.name,
+          name: `[${chalk.dim(t.testDefinition.type)}] ${t.testDefinition.name}`,
           value: t,
         })),
       },
