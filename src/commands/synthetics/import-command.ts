@@ -85,7 +85,7 @@ export class ImportCommand extends Command {
 
     if (testsFoundInCodebase.length > 0) {
       const testListStr = testsFoundInCodebase
-        .map((t) => `- [${chalk.bold.dim(t.public_id)}] ${chalk.bold.cyan(t.name)}`)
+        .map((t) => `  - [${chalk.bold.dim(t.public_id)}] ${chalk.bold.cyan(t.name)}`)
         .join('\n')
 
       console.log(`The following tests were already listed in your codebase:\n${testListStr}\n`)
@@ -109,8 +109,12 @@ export class ImportCommand extends Command {
         await writeFile(fileName, JSON.stringify(newContent, undefined, 2))
       }
 
+      const fileListStr = testConfigFileNames.map((file) => `  - ${file}`).join('\n')
+
       console.log(
-        `${chalk.green('The corresponding references in existing files were replaced by test definitions.')}\n`
+        `${chalk.green(
+          `The corresponding references were replaced by test definitions in the following files:`
+        )}\n${fileListStr}\n`
       )
     }
 
