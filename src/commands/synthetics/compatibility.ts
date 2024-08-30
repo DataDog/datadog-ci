@@ -104,9 +104,9 @@ export const warnIfDeprecatedConfigUsed = (suites: Suite[], reporter: MainReport
     suite.content.tests.some((test) => Object.keys(test.config ?? {}).length > 0)
   )
   if (isUsingConfig) {
-    reporter.error(
-      "The 'config' property is deprecated. Please use 'testOverrides' instead.\nIf both 'config' and 'testOverrides' properties exist, 'testOverrides' is used!\n"
-    )
+    // reporter.error(
+    //   "The 'config' property is deprecated. Please use 'testOverrides' instead.\nIf both 'config' and 'testOverrides' properties exist, 'testOverrides' is used!\n"
+    // )
   }
 }
 
