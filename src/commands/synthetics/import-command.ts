@@ -151,7 +151,7 @@ export class ImportCommand extends Command {
         const newFileName = answers.newFileName as string
         const content = {tests: testsNotFoundInCodebase.map((t) => ({testDefinition: cleanTest(t)}))}
         await writeFile(newFileName, JSON.stringify(content, undefined, 2))
-        console.log(`\n${chalk.green(`The tests were written in ${chalk.underline(newFileName)}.`)}\n`)
+        console.log(`\n${chalk.green(`The tests were written in ${chalk.underline(newFileName)}`)}\n`)
       } else {
         const existingFileName = answers.existingFileName as string
         const currentContent = JSON.parse(await readFile(existingFileName, 'utf-8')) as Suite['content']
