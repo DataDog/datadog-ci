@@ -99,7 +99,7 @@ export class RecordTestCommand extends Command {
       params.append('port', port.toString())
     }
 
-    const baseUrl = getCommonAppBaseURL(datadogSite, this.subdomain)
+    const baseUrl = getCommonAppBaseURL(datadogSite, subdomain)
 
     const queryString = params.toString()
     const quickRecorderLink = `${baseUrl}synthetics/browser/quick-recorder${queryString ? `?${queryString}` : ''}`
