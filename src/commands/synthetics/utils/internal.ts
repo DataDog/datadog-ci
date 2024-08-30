@@ -1,4 +1,12 @@
+import * as fs from 'fs'
+import {resolve} from 'path'
+import {promisify} from 'util'
+
+import {v1} from '@datadog/datadog-api-client'
+import createJiti from 'jiti'
+
 import {APIHelper, getApiHelper} from '../api'
+import {CriticalError} from '../errors'
 import {
   BaseResult,
   BasicAuthCredentials,
@@ -10,11 +18,13 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  Suite,
   SyntheticsCIConfig,
   Test,
   TestNotFound,
   TestSkipped,
   TestWithOverride,
+  TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
 
@@ -335,6 +345,126 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   )
 
   return parsedOverrides
+}
+
+export const loadTestFileJson = async (path: string, suiteName?: string): Promise<Suite> => {
+  const content = await promisify(fs.readFile)(path, 'utf8')
+
+  const triggerConfigs = JSON.parse(content) as unknown
+  if (
+    !triggerConfigs ||
+    typeof triggerConfigs !== 'object' ||
+    !('tests' in triggerConfigs) ||
+    !Array.isArray(triggerConfigs.tests)
+  ) {
+    throw new Error(`The test file at ${path} does not have a \`tests\` property with an array of test definitions.`)
+  }
+
+  const tests = triggerConfigs.tests as unknown[]
+
+  return {
+    name: suiteName,
+    content: {
+      tests: tests.map((t, i) => {
+        if (!t || typeof t !== 'object') {
+          throw new Error(`Item at index ${i} in the \`tests\` list in ${path} is not an object.`)
+        }
+
+        if (!('testDefinition' in t)) {
+          return t as TriggerConfig
+        }
+
+        return {...t, testDefinition: transformApiSpecToBackend(t.testDefinition)}
+      }),
+    },
+  }
+}
+
+export const loadTestFileModule = async (path: string, suiteName?: string): Promise<Suite> => {
+  try {
+    const cwd = process.cwd()
+    const absolutePath = resolve(cwd, path)
+    const jiti = createJiti(cwd)
+    const data = jiti(absolutePath) as unknown
+
+    if (!data || typeof data !== 'object' || !('default' in data) || typeof data.default !== 'object') {
+      console.error(
+        'Test files defined as JS or TS modules must export one or multiple test definitions with a default export.'
+      )
+      console.error('You may use the `@datadog/datadog-api-client` package to typecheck in your editor.\n')
+
+      throw new CriticalError('INVALID_CONFIG', `The test file module at ${path} is not valid.`)
+    }
+
+    const exported = data.default
+    const testDefinitions = Array.isArray(exported) ? exported : [exported]
+
+    if (testDefinitions.length === 0) {
+      throw new CriticalError(
+        'INVALID_CONFIG',
+        `The test file module at ${path} does not export any test definitions. Did you forget to export?`
+      )
+    }
+
+    return {
+      name: suiteName,
+      content: {
+        tests: testDefinitions.map((testDefinition) => ({testDefinition: transformApiSpecToBackend(testDefinition)})),
+      },
+    }
+  } catch (error) {
+    throw new CriticalError('INVALID_CONFIG', `Failed to load test file module at ${path}: ${error.message}`)
+  }
+}
+
+/**
+ * This function both validates the payload, and transforms it for the backend (e.g. `camelCase` to `snake_case`).
+ */
+export const transformApiSpecToBackend = (testDefinition: unknown): Test => {
+  if (
+    !testDefinition ||
+    typeof testDefinition !== 'object' ||
+    !('type' in testDefinition) ||
+    typeof testDefinition.type !== 'string'
+  ) {
+    throw new Error('The test definition does not have a type property.')
+  }
+
+  // TODO: throw a validation error with the version of the API client that we use in datadog-ci, so that customers can easily check their own API client version
+
+  switch (testDefinition.type) {
+    case 'api':
+      return v1.ObjectSerializer.serialize(testDefinition, 'SyntheticsAPITest', '') as Test
+    case 'browser':
+      return v1.ObjectSerializer.serialize(testDefinition, 'SyntheticsBrowserTest', '') as Test
+    default:
+      throw new Error('The test definition should have a `type: "api"` or `type: "browser"` property.')
+  }
+}
+
+/**
+ * This function both validates the payload, and transforms it for usage by the API clients (e.g. `snake_case` to `camelCase`).
+ */
+export const transformBackendToApiSpec = (testDefinition: unknown): Test => {
+  if (
+    !testDefinition ||
+    typeof testDefinition !== 'object' ||
+    !('type' in testDefinition) ||
+    typeof testDefinition.type !== 'string'
+  ) {
+    throw new Error('The test definition does not have a type property.')
+  }
+
+  // TODO: throw a validation error with the version of the API client that we use in datadog-ci, so that customers can easily check their own API client version
+
+  switch (testDefinition.type) {
+    case 'api':
+      return v1.ObjectSerializer.deserialize(testDefinition, 'SyntheticsAPITest', '') as Test
+    case 'browser':
+      return v1.ObjectSerializer.deserialize(testDefinition, 'SyntheticsBrowserTest', '') as Test
+    default:
+      throw new Error('The test definition should have a `type: "api"` or `type: "browser"` property.')
+  }
 }
 
 export const waitForFastTestResult = async (

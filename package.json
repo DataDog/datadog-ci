@@ -71,6 +71,7 @@
     "@aws-sdk/core": "^3.624.0",
     "@aws-sdk/credential-provider-ini": "^3.624.0",
     "@aws-sdk/credential-providers": "^3.624.0",
+    "@datadog/datadog-api-client": "^1.27.0",
     "@google-cloud/logging": "^11.1.0",
     "@google-cloud/run": "^1.4.0",
     "@smithy/property-provider": "^2.0.12",

@@ -9,7 +9,7 @@ import {Suite, Test} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs} from './test'
-import {fetchApiOrBrowserTest} from './utils/internal'
+import {fetchApiOrBrowserTest, transformBackendToApiSpec} from './utils/internal'
 import {getReporter, normalizePublicId} from './utils/public'
 
 export class ImportCommand extends Command {
@@ -170,6 +170,7 @@ export class ImportCommand extends Command {
 }
 
 const cleanTest = (test: Test) => {
+  // Remove fields that do not make sense for an ephemeral test
   const testCopy = {...test} as Record<string, unknown>
   delete testCopy.public_id
   delete testCopy.created_at
@@ -178,7 +179,7 @@ const cleanTest = (test: Test) => {
   delete testCopy.monitor_id
   delete testCopy.creator
 
-  return testCopy
+  return transformBackendToApiSpec(testCopy)
 }
 
 const extractPublicId = (id: string) => {

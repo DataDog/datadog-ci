@@ -83,6 +83,7 @@ export const executeTests = async (
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
   } catch (error) {
+    // TODO: fix the fact that `INVALID_CONFIG` thrown in `getTriggerConfigs` is transformed into an `UNAVAILABLE_TEST_CONFIG` error
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 

@@ -1,5 +1,3 @@
-import type {v1} from '@datadog/datadog-api-client'
-
 // const connectAsStandardUser: v1.SyntheticsStep = {
 //   name: '[ci][standard] Connect as standard user.',
 //   type: 'playSubTest',
@@ -316,7 +314,8 @@ import type {v1} from '@datadog/datadog-api-client'
 //   ],
 // })
 
-const tests: v1.SyntheticsAPITest[] = []
+/** @type {import('@datadog/datadog-api-client').v1.SyntheticsAPITest[]} */
+const tests = []
 
 tests.push({
   name: 'First ephemeral api test',
@@ -339,4 +338,4 @@ tests.push({
   },
 })
 
-export default tests
+export default ''

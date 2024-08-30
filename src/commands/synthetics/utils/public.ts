@@ -1,12 +1,10 @@
 import {exec} from 'child_process'
-import * as fs from 'fs'
 import * as path from 'path'
 import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
 import glob from 'glob'
-import createJiti from 'jiti'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
@@ -50,7 +48,13 @@ import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} fr
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasResult, isMobileTestWithOverride} from './internal'
+import {
+  getOverriddenExecutionRule,
+  hasResult,
+  isMobileTestWithOverride,
+  loadTestFileJson,
+  loadTestFileModule,
+} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -259,22 +263,10 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
         switch (extension) {
           case '.json':
-            const content = await promisify(fs.readFile)(file, 'utf8')
-
-            return {name: suiteName, content: JSON.parse(content)}
+            return loadTestFileJson(file, suiteName)
           case '.js':
           case '.ts':
-            const absolutePath = path.resolve(process.cwd(), file)
-            const jiti = createJiti(process.cwd())
-            const data = jiti(absolutePath).default
-            const testDefinitions = Array.isArray(data) ? data : [data]
-
-            return {
-              name: suiteName,
-              content: {
-                tests: testDefinitions.map((testDefinition) => ({testDefinition})),
-              },
-            }
+            return loadTestFileModule(file, suiteName)
           default:
             throw new Error(`Unsupported extension for test file ${file}`)
         }
