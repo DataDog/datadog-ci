@@ -35,8 +35,8 @@ export class ImportCommand extends Command {
 
     const apiKey = process.env.DD_API_KEY ?? process.env.DATADOG_API_KEY ?? ''
     const appKey = process.env.DD_APP_KEY ?? process.env.DATADOG_APP_KEY ?? ''
-    const datadogSite = this.datadogSite ?? 'datadoghq.com'
-    const subdomain = this.subdomain ?? 'app'
+    const datadogSite = this.datadogSite ?? process.env.DATADOG_SITE ?? 'datadoghq.com'
+    const subdomain = this.subdomain ?? process.env.DATADOG_SUBDOMAIN ?? 'app'
     const files = this.files ?? []
 
     const reporter = getReporter([new DefaultReporter(this)])

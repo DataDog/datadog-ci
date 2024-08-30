@@ -43,10 +43,21 @@ export class RecordTestCommand extends Command {
   public async execute() {
     console.log('Recording a new Synthetic browser test on Datadog...\n')
 
-    const datadogSite = this.datadogSite ?? 'datadoghq.com'
+    const apiKey = process.env.DD_API_KEY ?? process.env.DATADOG_API_KEY ?? ''
+    const appKey = process.env.DD_APP_KEY ?? process.env.DATADOG_APP_KEY ?? ''
+    const datadogSite = this.datadogSite ?? process.env.DATADOG_SITE ?? 'datadoghq.com'
+    const subdomain = this.subdomain ?? process.env.DATADOG_SUBDOMAIN ?? 'app'
+    const files = this.files ?? []
 
     const reporter = getReporter([new DefaultReporter(this)])
-    const config = {...DEFAULT_COMMAND_CONFIG, files: this.files ?? []}
+    const config = {
+      ...DEFAULT_COMMAND_CONFIG,
+      apiKey,
+      appKey,
+      datadogSite,
+      subdomain,
+      files,
+    }
 
     const testConfigs = await getTestConfigs(config, reporter)
 
