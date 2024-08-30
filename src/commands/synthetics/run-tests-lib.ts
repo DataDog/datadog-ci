@@ -175,7 +175,7 @@ export const executeTests = async (
       })
       fastChecks[fastCheckId] = fastTest.test
     } catch (error) {
-      reporter.error(`Failed to trigger fast test: ${formatBackendErrors(error)}\n`)
+      reporter.error(`Failed to trigger fast test ${fastTest.test.name}: ${formatBackendErrors(error)}\n`)
       continue
     }
   }
