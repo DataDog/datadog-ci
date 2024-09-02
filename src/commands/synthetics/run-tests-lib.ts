@@ -71,7 +71,7 @@ export const executeTests = async (
   config = moveLocationsToTestOverrides(config, reporter, true)
 
   // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  config.batchTimeout = replacePollingTimeoutWithBatchTimeout(config, reporter, true)
+  config = replacePollingTimeoutWithBatchTimeout(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)

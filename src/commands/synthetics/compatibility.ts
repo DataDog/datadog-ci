@@ -76,7 +76,7 @@ export const replacePollingTimeoutWithBatchTimeout = (
   warnDeprecatedPollingTimeout = false,
   batchTimeoutCliParam?: number,
   pollingTimeoutCliParam?: number
-): number | undefined => {
+): RunTestsCommandConfig => {
   // At this point, `global` should already have been moved to `defaultTestOverrides`
   const pollingTimeout = pollingTimeoutCliParam ?? config.defaultTestOverrides?.pollingTimeout ?? config.pollingTimeout
   const isPollingTimeoutUsed = pollingTimeout !== undefined && pollingTimeout !== DEFAULT_POLLING_TIMEOUT
@@ -92,10 +92,24 @@ export const replacePollingTimeoutWithBatchTimeout = (
 
   // If the user hasn't migrated and is still using `pollingTimeout`, use `pollingTimeout`
   if (!isBatchTimeoutUsed && isPollingTimeoutUsed) {
-    return pollingTimeout
+    return {
+      ...config,
+      pollingTimeout,
+      batchTimeout: pollingTimeout,
+    }
   }
 
-  return batchTimeout
+  // If the current call comes from the CLI, keep using both to make the future call by the command show a warning.
+  const calledByCli = !warnDeprecatedPollingTimeout
+  if (calledByCli && isBatchTimeoutUsed && isPollingTimeoutUsed) {
+    return {
+      ...config,
+      batchTimeout,
+      pollingTimeout: batchTimeout,
+    }
+  }
+
+  return config
 }
 
 export const warnIfDeprecatedConfigUsed = (suites: Suite[], reporter: MainReporter): void => {

@@ -129,7 +129,6 @@ describe('run-test', () => {
           headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
           locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-          pollingTimeout: 1,
           resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
             ';'
           ),
@@ -147,7 +146,6 @@ describe('run-test', () => {
         failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
-        pollingTimeout: 1, // also set for backwards compatibility
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
         selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
         subdomain: overrideEnv.DATADOG_SUBDOMAIN,
@@ -202,7 +200,7 @@ describe('run-test', () => {
           locations: ['aws:us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
-          pollingTimeout: 1,
+          pollingTimeout: 3,
           retry: {count: 2, interval: 300},
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
           startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
@@ -398,7 +396,6 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
-          pollingTimeout: 2, // overridden by CLI
           resourceUrlSubstitutionRegexes: [
             's/(https://www.)(.*)/$1extra-$2',
             'https://example.com(.*)|http://subdomain.example.com$1',
@@ -417,9 +414,8 @@ describe('run-test', () => {
         failOnTimeout: false,
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
+        pollingTimeout: 2,
         publicIds: ['ran-dom-id2'],
-        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        pollingTimeout: 2, // also set for backwards compatibility
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -457,7 +453,6 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
-          pollingTimeout: 1, // overridden by CLI
           resourceUrlSubstitutionRegexes: [
             's/(https://www.)(.*)/$1extra-$2',
             'https://example.com(.*)|http://subdomain.example.com$1',
@@ -480,7 +475,7 @@ describe('run-test', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         publicIds: ['ran-dom-id2'],
-        pollingTimeout: 1, // still set to the correct value for backwards compatibility
+        pollingTimeout: 1,
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -496,7 +491,6 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         defaultTestOverrides: {
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           deviceIds: ['dev1', 'dev2'],
         },
       })
@@ -510,7 +504,6 @@ describe('run-test', () => {
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
         defaultTestOverrides: {
-          pollingTimeout: DEFAULT_POLLING_TIMEOUT,
           variables: {var1: 'value1', var2: 'value2'},
         },
       })
@@ -526,7 +519,7 @@ describe('run-test', () => {
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {followRedirects: false},
-        defaultTestOverrides: {followRedirects: false, pollingTimeout: 333},
+        defaultTestOverrides: {followRedirects: false},
         pollingTimeout: 333,
       })
     })
@@ -583,7 +576,6 @@ describe('run-test', () => {
         jUnitReport: 'junit-report-from-config-file.xml',
         // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
         locations: ['location_1_from_config_file', 'location_2_from_config_file'],
-        pollingTimeout: DEFAULT_POLLING_TIMEOUT,
         proxy: {protocol: 'http'},
         publicIds: ['public-id-from-config-file'],
         selectiveRerun: false,
@@ -668,7 +660,6 @@ describe('run-test', () => {
             // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
             locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
             mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-            pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
             resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
               ';'
             ),
@@ -683,6 +674,7 @@ describe('run-test', () => {
 
             // Added to make the test work, should be changed in the future when cleaning up
             mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
+            pollingTimeout: configFile.defaultTestOverrides.pollingTimeout,
           },
           failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
           failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -700,7 +692,7 @@ describe('run-test', () => {
           global: {},
           // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
           locations: configFile.locations,
-          pollingTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+          pollingTimeout: 1,
           proxy: configFile.proxy,
           variableStrings: configFile.variableStrings,
         }
@@ -758,7 +750,6 @@ describe('run-test', () => {
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
           locations: ['cli-loc-1', 'cli-loc-2'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000-cli',
-          pollingTimeout: 12,
           resourceUrlSubstitutionRegexes: [
             'cli-regex',
             's/(https://www.)(.*)/$1extra-$2',
@@ -836,9 +827,9 @@ describe('run-test', () => {
           defaultTestOverrides: {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,
-            pollingTimeout: filteredOverrideCLI.batchTimeout,
+            pollingTimeout: configFile.defaultTestOverrides.pollingTimeout,
           },
-          pollingTimeout: filteredOverrideCLI.batchTimeout,
+          pollingTimeout: 1,
           proxy: configFile.proxy,
           variableStrings: configFile.variableStrings,
         }
@@ -930,7 +921,6 @@ describe('run-test', () => {
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
           locations: ['cli-loc-1', 'cli-loc-2'],
           mobileApplicationVersion: 'cli-00000000-0000-0000-0000-000000000000',
-          pollingTimeout: 12,
           resourceUrlSubstitutionRegexes: [
             'from-cli-regex1',
             's/(https://www.)(.*)/$1extra-$2',
@@ -1010,9 +1000,8 @@ describe('run-test', () => {
           defaultTestOverrides: {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,
-            pollingTimeout: filteredOverrideCLI.batchTimeout,
           },
-          pollingTimeout: filteredOverrideCLI.batchTimeout,
+          pollingTimeout: 1,
           proxy: {protocol: 'http'},
           variableStrings: [],
         }
