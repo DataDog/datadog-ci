@@ -3,7 +3,7 @@ import {
   BaseResult,
   BasicAuthCredentials,
   ExecutionRule,
-  FastTest,
+  EphemeralTest,
   FastTestPollResult,
   MobileTestWithOverride,
   Result,
@@ -72,7 +72,7 @@ export const isResultInBatchSkippedBySelectiveRerun = (
 }
 
 export const isMobileTestWithOverride = (
-  item: TestNotFound | TestSkipped | TestWithOverride | FastTest
+  item: TestNotFound | TestSkipped | TestWithOverride | EphemeralTest
 ): item is MobileTestWithOverride =>
   'test' in item && item.test.type === 'mobile' && !!item.test.options && !!item.test.options.mobileApplication
 

@@ -9,7 +9,7 @@ import {
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
   MultipartPresignedUrlsResponse,
-  TestPayload,
+  BaseTestPayload,
   UploadApplicationCommandConfig,
   MobileApplicationNewVersionParams,
   TriggerConfig,
@@ -181,7 +181,7 @@ export class AppUploadCache {
 }
 
 export const overrideMobileConfig = (
-  overriddenTest: TestPayload,
+  overriddenTest: BaseTestPayload,
   appId: string,
   tempFileName?: string,
   mobileApplicationVersion?: string,

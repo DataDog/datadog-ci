@@ -21,7 +21,6 @@ import {
   APIHelperConfig,
   BrowserServerResult,
   ExecutionRule,
-  FastTest,
   LocationsMapping,
   MainReporter,
   Operator,
@@ -38,12 +37,14 @@ import {
   SyntheticsOrgSettings,
   Test,
   TestNotFound,
-  TestPayload,
+  BaseTestPayload,
   TestSkipped,
+  TestPayload,
   TestWithOverride,
   Trigger,
   TriggerConfig,
   UserConfigOverride,
+  EphemeralTest,
 } from '../interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
@@ -82,8 +83,8 @@ export const getOverriddenConfig = (
   publicId: string,
   reporter: MainReporter,
   testOverrides?: UserConfigOverride
-): TestPayload => {
-  let overriddenConfig: TestPayload = {
+): BaseTestPayload => {
+  let overriddenConfig: BaseTestPayload = {
     public_id: publicId,
   }
 
@@ -475,12 +476,11 @@ export const getTestAndOverrideConfig = async (
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-): Promise<TestNotFound | TestSkipped | TestWithOverride | FastTest> => {
+): Promise<TestNotFound | TestSkipped | TestWithOverride | EphemeralTest> => {
   if ('testDefinition' in triggerConfig) {
-    return {
-      test: triggerConfig.testDefinition,
-      isFastTest: true,
-    }
+    const ephemeralTestConfig = {...triggerConfig.testOverrides, testDefinition: triggerConfig.testDefinition}
+
+    return {overriddenConfig: ephemeralTestConfig}
   }
 
   const {id, suite} = triggerConfig
@@ -581,7 +581,7 @@ export const getTestsToTrigger = async (
     testsAndConfigsOverride.filter(isMobileTestWithOverride)
   )
 
-  const overriddenTestsToTrigger: (TestPayload | FastTest)[] = []
+  const overriddenTestsToTrigger: TestPayload[] = []
   const waitedTests: Test[] = []
   testsAndConfigsOverride.forEach((item) => {
     if ('errorMessage' in item) {
@@ -590,10 +590,6 @@ export const getTestsToTrigger = async (
 
     if ('overriddenConfig' in item) {
       overriddenTestsToTrigger.push(item.overriddenConfig)
-    }
-
-    if ('isFastTest' in item) {
-      overriddenTestsToTrigger.push(item)
     }
 
     if ('test' in item) {
@@ -652,7 +648,7 @@ export const runTests = async (
     return await api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
-    const testIds = tests.map((t) => t.public_id).join(',')
+    const testIds = tests.map((t) => ('public_id' in t ? t.public_id : 'ephemeral test')).join(',')
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }

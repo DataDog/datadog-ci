@@ -7,7 +7,7 @@ import axios, {AxiosError} from 'axios'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
-import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {ExecutionRule, PollResult, ServerResult, BaseTestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as utils from '../utils/public'
 
@@ -65,7 +65,7 @@ describe('dd-api', () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: TRIGGER_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const {triggerTests} = api
-    const tests: TestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
+    const tests: BaseTestPayload[] = [{public_id: TRIGGERED_TEST_ID, executionRule: ExecutionRule.BLOCKING}]
     const {batch_id: batchId} = await triggerTests({tests})
     expect(batchId).toBe(BATCH_ID)
   })

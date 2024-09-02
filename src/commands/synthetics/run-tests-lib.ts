@@ -1,8 +1,6 @@
-import {writeFile} from 'fs/promises'
-
 import {getProxyAgent} from '../../helpers/utils'
 
-import {APIHelper, formatBackendErrors, getApiHelper, isForbiddenError} from './api'
+import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {
   moveLocationsToTestOverrides,
   replaceGlobalWithDefaultTestOverrides,
@@ -11,8 +9,6 @@ import {
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   EphemeralTriggerConfig,
-  ExecutionRule,
-  FastTest,
   MainReporter,
   Reporter,
   Result,
@@ -26,12 +22,11 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
-import {DefaultReporter, getTunnelReporter, renderEphemeralResult} from './reporters/default'
+import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
-import {waitForFastTestResult} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -43,7 +38,6 @@ import {
   getExitReason,
   toExitCode,
   reportExitLogs,
-  getAppBaseURL,
 } from './utils/public'
 
 type ExecuteOptions = {
@@ -92,7 +86,7 @@ export const executeTests = async (
 
   let testsToTriggerResult: {
     initialSummary: InitialSummary
-    overriddenTestsToTrigger: (TestPayload | FastTest)[]
+    overriddenTestsToTrigger: TestPayload[]
     tests: Test[]
   }
 
@@ -117,7 +111,7 @@ export const executeTests = async (
   const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
 
   // All tests have been skipped or are missing.
-  if (!tests.length) {
+  if (!tests.length && !overriddenTestsToTrigger.length) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -149,35 +143,17 @@ export const executeTests = async (
     }
   }
 
-  const testsToTriggerInBatch = overriddenTestsToTrigger.filter((t): t is TestPayload => 'public_id' in t)
-  const fastTestsToTrigger = overriddenTestsToTrigger.filter((t): t is FastTest => 'isFastTest' in t)
 
-  let trigger: Trigger | undefined
-  if (testsToTriggerInBatch.length > 0) {
-    try {
-      trigger = await runTests(api, testsToTriggerInBatch, config.selectiveRerun, config.batchTimeout)
-    } catch (error) {
-      await stopTunnel()
-      throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
-    }
+  let trigger: Trigger
+  try {
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
+  } catch (error) {
+    await stopTunnel()
+    throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
-  if (trigger?.selective_rerun_rate_limited) {
+  if (trigger.selective_rerun_rate_limited) {
     reporter.error('The selective re-run feature was rate-limited. All tests will be re-run.\n\n')
-  }
-
-  const fastChecks: Record<string, Test> = {}
-  for (const fastTest of fastTestsToTrigger) {
-    try {
-      const fastCheckId = await api.triggerFastTest({
-        ...fastTest.test,
-        type: `fast-${fastTest.test.type}`,
-      })
-      fastChecks[fastCheckId] = fastTest.test
-    } catch (error) {
-      reporter.error(`Failed to trigger fast test: ${formatBackendErrors(error)}\n`)
-      continue
-    }
   }
 
   try {
@@ -189,7 +165,7 @@ export const executeTests = async (
     )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
 
-    const results = testsToTriggerInBatch.length
+    const results = overriddenTestsToTrigger.length
       ? await waitForResults(
           api,
           trigger!,
@@ -200,48 +176,11 @@ export const executeTests = async (
         )
       : []
 
-    const baseUrl = getAppBaseURL(config)
-    if (!testsToTriggerInBatch.length) {
-      reporter.testsWait(Object.values(fastChecks), baseUrl, 'no-batch')
-    }
-
-    await Promise.all(
-      Object.keys(fastChecks).map(async (fastCheckId) => {
-        const pollResult = await waitForFastTestResult(api, fastCheckId)
-
-        if (pollResult.result.passed) {
-          initialSummary.passed += 1
-        } else if (pollResult.result.unhealthy) {
-          initialSummary.criticalErrors += 1
-        } else if (pollResult.result.failure) {
-          initialSummary.failed += 1
-        }
-
-        const test = fastChecks[fastCheckId]
-
-        const result: Result = {
-          executionRule: ExecutionRule.BLOCKING,
-          location: 'Frankfurt (AWS)', // XXX: we don't have the location yet
-          passed: pollResult.result.passed,
-          result: pollResult.result,
-          test,
-          resultId: pollResult.result.initialResultID ?? '',
-          timestamp: pollResult.timestamp,
-          retries: 0,
-          timedOut: false,
-        }
-
-        await writeFile(`./result-${fastCheckId}.json`, JSON.stringify(pollResult, undefined, 2))
-
-        reporter.log(renderEphemeralResult(test, result, baseUrl, 'no-batch') + '\n\n')
-      })
-    )
-
     return {
       results,
       summary: {
         ...initialSummary,
-        batchId: trigger?.batch_id ?? 'no-batch', // XXX: This is temporary, and will be removed when batches support ephemeral tests.
+        batchId: trigger?.batch_id,
       },
     }
   } catch (error) {
@@ -277,7 +216,7 @@ export const getTriggerConfigs = async (
   const testIdsToTrigger =
     [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
-  const fastTestsToTrigger = testsFromTestConfigs.filter((t): t is EphemeralTriggerConfig => 'testDefinition' in t)
+  const ephemeralTestsToTrigger = testsFromTestConfigs.filter((t): t is EphemeralTriggerConfig => 'testDefinition' in t)
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigs = testIdsToTrigger.map<TriggerConfig>((id) => {
@@ -304,12 +243,12 @@ export const getTriggerConfigs = async (
     }
   })
 
-  const fastTestTriggerConfigs = fastTestsToTrigger.map<EphemeralTriggerConfig>((testFromTestConfigs) => ({
+  const ephemeralTestTriggerConfigs = ephemeralTestsToTrigger.map<EphemeralTriggerConfig>((testFromTestConfigs) => ({
     ...testFromTestConfigs,
     testDefinition: testFromTestConfigs.testDefinition,
   }))
 
-  return triggerConfigs.concat(fastTestTriggerConfigs)
+  return triggerConfigs.concat(ephemeralTestTriggerConfigs)
 }
 
 export const executeWithDetails = async (

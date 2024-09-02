@@ -388,27 +388,32 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface TestPayload extends ServerConfigOverride {
+export interface BaseTestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
   public_id: string
 }
+
+export type EphemeralTestPayload = Omit<BaseTestPayload, 'public_id'> & {
+  testDefinition: Test
+}
+
+export type TestPayload = BaseTestPayload | EphemeralTestPayload
 
 export interface TestNotFound {
   errorMessage: string
 }
 
 export interface TestSkipped {
-  overriddenConfig: TestPayload
+  overriddenConfig: BaseTestPayload
 }
 
 export interface TestWithOverride {
   test: Test
-  overriddenConfig: TestPayload
+  overriddenConfig: BaseTestPayload
 }
 
-export interface FastTest {
-  test: Test
-  isFastTest: boolean // XXX: This is temporary, and will be removed when batches support ephemeral tests.
+export interface EphemeralTest {
+  overriddenConfig: EphemeralTestPayload
 }
 
 export interface MobileTestWithOverride extends TestWithOverride {
