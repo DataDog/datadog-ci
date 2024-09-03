@@ -143,7 +143,6 @@ export const executeTests = async (
     }
   }
 
-
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
