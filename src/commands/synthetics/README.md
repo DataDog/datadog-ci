@@ -138,7 +138,7 @@ Global Config < Environment variables < CLI parameters
 You can also use the `datadog-ci` package as a library in your Node.js application to trigger tests. To do so, import the package from the Synthetics `run-tests` command and call the `executeWithDetails()` function.
 
 ``` javascript
-import { synthetics } from '@datadog/datadog-ci';
+import { synthetics } from '@datadog/datadog-ci'
 
 const { results, summary } = await synthetics.executeTests(...)
 ```
@@ -412,7 +412,7 @@ A boolean flag to only run the tests which failed in the previous test batches. 
 
 **Configuration options**
 
-* Global Config: `"selectiveRerun": true,`
+* Global Config: `"selectiveRerun": true`
 * ENV variable: `DATADOG_SYNTHETICS_SELECTIVE_RERUN=true`
 * CLI param: `--selectiveRerun` / `--no-selectiveRerun`
 
@@ -535,8 +535,8 @@ A list of devices to run the browser test on. The values that it can take can be
 **Configuration options**
 
 * Global/Test Config: `"deviceIds": ["chrome.laptop_large", "firefox.tablet"]`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS=["chrome.laptop_large", "firefox.tablet"]`
-* CLI param: `--override deviceIds=["chrome.laptop_large", "firefox.tablet"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS="chrome.laptop_large;firefox.tablet"`
+* CLI param: `--override deviceIds="chrome.laptop_large;firefox.tablet"`
 
 #### `executionRule` (String)
 
@@ -582,8 +582,8 @@ A list of locations to run the test from. The specific values that it can accept
 **Configuration options**
 
 * Global/Test Config: `"locations": ["aws:us-east-1", "gcp:europe-west3"]`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS=["aws:us-east-1", "gcp:europe-west3"]`
-* CLI param: `--override locations=["aws:us-east-1", "gcp:europe-west3"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS="aws:us-east-1;gcp:europe-west3"`
+* CLI param: `--override locations="aws:us-east-1;gcp:europe-west3"`
 
 #### `mobileApplicationVersion` (String)
 
@@ -817,7 +817,7 @@ If present, marks the application as 'latest'. Any tests that run on the latest 
 
 **Configuration options**
 
-* Global Config: `"latest": true,`
+* Global Config: `"latest": true`
 * ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
 * CLI param: `--latest` / `--no-latest`
 
