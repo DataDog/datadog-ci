@@ -58,6 +58,18 @@ export const checkForError = (filePath: string): string[] => {
           }
         }
       }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if ('tool' in run && 'extensions' in run['tool']) {
+        for (const extension of run['tool']['extensions']) {
+          if ('rules' in extension) {
+            for (const rule of extension['rules']) {
+              if ('id' in rule) {
+                rules.push(rule['id'])
+              }
+            }
+          }
+        }
+      }
 
       if ('results' in run) {
         for (const result of run['results']) {
