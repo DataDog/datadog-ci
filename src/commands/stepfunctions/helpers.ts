@@ -94,9 +94,9 @@ export const injectContextIntoTasks = async (
   for (const stepName in definitionObj.States) {
     if (definitionObj.States.hasOwnProperty(stepName)) {
       const step = definitionObj.States[stepName]
-      const lambdaUpdated = injectContextForLambdaFunctions(step, context, stepName);
-      const stepUpdated = injectContextForStepFunctions(step);
-      definitionHasBeenUpdated = lambdaUpdated || stepUpdated;
+      const lambdaUpdated = injectContextForLambdaFunctions(step, context, stepName)
+      const stepUpdated = injectContextForStepFunctions(step)
+      definitionHasBeenUpdated = lambdaUpdated || stepUpdated
     }
   }
   if (definitionHasBeenUpdated) {
