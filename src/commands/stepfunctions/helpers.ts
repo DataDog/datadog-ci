@@ -94,8 +94,9 @@ export const injectContextIntoTasks = async (
   for (const stepName in definitionObj.States) {
     if (definitionObj.States.hasOwnProperty(stepName)) {
       const step = definitionObj.States[stepName]
-      definitionHasBeenUpdated = injectContextForLambdaFunctions(step, context, stepName)
-      definitionHasBeenUpdated = injectContextForStepFunctions(step)
+      const lambdaUpdated = injectContextForLambdaFunctions(step, context, stepName)
+      const stepUpdated = injectContextForStepFunctions(step)
+      definitionHasBeenUpdated = lambdaUpdated || stepUpdated
     }
   }
   if (definitionHasBeenUpdated) {
@@ -203,8 +204,8 @@ const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, s
     return true
   } else if (step.Resource?.startsWith('arn:aws:lambda')) {
     context.stdout.write(
-      `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace. 
-          To merge lambda trace(s) with Step Functions trace, please consider using the latest integration. 
+      `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace.
+          To merge lambda trace(s) with Step Functions trace, please consider using the latest integration.
           More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
     )
   }
