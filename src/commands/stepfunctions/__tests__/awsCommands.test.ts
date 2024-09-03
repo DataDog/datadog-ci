@@ -227,7 +227,7 @@ describe('awsCommands test', () => {
       $metadata: {},
       creationDate: undefined,
       definition: undefined,
-      roleArn: `arn:aws:iam::${fakeAccountId}:role/service-role/unit-test-fake-role-name`,  // two slashes in the role arn for standard SF
+      roleArn: `arn:aws:iam::${fakeAccountId}:role/service-role/unit-test-fake-role-name`, // two slashes in the role arn for standard SF
       type: undefined,
       stateMachineArn: fakeStepFunctionArn,
       name: fakeStateMachineName,
