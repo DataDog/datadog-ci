@@ -336,19 +336,12 @@ export class RunTestsCommand extends Command {
     }
 
     // Override with CLI parameters
-    const batchTimeout = replacePollingTimeoutWithBatchTimeout(
-      this.config,
-      this.reporter,
-      false,
-      this.batchTimeout,
-      this.pollingTimeout
-    )
     this.config = deepExtend(
       this.config,
       removeUndefinedValues({
         apiKey: this.apiKey,
         appKey: this.appKey,
-        batchTimeout,
+        batchTimeout: this.batchTimeout,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
@@ -357,13 +350,19 @@ export class RunTestsCommand extends Command {
         files: this.files,
         jUnitReport: this.jUnitReport,
         publicIds: this.publicIds,
-        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-        pollingTimeout: batchTimeout,
         selectiveRerun: this.selectiveRerun,
         subdomain: this.subdomain,
         testSearchQuery: this.testSearchQuery,
         tunnel: this.tunnel,
       })
+    )
+    // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
+    this.config = replacePollingTimeoutWithBatchTimeout(
+      this.config,
+      this.reporter,
+      false,
+      this.batchTimeout,
+      this.pollingTimeout
     )
 
     // Override defaultTestOverrides with CLI parameters
@@ -407,8 +406,6 @@ export class RunTestsCommand extends Command {
         locations: validatedOverrides.locations,
         mobileApplicationVersion: this.mobileApplicationVersion,
         mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-        pollingTimeout: batchTimeout,
         resourceUrlSubstitutionRegexes: validatedOverrides.resourceUrlSubstitutionRegexes,
         retry: Object.keys(cliOverrideRetryConfig).length > 0 ? cliOverrideRetryConfig : undefined,
         startUrl: validatedOverrides.startUrl,
