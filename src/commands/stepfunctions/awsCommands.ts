@@ -205,9 +205,11 @@ export const attachPolicyToStateMachineIamRole = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<AttachRolePolicyCommandOutput | undefined> => {
-  let splitRoleArnList = describeStateMachineCommandOutput?.roleArn?.split('/')
+  const splitRoleArnList = describeStateMachineCommandOutput?.roleArn?.split('/')
   if (splitRoleArnList === undefined) {
-    throw Error(`unexpected roleArn ${describeStateMachineCommandOutput?.roleArn} for the describeStateMachineCommandOutput ${describeStateMachineCommandOutput}`)
+    throw Error(
+      `unexpected roleArn ${describeStateMachineCommandOutput?.roleArn} for the describeStateMachineCommandOutput ${describeStateMachineCommandOutput}`
+    )
   }
   const roleName = splitRoleArnList[splitRoleArnList.length - 1]
   const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(describeStateMachineCommandOutput)}`
