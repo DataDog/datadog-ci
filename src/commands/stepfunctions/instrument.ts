@@ -62,7 +62,7 @@ export class InstrumentStepFunctionsCommand extends Command {
   )
   private propagateUpstreamTrace = Option.Boolean('--propagate-upstream-trace', false)
 
-  public async execute() {
+  public async execute(): Promise<0 | 1> {
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] `--forwarder` is required\n')

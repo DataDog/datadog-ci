@@ -83,7 +83,7 @@ export class InstrumentCommand extends Command {
 
   private credentials?: AwsCredentialIdentity
 
-  public async execute() {
+  public async execute(): Promise<0 | 1> {
     this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
@@ -392,7 +392,7 @@ export class InstrumentCommand extends Command {
     return {commitSha: currentStatus.hash, gitRemote}
   }
 
-  private async uploadGitData() {
+  private async uploadGitData(): Promise<void> {
     const cli = new Cli()
     cli.register(UploadCommand)
     if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
@@ -499,7 +499,7 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
+  private printPlannedActions(configs: FunctionConfiguration[]): void {
     const willUpdate = willUpdateFunctionConfigs(configs)
     if (!willUpdate) {
       this.context.stdout.write(instrumentRenderer.renderNoUpdatesApplied(this.dryRun))
@@ -568,7 +568,7 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private setEnvServiceVersion() {
+  private setEnvServiceVersion(): void {
     this.environment = process.env[ENVIRONMENT_ENV_VAR] || undefined
     this.service = process.env[SERVICE_ENV_VAR] || undefined
     this.version = process.env[VERSION_ENV_VAR] || undefined

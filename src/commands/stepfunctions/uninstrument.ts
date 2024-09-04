@@ -43,7 +43,7 @@ export class UninstrumentStepFunctionsCommand extends Command {
     {hidden: true}
   )
 
-  public async execute() {
+  public async execute(): Promise<0 | 1> {
     let validationError = false
     let hasChanges = false
 

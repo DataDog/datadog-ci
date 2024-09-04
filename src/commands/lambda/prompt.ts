@@ -208,7 +208,7 @@ export const functionSelectionQuestion = (functionNames: string[]): typeof check
   },
 })
 
-export const requestAWSCredentials = async () => {
+export const requestAWSCredentials = async (): Promise<void> => {
   try {
     const awsCredentialsAnswers = await inquirer.prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
@@ -223,7 +223,7 @@ export const requestAWSCredentials = async () => {
   }
 }
 
-export const requestAWSRegion = async (defaultRegion?: string) => {
+export const requestAWSRegion = async (defaultRegion?: string): Promise<void> => {
   try {
     const awsRegionAnswer = await inquirer.prompt(awsRegionQuestion(defaultRegion))
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsRegionAnswer[AWS_DEFAULT_REGION_ENV_VAR]
@@ -234,7 +234,7 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
   }
 }
 
-export const requestDatadogEnvVars = async () => {
+export const requestDatadogEnvVars = async (): Promise<void> => {
   try {
     const envSite = process.env[CI_SITE_ENV_VAR]
     let selectedDatadogSite = envSite
@@ -258,7 +258,7 @@ export const requestDatadogEnvVars = async () => {
   }
 }
 
-export const requestEnvServiceVersion = async () => {
+export const requestEnvServiceVersion = async (): Promise<void> => {
   try {
     const envQuestionAnswer = await inquirer.prompt(envQuestion)
     const inputedEnvQuestionAnswer = envQuestionAnswer[ENVIRONMENT_ENV_VAR]
@@ -278,7 +278,7 @@ export const requestEnvServiceVersion = async () => {
   }
 }
 
-export const requestFunctionSelection = async (functionNames: string[]) => {
+export const requestFunctionSelection = async (functionNames: string[]): Promise<any> => {
   try {
     const selectedFunctionsAnswer: any = await inquirer.prompt(functionSelectionQuestion(functionNames))
 

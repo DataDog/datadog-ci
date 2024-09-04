@@ -13,7 +13,7 @@ import {version} from '../../helpers/version'
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
 
-export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConfiguration) => {
+export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConfiguration): Promise<void> => {
   const {tagResourceCommandInput, untagResourceCommandInput} = config
   if (tagResourceCommandInput !== undefined) {
     await tagResource(lambdaClient, tagResourceCommandInput)
@@ -23,17 +23,20 @@ export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConf
   }
 }
 
-export const tagResource = async (client: LambdaClient, input: TagResourceCommandInput) => {
+export const tagResource = async (client: LambdaClient, input: TagResourceCommandInput): Promise<void> => {
   const command = new TagResourceCommand(input)
   await client.send(command)
 }
 
-export const untagResource = async (client: LambdaClient, input: UntagResourceCommandInput) => {
+export const untagResource = async (client: LambdaClient, input: UntagResourceCommandInput): Promise<void> => {
   const command = new UntagResourceCommand(input)
   await client.send(command)
 }
 
-export const calculateTagUpdateRequest = async (lambdaClient: LambdaClient, functionARN: string) => {
+export const calculateTagUpdateRequest = async (
+  lambdaClient: LambdaClient,
+  functionARN: string
+): Promise<TagConfiguration | undefined> => {
   const config: TagConfiguration = {}
 
   const versionTagPresent = await hasVersionTag(lambdaClient, functionARN)
@@ -52,7 +55,10 @@ export const calculateTagUpdateRequest = async (lambdaClient: LambdaClient, func
   return
 }
 
-export const calculateTagRemoveRequest = async (lambdaClient: LambdaClient, functionARN: string) => {
+export const calculateTagRemoveRequest = async (
+  lambdaClient: LambdaClient,
+  functionARN: string
+): Promise<TagConfiguration | undefined> => {
   const config: TagConfiguration = {}
   const versionTagPresent = await hasVersionTag(lambdaClient, functionARN)
   if (versionTagPresent) {

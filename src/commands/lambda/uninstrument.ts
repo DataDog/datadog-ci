@@ -66,7 +66,7 @@ export class UninstrumentCommand extends Command {
 
   private credentials?: AwsCredentialIdentity
 
-  public async execute() {
+  public async execute(): Promise<0 | 1> {
     this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
@@ -278,7 +278,7 @@ export class UninstrumentCommand extends Command {
     return 0
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
+  private printPlannedActions(configs: FunctionConfiguration[]): void {
     const willUpdate = willUpdateFunctionConfigs(configs)
 
     if (!willUpdate) {
