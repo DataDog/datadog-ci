@@ -208,7 +208,7 @@ export const attachPolicyToStateMachineIamRole = async (
   const splitRoleArnList = describeStateMachineCommandOutput?.roleArn?.split('/')
   if (splitRoleArnList === undefined) {
     throw Error(
-      `unexpected roleArn ${describeStateMachineCommandOutput?.roleArn} for the describeStateMachineCommandOutput ${describeStateMachineCommandOutput}`
+      `Unexpected roleArn ${describeStateMachineCommandOutput?.roleArn} for the describeStateMachineCommandOutput ${describeStateMachineCommandOutput}`
     )
   }
   // `arn:aws:iam::<accountId>:role/<name>` or `arn:aws:iam::<accountId>:role/service-role/<name>`
