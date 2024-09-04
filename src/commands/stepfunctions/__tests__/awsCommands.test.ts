@@ -222,6 +222,35 @@ describe('awsCommands test', () => {
     expect(actual).toEqual(expectedResp)
   })
 
+  test('attachPolicyToStateMachineIamRole test two slashes role arn', async () => {
+    describeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: `arn:aws:iam::${fakeAccountId}:role/service-role/unit-test-fake-role-name`, // two slashes in the role ARN for standard SF
+      type: undefined,
+      stateMachineArn: fakeStepFunctionArn,
+      name: fakeStateMachineName,
+    }
+
+    const input = {
+      PolicyArn: `arn:aws:iam::${fakeAccountId}:policy/LogsDeliveryAccessPolicy-${fakeStateMachineName}`,
+      RoleName: 'unit-test-fake-role-name',
+    }
+
+    mockedIamClient.on(AttachRolePolicyCommand, input).resolves(expectedResp)
+
+    const actual = await attachPolicyToStateMachineIamRole(
+      new IAMClient({}),
+      describeStateMachineCommandOutput,
+      fakeAccountId,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
+
   test('enableStepFunctionLogs test', async () => {
     const input = {
       stateMachineArn: fakeStepFunctionArn,
