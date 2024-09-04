@@ -113,6 +113,8 @@ const getResultsToReport = (
     .filter((r) => isResultInBatchSkippedBySelectiveRerun(r) || !incompleteResultIds.has(r.result_id))
     .concat(newlyCompleteResults)
 
+  const resultIdsToReport = new Set(getResultIds(resultsToReport))
+
   if (shouldContinuePolling) {
     return resultsToReport
   }
@@ -122,7 +124,10 @@ const getResultsToReport = (
   //  - Still incomplete (the poll results endpoint didn't find it): log a warning and report with incomplete data
   //  - Timed out although fast retries were configured: log a warning and report with incomplete data
   const residualResults = excludeSkipped(batch.results).filter(
-    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id) || isTimedOutRetry(r)
+    (r) =>
+      !emittedResultIds.has(r.result_id) ||
+      incompleteResultIds.has(r.result_id) ||
+      (!resultIdsToReport.has(r.result_id) && isTimedOutRetry(r))
   )
 
   const errors: string[] = []

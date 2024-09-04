@@ -841,6 +841,7 @@ describe('utils', () => {
       selectiveRerun: undefined,
       test: apiTest,
       timedOut: false,
+      timedOutRetry: false,
       timestamp: 0,
     }
     const pollResult: PollResult = {
@@ -1314,7 +1315,7 @@ describe('utils', () => {
         'bid'
       )
       expect(mockReporter.error).toHaveBeenCalledWith(
-        'The full information for result rid was incomplete at the end of the batch.\n\n'
+        'The information for result rid of test pid was incomplete at the end of the batch.\n\n'
       )
 
       // Do not report when there are no tests to wait anymore
@@ -1366,11 +1367,12 @@ describe('utils', () => {
         ...result,
         result: {
           ...result.result,
-          failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+          failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'},
           passed: false,
         },
         resultId: '3',
         timedOut: true,
+        timedOutRetry: true,
       }
 
       expect(
@@ -1492,10 +1494,11 @@ describe('utils', () => {
           ...result,
           result: {
             ...result.result,
-            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'},
             passed: false,
           },
           timedOut: true,
+          timedOutRetry: true,
         },
       ])
     })
@@ -1526,10 +1529,11 @@ describe('utils', () => {
           ...result,
           result: {
             ...result.result,
-            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
+            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'},
             passed: false,
           },
           timedOut: true,
+          timedOutRetry: true,
         },
       ])
     })
@@ -1599,12 +1603,13 @@ describe('utils', () => {
           ...result,
           passed: true, // because `failOnTimeout` is false
           timedOut: true,
+          timedOutRetry: true,
           resultId: pollTimeoutResult.resultID,
           result: {
             ...result.result,
             failure: {
               code: 'TIMEOUT',
-              message: 'The batch timed out before receiving the result.',
+              message: 'The batch timed out before receiving the retry.',
             },
             passed: false,
           },
