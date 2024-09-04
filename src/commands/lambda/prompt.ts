@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
+import checkboxPlusPrompt from 'inquirer-checkbox-plus-prompt'
 
 import {
   CI_API_KEY_ENV_VAR,
@@ -26,7 +27,6 @@ import {
 } from './constants'
 import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
 
-const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)
 
 export const awsProfileQuestion = (mfaSerial: string): inquirer.InputQuestion => ({
