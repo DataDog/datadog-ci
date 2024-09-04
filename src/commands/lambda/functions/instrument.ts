@@ -156,7 +156,7 @@ export const calculateUpdateRequest = async (
   settings: InstrumentationSettings,
   region: string,
   runtime: Runtime
-) => {
+): Promise<UpdateFunctionConfigurationCommandInput | undefined> => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const changedEnvVars: Record<string, string> = {}
   const functionARN = config.FunctionArn

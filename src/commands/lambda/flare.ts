@@ -83,7 +83,7 @@ export class LambdaFlareCommand extends Command {
    * Lambda function and sends them to Datadog support.
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
-  public async execute() {
+  public async execute(): Promise<0 | 1> {
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
@@ -425,7 +425,7 @@ export class LambdaFlareCommand extends Command {
  * @param config
  * @returns a summarized config
  */
-export const summarizeConfig = (config: any) => {
+export const summarizeConfig = (config: any): any => {
   const summarizedConfig: any = {}
   for (const key in config) {
     if (SUMMARIZED_FIELDS.has(key)) {
@@ -450,7 +450,7 @@ export const getLogStreamNames = async (
   logGroupName: string,
   startMillis?: number,
   endMillis?: number
-) => {
+): Promise<string[]> => {
   const config = {
     logGroupName,
     descending: true,
@@ -507,7 +507,7 @@ export const getLogEvents = async (
   logStreamName: string,
   startMillis?: number,
   endMillis?: number
-) => {
+): Promise<OutputLogEvent[]> => {
   const config: any = {
     logGroupName,
     logStreamName,
@@ -537,7 +537,12 @@ export const getLogEvents = async (
  * @param endMillis end time in milliseconds or undefined if no end time is specified
  * @returns a map of log stream names to log events or an empty map if no logs are found
  */
-export const getAllLogs = async (region: string, functionName: string, startMillis?: number, endMillis?: number) => {
+export const getAllLogs = async (
+  region: string,
+  functionName: string,
+  startMillis?: number,
+  endMillis?: number
+): Promise<Map<string, OutputLogEvent[]>> => {
   const logs = new Map<string, OutputLogEvent[]>()
   const cwlClient = new CloudWatchLogsClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
   if (functionName.startsWith('arn:aws')) {
@@ -574,7 +579,11 @@ export const getAllLogs = async (region: string, functionName: string, startMill
  * @returns the tags or an empty object if no tags are found
  * @throws Error if the tags cannot be retrieved
  */
-export const getTags = async (lambdaClient: LambdaClient, region: string, arn: string) => {
+export const getTags = async (
+  lambdaClient: LambdaClient,
+  region: string,
+  arn: string
+): Promise<Record<string, string>> => {
   if (!arn.startsWith('arn:aws')) {
     throw Error(`Invalid function ARN: ${arn}`)
   }
@@ -601,7 +610,7 @@ export const getTags = async (lambdaClient: LambdaClient, region: string, arn: s
  * @param filePaths the list of file paths
  * @returns a mapping of file paths to new file names
  */
-export const getUniqueFileNames = (filePaths: Set<string>) => {
+export const getUniqueFileNames = (filePaths: Set<string>): Map<string, string> => {
   // Count occurrences of each filename
   const fileNameCount: {[fileName: string]: number} = {}
   filePaths.forEach((filePath) => {
@@ -634,7 +643,7 @@ export const getUniqueFileNames = (filePaths: Set<string>) => {
  * @param logEvents array of log events
  * @returns the CSV string
  */
-export const convertToCSV = (logEvents: OutputLogEvent[]) => {
+export const convertToCSV = (logEvents: OutputLogEvent[]): string => {
   const rows = [['timestamp', 'datetime', 'message']]
   for (const logEvent of logEvents) {
     const timestamp = `"${logEvent.timestamp ?? ''}"`
@@ -653,7 +662,7 @@ export const convertToCSV = (logEvents: OutputLogEvent[]) => {
 /**
  * @param ms number of milliseconds to sleep
  */
-export const sleep = async (ms: number) => {
+export const sleep = async (ms: number): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -661,7 +670,7 @@ export const sleep = async (ms: number) => {
  * Get the framework used based on the files in the directory
  * @returns the framework used or undefined if no framework is found
  */
-export const getFramework = () => {
+export const getFramework = (): string => {
   const frameworks = new Set<DeploymentFrameworks>()
   const files = fs.readdirSync(process.cwd())
   files.forEach((file) => {
@@ -683,7 +692,11 @@ export const getFramework = () => {
  * @param isDryRun whether or not this is a dry run
  * @param config Lambda function configuration
  */
-export const generateInsightsFile = (insightsFilePath: string, isDryRun: boolean, config: FunctionConfiguration) => {
+export const generateInsightsFile = (
+  insightsFilePath: string,
+  isDryRun: boolean,
+  config: FunctionConfiguration
+): void => {
   const lines: string[] = []
   // Header
   lines.push('# Flare Insights')

@@ -116,7 +116,10 @@ export const getUninstrumentedFunctionConfigsFromRegEx = async (
   return functionsToUpdate
 }
 
-export const calculateUpdateRequest = (config: LFunctionConfiguration, runtime: Runtime) => {
+export const calculateUpdateRequest = (
+  config: LFunctionConfiguration,
+  runtime: Runtime
+): UpdateFunctionConfigurationRequest | undefined => {
   const oldEnvVars: Record<string, string> = {...config.Environment?.Variables}
   const functionARN = config.FunctionArn
 

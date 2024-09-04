@@ -54,7 +54,11 @@ import {applyTagConfig} from '../tags'
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.
  */
-export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName: string, layerARNs: string[]) => {
+export const addLayerArn = (
+  fullLayerArn: string | undefined,
+  previousLayerName: string,
+  layerARNs: string[]
+): string[] => {
   if (fullLayerArn) {
     if (!layerARNs.includes(fullLayerArn)) {
       // Remove any other versions of the layer
@@ -137,7 +141,7 @@ export const collectFunctionsByRegion = (
  * @param region the region where the layer is stored.
  * @returns the latest version of the layer to find.
  */
-export const findLatestLayerVersion = async (layer: LayerKey, region: string) => {
+export const findLatestLayerVersion = async (layer: LayerKey, region: string): Promise<number> => {
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
@@ -218,7 +222,7 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
  * @param {string} profile the AWS Credentials profile
  * @returns {AwsCredentialIdentity} credentials object.
  */
-export const getAWSProfileCredentials = async (profile: string) => {
+export const getAWSProfileCredentials = async (profile: string): Promise<AwsCredentialIdentity | undefined> => {
   const init = getAWSFileCredentialsParams(profile)
 
   try {
@@ -233,7 +237,7 @@ export const getAWSProfileCredentials = async (profile: string) => {
   }
 }
 
-export const getAWSCredentials = async () => {
+export const getAWSCredentials = async (): Promise<AwsCredentialIdentity | undefined> => {
   const provider = fromNodeProviderChain()
 
   try {
@@ -250,24 +254,25 @@ export const getAWSCredentials = async () => {
   }
 }
 
-export const isMissingAnyDatadogApiKeyEnvVar = () =>
+export const isMissingAnyDatadogApiKeyEnvVar = (): boolean =>
   !(
     process.env[CI_API_KEY_ENV_VAR] ||
     process.env[API_KEY_ENV_VAR] ||
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
-export const isMissingDatadogEnvVars = () =>
+export const isMissingDatadogEnvVars = (): boolean =>
   !isValidDatadogSite(process.env[CI_SITE_ENV_VAR]) || isMissingAnyDatadogApiKeyEnvVar()
 
-export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient) =>
+export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient): Promise<LFunctionConfiguration[]> =>
   getLambdaFunctionConfigsFromRegex(lambdaClient, '.')
 
 // Returns false if not all runtimes are of the same RuntimeType across multiple functions
-export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
+export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]): boolean =>
   configList
     .map((item) => item.lambdaConfig.Runtime)
     .every((runtime) => RUNTIME_LOOKUP[runtime!] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime!])
+
 /**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.
@@ -321,6 +326,7 @@ export const getLambdaFunctionConfigs = (
  * and settings (optional).
  *
  * @param config a Lambda FunctionConfiguration.
+ * @param layer a Lambda layer.
  * @param region a region where the layer is hosted.
  * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
  * @returns the ARN of a **Specific Runtime Layer** with the correct region, account, architecture, and name.
@@ -330,7 +336,7 @@ export const getLayerArn = (
   layer: LayerKey,
   region: string,
   settings?: InstrumentationSettings
-) => {
+): string => {
   let layerName = LAYER_LOOKUP[layer]
   if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
@@ -350,7 +356,7 @@ export const getLayerNameWithVersion = (layerArn: string): string | undefined =>
   return name && version ? `${name}:${version}` : undefined
 }
 
-export const getLayers = (config: LFunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
+export const getLayers = (config: LFunctionConfiguration): string[] => (config.Layers ?? []).map((layer) => layer.Arn!)
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
@@ -406,7 +412,7 @@ export const updateLambdaFunctionConfig = async (
   lambdaClient: LambdaClient,
   cloudWatchLogsClient: CloudWatchLogsClient,
   config: FunctionConfiguration
-) => {
+): Promise<void> => {
   if (config.updateFunctionConfigurationCommandInput !== undefined) {
     await updateFunctionConfiguration(lambdaClient, config.updateFunctionConfigurationCommandInput)
   }
@@ -421,12 +427,15 @@ export const updateLambdaFunctionConfig = async (
 export const updateFunctionConfiguration = async (
   client: LambdaClient,
   input: UpdateFunctionConfigurationCommandInput
-) => {
+): Promise<void> => {
   const command = new UpdateFunctionConfigurationCommand(input)
   await client.send(command)
 }
 
-export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
+export const handleLambdaFunctionUpdates = async (
+  configGroups: InstrumentedConfigurationGroup[],
+  stdout: Writable
+): Promise<void> => {
   let totalFunctions = 0
   let totalFailedUpdates = 0
   for (const group of configGroups) {
@@ -482,7 +491,7 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
   }
 }
 
-export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
+export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]): boolean => {
   let willUpdate = false
   for (const config of configs) {
     if (
@@ -507,7 +516,7 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
  * @param config
  * @returns masked config
  */
-export const maskConfig = (config: any) => {
+export const maskConfig = (config: any): any => {
   // We stringify and parse again to make a deep copy
   const configCopy = JSON.parse(JSON.stringify(config))
   const vars = configCopy.Environment?.Variables
