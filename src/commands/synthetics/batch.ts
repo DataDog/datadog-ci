@@ -264,7 +264,7 @@ const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
 
     return batch
   } catch (e) {
-    throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}\n`, e.response?.status)
+    throw new EndpointError(`Failed to get batch: ${formatBackendErrors(e)}`, e.response?.status)
   }
 }
 
@@ -285,7 +285,7 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
 
     return {pollResultMap, incompleteResultIds}
   } catch (e) {
-    throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
+    throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}`, e.response?.status)
   }
 }
 

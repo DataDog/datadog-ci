@@ -1,6 +1,9 @@
 /* eslint-disable max-classes-per-file */
 
+import {isAxiosError} from 'axios'
+
 import {coerceError} from '../../helpers/errors'
+
 import {isEndpointError, isForbiddenError} from './api'
 
 const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'MISSING_TESTS'] as const
@@ -62,18 +65,31 @@ export class BatchTimeoutRunawayError extends CriticalError {
   }
 }
 
-export function convertErrorToCiError(e: unknown): CiError {
+export const wrapError = (e: unknown): Error => {
   const error = coerceError(e)
   if (error instanceof CiError) {
     return error
   }
 
+  if (isAxiosError(error)) {
+    // Avoid leaking any unexpected information.
+    delete error.config
+    delete error.request
+    delete error.response
+
+    if (isForbiddenError(error)) {
+      return new CriticalError('AUTHORIZATION_ERROR', error.message)
+    }
+
+    return error
+  }
+
   if (isForbiddenError(error)) {
-    return new CriticalError('AUTHORIZATION_ERROR', error)
+    return new CriticalError('AUTHORIZATION_ERROR', error.message)
   }
 
   if (isEndpointError(error)) {
-    return new CriticalError('UNAVAILABLE_TEST_CONFIG', error)
+    return error
   }
 
   return new CriticalError('UNKNOWN', error)

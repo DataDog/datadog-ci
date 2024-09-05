@@ -25,7 +25,12 @@ exports[`utils reportCiError should report AUTHORIZATION_ERROR error 1`] = `
     [
       "
 [41m[1m ERROR: authorization error [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'AUTHORIZATION_ERROR',
+  cause: undefined
+}
 
 ",
     ],
@@ -45,7 +50,12 @@ exports[`utils reportCiError should report INVALID_CONFIG error 1`] = `
     [
       "
 [41m[1m ERROR: invalid config [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'INVALID_CONFIG',
+  cause: undefined
+}
 
 ",
     ],
@@ -118,7 +128,7 @@ exports[`utils reportCiError should report NO_TESTS_TO_RUN error 1`] = `
   "calls": [
     [
       "
-[41m[1m ERROR: No tests to run [22m[49m
+[41m[1m ERROR: no tests to run [22m[49m
 
 
 ",
@@ -139,7 +149,12 @@ exports[`utils reportCiError should report POLL_RESULTS_FAILED error 1`] = `
     [
       "
 [41m[1m ERROR: unable to poll test results [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'POLL_RESULTS_FAILED',
+  cause: undefined
+}
 
 ",
     ],
@@ -159,7 +174,12 @@ exports[`utils reportCiError should report TOO_MANY_TESTS_TO_TRIGGER error 1`] =
     [
       "
 [41m[1m ERROR: too many tests to trigger [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'TOO_MANY_TESTS_TO_TRIGGER',
+  cause: undefined
+}
 
 ",
     ],
@@ -179,7 +199,12 @@ exports[`utils reportCiError should report TRIGGER_TESTS_FAILED error 1`] = `
     [
       "
 [41m[1m ERROR: unable to trigger tests [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'TRIGGER_TESTS_FAILED',
+  cause: undefined
+}
 
 ",
     ],
@@ -199,7 +224,12 @@ exports[`utils reportCiError should report TUNNEL_START_FAILED error 1`] = `
     [
       "
 [41m[1m ERROR: unable to start tunnel [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'TUNNEL_START_FAILED',
+  cause: undefined
+}
 
 ",
     ],
@@ -218,8 +248,13 @@ exports[`utils reportCiError should report UNAVAILABLE_TEST_CONFIG error 1`] = `
   "calls": [
     [
       "
-[41m[1m ERROR: unable to obtain test configurations with search query [22m[49m
-
+[41m[1m ERROR: unable to obtain test configurations [22m[49m
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'UNAVAILABLE_TEST_CONFIG',
+  cause: undefined
+}
 
 ",
     ],
@@ -239,7 +274,12 @@ exports[`utils reportCiError should report UNAVAILABLE_TUNNEL_CONFIG error 1`] =
     [
       "
 [41m[1m ERROR: unable to get tunnel configuration [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'UNAVAILABLE_TUNNEL_CONFIG',
+  cause: undefined
+}
 
 ",
     ],
@@ -259,7 +299,12 @@ exports[`utils reportCiError should report default Error if no CiError was match
     [
       "
 [41m[1m ERROR [22m[49m
-
+CiError: 
+    at someFunction (someFile.js:42:42)
+    at someFunction (someFile.js:42:42) {
+  code: 'ERROR',
+  cause: undefined
+}
 
 ",
     ],

@@ -58,13 +58,17 @@ export const getTestsFromSearchQuery = async (
     return []
   }
 
-  const testSearchResults = await api.searchTests(testSearchQuery)
+  try {
+    const testSearchResults = await api.searchTests(testSearchQuery)
 
-  return testSearchResults.tests.map((test) => ({
-    testOverrides: defaultTestOverrides ?? {},
-    id: test.public_id,
-    suite: `Query: ${testSearchQuery}`,
-  }))
+    return testSearchResults.tests.map((test) => ({
+      testOverrides: defaultTestOverrides ?? {},
+      id: test.public_id,
+      suite: `Query: ${testSearchQuery}`,
+    }))
+  } catch (e) {
+    throw new EndpointError(`Failed to search tests with query: ${formatBackendErrors(e)}`, e.response?.status)
+  }
 }
 
 export const getTest = async (

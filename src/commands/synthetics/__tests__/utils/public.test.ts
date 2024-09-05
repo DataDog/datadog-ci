@@ -41,6 +41,7 @@ jest.mock('path', () => {
 import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
+import util from 'util'
 
 import type * as path from 'path'
 
@@ -450,7 +451,7 @@ describe('utils', () => {
 
       await expect(() =>
         utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
-      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
+      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden')
     })
 
     test('Passes when public ID is valid', async () => {
@@ -1731,7 +1732,7 @@ describe('utils', () => {
           mockReporter
         )
       ).rejects.toThrow(
-        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
+        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error'
       )
 
       expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
@@ -1757,7 +1758,7 @@ describe('utils', () => {
           mockReporter
         )
       ).rejects.toThrow(
-        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
+        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error'
       )
 
       expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
@@ -2158,6 +2159,15 @@ describe('utils', () => {
   })
 
   describe('reportCiError', () => {
+    const originalInspect = jest.requireActual('util').inspect
+    beforeEach(() => {
+      jest.spyOn(util, 'inspect').mockImplementation((error) => {
+        error.stack = `Error: ${error.message}\n    at someFunction (someFile.js:42:42)\n    at someFunction (someFile.js:42:42)`
+
+        return originalInspect(error)
+      })
+    })
+
     test.each([
       'NO_TESTS_TO_RUN',
       'MISSING_TESTS',
