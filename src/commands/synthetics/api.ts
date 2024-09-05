@@ -313,7 +313,7 @@ export const determineRetryDelay = (
   }
 }
 
-const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
+export const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
 
 const getErrorHttpStatus = (error: Error): number | undefined =>
   isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined

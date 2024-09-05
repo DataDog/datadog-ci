@@ -1,12 +1,13 @@
+import {coerceError} from '../../helpers/errors'
 import {getProxyAgent} from '../../helpers/utils'
 
-import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {APIHelper, getApiHelper} from './api'
 import {
   moveLocationsToTestOverrides,
   replaceGlobalWithDefaultTestOverrides,
   replacePollingTimeoutWithBatchTimeout,
 } from './compatibility'
-import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
+import {CiError, BatchTimeoutRunawayError, CriticalError, convertErrorToCiError} from './errors'
 import {
   MainReporter,
   Reporter,
@@ -75,8 +76,9 @@ export const executeTests = async (
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
-  } catch (error) {
-    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
+  } catch (e) {
+    const error = convertErrorToCiError(e)
+    throw new CriticalError('UNAVAILABLE_TEST_CONFIG', error)
   }
 
   if (triggerConfigs.length === 0) {
@@ -99,12 +101,9 @@ export const executeTests = async (
       config.failOnMissingTests,
       config.tunnel
     )
-  } catch (error) {
-    if (error instanceof CiError) {
-      throw error
-    }
-
-    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
+  } catch (e) {
+    const error = convertErrorToCiError(e)
+    throw new CriticalError('UNAVAILABLE_TEST_CONFIG', error)
   }
 
   const {tests, overriddenTestsToTrigger, initialSummary} = testsToTriggerResult
@@ -121,8 +120,9 @@ export const executeTests = async (
     try {
       // Get the pre-signed URL to connect to the tunnel service
       presignedURL = (await api.getTunnelPresignedURL(publicIdsToTrigger)).url
-    } catch (error) {
-      throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', error.message)
+    } catch (e) {
+      const error = coerceError(e)
+      throw new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', error)
     }
     // Open a tunnel to Datadog
     try {
@@ -134,18 +134,20 @@ export const executeTests = async (
       overriddenTestsToTrigger.forEach((testToTrigger) => {
         testToTrigger.tunnel = tunnelInfo
       })
-    } catch (error) {
+    } catch (e) {
       await stopTunnel()
-      throw new CriticalError('TUNNEL_START_FAILED', error.message)
+      const error = coerceError(e)
+      throw new CriticalError('TUNNEL_START_FAILED', error)
     }
   }
 
   let trigger: Trigger
   try {
     trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
-  } catch (error) {
+  } catch (e) {
     await stopTunnel()
-    throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
+    const error = coerceError(e)
+    throw new CriticalError('TRIGGER_TESTS_FAILED', error)
   }
 
   if (trigger.selective_rerun_rate_limited) {
@@ -177,12 +179,13 @@ export const executeTests = async (
         batchId: trigger.batch_id,
       },
     }
-  } catch (error) {
+  } catch (e) {
+    const error = coerceError(e)
     if (error instanceof BatchTimeoutRunawayError) {
       throw error
     }
 
-    throw new CriticalError('POLL_RESULTS_FAILED', error.message)
+    throw new CriticalError('POLL_RESULTS_FAILED', error)
   } finally {
     await stopTunnel()
   }

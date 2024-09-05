@@ -85,6 +85,6 @@ export const getTest = async (
       return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
-    throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
+    throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}`, error.response?.status)
   }
 }
