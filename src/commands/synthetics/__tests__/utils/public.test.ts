@@ -2164,6 +2164,14 @@ describe('utils', () => {
       jest.spyOn(util, 'inspect').mockImplementation((error) => {
         error.stack = `Error: ${error.message}\n    at someFunction (someFile.js:42:42)\n    at someFunction (someFile.js:42:42)`
 
+        // Node 14 doesn't show the `[cause]` in the stack trace as shown here: https://nodejs.org/api/errors.html#errorcause
+        // So we mock it here to align the unit tests' snapshots across all Node.js versions on which we run Jest in the CI.
+        if (process.version.startsWith('v14')) {
+          error.cause = undefined
+
+          return originalInspect(error).replace('cause: undefined', '[cause]: undefined')
+        }
+
         return originalInspect(error)
       })
     })
