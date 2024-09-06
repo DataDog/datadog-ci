@@ -1,11 +1,14 @@
 import chalk from 'chalk'
 
+import {coerceError} from '../../helpers/errors'
+
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
 import {
   replaceConfigWithTestOverrides,
   warnIfDeprecatedConfigUsed,
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
+import {CriticalError} from './errors'
 import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {getSuites, normalizePublicId} from './utils/public'
@@ -24,11 +27,7 @@ export const getTestConfigs = async (
     files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
   }
 
-  const suitesFromFiles = (await Promise.all(files.map((glob: string) => getSuites(glob, reporter))))
-    .reduce((acc, val) => acc.concat(val), [])
-    .filter((suite) => !!suite.content.tests)
-
-  suites.push(...suitesFromFiles)
+  suites.push(...(await getSuitesFromFiles(files, reporter)))
 
   warnIfDeprecatedConfigUsed(suites, reporter)
   warnIfDeprecatedPollingTimeoutUsed(suites, reporter)
@@ -45,6 +44,18 @@ export const getTestConfigs = async (
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
   return testConfigs
+}
+
+const getSuitesFromFiles = async (files: string[], reporter: MainReporter) => {
+  try {
+    const suitesFromFiles = (await Promise.all(files.map((glob: string) => getSuites(glob, reporter))))
+      .reduce((acc, val) => acc.concat(val), [])
+      .filter((suite) => !!suite.content.tests)
+
+    return suitesFromFiles
+  } catch (e) {
+    throw new CriticalError('INVALID_CONFIG', coerceError(e))
+  }
 }
 
 export const getTestsFromSearchQuery = async (

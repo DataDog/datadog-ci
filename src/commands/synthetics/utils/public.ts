@@ -9,6 +9,7 @@ import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
+import {coerceError} from '../../../helpers/errors'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
@@ -256,7 +257,9 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
         return {name: suiteName, content: JSON.parse(content)}
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${file}`)
+        throw new Error(`Unable to read and parse the test file ${file}`, {
+          cause: coerceError(e),
+        })
       }
     })
   )

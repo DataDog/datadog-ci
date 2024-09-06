@@ -29,7 +29,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'AUTHORIZATION_ERROR',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -54,7 +54,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'INVALID_CONFIG',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -153,7 +153,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'POLL_RESULTS_FAILED',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -178,7 +178,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'TOO_MANY_TESTS_TO_TRIGGER',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -203,7 +203,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'TRIGGER_TESTS_FAILED',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -228,7 +228,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'TUNNEL_START_FAILED',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -253,7 +253,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'UNAVAILABLE_TEST_CONFIG',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -278,7 +278,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'UNAVAILABLE_TUNNEL_CONFIG',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",
@@ -303,7 +303,7 @@ CiError:
     at someFunction (someFile.js:42:42)
     at someFunction (someFile.js:42:42) {
   code: 'ERROR',
-  cause: undefined
+  [cause]: undefined
 }
 
 ",

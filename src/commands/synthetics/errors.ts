@@ -37,9 +37,8 @@ export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 export type CiErrorCode = NonCriticalCiErrorCode | CriticalCiErrorCode
 
 export class CiError extends Error {
-  // TODO: Use native `cause` property when targeting Node.js 16
-  constructor(public code: CiErrorCode, message?: string, public cause?: Error) {
-    super(message)
+  constructor(public code: CiErrorCode, message?: string, cause?: Error) {
+    super(message, {cause})
   }
 
   public toJson() {
