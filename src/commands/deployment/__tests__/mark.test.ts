@@ -36,6 +36,9 @@ describe('mark', () => {
     const runCLI = async () => {
       const cli = makeCLI()
       const context = createMockContext() as any
+      process.env = {
+        DATADOG_API_KEY: 'PLACEHOLDER',
+      }
 
       const code = await cli.run(['deployment', 'mark'], context)
 
