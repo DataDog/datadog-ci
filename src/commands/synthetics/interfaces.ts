@@ -128,22 +128,29 @@ export type SelectiveRerunDecision =
 
 export interface BaseResult {
   executionRule: ExecutionRule
+  initialResultId?: string
+  /** Whether the result is an intermediary result that is expected to be retried. */
+  isNonFinal?: boolean
   location: string
-  // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
+  /** Whether the result is passed or not, according to `failOnCriticalErrors` and `failOnTimeout`. */
   passed: boolean
   result: ServerResult
   resultId: string
-  // Number of retries, including this result.
+  /** Number of retries, including this result. */
   retries: number
+  maxRetries: number
   selectiveRerun?: SelectiveRerunDecision
-  // Original test for this result, including overrides if any.
+  /** Original test for this result, including overrides if any. */
   test: Test
   timedOut: boolean
   timestamp: number
 }
 
 // Inside this type, `.resultId` is a linked result ID from a previous batch.
-export type ResultSkippedBySelectiveRerun = Omit<BaseResult, 'location' | 'result' | 'retries' | 'timestamp'> & {
+export type ResultSkippedBySelectiveRerun = Omit<
+  BaseResult,
+  'location' | 'result' | 'retries' | 'maxRetries' | 'timestamp'
+> & {
   executionRule: ExecutionRule.SKIPPED
   selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
 }
@@ -155,9 +162,11 @@ type BatchStatus = 'passed' | 'failed' | 'in_progress'
 
 export interface BaseResultInBatch {
   execution_rule: ExecutionRule
+  initial_result_id?: string
   location: string
   result_id: string
   retries: number | null
+  max_retries: number | null
   selective_rerun?: SelectiveRerunDecision
   status: Status
   test_public_id: string

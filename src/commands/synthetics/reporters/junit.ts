@@ -221,6 +221,12 @@ export class JUnitReporter implements Reporter {
   }
 
   public resultEnd(result: Result, baseUrl: string, batchId: string) {
+    if (result.isNonFinal) {
+      // To avoid any client code badly handling non-final results in JUnit reports,
+      // we don't pollute those reports with intermediate results, as they are retried anyway.
+      return
+    }
+
     const suite = this.getSuiteByName(result.test.suite)
     const testCase = this.getTestCase(result, baseUrl, batchId)
 
@@ -534,17 +540,20 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'location', value: hasResult(result) && result.location}},
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
-          {$: {name: 'passed', value: `${passed}`}},
+          {$: {name: 'passed', value: String(passed)}},
           {$: {name: 'public_id', value: test.public_id}},
           {$: {name: 'result_id', value: result.resultId}},
+          {$: {name: 'initial_result_id', value: result.initialResultId}},
           {$: {name: 'result_url', value: resultUrl}},
+          {$: {name: 'retries', value: hasResult(result) && result.retries}},
+          {$: {name: 'max_retries', value: hasResult(result) && result.maxRetries}},
           {$: {name: 'selective_rerun', value: renderSelectiveRerun(result.selectiveRerun)}},
           {$: {name: 'start_url', value: hasResult(result) && 'startUrl' in result.result && result.result.startUrl}},
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},
-          {$: {name: 'timeout', value: `${result.timedOut}`}},
+          {$: {name: 'timeout', value: String(result.timedOut)}},
           {$: {name: 'type', value: test.type}},
-        ].filter((prop) => prop.$.value),
+        ].filter((prop) => prop.$.value !== undefined),
       },
       skipped: [],
       warning: [],

@@ -19,7 +19,7 @@ import {
   UserConfigOverride,
   ResultInBatch,
 } from '../interfaces'
-import {hasResult} from '../utils/internal'
+import {hasResult, isTimedOutRetry} from '../utils/internal'
 import {
   getBatchUrl,
   getResultDuration,
@@ -200,7 +200,7 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
 }
 
 const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
-  const {executionRule, test: overriddenTest, resultId, timedOut} = execution
+  const {executionRule, test: overriddenTest, resultId} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
@@ -226,7 +226,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
     const durationText = duration ? ` Total duration: ${duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
-    const resultUrlStatus = timedOut ? '(not yet received)' : ''
+    const resultUrlStatus = getResultUrlSuffix(execution)
 
     outputLines.push(`  •${durationText} View test run details:`)
     outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`)
@@ -250,10 +250,10 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
   if (hasResult(execution)) {
-    const {result, passed, retries, test} = execution
+    const {result, passed, retries, maxRetries, timedOut} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
-    const attempt = getAttemptSuffix(passed, retries, test)
+    const attempt = getAttemptSuffix(passed, retries, maxRetries, timedOut)
 
     return ` - ${location}${device}${attempt}`
   }
@@ -261,9 +261,26 @@ const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk)
   return ''
 }
 
-const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
+export const getResultUrlSuffix = (execution: Result) => {
+  if (hasResult(execution)) {
+    const {retries, maxRetries, timedOut} = execution
+    const timedOutRetry = isTimedOutRetry(retries, maxRetries, timedOut)
+
+    if (timedOutRetry) {
+      return '(previous attempt)'
+    }
+
+    if (timedOut) {
+      return '(not yet received)'
+    }
+  }
+
+  return ''
+}
+
+const getAttemptSuffix = (passed: boolean, retries: number, maxRetries: number, timedOut: boolean) => {
   const currentAttempt = retries + 1
-  const maxAttempts = (test.options.retry?.count ?? 0) + 1
+  const maxAttempts = maxRetries + 1
 
   if (maxAttempts === 1) {
     // No need to talk about "attempts" if retries aren't configured.
@@ -271,8 +288,18 @@ const getAttemptSuffix = (passed: boolean, retries: number, test: Test) => {
   }
 
   if (passed && retries === 0) {
-    // No need to display anything if the test passed on the first attempt
+    // No need to display anything if the test passed on the first attempt.
     return ''
+  }
+
+  if (isTimedOutRetry(retries, maxRetries, timedOut)) {
+    // Current attempt is still that of the last received result, so we increment it to refer to the expected retry.
+    return ` (attempt ${currentAttempt + 1} of ${maxAttempts})`
+  }
+
+  if (passed) {
+    // Having 'of' for a passed result is redundant, and is confusing when we have "✅ attempt 1 of 2".
+    return ` (attempt ${currentAttempt})`
   }
 
   return ` (attempt ${currentAttempt} of ${maxAttempts})`

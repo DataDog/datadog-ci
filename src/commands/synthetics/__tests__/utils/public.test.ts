@@ -838,6 +838,7 @@ describe('utils', () => {
       result: getBrowserServerResult({passed: true}),
       resultId: 'rid',
       retries: 0,
+      maxRetries: 0,
       selectiveRerun: undefined,
       test: apiTest,
       timedOut: false,
@@ -1326,7 +1327,7 @@ describe('utils', () => {
         'bid'
       )
       expect(mockReporter.error).toHaveBeenCalledWith(
-        'The full information for result rid was incomplete at the end of the batch.\n\n'
+        'The information for result rid of test pid was incomplete at the end of the batch.\n\n'
       )
 
       // Do not report when there are no tests to wait anymore

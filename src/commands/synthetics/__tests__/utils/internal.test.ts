@@ -64,6 +64,11 @@ describe('utils', () => {
       expect(hasResultPassed(result, false, hasTimedOut, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(false)
       expect(hasResultPassed(result, false, hasTimedOut, {failOnCriticalErrors: true, failOnTimeout: false})).toBe(true)
     })
+
+    test('in-progress result', () => {
+      const result = {status: 'in_progress'} as ResultInBatch // failed non-final result (retry expected)
+      expect(hasResultPassed(result, false, false, {failOnCriticalErrors: true, failOnTimeout: true})).toBe(false)
+    })
   })
 
   describe('toBoolean', () => {

@@ -15,8 +15,9 @@ import {
 import {
   isResultInBatchSkippedBySelectiveRerun,
   getResultIdOrLinkedResultId,
-  hasRetries,
   hasResultPassed,
+  isTimedOutRetry,
+  isNonFinalResult,
 } from './utils/internal'
 import {wait, getAppBaseURL} from './utils/public'
 
@@ -94,7 +95,7 @@ const getResultIdsToFetch = (
   return getResultIds(newlyReceivedResults).concat(...oldIncompleteResultIds)
 }
 
-const getResultsToReport = (
+export const getResultsToReport = (
   shouldContinuePolling: boolean,
   batch: Batch,
   newlyReceivedResults: ResultInBatch[],
@@ -118,14 +119,20 @@ const getResultsToReport = (
   // Residual results are either:
   //  - Still in progress (from the batch POV): they were never emitted.
   //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
+  //  - Or the current result ID was already emitted but it used to be non-final result, and it's now final.
   const residualResults = excludeSkipped(batch.results).filter(
-    (r) => !emittedResultIds.has(r.result_id) || incompleteResultIds.has(r.result_id)
+    (r) =>
+      !emittedResultIds.has(r.result_id) ||
+      incompleteResultIds.has(r.result_id) ||
+      isTimedOutRetry(r.retries, r.max_retries, r.timed_out)
   )
 
   const errors: string[] = []
   for (const result of residualResults) {
     if (!result.timed_out) {
-      errors.push(`The full information for result ${result.result_id} was incomplete at the end of the batch.`)
+      errors.push(
+        `The information for result ${result.result_id} of test ${result.test_public_id} was incomplete at the end of the batch.`
+      )
     }
   }
 
@@ -144,7 +151,7 @@ const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string>, repo
     const resultId = result.status === 'skipped' ? `skipped-${index}` : result.result_id
 
     // The result is reported if it has a final status, or if it's a non-final result.
-    if ((result.status !== 'in_progress' || hasRetries(result)) && !emittedResultIds.has(resultId)) {
+    if ((result.status !== 'in_progress' || isNonFinalResult(result)) && !emittedResultIds.has(resultId)) {
       emittedResultIds.add(resultId)
       reporter.resultReceived(result)
       receivedResults.push(result)
@@ -218,6 +225,7 @@ const getResultFromBatch = (
   const {getLocation, options, tests} = resultDisplayInfo
 
   const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
+  const timedOutRetry = isTimedOutRetry(resultInBatch.retries, resultInBatch.max_retries, resultInBatch.timed_out)
 
   const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
@@ -237,6 +245,9 @@ const getResultFromBatch = (
   if (safeDeadlineReached) {
     pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
     pollResult.result.passed = false
+  } else if (timedOutRetry) {
+    pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'}
+    pollResult.result.passed = false
   } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
     pollResult.result.passed = false
@@ -246,11 +257,14 @@ const getResultFromBatch = (
 
   return {
     executionRule: resultInBatch.execution_rule,
+    initialResultId: resultInBatch.initial_result_id,
+    isNonFinal: isNonFinalResult(resultInBatch),
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(resultInBatch, isUnhealthy, hasTimedOut, options),
     result: pollResult.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
     retries: resultInBatch.retries || 0,
+    maxRetries: resultInBatch.max_retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
     test: deepExtend({}, test, pollResult.check),
     timedOut: hasTimedOut,
