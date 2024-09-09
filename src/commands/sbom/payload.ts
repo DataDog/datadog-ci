@@ -6,6 +6,8 @@ import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_EMAIL,
   GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_COMMITTER_EMAIL,
+  GIT_COMMIT_COMMITTER_NAME,
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '../../helpers/tags'
@@ -92,6 +94,8 @@ export const generatePayload = (
   if (
     !tags[GIT_COMMIT_AUTHOR_EMAIL] ||
     !tags[GIT_COMMIT_AUTHOR_NAME] ||
+    !tags[GIT_COMMIT_COMMITTER_EMAIL] ||
+    !tags[GIT_COMMIT_COMMITTER_NAME] ||
     !tags[GIT_SHA] ||
     !tags[GIT_BRANCH] ||
     !tags[GIT_REPOSITORY_URL]
@@ -166,6 +170,8 @@ export const generatePayload = (
     commit: {
       author_name: tags[GIT_COMMIT_AUTHOR_NAME],
       author_email: tags[GIT_COMMIT_AUTHOR_EMAIL],
+      committer_name: tags[GIT_COMMIT_COMMITTER_NAME],
+      committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL],
       sha: tags[GIT_SHA],
       branch: tags[GIT_BRANCH],
     },
