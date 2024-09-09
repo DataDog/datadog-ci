@@ -41,6 +41,10 @@ export class TagCommand extends Command {
 
   public setTags(tags: string[]) {
     this.tags = tags
+
+    // When this command is used by another command (e.g. `deployment mark`), the command options are not resolved
+    // and are still Clipanion option constructors: `this.tagsFile` is not a valid path.
+    delete this.tagsFile
   }
 
   public setNoFail(noFail: boolean) {

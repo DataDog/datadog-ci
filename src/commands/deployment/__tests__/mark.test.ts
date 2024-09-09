@@ -1,8 +1,60 @@
+import {Cli} from 'clipanion'
+
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 
 import {DeploymentMarkCommand} from '../mark'
 
+const makeCLI = () => {
+  const cli = new Cli()
+  cli.register(DeploymentMarkCommand)
+
+  return cli
+}
+
+const createMockContext = () => {
+  let out = ''
+  let err = ''
+
+  return {
+    stderr: {
+      toString: () => err,
+      write: (input: string) => {
+        err += input
+      },
+    },
+    stdout: {
+      toString: () => out,
+      write: (input: string) => {
+        out += input
+      },
+    },
+  }
+}
+
 describe('mark', () => {
+  describe('execute', () => {
+    const runCLI = async () => {
+      const cli = makeCLI()
+      const context = createMockContext() as any
+      process.env = {
+        DATADOG_API_KEY: 'PLACEHOLDER',
+      }
+
+      const code = await cli.run(['deployment', 'mark'], context)
+
+      return {context, code}
+    }
+
+    test('should fail if not running in a supported provider', async () => {
+      const {context, code} = await runCLI()
+      expect(code).toBe(1)
+      expect(context.stdout.toString()).toStrictEqual('')
+      expect(context.stderr.toString()).toContain(
+        'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
+      )
+    })
+  })
+
   describe('createDeploymentTags', () => {
     test('should add is rollback if present', () => {
       const command = createCommand(DeploymentMarkCommand)
