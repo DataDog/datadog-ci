@@ -229,7 +229,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
     const resultUrlStatus = getResultUrlSuffix(execution)
 
     outputLines.push(`  •${durationText} View test run details:`)
-    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`)
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}${resultUrlStatus}`)
   }
 
   if (isResultSkippedBySelectiveRerun(execution)) {
@@ -267,11 +267,11 @@ export const getResultUrlSuffix = (execution: Result) => {
     const timedOutRetry = isTimedOutRetry(retries, maxRetries, timedOut)
 
     if (timedOutRetry) {
-      return '(previous attempt)'
+      return ' (previous attempt)'
     }
 
     if (timedOut) {
-      return '(not yet received)'
+      return ' (not yet received)'
     }
   }
 
@@ -292,17 +292,20 @@ const getAttemptSuffix = (passed: boolean, retries: number, maxRetries: number, 
     return ''
   }
 
+  const attempt = (current: number, max: number) => {
+    if (!passed && current < max) {
+      return chalk.dim(`attempt ${current} of ${max}, retrying…`)
+    }
+
+    return chalk.dim(`attempt ${current}, success`)
+  }
+
   if (isTimedOutRetry(retries, maxRetries, timedOut)) {
     // Current attempt is still that of the last received result, so we increment it to refer to the expected retry.
-    return ` (attempt ${currentAttempt + 1} of ${maxAttempts})`
+    return ` (${attempt(currentAttempt + 1, maxAttempts)})`
   }
 
-  if (passed) {
-    // Having 'of' for a passed result is redundant, and is confusing when we have "✅ attempt 1 of 2".
-    return ` (attempt ${currentAttempt})`
-  }
-
-  return ` (attempt ${currentAttempt} of ${maxAttempts})`
+  return ` (${attempt(currentAttempt, maxAttempts)})`
 }
 
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
