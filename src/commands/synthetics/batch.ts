@@ -109,22 +109,18 @@ export const getResultsToReport = (
   )
 
   const resultsToReport = newlyReceivedResults
-    .filter((r) => isResultInBatchSkippedBySelectiveRerun(r) || !incompleteResultIds.has(r.result_id))
+    .filter(
+      (r) => isResultInBatchSkippedBySelectiveRerun(r) || !isResidualResult(r, emittedResultIds, incompleteResultIds)
+    )
     .concat(newlyCompleteResults)
 
   if (shouldContinuePolling) {
     return resultsToReport
   }
 
-  // Residual results are either:
-  //  - Still in progress (from the batch POV): they were never emitted.
-  //  - Or still incomplete (from the poll results POV): report them with their incomplete data and a warning.
-  //  - Or the current result ID was already emitted but it used to be non-final result, and it's now final.
-  const residualResults = excludeSkipped(batch.results).filter(
-    (r) =>
-      !emittedResultIds.has(r.result_id) ||
-      incompleteResultIds.has(r.result_id) ||
-      isTimedOutRetry(r.retries, r.max_retries, r.timed_out)
+  // Results that we failed to report for some reason are finally reported as "residues".
+  const residualResults = excludeSkipped(batch.results).filter((r) =>
+    isResidualResult(r, emittedResultIds, incompleteResultIds)
   )
 
   const errors: string[] = []
@@ -143,7 +139,7 @@ export const getResultsToReport = (
   return resultsToReport.concat(residualResults)
 }
 
-const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string>, reporter: MainReporter) => {
+export const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string>, reporter: MainReporter) => {
   const receivedResults: ResultInBatch[] = []
 
   for (const [index, result] of batch.results.entries()) {
@@ -301,6 +297,27 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   } catch (e) {
     throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
+}
+
+const isResidualResult = (
+  result: BaseResultInBatch,
+  emittedResultIds: Set<string>,
+  incompleteResultIds: Set<string>
+) => {
+  if (incompleteResultIds.has(result.result_id)) {
+    // The poll results endpoint returned an incomplete result: report it with incomplete data and a warning.
+    return true
+  }
+  if (!emittedResultIds.has(result.result_id)) {
+    // Was never emitted, which means the batch never set a final status for it.
+    return true
+  }
+  if (emittedResultIds.has(result.result_id) && isTimedOutRetry(result.retries, result.max_retries, result.timed_out)) {
+    // The result ID was already emitted but it used to be non-final result, and it's now a timed out retry.
+    return true
+  }
+
+  return false
 }
 
 const getTestByPublicId = (id: string, tests: Test[]): Test => tests.find((t) => t.public_id === id)!
