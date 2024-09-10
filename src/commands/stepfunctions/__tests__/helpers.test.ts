@@ -1,4 +1,5 @@
 import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
+import {BaseContext} from 'clipanion'
 
 import {
   buildArn,
@@ -16,7 +17,18 @@ import {
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
 
+const createMockContext = (): BaseContext => {
+  return {
+    stdout: {
+      write: (input: string) => {
+        return true
+      },
+    },
+  } as BaseContext
+}
+
 describe('stepfunctions command helpers tests', () => {
+  const context = createMockContext()
   describe('shouldUpdateStepForTracesMerging test', () => {
     test('already has JsonMerge added to payload field', () => {
       const step: StepType = {
@@ -28,7 +40,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
     test('no payload field', () => {
@@ -40,7 +52,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step)).toBeTruthy()
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeTruthy()
     })
 
     test('default payload field of $', () => {
@@ -53,7 +65,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step)).toBeTruthy()
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeTruthy()
     })
 
     test('none-lambda step should not be updated', () => {
@@ -65,7 +77,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+      expect(shouldUpdateStepForTracesMerging(step, context, 'DynamoDB Update')).toBeFalsy()
     })
 
     test('legacy lambda api should not be updated', () => {
@@ -74,7 +86,7 @@ describe('stepfunctions command helpers tests', () => {
         Resource: 'arn:aws:lambda:sa-east-1:601427271234:function:hello-function',
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step)).toBeFalsy()
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Legacy Lambda')).toBeFalsy()
     })
   })
 
