@@ -125,20 +125,35 @@ export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType):
   }
 }
 
-export const shouldUpdateStepForTracesMerging = (step: StepType): boolean => {
+export const shouldUpdateStepForTracesMerging = (step: StepType, context: BaseContext, stepName: string): boolean => {
   // is default lambda api
   if (step.Resource === 'arn:aws:states:::lambda:invoke') {
     if (!step.Parameters) {
+      context.stdout
+        .write(`[Warn] Step ${stepName} does not have a Parameters field. Step Functions Context Object injection \
+skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually merge these traces, \
+check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
       return false
     }
+
     // payload field not set
     if (!step.Parameters.hasOwnProperty('Payload.$')) {
       return true
     }
+
     // default payload
     if (step.Parameters['Payload.$'] === '$') {
       return true
     }
+
+    // custom payload
+    context.stdout
+      .write(`[Warn] Step ${stepName} has a custom Payload field. Step Functions Context Object injection skipped. \
+Your Step Functions trace will not be merged with downstream Lambda traces. To manually merge these traces, \
+check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+    return false
   }
 
   return false
@@ -198,7 +213,7 @@ export type ParametersType = {
 }
 
 const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
-  if (shouldUpdateStepForTracesMerging(step)) {
+  if (shouldUpdateStepForTracesMerging(step, context, stepName)) {
     addTraceContextToLambdaParameters(step)
 
     return true
