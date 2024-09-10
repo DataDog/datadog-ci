@@ -833,6 +833,8 @@ describe('utils', () => {
     const apiTest = getApiTest('pid')
     const result: Result = {
       executionRule: ExecutionRule.BLOCKING,
+      initialResultId: undefined,
+      isNonFinal: false,
       location: mockLocation.display_name,
       passed: true,
       result: getBrowserServerResult({passed: true}),
@@ -1058,7 +1060,7 @@ describe('utils', () => {
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
-        {...result, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
+        {...result, isNonFinal: true, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
         MOCK_BASE_URL,
         'bid'
       )
