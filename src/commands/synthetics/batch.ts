@@ -299,6 +299,12 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
   }
 }
 
+/**
+ * A residual result is either:
+ * - Still incomplete (from the poll results POV): report it with incomplete data and a warning. 
+ * - Still in progress (from the batch POV): it was never emitted.  
+ * - A timed out retry.
+ */
 const isResidualResult = (
   result: BaseResultInBatch,
   emittedResultIds: Set<string>,
