@@ -197,7 +197,9 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeTruthy()
+      expect(
+        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
+      ).toBeTruthy()
     })
 
     test('is true for undefined', () => {
@@ -209,7 +211,9 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeTruthy()
+      expect(
+        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
+      ).toBeTruthy()
     })
 
     test('is false when Input is an object that contains a CONTEXT key', () => {
@@ -222,7 +226,9 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForStepFunctionContextInjection(step)).toBeFalsy()
+      expect(
+        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
+      ).toBeFalsy()
     })
   })
 
@@ -238,7 +244,7 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
 
-      const changed = injectContextForStepFunctions(step)
+      const changed = injectContextForStepFunctions(step, context, 'Step Functions StartExecution')
       expect(changed).toBeTruthy()
       expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
     })

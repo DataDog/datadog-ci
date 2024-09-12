@@ -95,7 +95,7 @@ export const injectContextIntoTasks = async (
     if (definitionObj.States.hasOwnProperty(stepName)) {
       const step = definitionObj.States[stepName]
       const lambdaUpdated = injectContextForLambdaFunctions(step, context, stepName)
-      const stepUpdated = injectContextForStepFunctions(step)
+      const stepUpdated = injectContextForStepFunctions(step, context, stepName)
       definitionHasBeenUpdated = lambdaUpdated || stepUpdated
     }
   }
@@ -167,21 +167,45 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
 // not object               | false
 // object without CONTEXT.$ | true
 // object with CONTEXT.$    | false
-export const shouldUpdateStepForStepFunctionContextInjection = (step: StepType): boolean => {
+export const shouldUpdateStepForStepFunctionContextInjection = (
+  step: StepType,
+  context: BaseContext,
+  stepName: string
+): boolean => {
   // is default lambda api
   if (step.Resource?.startsWith('arn:aws:states:::states:startExecution')) {
     if (!step.Parameters) {
+      context.stdout
+        .write(`[Warn] Step ${stepName} does not have a Parameters field. Step Functions Context Object injection \
+skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually merge these \
+traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
       return false
     }
+
     if (!step.Parameters.Input) {
       return true
     }
+
     if (typeof step.Parameters.Input !== 'object') {
+      context.stdout
+        .write(`[Warn] Step ${stepName}'s Parameters.Input field is not a JSON object. Step Functions Context Object \
+injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually \
+merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
       return false
     }
+
     if (!step.Parameters.Input['CONTEXT.$']) {
       return true
     }
+
+    context.stdout
+      .write(`[Warn] Step ${stepName}'s Parameters.Input field has a custom CONTEXT field. Step Functions Context \
+Object injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To \
+manually merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+    return false
   }
 
   return false
@@ -228,8 +252,8 @@ const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, s
   return false
 }
 
-export const injectContextForStepFunctions = (step: StepType): boolean => {
-  if (shouldUpdateStepForStepFunctionContextInjection(step)) {
+export const injectContextForStepFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
+  if (shouldUpdateStepForStepFunctionContextInjection(step, context, stepName)) {
     addTraceContextToStepFunctionParameters(step)
 
     return true
