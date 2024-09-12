@@ -1,6 +1,6 @@
 import {Cli} from 'clipanion/lib/advanced'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createMockContext, getAxiosError} from '../../../helpers/__tests__/fixtures'
 
 import {DeploymentCorrelateCommand} from '../correlate'
 
@@ -74,5 +74,27 @@ describe('execute', () => {
       "CI_PIPELINE_ID": "1",
       "CI_JOB_ID": "1"
     }`)
+  })
+  test('handleError', async () => {
+    const command = new DeploymentCorrelateCommand()
+    command['context'] = createMockContext() as any
+
+    const axiosError = getAxiosError(400, {
+      message: 'Request failed with status code 400',
+      errors: ['Some validation error'],
+    })
+
+    command['handleError'](axiosError)
+
+    expect(command['context'].stdout.toString()).toStrictEqual(
+      `[ERROR] Could not send deployment correlation data: {
+  "status": 400,
+  "response": {
+    "errors": [
+      "Some validation error"
+    ]
+  }
+}\n`
+    )
   })
 })

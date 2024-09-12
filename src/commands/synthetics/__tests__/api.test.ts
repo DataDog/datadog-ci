@@ -5,6 +5,8 @@ import type {AxiosResponse} from 'axios'
 
 import axios, {AxiosError} from 'axios'
 
+import {getAxiosError} from '../../../helpers/__tests__/fixtures'
+
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
 import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
@@ -14,7 +16,6 @@ import * as utils from '../utils/public'
 import {
   ciConfig,
   getApiTest,
-  getAxiosHttpError,
   getSyntheticsProxy,
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   MOBILE_PRESIGNED_UPLOAD_PARTS,
@@ -478,31 +479,31 @@ describe('getApiHelper', () => {
 
 describe('formatBackendErrors', () => {
   test('backend error - no error', () => {
-    const backendError = getAxiosHttpError(500, {errors: []})
+    const backendError = getAxiosError(500, {errors: []})
     expect(formatBackendErrors(backendError)).toBe('error querying https://app.datadoghq.com/example')
   })
 
   test('backend error - single error', () => {
-    const backendError = getAxiosHttpError(500, {errors: ['single error']})
+    const backendError = getAxiosError(500, {errors: ['single error']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned: "single error"'
     )
   })
 
   test('backend error - multiple errors', () => {
-    const backendError = getAxiosHttpError(500, {errors: ['error 1', 'error 2']})
+    const backendError = getAxiosError(500, {errors: ['error 1', 'error 2']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned:\n  - error 1\n  - error 2'
     )
   })
 
   test('not a backend error', () => {
-    const requestError = getAxiosHttpError(403, {message: 'Forbidden'})
+    const requestError = getAxiosError(403, {message: 'Forbidden'})
     expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
   })
 
   test('missing scope error', () => {
-    const requestError = getAxiosHttpError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
+    const requestError = getAxiosError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
     expect(formatBackendErrors(requestError, 'synthetics_default_settings_read')).toBe(
       'query on https://app.datadoghq.com/example returned:\n  - Forbidden\n  - Failed permission authorization checks\nIs the App key granted the synthetics_default_settings_read scope?'
     )

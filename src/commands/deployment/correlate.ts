@@ -1,5 +1,4 @@
-import type {AxiosError} from 'axios'
-
+import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
@@ -150,7 +149,8 @@ export class DeploymentCorrelateCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.handleError(error as AxiosError)
+      // TODO: use `coerceError()`
+      this.handleError(error as Error)
     }
   }
 
@@ -169,10 +169,20 @@ export class DeploymentCorrelateCommand extends Command {
     return true
   }
 
-  private handleError(error: AxiosError) {
+  private handleError(error: Error) {
     this.context.stderr.write(
-      `${chalk.red.bold('[ERROR]')} Could not send deployment correlation data: ` +
-        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+      `${chalk.red.bold('[ERROR]')} Could not send deployment correlation data: ${
+        isAxiosError(error)
+          ? JSON.stringify(
+              {
+                status: error.response?.status,
+                response: error.response?.data as unknown,
+              },
+              undefined,
+              2
+            )
+          : error.message
+      }\n`
     )
   }
 }
