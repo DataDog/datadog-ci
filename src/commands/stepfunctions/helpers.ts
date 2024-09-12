@@ -196,7 +196,7 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
       return false
     }
 
-    if (!step.Parameters.Input['CONTEXT.$']) {
+    if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
       return true
     }
 
@@ -234,6 +234,7 @@ export type ParametersType = {
   TableName?: string
   Input?: {
     'CONTEXT.$'?: string
+    CONTEXT?: string
   }
 }
 
