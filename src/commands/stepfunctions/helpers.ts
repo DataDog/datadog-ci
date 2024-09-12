@@ -138,7 +138,7 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
     }
 
     // payload field not set
-    if (!step.Parameters.hasOwnProperty('Payload.$')) {
+    if (!step.Parameters.hasOwnProperty('Payload.$') && !step.Parameters.hasOwnProperty('Payload')) {
       return true
     }
 
@@ -228,6 +228,7 @@ export type StepType = {
 
 export type ParametersType = {
   'Payload.$'?: string
+  Payload?: string
   FunctionName?: string
   StateMachineArn?: string
   TableName?: string

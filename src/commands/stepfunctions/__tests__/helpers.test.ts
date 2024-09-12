@@ -68,6 +68,32 @@ describe('stepfunctions command helpers tests', () => {
       expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeTruthy()
     })
 
+    test('custom payload field not using JsonPath expression', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Payload: '{"action": "service/delete_customer"}',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test('custom payload field using JsonPath expression', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          'Payload.$': '{"customer.$": "$.customer"}',
+        },
+        End: true,
+      }
+      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
     test('none-lambda step should not be updated', () => {
       const step: StepType = {
         Type: 'Task',
