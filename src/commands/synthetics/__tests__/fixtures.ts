@@ -195,6 +195,7 @@ const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'>
   passed: true,
   resultId,
   retries: 0,
+  maxRetries: 0,
   test,
   timedOut: false,
   timestamp: 1,
@@ -239,6 +240,7 @@ export const getTimedOutBrowserResult = (): Result => ({
   },
   resultId: '1',
   retries: 0,
+  maxRetries: 0,
   test: getBrowserTest(),
   timedOut: true,
   timestamp: 1,
@@ -299,6 +301,7 @@ export const getFailedBrowserResult = (): Result => ({
   },
   resultId: '1',
   retries: 0,
+  maxRetries: 0,
   test: getBrowserTest(),
   timedOut: false,
   timestamp: 1,
@@ -522,6 +525,8 @@ export const getInProgressResultInBatch = (): BaseResultInBatch => {
     result_id: 'rid',
     // eslint-disable-next-line no-null/no-null
     retries: null,
+    // eslint-disable-next-line no-null/no-null
+    max_retries: null,
     status: 'in_progress',
     test_public_id: 'pid',
     // eslint-disable-next-line no-null/no-null
@@ -535,6 +540,8 @@ export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun 
     execution_rule: ExecutionRule.SKIPPED,
     // eslint-disable-next-line no-null/no-null
     retries: null,
+    // eslint-disable-next-line no-null/no-null
+    max_retries: null,
     status: 'skipped',
     selective_rerun: {
       decision: 'skip',

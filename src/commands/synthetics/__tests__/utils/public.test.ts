@@ -833,11 +833,14 @@ describe('utils', () => {
     const apiTest = getApiTest('pid')
     const result: Result = {
       executionRule: ExecutionRule.BLOCKING,
+      initialResultId: undefined,
+      isNonFinal: false,
       location: mockLocation.display_name,
       passed: true,
       result: getBrowserServerResult({passed: true}),
       resultId: 'rid',
       retries: 0,
+      maxRetries: 0,
       selectiveRerun: undefined,
       test: apiTest,
       timedOut: false,
@@ -1057,7 +1060,7 @@ describe('utils', () => {
       })
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
-        {...result, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
+        {...result, isNonFinal: true, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
         MOCK_BASE_URL,
         'bid'
       )
@@ -1326,7 +1329,7 @@ describe('utils', () => {
         'bid'
       )
       expect(mockReporter.error).toHaveBeenCalledWith(
-        'The full information for result rid was incomplete at the end of the batch.\n\n'
+        'The information for result rid of test pid was incomplete at the end of the batch.\n\n'
       )
 
       // Do not report when there are no tests to wait anymore

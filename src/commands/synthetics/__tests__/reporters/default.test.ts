@@ -12,6 +12,7 @@ import {
   UserConfigOverride,
 } from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
+import {isTimedOutRetry} from '../../utils/internal'
 
 import {
   getApiResult,
@@ -238,7 +239,9 @@ describe('Default reporter', () => {
         incomplete?: boolean
         passed?: boolean
         retries?: number
+        maxRetries?: number
         selectiveRerun?: SelectiveRerunDecision
+        timedOut?: boolean
       },
       test: Test
     ): Result => {
@@ -252,7 +255,7 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      const {executionRule, incomplete, passed, retries, selectiveRerun} = opts
+      const {executionRule, incomplete, passed, retries, maxRetries, selectiveRerun, timedOut} = opts
 
       const result = test.type === 'api' ? getApiResult(resultId, test) : getBrowserResult(resultId, test)
 
@@ -263,9 +266,22 @@ describe('Default reporter', () => {
           ...(passed ? {} : {failure}),
           passed,
         }
-        result.retries = retries ?? 0
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
+      }
+
+      result.retries = retries ?? 0
+      result.maxRetries = maxRetries ?? 0
+
+      if (timedOut) {
+        result.timedOut = true
+        result.passed = false // `failOnTimeout` is assumed to be true
+
+        if (isTimedOutRetry(result.retries, result.maxRetries, timedOut)) {
+          result.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'}
+        } else {
+          result.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
+        }
       }
 
       if (executionRule) {
@@ -285,13 +301,6 @@ describe('Default reporter', () => {
 
     const apiTest = getApiTest('aaa-aaa-aaa')
     const browserTest = getBrowserTest('bbb-bbb-bbb')
-    const retryableApiTest: Test = {
-      ...apiTest,
-      options: {
-        ...apiTest.options,
-        retry: {count: 2},
-      },
-    }
 
     const cases = [
       {
@@ -359,13 +368,35 @@ describe('Default reporter', () => {
         },
       },
       {
-        description: '1 API test, 3 attempts (2 failed, then passed)',
+        description: 'Retryable test - Usual case: passes after max retries',
         fixtures: {
           baseUrl: MOCK_BASE_URL,
           results: [
-            createFakeResult('1', {passed: false, retries: 0}, retryableApiTest),
-            createFakeResult('2', {passed: false, retries: 1}, retryableApiTest),
-            createFakeResult('3', {passed: true, retries: 2}, retryableApiTest),
+            createFakeResult('0', {passed: false, retries: 0, maxRetries: 2}, apiTest),
+            createFakeResult('1', {passed: false, retries: 1, maxRetries: 2}, apiTest),
+            createFakeResult('2', {passed: true, retries: 2, maxRetries: 2}, apiTest),
+          ],
+        },
+      },
+      {
+        description: 'Retryable test - Usual case: passes after 1 retry only',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            createFakeResult('0', {passed: false, retries: 0, maxRetries: 2}, apiTest),
+            createFakeResult('1', {passed: true, retries: 1, maxRetries: 2}, apiTest),
+          ],
+        },
+      },
+      {
+        description: 'Retryable test - Edge case: fails, then retry times out',
+        fixtures: {
+          baseUrl: MOCK_BASE_URL,
+          results: [
+            // The initial result ID is known from the beginning
+            createFakeResult('0', {passed: false, retries: 0, maxRetries: 1}, apiTest),
+            // If the retry times out, the result ID stays the same
+            createFakeResult('0', {timedOut: true, retries: 0, maxRetries: 1}, apiTest),
           ],
         },
       },
