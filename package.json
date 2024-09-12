@@ -23,11 +23,7 @@
     "access": "public"
   },
   "resolutions": {
-    "@types/retry": "0.12.0",
-    "aws-sdk-client-mock": "2.1.1",
-    "aws-sdk-client-mock-jest": "2.1.1",
-    "ini": "1.3.7",
-    "kind-of@^6.0.0": "6.0.3"
+    "ini": "1.3.8"
   },
   "pkg": {
     "scripts": [
@@ -76,7 +72,6 @@
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
     "@types/datadog-metrics": "0.6.1",
-    "@types/retry": "0.12.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "async-retry": "1.3.1",
@@ -118,7 +113,7 @@
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",
     "@microsoft/eslint-formatter-sarif": "^3.0.0",
-    "@types/async-retry": "1.4.2",
+    "@types/async-retry": "1.4.8",
     "@types/deep-extend": "0.4.31",
     "@types/glob": "7.1.1",
     "@types/inquirer": "8.2.6",

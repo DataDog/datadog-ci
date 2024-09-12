@@ -47,7 +47,7 @@ export const makeCli = () => {
   return cli
 }
 
-export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>) => {
+export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>) => {
   lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})
   lambdaClientMock.on(TagResourceCommand).resolves({})
   lambdaClientMock.on(GetLayerVersionCommand).rejects()
@@ -55,7 +55,7 @@ export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInput
 }
 
 export const mockLambdaConfigurations = (
-  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>,
+  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>,
   functionConfigurations: Record<string, {config: LFunctionConfiguration; tags?: ListTagsResponse}>
 ) => {
   const functions: LFunctionConfiguration[] = []
@@ -88,7 +88,7 @@ export const mockLambdaConfigurations = (
 }
 
 export const mockLambdaLayers = (
-  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes>,
+  lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>,
   layers: Record<string, GetLayerVersionCommandInput>
 ) => {
   for (const layerName in layers) {
@@ -108,7 +108,7 @@ export const mockLambdaLayers = (
 }
 
 export const mockLogGroups = (
-  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes, any>,
   logGroups: Record<
     string,
     {
@@ -136,7 +136,7 @@ export const mockLogGroups = (
 }
 
 export const mockCloudWatchLogsClientCommands = (
-  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes, any>
 ) => {
   cloudWatchLogsClientMock.on(DescribeLogGroupsCommand).resolves({})
   cloudWatchLogsClientMock.on(DescribeSubscriptionFiltersCommand).resolves({})
@@ -146,21 +146,21 @@ export const mockCloudWatchLogsClientCommands = (
 }
 
 export const mockCloudWatchLogStreams = (
-  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes, any>,
   logStreams: LogStream[]
 ) => {
   cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).resolves({logStreams})
 }
 
 export const mockCloudWatchLogEvents = (
-  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes>,
+  cloudWatchLogsClientMock: AwsStub<CWLServiceInputTypes, CWLServiceOutputTypes, any>,
   events: OutputLogEvent[]
 ) => {
   cloudWatchLogsClientMock.on(GetLogEventsCommand).resolves({events})
 }
 
 export const mockResourceTags = (
-  lambdaClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes>,
+  lambdaClientMock: AwsStub<ServiceInputTypes, ServiceOutputTypes, any>,
   output: ListTagsCommandOutput
 ) => {
   lambdaClientMock.on(ListTagsCommand).resolves(output)

@@ -1893,7 +1893,7 @@ __metadata:
     "@microsoft/eslint-formatter-sarif": ^3.0.0
     "@smithy/property-provider": ^2.0.12
     "@smithy/util-retry": ^2.0.4
-    "@types/async-retry": 1.4.2
+    "@types/async-retry": 1.4.8
     "@types/datadog-metrics": 0.6.1
     "@types/deep-extend": 0.4.31
     "@types/glob": 7.1.1
@@ -1901,7 +1901,6 @@ __metadata:
     "@types/jest": 29.5.3
     "@types/js-yaml": ^4.0.5
     "@types/node": 14.18.34
-    "@types/retry": 0.12.0
     "@types/rimraf": ^3.0.2
     "@types/semver": ^7.3.12
     "@types/ssh2": 1.11.6
@@ -3449,12 +3448,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/async-retry@npm:1.4.2":
-  version: 1.4.2
-  resolution: "@types/async-retry@npm:1.4.2"
+"@types/async-retry@npm:1.4.8":
+  version: 1.4.8
+  resolution: "@types/async-retry@npm:1.4.8"
   dependencies:
     "@types/retry": "*"
-  checksum: a56040d09d67507b7bbcbef02fd052f5d57359f358b93b3393413e8d4fe7181825d19d0ecee42f7a9100c1b6fb23e740464162709fef14c2ba9a329e172d50ec
+  checksum: 5d4b0b786e2506ab690c311d55a8000c3675cf1036290ad3b83af11ad791c62c9e16e7ff5a6dac3fae557404127451e72c297d711701015b027227586368eaf5
   languageName: node
   linkType: hard
 
@@ -3675,10 +3674,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/retry@npm:0.12.0":
-  version: 0.12.0
-  resolution: "@types/retry@npm:0.12.0"
-  checksum: 61a072c7639f6e8126588bf1eb1ce8835f2cb9c2aba795c4491cf6310e013267b0c8488039857c261c387e9728c1b43205099223f160bb6a76b4374f741b5603
+"@types/retry@npm:*":
+  version: 0.12.5
+  resolution: "@types/retry@npm:0.12.5"
+  checksum: 3fb6bf91835ca0eb2987567d6977585235a7567f8aeb38b34a8bb7bbee57ac050ed6f04b9998cda29701b8c893f5dfe315869bc54ac17e536c9235637fe351a2
   languageName: node
   linkType: hard
 
@@ -4346,26 +4345,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aws-sdk-client-mock-jest@npm:2.1.1":
-  version: 2.1.1
-  resolution: "aws-sdk-client-mock-jest@npm:2.1.1"
+"aws-sdk-client-mock-jest@npm:^2.1.1":
+  version: 2.2.0
+  resolution: "aws-sdk-client-mock-jest@npm:2.2.0"
   dependencies:
     "@types/jest": ^28.1.3
     tslib: ^2.1.0
   peerDependencies:
-    aws-sdk-client-mock: 2.1.1
-  checksum: 4b5ca96bbcaa60ea3ea947821c7ff1f073c1342a12ce5c778b70832bdcc6106e10591e98e09b22c5b0d83dfc6fe554e8a08d5df5cf067a7eaadb804087b891ed
+    aws-sdk-client-mock: 2.2.0
+  checksum: 2b9367077b745df34da049e2c90f4d743e38369d2d0f0469582ad27a8db52c2f1d5a711ec93b398bd54b732e1454e0028ef161eaea29a0309094ca24ef51a926
   languageName: node
   linkType: hard
 
-"aws-sdk-client-mock@npm:2.1.1":
-  version: 2.1.1
-  resolution: "aws-sdk-client-mock@npm:2.1.1"
+"aws-sdk-client-mock@npm:^2.1.1":
+  version: 2.2.0
+  resolution: "aws-sdk-client-mock@npm:2.2.0"
   dependencies:
     "@types/sinon": ^10.0.10
     sinon: ^14.0.2
     tslib: ^2.1.0
-  checksum: 8330b88cdaeae401390ece094344ed727db0b007369d862a88afc0a29249828b95cce809faa0c2289c1af99528af0e765b4aba8156b948d01a12299390195cea
+  checksum: 25232d56cd0401bc1212730a4a0192efc5154a211a648fe0cb4d71bd693216f63c8f13776ef04b4b36fb8eb70b9a7d19d87a3979816b9fd153450d44515d5598
   languageName: node
   linkType: hard
 
@@ -6916,10 +6915,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ini@npm:1.3.7":
-  version: 1.3.7
-  resolution: "ini@npm:1.3.7"
-  checksum: f8f3801e8eb039f9e03cdc27ceb494a7ac6e6ca7b2dd8394a9ef97ed5ae66930fadefd5ec908e41e4b103d3c9063b5788d47de5e8e892083c7a67b489f3b962d
+"ini@npm:1.3.8":
+  version: 1.3.8
+  resolution: "ini@npm:1.3.8"
+  checksum: dfd98b0ca3a4fc1e323e38a6c8eb8936e31a97a918d3b377649ea15bdb15d481207a0dda1021efbd86b464cae29a0d33c1d7dcaf6c5672bee17fa849bc50a1b3
   languageName: node
   linkType: hard
 
