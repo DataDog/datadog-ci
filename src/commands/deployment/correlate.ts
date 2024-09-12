@@ -8,6 +8,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
+import type { AxiosError } from "axios";
 
 /**
  * This command collects environment variables and git information to correlate commits from the
@@ -148,7 +149,7 @@ export class DeploymentCorrelateCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.logger.error(`Failed to send deployment correlation data: ${error.message}`)
+      this.handleError(error as AxiosError)
     }
   }
 
@@ -165,5 +166,12 @@ export class DeploymentCorrelateCommand extends Command {
     }
 
     return true
+  }
+
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send deployment correlation data: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
   }
 }
