@@ -1,3 +1,5 @@
+import type {AxiosError} from 'axios'
+
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
@@ -8,7 +10,6 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import type { AxiosError } from "axios";
 
 /**
  * This command collects environment variables and git information to correlate commits from the
