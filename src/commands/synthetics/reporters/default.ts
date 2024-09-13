@@ -297,7 +297,7 @@ const getAttemptSuffix = (passed: boolean, retries: number, maxRetries: number, 
       return chalk.dim(`attempt ${current} of ${max}, retrying…`)
     }
 
-    return chalk.dim(`attempt ${current}, success`)
+    return chalk.dim(`attempt ${current}, done`)
   }
 
   if (isTimedOutRetry(retries, maxRetries, timedOut)) {
