@@ -2,13 +2,14 @@ import {exec} from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
 import process from 'process'
-import {promisify} from 'util'
+import {inspect, promisify} from 'util'
 
 import chalk from 'chalk'
 import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
+import {coerceError} from '../../../helpers/errors'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
@@ -256,7 +257,9 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
         return {name: suiteName, content: JSON.parse(content)}
       } catch (e) {
-        throw new Error(`Unable to read and parse the test file ${file}`)
+        throw new Error(`Unable to read and parse the test file ${file}`, {
+          cause: coerceError(e),
+        })
       }
     })
   )
@@ -620,7 +623,7 @@ export const runTests = async (
     const errorMessage = formatBackendErrors(e)
     const testIds = testsToTrigger.map((t) => t.public_id).join(',')
     // Rewrite error message
-    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}`, e.response?.status)
   }
 }
 
@@ -859,7 +862,7 @@ export const pluralize = (word: string, count: number): string => (count === 1 ?
 export const reportCiError = (error: CiError, reporter: MainReporter) => {
   switch (error.code) {
     case 'NO_TESTS_TO_RUN':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: No tests to run ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: no tests to run ')}\n${error.message}\n\n`)
       break
     case 'MISSING_TESTS':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
@@ -867,11 +870,11 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
 
     // Critical command errors
     case 'AUTHORIZATION_ERROR':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: authorization error ')}\n${inspect(error)}\n\n`)
       reporter.log('Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n')
       break
     case 'INVALID_CONFIG':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${inspect(error)}\n\n`)
       break
     case 'MISSING_APP_KEY':
       reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
@@ -880,30 +883,28 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
       break
     case 'POLL_RESULTS_FAILED':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${inspect(error)}\n\n`)
       break
     case 'BATCH_TIMEOUT_RUNAWAY':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: batch timeout runaway ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: batch timeout runaway ')}\n${inspect(error)}\n\n`)
       break
     case 'TUNNEL_START_FAILED':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to start tunnel ')}\n${inspect(error)}\n\n`)
       break
     case 'TOO_MANY_TESTS_TO_TRIGGER':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: too many tests to trigger ')}\n${inspect(error)}\n\n`)
       break
     case 'TRIGGER_TESTS_FAILED':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to trigger tests ')}\n${inspect(error)}\n\n`)
       break
     case 'UNAVAILABLE_TEST_CONFIG':
-      reporter.error(
-        `\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations with search query ')}\n${error.message}\n\n`
-      )
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to obtain test configurations ')}\n${inspect(error)}\n\n`)
       break
     case 'UNAVAILABLE_TUNNEL_CONFIG':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${inspect(error)}\n\n`)
       break
 
     default:
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${inspect(error)}\n\n`)
   }
 }

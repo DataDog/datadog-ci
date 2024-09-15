@@ -13,7 +13,7 @@
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
     "esModuleInterop": true,
-    "lib": ["es2020"],
+    "lib": ["es2022"],
     "resolveJsonModule": true
   },
   "include": ["src/**/*"]

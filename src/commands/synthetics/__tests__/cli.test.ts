@@ -1399,7 +1399,9 @@ describe('run-test', () => {
       expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
       expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 test override)\n')
       expect(writeMock).toHaveBeenCalledWith(
-        '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
+        expect.stringContaining(
+          '\n ERROR: authorization error \nCriticalError: Failed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"'
+        )
       )
       expect(writeMock).toHaveBeenCalledWith(
         'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'

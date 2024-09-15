@@ -332,7 +332,7 @@ describe('run-test', () => {
       test(`getTestsList throws - ${status}`, async () => {
         const apiHelper = {
           searchTests: jest.fn(() => {
-            throw getAxiosHttpError(status, {message: 'Server Error'})
+            throw getAxiosHttpError(status, {errors: [status === 403 ? 'Forbidden' : 'Bad Gateway']})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -342,13 +342,22 @@ describe('run-test', () => {
             testSearchQuery: 'a-search-query',
             tunnel: true,
           })
-        ).rejects.toThrow(new CriticalError(error, 'Server Error'))
+        ).rejects.toThrow(
+          new CriticalError(
+            error,
+            status === 403
+              ? 'Failed to search tests with query: query on https://app.datadoghq.com/example returned: "Forbidden"'
+              : new Error(
+                  'Failed to search tests with query: query on https://app.datadoghq.com/example returned: "Bad Gateway"'
+                )
+          )
+        )
       })
 
       test(`getTestsToTrigger throws - ${status}`, async () => {
         const apiHelper = {
           getTest: jest.fn(() => {
-            throw getAxiosHttpError(status, {errors: ['Bad Gateway']})
+            throw getAxiosHttpError(status, {errors: [status === 403 ? 'Forbidden' : 'Bad Gateway']})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -361,7 +370,9 @@ describe('run-test', () => {
         ).rejects.toThrow(
           new CriticalError(
             error,
-            'Failed to get test: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+            status === 403
+              ? 'Failed to get test: query on https://app.datadoghq.com/example returned: "Forbidden"'
+              : new Error('Failed to get test: query on https://app.datadoghq.com/example returned: "Bad Gateway"')
           )
         )
       })
@@ -389,7 +400,7 @@ describe('run-test', () => {
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           tunnel: true,
         })
-      ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
+      ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', new Error('Server Error')))
     })
 
     test.each(compat)('getMobileApplicationPresignedURLs throws ($compat)', async ({defaultTestOverrides}) => {
@@ -494,7 +505,7 @@ describe('run-test', () => {
       ).rejects.toThrow(
         new CriticalError(
           'TRIGGER_TESTS_FAILED',
-          '[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+          new Error('[] Failed to trigger tests: query on https://app.datadoghq.com/example returned: "Bad Gateway"')
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
@@ -546,7 +557,7 @@ describe('run-test', () => {
       ).rejects.toThrow(
         new CriticalError(
           'POLL_RESULTS_FAILED',
-          'Failed to poll results: query on https://app.datadoghq.com/example returned: "Bad Gateway"\n'
+          new Error('Failed to poll results: query on https://app.datadoghq.com/example returned: "Bad Gateway"')
         )
       )
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)

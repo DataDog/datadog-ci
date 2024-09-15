@@ -1,3 +1,11 @@
+/* eslint-disable max-classes-per-file */
+
+import {isAxiosError} from 'axios'
+
+import {coerceError} from '../../helpers/errors'
+
+import {isEndpointError, isForbiddenError} from './api'
+
 const nonCriticalErrorCodes = ['NO_TESTS_TO_RUN', 'MISSING_TESTS'] as const
 export type NonCriticalCiErrorCode = typeof nonCriticalErrorCodes[number]
 
@@ -22,14 +30,15 @@ const criticalErrorCodes = [
   'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
   'MOBILE_APP_UPLOAD_TIMEOUT',
   'UNKNOWN_MOBILE_APP_UPLOAD_FAILURE',
+  'UNKNOWN',
 ] as const
 export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 
 export type CiErrorCode = NonCriticalCiErrorCode | CriticalCiErrorCode
 
 export class CiError extends Error {
-  constructor(public code: CiErrorCode, message?: string) {
-    super(message)
+  constructor(public code: CiErrorCode, message?: string, cause?: Error) {
+    super(message, {cause})
   }
 
   public toJson() {
@@ -41,8 +50,11 @@ export class CiError extends Error {
 }
 
 export class CriticalError extends CiError {
-  constructor(public code: CriticalCiErrorCode, message?: string) {
-    super(code, message)
+  constructor(public code: CriticalCiErrorCode, cause?: string | Error) {
+    const message = typeof cause === 'string' ? cause : cause?.message
+    const error = cause instanceof Error ? cause : undefined
+
+    super(code, message, error)
   }
 }
 
@@ -50,4 +62,34 @@ export class BatchTimeoutRunawayError extends CriticalError {
   constructor() {
     super('BATCH_TIMEOUT_RUNAWAY', "The batch didn't timeout after the expected timeout period.")
   }
+}
+
+export const wrapError = (e: unknown): Error => {
+  const error = coerceError(e)
+  if (error instanceof CiError) {
+    return error
+  }
+
+  if (isAxiosError(error)) {
+    // Avoid leaking any unexpected information.
+    delete error.config
+    delete error.request
+    delete error.response
+
+    if (isForbiddenError(error)) {
+      return new CriticalError('AUTHORIZATION_ERROR', error.message)
+    }
+
+    return error
+  }
+
+  if (isForbiddenError(error)) {
+    return new CriticalError('AUTHORIZATION_ERROR', error.message)
+  }
+
+  if (isEndpointError(error)) {
+    return error
+  }
+
+  return new CriticalError('UNKNOWN', error)
 }

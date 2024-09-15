@@ -64,7 +64,7 @@ export const uploadMobileApplication = async (
   try {
     multipartPresignedUrlsResponse = await api.getMobileApplicationPresignedURLs(applicationId, appSize, parts)
   } catch (e) {
-    throw new EndpointError(`Failed to get presigned URL: ${formatBackendErrors(e)}\n`, e.response?.status)
+    throw new EndpointError(`Failed to get presigned URL: ${formatBackendErrors(e)}`, e.response?.status)
   }
 
   let uploadPartResponses: MobileApplicationUploadPartResponse[]
@@ -74,7 +74,7 @@ export const uploadMobileApplication = async (
       multipartPresignedUrlsResponse.multipart_presigned_urls_params
     )
   } catch (e) {
-    throw new EndpointError(`Failed to upload mobile application: ${formatBackendErrors(e)}\n`, e.response?.status)
+    throw new EndpointError(`Failed to upload mobile application: ${formatBackendErrors(e)}`, e.response?.status)
   }
 
   const {upload_id: uploadId, key} = multipartPresignedUrlsResponse.multipart_presigned_urls_params
@@ -89,7 +89,7 @@ export const uploadMobileApplication = async (
     )
   } catch (e) {
     throw new EndpointError(
-      `Failed to complete upload mobile application: ${formatBackendErrors(e)}\n`,
+      `Failed to complete upload mobile application: ${formatBackendErrors(e)}`,
       e.response?.status
     )
   }
@@ -103,7 +103,7 @@ export const uploadMobileApplication = async (
     try {
       appUploadResponse = await api.pollMobileApplicationUploadResponse(jobId)
     } catch (e) {
-      throw new EndpointError(`Failed to validate mobile application: ${formatBackendErrors(e)}\n`, e.response?.status)
+      throw new EndpointError(`Failed to validate mobile application: ${formatBackendErrors(e)}`, e.response?.status)
     }
 
     if (appUploadResponse.status !== 'pending') {
