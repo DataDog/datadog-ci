@@ -28,7 +28,7 @@ import {
   reportExitLogs,
 } from './utils/public'
 
-export const MAX_TESTS_TO_TRIGGER = 100
+export const MAX_TESTS_TO_TRIGGER = 1000
 
 export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
 /** @deprecated Please use `DEFAULT_BATCH_TIMEOUT` instead. */
