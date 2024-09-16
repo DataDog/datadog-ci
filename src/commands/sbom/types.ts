@@ -81,7 +81,7 @@ export interface Locations {
 }
 
 export interface Property {
-  name: string,
+  name: string
   value: string
 }
 

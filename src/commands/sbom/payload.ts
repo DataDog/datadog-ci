@@ -105,8 +105,8 @@ export const generatePayload = (
   }
 
   const dependencies: Dependency[] = []
-  const files: File[] = [];
-  const component_links: ComponentLink[] = []
+  const files: File[] = []
+  const componentLinks: ComponentLink[] = []
 
   if (jsonContent) {
     if (jsonContent['components']) {
@@ -117,7 +117,7 @@ export const generatePayload = (
 
         if (component['type'] === 'library') {
           const dependency = extractingDependency(component)
-          if (dependency !== null) {
+          if (dependency !== undefined) {
             dependencies.push(dependency)
           }
         } else if (component['type'] === 'file') {
@@ -130,7 +130,7 @@ export const generatePayload = (
         if (!dependency['ref'] || !dependency['dependsOn']) {
           continue
         }
-        component_links.push(extractingComponentLink(dependency));
+        componentLinks.push(extractingComponentLink(dependency))
       }
     }
   }
@@ -151,24 +151,25 @@ export const generatePayload = (
     tags,
     dependencies,
     files,
-    component_links,
+    component_links: componentLinks,
     service,
     env,
   }
 }
 
-const extractingDependency = (component: any): Dependency|null => {
+const extractingDependency = (component: any): Dependency | undefined => {
   const lang = getLanguageFromComponent(component)
 
   if (!lang) {
-    return null;
+    return
   }
 
   const purl: string | undefined = component['purl']
 
   if (!purl) {
     console.error(`cannot find purl for component ${component['name']}`)
-    return null;
+
+    return
   }
 
   const locations: Locations[] = []
@@ -215,6 +216,7 @@ const extractingDependency = (component: any): Dependency|null => {
     is_direct: isDirect,
     package_manager: packageManager
   }
+
   return dependency
 }
 
@@ -235,6 +237,6 @@ const extractingFile = (component: any): File => {
 const extractingComponentLink = (dependency: any): ComponentLink => {
   return {
     component_ref: dependency['ref'],
-    depends_on: dependency['dependsOn']
+    depends_on: dependency['dependsOn'],
   }
 }
