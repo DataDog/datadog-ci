@@ -1,10 +1,12 @@
 import path from 'path'
 
+import {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 import {BaseContext, Command} from 'clipanion'
 import {CommandOption} from 'clipanion/lib/advanced/options'
 
 import {CommandContext} from '../interfaces'
 
+export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_CWD = 'mock-folder'
 export const MOCK_FLARE_FOLDER_PATH = path.join(MOCK_CWD, '.datadog-ci')
@@ -83,4 +85,12 @@ export const createCommand = <T extends Command>(
   resolveCommandOptionsDefaults(command)
 
   return command
+}
+
+export const getAxiosError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
+  const serverError = new AxiosError(message) as AxiosError<any> & {config: InternalAxiosRequestConfig}
+  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'} as InternalAxiosRequestConfig
+  serverError.response = {data: {errors}, status} as AxiosResponse
+
+  return serverError
 }

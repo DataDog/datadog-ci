@@ -1,6 +1,6 @@
 import {Cli} from 'clipanion/lib/advanced'
 
-import {createCommand} from '../../../helpers/__tests__/fixtures'
+import {createCommand, getAxiosError} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
@@ -11,12 +11,12 @@ import {
   UploadApplicationCommandConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../run-tests-command'
+import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import {toBoolean, toNumber, toExecutionRule, toStringMap} from '../utils/internal'
 import * as utils from '../utils/public'
 
-import {getApiTest, getAxiosHttpError, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -1048,7 +1048,7 @@ describe('run-test', () => {
       }
 
       const triggerTests = jest.fn(() => {
-        throw getAxiosHttpError(502, {message: 'Bad Gateway'})
+        throw getAxiosError(502, {message: 'Bad Gateway'})
       })
       const apiHelper = mockApi({
         getTest: jest.fn(async () => ({...getApiTest('publicId')})),
@@ -1228,7 +1228,7 @@ describe('run-test', () => {
 
       const apiHelper = mockApi({
         getTest: jest.fn(() => {
-          throw getAxiosHttpError(404, {errors: ['Test not found']})
+          throw getAxiosError(404, {errors: ['Test not found']})
         }),
       })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
@@ -1251,7 +1251,7 @@ describe('run-test', () => {
 
           const apiHelper = mockApi({
             searchTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
@@ -1267,7 +1267,7 @@ describe('run-test', () => {
 
           const apiHelper = mockApi({
             getTest: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
@@ -1285,7 +1285,7 @@ describe('run-test', () => {
           const apiHelper = mockApi({
             getTest: async () => getApiTest('123-456-789'),
             triggerTests: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
           })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
@@ -1304,7 +1304,7 @@ describe('run-test', () => {
             getBatch: async () => ({results: [], status: 'passed'}),
             getTest: async () => getApiTest('123-456-789'),
             pollResults: jest.fn(() => {
-              throw errorCode ? getAxiosHttpError(errorCode, {message: 'Error'}) : new Error('Unknown error')
+              throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
             triggerTests: async () => mockTestTriggerResponse,
           })
@@ -1336,7 +1336,7 @@ describe('run-test', () => {
         const apiHelper = mockApi({
           getTest: jest.fn(async (testId: string) => {
             if (testId === 'mis-sin-ggg') {
-              throw getAxiosHttpError(404, {errors: ['Test not found']})
+              throw getAxiosError(404, {errors: ['Test not found']})
             }
 
             return {} as ServerTest
@@ -1369,7 +1369,7 @@ describe('run-test', () => {
       const apiHelper = mockApi({
         getTest: jest.fn(async (testId: string) => {
           if (testId === 'for-bid-den') {
-            const serverError = getAxiosHttpError(403, {errors: ['Forbidden']})
+            const serverError = getAxiosError(403, {errors: ['Forbidden']})
             serverError.config.url = 'tests/for-bid-den'
             throw serverError
           }

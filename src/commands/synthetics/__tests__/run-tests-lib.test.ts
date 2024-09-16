@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
@@ -16,7 +17,6 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
-  getAxiosHttpError,
   getMobileTest,
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   mockReporter,
@@ -332,7 +332,7 @@ describe('run-test', () => {
       test(`getTestsList throws - ${status}`, async () => {
         const apiHelper = {
           searchTests: jest.fn(() => {
-            throw getAxiosHttpError(status, {message: 'Server Error'})
+            throw getAxiosError(status, {message: 'Server Error'})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -348,7 +348,7 @@ describe('run-test', () => {
       test(`getTestsToTrigger throws - ${status}`, async () => {
         const apiHelper = {
           getTest: jest.fn(() => {
-            throw getAxiosHttpError(status, {errors: ['Bad Gateway']})
+            throw getAxiosError(status, {errors: ['Bad Gateway']})
           }),
         }
         jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
@@ -378,7 +378,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getTunnelPresignedURL: jest.fn(() => {
-          throw getAxiosHttpError(502, {message: 'Server Error'})
+          throw getAxiosError(502, {message: 'Server Error'})
         }),
       }
 
@@ -412,7 +412,7 @@ describe('run-test', () => {
 
       const apiHelper = {
         getMobileApplicationPresignedURLs: jest.fn(() => {
-          throw getAxiosHttpError(502, {message: 'Server Error'})
+          throw getAxiosError(502, {message: 'Server Error'})
         }),
       }
 
@@ -449,7 +449,7 @@ describe('run-test', () => {
       const apiHelper = {
         getMobileApplicationPresignedURLs: jest.fn(() => MOBILE_PRESIGNED_URLS_PAYLOAD),
         uploadMobileApplicationPart: jest.fn(() => {
-          throw getAxiosHttpError(502, {message: 'Server Error'})
+          throw getAxiosError(502, {message: 'Server Error'})
         }),
       }
 
@@ -480,7 +480,7 @@ describe('run-test', () => {
       const apiHelper = {
         getTunnelPresignedURL: () => ({url: 'url'}),
         triggerTests: jest.fn(() => {
-          throw getAxiosHttpError(502, {errors: ['Bad Gateway']})
+          throw getAxiosError(502, {errors: ['Bad Gateway']})
         }),
       }
 
@@ -531,7 +531,7 @@ describe('run-test', () => {
         getBatch: () => ({results: []}),
         getTunnelPresignedURL: () => ({url: 'url'}),
         pollResults: jest.fn(() => {
-          throw getAxiosHttpError(502, {errors: ['Bad Gateway']})
+          throw getAxiosError(502, {errors: ['Bad Gateway']})
         }),
       }
 

@@ -2,9 +2,6 @@ import * as http from 'http'
 import * as net from 'net'
 import {URL} from 'url'
 
-import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
-
-import {AxiosError} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
@@ -52,8 +49,6 @@ const mockUser: User = {
   name: '',
 }
 
-export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
-
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
 }
@@ -92,14 +87,6 @@ export const ciConfig: RunTestsCommandConfig = {
   testSearchQuery: '',
   tunnel: false,
   variableStrings: [],
-}
-
-export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
-  const serverError = new AxiosError(message) as AxiosError<any> & {config: InternalAxiosRequestConfig}
-  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'} as InternalAxiosRequestConfig
-  serverError.response = {data: {errors}, status} as AxiosResponse
-
-  return serverError
 }
 
 export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({

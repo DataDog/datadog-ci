@@ -4,6 +4,8 @@ import {Writable} from 'stream'
 
 import {BaseContext} from 'clipanion/lib/advanced'
 
+import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
+
 import {Device, ExecutionRule, Result, Test} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {RunTestsCommand} from '../../run-tests-command'
@@ -23,7 +25,6 @@ import {
   getMultiStepsServerResult,
   getStep,
   getSummary,
-  MOCK_BASE_URL,
 } from '../fixtures'
 
 const globalTestMock = getApiTest('123-456-789')

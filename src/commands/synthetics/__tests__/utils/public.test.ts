@@ -50,6 +50,7 @@ import glob from 'glob'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
+import {getAxiosError, MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
 import * as ciHelpers from '../../../../helpers/ci'
 import {Metadata} from '../../../../helpers/interfaces'
 import * as ciUtils from '../../../../helpers/utils'
@@ -77,7 +78,6 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
-  getAxiosHttpError,
   getBatch,
   getBrowserServerResult,
   getFailedResultInBatch,
@@ -87,7 +87,6 @@ import {
   getResults,
   getSkippedResultInBatch,
   getSummary,
-  MOCK_BASE_URL,
   MockedReporter,
   mockLocation,
   mockReporter,
@@ -300,7 +299,7 @@ describe('utils', () => {
 
     test('triggerTests throws', async () => {
       jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        throw getAxiosHttpError(502, {message: 'Server Error'})
+        throw getAxiosError(502, {message: 'Server Error'})
       })
 
       await expect(
@@ -348,7 +347,7 @@ describe('utils', () => {
           return {data: fakeTests[publicId]}
         }
 
-        throw getAxiosHttpError(404, {errors: ['Not found']})
+        throw getAxiosError(404, {errors: ['Not found']})
       }) as any)
     })
 
@@ -443,7 +442,7 @@ describe('utils', () => {
     test('Forbidden error when getting a test', async () => {
       const axiosMock = jest.spyOn(axios, 'create')
       axiosMock.mockImplementation((() => (e: any) => {
-        throw getAxiosHttpError(403, {message: 'Forbidden'})
+        throw getAxiosError(403, {message: 'Forbidden'})
       }) as any)
 
       const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
@@ -1717,7 +1716,7 @@ describe('utils', () => {
     test('pollResults throws', async () => {
       const {pollResultsMock} = mockApi({
         pollResultsImplementation: () => {
-          throw getAxiosHttpError(502, {message: 'Poll results server error'})
+          throw getAxiosError(502, {message: 'Poll results server error'})
         },
       })
 
@@ -1743,7 +1742,7 @@ describe('utils', () => {
     test('getBatch throws', async () => {
       const {getBatchMock} = mockApi({
         getBatchImplementation: () => {
-          throw getAxiosHttpError(502, {message: 'Get batch server error'})
+          throw getAxiosError(502, {message: 'Get batch server error'})
         },
       })
 
@@ -2152,7 +2151,7 @@ describe('utils', () => {
 
     test('failing to get org settings is not important enough to throw', async () => {
       jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
-        throw getAxiosHttpError(502, {message: 'Server Error'})
+        throw getAxiosError(502, {message: 'Server Error'})
       })
 
       const config = (apiConfiguration as unknown) as SyntheticsCIConfig

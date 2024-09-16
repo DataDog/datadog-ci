@@ -2,6 +2,8 @@ jest.unmock('chalk')
 
 import {BaseContext} from 'clipanion/lib/advanced'
 
+import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
+
 import {
   ExecutionRule,
   MainReporter,
@@ -23,7 +25,6 @@ import {
   getIncompleteServerResult,
   getSummary,
   getTimedOutBrowserResult,
-  MOCK_BASE_URL,
 } from '../fixtures'
 
 /**
