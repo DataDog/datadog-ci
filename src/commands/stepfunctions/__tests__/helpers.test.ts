@@ -9,7 +9,7 @@ import {
   getStepFunctionLogGroupArn,
   parseArn,
   buildLogAccessPolicyName,
-  shouldUpdateStepForTracesMerging,
+  injectContextForLambdaFunctions,
   StepType,
   injectContextForStepFunctions,
   shouldUpdateStepForStepFunctionContextInjection,
@@ -29,7 +29,7 @@ const createMockContext = (): BaseContext => {
 
 describe('stepfunctions command helpers tests', () => {
   const context = createMockContext()
-  describe('shouldUpdateStepForTracesMerging test', () => {
+  describe('injectContextForLambdaFunctions test', () => {
     test('already has JsonMerge added to payload field', () => {
       const step: StepType = {
         Type: 'Task',
@@ -40,7 +40,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
     test('no payload field', () => {
@@ -52,7 +52,8 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeTruthy()
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
+      expect(step.Parameters?.['Payload.$']).toEqual('States.JsonMerge($$, $, false)')
     })
 
     test('default payload field of $', () => {
@@ -65,7 +66,8 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeTruthy()
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
+      expect(step.Parameters?.['Payload.$']).toEqual('States.JsonMerge($$, $, false)')
     })
 
     test('custom payload field not using JsonPath expression', () => {
@@ -78,7 +80,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
     test('custom payload field using JsonPath expression', () => {
@@ -91,7 +93,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Lambda Invoke')).toBeFalsy()
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
     test('none-lambda step should not be updated', () => {
@@ -103,7 +105,7 @@ describe('stepfunctions command helpers tests', () => {
         },
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'DynamoDB Update')).toBeFalsy()
+      expect(injectContextForLambdaFunctions(step, context, 'DynamoDB Update')).toBeFalsy()
     })
 
     test('legacy lambda api should not be updated', () => {
@@ -112,7 +114,7 @@ describe('stepfunctions command helpers tests', () => {
         Resource: 'arn:aws:lambda:sa-east-1:601427271234:function:hello-function',
         End: true,
       }
-      expect(shouldUpdateStepForTracesMerging(step, context, 'Legacy Lambda')).toBeFalsy()
+      expect(injectContextForLambdaFunctions(step, context, 'Legacy Lambda')).toBeFalsy()
     })
   })
 
