@@ -114,53 +114,11 @@ export const generatePayload = (
         if (component['type'] !== 'library') {
           continue
         }
-
-        const lang = getLanguageFromComponent(component)
-
-        if (!lang) {
-          continue
+        
+        const dependency = extractingDependency(component)
+        if (dependency !== null) {
+          dependencies.push(dependency)
         }
-
-        const purl: string | undefined = component['purl']
-
-        if (!purl) {
-          console.error(`cannot find purl for component ${component['name']}`)
-          continue
-        }
-
-        const locations: Locations[] = []
-
-        // Extract the unique location strings from the file.
-        const locationsStrings: Set<string> = new Set()
-        if (component['evidence'] && component['evidence']['occurrences']) {
-          for (const occ of component['evidence']['occurrences']) {
-            if (occ['location']) {
-              const loc: string = occ['location']
-
-              if (!locationsStrings.has(loc)) {
-                locationsStrings.add(loc)
-              }
-            }
-          }
-        }
-
-        for (const l of locationsStrings) {
-          const loc = parseLocationsString(l)
-          if (loc) {
-            locations.push(loc)
-          }
-        }
-
-        const dependency: Dependency = {
-          name: component['name'],
-          group: component['group'] || undefined,
-          version: component['version'] || undefined,
-          language: lang,
-          licenses: [],
-          purl,
-          locations,
-        }
-        dependencies.push(dependency)
       }
     }
   }
@@ -183,4 +141,53 @@ export const generatePayload = (
     service,
     env,
   }
+}
+
+const extractingDependency = (component: any): Dependency|null => {
+  const lang = getLanguageFromComponent(component)
+
+  if (!lang) {
+    return null;
+  }
+
+  const purl: string | undefined = component['purl']
+
+  if (!purl) {
+    console.error(`cannot find purl for component ${component['name']}`)
+    return null;
+  }
+
+  const locations: Locations[] = []
+
+  // Extract the unique location strings from the file.
+  const locationsStrings: Set<string> = new Set()
+  if (component['evidence'] && component['evidence']['occurrences']) {
+    for (const occ of component['evidence']['occurrences']) {
+      if (occ['location']) {
+        const loc: string = occ['location']
+
+        if (!locationsStrings.has(loc)) {
+          locationsStrings.add(loc)
+        }
+      }
+    }
+  }
+
+  for (const l of locationsStrings) {
+    const loc = parseLocationsString(l)
+    if (loc) {
+      locations.push(loc)
+    }
+  }
+
+  const dependency: Dependency = {
+    name: component['name'],
+    group: component['group'] || undefined,
+    version: component['version'] || undefined,
+    language: lang,
+    licenses: [],
+    purl,
+    locations,
+  }
+  return dependency
 }
