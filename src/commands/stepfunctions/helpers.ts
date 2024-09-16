@@ -150,6 +150,13 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
     return true
   }
 
+  // context injection is already set up
+  if (step.Parameters['Payload.$'] === 'States.JsonMerge($$, $, false)') {
+    context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
+
+    return false
+  }
+
   // custom payload
   context.stdout
     .write(`[Warn] Step ${stepName} has a custom Payload field. Step Functions Context Object injection skipped. \
@@ -201,6 +208,13 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
 
   if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
     return true
+  }
+
+  // context injection is already set up
+  if (step.Parameters.Input['CONTEXT.$'] === 'States.JsonMerge($$, $, false)') {
+    context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
+
+    return false
   }
 
   context.stdout
