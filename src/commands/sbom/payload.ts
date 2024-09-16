@@ -106,6 +106,7 @@ export const generatePayload = (
 
   const dependencies: Dependency[] = []
   const files: File[] = [];
+  const component_links: ComponentLink[] = []
 
   if (jsonContent) {
     if (jsonContent['components']) {
@@ -122,6 +123,14 @@ export const generatePayload = (
         } else if (component['type'] === 'file') {
           files.push(extractingFile(component))
         }
+      }
+    }
+    if (jsonContent['dependencies']) {
+      for (const dependency of jsonContent['dependencies']) {
+        if (!dependency['ref'] || !dependency['dependsOn']) {
+          continue
+        }
+        component_links.push(extractingComponentLink(dependency));
       }
     }
   }
@@ -142,6 +151,7 @@ export const generatePayload = (
     tags,
     dependencies,
     files,
+    component_links,
     service,
     env,
   }
@@ -219,5 +229,12 @@ const extractingFile = (component: any): File => {
   return {
     name: component['name'],
     purl: purl,
+  }
+}
+
+const extractingComponentLink = (dependency: any): ComponentLink => {
+  return {
+    component_ref: dependency['ref'],
+    depends_on: dependency['dependsOn']
   }
 }

@@ -64,6 +64,7 @@ describe('generation of payload', () => {
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
     expect(payload?.dependencies.length).toBe(147)
     expect(payload?.files.length).toBe(2)
+    expect(payload?.component_links.length).toBe(154)
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toBe(147)
