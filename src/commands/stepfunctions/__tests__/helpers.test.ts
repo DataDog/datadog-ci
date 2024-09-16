@@ -53,7 +53,7 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
-      expect(step.Parameters?.['Payload.$']).toEqual('States.JsonMerge($$, $, false)')
+      expect(step.Parameters?.['Payload.$']).toEqual(`$$['Execution', 'State', 'StateMachine']`)
     })
 
     test('default payload field of $', () => {

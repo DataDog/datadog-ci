@@ -110,10 +110,6 @@ export const injectContextIntoTasks = async (
   }
 }
 
-export const addTraceContextToLambdaParameters = (Parameters: ParametersType): void => {
-  Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
-}
-
 export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType): void => {
   if (Parameters) {
     if (!Parameters.Input) {
@@ -236,14 +232,14 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
 
   // payload field not set
   if (!step.Parameters.hasOwnProperty('Payload.$') && !step.Parameters.hasOwnProperty('Payload')) {
-    addTraceContextToLambdaParameters(step.Parameters)
+    step.Parameters[`Payload.$`] = `$$['Execution', 'State', 'StateMachine']`
 
     return true
   }
 
   // default payload
   if (step.Parameters['Payload.$'] === '$') {
-    addTraceContextToLambdaParameters(step.Parameters)
+    step.Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
 
     return true
   }
