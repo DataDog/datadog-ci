@@ -80,6 +80,11 @@ export interface Locations {
   version: undefined | Location
 }
 
+export interface Property {
+  name: string,
+  value: string
+}
+
 export interface Dependency {
   name: string
   version: undefined | string
@@ -88,6 +93,8 @@ export interface Dependency {
   licenses: DependencyLicense[]
   purl: string
   locations: undefined | Locations[]
+  is_direct: boolean
+  package_manager: string
 }
 
 export interface CommitInformation {

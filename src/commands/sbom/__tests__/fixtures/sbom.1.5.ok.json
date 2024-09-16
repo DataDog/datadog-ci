@@ -130,6 +130,14 @@
         {
           "name": "aquasecurity:trivy:PkgType",
           "value": "npm"
+        },
+        {
+          "name": "osv-scanner:is-direct",
+          "value": "true"
+        },
+        {
+          "name": "osv-scanner:package-manager",
+          "value": "Npm"
         }
       ]
     },

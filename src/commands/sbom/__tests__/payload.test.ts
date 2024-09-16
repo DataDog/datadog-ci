@@ -66,6 +66,12 @@ describe('generation of payload', () => {
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toBe(147)
+
+    const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
+    expect(directDependencies?.length).toBe(1)
+
+    const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
+    expect(dependenciesWithPackageManager?.length).toBe(1)
   })
 
   test('SBOM for rust with multiple licenses', async () => {
