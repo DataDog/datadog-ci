@@ -27,6 +27,28 @@
   },
   "components": [
     {
+      "bom-ref": "lib/lib1/pom.xml",
+      "type": "file",
+      "name": "lib/lib1/pom.xml",
+      "properties": [
+        {
+          "name": "osv-scanner:package",
+          "value": "pkg:mvn/foo.bar/lib1@1.0-SNAPSHOT"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pom.xml",
+      "type": "file",
+      "name": "pom.xml",
+      "properties": [
+        {
+          "name": "osv-scanner:package",
+          "value": "pkg:mvn/foo.bar/service@1.0-SNAPSHOT"
+        }
+      ]
+    },
+    {
       "bom-ref": "2109f186-7879-4987-939b-60bbd3c73ce6",
       "type": "application",
       "name": "server/package-lock.json",

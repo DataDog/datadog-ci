@@ -110,11 +110,17 @@ export interface RepositoryInformation {
   url: string
 }
 
+export interface File {
+  name: string
+  purl: string | undefined
+}
+
 export interface ScaRequest {
   id: string
   commit: CommitInformation
   repository: RepositoryInformation
   dependencies: Dependency[]
+  files: File[]
   service: string
   env: string
   tags: Record<string, string>
