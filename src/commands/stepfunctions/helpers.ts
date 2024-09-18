@@ -193,9 +193,18 @@ export type StepType = {
   End?: boolean
 }
 
+export type PayloadObject = {
+  'Execution.$'?: any
+  Execution?: any
+  'State.$'?: any
+  State?: any
+  'StateMachine.$'?: any
+  StateMachine?: any
+}
+
 export type ParametersType = {
   'Payload.$'?: string
-  Payload?: string
+  Payload?: string | PayloadObject
   FunctionName?: string
   StateMachineArn?: string
   TableName?: string
@@ -237,13 +246,47 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
     return true
   }
 
-  // payload is not a JSON object
-  if (step.Parameters.hasOwnProperty('Payload') && typeof step.Parameters['Payload'] !== 'object') {
-    context.stdout.write(`[Warn] Step ${stepName}'s Payload field is not a JSON object. Step Functions Context Object \
+  if (step.Parameters.hasOwnProperty('Payload')) {
+    if (typeof step.Parameters['Payload'] !== 'object') {
+      // payload is not a JSON object
+      context.stdout
+        .write(`[Warn] Step ${stepName}'s Payload field is not a JSON object. Step Functions Context Object \
 injection skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually \
 merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
 
-    return false
+      return false
+    } else {
+      const payload = step.Parameters.Payload
+      if (
+        payload['Execution.$'] === '$$.Execution' &&
+        payload['State.$'] === '$$.State' &&
+        payload['StateMachine.$'] === '$$.StateMachine'
+      ) {
+        context.stdout.write(`Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
+
+        return false
+      } else if (
+        payload.hasOwnProperty('Execution.$') ||
+        payload.hasOwnProperty('Execution') ||
+        payload.hasOwnProperty('State.$') ||
+        payload.hasOwnProperty('State') ||
+        payload.hasOwnProperty('StateMachine.$') ||
+        payload.hasOwnProperty('StateMachine')
+      ) {
+        context.stdout
+          .write(`[Warn] Step ${stepName} may be using custom Execution, State or StateMachine field. Step Functions Context Object \
+injection skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually \
+merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+        return false
+      } else {
+        payload['Execution.$'] = '$$.Execution'
+        payload['State.$'] = '$$.State'
+        payload['StateMachine.$'] = '$$.StateMachine'
+
+        return true
+      }
+    }
   }
 
   // default payload
