@@ -56,6 +56,19 @@ describe('stepfunctions command helpers tests', () => {
       expect(step.Parameters?.['Payload.$']).toEqual(`$$['Execution', 'State', 'StateMachine']`)
     })
 
+    test('payload is not a JSON object', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Payload: 'Just a string!',
+        },
+        End: true,
+      }
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
     test('default payload field of $', () => {
       const step: StepType = {
         Type: 'Task',
