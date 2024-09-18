@@ -13,6 +13,7 @@ import {
   StepType,
   injectContextForStepFunctions,
   shouldUpdateStepForStepFunctionContextInjection,
+  PayloadObject,
 } from '../helpers'
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
@@ -67,6 +68,55 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test('already injected Execution and State into Payload', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Payload: {
+            'Execution.$': '$$.Execution',
+            'State.$': '$$.State',
+            'StateMachine.$': '$$.StateMachine',
+          },
+        },
+        End: true,
+      }
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test('custom State field in Payload', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Payload: {
+            State: {Name: 'Lambda Invoke'},
+          },
+        },
+        End: true,
+      }
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test('no Execution, State, or StateMachine field in Payload', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Payload: {},
+        },
+        End: true,
+      }
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
+      const payload = step.Parameters?.['Payload'] as PayloadObject
+      expect(payload['Execution.$']).toEqual('$$.Execution')
+      expect(payload['State.$']).toEqual('$$.State')
+      expect(payload['StateMachine.$']).toEqual('$$.StateMachine')
     })
 
     test('default payload field of $', () => {
