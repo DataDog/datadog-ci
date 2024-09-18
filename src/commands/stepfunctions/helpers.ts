@@ -214,6 +214,17 @@ export type ParametersType = {
   }
 }
 
+// Truth table
+// Case | Input                                                    | Expected
+// -----|----------------------------------------------------------|---------
+//   1  | No "Payload" or "Payload.$"                              | true
+//  2.1 | "Payload" is object, already injected                    | false
+//  2.2 | "Payload" object has Execution, State or StateMachine    | false
+//  2.3 | "Payload" object has no Execution, State or StateMachine | true
+//   3  | "Payload" is not object                                  | false
+//  4.1 | "Payload.$": "$" (default payload)                       | true
+//  4.2 | "Payload.$": "States.JsonMerge($$, $, false)"            | false
+//  4.3 | Custom "Payload.$"                                       | false
 export const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
   if (step.Resource?.startsWith('arn:aws:lambda')) {
     context.stdout.write(
@@ -239,7 +250,7 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
     return false
   }
 
-  // payload field not set
+  // Case 1: payload field not set
   if (!step.Parameters.hasOwnProperty('Payload.$') && !step.Parameters.hasOwnProperty('Payload')) {
     step.Parameters[`Payload.$`] = `$$['Execution', 'State', 'StateMachine']`
 
@@ -248,7 +259,7 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
 
   if (step.Parameters.hasOwnProperty('Payload')) {
     if (typeof step.Parameters['Payload'] !== 'object') {
-      // payload is not a JSON object
+      // Case 3: payload is not a JSON object
       context.stdout
         .write(`[Warn] Step ${stepName}'s Payload field is not a JSON object. Step Functions Context Object \
 injection skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually \
@@ -256,12 +267,14 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
 
       return false
     } else {
+      // Case 2: payload is not a JSON object
       const payload = step.Parameters.Payload
       if (
         payload['Execution.$'] === '$$.Execution' &&
         payload['State.$'] === '$$.State' &&
         payload['StateMachine.$'] === '$$.StateMachine'
       ) {
+        // Case 2.1: already injected into "Payload"
         context.stdout.write(`Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
 
         return false
@@ -273,6 +286,7 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
         payload.hasOwnProperty('StateMachine.$') ||
         payload.hasOwnProperty('StateMachine')
       ) {
+        // Case 2.2: "Payload" object has Execution, State or StateMachine
         context.stdout
           .write(`[Warn] Step ${stepName} may be using custom Execution, State or StateMachine field. Step Functions Context Object \
 injection skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually \
@@ -280,6 +294,7 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
 
         return false
       } else {
+        // Case 2.3: "Payload" object has no Execution, State or StateMachine
         payload['Execution.$'] = '$$.Execution'
         payload['State.$'] = '$$.State'
         payload['StateMachine.$'] = '$$.StateMachine'
@@ -289,21 +304,21 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
     }
   }
 
-  // default payload
+  // Case 4.1: default payload
   if (step.Parameters['Payload.$'] === '$') {
     step.Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
 
     return true
   }
 
-  // context injection is already set up
+  // Case 4.2: context injection is already set up using "Payload.$"
   if (step.Parameters['Payload.$'] === 'States.JsonMerge($$, $, false)') {
     context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
 
     return false
   }
 
-  // custom payload
+  // Case 4.3: custom "Payload.$"
   context.stdout
     .write(`[Warn] Step ${stepName} has a custom Payload field. Step Functions Context Object injection skipped. \
 Your Step Functions trace will not be merged with downstream Lambda traces. To manually merge these traces, \
