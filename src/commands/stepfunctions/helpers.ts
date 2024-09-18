@@ -237,6 +237,15 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
     return true
   }
 
+  // payload is not a JSON object
+  if (step.Parameters.hasOwnProperty('Payload') && typeof step.Parameters['Payload'] !== 'object') {
+    context.stdout.write(`[Warn] Step ${stepName}'s Payload field is not a JSON object. Step Functions Context Object \
+injection skipped. Your Step Functions trace will not be merged with downstream Lambda traces. To manually \
+merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+    return false
+  }
+
   // default payload
   if (step.Parameters['Payload.$'] === '$') {
     step.Parameters[`Payload.$`] = 'States.JsonMerge($$, $, false)'
