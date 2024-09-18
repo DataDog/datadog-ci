@@ -31,7 +31,7 @@ const createMockContext = (): BaseContext => {
 describe('stepfunctions command helpers tests', () => {
   const context = createMockContext()
   describe('injectContextForLambdaFunctions test', () => {
-    test('already has JsonMerge added to payload field', () => {
+    test('Case 4.2: already has JsonMerge added to payload field', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -44,7 +44,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('no payload field', () => {
+    test('Case 1: no Payload or Payload.$', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -57,7 +57,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(step.Parameters?.['Payload.$']).toEqual(`$$['Execution', 'State', 'StateMachine']`)
     })
 
-    test('payload is not a JSON object', () => {
+    test('Case 3: Payload is not a JSON object', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -70,7 +70,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('already injected Execution and State into Payload', () => {
+    test('Case 2.1: already injected Execution, State and StateMachine into Payload', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -87,7 +87,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('custom State field in Payload', () => {
+    test('Case 2.2: custom State field in Payload', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -102,7 +102,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('no Execution, State, or StateMachine field in Payload', () => {
+    test('Case 2.3: no Execution, State, or StateMachine field in Payload', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -119,7 +119,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(payload['StateMachine.$']).toEqual('$$.StateMachine')
     })
 
-    test('default payload field of $', () => {
+    test('Case 4.1: default payload field of $', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -133,7 +133,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(step.Parameters?.['Payload.$']).toEqual('States.JsonMerge($$, $, false)')
     })
 
-    test('custom payload field not using JsonPath expression', () => {
+    test('Case 4.3: custom payload field not using JsonPath expression', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
@@ -146,7 +146,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('custom payload field using JsonPath expression', () => {
+    test('Case 4.3: custom payload field using JsonPath expression', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::lambda:invoke',
