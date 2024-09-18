@@ -93,7 +93,7 @@ export interface Dependency {
   licenses: DependencyLicense[]
   purl: string
   locations: undefined | Locations[]
-  is_direct: boolean
+  is_direct: undefined | boolean
   package_manager: string
 }
 

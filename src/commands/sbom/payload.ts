@@ -196,12 +196,12 @@ const extractingDependency = (component: any): Dependency | undefined => {
   }
 
   let packageManager = ''
-  let isDirect = false
+  let isDirect = undefined
   for (const property of component['properties'] ?? []) {
     if (property['name'] === PACKAGE_MANAGER_PROPERTY_KEY) {
       packageManager = property['value']
     } else if (property['name'] === IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
-      isDirect = property['value'].toLowerCase() === 'true'
+      isDirect = property['value'].toLowerCase() === 'true' ? true : undefined
     }
   }
 
