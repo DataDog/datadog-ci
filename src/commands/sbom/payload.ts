@@ -196,7 +196,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
   }
 
   let packageManager = ''
-  let isDirect = undefined
+  let isDirect
   for (const property of component['properties'] ?? []) {
     if (property['name'] === PACKAGE_MANAGER_PROPERTY_KEY) {
       packageManager = property['value']
