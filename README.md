@@ -117,9 +117,9 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 ## More ways to install the CLI
 
-### Standalone binary (**beta**)
+### Standalone binary
 
-If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _darwin-x64_ (macOS), and _win-x64_ (Windows) are supported. **These standalone binaries are in beta and their stability is not guaranteed**.
+If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _linux-arm64_, _darwin-x64_, _darwin-arm64_ (MacOS) and _win-x64_ (Windows) are supported.
 
 To install:
 
