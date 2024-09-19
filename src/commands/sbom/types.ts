@@ -115,7 +115,7 @@ export interface File {
   purl: string | undefined
 }
 
-export interface ComponentLink {
+export interface Relations {
   component_ref: string
   depends_on: string[]
 }
@@ -126,7 +126,7 @@ export interface ScaRequest {
   repository: RepositoryInformation
   dependencies: Dependency[]
   files: File[]
-  component_links: ComponentLink[]
+  relations: Relations[]
   service: string
   env: string
   tags: Record<string, string>
