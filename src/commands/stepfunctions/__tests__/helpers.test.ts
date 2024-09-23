@@ -293,7 +293,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
     })
 
-    test('is true for an empty object', () => {
+    test('Case 1: is true when "CONTEXT.$" and "CONTEXT" fields are not set', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::states:startExecution.sync:2',
@@ -331,7 +331,7 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
     })
 
-    test('is false when Input is an object that contains a CONTEXT key not using JSONPath expression', () => {
+    test('Case 3: is false when Input is an object that contains a CONTEXT key that is not a JSON object', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::states:startExecution.sync:2',
