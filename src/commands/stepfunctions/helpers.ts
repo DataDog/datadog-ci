@@ -119,65 +119,6 @@ export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType):
   }
 }
 
-// Truth table
-// Input                    | Expected
-// -------------------------|---------
-// Empty object             | true
-// undefined                | true
-// not object               | false
-// object without CONTEXT.$ | true
-// object with CONTEXT.$    | false
-export const shouldUpdateStepForStepFunctionContextInjection = (
-  step: StepType,
-  context: BaseContext,
-  stepName: string
-): boolean => {
-  // not default lambda api
-  if (!step.Resource?.startsWith('arn:aws:states:::states:startExecution')) {
-    return false
-  }
-
-  if (!step.Parameters) {
-    context.stdout
-      .write(`[Warn] Step ${stepName} does not have a Parameters field. Step Functions Context Object injection \
-skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually merge these \
-traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
-
-    return false
-  }
-
-  if (!step.Parameters.Input) {
-    return true
-  }
-
-  if (typeof step.Parameters.Input !== 'object') {
-    context.stdout
-      .write(`[Warn] Step ${stepName}'s Parameters.Input field is not a JSON object. Step Functions Context Object \
-injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually \
-merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
-
-    return false
-  }
-
-  if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
-    return true
-  }
-
-  // context injection is already set up
-  if (step.Parameters.Input['CONTEXT.$'] === 'States.JsonMerge($$, $, false)') {
-    context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
-
-    return false
-  }
-
-  context.stdout
-    .write(`[Warn] Step ${stepName}'s Parameters.Input field has a custom CONTEXT field. Step Functions Context \
-Object injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To \
-manually merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
-
-  return false
-}
-
 export type StateMachineDefinitionType = {
   Comment?: string
   StartAt?: string
@@ -328,11 +269,52 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
 }
 
 export const injectContextForStepFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
-  if (shouldUpdateStepForStepFunctionContextInjection(step, context, stepName)) {
+  // not default lambda api
+  if (!step.Resource?.startsWith('arn:aws:states:::states:startExecution')) {
+    return false
+  }
+
+  if (!step.Parameters) {
+    context.stdout
+      .write(`[Warn] Step ${stepName} does not have a Parameters field. Step Functions Context Object injection \
+skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually merge these \
+traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+    return false
+  }
+
+  if (!step.Parameters.Input) {
     addTraceContextToStepFunctionParameters(step)
 
     return true
   }
+
+  if (typeof step.Parameters.Input !== 'object') {
+    context.stdout
+      .write(`[Warn] Step ${stepName}'s Parameters.Input field is not a JSON object. Step Functions Context Object \
+injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually \
+merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+    return false
+  }
+
+  if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
+    addTraceContextToStepFunctionParameters(step)
+
+    return true
+  }
+
+  // context injection is already set up
+  if (step.Parameters.Input['CONTEXT.$'] === 'States.JsonMerge($$, $, false)') {
+    context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
+
+    return false
+  }
+
+  context.stdout
+    .write(`[Warn] Step ${stepName}'s Parameters.Input field has a custom CONTEXT field. Step Functions Context \
+Object injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To \
+manually merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
 
   return false
 }

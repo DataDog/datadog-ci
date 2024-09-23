@@ -12,7 +12,6 @@ import {
   injectContextForLambdaFunctions,
   StepType,
   injectContextForStepFunctions,
-  shouldUpdateStepForStepFunctionContextInjection,
   PayloadObject,
 } from '../helpers'
 
@@ -277,67 +276,6 @@ describe('stepfunctions command helpers tests', () => {
     })
   })
 
-  describe('shouldUpdateStepForStepFunctionContextInjection', () => {
-    test('is true for an empty object', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::states:startExecution.sync:2',
-        Parameters: {
-          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
-          Input: {},
-        },
-        End: true,
-      }
-      expect(
-        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
-      ).toBeTruthy()
-    })
-
-    test('is true for undefined', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::states:startExecution.sync:2',
-        Parameters: {
-          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
-        },
-        End: true,
-      }
-      expect(
-        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
-      ).toBeTruthy()
-    })
-
-    test('is false when Input is an object that contains a CONTEXT key using JSONPath expression', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::states:startExecution.sync:2',
-        Parameters: {
-          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
-          Input: {'CONTEXT.$': 'blah'},
-        },
-        End: true,
-      }
-      expect(
-        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
-      ).toBeFalsy()
-    })
-
-    test('is false when Input is an object that contains a CONTEXT key not using JSONPath expression', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::states:startExecution.sync:2',
-        Parameters: {
-          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
-          Input: {CONTEXT: 'blah'},
-        },
-        End: true,
-      }
-      expect(
-        shouldUpdateStepForStepFunctionContextInjection(step, context, 'Step Functions StartExecution')
-      ).toBeFalsy()
-    })
-  })
-
   describe('inject context for StepFunctions', () => {
     test('injects context into a step function invocation', () => {
       const step: StepType = {
@@ -353,6 +291,57 @@ describe('stepfunctions command helpers tests', () => {
       const changed = injectContextForStepFunctions(step, context, 'Step Functions StartExecution')
       expect(changed).toBeTruthy()
       expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
+    })
+
+    test('is true for an empty object', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {},
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeTruthy()
+    })
+
+    test('is true for undefined', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeTruthy()
+    })
+
+    test('is false when Input is an object that contains a CONTEXT key using JSONPath expression', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {'CONTEXT.$': 'blah'},
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
+    })
+
+    test('is false when Input is an object that contains a CONTEXT key not using JSONPath expression', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {CONTEXT: 'blah'},
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
     })
   })
 
