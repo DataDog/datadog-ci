@@ -5,6 +5,9 @@ on:
     tags:
       - v* # Any version tag
 
+permissions:
+  contents: write # Required for the draft release
+
 jobs:
   create-draft-release:
     runs-on: ubuntu-latest
