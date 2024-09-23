@@ -110,15 +110,6 @@ export const injectContextIntoTasks = async (
   }
 }
 
-export const addTraceContextToStepFunctionParameters = ({Parameters}: StepType): void => {
-  if (Parameters) {
-    if (!Parameters.Input) {
-      Parameters.Input = {}
-    }
-    Parameters.Input['CONTEXT.$'] = 'States.JsonMerge($$, $, false)'
-  }
-}
-
 export type StateMachineDefinitionType = {
   Comment?: string
   StartAt?: string
@@ -284,7 +275,7 @@ traces, check out https://docs.datadoghq.com/serverless/step_functions/troublesh
   }
 
   if (!step.Parameters.Input) {
-    addTraceContextToStepFunctionParameters(step)
+    step.Parameters.Input = {'CONTEXT.$': 'States.JsonMerge($$, $, false)'}
 
     return true
   }
@@ -299,7 +290,7 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
   }
 
   if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
-    addTraceContextToStepFunctionParameters(step)
+    step.Parameters.Input['CONTEXT.$'] = 'States.JsonMerge($$, $, false)'
 
     return true
   }
