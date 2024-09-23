@@ -289,10 +289,23 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
     return false
   }
 
+  // Case 1: 'CONTEXT.$' and 'CONTEXT' fields are not set
   if (!step.Parameters.Input['CONTEXT.$'] && !step.Parameters.Input['CONTEXT']) {
     step.Parameters.Input['CONTEXT.$'] = 'States.JsonMerge($$, $, false)'
 
     return true
+  }
+
+  if (step.Parameters.Input.hasOwnProperty('CONTEXT')) {
+    if (typeof step.Parameters.Input.CONTEXT !== 'object') {
+      // Case 3: 'CONTEXT' field is not a JSON object
+      context.stdout
+        .write(`[Warn] Step ${stepName}'s Parameters.Input.CONTEXT field is not a JSON object. Step Functions Context Object \
+injection skipped. Your Step Functions trace will not be merged with downstream Step Function traces. To manually \
+merge these traces, check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\n`)
+
+      return false
+    }
   }
 
   // context injection is already set up
