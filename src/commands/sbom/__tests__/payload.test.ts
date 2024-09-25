@@ -63,9 +63,20 @@ describe('generation of payload', () => {
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
     expect(payload?.dependencies.length).toBe(147)
+    expect(payload?.files.length).toBe(2)
+    expect(payload?.relations.length).toBe(154)
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toBe(147)
+
+    const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
+    expect(directDependencies?.length).toBe(1)
+
+    const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
+    expect(dependenciesWithPackageManager?.length).toBe(1)
+
+    const filesWithPURL = payload?.files.filter((d) => d.purl)
+    expect(filesWithPURL?.length).toBe(2)
   })
 
   test('SBOM for rust with multiple licenses', async () => {

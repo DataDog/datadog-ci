@@ -80,6 +80,11 @@ export interface Locations {
   version: undefined | Location
 }
 
+export interface Property {
+  name: string
+  value: string
+}
+
 export interface Dependency {
   name: string
   version: undefined | string
@@ -88,6 +93,8 @@ export interface Dependency {
   licenses: DependencyLicense[]
   purl: string
   locations: undefined | Locations[]
+  is_direct: undefined | boolean
+  package_manager: string
 }
 
 export interface CommitInformation {
@@ -103,11 +110,23 @@ export interface RepositoryInformation {
   url: string
 }
 
+export interface File {
+  name: string
+  purl: string | undefined
+}
+
+export interface Relations {
+  component_ref: string
+  depends_on: string[]
+}
+
 export interface ScaRequest {
   id: string
   commit: CommitInformation
   repository: RepositoryInformation
   dependencies: Dependency[]
+  files: File[]
+  relations: Relations[]
   service: string
   env: string
   tags: Record<string, string>
