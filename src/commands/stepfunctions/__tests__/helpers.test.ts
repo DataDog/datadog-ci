@@ -43,6 +43,19 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
+    test('Case 4.2: context injection already set up', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::lambda:invoke',
+        Parameters: {
+          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          'Payload.$': `$$['Execution', 'State', 'StateMachine']`,
+        },
+        End: true,
+      }
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
     test('Case 1: no Payload or Payload.$', () => {
       const step: StepType = {
         Type: 'Task',

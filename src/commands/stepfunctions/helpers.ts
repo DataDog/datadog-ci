@@ -155,7 +155,8 @@ export type ParametersType = {
 //  2.3 | "Payload" object has no Execution, State or StateMachine | true
 //   3  | "Payload" is not object                                  | false
 //  4.1 | "Payload.$": "$" (default payload)                       | true
-//  4.2 | "Payload.$": "States.JsonMerge($$, $, false)"            | false
+//  4.2 | "Payload.$": "States.JsonMerge($$, $, false)" or         | false
+//      | "Payload.$": "$$['Execution', 'State', 'StateMachine']"  |
 //  4.3 | Custom "Payload.$"                                       | false
 export const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
   if (step.Resource?.startsWith('arn:aws:lambda')) {
@@ -244,7 +245,10 @@ merge these traces, check out https://docs.datadoghq.com/serverless/step_functio
   }
 
   // Case 4.2: context injection is already set up using "Payload.$"
-  if (step.Parameters['Payload.$'] === 'States.JsonMerge($$, $, false)') {
+  if (
+    step.Parameters['Payload.$'] === 'States.JsonMerge($$, $, false)' ||
+    step.Parameters['Payload.$'] === `$$['Execution', 'State', 'StateMachine']`
+  ) {
     context.stdout.write(` Step ${stepName}: Context injection is already set up. Skipping context injection.\n`)
 
     return false
