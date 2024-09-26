@@ -303,7 +303,7 @@ describe('stepfunctions command helpers tests', () => {
 
       const changed = injectContextForStepFunctions(step, context, 'Step Functions StartExecution')
       expect(changed).toBeTruthy()
-      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': 'States.JsonMerge($$, $, false)'})
+      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': `$$['Execution', 'State', 'StateMachine']`})
     })
 
     test('Case 1: is true when "CONTEXT.$" and "CONTEXT" fields are not set', () => {
@@ -317,9 +317,10 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
       expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeTruthy()
+      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': `$$['Execution', 'State', 'StateMachine']`})
     })
 
-    test('is true for undefined', () => {
+    test('is true when Input field is not set', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::states:startExecution.sync:2',
@@ -329,9 +330,10 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
       expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeTruthy()
+      expect(step.Parameters?.Input).toEqual({'CONTEXT.$': `$$['Execution', 'State', 'StateMachine']`})
     })
 
-    test('is false when Input is an object that contains a CONTEXT key using JSONPath expression', () => {
+    test('Case 3.2: is false when Input contains a custom "CONTEXT.$" field', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::states:startExecution.sync:2',
@@ -344,13 +346,43 @@ describe('stepfunctions command helpers tests', () => {
       expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
     })
 
-    test('Case 3: is false when Input is an object that contains a CONTEXT key that is not a JSON object', () => {
+    test('Case 2: is false when Input contains "CONTEXT" field', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::states:startExecution.sync:2',
         Parameters: {
           StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
           Input: {CONTEXT: 'blah'},
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
+    })
+
+    test('Case 3.1: is false when context injection is already set up using States.JsonMerge($$, $, false)', () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {
+            'CONTEXT.$': 'States.JsonMerge($$, $, false)',
+          },
+        },
+        End: true,
+      }
+      expect(injectContextForStepFunctions(step, context, 'Step Functions StartExecution')).toBeFalsy()
+    })
+
+    test(`Case 3.1: is false when context injection is already set up using $$['Execution', 'State', 'StateMachine']`, () => {
+      const step: StepType = {
+        Type: 'Task',
+        Resource: 'arn:aws:states:::states:startExecution.sync:2',
+        Parameters: {
+          StateMachineArn: 'arn:aws:states:us-east-1:425362996713:stateMachine:agocs_inner_state_machine',
+          Input: {
+            'CONTEXT.$': `$$['Execution', 'State', 'StateMachine']`,
+          },
         },
         End: true,
       }
