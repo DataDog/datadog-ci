@@ -414,22 +414,20 @@ export const execute = (cmd: string, cwd?: string): Promise<{stderr: string; std
   })
 
 type GitHubWebhookPayload = {
-  pull_request: {
-    head: {
+  pull_request?: {
+    head?: {
+      sha: string
+    }
+    base?: {
       sha: string
     }
   }
 }
 
-export const getGitHeadShaFromGitHubWebhookPayload = () => {
+export const getGitHubEventPayload = () => {
   if (!process.env.GITHUB_EVENT_PATH) {
-    return ''
+    return
   }
-  try {
-    const parsedContents = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
 
-    return parsedContents.pull_request.head.sha
-  } catch (e) {
-    return ''
-  }
+  return JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
 }

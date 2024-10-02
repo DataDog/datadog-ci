@@ -28,6 +28,8 @@ import {
   GIT_HEAD_SHA,
   SERVICE,
   GIT_BASE_REF,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
 } from './tags'
 
 export interface Metadata {
@@ -98,6 +100,8 @@ export type SpanTag =
   | typeof SERVICE
   | typeof GIT_HEAD_SHA
   | typeof GIT_BASE_REF
+  | typeof GIT_PULL_REQUEST_BASE_BRANCH
+  | typeof GIT_PULL_REQUEST_BASE_BRANCH_SHA
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 

@@ -3,7 +3,13 @@ import path from 'path'
 
 import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
-import {CI_NODE_LABELS, CI_ENV_VARS} from '../tags'
+import {
+  CI_NODE_LABELS,
+  CI_ENV_VARS,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_HEAD_SHA,
+} from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
@@ -169,9 +175,73 @@ describe('ci spec', () => {
   })
 
   CI_PROVIDERS.forEach((ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[key: string]: string}
+    ][]
 
-    assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {
+    if (ciProvider === 'github.json') {
+      describe('github actions pull request events', () => {
+        afterEach(() => {
+          delete process.env.GITHUB_BASE_REF
+          delete process.env.GITHUB_EVENT_PATH
+        })
+        // We grab the first assertion because we only need to test one
+        const [env] = assertions[0]
+        it('can read pull request data from GitHub Actions', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'ci-fixtures', 'github_event_payload.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect({
+            pullRequestBaseBranch,
+            pullRequestBaseBranchSha,
+            headCommitSha,
+          }).toEqual({
+            pullRequestBaseBranch: 'datadog:main',
+            pullRequestBaseBranchSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
+            headCommitSha: 'df289512a51123083a8e6931dd6f57bb3883d4c4',
+          })
+        })
+
+        it('does not crash if GITHUB_EVENT_PATH is not a valid JSON file', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'github_event_payload_malformed.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect(pullRequestBaseBranch).toEqual('datadog:main')
+          expect(pullRequestBaseBranchSha).toBeUndefined()
+          expect(headCommitSha).toBeUndefined()
+        })
+
+        it('does not crash if GITHUB_EVENT_PATH is not a file', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'does_not_exist.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect(pullRequestBaseBranch).toEqual('datadog:main')
+          expect(pullRequestBaseBranchSha).toBeUndefined()
+          expect(headCommitSha).toBeUndefined()
+        })
+      })
+    }
+
+    assertions.forEach(([env, expectedSpanTags], index) => {
       test(`reads env info for spec ${index} from ${ciProvider}`, () => {
         process.env = env
         const tags = {
