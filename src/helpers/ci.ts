@@ -25,6 +25,8 @@ import {
   GIT_TAG,
   GIT_HEAD_SHA,
   GIT_BASE_REF,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
@@ -32,7 +34,7 @@ import {
   removeEmptyValues,
   removeUndefinedValues,
   filterSensitiveInfoFromRepository,
-  getGitHeadShaFromGitHubWebhookPayload,
+  getGitHubEventPayload,
 } from './utils'
 
 export const CI_ENGINES = {
@@ -264,10 +266,13 @@ export const getCISpanTags = (): SpanTags | undefined => {
     if (GITHUB_BASE_REF) {
       // GITHUB_BASE_REF is defined if it's a pull_request or pull_request_target trigger
       tags[GIT_BASE_REF] = GITHUB_BASE_REF
-      const headSha = getGitHeadShaFromGitHubWebhookPayload()
-
-      if (headSha) {
-        tags[GIT_HEAD_SHA] = headSha
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = GITHUB_BASE_REF
+      try {
+        const eventPayload = getGitHubEventPayload()
+        tags[GIT_HEAD_SHA] = eventPayload?.pull_request?.head?.sha
+        tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = eventPayload?.pull_request?.base?.sha
+      } catch (e) {
+        // ignore malformed event content
       }
     }
   }
