@@ -203,11 +203,12 @@ export const parseMeasuresFile = (
 }
 
 /**
- * The repository URL is mandatory in processing for the following commands: sarif and sbom.
+ * These are mandatory git fields for the following commands: sarif and sbom.
  * Note: for sarif uploads, this will fail silent on the backend.
  */
 export const mandatoryGitFields: Record<string, boolean> = {
   [GIT_REPOSITORY_URL]: true,
+  [GIT_COMMIT_AUTHOR_EMAIL]: true,
 }
 
 /**
