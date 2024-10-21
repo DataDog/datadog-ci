@@ -1,6 +1,7 @@
 import {
   BaseResult,
   BasicAuthCredentials,
+  CookiesObject,
   ExecutionRule,
   MobileTestWithOverride,
   Result,
@@ -160,6 +161,7 @@ type AccumulatorBaseConfigOverride = Omit<
   | 'retry'
   | 'basicAuth'
   | 'cookies'
+  | 'setCookies'
   // TODO SYNTH-12971: These options will be implemented later in separate PRs
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
@@ -167,11 +169,13 @@ type AccumulatorBaseConfigOverride = Omit<
 > & {
   retry?: Partial<RetryConfig>
   basicAuth?: Partial<BasicAuthCredentials>
-  cookies?: Partial<Exclude<UserConfigOverride['cookies'], string>>
+  cookies?: Partial<CookiesObject>
+  setCookies?: Partial<CookiesObject>
 }
 type AccumulatorBaseConfigOverrideKey = keyof AccumulatorBaseConfigOverride
 const allOverrideKeys: AccumulatorBaseConfigOverrideKey[] = [
   'cookies',
+  'setCookies',
   'retry',
   'basicAuth',
   'allowInsecureCertificates',
@@ -208,7 +212,7 @@ export const parseOverrideValue = (value: string, type: ValidTestOverrideValueTy
       }
       throw new Error(`Invalid number value: ${value}`)
     case 'string':
-      return value.trim()
+      return value.replace(/\\n/g, '\n').trim()
     case 'string[]':
       return value.split(';').map((item) => item.trim())
     case 'ExecutionRule':
@@ -228,7 +232,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   }
   const parsedOverrides: AccumulatorBaseConfigOverride = overrides.reduce(
     (acc: AccumulatorBaseConfigOverride, override: string) => {
-      const match = override.match(/^(.*?)=(.*)$/) ?? [] // split key and value at first equal sign
+      const match = override.match(/^(.*?)=(.*)$/s) ?? [] // split key and value at first equal sign
       const rawKey = match[1] ?? ''
       const value = match[2] ?? ''
 
@@ -296,17 +300,18 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           }
           break
 
-        // Convert to cookies (either a string or an object)
+        // Convert to cookies and set-cookies (either a string or an object)
         case 'cookies':
-          acc['cookies'] = acc['cookies'] ?? {}
+        case 'setCookies':
+          acc[key] = acc[key] ?? {}
           if (subKey) {
             if (subKey === 'append') {
-              acc['cookies'].append = parseOverrideValue(value, 'boolean') as boolean
+              ;(acc[key] as CookiesObject).append = parseOverrideValue(value, 'boolean') as boolean
             } else {
-              throw new Error(`The path "${key}.${subKey}" is invalid. Did you mean \`--override cookies=...\`?`)
+              throw new Error(`The path "${key}.${subKey}" is invalid. Did you mean \`--override ${key}=...\`?`)
             }
           } else {
-            acc['cookies'].value = parseOverrideValue(value, 'string') as string
+            ;(acc[key] as CookiesObject).value = parseOverrideValue(value, 'string') as string
           }
           break
 
