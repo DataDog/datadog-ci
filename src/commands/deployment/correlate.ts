@@ -30,6 +30,7 @@ export class DeploymentCorrelateCommand extends Command {
 
   private cdProviderParam = Option.String('--provider')
   private configurationRepo = Option.String('--config-repo')
+  private configurationShas = Option.Array('--config-shas')
   private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
@@ -76,21 +77,8 @@ export class DeploymentCorrelateCommand extends Command {
       maxConcurrentProcesses: 2, // max 2 git commands at the same time
     })
 
-    const currentBranch = await gitCurrentBranch(git)
-    if (!currentBranch) {
-      this.logger.error('Could not get current branch')
-
-      return 1
-    }
-
-    let localCommitShas: string[]
-    if (this.configurationRepo) {
-      localCommitShas = await gitLocalCommitShas(git, currentBranch)
-    } else {
-      ;[this.configurationRepo, localCommitShas] = await Promise.all([
-        gitRepositoryURL(git),
-        gitLocalCommitShas(git, currentBranch),
-      ])
+    if (!this.configurationRepo) {
+      this.configurationRepo = await gitRepositoryURL(git)
     }
 
     if (this.configurationRepo === undefined || this.configurationRepo === '') {
@@ -99,12 +87,29 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], localCommitShas, ciEnv, this.config.apiKey)
+    if (!this.configurationShas) {
+      const currentBranch = await gitCurrentBranch(git)
+      if (!currentBranch) {
+        this.logger.error('Could not get current branch')
+
+        return 1
+      }
+      this.configurationShas = await gitLocalCommitShas(git, currentBranch)
+    }
+
+    if (this.configurationShas.length === 0) {
+      this.logger.error(
+        'Could not retrieve commit SHAs, make commits and then call this command or provide them with --config-shas'
+      )
+
+      return 1
+    }
+
+    await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], ciEnv, this.config.apiKey)
   }
 
   private async sendCorrelationData(
     ciProvider: string,
-    configCommitShas: string[],
     ciEnv: Record<string, string>,
     apiKey: string
   ) {
@@ -114,7 +119,7 @@ export class DeploymentCorrelateCommand extends Command {
         ci_provider: ciProvider,
         cd_provider: this.cdProviderParam,
         config_repo_url: this.configurationRepo,
-        config_commit_shas: configCommitShas,
+        config_commit_shas: this.configurationShas,
         ci_env: ciEnv,
       },
     }
