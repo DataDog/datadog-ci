@@ -25,7 +25,13 @@ export class DeploymentCorrelateCommand extends Command {
       This command will correlate the pipeline with a GitOps CD deployment.\n
       See README for additional details.
     `,
-    examples: [['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd']],
+    examples: [
+      ['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd'],
+      [
+        'Correlate ArgoCD deployment manually',
+        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4',
+      ],
+    ],
   })
 
   private cdProviderParam = Option.String('--provider')
