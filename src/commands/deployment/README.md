@@ -42,7 +42,7 @@ datadog-ci deployment correlate --provider argocd
 
 - `--provider` (**required**): the CD provider name. Currently, the only supported CD provider is `argocd`.
 - `--config-repo`: configuration repository URL where the kubernetes manifests are stored. If empty, the command tries to get it using the git command `git ls-remote --get-url`.
-- `--config-shas`: a list of the Git commit SHAs of the configuration repository. If empty, the command tries to get all unpushed commits using a `git log` command.
+- `--config-shas`: a list of the Git commit SHAs of the configuration repository. If empty, the command tries to get all local commits using a `git log` command.
 - `--dry-run` (default: `false`): prevents the command from sending any data to Datadog. All the other checks are still performed.
 
 ### Environment variables

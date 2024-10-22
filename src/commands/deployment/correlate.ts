@@ -94,6 +94,7 @@ export class DeploymentCorrelateCommand extends Command {
     }
 
     if (!this.configurationShas) {
+      this.logger.info('Retrieving local git commits')
       const currentBranch = await gitCurrentBranch(git)
       if (!currentBranch) {
         this.logger.error('Could not get current branch')
