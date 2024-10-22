@@ -108,11 +108,7 @@ export class DeploymentCorrelateCommand extends Command {
     await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], ciEnv, this.config.apiKey)
   }
 
-  private async sendCorrelationData(
-    ciProvider: string,
-    ciEnv: Record<string, string>,
-    apiKey: string
-  ) {
+  private async sendCorrelationData(ciProvider: string, ciEnv: Record<string, string>, apiKey: string) {
     const correlateEvent = {
       type: 'ci_app_deployment_correlate',
       attributes: {
