@@ -507,7 +507,7 @@ Content type for the data to send in an API test.
 Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
 
 * If this is a string, it is used to replace the original cookies.
-* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of append, it is appended or replaces the original cookies.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies.
 
 **Configuration options**
 
@@ -524,7 +524,7 @@ Use the provided string as a cookie header in an API or browser test (in additio
 Use the provided string as a set-cookie header in a browser test only (in addition or as a replacement).
 
 * If this is a string, it is used to replace the original set-cookies.
-* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of append, it is appended or replaces the original set-cookies.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original set-cookies.
 
 **Configuration options**
 
