@@ -75,6 +75,7 @@ Example:
     "body": "{\"fakeContent\":true}",
     "bodyType": "application/json",
     "cookies": "name1=value1;name2=value2;",
+    "setCookies": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly",
     "defaultStepTimeout": 15,
     "deviceIds": ["chrome.laptop_large"],
     "executionRule": "skipped",
@@ -506,7 +507,7 @@ Content type for the data to send in an API test.
 Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
 
 * If this is a string, it is used to replace the original cookies.
-* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of append, it is appended or replaces the original cookies.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies.
 
 **Configuration options**
 
@@ -517,6 +518,23 @@ Use the provided string as a cookie header in an API or browser test (in additio
 * CLI param:
   * `--override cookies="name1=value1;name2=value2"`
   * `--override cookies.append=true`
+
+#### `setCookies` (String or object)
+
+Use the provided string as a set-cookie header in a browser test only (in addition or as a replacement).
+
+* If this is a string, it is used to replace the original set-cookies.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original set-cookies.
+
+**Configuration options**
+
+* Global/Test Config: `"setCookies": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly"` (equivalent to `"append": false`) or `"setCookies": {"append": true, "value": "setCookies": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly"}`
+* ENV variable:
+  * `DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES="name1=value1;name2=value2"`
+  * `DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND=true`
+* CLI param:
+  * `--override setCookies="setCookies": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly"`
+  * `--override setCookies.append=true`
 
 #### `defaultStepTimeout` (Number)
 

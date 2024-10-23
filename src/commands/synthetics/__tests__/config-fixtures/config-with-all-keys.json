@@ -18,6 +18,10 @@
       "value": "name1=value1;name2=value2;",
       "append": true
     },
+    "setCookies": {
+      "value": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly",
+      "append": true
+    },
     "defaultStepTimeout": 10000,
     "deviceIds": ["chrome.laptop_large"],
     "executionRule": "blocking",
@@ -40,6 +44,10 @@
     "bodyType": "application/json",
     "cookies": {
       "value": "name1=value1;name2=value2;",
+      "append": true
+    },
+    "setCookies": {
+      "value": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly",
       "append": true
     },
     "defaultStepTimeout": 10000,

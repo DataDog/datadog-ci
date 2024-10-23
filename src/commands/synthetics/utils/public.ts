@@ -102,6 +102,7 @@ export const getOverriddenConfig = (
       'body',
       'bodyType',
       'cookies',
+      'setCookies',
       'defaultStepTimeout',
       'deviceIds',
       'followRedirects',

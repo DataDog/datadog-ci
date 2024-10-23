@@ -12,21 +12,16 @@
     "body": "{\"fakeContent\":true}",
     "bodyType": "application/json",
     "cookies": "name1=value1;name2=value2",
+    "setCookies": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly",
     "defaultStepTimeout": 15,
-    "deviceIds": [
-      "chrome.laptop_large",
-      "firefox.tablet"
-    ],
+    "deviceIds": ["chrome.laptop_large", "firefox.tablet"],
     "executionRule": "skipped",
     "followRedirects": true,
     "headers": {
       "NEW_HEADER_1": "NEW VALUE 1",
       "NEW_HEADER_2": "NEW VALUE 2"
     },
-    "locations": [
-      "aws:us-east-1",
-      "gcp:europe-west3"
-    ],
+    "locations": ["aws:us-east-1", "gcp:europe-west3"],
     "mobileApplicationVersion": "01234567-8888-9999-abcd-efffffffffff",
     "mobileApplicationVersionFilePath": "path/to/application.apk",
     "retry": {
@@ -44,9 +39,7 @@
   "failOnCriticalErrors": true,
   "failOnMissingTests": true,
   "failOnTimeout": true,
-  "files": [
-    "{,!(node_modules)/**/}*.synthetics.json"
-  ],
+  "files": ["{,!(node_modules)/**/}*.synthetics.json"],
   "jUnitReport": "e2e-test-junit",
   "latest": true,
   "mobileApplicationId": "example-abc",
@@ -60,10 +53,7 @@
     "port": 3128,
     "protocol": "http"
   },
-  "publicIds": [
-    "abc-def-ghi",
-    "123-456-789"
-  ],
+  "publicIds": ["abc-def-ghi", "123-456-789"],
   "selectiveRerun": true,
   "subdomain": "myorg",
   "testSearchQuery": "tag:e2e-tests",

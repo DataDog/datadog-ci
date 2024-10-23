@@ -5,6 +5,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
 import {
+  CookiesObject,
   ExecutionRule,
   RunTestsCommandConfig,
   ServerTest,
@@ -83,6 +84,9 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType',
         DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1;cookie2;cookie3',
         DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+        DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES:
+          'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
+        DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND: 'true',
         DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
         DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large',
         DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
@@ -121,6 +125,10 @@ describe('run-test', () => {
           cookies: {
             value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
             append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+          },
+          setCookies: {
+            value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES,
+            append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND),
           },
           defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
           deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
@@ -192,6 +200,10 @@ describe('run-test', () => {
             value: 'name1=value1;name2=value2;',
             append: true,
           },
+          setCookies: {
+            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
+            append: true,
+          },
           defaultStepTimeout: 10000,
           deviceIds: ['chrome.laptop_large'],
           executionRule: ExecutionRule.BLOCKING,
@@ -219,6 +231,10 @@ describe('run-test', () => {
           bodyType: 'application/json',
           cookies: {
             value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          setCookies: {
+            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
             append: true,
           },
           defaultStepTimeout: 10000,
@@ -293,6 +309,7 @@ describe('run-test', () => {
         body: 'a body',
         bodyType: 'bodyType',
         cookies: 'name1=value1;name2=value2;',
+        setCookies: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
         defaultStepTimeout: 42,
         deviceIds: ['chrome.laptop_large', 'chrome.laptop_small', 'firefox.laptop_large'],
         executionRule: ExecutionRule.BLOCKING,
@@ -348,6 +365,8 @@ describe('run-test', () => {
         `bodyType=${defaultTestOverrides.bodyType}`,
         `cookies=${defaultTestOverrides.cookies}`,
         `cookies.append=true`,
+        `setCookies=${defaultTestOverrides.setCookies}`,
+        `setCookies.append=true`,
         `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
         `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
         `executionRule=${defaultTestOverrides.executionRule}`,
@@ -385,6 +404,10 @@ describe('run-test', () => {
           bodyType: 'bodyType',
           cookies: {
             value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          setCookies: {
+            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
             append: true,
           },
           defaultStepTimeout: 42,
@@ -442,6 +465,10 @@ describe('run-test', () => {
           bodyType: 'bodyType',
           cookies: {
             value: 'name1=value1;name2=value2;',
+            append: true,
+          },
+          setCookies: {
+            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
             append: true,
           },
           defaultStepTimeout: 42,
@@ -617,6 +644,9 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES:
+            'cookie1-from-env \n cookie2-from-env; Domain=example.com \n cookie3-from-env; Secure; HttpOnly',
+          DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
           DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'NON_BLOCKING',
@@ -651,6 +681,10 @@ describe('run-test', () => {
             cookies: {
               value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
               append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
+            },
+            setCookies: {
+              value: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES,
+              append: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND),
             },
             defaultStepTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
             deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
@@ -743,6 +777,10 @@ describe('run-test', () => {
             value: 'cli1=value1;cli2=value2;',
             append: false,
           },
+          setCookies: {
+            value: 'cli1=value1 \n cli2=value2; Domain=example.com \n cli3=value3; Secure; HttpOnly',
+            append: false,
+          },
           defaultStepTimeout: 11,
           deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
           executionRule: ExecutionRule.NON_BLOCKING,
@@ -764,8 +802,6 @@ describe('run-test', () => {
           testTimeout: 15,
           variables: {cliVar1: 'value1', cliVar2: 'value2'},
         }
-
-        type Cookies = {value: string; append: boolean}
 
         const command = createCommand(RunTestsCommand)
         command['apiKey'] = overrideCLI.apiKey
@@ -796,8 +832,10 @@ describe('run-test', () => {
           `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
           `body=${defaultTestOverrides.body}`,
           `bodyType=${defaultTestOverrides.bodyType}`,
-          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
-          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `cookies=${(defaultTestOverrides.cookies as CookiesObject).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as CookiesObject).append}`,
+          `setCookies=${(defaultTestOverrides.setCookies as CookiesObject).value}`,
+          `setCookies.append=${(defaultTestOverrides.setCookies as CookiesObject).append}`,
           `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
           `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
           `executionRule=${defaultTestOverrides.executionRule}`,
@@ -864,6 +902,9 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHEITCS_OVERRIDE_SET_COOKIES:
+            'cookie1-from-env \n cookie2-from-env; Domain=example.com \n cookie3-from-env; Secure; HttpOnly',
+          DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
           DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
@@ -914,6 +955,10 @@ describe('run-test', () => {
             value: 'cli1=value1;cli2=value2;',
             append: false,
           },
+          setCookies: {
+            value: 'cli1=value1 \n cli2=value2; Domain=example.com \n cli3=value3; Secure; HttpOnly',
+            append: false,
+          },
           defaultStepTimeout: 11,
           deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
           executionRule: ExecutionRule.NON_BLOCKING,
@@ -937,8 +982,6 @@ describe('run-test', () => {
         }
 
         process.env = overrideEnv
-
-        type Cookies = {value: string; append: boolean}
 
         const command = createCommand(RunTestsCommand)
         command['apiKey'] = overrideCLI.apiKey
@@ -969,8 +1012,10 @@ describe('run-test', () => {
           `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
           `body=${defaultTestOverrides.body}`,
           `bodyType=${defaultTestOverrides.bodyType}`,
-          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
-          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `cookies=${(defaultTestOverrides.cookies as CookiesObject).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as CookiesObject).append}`,
+          `setCookies=${(defaultTestOverrides.setCookies as CookiesObject).value}`,
+          `setCookies.append=${(defaultTestOverrides.setCookies as CookiesObject).append}`,
           `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
           `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
           `executionRule=${defaultTestOverrides.executionRule}`,
@@ -1018,6 +1063,10 @@ describe('run-test', () => {
         bodyType: 'bodyType from test file',
         cookies: {
           value: 'test-file1=value1;test-file2=value2;',
+          append: false,
+        },
+        setCookies: {
+          value: 'test-file1=value1 \n test-file2=value2; Domain=example.com \n test-file3=value3; Secure; HttpOnly',
           append: false,
         },
         defaultStepTimeout: 31,
@@ -1112,6 +1161,9 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE: 'bodyType-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES: 'cookie1-from-env;cookie2-from-env;cookie3-from-env',
           DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND: 'true',
+          DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES:
+            'cookie1-from-env \n cookie2-from-env; Domain=example.com \n cookie3-from-env; Secure; HttpOnly',
+          DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT: '42',
           DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS: 'chrome.laptop_large_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE: 'BLOCKING',
@@ -1158,6 +1210,10 @@ describe('run-test', () => {
             value: 'cli1=value1;cli2=value2;',
             append: false,
           },
+          setCookies: {
+            value: 'cli1=value1 \n cli2=value2; Domain=example.com \n cli3=value3; Secure; HttpOnly',
+            append: false,
+          },
           defaultStepTimeout: 11,
           deviceIds: ['chrome.laptop_large_from_cli', 'chrome.laptop_small_from_cli', 'firefox.laptop_large_from_cli'],
           executionRule: ExecutionRule.NON_BLOCKING,
@@ -1181,8 +1237,6 @@ describe('run-test', () => {
           variables: {cliVar1: 'value1', cliVar2: 'value2'},
         }
 
-        type Cookies = {value: string; append: boolean}
-
         // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
         command['deviceIds'] = ['my-old-device']
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
@@ -1192,8 +1246,10 @@ describe('run-test', () => {
           `basicAuth.username=${defaultTestOverrides.basicAuth?.username}`,
           `body=${defaultTestOverrides.body}`,
           `bodyType=${defaultTestOverrides.bodyType}`,
-          `cookies=${(defaultTestOverrides.cookies as Cookies).value}`,
-          `cookies.append=${(defaultTestOverrides.cookies as Cookies).append}`,
+          `cookies=${(defaultTestOverrides.cookies as CookiesObject).value}`,
+          `cookies.append=${(defaultTestOverrides.cookies as CookiesObject).append}`,
+          `setCookies=${(defaultTestOverrides.setCookies as CookiesObject).value}`,
+          `setCookies.append=${(defaultTestOverrides.setCookies as CookiesObject).append}`,
           `defaultStepTimeout=${defaultTestOverrides.defaultStepTimeout}`,
           `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
           `executionRule=${defaultTestOverrides.executionRule}`,

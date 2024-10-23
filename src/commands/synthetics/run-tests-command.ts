@@ -254,6 +254,11 @@ export class RunTestsCommand extends Command {
       this.config.defaultTestOverrides.cookies = {value: this.config.defaultTestOverrides.cookies}
     }
 
+    // Convert setCookies to object
+    if (typeof this.config.defaultTestOverrides?.setCookies === 'string') {
+      this.config.defaultTestOverrides.setCookies = {value: this.config.defaultTestOverrides.setCookies}
+    }
+
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
@@ -294,6 +299,10 @@ export class RunTestsCommand extends Command {
       append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES_APPEND),
       value: process.env.DATADOG_SYNTHETICS_OVERRIDE_COOKIES,
     })
+    const envOverrideSetCookies = removeUndefinedValues({
+      append: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES_APPEND),
+      value: process.env.DATADOG_SYNTHETICS_OVERRIDE_SET_COOKIES,
+    })
     const envOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
       removeUndefinedValues({
@@ -309,6 +318,7 @@ export class RunTestsCommand extends Command {
         body: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY,
         bodyType: process.env.DATADOG_SYNTHETICS_OVERRIDE_BODY_TYPE,
         cookies: Object.keys(envOverrideCookies).length > 0 ? envOverrideCookies : undefined,
+        setCookies: Object.keys(envOverrideSetCookies).length > 0 ? envOverrideSetCookies : undefined,
         defaultStepTimeout: toNumber(process.env.DATADOG_SYNTHETICS_OVERRIDE_DEFAULT_STEP_TIMEOUT),
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
@@ -383,6 +393,10 @@ export class RunTestsCommand extends Command {
       append: validatedOverrides.cookies?.append,
       value: validatedOverrides.cookies?.value,
     })
+    const cliOverrideSetCookies = removeUndefinedValues({
+      append: validatedOverrides.setCookies?.append,
+      value: validatedOverrides.setCookies?.value,
+    })
     const cliOverrideRetryConfig = deepExtend(
       this.config.defaultTestOverrides?.retry ?? {},
       removeUndefinedValues({
@@ -398,6 +412,7 @@ export class RunTestsCommand extends Command {
         body: validatedOverrides.body,
         bodyType: validatedOverrides.bodyType,
         cookies: Object.keys(cliOverrideCookies).length > 0 ? cliOverrideCookies : undefined,
+        setCookies: Object.keys(cliOverrideSetCookies).length > 0 ? cliOverrideSetCookies : undefined,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
         // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
         deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
@@ -443,6 +458,13 @@ export class RunTestsCommand extends Command {
       !this.config.defaultTestOverrides.cookies.value
     ) {
       throw new CiError('INVALID_CONFIG', 'Cookies value cannot be empty.')
+    }
+
+    if (
+      typeof this.config.defaultTestOverrides?.setCookies === 'object' &&
+      !this.config.defaultTestOverrides.setCookies.value
+    ) {
+      throw new CiError('INVALID_CONFIG', 'SetCookies value cannot be empty.')
     }
   }
 }

@@ -660,6 +660,7 @@ describe('utils', () => {
         body: 'body',
         bodyType: 'application/json',
         cookies: 'name=value;',
+        setCookies: 'name=value \n name2=value2; Secure',
         defaultStepTimeout: 15,
         deviceIds: ['device_id'],
         executionRule: ExecutionRule.NON_BLOCKING,

@@ -344,12 +344,18 @@ export interface MobileApplication {
   referenceType: 'latest' | 'version' | 'temporary'
 }
 
+export interface CookiesObject {
+  append?: boolean
+  value: string
+}
+
 export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
   body?: string
   bodyType?: string
-  cookies?: string | {append?: boolean; value: string}
+  cookies?: string | CookiesObject
+  setCookies?: string | CookiesObject
   defaultStepTimeout?: number
   deviceIds?: string[]
   executionRule?: ExecutionRule
