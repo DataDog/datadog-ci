@@ -1,15 +1,16 @@
 import deepExtend from 'deep-extend'
 
-import {APIHelper, EndpointError, formatBackendErrors} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
   MainReporter,
-  PollResultMap,
+  PollResult,
   Result,
   ResultDisplayInfo,
   ResultInBatch,
+  ServerResult,
   Test,
 } from './interfaces'
 import {
@@ -32,6 +33,8 @@ export const waitForBatchToFinish = async (
 ): Promise<Result[]> => {
   const safeDeadline = Date.now() + batchTimeout + 3 * POLLING_INTERVAL
   const emittedResultIds = new Set<string>()
+  const backupPollResultMap = new Map<string, PollResult>()
+
   let oldIncompleteResultIds = new Set<string>()
 
   while (true) {
@@ -51,7 +54,7 @@ export const waitForBatchToFinish = async (
       oldIncompleteResultIds
     )
 
-    const {pollResultMap, incompleteResultIds} = await getPollResultMap(api, resultIdsToFetch)
+    const {pollResultMap, incompleteResultIds} = await getPollResultMap(api, resultIdsToFetch, backupPollResultMap)
 
     const resultsToReport = getResultsToReport(
       shouldContinuePolling,
@@ -143,7 +146,7 @@ export const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string
   const receivedResults: ResultInBatch[] = []
 
   for (const [index, result] of batch.results.entries()) {
-    // Skipped results aren't reported in detail in the terminal output, but they are still reported by `resultReceived()`.
+    // Skipped results are only reported by `resultReceived()`, then they are excluded everywhere with `excludeSkipped()`.
     const resultId = result.status === 'skipped' ? `skipped-${index}` : result.result_id
 
     // The result is reported if it has a final status, or if it's a non-final result.
@@ -160,7 +163,7 @@ export const reportReceivedResults = (batch: Batch, emittedResultIds: Set<string
 const reportResults = (
   batchId: string,
   results: ResultInBatch[],
-  pollResultMap: PollResultMap,
+  pollResultMap: Map<string, PollResult>,
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached: boolean,
   reporter: MainReporter
@@ -214,7 +217,7 @@ const reportWaitingTests = (
 
 const getResultFromBatch = (
   resultInBatch: ResultInBatch,
-  pollResultMap: PollResultMap,
+  pollResultMap: Map<string, PollResult>,
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached = false
 ): Result => {
@@ -236,7 +239,10 @@ const getResultFromBatch = (
     }
   }
 
-  const pollResult = pollResultMap[resultInBatch.result_id]
+  const pollResult = pollResultMap.get(resultInBatch.result_id)
+  if (!pollResult) {
+    return getResultWithoutPollResult(resultInBatch, test, hasTimedOut, resultDisplayInfo)
+  }
 
   if (safeDeadlineReached) {
     pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
@@ -268,6 +274,31 @@ const getResultFromBatch = (
   }
 }
 
+const getResultWithoutPollResult = (
+  resultInBatch: BaseResultInBatch,
+  test: Test,
+  hasTimedOut: boolean,
+  resultDisplayInfo: ResultDisplayInfo
+): Result => {
+  const {getLocation, options} = resultDisplayInfo
+
+  return {
+    executionRule: resultInBatch.execution_rule,
+    initialResultId: resultInBatch.initial_result_id,
+    isNonFinal: isNonFinalResult(resultInBatch),
+    location: getLocation(resultInBatch.location, test),
+    passed: hasResultPassed(resultInBatch, false, hasTimedOut, options),
+    result: {} as ServerResult,
+    resultId: getResultIdOrLinkedResultId(resultInBatch),
+    retries: resultInBatch.retries || 0,
+    maxRetries: resultInBatch.max_retries || 0,
+    selectiveRerun: resultInBatch.selective_rerun,
+    test: deepExtend({}, test),
+    timedOut: hasTimedOut,
+    timestamp: Date.now(),
+  }
+}
+
 const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
   try {
     const batch = await api.getBatch(batchId)
@@ -278,23 +309,42 @@ const getBatch = async (api: APIHelper, batchId: string): Promise<Batch> => {
   }
 }
 
-const getPollResultMap = async (api: APIHelper, resultIds: string[]) => {
+/**
+ * Returns fresh poll results, or reads the backup map in case of 404.
+ */
+const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollResultMap: Map<string, PollResult>) => {
+  const pollResultMap = new Map<string, PollResult>()
+  const incompleteResultIds = new Set<string>()
+
   try {
     const pollResults = await api.pollResults(resultIds)
-
-    const pollResultMap: PollResultMap = {}
-    const incompleteResultIds = new Set<string>()
 
     pollResults.forEach((r) => {
       // When they are initialized in the backend, results only contain an `eventType: created` property.
       if ('eventType' in r.result && r.result.eventType === 'created') {
         incompleteResultIds.add(r.resultID)
       }
-      pollResultMap[r.resultID] = r
+      pollResultMap.set(r.resultID, r)
+      backupPollResultMap.set(r.resultID, r)
     })
 
     return {pollResultMap, incompleteResultIds}
   } catch (e) {
+    if (getErrorHttpStatus(e) === 404) {
+      // If some results have latency and retries were not enough, the whole request fails with "Test results not found".
+      // In that case, we mark results IDs that were never polled before as incomplete so they are fetched in the next polling cycles.
+      resultIds.forEach((resultId) => {
+        const backupPollResult = backupPollResultMap.get(resultId)
+        if (backupPollResult) {
+          pollResultMap.set(resultId, backupPollResult)
+        } else {
+          incompleteResultIds.add(resultId)
+        }
+      })
+
+      return {pollResultMap, incompleteResultIds}
+    }
+
     throw new EndpointError(`Failed to poll results: ${formatBackendErrors(e)}\n`, e.response?.status)
   }
 }
