@@ -85,8 +85,6 @@ export interface PollResult {
   timestamp: number
 }
 
-export type PollResultMap = {[resultId: string]: PollResult}
-
 /**
  * Information required to convert a `PollResult` to a `Result`.
  */

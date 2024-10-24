@@ -315,7 +315,7 @@ export const determineRetryDelay = (
 
 const isEndpointError = (error: Error): error is EndpointError => error instanceof EndpointError
 
-const getErrorHttpStatus = (error: Error): number | undefined =>
+export const getErrorHttpStatus = (error: Error): number | undefined =>
   isEndpointError(error) ? error.status : isAxiosError(error) ? error.response?.status : undefined
 
 export const isForbiddenError = (error: Error): boolean => getErrorHttpStatus(error) === 403
