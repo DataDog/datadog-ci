@@ -25,11 +25,22 @@ export class DeploymentCorrelateCommand extends Command {
       This command will correlate the pipeline with a GitOps CD deployment.\n
       See README for additional details.
     `,
-    examples: [['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd']],
+    examples: [
+      ['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd'],
+      [
+        'Correlate ArgoCD deployment manually',
+        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4',
+      ],
+      [
+        'Correlate ArgoCD deployment manually to several commits',
+        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4 --config-shas e996e5c30ba1cb4dc7f634ab4a0a59473741c4de',
+      ],
+    ],
   })
 
   private cdProviderParam = Option.String('--provider')
   private configurationRepo = Option.String('--config-repo')
+  private configurationShas = Option.Array('--config-shas')
   private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
@@ -76,21 +87,8 @@ export class DeploymentCorrelateCommand extends Command {
       maxConcurrentProcesses: 2, // max 2 git commands at the same time
     })
 
-    const currentBranch = await gitCurrentBranch(git)
-    if (!currentBranch) {
-      this.logger.error('Could not get current branch')
-
-      return 1
-    }
-
-    let localCommitShas: string[]
-    if (this.configurationRepo) {
-      localCommitShas = await gitLocalCommitShas(git, currentBranch)
-    } else {
-      ;[this.configurationRepo, localCommitShas] = await Promise.all([
-        gitRepositoryURL(git),
-        gitLocalCommitShas(git, currentBranch),
-      ])
+    if (!this.configurationRepo) {
+      this.configurationRepo = await gitRepositoryURL(git)
     }
 
     if (this.configurationRepo === undefined || this.configurationRepo === '') {
@@ -99,22 +97,36 @@ export class DeploymentCorrelateCommand extends Command {
       return 1
     }
 
-    await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], localCommitShas, ciEnv, this.config.apiKey)
+    if (!this.configurationShas) {
+      this.logger.info('Retrieving local git commits')
+      const currentBranch = await gitCurrentBranch(git)
+      if (!currentBranch) {
+        this.logger.error('Could not get current branch')
+
+        return 1
+      }
+      this.configurationShas = await gitLocalCommitShas(git, currentBranch)
+    }
+
+    if (this.configurationShas.length === 0) {
+      this.logger.error(
+        'Could not retrieve commit SHAs, commit changes and then call this command or provide them with --config-shas'
+      )
+
+      return 1
+    }
+
+    await this.sendCorrelationData(ciEnv[CI_PROVIDER_NAME], ciEnv, this.config.apiKey)
   }
 
-  private async sendCorrelationData(
-    ciProvider: string,
-    configCommitShas: string[],
-    ciEnv: Record<string, string>,
-    apiKey: string
-  ) {
+  private async sendCorrelationData(ciProvider: string, ciEnv: Record<string, string>, apiKey: string) {
     const correlateEvent = {
       type: 'ci_app_deployment_correlate',
       attributes: {
         ci_provider: ciProvider,
         cd_provider: this.cdProviderParam,
         config_repo_url: this.configurationRepo,
-        config_commit_shas: configCommitShas,
+        config_commit_shas: this.configurationShas,
         ci_env: ciEnv,
       },
     }

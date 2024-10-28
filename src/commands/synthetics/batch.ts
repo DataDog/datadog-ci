@@ -258,6 +258,7 @@ const getResultFromBatch = (
   const isUnhealthy = pollResult.result.unhealthy ?? false
 
   return {
+    duration: resultInBatch.duration,
     executionRule: resultInBatch.execution_rule,
     initialResultId: resultInBatch.initial_result_id,
     isNonFinal: isNonFinalResult(resultInBatch),

@@ -8,6 +8,7 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  ServerResult,
   Test,
   TestNotFound,
   TestSkipped,
@@ -48,8 +49,12 @@ export const hasResultPassed = (
   return result.status === 'passed'
 }
 
-export const hasResult = (result: Result): result is BaseResult => {
+export const isBaseResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
+}
+
+export const hasDefinedResult = (result: Result): result is BaseResult & {result: ServerResult} => {
+  return !isResultSkippedBySelectiveRerun(result) && result.result !== undefined
 }
 
 /**

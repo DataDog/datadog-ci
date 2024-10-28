@@ -19,14 +19,12 @@ import {
   SelectiveRerunDecision,
   Step,
   Summary,
-  SyntheticsOrgSettings,
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import {hasResult} from '../utils/internal'
+import {hasDefinedResult, isBaseResult} from '../utils/internal'
 import {
   getBatchUrl,
-  getResultDuration,
   getResultOutcome,
   getResultUrl,
   isDeviceIdSet,
@@ -241,7 +239,7 @@ export class JUnitReporter implements Reporter {
         ? testCase.error // ❗️
         : testCase.failure // ❌
 
-    if ('stepDetails' in result.result) {
+    if (hasDefinedResult(result) && 'stepDetails' in result.result) {
       // It's a browser test.
       for (const stepDetail of result.result.stepDetails) {
         const {allowedErrors, browserErrors, errors, warnings} = this.getBrowserTestErrors(stepDetail)
@@ -250,7 +248,7 @@ export class JUnitReporter implements Reporter {
         errorOrFailure.push(...errors)
         testCase.warning.push(...warnings)
       }
-    } else if ('steps' in result.result) {
+    } else if (hasDefinedResult(result) && 'steps' in result.result) {
       // It's a multistep test.
       for (const step of result.result.steps) {
         const {allowedErrors, errors} = this.getMultiStepTestErrors(step)
@@ -264,12 +262,12 @@ export class JUnitReporter implements Reporter {
     }
 
     if (result.timedOut) {
-      // Timeout errors are manually reported by the CLI at the test level. ('The batch timed out before receiving the result.')
+      // Timeout errors are manually reported by the CLI at the test level.
       errorOrFailure.push({
         $: {type: 'timeout'},
-        _: String(result.result.failure?.message),
+        _: String(result.result?.failure?.message ?? 'The batch timed out before receiving the result.'),
       })
-    } else if (errorOrFailure.length === 0 && result.result.failure) {
+    } else if (errorOrFailure.length === 0 && hasDefinedResult(result) && result.result.failure) {
       // Fall back to any failure reported at the test level if nothing was reported at the step level.
       errorOrFailure.push({
         $: {type: 'test_failure'},
@@ -280,7 +278,7 @@ export class JUnitReporter implements Reporter {
     this.addTestCaseToSuite(suite, testCase)
   }
 
-  public runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings) {
+  public runEnd(summary: Summary, baseUrl: string) {
     Object.assign(this.json.testsuites.$, {
       tests_critical_error: summary.criticalErrors,
       tests_failed: summary.failed,
@@ -355,7 +353,7 @@ export class JUnitReporter implements Reporter {
   private getApiTestErrors(result: BaseResult): {errors: XMLError[]} {
     const errors = []
 
-    if (result.result.failure) {
+    if (hasDefinedResult(result) && result.result.failure) {
       const xmlError = {
         $: {type: result.result.failure.code, step: result.test.name},
         _: renderApiError(result.result.failure.code, result.result.failure.message),
@@ -506,8 +504,9 @@ export class JUnitReporter implements Reporter {
     const passed = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
 
     const id = `id: ${test.public_id}`
-    const location = hasResult(result) ? `location: ${result.location}` : ''
-    const device = hasResult(result) && isDeviceIdSet(result.result) ? ` - device: ${result.result.device.id}` : ''
+    const location = isBaseResult(result) ? `location: ${result.location}` : ''
+    const device =
+      hasDefinedResult(result) && isDeviceIdSet(result.result) ? ` - device: ${result.result.device.id}` : ''
     const resultTimedOut = result.timedOut ? ` - result id: ${result.resultId} (not yet received)` : ''
 
     // This has to identify results, otherwise GitLab will only show the last result with the same name.
@@ -518,8 +517,8 @@ export class JUnitReporter implements Reporter {
         classname: test.suite,
         file: test.suite,
         name: resultIdentification,
-        time: hasResult(result) ? getResultDuration(result.result) / 1000 : 0,
-        timestamp: hasResult(result) ? new Date(result.timestamp).toISOString() : new Date().toISOString(),
+        time: isBaseResult(result) ? result.duration / 1000 : 0,
+        timestamp: isBaseResult(result) ? new Date(result.timestamp).toISOString() : new Date().toISOString(),
         ...this.getTestCaseStats(result),
       },
       allowed_error: [],
@@ -529,7 +528,7 @@ export class JUnitReporter implements Reporter {
       properties: {
         property: [
           {$: {name: 'check_id', value: test.public_id}},
-          ...(hasResult(result) && isDeviceIdSet(result.result)
+          ...(hasDefinedResult(result) && isDeviceIdSet(result.result)
             ? [
                 {$: {name: 'device', value: result.result.device.id}},
                 {$: {name: 'width', value: result.result.device.width}},
@@ -537,7 +536,7 @@ export class JUnitReporter implements Reporter {
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
-          {$: {name: 'location', value: hasResult(result) && result.location}},
+          {$: {name: 'location', value: isBaseResult(result) && result.location}},
           {$: {name: 'message', value: test.message}},
           {$: {name: 'monitor_id', value: test.monitor_id}},
           {$: {name: 'passed', value: String(passed)}},
@@ -545,10 +544,15 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'result_id', value: result.resultId}},
           {$: {name: 'initial_result_id', value: result.initialResultId}},
           {$: {name: 'result_url', value: resultUrl}},
-          {$: {name: 'retries', value: hasResult(result) && result.retries}},
-          {$: {name: 'max_retries', value: hasResult(result) && result.maxRetries}},
+          {$: {name: 'retries', value: isBaseResult(result) && result.retries}},
+          {$: {name: 'max_retries', value: isBaseResult(result) && result.maxRetries}},
           {$: {name: 'selective_rerun', value: renderSelectiveRerun(result.selectiveRerun)}},
-          {$: {name: 'start_url', value: hasResult(result) && 'startUrl' in result.result && result.result.startUrl}},
+          {
+            $: {
+              name: 'start_url',
+              value: hasDefinedResult(result) && 'startUrl' in result.result && result.result.startUrl,
+            },
+          },
           {$: {name: 'status', value: test.status}},
           {$: {name: 'tags', value: test.tags.join(',')}},
           {$: {name: 'timeout', value: String(result.timedOut)}},
@@ -561,7 +565,7 @@ export class JUnitReporter implements Reporter {
   }
 
   private getTestCaseStats(result: Result): TestCaseStats {
-    if (isResultSkippedBySelectiveRerun(result)) {
+    if (isResultSkippedBySelectiveRerun(result) || !hasDefinedResult(result)) {
       return getDefaultTestCaseStats()
     }
 
