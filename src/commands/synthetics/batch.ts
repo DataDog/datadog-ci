@@ -10,7 +10,6 @@ import {
   Result,
   ResultDisplayInfo,
   ResultInBatch,
-  ServerResult,
   Test,
 } from './interfaces'
 import {
@@ -221,12 +220,11 @@ const getResultFromBatch = (
   resultDisplayInfo: ResultDisplayInfo,
   safeDeadlineReached = false
 ): Result => {
-  const {getLocation, options, tests} = resultDisplayInfo
+  const {tests} = resultDisplayInfo
+  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
   const hasTimedOut = resultInBatch.timed_out ?? safeDeadlineReached
   const timedOutRetry = isTimedOutRetry(resultInBatch.retries, resultInBatch.max_retries, resultInBatch.timed_out)
-
-  const test = getTestByPublicId(resultInBatch.test_public_id, tests)
 
   if (isResultInBatchSkippedBySelectiveRerun(resultInBatch)) {
     return {
@@ -240,8 +238,9 @@ const getResultFromBatch = (
   }
 
   const pollResult = pollResultMap.get(resultInBatch.result_id)
+  const isUnhealthy = pollResult?.result.unhealthy ?? false
   if (!pollResult) {
-    return getResultWithoutPollResult(resultInBatch, test, hasTimedOut, resultDisplayInfo)
+    return createResult(resultInBatch, undefined, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
   }
 
   if (safeDeadlineReached) {
@@ -255,8 +254,17 @@ const getResultFromBatch = (
     pollResult.result.passed = false
   }
 
-  const isUnhealthy = pollResult.result.unhealthy ?? false
+  return createResult(resultInBatch, pollResult, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
+}
 
+const createResult = (
+  resultInBatch: BaseResultInBatch,
+  pollResult: PollResult | undefined,
+  test: Test,
+  hasTimedOut: boolean,
+  isUnhealthy: boolean,
+  {getLocation, options}: Pick<ResultDisplayInfo, 'getLocation' | 'options'>
+): Result => {
   return {
     duration: resultInBatch.duration,
     executionRule: resultInBatch.execution_rule,
@@ -264,39 +272,14 @@ const getResultFromBatch = (
     isNonFinal: isNonFinalResult(resultInBatch),
     location: getLocation(resultInBatch.location, test),
     passed: hasResultPassed(resultInBatch, isUnhealthy, hasTimedOut, options),
-    result: pollResult.result,
+    result: pollResult?.result,
     resultId: getResultIdOrLinkedResultId(resultInBatch),
     retries: resultInBatch.retries || 0,
     maxRetries: resultInBatch.max_retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult.check),
+    test: deepExtend({}, test, pollResult?.check),
     timedOut: hasTimedOut,
-    timestamp: pollResult.timestamp,
-  }
-}
-
-const getResultWithoutPollResult = (
-  resultInBatch: BaseResultInBatch,
-  test: Test,
-  hasTimedOut: boolean,
-  resultDisplayInfo: ResultDisplayInfo
-): Result => {
-  const {getLocation, options} = resultDisplayInfo
-
-  return {
-    executionRule: resultInBatch.execution_rule,
-    initialResultId: resultInBatch.initial_result_id,
-    isNonFinal: isNonFinalResult(resultInBatch),
-    location: getLocation(resultInBatch.location, test),
-    passed: hasResultPassed(resultInBatch, false, hasTimedOut, options),
-    result: {} as ServerResult,
-    resultId: getResultIdOrLinkedResultId(resultInBatch),
-    retries: resultInBatch.retries || 0,
-    maxRetries: resultInBatch.max_retries || 0,
-    selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test),
-    timedOut: hasTimedOut,
-    timestamp: Date.now(),
+    timestamp: pollResult?.timestamp ?? Date.now(),
   }
 }
 
