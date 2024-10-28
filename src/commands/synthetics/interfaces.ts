@@ -127,6 +127,8 @@ export type SelectiveRerunDecision =
     }
 
 export interface BaseResult {
+  /** Duration of the result in milliseconds. */
+  duration: number
   executionRule: ExecutionRule
   initialResultId?: string
   /** Whether the result is an intermediary result that is expected to be retried. */
@@ -134,7 +136,7 @@ export interface BaseResult {
   location: string
   /** Whether the result is passed or not, according to `failOnCriticalErrors` and `failOnTimeout`. */
   passed: boolean
-  result: ServerResult
+  result?: ServerResult
   resultId: string
   /** Number of retries, including this result. */
   retries: number
@@ -149,7 +151,7 @@ export interface BaseResult {
 // Inside this type, `.resultId` is a linked result ID from a previous batch.
 export type ResultSkippedBySelectiveRerun = Omit<
   BaseResult,
-  'location' | 'result' | 'retries' | 'maxRetries' | 'timestamp'
+  'duration' | 'location' | 'result' | 'retries' | 'maxRetries' | 'timestamp'
 > & {
   executionRule: ExecutionRule.SKIPPED
   selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
@@ -161,6 +163,7 @@ type Status = 'passed' | 'failed' | 'in_progress' | 'skipped'
 type BatchStatus = 'passed' | 'failed' | 'in_progress'
 
 export interface BaseResultInBatch {
+  duration: number
   execution_rule: ExecutionRule
   initial_result_id?: string
   location: string
@@ -173,7 +176,7 @@ export interface BaseResultInBatch {
   timed_out: boolean | null
 }
 
-type SkippedResultInBatch = Omit<BaseResultInBatch, 'location' | 'result_id'> & {
+type SkippedResultInBatch = Omit<BaseResultInBatch, 'duration' | 'location' | 'result_id'> & {
   execution_rule: ExecutionRule.SKIPPED
   status: 'skipped'
 }

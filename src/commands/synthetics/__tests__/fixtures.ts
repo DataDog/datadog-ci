@@ -177,6 +177,7 @@ export const getSummary = (): Summary => ({
 })
 
 const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'> => ({
+  duration: 1000,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
   passed: true,
@@ -192,12 +193,16 @@ export const getBrowserResult = (
   resultId: string,
   test: Test,
   resultOpts: Partial<BrowserServerResult> = {}
-): BaseResult => ({
+): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
   result: getBrowserServerResult(resultOpts),
 })
 
-export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<ApiServerResult> = {}): BaseResult => ({
+export const getApiResult = (
+  resultId: string,
+  test: Test,
+  resultOpts: Partial<ApiServerResult> = {}
+): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
   result: getApiServerResult(resultOpts),
 })
@@ -208,7 +213,7 @@ export const getIncompleteServerResult = (): ServerResult => {
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
   device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-  duration: 0,
+  duration: 1000,
   passed: true,
   startUrl: '',
   stepDetails: [],
@@ -216,6 +221,7 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
 })
 
 export const getTimedOutBrowserResult = (): Result => ({
+  duration: 0,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Location name',
   passed: false,
@@ -234,12 +240,13 @@ export const getTimedOutBrowserResult = (): Result => ({
 })
 
 export const getFailedBrowserResult = (): Result => ({
+  duration: 22000,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Location name',
   passed: false,
   result: {
     device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-    duration: 20000,
+    duration: 22000,
     failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
     passed: false,
     startUrl: 'https://example.org/',
@@ -259,7 +266,7 @@ export const getFailedBrowserResult = (): Result => ({
       {
         ...getStep(),
         allowFailure: true,
-        description: 'Navigate',
+        description: 'Navigate again',
         duration: 1000,
         error: 'Navigation failure',
         skipped: true,
@@ -272,10 +279,9 @@ export const getFailedBrowserResult = (): Result => ({
       {
         ...getStep(),
         description: 'Assert',
-        duration: 1000,
-        error: 'Step failure',
+        duration: 20000,
+        error: 'Step timeout',
         publicId: 'abc-def-hij',
-        skipped: true,
         stepId: 3,
         type: 'assertElementContent',
         url: 'https://example.org/',
@@ -303,13 +309,13 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
   ],
   passed: true,
   timings: {
-    total: 123,
+    total: 1000,
   },
   ...opts,
 })
 
 export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
-  duration: 123,
+  duration: 1000,
   passed: true,
   steps: [],
 })
@@ -507,6 +513,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
 
 export const getInProgressResultInBatch = (): BaseResultInBatch => {
   return {
+    duration: 0,
     execution_rule: ExecutionRule.BLOCKING,
     location: mockLocation.name,
     result_id: 'rid',
@@ -543,6 +550,7 @@ export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun 
 export const getPassedResultInBatch = (): BaseResultInBatch => {
   return {
     ...getInProgressResultInBatch(),
+    duration: 1000,
     retries: 0,
     status: 'passed',
     timed_out: false,
@@ -552,6 +560,7 @@ export const getPassedResultInBatch = (): BaseResultInBatch => {
 export const getFailedResultInBatch = (): BaseResultInBatch => {
   return {
     ...getInProgressResultInBatch(),
+    duration: 1000,
     retries: 0,
     status: 'failed',
     timed_out: false,

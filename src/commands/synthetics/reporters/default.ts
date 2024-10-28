@@ -19,10 +19,9 @@ import {
   UserConfigOverride,
   ResultInBatch,
 } from '../interfaces'
-import {hasResult, isTimedOutRetry} from '../utils/internal'
+import {isBaseResult, isTimedOutRetry} from '../utils/internal'
 import {
   getBatchUrl,
-  getResultDuration,
   getResultOutcome,
   getResultUrl,
   getTestOverridesCount,
@@ -111,12 +110,12 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 
 // Test execution rendering
 const renderResultOutcome = (
-  result: ServerResult,
+  result: ServerResult | undefined,
   test: Test,
   icon: string,
   color: chalk.Chalk
 ): string | undefined => {
-  if (result.unhealthy) {
+  if (result?.unhealthy) {
     const error =
       result.failure && result.failure.message !== 'Unknown error' ? result.failure.message : 'General Error'
 
@@ -129,7 +128,7 @@ const renderResultOutcome = (
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
-    if (result.failure) {
+    if (result?.failure) {
       return [
         `  ${icon} ${color(requestDescription)}`,
         renderApiError(result.failure.code, result.failure.message, color),
@@ -142,12 +141,12 @@ const renderResultOutcome = (
   if (test.type === 'browser') {
     const lines: string[] = []
 
-    if (result.failure) {
+    if (result?.failure) {
       lines.push(chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`))
     }
 
     // We render the step only if the test hasn't passed to avoid cluttering the output.
-    if (!result.passed && 'stepDetails' in result) {
+    if (result && !result.passed && 'stepDetails' in result) {
       const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
       lines.push(...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep))
 
@@ -221,9 +220,8 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (hasResult(execution) && !execution.result.unhealthy) {
-    const duration = getResultDuration(execution.result)
-    const durationText = duration ? ` Total duration: ${duration} ms -` : ''
+  if (isBaseResult(execution) && !execution.result?.unhealthy) {
+    const durationText = execution.duration ? ` Total duration: ${execution.duration} ms -` : ''
 
     const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
     const resultUrlStatus = getResultUrlSuffix(execution)
@@ -249,7 +247,7 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
 }
 
 const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
-  if (hasResult(execution)) {
+  if (isBaseResult(execution)) {
     const {result, passed, retries, maxRetries, timedOut} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
     const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
@@ -262,7 +260,7 @@ const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk)
 }
 
 export const getResultUrlSuffix = (execution: Result) => {
-  if (hasResult(execution)) {
+  if (isBaseResult(execution)) {
     const {retries, maxRetries, timedOut} = execution
     const timedOutRetry = isTimedOutRetry(retries, maxRetries, timedOut)
 

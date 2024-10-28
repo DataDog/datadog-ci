@@ -48,7 +48,7 @@ import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} fr
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasResult, isMobileTestWithOverride} from './internal'
+import {getOverriddenExecutionRule, hasDefinedResult, isMobileTestWithOverride} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -179,12 +179,12 @@ export const isTestSupportedByTunnel = (test: Test) => {
  * @deprecated The concept of `ServerResult` is internal and not the source of truth for a result's status. This function has no public equivalent.
  */
 export const hasResultPassed = (
-  serverResult: ServerResult,
+  serverResult: ServerResult | undefined,
   hasTimedOut: boolean,
   failOnCriticalErrors: boolean,
   failOnTimeout: boolean
 ): boolean => {
-  if (serverResult.unhealthy && !failOnCriticalErrors) {
+  if (serverResult?.unhealthy && !failOnCriticalErrors) {
     return true
   }
 
@@ -192,11 +192,11 @@ export const hasResultPassed = (
     return true
   }
 
-  if (serverResult.passed !== undefined) {
+  if (serverResult?.passed !== undefined) {
     return serverResult.passed
   }
 
-  if (serverResult.failure !== undefined) {
+  if (serverResult?.failure !== undefined) {
     return false
   }
 
@@ -362,6 +362,9 @@ export const createInitialSummary = (): InitialSummary => ({
   timedOut: 0,
 })
 
+/**
+ * @deprecated Please use `Result.duration` instead.
+ */
 export const getResultDuration = (result: ServerResult): number => {
   if ('duration' in result) {
     return Math.round(result.duration)
@@ -752,7 +755,7 @@ export const renderResults = ({
       summary.timedOut++
     }
 
-    if (hasResult(result) && result.result.unhealthy && !config.failOnCriticalErrors) {
+    if (hasDefinedResult(result) && result.result.unhealthy && !config.failOnCriticalErrors) {
       summary.criticalErrors++
     }
 

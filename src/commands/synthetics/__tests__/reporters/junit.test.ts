@@ -505,14 +505,14 @@ describe('GitLab test report compatibility', () => {
         step: 'Assert',
         type: 'assertion',
       },
-      _: 'Step failure',
+      _: 'Step timeout',
     }
 
     expect(testCase.$).toHaveProperty('classname', 'tests.json') // Suite
     expect(testCase.$).toHaveProperty('name', name) // Name
     expect(testCase.$).toHaveProperty('file', 'tests.json') // Filename
     expect(testCase.failure).toStrictEqual([failure]) // Status
-    expect(testCase.$).toHaveProperty('time', 20) // Duration
+    expect(testCase.$).toHaveProperty('time', 22) // Duration
   })
 
   test('the icon in the Status column is correct (blocking vs. non-blocking)', () => {
