@@ -47,7 +47,7 @@ describe('execute', () => {
     const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain(
-      'Could not retrieve commit SHAs, make commits and then call this command or provide them with --config-shas'
+      'Could not retrieve commit SHAs, commit changes and then call this command or provide them with --config-shas'
     )
   })
   test('valid with minimal data', async () => {
