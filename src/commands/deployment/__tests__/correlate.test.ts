@@ -38,13 +38,25 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Could not extract the commit SHA from the CI environment variables')
   })
+  test('no configuration commit shas', async () => {
+    const envVars = {
+      GITLAB_CI: 'placeholder',
+      CI_REPOSITORY_URL: 'https://github.com/DataDog/example',
+      CI_COMMIT_SHA: 'abcdef',
+    }
+    const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
+    expect(code).toBe(1)
+    expect(context.stdout.toString()).toContain(
+      'Could not retrieve commit SHAs, commit changes and then call this command or provide them with --config-shas'
+    )
+  })
   test('valid with minimal data', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
       CI_REPOSITORY_URL: 'https://github.com/DataDog/example',
       CI_COMMIT_SHA: 'abcdef',
     }
-    const {context: _, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
+    const {context: _, code} = await runCLI(['--provider', 'argocd', '--config-shas', 'abcdef', '--dry-run'], envVars)
     expect(code).toBe(0)
   })
   test('valid', async () => {
@@ -56,7 +68,10 @@ describe('execute', () => {
       CI_PIPELINE_ID: '1',
       CI_JOB_ID: '1',
     }
-    const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
+    const {context, code} = await runCLI(
+      ['--provider', 'argocd', '--config-shas', 'abcdef', '--config-shas', 'fedcba', '--dry-run'],
+      envVars
+    )
     expect(code).toBe(0)
     const output = context.stdout.toString()
     expect(output).toContain(`"type": "ci_app_deployment_correlate"`)
@@ -64,7 +79,10 @@ describe('execute', () => {
     expect(output).toContain(`"ci_provider": "gitlab"`)
     expect(output).toContain(`"cd_provider": "argocd"`)
     expect(output).toContain(`"config_repo_url"`)
-    expect(output).toContain(`"config_commit_shas"`)
+    expect(output).toContain(`"config_commit_shas": [
+      "abcdef",
+      "fedcba"
+    ]`)
     expect(output).toContain(`"ci_env": {
       "ci.pipeline.id": "1",
       "ci.provider.name": "gitlab",
