@@ -31,6 +31,10 @@ export class DeploymentCorrelateCommand extends Command {
         'Correlate ArgoCD deployment manually',
         'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4',
       ],
+      [
+        'Correlate ArgoCD deployment manually to several commits',
+        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4 --config-shas e996e5c30ba1cb4dc7f634ab4a0a59473741c4de',
+      ],
     ],
   })
 
@@ -106,7 +110,7 @@ export class DeploymentCorrelateCommand extends Command {
 
     if (this.configurationShas.length === 0) {
       this.logger.error(
-        'Could not retrieve commit SHAs, make commits and then call this command or provide them with --config-shas'
+        'Could not retrieve commit SHAs, commit changes and then call this command or provide them with --config-shas'
       )
 
       return 1
