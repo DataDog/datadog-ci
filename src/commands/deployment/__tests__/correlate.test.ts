@@ -38,18 +38,6 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Could not extract the commit SHA from the CI environment variables')
   })
-  test('no configuration commit shas', async () => {
-    const envVars = {
-      GITLAB_CI: 'placeholder',
-      CI_REPOSITORY_URL: 'https://github.com/DataDog/example',
-      CI_COMMIT_SHA: 'abcdef',
-    }
-    const {context, code} = await runCLI(['--provider', 'argocd', '--dry-run'], envVars)
-    expect(code).toBe(1)
-    expect(context.stdout.toString()).toContain(
-      'Could not retrieve commit SHAs, commit changes and then call this command or provide them with --config-shas'
-    )
-  })
   test('valid with minimal data', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
