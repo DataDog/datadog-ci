@@ -80,12 +80,10 @@ export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsSer
 
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  result: ServerResult
+  result?: ServerResult
   resultID: string
   timestamp: number
 }
-
-export type PollResultMap = {[resultId: string]: PollResult}
 
 /**
  * Information required to convert a `PollResult` to a `Result`.
