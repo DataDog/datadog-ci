@@ -56,10 +56,6 @@ export const isBaseResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
 }
 
-export const hasDefinedResult = (result: Result): result is BaseResult & {result: ServerResult} => {
-  return !isResultSkippedBySelectiveRerun(result) && result.result !== undefined
-}
-
 /**
  * Whether the result has a defined {@link BaseResult.result} property.
  *
