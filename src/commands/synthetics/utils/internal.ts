@@ -58,7 +58,7 @@ export const isBaseResult = (result: Result): result is BaseResult => {
 
 /**
  * Whether the result has a defined {@link BaseResult.result} property.
- * 
+ *
  * This property would be undefined if the server result isn't available when polling for it,
  * which is a known latency issue. We call such result an incomplete result.
  */
