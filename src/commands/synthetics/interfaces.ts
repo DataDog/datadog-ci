@@ -80,7 +80,7 @@ export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsSer
 
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  result: ServerResult
+  result?: ServerResult
   resultID: string
   timestamp: number
 }

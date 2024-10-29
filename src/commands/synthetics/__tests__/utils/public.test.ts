@@ -847,7 +847,7 @@ describe('utils', () => {
       timedOut: false,
       timestamp: 0,
     }
-    const pollResult: PollResult = {
+    const pollResult: PollResult & {result: ServerResult} = {
       check: result.test,
       result: result.result,
       resultID: result.resultId,
@@ -1304,7 +1304,7 @@ describe('utils', () => {
       })
 
       expect(await resultsPromise).toEqual([
-        {...result, resultId: 'rid', passed: false, result: getIncompleteServerResult()},
+        {...result, resultId: 'rid', passed: false, result: undefined},
         {...result, resultId: 'rid-2'},
         {...result, resultId: 'rid-3'},
       ])
@@ -1322,12 +1322,7 @@ describe('utils', () => {
       // Result 1 never became available (but the batch says it did not pass)
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         3,
-        {
-          ...result,
-          passed: false,
-          resultId: 'rid',
-          result: getIncompleteServerResult(),
-        },
+        {...result, passed: false, resultId: 'rid', result: undefined},
         MOCK_BASE_URL,
         'bid'
       )
@@ -1456,7 +1451,7 @@ describe('utils', () => {
 
       expect(await resultsPromise).toEqual([
         result,
-        {...result, resultId: 'rid-2', result: {}, timestamp: 123, test: tests[1]},
+        {...result, resultId: 'rid-2', result: undefined, timestamp: 123, test: tests[1]},
       ])
 
       // One result received
@@ -1469,7 +1464,7 @@ describe('utils', () => {
       // Last result is reported without a poll result
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
         2,
-        {...result, resultId: 'rid-2', result: {}, test: tests[1], timestamp: 123},
+        {...result, resultId: 'rid-2', result: undefined, test: tests[1], timestamp: 123},
         MOCK_BASE_URL,
         'bid'
       )

@@ -238,9 +238,9 @@ const getResultFromBatch = (
   }
 
   const pollResult = pollResultMap.get(resultInBatch.result_id)
-  const isUnhealthy = pollResult?.result.unhealthy ?? false
-  if (!pollResult) {
-    return createResult(resultInBatch, undefined, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
+  const isUnhealthy = pollResult?.result?.unhealthy ?? false
+  if (!pollResult?.result) {
+    return createResult(resultInBatch, pollResult, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
   }
 
   if (safeDeadlineReached) {
@@ -304,9 +304,12 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
     const pollResults = await api.pollResults(resultIds)
 
     pollResults.forEach((r) => {
-      // When they are initialized in the backend, results only contain an `eventType: created` property.
-      if ('eventType' in r.result && r.result.eventType === 'created') {
+      // Server results are initialized to `{"eventType": "created"}` in the backend, and they may take
+      // some time to be updated. In that case, we keep the `PollResult` information (e.g. `timestamp`)
+      // but remove the server result to avoid reporting an unexpected object shape.
+      if (r.result && 'eventType' in r.result && r.result.eventType === 'created') {
         incompleteResultIds.add(r.resultID)
+        delete r.result
       }
       pollResultMap.set(r.resultID, r)
       backupPollResultMap.set(r.resultID, r)
