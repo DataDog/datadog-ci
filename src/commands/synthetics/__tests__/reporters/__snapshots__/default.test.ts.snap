@@ -2,7 +2,7 @@
 
 exports[`Default reporter resultEnd 1 API test, 1 location, 1 result: success 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -11,19 +11,19 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 1 result: success 1`
 
 exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, failed non-blocking, failed blocking 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
 [1m[33m✖[39m[22m [[1m[33mnon-blocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[33mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&batch_id=123&from_ci=true[39m[22m
   [1m[33m✖[39m[22m [1m[33m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[33m  - Assertion failed:[39m[22m
 [1m[33m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
 
 [1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=3&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion failed:[39m[22m
@@ -34,7 +34,7 @@ exports[`Default reporter resultEnd 1 API test, 1 location, 3 results: success, 
 
 exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI run) 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1001&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -43,7 +43,7 @@ exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI ru
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0002&batch_id=123&from_ci=true[39m[22m
 
 [1m[32m✓[39m[22m [2m(edited) [22m[[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1003&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -52,17 +52,17 @@ exports[`Default reporter resultEnd 3 API tests, 2 passed (1 from previous CI ru
 
 exports[`Default reporter resultEnd 3 Browser tests: failed blocking, timed out, global failure 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m - [1m[31mdevice: [1mchrome.laptop_large[22m[1m[39m[22m
-  • Total duration: 20000 ms - View test run details:
+  • Total duration: 22000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/abc-def-ghi/result/1?batch_id=123&from_ci=true[39m[22m
 [31m    [[1mSTEP_TIMEOUT[22m] - [2mStep failed because it took more than 20 seconds.[22m[39m
     [1m[32m✓[39m[22m | [1m1000[22mms - Navigate to start URL
     [2mhttps://example.org/[22m
-    [1m[31m✖[39m[22m | [1m1000[22mms - Navigate
+    [1m[31m✖[39m[22m | [1m1000[22mms - Navigate again
     [2mhttps://example.org/[22m
     [31m[2mNavigation failure[22m[39m
-    [1m[31m✖[39m[22m | [1m1000[22mms - Assert
+    [1m[31m✖[39m[22m | [1m[31m20000[39m[22mms - Assert
     [2mvalue[22m
-    [31m[2mStep failure[22m[39m
+    [31m[2mStep timeout[22m[39m
     [1m[33m⇢[39m[22m | 3 skipped steps
 
 [1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mabc-def-ghi[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mLocation name[22m[1m[39m[22m
@@ -80,21 +80,21 @@ exports[`Default reporter resultEnd 3 Browser tests: failed blocking, timed out,
 
 exports[`Default reporter resultEnd Incomplete API and Browser tests - passed and failed 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
 [1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2mbbb-bbb-bbb[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/bbb-bbb-bbb/result/3?batch_id=123&from_ci=true[39m[22m
 
 [1m[32m✓[39m[22m [[1m[2mbbb-bbb-bbb[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/bbb-bbb-bbb/result/4?batch_id=123&from_ci=true[39m[22m
 
 "
@@ -102,14 +102,14 @@ exports[`Default reporter resultEnd Incomplete API and Browser tests - passed an
 
 exports[`Default reporter resultEnd Retryable test - Edge case: fails, then retry times out 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 1 of 2, retrying…[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion failed:[39m[22m
 [1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
 
 [1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 2, done[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0&batch_id=123&from_ci=true[39m[22m (previous attempt)
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [31m    [[1mTIMEOUT[22m] - [2mThe batch timed out before receiving the retry.[22m[39m
@@ -119,14 +119,14 @@ exports[`Default reporter resultEnd Retryable test - Edge case: fails, then retr
 
 exports[`Default reporter resultEnd Retryable test - Usual case: passes after 1 retry only 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 1 of 3, retrying…[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion failed:[39m[22m
 [1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 2, done[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -135,21 +135,21 @@ exports[`Default reporter resultEnd Retryable test - Usual case: passes after 1 
 
 exports[`Default reporter resultEnd Retryable test - Usual case: passes after max retries 1`] = `
 "[1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 1 of 3, retrying…[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=0&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion failed:[39m[22m
 [1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
 
 [1m[31m✖[39m[22m [[1m[31mblocking[39m[22m] [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[31mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 2 of 3, retrying…[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=1&batch_id=123&from_ci=true[39m[22m
   [1m[31m✖[39m[22m [1m[31m[1mGET[22m[1m - http://fake.url[39m[22m
 [1m[31m  - Assertion failed:[39m[22m
 [1m[31m    ▶ responseTime should be less than [4m1000[24m. Actual: [4m1234[24m[39m[22m
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m ([2mattempt 3, done[22m)
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=2&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -325,7 +325,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: false) 2`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -335,7 +335,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: false) 3`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -346,7 +346,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 exports[`Default reporter testsWait the spinner text is updated and cleared at the end (in CI: false) 4`] = `
 "View pending summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=123[39m[22m
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
  [36m⠹[39m Waiting for the batch to end…
@@ -367,7 +367,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 - Waiting for [1m[36m2[39m[22m tests [90m(aaa-aaa-aaa, bbb-bbb-bbb)[39m…
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -380,7 +380,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 - Waiting for [1m[36m2[39m[22m tests [90m(aaa-aaa-aaa, bbb-bbb-bbb)[39m…
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 
@@ -397,7 +397,7 @@ exports[`Default reporter testsWait the spinner text is updated and cleared at t
 - Waiting for [1m[36m2[39m[22m tests [90m(aaa-aaa-aaa, bbb-bbb-bbb)[39m…
 
 [1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
-  • Total duration: 123 ms - View test run details:
+  • Total duration: 1000 ms - View test run details:
     ⎋ [2m[36mhttps://app.datadoghq.com/synthetics/details/aaa-aaa-aaa?resultId=rid&batch_id=123&from_ci=true[39m[22m
   [1m[32m✓[39m[22m [1m[32m[1mGET[22m[1m - http://fake.url[39m[22m
 

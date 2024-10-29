@@ -8,6 +8,7 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  ServerResult,
   Test,
   TestNotFound,
   TestSkipped,
@@ -48,8 +49,21 @@ export const hasResultPassed = (
   return result.status === 'passed'
 }
 
-export const hasResult = (result: Result): result is BaseResult => {
+/**
+ * Whether the result is of type {@link BaseResult}, i.e. it wasn't skipped.
+ */
+export const isBaseResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
+}
+
+/**
+ * Whether the result has a defined {@link BaseResult.result} property.
+ *
+ * This property would be undefined if the server result isn't available when polling for it,
+ * which is a known latency issue. We call such result an incomplete result.
+ */
+export const hasDefinedResult = (result: Result): result is BaseResult & {result: ServerResult} => {
+  return isBaseResult(result) && result.result !== undefined
 }
 
 /**

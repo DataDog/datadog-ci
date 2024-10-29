@@ -831,7 +831,8 @@ describe('utils', () => {
 
     const batch: Batch = getBatch()
     const apiTest = getApiTest('pid')
-    const result: Result = {
+    const result: BaseResult & {result: ServerResult} = {
+      duration: 1000,
       executionRule: ExecutionRule.BLOCKING,
       initialResultId: undefined,
       isNonFinal: false,
@@ -1035,6 +1036,7 @@ describe('utils', () => {
             // Second test
             {
               ...getInProgressResultInBatch(), // stays in progress
+              duration: 1000,
               retries: 0, // `retries` is set => first attempt failed, but will be fast retried
               test_public_id: 'other-public-id',
               timed_out: false,
@@ -1054,6 +1056,7 @@ describe('utils', () => {
       // One result received
       expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(3, {
         ...batch.results[0],
+        duration: 1000,
         status: 'in_progress',
         test_public_id: 'other-public-id',
         result_id: 'rid-3',
@@ -1428,8 +1431,9 @@ describe('utils', () => {
         ],
       })
 
-      const expectedDeadlineResult = {
+      const expectedDeadlineResult: Result = {
         ...result,
+        duration: 0,
         result: {
           ...result.result,
           failure: {
