@@ -49,12 +49,18 @@ export const hasResultPassed = (
   return result.status === 'passed'
 }
 
+/**
+ * Whether the result is of type {@link BaseResult}, i.e. it wasn't skipped.
+ */
 export const isBaseResult = (result: Result): result is BaseResult => {
   return !isResultSkippedBySelectiveRerun(result)
 }
 
+/**
+ * Whether the result has a defined {@link BaseResult.result} property.
+ */
 export const hasDefinedResult = (result: Result): result is BaseResult & {result: ServerResult} => {
-  return !isResultSkippedBySelectiveRerun(result) && result.result !== undefined
+  return isBaseResult(result) && result.result !== undefined
 }
 
 /**
