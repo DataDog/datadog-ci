@@ -94,7 +94,7 @@ export const generatePayload = (
 ): ScaRequest | undefined => {
 
   if (
-    REQUIRED_GIT_TAGS.filter((tag: string) => !tags[tag]).length > 0
+    REQUIRED_GIT_TAGS.filter((tag) => !tags[tag]).length > 0
   ) {
     return undefined
   }
