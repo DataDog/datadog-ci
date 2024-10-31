@@ -2,6 +2,9 @@ import chalk from 'chalk'
 
 import {getBaseUrl} from '../junit/utils'
 
+import {REQUIRED_GIT_TAGS} from './constants'
+import { SpanTag, SpanTags } from '../../helpers/interfaces';
+
 const ICONS = {
   FAILED: '❌',
   SUCCESS: '✅',
@@ -16,6 +19,18 @@ export const renderInvalidFile = (sbomReport: string) => {
   fullStr += chalk.red(`${ICONS.FAILED} Invalid SBOM report file ${reportPath}.\n`)
   fullStr += chalk.red(`The report is not a valid SBOM or is not compliant with our json schema.\n`)
 
+  return fullStr
+}
+
+export const renderMissingGitAttributes = (sbomReport: string, tags: SpanTags) => {
+  const missingTags = REQUIRED_GIT_TAGS.filter((tag: string) => !tags[tag]);
+  const reportPath = `[${chalk.bold.dim(sbomReport)}]`
+  let fullStr = ''
+  fullStr += chalk.red(`There are missing git tags for ${reportPath}:\n`)
+  missingTags.forEach((element: SpanTag) => {
+    fullStr += chalk.red(` - ${element}\n`)
+  });
+  fullStr += chalk.red(`To fix this, ensure that the git information above is in your commit`)
   return fullStr
 }
 

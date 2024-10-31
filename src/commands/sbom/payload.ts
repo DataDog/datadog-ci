@@ -12,7 +12,7 @@ import {
   GIT_SHA,
 } from '../../helpers/tags'
 
-import {FILE_PACKAGE_PROPERTY_KEY, IS_DEPENDENCY_DIRECT_PROPERTY_KEY, PACKAGE_MANAGER_PROPERTY_KEY} from './constants'
+import {FILE_PACKAGE_PROPERTY_KEY, IS_DEPENDENCY_DIRECT_PROPERTY_KEY, PACKAGE_MANAGER_PROPERTY_KEY, REQUIRED_GIT_TAGS} from './constants'
 import {getLanguageFromComponent} from './language'
 import {Relations, Dependency, File, Location, LocationFromFile, Locations, ScaRequest} from './types'
 
@@ -92,14 +92,9 @@ export const generatePayload = (
   service: string,
   env: string
 ): ScaRequest | undefined => {
+
   if (
-    !tags[GIT_COMMIT_AUTHOR_EMAIL] ||
-    !tags[GIT_COMMIT_AUTHOR_NAME] ||
-    !tags[GIT_COMMIT_COMMITTER_EMAIL] ||
-    !tags[GIT_COMMIT_COMMITTER_NAME] ||
-    !tags[GIT_SHA] ||
-    !tags[GIT_BRANCH] ||
-    !tags[GIT_REPOSITORY_URL]
+    REQUIRED_GIT_TAGS.filter((tag: string) => !tags[tag]).length > 0
   ) {
     return undefined
   }
