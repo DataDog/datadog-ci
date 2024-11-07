@@ -2,6 +2,10 @@ import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@a
 import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+
 import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
 import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from './constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
@@ -43,7 +47,16 @@ export class UninstrumentStepFunctionsCommand extends Command {
     {hidden: true}
   )
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute(): Promise<0 | 1> {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     let validationError = false
     let hasChanges = false
 

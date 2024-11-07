@@ -3,7 +3,10 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '../../helpers/git/get-git-data'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
@@ -43,13 +46,20 @@ export class DeploymentCorrelateCommand extends Command {
   private configurationShas = Option.Array('--config-shas')
   private dryRun = Option.Boolean('--dry-run', false)
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (!this.config.apiKey) {
       this.logger.error(
         `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`

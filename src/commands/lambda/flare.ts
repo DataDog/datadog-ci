@@ -18,11 +18,15 @@ import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
@@ -77,6 +81,13 @@ export class LambdaFlareCommand extends Command {
   private apiKey?: string
   private credentials?: AwsCredentialIdentity
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   /**
    * Entry point for the `lambda flare` command.
    * Gathers config, logs, tags, project files, and more from a
@@ -84,6 +95,8 @@ export class LambdaFlareCommand extends Command {
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute(): Promise<0 | 1> {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name

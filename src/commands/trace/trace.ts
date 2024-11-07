@@ -6,7 +6,10 @@ import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCIProvider, getCISpanTags} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
@@ -51,12 +54,19 @@ export class TraceCommand extends Command {
   private dryRun = Option.Boolean('--dry-run')
   private tags = Option.Array('--tags')
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (!this.command || !this.command.length) {
       this.context.stderr.write('Missing command to run\n')
 

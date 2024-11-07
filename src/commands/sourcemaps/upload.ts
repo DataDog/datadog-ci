@@ -5,10 +5,13 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
@@ -66,12 +69,20 @@ export class UploadCommand extends Command {
   private service = Option.String('--service')
 
   private cliVersion = version
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
 

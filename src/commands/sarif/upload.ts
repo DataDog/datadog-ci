@@ -5,8 +5,11 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_SHA, getSpanTags, REQUIRED_GIT_TAGS} from '../../helpers/tags'
@@ -70,7 +73,16 @@ export class UploadSarifReportCommand extends Command {
     envVarTags: process.env.DD_TAGS,
   }
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
 
