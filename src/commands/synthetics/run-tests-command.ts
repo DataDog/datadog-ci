@@ -2,6 +2,7 @@ import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
 
+import {enableFips, UnsupportedFipsError} from '../../helpers/fips'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -47,6 +48,8 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: [],
+  fipsEnabled: false,
+  fipsIgnoreError: false,
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   jUnitReport: '',
@@ -133,6 +136,13 @@ export class RunTestsCommand extends Command {
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
   })
+  private fipsEnabled = Option.Boolean('--fips', {
+    description:
+      'Use a FIPS compliant crypto provider. Throws an error if no FIPS compliant crypto provider are available.',
+  })
+  private fipsIgnoreError = Option.Boolean('--fipsIgnoreError', {
+    description: `Prevent error when using the ${$1('--fips')} option.`,
+  })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
     description: 'Override the default mobile application version to test a different version within Datadog.',
   })
@@ -185,6 +195,22 @@ export class RunTestsCommand extends Command {
       }
 
       return 1
+    }
+
+    if (this.config.fipsEnabled) {
+      try {
+        if (enableFips(this.config.fipsIgnoreError)) {
+          this.reporter.log('FIPS mode enabled.\n')
+        } else {
+          this.reporter.error('FIPS could not be enabled. The command will continue without FIPS mode.\n')
+        }
+      } catch (error) {
+        if (error instanceof UnsupportedFipsError) {
+          this.reporter.error('FIPS mode is not supported. Aborting.\n')
+
+          return toExitCode(getExitReason(this.config, {error}))
+        }
+      }
     }
 
     if (this.config.jUnitReport) {
@@ -277,6 +303,8 @@ export class RunTestsCommand extends Command {
         failOnMissingTests: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
         failOnTimeout: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
+        fipsEnabled: toBoolean(process.env.DATADOG_FIPS),
+        fipsIgnoreError: toBoolean(process.env.DATADOG_FIPS_IGNORE_ERROR),
         jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
         publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
         selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
@@ -357,6 +385,8 @@ export class RunTestsCommand extends Command {
         failOnMissingTests: this.failOnMissingTests,
         failOnTimeout: this.failOnTimeout,
         files: this.files,
+        fipsEnabled: this.fipsEnabled,
+        fipsIgnoreError: this.fipsIgnoreError,
         jUnitReport: this.jUnitReport,
         publicIds: this.publicIds,
         selectiveRerun: this.selectiveRerun,

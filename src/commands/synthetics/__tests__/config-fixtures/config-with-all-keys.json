@@ -8,6 +8,8 @@
   "failOnMissingTests": true,
   "failOnTimeout": false,
   "files": ["my-new-file"],
+  "fipsEnabled": true,
+  "fipsIgnoreError": true,
   "jUnitReport": "junit-report.xml",
   "global": {
     "allowInsecureCertificates": true,

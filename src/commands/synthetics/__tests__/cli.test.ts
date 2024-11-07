@@ -29,6 +29,8 @@ test('all option flags are supported', async () => {
     'failOnMissingTests',
     'failOnTimeout',
     'files',
+    'fips',
+    'fipsIgnoreError',
     'jUnitReport',
     'mobileApplicationVersion',
     'mobileApplicationVersionFilePath',
@@ -62,6 +64,8 @@ describe('run-test', () => {
       const overrideEnv = {
         DATADOG_API_KEY: 'fake_api_key',
         DATADOG_APP_KEY: 'fake_app_key',
+        DATADOG_FIPS: 'true',
+        DATADOG_FIPS_IGNORE_ERROR: 'true',
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
         DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
@@ -153,6 +157,8 @@ describe('run-test', () => {
         failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
         failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
         files: overrideEnv.DATADOG_SYNTHETICS_FILES.split(';'),
+        fipsEnabled: true,
+        fipsIgnoreError: true,
         jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
         publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS.split(';'),
         selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
@@ -223,6 +229,8 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
+        fipsEnabled: true,
+        fipsIgnoreError: true,
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {
           allowInsecureCertificates: true,
@@ -288,6 +296,8 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        fipsEnabled: true,
+        fipsIgnoreError: true,
         jUnitReport: 'junit-report.xml',
         mobileApplicationVersionFilePath: './path/to/application.apk',
         pollingTimeout: 2,
@@ -345,6 +355,8 @@ describe('run-test', () => {
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
       command['files'] = overrideCLI.files
+      command['fipsEnabled'] = overrideCLI.fipsEnabled
+      command['fipsIgnoreError'] = overrideCLI.fipsIgnoreError
       command['jUnitReport'] = overrideCLI.jUnitReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
@@ -436,6 +448,8 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        fipsEnabled: true,
+        fipsIgnoreError: true,
         jUnitReport: 'junit-report.xml',
         pollingTimeout: 2,
         publicIds: ['ran-dom-id2'],
@@ -500,6 +514,8 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['new-file'],
+        fipsEnabled: true,
+        fipsIgnoreError: true,
         jUnitReport: 'junit-report.xml',
         publicIds: ['ran-dom-id2'],
         pollingTimeout: 1,
@@ -562,7 +578,7 @@ describe('run-test', () => {
     //
     // (config file < ENV < CLI < test file) => execute tests
 
-    describe('override precedence - config file < ENV < CLI < test file', () => {
+    describe('override precedence - [config file < ENV < CLI < test file]', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
@@ -598,6 +614,8 @@ describe('run-test', () => {
         failOnMissingTests: false,
         failOnTimeout: false,
         files: ['from_config_file.json'],
+        fipsEnabled: false,
+        fipsIgnoreError: false,
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {},
         jUnitReport: 'junit-report-from-config-file.xml',
@@ -622,6 +640,8 @@ describe('run-test', () => {
         const overrideEnv = {
           DATADOG_API_KEY: 'env_api_key',
           DATADOG_APP_KEY: 'env_app_key',
+          DATADOG_FIPS: 'true',
+          DATADOG_FIPS_IGNORE_ERROR: 'true',
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
           DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
@@ -714,6 +734,8 @@ describe('run-test', () => {
           failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
           failOnTimeout: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT),
           files: overrideEnv.DATADOG_SYNTHETICS_FILES?.split(';'),
+          fipsEnabled: toBoolean(overrideEnv.DATADOG_FIPS),
+          fipsIgnoreError: toBoolean(overrideEnv.DATADOG_FIPS_IGNORE_ERROR),
           jUnitReport: overrideEnv.DATADOG_SYNTHETICS_JUNIT_REPORT,
           publicIds: overrideEnv.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
           selectiveRerun: toBoolean(overrideEnv.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
@@ -754,6 +776,8 @@ describe('run-test', () => {
           failOnMissingTests: true,
           failOnTimeout: true,
           files: ['new-file-from-cli'],
+          fipsEnabled: true,
+          fipsIgnoreError: true,
           jUnitReport: 'junit-report-from-cli.xml',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
           pollingTimeout: 10,
@@ -815,6 +839,8 @@ describe('run-test', () => {
         command['failOnMissingTests'] = overrideCLI.failOnMissingTests
         command['failOnTimeout'] = overrideCLI.failOnTimeout
         command['files'] = overrideCLI.files
+        command['fipsEnabled'] = overrideCLI.fipsEnabled
+        command['fipsIgnoreError'] = overrideCLI.fipsIgnoreError
         command['jUnitReport'] = overrideCLI.jUnitReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
@@ -881,6 +907,8 @@ describe('run-test', () => {
         const overrideEnv = {
           DATADOG_API_KEY: 'env_api_key',
           DATADOG_APP_KEY: 'env_app_key',
+          DATADOG_FIPS: 'false',
+          DATADOG_FIPS_IGNORE_ERROR: 'false',
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
@@ -932,6 +960,8 @@ describe('run-test', () => {
           failOnMissingTests: false,
           failOnTimeout: false,
           files: ['file-from-cli-1;file-from-cli-2'],
+          fipsEnabled: true,
+          fipsIgnoreError: true,
           jUnitReport: 'junit-report-from-cli.xml',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
           pollingTimeout: 10,
@@ -995,6 +1025,8 @@ describe('run-test', () => {
         command['failOnMissingTests'] = overrideCLI.failOnMissingTests
         command['failOnTimeout'] = overrideCLI.failOnTimeout
         command['files'] = overrideCLI.files
+        command['fipsEnabled'] = overrideCLI.fipsEnabled
+        command['fipsIgnoreError'] = overrideCLI.fipsIgnoreError
         command['jUnitReport'] = overrideCLI.jUnitReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath

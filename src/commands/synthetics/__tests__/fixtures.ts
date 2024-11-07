@@ -76,6 +76,8 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: [],
+  fipsEnabled: false,
+  fipsIgnoreError: false,
   jUnitReport: '',
   global: {},
   defaultTestOverrides: {},

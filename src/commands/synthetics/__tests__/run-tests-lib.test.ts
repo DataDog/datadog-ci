@@ -62,6 +62,8 @@ describe('run-test', () => {
           failOnMissingTests: false,
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          fipsEnabled: false,
+          fipsIgnoreError: false,
           global: {}, // deprecated
           locations: [], // deprecated
           pollingTimeout: 2 * 60 * 1000,
@@ -90,6 +92,8 @@ describe('run-test', () => {
           failOnMissingTests: false,
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
+          fipsEnabled: false,
+          fipsIgnoreError: false,
           // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
           locations: [],

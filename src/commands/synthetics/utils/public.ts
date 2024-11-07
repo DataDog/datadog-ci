@@ -9,6 +9,7 @@ import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
+import {UnsupportedFipsError} from '../../../helpers/fips'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 import {pick} from '../../../helpers/utils'
 
@@ -812,6 +813,10 @@ export const getExitReason = (
   config: Pick<RunTestsCommandConfig, 'failOnCriticalErrors' | 'failOnMissingTests'>,
   {results, error}: {results?: Result[]; error?: unknown}
 ) => {
+  if (error instanceof UnsupportedFipsError) {
+    return 'fips-mode-not-supported'
+  }
+
   if (results?.some((result) => getResultOutcome(result) === ResultOutcome.Failed)) {
     return 'failing-tests'
   }

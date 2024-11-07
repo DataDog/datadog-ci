@@ -1,7 +1,8 @@
-import {exec} from 'child_process'
+import {exec, ExecException} from 'child_process'
 import {promisify} from 'util'
 
 import {version} from '../package.json'
+import { stderr } from 'process'
 
 const execPromise = promisify(exec)
 
@@ -89,6 +90,14 @@ describe('standalone binary', () => {
       const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)
       const syntheticsHelpText = sanitizeOutput(stdout)
       expect(syntheticsHelpText).toContain('datadog-ci synthetics run-tests')
+    })
+    it('report when FIPS is unsupported', async () => {
+      const {error, stdout} = await new Promise<{ error: ExecException | null, stdout: string, stderr: string}>((resolve) =>
+        exec(`${STANDALONE_BINARY_PATH} synthetics --fips`, (error, stdout, stderr) => resolve({error, stdout, stderr})))
+
+      const testFipsOutput = sanitizeOutput(stdout)
+      expect(error).toBe(1)
+      expect(testFipsOutput).toEqual('FIPS mode is not supported. Aborting.\n')
     })
   })
   describe('trace', () => {
