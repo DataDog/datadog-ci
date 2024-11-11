@@ -28,19 +28,6 @@ export const renderInvalidPayload = (sbomReport: string) => {
   return fullStr
 }
 
-export const renderMissingSpan = (errorMessage: string) => {
-  const currentPath = `[${chalk.bold.dim(process.cwd())}]`
-
-  let fullStr = ''
-  fullStr += chalk.yellow(`${ICONS.WARNING}  Validation failed: ${errorMessage}.\n`)
-  fullStr += chalk.yellow(
-    `Upload attempted from ${currentPath}. Is this the directory for which this analysis was run?\n`
-  )
-  fullStr += chalk.yellow(`The upload must come from a directory with a ".git" directory.\n`)
-
-  return fullStr
-}
-
 export const renderDuplicateUpload = (sha: string, env: string, service: string) => {
   let fullStr = ''
   fullStr += chalk.red(`${ICONS.WARNING}  Duplicate SBOM upload detected\n`)
