@@ -32,7 +32,7 @@ export const renderMissingTags = (missingTags: string[]) => {
   const styledPath = `[${chalk.bold.dim(process.cwd())}]`
 
   let fullStr = ''
-  fullStr += chalk.red(`${ICONS.WARNING}  There are missing git tags in ${styledPath}:\n`)
+  fullStr += chalk.red(`There are missing git tags in ${styledPath}:\n`)
   missingTags.forEach((tag: string) => {
     fullStr += chalk.red(` - ${tag}\n`)
   })
