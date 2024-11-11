@@ -9,7 +9,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {GIT_SHA, getSpanTags, mandatoryGitFields} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, REQUIRED_GIT_TAGS} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
@@ -23,7 +23,7 @@ import {
   renderFailedUpload,
   renderInvalidFile,
   renderFilesNotFound,
-  renderMissingSpan,
+  renderMissingTags,
 } from './renderer'
 import {getBaseIntakeUrl} from './utils'
 import {checkForError, validateSarif} from './validation'
@@ -87,11 +87,17 @@ export class UploadSarifReportCommand extends Command {
 
     const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
-    // Check if we have all the mandatory git fields
-    const spanTagsKeys = Object.keys(spanTags)
-    const filteredSpanTags = spanTagsKeys.filter((key) => mandatoryGitFields[key])
-    if (filteredSpanTags.length !== Object.keys(mandatoryGitFields).length) {
-      this.context.stdout.write(renderMissingSpan('missing span tags (CI, git, or user-provided tags)'))
+    // Gather any missing mandatory git fields to display to the user
+    const missingGitFields = Object.entries(spanTags).reduce((acc: string[], [tag, value]) => {
+      if (REQUIRED_GIT_TAGS[tag] && !value) {
+        acc.push(tag)
+      }
+
+      return acc
+    }, [])
+
+    if (missingGitFields.length > 0) {
+      this.context.stdout.write(renderMissingTags(missingGitFields))
 
       return 1
     }
