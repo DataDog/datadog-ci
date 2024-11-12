@@ -12,7 +12,7 @@ import {
   GIT_SHA,
 } from '../../helpers/tags'
 
-import {FILE_PACKAGE_PROPERTY_KEY, IS_DEPENDENCY_DIRECT_PROPERTY_KEY, PACKAGE_MANAGER_PROPERTY_KEY, REQUIRED_GIT_TAGS} from './constants'
+import {FILE_PACKAGE_PROPERTY_KEY, IS_DEPENDENCY_DIRECT_PROPERTY_KEY, PACKAGE_MANAGER_PROPERTY_KEY} from './constants'
 import {getLanguageFromComponent} from './language'
 import {Relations, Dependency, File, Location, LocationFromFile, Locations, ScaRequest} from './types'
 
@@ -123,18 +123,24 @@ export const generatePayload = (
     }
   }
 
+  if (!tags[GIT_COMMIT_AUTHOR_NAME]) {
+    console.error('missing GIT_COMMIT_AUTHOR_NAME tag')
+
+    return
+  }
+
   return {
     id: crypto.randomUUID(),
     commit: {
-      author_name: tags[GIT_COMMIT_AUTHOR_NAME],
-      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL],
-      committer_name: tags[GIT_COMMIT_COMMITTER_NAME],
-      committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL],
-      sha: tags[GIT_SHA],
-      branch: tags[GIT_BRANCH],
+      author_name: tags[GIT_COMMIT_AUTHOR_NAME] ?? '',
+      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL] ?? '',
+      committer_name: tags[GIT_COMMIT_COMMITTER_NAME] ?? '',
+      committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL] ?? '',
+      sha: tags[GIT_SHA] ?? '',
+      branch: tags[GIT_BRANCH] ?? '',
     },
     repository: {
-      url: tags[GIT_REPOSITORY_URL],
+      url: tags[GIT_REPOSITORY_URL] ?? '',
     },
     tags,
     dependencies,

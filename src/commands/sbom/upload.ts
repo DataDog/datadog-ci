@@ -19,7 +19,6 @@ import {
   renderNoDefaultBranch,
   renderSuccessfulCommand,
   renderUploading,
-  renderMissingGitAttributes,
 } from './renderer'
 import {ScaRequest} from './types'
 import {getValidator, validateFileAgainstToolRequirements, validateSbomFileAgainstSchema} from './validation'
@@ -127,6 +126,8 @@ export class UploadSbomCommand extends Command {
     try {
       const scaPayload = generatePayload(jsonContent, tags, service, environment)
       if (!scaPayload) {
+        this.context.stdout.write(renderInvalidPayload(basePath))
+
         return 1
       }
       this.context.stdout.write(renderUploading(basePath))
