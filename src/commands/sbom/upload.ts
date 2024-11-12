@@ -5,7 +5,9 @@ import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {GIT_SHA, getSpanTags, mandatoryGitFields, GIT_REPOSITORY_URL} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, GIT_REPOSITORY_URL, REQUIRED_GIT_TAGS} from '../../helpers/tags'
+
+import {renderMissingTags} from '../sarif/renderer'
 
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
@@ -14,7 +16,6 @@ import {
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
-  renderMissingSpan,
   renderNoDefaultBranch,
   renderSuccessfulCommand,
   renderUploading,
@@ -83,11 +84,17 @@ export class UploadSbomCommand extends Command {
 
     const tags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
-    // Check if we have all the mandatory git fields
-    const spanTagsKeys = Object.keys(tags)
-    const filteredSpanTags = spanTagsKeys.filter((key) => mandatoryGitFields[key])
-    if (filteredSpanTags.length !== Object.keys(mandatoryGitFields).length) {
-      this.context.stdout.write(renderMissingSpan('missing span tags (CI, git, or user-provided tags)'))
+    // Gather any missing mandatory git fields to display to the user
+    const missingGitFields = Object.entries(tags).reduce((acc: string[], [tag, value]) => {
+      if (REQUIRED_GIT_TAGS[tag] && !value) {
+        acc.push(tag)
+      }
+
+      return acc
+    }, [])
+
+    if (missingGitFields.length > 0) {
+      this.context.stdout.write(renderMissingTags(missingGitFields))
 
       return 1
     }

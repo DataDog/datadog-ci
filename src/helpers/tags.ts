@@ -203,12 +203,16 @@ export const parseMeasuresFile = (
 }
 
 /**
- * These are mandatory git fields for the following commands: sarif and sbom.
- * Note: for sarif uploads, this will fail silent on the backend.
+ * These are required git tags for the following commands: sarif and sbom.
  */
-export const mandatoryGitFields: Record<string, boolean> = {
+export const REQUIRED_GIT_TAGS: Record<string, boolean> = {
   [GIT_REPOSITORY_URL]: true,
+  [GIT_BRANCH]: true,
+  [GIT_SHA]: true,
   [GIT_COMMIT_AUTHOR_EMAIL]: true,
+  [GIT_COMMIT_AUTHOR_NAME]: true,
+  [GIT_COMMIT_COMMITTER_EMAIL]: true,
+  [GIT_COMMIT_COMMITTER_NAME]: true,
 }
 
 /**
