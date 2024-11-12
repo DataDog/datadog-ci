@@ -123,12 +123,6 @@ export const generatePayload = (
     }
   }
 
-  if (!tags[GIT_COMMIT_AUTHOR_NAME]) {
-    console.error('missing GIT_COMMIT_AUTHOR_NAME tag')
-
-    return
-  }
-
   return {
     id: crypto.randomUUID(),
     commit: {
