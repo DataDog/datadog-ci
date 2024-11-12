@@ -92,13 +92,6 @@ export const generatePayload = (
   service: string,
   env: string
 ): ScaRequest | undefined => {
-
-  if (
-    REQUIRED_GIT_TAGS.filter((tag) => !tags[tag]).length > 0
-  ) {
-    return undefined
-  }
-
   const dependencies: Dependency[] = []
   const files: File[] = []
   const relations: Relations[] = []

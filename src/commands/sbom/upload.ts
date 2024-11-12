@@ -127,7 +127,6 @@ export class UploadSbomCommand extends Command {
     try {
       const scaPayload = generatePayload(jsonContent, tags, service, environment)
       if (!scaPayload) {
-        this.context.stdout.write(renderMissingGitAttributes(basePath, tags))
         return 1
       }
       this.context.stdout.write(renderUploading(basePath))
