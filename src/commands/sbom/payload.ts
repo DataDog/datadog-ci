@@ -123,6 +123,8 @@ export const generatePayload = (
     }
   }
 
+  // The tags ditionary is validated prior to generatePayload being called
+  //  see upload.ts missingGitFields
   return {
     id: crypto.randomUUID(),
     commit: {
