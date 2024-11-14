@@ -552,7 +552,7 @@ describe('run-test', () => {
       expect(stopTunnelSpy).toHaveBeenCalledTimes(1)
     })
 
-    test('log when selective re-run is rate-limited', async () => {
+    test('log when selective rerun is rate-limited', async () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
@@ -581,11 +581,11 @@ describe('run-test', () => {
       })
 
       expect(mockReporter.error).toHaveBeenCalledWith(
-        'The selective re-run feature was rate-limited. All tests will be re-run.\n\n'
+        'The selective rerun feature was rate-limited. All tests will be re-run.\n\n'
       )
     })
 
-    test('selective re-run defaults to undefined', async () => {
+    test('selective rerun defaults to undefined', async () => {
       jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),

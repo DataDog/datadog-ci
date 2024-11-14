@@ -208,7 +208,7 @@ describe('Junit reporter', () => {
         ...getDefaultSuiteStats(),
         errors: 0,
         failures: 1,
-        skipped: 1, // not 2 because skipped by selective re-run counts as passed
+        skipped: 1, // not 2 because skipped by selective rerun counts as passed
         tests: 3,
       })
     })
