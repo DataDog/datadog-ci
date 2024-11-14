@@ -56,7 +56,6 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   pollingTimeout: DEFAULT_POLLING_TIMEOUT,
   proxy: {protocol: 'http'},
   publicIds: [],
-  selectiveRerun: false,
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,

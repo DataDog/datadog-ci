@@ -595,7 +595,7 @@ export const getTestsToTrigger = async (
 export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
-  selectiveRerun = false,
+  selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<Trigger> => {
   // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
