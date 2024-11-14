@@ -509,7 +509,8 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
   pollingTimeout?: number
   publicIds: string[]
-  selectiveRerun: boolean
+  /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
+  selectiveRerun?: boolean
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean

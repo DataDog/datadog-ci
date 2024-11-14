@@ -82,7 +82,6 @@ export const ciConfig: RunTestsCommandConfig = {
   locations: [],
   proxy: {protocol: 'http'},
   publicIds: [],
-  selectiveRerun: false,
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,

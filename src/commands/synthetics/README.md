@@ -409,7 +409,7 @@ List of IDs for the Synthetic tests you want to trigger.
 
 #### `selectiveRerun`
 
-A boolean flag to only run the tests which failed in the previous test batches. Use the `--no-selectiveRerun` CLI flag to force a full run if your configuration enables it by default.
+A boolean flag to only run the tests which failed in the previous test batches. By default, the [organization default setting](https://app.datadoghq.com/synthetics/settings/continuous-testing) is used. Use the `--no-selectiveRerun` CLI flag or `selectiveRerun: false` to force a full run.
 
 **Configuration options**
 
