@@ -421,7 +421,7 @@ export class DefaultReporter implements MainReporter {
 
     if (summary.previouslyPassed) {
       lines.push(
-        `• Selective re-run: ran ${summary.expected - summary.previouslyPassed} out of ${summary.expected} tests`
+        `• Selective rerun: ran ${summary.expected - summary.previouslyPassed} out of ${summary.expected} tests`
       )
     }
 

@@ -194,7 +194,7 @@ type ServerResultInBatch = BaseResultInBatch | SkippedResultInBatch
 
 export interface ServerBatch {
   // The batch from the server contains skipped results, which we're going to remove since we don't
-  // care about skipped results internally (except when they are skipped by a selective re-run).
+  // care about skipped results internally (except when they are skipped by a selective rerun).
   results: ServerResultInBatch[]
   status: BatchStatus
 }
@@ -453,7 +453,7 @@ export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
   criticalErrors: number
-  // Number of results expected by datadog-ci, prior to any selective re-run.
+  // Number of results expected by datadog-ci, prior to any selective rerun.
   expected: number
   failed: number
   failedNonBlocking: number

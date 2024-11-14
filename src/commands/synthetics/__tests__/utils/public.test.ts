@@ -1125,7 +1125,7 @@ describe('utils', () => {
           status: 'in_progress',
           results: [
             // First test
-            {...getSkippedResultInBatch()}, // skipped by selective re-run
+            {...getSkippedResultInBatch()}, // skipped by selective rerun
             // Second test
             {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
           ],
@@ -1155,7 +1155,7 @@ describe('utils', () => {
       expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
         ...getSkippedResultInBatch(),
       })
-      // And marked as passed because it's selective re-run
+      // And marked as passed because it's selective rerun
       const skippedResult: Result = {
         executionRule: ExecutionRule.SKIPPED,
         passed: true,
