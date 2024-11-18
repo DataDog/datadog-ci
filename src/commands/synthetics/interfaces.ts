@@ -244,7 +244,7 @@ export interface ServerTest {
       timeout: number
       url: string
     }
-    steps?: {subtype: string}[]
+    steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
   created_at: string
@@ -281,6 +281,8 @@ export interface ServerTest {
 export interface Test extends ServerTest {
   suite?: string
 }
+
+export type LocalTestDefinition = Omit<ServerTest, 'public_id'>
 
 export interface Assertion {
   actual: string | number | Date | {[key: string]: any}
@@ -398,7 +400,8 @@ export interface Payload {
 
 export interface TestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
-  public_id: string
+  local_test_definition?: LocalTestDefinition
+  public_id?: string
 }
 
 export interface TestNotFound {
@@ -427,7 +430,8 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-export interface TriggerConfig {
+
+export interface RemoteTriggerConfig {
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   /** @deprecated This property is deprecated, please use `testOverrides` instead. */
   config?: UserConfigOverride
@@ -435,6 +439,12 @@ export interface TriggerConfig {
   id: string
   suite?: string
 }
+export interface LocalTriggerConfig extends Omit<RemoteTriggerConfig, 'id'> {
+  /** Can be used to link to an existing remote test. */
+  id?: string
+  localTestDefinition: LocalTestDefinition
+}
+export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',

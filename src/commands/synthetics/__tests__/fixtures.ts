@@ -38,6 +38,7 @@ import {
   ResultInBatchSkippedBySelectiveRerun,
   ServerResult,
   APIConfiguration,
+  LocalTestDefinition,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -134,6 +135,15 @@ export const getBrowserTest = (
   type: 'browser',
   ...opts,
 })
+
+export const getLocalTestDefinition = (): LocalTestDefinition => {
+  const {public_id: _unused, ...test} = getApiTest()
+
+  return {
+    ...test,
+    name: 'Local test definition',
+  }
+}
 
 export const getStep = (): Step => ({
   allowFailure: false,

@@ -3,6 +3,7 @@ import {
   BasicAuthCredentials,
   CookiesObject,
   ExecutionRule,
+  LocalTriggerConfig,
   MobileTestWithOverride,
   Result,
   ResultInBatch,
@@ -13,6 +14,7 @@ import {
   TestNotFound,
   TestSkipped,
   TestWithOverride,
+  TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
 
@@ -82,6 +84,10 @@ export const isTimedOutRetry = (
   timedOut: boolean | null
 ): boolean => {
   return !!timedOut && (retries ?? 0) < (maxRetries ?? 0)
+}
+
+export const isLocalTriggerConfig = (triggerConfig: TriggerConfig): triggerConfig is LocalTriggerConfig => {
+  return 'localTestDefinition' in triggerConfig
 }
 
 export const isResultInBatchSkippedBySelectiveRerun = (

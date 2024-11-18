@@ -48,7 +48,7 @@ import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} fr
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasDefinedResult, isMobileTestWithOverride} from './internal'
+import {getOverriddenExecutionRule, hasDefinedResult, isLocalTriggerConfig, isMobileTestWithOverride} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -453,21 +453,41 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  {config, testOverrides, id, suite}: TriggerConfig,
+  triggerConfig: TriggerConfig,
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
-  const normalizedId = normalizePublicId(id)
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  const testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
 
-  if (!normalizedId) {
-    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${id}\``)
+  if (isLocalTriggerConfig(triggerConfig)) {
+    if (!triggerConfig.id) {
+      throw new CriticalError(
+        'INVALID_CONFIG',
+        'Linking local test definitions to an existing remote test is currently mandatory.'
+      )
+    }
+
+    return {
+      test: {
+        ...triggerConfig.localTestDefinition,
+        public_id: triggerConfig.id,
+      },
+      overriddenConfig: {
+        ...testOverrides,
+        public_id: triggerConfig.id,
+        local_test_definition: triggerConfig.localTestDefinition,
+      },
+    }
   }
 
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  testOverrides = replaceConfigWithTestOverrides(config, testOverrides)
+  const normalizedId = normalizePublicId(triggerConfig.id)
+  if (!normalizedId) {
+    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${triggerConfig.id}\``)
+  }
 
-  const testResult = await getTest(api, {id: normalizedId, suite})
+  const testResult = await getTest(api, normalizedId, triggerConfig.suite)
   if ('errorMessage' in testResult) {
     summary.testsNotFound.add(normalizedId)
 
@@ -508,7 +528,7 @@ export const getTestAndOverrideConfig = async (
     )
   }
 
-  return {overriddenConfig, test}
+  return {test, overriddenConfig}
 }
 
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>

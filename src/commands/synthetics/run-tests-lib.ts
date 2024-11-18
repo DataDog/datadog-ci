@@ -26,6 +26,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
+import {isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -204,14 +205,14 @@ export const getTriggerConfigs = async (
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
   const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
-  const testIdsFromTestConfigs = testsFromTestConfigs.map(({id}) => id)
+  const testIdsFromTestConfigs = testsFromTestConfigs.flatMap(({id}) => (id ? [id] : []))
 
   // Take the list of tests from the first source that defines it, by order of precedence
   const testIdsToTrigger =
     [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
   // Create the overrides required for the list of tests to trigger
-  const triggerConfigs = testIdsToTrigger.map((id) => {
+  const triggerConfigsWithId = testIdsToTrigger.map<TriggerConfig>((id) => {
     const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
     let testFromSearchQuery
     if (testIndexFromSearchQuery >= 0) {
@@ -235,7 +236,25 @@ export const getTriggerConfigs = async (
     }
   })
 
-  return triggerConfigs
+  const localTriggerConfigsWithoutId: TriggerConfig[] = []
+
+  for (let i = 0; i < testsFromTestConfigs.length; i++) {
+    if (!isLocalTriggerConfig(testsFromTestConfigs[i])) {
+      continue
+    }
+
+    const testFromTestConfigs = testsFromTestConfigs.splice(i, 1)[0]
+
+    localTriggerConfigsWithoutId.push({
+      ...testFromTestConfigs,
+      testOverrides: {
+        ...defaultTestConfigOverrides,
+        ...testFromTestConfigs?.testOverrides,
+      },
+    })
+  }
+
+  return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
 }
 
 export const executeWithDetails = async (

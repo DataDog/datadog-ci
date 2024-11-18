@@ -5,7 +5,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule, RunTestsCommandConfig, Summary, UserConfigOverride} from '../interfaces'
+import {ExecutionRule, RunTestsCommandConfig, Suite, Summary, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
@@ -17,6 +17,7 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
+  getLocalTestDefinition,
   getMobileTest,
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   mockReporter,
@@ -756,7 +757,7 @@ describe('run-test', () => {
     } as any
 
     test('should extend global config and execute all tests from test config files when no clue what to run', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockResolvedValue(fakeSuites)
       const defaultTestOverrides = {locations, startUrl}
 
       await expect(
@@ -817,7 +818,7 @@ describe('run-test', () => {
     })
 
     test('should override and execute only publicIds that were defined in the global config and use given globs', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockResolvedValue(fakeSuites)
       const defaultTestOverrides = {locations, startUrl}
       const files = ['glob']
 
@@ -889,7 +890,7 @@ describe('run-test', () => {
     })
 
     test('should search tests with testSearchQuery and use given globs', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockResolvedValue(fakeSuites)
 
       const defaultTestOverrides = {startUrl}
       const searchQuery = 'fake search'
@@ -919,7 +920,7 @@ describe('run-test', () => {
     })
 
     test('should use given globs to get tests list', async () => {
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => fakeSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockResolvedValue(fakeSuites)
       const defaultTestOverrides = {startUrl}
       const files = ['new glob', 'another one']
 
@@ -960,7 +961,7 @@ describe('run-test', () => {
       const userSuites = [fakeSuites[0]]
       const globSuites = [fakeSuites[1]]
 
-      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockImplementation((() => globSuites) as any)
+      const getSuitesMock = jest.spyOn(utils, 'getSuites').mockResolvedValue(globSuites)
       const defaultTestOverrides = {startUrl}
       const files = ['glob']
 
@@ -985,45 +986,43 @@ describe('run-test', () => {
     })
 
     test('should handle test configurations with the same test ID correctly', async () => {
-      const conf5 = {
-        tests: [
-          {
-            id: 'abc-abc-abc',
-            testOverrides: {
-              allowInsecureCertificates: true,
-              basicAuth: {username: 'test', password: 'test'},
-              body: '{"fakeContent":true}',
-              bodyType: 'application/json',
-              cookies: 'name1=value1;name2=value2;',
-              setCookies: 'name1=value1 \n name2=value2; Secure',
-              defaultStepTimeout: 15,
-              deviceIds: ['chrome.laptop_large'],
-              executionRule: 'non-blocking',
-              followRedirects: true,
-              headers: {NEW_HEADER: 'NEW VALUE'},
-              locations: ['aws:us-east-1'],
-              mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
-              mobileApplicationVersionFilePath: 'path/to/application.apk',
-              pollingTimeout: 30000,
-              retry: {count: 2, interval: 300},
-              testTimeout: 300,
-              variables: {MY_VARIABLE: 'new title'},
+      const suite: Suite = {
+        name: 'Suite with duplicate IDs',
+        content: {
+          tests: [
+            {
+              id: 'abc-abc-abc',
+              testOverrides: {
+                allowInsecureCertificates: true,
+                basicAuth: {username: 'test', password: 'test'},
+                body: '{"fakeContent":true}',
+                bodyType: 'application/json',
+                cookies: 'name1=value1;name2=value2;',
+                setCookies: 'name1=value1 \n name2=value2; Secure',
+                defaultStepTimeout: 15,
+                deviceIds: ['chrome.laptop_large'],
+                executionRule: ExecutionRule.NON_BLOCKING,
+                followRedirects: true,
+                headers: {NEW_HEADER: 'NEW VALUE'},
+                locations: ['aws:us-east-1'],
+                mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
+                mobileApplicationVersionFilePath: 'path/to/application.apk',
+                pollingTimeout: 30000,
+                retry: {count: 2, interval: 300},
+                testTimeout: 300,
+                variables: {MY_VARIABLE: 'new title'},
+              },
             },
-          },
-          {
-            id: 'abc-abc-abc',
-            testOverrides: {
-              executionRule: 'skipped',
+            {
+              id: 'abc-abc-abc',
+              testOverrides: {
+                executionRule: ExecutionRule.SKIPPED,
+              },
             },
-          },
-        ],
-      }
-      jest.spyOn(utils, 'getSuites').mockImplementation((() => [
-        {
-          content: conf5,
-          name: 'Suite with duplicate IDs',
+          ],
         },
-      ]) as any)
+      }
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([suite])
 
       const defaultTestOverrides = {locations: ['aws:us-east-1'], startUrl: 'fakeUrl'}
 
@@ -1040,7 +1039,7 @@ describe('run-test', () => {
             setCookies: 'name1=value1 \n name2=value2; Secure',
             defaultStepTimeout: 15,
             deviceIds: ['chrome.laptop_large'],
-            executionRule: 'non-blocking',
+            executionRule: 'non_blocking',
             followRedirects: true,
             headers: {NEW_HEADER: 'NEW VALUE'},
             locations: ['aws:us-east-1'],
@@ -1063,6 +1062,81 @@ describe('run-test', () => {
           },
           id: 'abc-abc-abc',
           suite: 'Suite with duplicate IDs',
+        },
+      ])
+    })
+
+    test('should handle local test definitions', async () => {
+      const localTestDefinition = getLocalTestDefinition()
+      const suite: Suite = {
+        name: 'Suite with local test definitions',
+        content: {
+          tests: [
+            {
+              id: 'aaa-aaa-aaa',
+              testOverrides: {
+                startUrl: 'fakeUrl',
+              },
+            },
+            {
+              id: 'bbb-bbb-bbb',
+              localTestDefinition,
+              testOverrides: {
+                startUrl: 'fakeUrl',
+              },
+            },
+          ],
+        },
+      }
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([suite])
+
+      await expect(runTests.getTriggerConfigs(fakeApi, ciConfig, mockReporter)).resolves.toEqual([
+        {
+          id: 'aaa-aaa-aaa',
+          suite: 'Suite with local test definitions',
+          testOverrides: {startUrl: 'fakeUrl'},
+        },
+        {
+          id: 'bbb-bbb-bbb',
+          localTestDefinition,
+          suite: 'Suite with local test definitions',
+          testOverrides: {startUrl: 'fakeUrl'},
+        },
+      ])
+    })
+
+    test('should handle local test definitions selected with publicIds', async () => {
+      const localTestDefinition = getLocalTestDefinition()
+      const suite: Suite = {
+        name: 'Suite with local test definitions',
+        content: {
+          tests: [
+            {
+              id: 'aaa-aaa-aaa',
+              testOverrides: {
+                startUrl: 'fakeUrl',
+              },
+            },
+            {
+              id: 'bbb-bbb-bbb',
+              localTestDefinition,
+              testOverrides: {
+                startUrl: 'fakeUrl',
+              },
+            },
+          ],
+        },
+      }
+      jest.spyOn(utils, 'getSuites').mockResolvedValue([suite])
+
+      await expect(
+        runTests.getTriggerConfigs(fakeApi, {...ciConfig, files: ['glob'], publicIds: ['bbb-bbb-bbb']}, mockReporter)
+      ).resolves.toEqual([
+        {
+          id: 'bbb-bbb-bbb',
+          localTestDefinition,
+          suite: 'Suite with local test definitions',
+          testOverrides: {startUrl: 'fakeUrl'},
         },
       ])
     })
