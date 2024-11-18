@@ -92,18 +92,6 @@ export const generatePayload = (
   service: string,
   env: string
 ): ScaRequest | undefined => {
-  if (
-    !tags[GIT_COMMIT_AUTHOR_EMAIL] ||
-    !tags[GIT_COMMIT_AUTHOR_NAME] ||
-    !tags[GIT_COMMIT_COMMITTER_EMAIL] ||
-    !tags[GIT_COMMIT_COMMITTER_NAME] ||
-    !tags[GIT_SHA] ||
-    !tags[GIT_BRANCH] ||
-    !tags[GIT_REPOSITORY_URL]
-  ) {
-    return undefined
-  }
-
   const dependencies: Dependency[] = []
   const files: File[] = []
   const relations: Relations[] = []
@@ -135,18 +123,20 @@ export const generatePayload = (
     }
   }
 
+  // The tags dictionary is validated prior to generatePayload being called
+  //  see upload.ts missingGitFields
   return {
     id: crypto.randomUUID(),
     commit: {
-      author_name: tags[GIT_COMMIT_AUTHOR_NAME],
-      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL],
-      committer_name: tags[GIT_COMMIT_COMMITTER_NAME],
-      committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL],
-      sha: tags[GIT_SHA],
-      branch: tags[GIT_BRANCH],
+      author_name: tags[GIT_COMMIT_AUTHOR_NAME] ?? '',
+      author_email: tags[GIT_COMMIT_AUTHOR_EMAIL] ?? '',
+      committer_name: tags[GIT_COMMIT_COMMITTER_NAME] ?? '',
+      committer_email: tags[GIT_COMMIT_COMMITTER_EMAIL] ?? '',
+      sha: tags[GIT_SHA] ?? '',
+      branch: tags[GIT_BRANCH] ?? '',
     },
     repository: {
-      url: tags[GIT_REPOSITORY_URL],
+      url: tags[GIT_REPOSITORY_URL] ?? '',
     },
     tags,
     dependencies,
