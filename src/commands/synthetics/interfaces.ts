@@ -232,7 +232,7 @@ export interface Step {
   }[]
 }
 
-export interface ServerTest {
+export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
     request: {
@@ -247,42 +247,35 @@ export interface ServerTest {
     steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
-  created_at: string
-  created_by: User
   locations: string[]
   message: string
-  modified_at: string
-  modified_by: User
-  monitor_id: number
   name: string
   options: {
     ci?: {
       executionRule: ExecutionRule
     }
     device_ids?: string[]
-    min_failure_duration: number
-    min_location_failed: number
     mobileApplication?: MobileApplication
-    tick_every: number
     retry?: {
       count?: number
     }
   }
-  overall_state: number
-  overall_state_modified: string
-  public_id: string
-  status: string
-  stepCount: number
+  /** Can be used to link to an existing remote test. */
+  public_id?: string
   subtype: string
   tags: string[]
   type: string
 }
 
-export interface Test extends ServerTest {
-  suite?: string
+export interface ServerTest extends LocalTestDefinition {
+  monitor_id: number
+  status: 'live' | 'paused'
+  public_id: string
 }
 
-export type LocalTestDefinition = Omit<ServerTest, 'public_id'>
+export type Test = (ServerTest | LocalTestDefinition) & {
+  suite?: string
+}
 
 export interface Assertion {
   actual: string | number | Date | {[key: string]: any}
@@ -309,13 +302,6 @@ export enum Operator {
   doesNotMatch = 'doesNotMatch',
   validatesJSONPath = 'validatesJSONPath',
   validatesXPath = 'validatesXPath',
-}
-
-export interface User {
-  email: string
-  handle: string
-  id: number
-  name: string
 }
 
 export interface Location {
@@ -440,8 +426,6 @@ export interface RemoteTriggerConfig {
   suite?: string
 }
 export interface LocalTriggerConfig extends Omit<RemoteTriggerConfig, 'id'> {
-  /** Can be used to link to an existing remote test. */
-  id?: string
   localTestDefinition: LocalTestDefinition
 }
 export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig

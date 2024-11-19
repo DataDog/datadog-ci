@@ -6,7 +6,7 @@ import {BaseContext} from 'clipanion/lib/advanced'
 
 import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
 
-import {Device, ExecutionRule, Result, Test} from '../../interfaces'
+import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 import {RunTestsCommand} from '../../run-tests-command'
 
@@ -413,7 +413,7 @@ describe('GitLab test report compatibility', () => {
     const browserTest = getBrowserTest('bbb-bbb-bbb', [devices.chrome.id, devices.firefox.id], {locations})
 
     const getTestCase = (
-      test: Test,
+      test: ServerTest,
       resultId: string,
       {
         location,

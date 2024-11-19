@@ -26,7 +26,7 @@ import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery} from './test'
 import {Tunnel} from './tunnel'
-import {isLocalTriggerConfig} from './utils/internal'
+import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
@@ -115,7 +115,7 @@ export const executeTests = async (
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
-  const publicIdsToTrigger = tests.map(({public_id}) => public_id)
+  const publicIdsToTrigger = tests.flatMap(({public_id}) => (public_id ? [public_id] : []))
 
   if (config.tunnel) {
     let presignedURL: string
@@ -205,54 +205,52 @@ export const getTriggerConfigs = async (
   // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
   const testIdsFromCli = config.publicIds
   const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
-  const testIdsFromTestConfigs = testsFromTestConfigs.flatMap(({id}) => (id ? [id] : []))
+  const testIdsFromTestConfigs = testsFromTestConfigs.map(getTriggerConfigPublicId).filter((p): p is string => !!p)
 
   // Take the list of tests from the first source that defines it, by order of precedence
   const testIdsToTrigger =
     [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
 
   // Create the overrides required for the list of tests to trigger
-  const triggerConfigsWithId = testIdsToTrigger.map<TriggerConfig>((id) => {
-    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((test) => test.id === id)
+  const triggerConfigsWithId = testIdsToTrigger.map((id) => {
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => t.id === id)
     let testFromSearchQuery
     if (testIndexFromSearchQuery >= 0) {
       testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
     }
 
-    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((test) => test.id === id)
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => getTriggerConfigPublicId(t) === id)
     let testFromTestConfigs
     if (testIndexFromTestConfigs >= 0) {
       testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
     }
 
     return {
-      id,
+      ...(isLocalTriggerConfig(testFromTestConfigs) ? {} : {id}),
       ...testFromSearchQuery,
       ...testFromTestConfigs,
       testOverrides: {
         ...defaultTestConfigOverrides,
         ...testFromTestConfigs?.testOverrides,
       },
-    }
+    } as TriggerConfig
   })
 
-  const localTriggerConfigsWithoutId: TriggerConfig[] = []
-
-  for (let i = 0; i < testsFromTestConfigs.length; i++) {
-    if (!isLocalTriggerConfig(testsFromTestConfigs[i])) {
-      continue
+  const localTriggerConfigsWithoutId = testsFromTestConfigs.flatMap((testConfig) => {
+    if (!isLocalTriggerConfig(testConfig)) {
+      return []
     }
 
-    const testFromTestConfigs = testsFromTestConfigs.splice(i, 1)[0]
-
-    localTriggerConfigsWithoutId.push({
-      ...testFromTestConfigs,
-      testOverrides: {
-        ...defaultTestConfigOverrides,
-        ...testFromTestConfigs?.testOverrides,
+    return [
+      {
+        ...testConfig,
+        testOverrides: {
+          ...defaultTestConfigOverrides,
+          ...testConfig.testOverrides,
+        },
       },
-    })
-  }
+    ]
+  })
 
   return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
 }

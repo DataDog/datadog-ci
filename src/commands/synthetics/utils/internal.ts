@@ -86,9 +86,19 @@ export const isTimedOutRetry = (
   return !!timedOut && (retries ?? 0) < (maxRetries ?? 0)
 }
 
-export const isLocalTriggerConfig = (triggerConfig: TriggerConfig): triggerConfig is LocalTriggerConfig => {
-  return 'localTestDefinition' in triggerConfig
+export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
+  return triggerConfig ? 'localTestDefinition' in triggerConfig : false
 }
+
+export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
+  if (isLocalTriggerConfig(triggerConfig)) {
+    return triggerConfig.localTestDefinition.public_id
+  }
+
+  return triggerConfig.id
+}
+
+export const publicIdOrPlaceholder = (test: Test) => test.public_id ?? 'local'
 
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch

@@ -25,11 +25,9 @@ import {
   Step,
   Suite,
   Summary,
-  Test,
   TestPayload,
   Trigger,
   UploadApplicationCommandConfig,
-  User,
   MobileAppUploadResult,
   MobileApplicationUploadPartResponse,
   TriggerConfig,
@@ -38,17 +36,10 @@ import {
   ResultInBatchSkippedBySelectiveRerun,
   ServerResult,
   APIConfiguration,
-  LocalTestDefinition,
+  ServerTest,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
-
-const mockUser: User = {
-  email: '',
-  handle: '',
-  id: 42,
-  name: '',
-}
 
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
@@ -89,7 +80,7 @@ export const ciConfig: RunTestsCommandConfig = {
   variableStrings: [],
 }
 
-export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({
+export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<ServerTest> = {}): ServerTest => ({
   config: {
     assertions: [],
     request: {
@@ -100,25 +91,15 @@ export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): 
     },
     variables: [],
   },
-  created_at: '',
-  created_by: mockUser,
   locations: [],
   message: '',
-  modified_at: '',
-  modified_by: mockUser,
   monitor_id: 0,
   name: 'Test name',
   options: {
     device_ids: [],
-    min_failure_duration: 0,
-    min_location_failed: 0,
-    tick_every: 3600,
   },
-  overall_state: 0,
-  overall_state_modified: '',
   public_id: publicId,
-  status: '',
-  stepCount: 0,
+  status: 'live',
   subtype: 'http',
   tags: [],
   type: 'api',
@@ -128,22 +109,13 @@ export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): 
 export const getBrowserTest = (
   publicId = 'abc-def-ghi',
   deviceIds = ['chrome.laptop_large'],
-  opts: Partial<Test> = {}
-): Test => ({
+  opts: Partial<ServerTest> = {}
+): ServerTest => ({
   ...getApiTest(publicId),
-  options: {device_ids: deviceIds, min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+  options: {device_ids: deviceIds},
   type: 'browser',
   ...opts,
 })
-
-export const getLocalTestDefinition = (): LocalTestDefinition => {
-  const {public_id: _unused, ...test} = getApiTest()
-
-  return {
-    ...test,
-    name: 'Local test definition',
-  }
-}
 
 export const getStep = (): Step => ({
   allowFailure: false,
@@ -185,7 +157,7 @@ export const getSummary = (): Summary => ({
   batchId: BATCH_ID,
 })
 
-const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'> => ({
+const getBaseResult = (resultId: string, test: ServerTest): Omit<BaseResult, 'result'> => ({
   duration: 1000,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
@@ -200,7 +172,7 @@ const getBaseResult = (resultId: string, test: Test): Omit<BaseResult, 'result'>
 
 export const getBrowserResult = (
   resultId: string,
-  test: Test,
+  test: ServerTest,
   resultOpts: Partial<BrowserServerResult> = {}
 ): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
@@ -209,7 +181,7 @@ export const getBrowserResult = (
 
 export const getApiResult = (
   resultId: string,
-  test: Test,
+  test: ServerTest,
   resultOpts: Partial<ApiServerResult> = {}
 ): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
@@ -581,7 +553,10 @@ export const getBatch = (): Batch => ({
   status: 'passed',
 })
 
-export const getMobileTest = (publicId = 'abc-def-ghi', appId = 'mobileAppUuid'): MobileTestWithOverride['test'] => ({
+export const getMobileTest = (
+  publicId = 'abc-def-ghi',
+  appId = 'mobileAppUuid'
+): MobileTestWithOverride['test'] & {public_id: string} => ({
   config: {
     assertions: [],
     request: {
@@ -592,30 +567,20 @@ export const getMobileTest = (publicId = 'abc-def-ghi', appId = 'mobileAppUuid')
     },
     variables: [],
   },
-  created_at: '',
-  created_by: mockUser,
   locations: [],
   message: '',
-  modified_at: '',
-  modified_by: mockUser,
   monitor_id: 0,
   name: 'Mobile Test',
   options: {
     device_ids: [],
-    min_failure_duration: 0,
-    min_location_failed: 0,
     mobileApplication: {
       applicationId: appId,
       referenceId: 'versionId',
       referenceType: 'version',
     },
-    tick_every: 3600,
   },
-  overall_state: 0,
-  overall_state_modified: '',
   public_id: publicId,
-  status: '',
-  stepCount: 0,
+  status: 'live',
   subtype: '',
   tags: [],
   type: 'mobile',

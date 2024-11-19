@@ -17,7 +17,6 @@ import {
   ciConfig,
   getApiResult,
   getApiTest,
-  getLocalTestDefinition,
   getMobileTest,
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   mockReporter,
@@ -1067,7 +1066,7 @@ describe('run-test', () => {
     })
 
     test('should handle local test definitions', async () => {
-      const localTestDefinition = getLocalTestDefinition()
+      const localTestDefinition = getApiTest('bbb-bbb-bbb')
       const suite: Suite = {
         name: 'Suite with local test definitions',
         content: {
@@ -1079,7 +1078,6 @@ describe('run-test', () => {
               },
             },
             {
-              id: 'bbb-bbb-bbb',
               localTestDefinition,
               testOverrides: {
                 startUrl: 'fakeUrl',
@@ -1097,7 +1095,6 @@ describe('run-test', () => {
           testOverrides: {startUrl: 'fakeUrl'},
         },
         {
-          id: 'bbb-bbb-bbb',
           localTestDefinition,
           suite: 'Suite with local test definitions',
           testOverrides: {startUrl: 'fakeUrl'},
@@ -1106,7 +1103,7 @@ describe('run-test', () => {
     })
 
     test('should handle local test definitions selected with publicIds', async () => {
-      const localTestDefinition = getLocalTestDefinition()
+      const localTestDefinition = getApiTest('bbb-bbb-bbb')
       const suite: Suite = {
         name: 'Suite with local test definitions',
         content: {
@@ -1118,7 +1115,6 @@ describe('run-test', () => {
               },
             },
             {
-              id: 'bbb-bbb-bbb',
               localTestDefinition,
               testOverrides: {
                 startUrl: 'fakeUrl',
@@ -1133,7 +1129,6 @@ describe('run-test', () => {
         runTests.getTriggerConfigs(fakeApi, {...ciConfig, files: ['glob'], publicIds: ['bbb-bbb-bbb']}, mockReporter)
       ).resolves.toEqual([
         {
-          id: 'bbb-bbb-bbb',
           localTestDefinition,
           suite: 'Suite with local test definitions',
           testOverrides: {startUrl: 'fakeUrl'},

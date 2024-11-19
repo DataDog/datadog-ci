@@ -462,7 +462,7 @@ export const getTestAndOverrideConfig = async (
   const testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
 
   if (isLocalTriggerConfig(triggerConfig)) {
-    if (!triggerConfig.id) {
+    if (!triggerConfig.localTestDefinition.public_id) {
       throw new CriticalError(
         'INVALID_CONFIG',
         'Linking local test definitions to an existing remote test is currently mandatory.'
@@ -472,11 +472,10 @@ export const getTestAndOverrideConfig = async (
     return {
       test: {
         ...triggerConfig.localTestDefinition,
-        public_id: triggerConfig.id,
       },
       overriddenConfig: {
         ...testOverrides,
-        public_id: triggerConfig.id,
+        public_id: triggerConfig.localTestDefinition.public_id,
         local_test_definition: triggerConfig.localTestDefinition,
       },
     }

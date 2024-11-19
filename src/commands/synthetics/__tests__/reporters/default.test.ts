@@ -9,8 +9,8 @@ import {
   MainReporter,
   Result,
   SelectiveRerunDecision,
+  ServerTest,
   Summary,
-  Test,
   UserConfigOverride,
 } from '../../interfaces'
 import {DefaultReporter} from '../../reporters/default'
@@ -77,7 +77,7 @@ describe('Default reporter', () => {
       writeMock.mockClear()
     })
 
-    const testObject: Pick<Test, 'name'> = {
+    const testObject: Pick<ServerTest, 'name'> = {
       name: 'Request on example.org',
     }
     const testId = 'aaa-bbb-ccc'
@@ -139,13 +139,13 @@ describe('Default reporter', () => {
     })
 
     test('outputs triggered tests', async () => {
-      reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123')
+      reporter.testsWait(Array<ServerTest>(11).fill(getApiTest()), MOCK_BASE_URL, '123')
       const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
       expect(output).toMatchSnapshot()
     })
 
     test('outputs triggered tests with skipped count', async () => {
-      reporter.testsWait(Array(11).fill(getApiTest()) as Test[], MOCK_BASE_URL, '123', 3)
+      reporter.testsWait(Array<ServerTest>(11).fill(getApiTest()), MOCK_BASE_URL, '123', 3)
       const output = writeMock.mock.calls.map((c) => c[0]).join('\n')
       expect(output).toMatchSnapshot()
     })
@@ -244,7 +244,7 @@ describe('Default reporter', () => {
         selectiveRerun?: SelectiveRerunDecision
         timedOut?: boolean
       },
-      test: Test
+      test: ServerTest
     ): Result => {
       const errorMessage = JSON.stringify([
         {

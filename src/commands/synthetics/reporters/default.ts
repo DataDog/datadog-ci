@@ -19,7 +19,7 @@ import {
   UserConfigOverride,
   ResultInBatch,
 } from '../interfaces'
-import {isBaseResult, isTimedOutRetry} from '../utils/internal'
+import {isBaseResult, isTimedOutRetry, publicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,
   getResultOutcome,
@@ -212,7 +212,8 @@ const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, b
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
 
-  const testLabel = `${editedText}${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
+  const publicId = publicIdOrPlaceholder(test)
+  const testLabel = `${editedText}${executionRuleText}[${chalk.bold.dim(publicId)}] ${chalk.bold(test.name)}`
 
   const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
   const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
@@ -445,7 +446,7 @@ export class DefaultReporter implements MainReporter {
   }
 
   public testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number) {
-    const testsList = tests.map((t) => t.public_id)
+    const testsList = tests.map((t) => publicIdOrPlaceholder(t))
     if (testsList.length > 10) {
       testsList.splice(10)
       testsList.push('…')

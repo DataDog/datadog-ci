@@ -6,7 +6,15 @@ import {
   warnIfDeprecatedConfigUsed,
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
-import {RemoteTriggerConfig, MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
+import {
+  RemoteTriggerConfig,
+  MainReporter,
+  RunTestsCommandConfig,
+  Suite,
+  Test,
+  TriggerConfig,
+  LocalTestDefinition,
+} from './interfaces'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {isLocalTriggerConfig} from './utils/internal'
 import {getSuites, normalizePublicId} from './utils/public'
@@ -37,23 +45,13 @@ export const getTestConfigs = async (
   const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => {
-        const common = {
+        return {
           // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
           testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
           suite: suite.name,
-        }
-
-        if (isLocalTriggerConfig(test)) {
-          return {
-            ...common,
-            id: test.id && (normalizePublicId(test.id) ?? ''),
-            localTestDefinition: test.localTestDefinition,
-          }
-        }
-
-        return {
-          ...common,
-          id: normalizePublicId(test.id) ?? '',
+          ...(isLocalTriggerConfig(test)
+            ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
+            : {id: normalizePublicId(test.id) ?? ''}),
         }
       })
     )
@@ -102,5 +100,15 @@ export const getTest = async (
     }
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
+  }
+}
+
+export const normalizeLocalTestDefinition = (localTestDefinition: LocalTestDefinition) => {
+  // Support links here too for QoL and consistency with `RemoteTriggerConfig.id`
+  const publicId = localTestDefinition.public_id && normalizePublicId(localTestDefinition.public_id)
+
+  return {
+    ...localTestDefinition,
+    public_id: publicId,
   }
 }
