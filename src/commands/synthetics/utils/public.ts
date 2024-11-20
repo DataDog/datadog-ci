@@ -48,7 +48,13 @@ import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} fr
 import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
-import {getOverriddenExecutionRule, hasDefinedResult, isLocalTriggerConfig, isMobileTestWithOverride} from './internal'
+import {
+  getOverriddenExecutionRule,
+  hasDefinedResult,
+  isLocalTriggerConfig,
+  isMobileTestWithOverride,
+  publicIdOrPlaceholder,
+} from './internal'
 
 const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -641,7 +647,7 @@ export const runTests = async (
     return await api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => t.public_id).join(',')
+    const testIds = testsToTrigger.map((t) => publicIdOrPlaceholder(t)).join(',')
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }

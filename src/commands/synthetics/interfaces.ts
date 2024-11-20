@@ -384,11 +384,16 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface TestPayload extends ServerConfigOverride {
+interface BaseTestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
+}
+interface LocalTestPayload extends BaseTestPayload {
   local_test_definition?: LocalTestDefinition
+}
+interface RemoteTestPayload extends BaseTestPayload {
   public_id?: string
 }
+export type TestPayload = LocalTestPayload | RemoteTestPayload
 
 export interface TestNotFound {
   errorMessage: string
@@ -417,15 +422,17 @@ export interface BasicAuthCredentials {
   username: string
 }
 
-export interface RemoteTriggerConfig {
+interface BaseTriggerConfig {
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   /** @deprecated This property is deprecated, please use `testOverrides` instead. */
   config?: UserConfigOverride
   testOverrides?: UserConfigOverride
-  id: string
   suite?: string
 }
-export interface LocalTriggerConfig extends Omit<RemoteTriggerConfig, 'id'> {
+export interface RemoteTriggerConfig extends BaseTriggerConfig {
+  id: string
+}
+export interface LocalTriggerConfig extends BaseTriggerConfig {
   localTestDefinition: LocalTestDefinition
 }
 export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig

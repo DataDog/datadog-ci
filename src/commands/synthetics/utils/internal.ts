@@ -12,6 +12,7 @@ import {
   ServerResult,
   Test,
   TestNotFound,
+  TestPayload,
   TestSkipped,
   TestWithOverride,
   TriggerConfig,
@@ -98,7 +99,8 @@ export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string |
   return triggerConfig.id
 }
 
-export const publicIdOrPlaceholder = (test: Test) => test.public_id ?? 'local'
+export const publicIdOrPlaceholder = (test: Test | TestPayload): string =>
+  ('public_id' in test && test.public_id) || 'local'
 
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch
