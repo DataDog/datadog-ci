@@ -82,9 +82,19 @@ export const getTestsFromSearchQuery = async (
 
 export const getTest = async (
   api: APIHelper,
-  publicId: string,
-  suite?: string
+  triggerConfig: TriggerConfig
 ): Promise<{test: Test} | {errorMessage: string}> => {
+  if (isLocalTriggerConfig(triggerConfig)) {
+    const test = {
+      ...triggerConfig.localTestDefinition,
+      suite: triggerConfig.suite,
+    }
+
+    return {test}
+  }
+
+  const {id: publicId, suite} = triggerConfig
+
   try {
     const test = {
       ...(await api.getTest(publicId)),

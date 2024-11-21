@@ -22,7 +22,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import {hasDefinedResult, isBaseResult, publicIdOrPlaceholder} from '../utils/internal'
+import {hasDefinedResult, isBaseResult, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,
   getResultOutcome,
@@ -446,7 +446,7 @@ export class JUnitReporter implements Reporter {
   }
 
   private getSkippedTestCase(test: Test): XMLTestCase {
-    const publicId = publicIdOrPlaceholder(test)
+    const publicId = getPublicIdOrPlaceholder(test)
     const id = `id: ${publicId}`
     const resultIdentification = `${test.name} - ${id} (skipped)`
 
@@ -504,7 +504,7 @@ export class JUnitReporter implements Reporter {
 
     const passed = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
 
-    const publicId = publicIdOrPlaceholder(test)
+    const publicId = getPublicIdOrPlaceholder(test)
     const id = `id: ${publicId}`
     const location = isBaseResult(result) ? `location: ${result.location}` : ''
     const device =

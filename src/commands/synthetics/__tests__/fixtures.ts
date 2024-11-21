@@ -616,7 +616,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
   }
 }
 
-export const getTestPayload = (override?: Partial<TestPayload>) => ({
+export const getTestPayload = (override?: Partial<TestPayload>): TestPayload => ({
   executionRule: ExecutionRule.BLOCKING,
   public_id: 'aaa-aaa-aaa',
   ...override,

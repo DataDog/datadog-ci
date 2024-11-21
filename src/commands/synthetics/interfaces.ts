@@ -384,14 +384,14 @@ export interface Payload {
   options?: BatchOptions
 }
 
-interface BaseTestPayload extends ServerConfigOverride {
+export interface BaseTestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
 }
-interface LocalTestPayload extends BaseTestPayload {
-  local_test_definition?: LocalTestDefinition
+export interface LocalTestPayload extends BaseTestPayload {
+  local_test_definition: LocalTestDefinition
 }
-interface RemoteTestPayload extends BaseTestPayload {
-  public_id?: string
+export interface RemoteTestPayload extends BaseTestPayload {
+  public_id: string
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 

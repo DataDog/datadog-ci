@@ -10,7 +10,6 @@ import glob from 'glob'
 import {getCommonAppBaseURL} from '../../../helpers/app'
 import {getCIMetadata} from '../../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
-import {pick} from '../../../helpers/utils'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
 import {waitForBatchToFinish} from '../batch'
@@ -49,14 +48,15 @@ import {getTest} from '../test'
 import {Tunnel} from '../tunnel'
 
 import {
-  getOverriddenExecutionRule,
+  LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
+  getTriggerConfigPublicId,
   hasDefinedResult,
-  isLocalTriggerConfig,
   isMobileTestWithOverride,
-  publicIdOrPlaceholder,
+  getPublicIdOrPlaceholder,
+  getBasePayload,
+  isLocalTriggerConfig,
 } from './internal'
 
-const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
 
 export const readableOperation: {[key in Operator]: string} = {
@@ -76,60 +76,33 @@ export const readableOperation: {[key in Operator]: string} = {
   [Operator.validatesXPath]: 'assert on XPath extracted value',
 }
 
-const template = (st: string, context: any): string =>
-  st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
-
 export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_package'
 
+export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, publicId: string): TestPayload => {
+  if (isLocalTriggerConfig(triggerConfig)) {
+    return {
+      ...getBasePayload(test, triggerConfig.testOverrides),
+      local_test_definition: triggerConfig.localTestDefinition,
+    }
+  }
+
+  return {
+    ...getBasePayload(test, triggerConfig.testOverrides),
+    public_id: publicId,
+  }
+}
+
+/** @deprecated This function doesn't work for local test definitions. Please use {@link makeTestPayload} instead. */
 export const getOverriddenConfig = (
   test: Test,
   publicId: string,
   reporter: MainReporter,
   testOverrides?: UserConfigOverride
 ): TestPayload => {
-  let overriddenConfig: TestPayload = {
+  return {
+    ...getBasePayload(test, testOverrides),
     public_id: publicId,
   }
-
-  if (!testOverrides || !Object.keys(testOverrides).length) {
-    return overriddenConfig
-  }
-
-  const executionRule = getOverriddenExecutionRule(test, testOverrides)
-  if (executionRule) {
-    overriddenConfig.executionRule = executionRule
-  }
-
-  overriddenConfig = {
-    ...overriddenConfig,
-    ...pick(testOverrides, [
-      'allowInsecureCertificates',
-      'basicAuth',
-      'body',
-      'bodyType',
-      'cookies',
-      'setCookies',
-      'defaultStepTimeout',
-      'deviceIds',
-      'followRedirects',
-      'headers',
-      'locations',
-      // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
-      'pollingTimeout',
-      'resourceUrlSubstitutionRegexes',
-      'retry',
-      'startUrlSubstitutionRegex',
-      'testTimeout',
-      'tunnel',
-      'variables',
-    ]),
-  }
-
-  if ((test.type === 'browser' || test.subtype === 'http') && testOverrides.startUrl) {
-    overriddenConfig.startUrl = template(testOverrides.startUrl, {...process.env})
-  }
-
-  return overriddenConfig
 }
 
 export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
@@ -289,7 +262,8 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-export const normalizePublicId = (id: string): string | undefined => id.match(PUBLIC_ID_REGEX)?.[0]
+export const normalizePublicId = (id: string): string | undefined =>
+  id === LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER ? id : id.match(PUBLIC_ID_REGEX)?.[0]
 
 export const getOrgSettings = async (
   reporter: MainReporter,
@@ -464,47 +438,28 @@ export const getTestAndOverrideConfig = async (
   summary: InitialSummary,
   isTunnelEnabled?: boolean
 ): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  const testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
-
-  if (isLocalTriggerConfig(triggerConfig)) {
-    if (!triggerConfig.localTestDefinition.public_id) {
-      throw new CriticalError(
-        'INVALID_CONFIG',
-        'Linking local test definitions to an existing remote test is currently mandatory.'
-      )
-    }
-
-    return {
-      test: {
-        ...triggerConfig.localTestDefinition,
-      },
-      overriddenConfig: {
-        ...testOverrides,
-        public_id: triggerConfig.localTestDefinition.public_id,
-        local_test_definition: triggerConfig.localTestDefinition,
-      },
-    }
-  }
-
-  const normalizedId = normalizePublicId(triggerConfig.id)
+  const publicIdOrPlaceholder = getPublicIdOrPlaceholder({public_id: getTriggerConfigPublicId(triggerConfig)})
+  const normalizedId = normalizePublicId(publicIdOrPlaceholder)
   if (!normalizedId) {
-    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${triggerConfig.id}\``)
+    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${publicIdOrPlaceholder}\``)
   }
 
-  const testResult = await getTest(api, normalizedId, triggerConfig.suite)
+  const testResult = await getTest(api, triggerConfig)
   if ('errorMessage' in testResult) {
     summary.testsNotFound.add(normalizedId)
 
     return {errorMessage: testResult.errorMessage}
   }
 
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  triggerConfig.testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
+
   const {test} = testResult
-  const overriddenConfig = getOverriddenConfig(test, normalizedId, reporter, testOverrides)
+  const overriddenConfig = makeTestPayload(test, triggerConfig, normalizedId)
   const testExecutionRule = test?.options?.ci?.executionRule
   const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 
-  reporter.testTrigger(test, normalizedId, executionRule, testOverrides)
+  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides)
   if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 
@@ -513,7 +468,7 @@ export const getTestAndOverrideConfig = async (
   reporter.testWait(test)
 
   if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
-    const details = [`public ID: ${test.public_id}`, `type: ${test.type}`]
+    const details = [`public ID: ${normalizedId}`, `type: ${test.type}`]
 
     if (test.subtype) {
       details.push(`sub-type: ${test.subtype}`)
@@ -647,7 +602,7 @@ export const runTests = async (
     return await api.triggerTests(payload)
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => publicIdOrPlaceholder(t)).join(',')
+    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
     // Rewrite error message
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }

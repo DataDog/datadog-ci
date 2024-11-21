@@ -1,5 +1,8 @@
+import {pick} from '../../../helpers/utils'
+
 import {
   BaseResult,
+  BaseTestPayload,
   BasicAuthCredentials,
   CookiesObject,
   ExecutionRule,
@@ -99,8 +102,10 @@ export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string |
   return triggerConfig.id
 }
 
-export const publicIdOrPlaceholder = (test: Test | TestPayload): string =>
-  ('public_id' in test && test.public_id) || 'local'
+export const LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER = 'local'
+
+export const getPublicIdOrPlaceholder = (test: Test | TestPayload | {public_id?: string}): string =>
+  ('public_id' in test && test.public_id) || LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER
 
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch
@@ -376,4 +381,53 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
   )
 
   return parsedOverrides
+}
+
+const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
+
+const template = (st: string, context: any): string =>
+  st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
+
+export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): BaseTestPayload => {
+  let overriddenConfig: BaseTestPayload = {}
+
+  if (!testOverrides || !Object.keys(testOverrides).length) {
+    return overriddenConfig
+  }
+
+  const executionRule = getOverriddenExecutionRule(test, testOverrides)
+  if (executionRule) {
+    overriddenConfig.executionRule = executionRule
+  }
+
+  overriddenConfig = {
+    ...overriddenConfig,
+    ...pick(testOverrides, [
+      'allowInsecureCertificates',
+      'basicAuth',
+      'body',
+      'bodyType',
+      'cookies',
+      'setCookies',
+      'defaultStepTimeout',
+      'deviceIds',
+      'followRedirects',
+      'headers',
+      'locations',
+      // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
+      'pollingTimeout',
+      'resourceUrlSubstitutionRegexes',
+      'retry',
+      'startUrlSubstitutionRegex',
+      'testTimeout',
+      'tunnel',
+      'variables',
+    ]),
+  }
+
+  if ((test.type === 'browser' || test.subtype === 'http') && testOverrides.startUrl) {
+    overriddenConfig.startUrl = template(testOverrides.startUrl, {...process.env})
+  }
+
+  return overriddenConfig
 }
