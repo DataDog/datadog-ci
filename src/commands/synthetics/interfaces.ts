@@ -232,7 +232,7 @@ export interface Step {
   }[]
 }
 
-export interface ServerTest {
+export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
     request: {
@@ -244,41 +244,36 @@ export interface ServerTest {
       timeout: number
       url: string
     }
-    steps?: {subtype: string}[]
+    steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
-  created_at: string
-  created_by: User
   locations: string[]
   message: string
-  modified_at: string
-  modified_by: User
-  monitor_id: number
   name: string
   options: {
     ci?: {
       executionRule: ExecutionRule
     }
     device_ids?: string[]
-    min_failure_duration: number
-    min_location_failed: number
     mobileApplication?: MobileApplication
-    tick_every: number
     retry?: {
       count?: number
     }
   }
-  overall_state: number
-  overall_state_modified: string
-  public_id: string
-  status: string
-  stepCount: number
+  /** Can be used to link to an existing remote test. */
+  public_id?: string
   subtype: string
   tags: string[]
   type: string
 }
 
-export interface Test extends ServerTest {
+export interface ServerTest extends LocalTestDefinition {
+  monitor_id: number
+  status: 'live' | 'paused'
+  public_id: string
+}
+
+export type Test = (ServerTest | LocalTestDefinition) & {
   suite?: string
 }
 
@@ -307,13 +302,6 @@ export enum Operator {
   doesNotMatch = 'doesNotMatch',
   validatesJSONPath = 'validatesJSONPath',
   validatesXPath = 'validatesXPath',
-}
-
-export interface User {
-  email: string
-  handle: string
-  id: number
-  name: string
 }
 
 export interface Location {
@@ -396,10 +384,16 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface TestPayload extends ServerConfigOverride {
+export interface BaseTestPayload extends ServerConfigOverride {
   executionRule?: ExecutionRule
+}
+export interface LocalTestPayload extends BaseTestPayload {
+  local_test_definition: LocalTestDefinition
+}
+export interface RemoteTestPayload extends BaseTestPayload {
   public_id: string
 }
+export type TestPayload = LocalTestPayload | RemoteTestPayload
 
 export interface TestNotFound {
   errorMessage: string
@@ -427,14 +421,21 @@ export interface BasicAuthCredentials {
   password: string
   username: string
 }
-export interface TriggerConfig {
+
+interface BaseTriggerConfig {
   // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   /** @deprecated This property is deprecated, please use `testOverrides` instead. */
   config?: UserConfigOverride
   testOverrides?: UserConfigOverride
-  id: string
   suite?: string
 }
+export interface RemoteTriggerConfig extends BaseTriggerConfig {
+  id: string
+}
+export interface LocalTriggerConfig extends BaseTriggerConfig {
+  localTestDefinition: LocalTestDefinition
+}
+export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',

@@ -62,6 +62,7 @@ import {
   Batch,
   ExecutionRule,
   PollResult,
+  RemoteTestPayload,
   Result,
   SelectiveRerunDecision,
   ServerResult,
@@ -597,7 +598,12 @@ describe('utils', () => {
 
         const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+        const overriddenConfig = utils.getOverriddenConfig(
+          fakeTest,
+          publicId,
+          mockReporter,
+          configOverride
+        ) as RemoteTestPayload
 
         expect(overriddenConfig.public_id).toBe(publicId)
         expect(overriddenConfig.executionRule).toBe(expectedExecutionRule)
@@ -640,7 +646,12 @@ describe('utils', () => {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)
+      const overriddenConfig = utils.getOverriddenConfig(
+        fakeTest,
+        publicId,
+        mockReporter,
+        configOverride
+      ) as RemoteTestPayload
 
       expect(overriddenConfig.public_id).toBe(publicId)
       expect(overriddenConfig.startUrl).toBe(expectedUrl)

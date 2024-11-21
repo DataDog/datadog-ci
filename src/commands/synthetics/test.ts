@@ -6,8 +6,17 @@ import {
   warnIfDeprecatedConfigUsed,
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
-import {MainReporter, RunTestsCommandConfig, Suite, Test, TriggerConfig} from './interfaces'
+import {
+  RemoteTriggerConfig,
+  MainReporter,
+  RunTestsCommandConfig,
+  Suite,
+  Test,
+  TriggerConfig,
+  LocalTestDefinition,
+} from './interfaces'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
+import {isLocalTriggerConfig} from './utils/internal'
 import {getSuites, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
@@ -35,12 +44,16 @@ export const getTestConfigs = async (
 
   const testConfigs = suites
     .map((suite) =>
-      suite.content.tests.map((test) => ({
-        // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-        testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
-        id: normalizePublicId(test.id) ?? '',
-        suite: suite.name,
-      }))
+      suite.content.tests.map((test) => {
+        return {
+          // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+          testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
+          suite: suite.name,
+          ...(isLocalTriggerConfig(test)
+            ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
+            : {id: normalizePublicId(test.id) ?? ''}),
+        }
+      })
     )
     .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
 
@@ -50,7 +63,7 @@ export const getTestConfigs = async (
 export const getTestsFromSearchQuery = async (
   api: APIHelper,
   config: Pick<RunTestsCommandConfig, 'defaultTestOverrides' | 'testSearchQuery'>
-): Promise<TriggerConfig[] | []> => {
+): Promise<RemoteTriggerConfig[] | []> => {
   const {defaultTestOverrides, testSearchQuery} = config
 
   // Empty search queries are not allowed.
@@ -69,11 +82,22 @@ export const getTestsFromSearchQuery = async (
 
 export const getTest = async (
   api: APIHelper,
-  {id, suite}: TriggerConfig
+  triggerConfig: TriggerConfig
 ): Promise<{test: Test} | {errorMessage: string}> => {
+  if (isLocalTriggerConfig(triggerConfig)) {
+    const test = {
+      ...triggerConfig.localTestDefinition,
+      suite: triggerConfig.suite,
+    }
+
+    return {test}
+  }
+
+  const {id: publicId, suite} = triggerConfig
+
   try {
     const test = {
-      ...(await api.getTest(id)),
+      ...(await api.getTest(publicId)),
       suite,
     }
 
@@ -82,9 +106,19 @@ export const getTest = async (
     if (isNotFoundError(error)) {
       const errorMessage = formatBackendErrors(error)
 
-      return {errorMessage: `[${chalk.bold.dim(id)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
+      return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
     }
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
+  }
+}
+
+export const normalizeLocalTestDefinition = (localTestDefinition: LocalTestDefinition) => {
+  // Support links here too for QoL and consistency with `RemoteTriggerConfig.id`
+  const publicId = localTestDefinition.public_id && normalizePublicId(localTestDefinition.public_id)
+
+  return {
+    ...localTestDefinition,
+    public_id: publicId,
   }
 }

@@ -22,7 +22,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../interfaces'
-import {hasDefinedResult, isBaseResult} from '../utils/internal'
+import {hasDefinedResult, isBaseResult, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,
   getResultOutcome,
@@ -446,7 +446,8 @@ export class JUnitReporter implements Reporter {
   }
 
   private getSkippedTestCase(test: Test): XMLTestCase {
-    const id = `id: ${test.public_id}`
+    const publicId = getPublicIdOrPlaceholder(test)
+    const id = `id: ${publicId}`
     const resultIdentification = `${test.name} - ${id} (skipped)`
 
     return {
@@ -464,15 +465,15 @@ export class JUnitReporter implements Reporter {
       failure: [],
       properties: {
         property: [
-          {$: {name: 'check_id', value: test.public_id}},
+          {$: {name: 'check_id', value: publicId}},
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
           {$: {name: 'message', value: test.message}},
-          {$: {name: 'monitor_id', value: test.monitor_id}},
-          {$: {name: 'public_id', value: test.public_id}},
-          {$: {name: 'status', value: test.status}},
+          ...('monitor_id' in test ? [{$: {name: 'monitor_id', value: test.monitor_id}}] : []),
+          {$: {name: 'public_id', value: publicId}},
+          ...('status' in test ? [{$: {name: 'status', value: test.status}}] : []),
           {$: {name: 'tags', value: test.tags.join(',')}},
           {$: {name: 'type', value: test.type}},
-        ].filter((prop) => prop.$.value),
+        ].filter((prop) => prop.$.value !== undefined),
       },
       skipped: [],
       warning: [],
@@ -503,7 +504,8 @@ export class JUnitReporter implements Reporter {
 
     const passed = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
 
-    const id = `id: ${test.public_id}`
+    const publicId = getPublicIdOrPlaceholder(test)
+    const id = `id: ${publicId}`
     const location = isBaseResult(result) ? `location: ${result.location}` : ''
     const device =
       hasDefinedResult(result) && isDeviceIdSet(result.result) ? ` - device: ${result.result.device.id}` : ''
@@ -527,7 +529,7 @@ export class JUnitReporter implements Reporter {
       failure: [],
       properties: {
         property: [
-          {$: {name: 'check_id', value: test.public_id}},
+          {$: {name: 'check_id', value: publicId}},
           ...(hasDefinedResult(result) && isDeviceIdSet(result.result)
             ? [
                 {$: {name: 'device', value: result.result.device.id}},
@@ -538,9 +540,9 @@ export class JUnitReporter implements Reporter {
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
           {$: {name: 'location', value: isBaseResult(result) && result.location}},
           {$: {name: 'message', value: test.message}},
-          {$: {name: 'monitor_id', value: test.monitor_id}},
+          ...('monitor_id' in test ? [{$: {name: 'monitor_id', value: test.monitor_id}}] : []),
           {$: {name: 'passed', value: String(passed)}},
-          {$: {name: 'public_id', value: test.public_id}},
+          {$: {name: 'public_id', value: publicId}},
           {$: {name: 'result_id', value: result.resultId}},
           {$: {name: 'initial_result_id', value: result.initialResultId}},
           {$: {name: 'result_url', value: resultUrl}},
@@ -553,7 +555,7 @@ export class JUnitReporter implements Reporter {
               value: hasDefinedResult(result) && 'startUrl' in result.result && result.result.startUrl,
             },
           },
-          {$: {name: 'status', value: test.status}},
+          ...('status' in test ? [{$: {name: 'status', value: test.status}}] : []),
           {$: {name: 'tags', value: test.tags.join(',')}},
           {$: {name: 'timeout', value: String(result.timedOut)}},
           {$: {name: 'type', value: test.type}},
