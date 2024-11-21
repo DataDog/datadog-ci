@@ -147,6 +147,11 @@ export const getStrictestExecutionRule = (configRule: ExecutionRule, testRule?: 
 }
 
 export const isTestSupportedByTunnel = (test: Test) => {
+  // Test public IDs are required by the tunnel.
+  if (!test.public_id) {
+    return false
+  }
+
   return (
     test.type === 'browser' ||
     test.subtype === 'http' ||
