@@ -2,6 +2,7 @@ import fs from 'fs'
 
 import Ajv from 'ajv'
 import addFormats from 'ajv-formats'
+import {PackageURL} from 'packageurl-js'
 
 import cycloneDxSchema14 from './json-schema/cyclonedx/bom-1.4.schema.json'
 import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
@@ -109,7 +110,7 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
       if (component['type'] === 'library') {
         const name = component['name']
 
-        if (!!component['version']) {
+        if (!component['version']) {
           continue
         }
 
@@ -119,6 +120,14 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
           }
 
           return false
+        } else {
+          try {
+            PackageURL.fromString(component['purl'])
+          } catch (purlError) {
+            process.stderr.write(`invalid purl ${component['purl']}: ${purlError.message}\n`)
+
+            return false
+          }
         }
       }
     }
