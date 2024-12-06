@@ -124,7 +124,9 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
           try {
             PackageURL.fromString(component['purl'])
           } catch (purlError) {
-            process.stderr.write(`invalid purl ${component['purl']}: ${purlError.message}\n`)
+            process.stderr.write(
+              `invalid purl ${component['purl']} for component ${component['name']}: ${purlError.message}\n`
+            )
 
             return false
           }
