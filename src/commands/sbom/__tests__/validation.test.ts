@@ -45,6 +45,11 @@ describe('validation of sbom file', () => {
       validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', true)
     ).toBeTruthy()
   })
+  test('SBOM with invalid purl are being rejected', () => {
+    expect(
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-invalid-purl.json', true)
+    ).toBeFalsy()
+  })
   test('should validate SBOM file osv scanner - version 1.5', () => {
     // type and name of the "component" have been removed from the valid file.
     expect(

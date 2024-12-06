@@ -1944,6 +1944,7 @@ __metadata:
     js-yaml: 3.13.1
     jszip: ^3.10.1
     ora: 5.4.1
+    packageurl-js: ^2.0.1
     pkg: 5.5.2
     prettier: 2.0.5
     proxy: ^2.1.1
@@ -8980,6 +8981,13 @@ jschardet@latest:
   version: 1.0.0
   resolution: "package-json-from-dist@npm:1.0.0"
   checksum: ac706ec856a5a03f5261e4e48fa974f24feb044d51f84f8332e2af0af04fbdbdd5bbbfb9cbbe354190409bc8307c83a9e38c6672c3c8855f709afb0006a009ea
+  languageName: node
+  linkType: hard
+
+"packageurl-js@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "packageurl-js@npm:2.0.1"
+  checksum: 91998b4ef0aa5fad8993dfb611039771a5e350532f14be1c065e64a5fb26fc771880865c2c81beaf127b07700d7d74ecfeccf8ca9748b0fef19c1cd9d3f41860
   languageName: node
   linkType: hard
 

@@ -92,6 +92,7 @@
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
     "ora": "5.4.1",
+    "packageurl-js": "^2.0.1",
     "proxy-agent": "^6.4.0",
     "rimraf": "^3.0.2",
     "semver": "^7.5.3",
