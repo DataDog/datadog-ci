@@ -3,7 +3,10 @@ import type {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCIEnv} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
 import {parseMeasuresFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
@@ -52,11 +55,18 @@ export class MeasureCommand extends Command {
   private measuresFile = Option.String('--measures-file')
   private noFail = Option.Boolean('--no-fail')
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (this.path[0] === 'metric') {
       this.context.stdout.write(
         chalk.yellow(`[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n`)

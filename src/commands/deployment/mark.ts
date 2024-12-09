@@ -1,5 +1,9 @@
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+
 import {TagCommand} from '../tag/tag'
 
 import {
@@ -51,7 +55,16 @@ export class DeploymentMarkCommand extends Command {
   })
   private tags = Option.Array('--tags')
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     const tagJobCommand = new TagCommand()
     tagJobCommand.setLevel('job')
     tagJobCommand.setTags(this.createJobDeploymentTags())

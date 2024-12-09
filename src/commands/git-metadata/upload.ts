@@ -1,8 +1,11 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
 import {ICONS} from '../../helpers/formatting'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
@@ -48,8 +51,14 @@ export class UploadCommand extends Command {
   private directory = Option.String('--directory', '')
 
   private cliVersion = version
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   private logger: Logger = new Logger((s: string) => {
@@ -58,6 +67,9 @@ export class UploadCommand extends Command {
 
   public async execute() {
     const initialTime = Date.now()
+
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (this.verbose) {
       this.logger = new Logger((s: string) => {
         this.context.stdout.write(s)

@@ -2,6 +2,9 @@ import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean, toNumber, toStringMap} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -16,7 +19,7 @@ import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './
 import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests} from './run-tests-lib'
-import {toBoolean, toNumber, toExecutionRule, validateAndParseOverrides, toStringMap} from './utils/internal'
+import {toExecutionRule, validateAndParseOverrides} from './utils/internal'
 import {
   getExitReason,
   getOrgSettings,
@@ -173,7 +176,16 @@ export class RunTestsCommand extends Command {
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     const reporters: Reporter[] = [new DefaultReporter(this)]
     this.reporter = getReporter(reporters)
 

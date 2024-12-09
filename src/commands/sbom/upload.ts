@@ -5,6 +5,9 @@ import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {GIT_SHA, getSpanTags, GIT_REPOSITORY_URL, REQUIRED_GIT_TAGS} from '../../helpers/tags'
 
 import {renderMissingTags} from '../sarif/renderer'
@@ -47,6 +50,14 @@ export class UploadSbomCommand extends Command {
     appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY || '',
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
+    fips: process.env[FIPS_ENV_VAR],
+  }
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   /**
@@ -54,6 +65,8 @@ export class UploadSbomCommand extends Command {
    * compliant with their schema and upload them to datadog.
    */
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     const service: string = this.service
 
     const environment = this.env

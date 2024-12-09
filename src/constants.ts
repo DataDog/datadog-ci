@@ -14,6 +14,10 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_GOV,
 ]
 
+// Common env vars
+export const FIPS_ENV_VAR = 'DATADOG_FIPS'
+export const FIPS_IGNORE_ERROR_ENV_VAR = 'DATADOG_FIPS_IGNORE_ERROR'
+
 export const CONTENT_TYPE_HEADER = 'Content-Type'
 export const CONTENT_TYPE_VALUE_PROTOBUF = 'application/x-protobuf'
 export const CONTENT_TYPE_VALUE_JSON = 'application/json'

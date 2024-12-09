@@ -56,7 +56,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-linux-x64 -o datadog-ci_linux-x64
+        run: yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
@@ -96,7 +96,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
+        run: yarn dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
@@ -132,7 +132,7 @@ jobs:
       - name: Bundle library
         run: yarn build:win
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-win-x64 -o datadog-ci_win-x64
+        run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm dist -r
@@ -170,7 +170,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-macos-x64 -o datadog-ci_darwin-x64
+        run: yarn dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
@@ -206,7 +206,7 @@ jobs:
       - name: Bundle library
         run: yarn build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node14-macos-arm64 -o datadog-ci_darwin-arm64
+        run: yarn dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
