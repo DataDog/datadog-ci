@@ -118,25 +118,28 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 ### FIPS support
 
-The `fips` option allow `datadog-ci` to use a FIPS cryptographic module provider, if the OpenSSL library installed on the host system provides it.
-`datadog-ci` cannot assert if such a provider is available, and won't throw any error in case the provider is not FIPS compliant.
+The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.
 
-However, node version below 17 are incompatible with OpenSSL 3 which provides FIPS support.
-In this case, enabling the `fips` option will cause the command to throw an error.
-The option `fips-ignore-error` is meant to ignore this error.
+**Note**: `datadog-ci` cannot assert if such a provider is available, and doesn't throw any error if the provider is not FIPS validated.
+
+Node.js versions below 17 are incompatible with OpenSSL 3, which provides FIPS support.
+If you are using a Node.js version below 17, enabling the `fips` option will cause the command to throw an error.
+The option `fips-ignore-error` ignores this error.
+The released `datadog-ci` binary now uses Node.js version 18 to be compatible with OpenSSL 3.
 
 #### `fips`
-Enable FIPS support by datadog-ci, given a FIPS provider is installed on the host system.
-If no FIPS provider is installed, no error are raised.
+Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
+If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
 
-ENV variable: DATADOG_FIPS=True
+ENV variable: `DATADOG_FIPS=true`
 CLI param: `--fips`
 
 #### `fips-ignore-error`
-Ignore node errors in case FIPS cannot be enabled on the host system.
-The absence of error doesn't imply FIPS is successfully enabled.
+Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
-ENV variable: DATADOG_FIPS_IGNORE_ERROR=True
+**Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
+
+ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
 CLI param: `--fips-ignore-error`
 
 
