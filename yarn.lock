@@ -1980,6 +1980,7 @@ __metadata:
     js-yaml: 3.13.1
     jszip: ^3.10.1
     ora: 5.4.1
+    packageurl-js: ^2.0.1
     pkg: 5.8.1
     prettier: 2.0.5
     proxy: ^2.1.1
@@ -8930,6 +8931,13 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
+"packageurl-js@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "packageurl-js@npm:2.0.1"
+  checksum: 91998b4ef0aa5fad8993dfb611039771a5e350532f14be1c065e64a5fb26fc771880865c2c81beaf127b07700d7d74ecfeccf8ca9748b0fef19c1cd9d3f41860
+  languageName: node
+  linkType: hard
+
 "pako@npm:~1.0.2":
   version: 1.0.11
   resolution: "pako@npm:1.0.11"
@@ -8997,9 +9005,9 @@ jschardet@latest:
   linkType: hard
 
 "path-to-regexp@npm:^0.1.2":
-  version: 0.1.11
-  resolution: "path-to-regexp@npm:0.1.11"
-  checksum: 02665d2795ae458f24b2f62cc7f4e8c3334d65dbd4e49a50b0494cf28d69f645ce6bf51404eab7bbf717dd36809a2c83785a54a3dda776e8fe1811ada0ba32fd
+  version: 0.1.12
+  resolution: "path-to-regexp@npm:0.1.12"
+  checksum: ab237858bee7b25ecd885189f175ab5b5161e7b712b360d44f5c4516b8d271da3e4bf7bf0a7b9153ecb04c7d90ce8ff5158614e1208819cf62bac2b08452722e
   languageName: node
   linkType: hard
 

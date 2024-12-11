@@ -122,15 +122,14 @@ export class UploadSbomCommand extends Command {
     }
 
     if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
-      if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
-        this.context.stdout.write(renderInvalidFile(basePath))
+      this.context.stdout.write(
+        'SBOM file not fully compliant against CycloneDX 1.4 or 1.5 specifications (use --debug to get validation error)\n'
+      )
+    }
+    if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+      this.context.stdout.write(renderInvalidFile(basePath))
 
-        return 1
-      } else {
-        this.context.stdout.write(
-          'Invalid SBOM file but enough data to be processed (use --debug to get validation error)\n'
-        )
-      }
+      return 1
     }
 
     const jsonContent = JSON.parse(fs.readFileSync(basePath).toString('utf8'))
