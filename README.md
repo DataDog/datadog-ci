@@ -123,7 +123,7 @@ The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provide
 **Note**: `datadog-ci` cannot assert if such a provider is available, and doesn't throw any error if the provider is not FIPS validated.
 
 Node.js versions below 17 are incompatible with OpenSSL 3, which provides FIPS support.
-If you are using a Node.js version below 17, enabling the `fips` option will cause the command to throw an error.
+If you are using a Node.js version below 17, enabling the `fips` option causes the command to throw an error.
 The option `fips-ignore-error` ignores this error.
 The released `datadog-ci` binary now uses Node.js version 18 to be compatible with OpenSSL 3.
 
