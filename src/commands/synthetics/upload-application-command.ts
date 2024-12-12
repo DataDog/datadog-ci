@@ -2,6 +2,9 @@ import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {LogLevel, Logger} from '../../helpers/logger'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
@@ -10,7 +13,6 @@ import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
-import {toBoolean} from './utils/internal'
 
 export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
   apiKey: '',
@@ -68,7 +70,16 @@ export class UploadApplicationCommand extends Command {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     try {
       await this.resolveConfig()
     } catch (error) {

@@ -1,6 +1,7 @@
 import {Cli} from 'clipanion/lib/advanced'
 
 import {createCommand, getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {toBoolean, toNumber, toStringMap} from '../../../helpers/env'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
@@ -14,7 +15,7 @@ import {
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
-import {toBoolean, toNumber, toExecutionRule, toStringMap} from '../utils/internal'
+import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
@@ -562,7 +563,7 @@ describe('run-test', () => {
     //
     // (config file < ENV < CLI < test file) => execute tests
 
-    describe('override precedence - config file < ENV < CLI < test file', () => {
+    describe('override precedence - [config file < ENV < CLI < test file]', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',

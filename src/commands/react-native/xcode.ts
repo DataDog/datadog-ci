@@ -5,6 +5,9 @@ import {sep} from 'path'
 
 import {Cli, Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {parsePlist} from '../../helpers/plist'
 
 import {UploadCommand} from './upload'
@@ -78,7 +81,16 @@ export class XCodeCommand extends Command {
 
   private scriptPath = Option.String({required: false}) // Positional
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     this.service = process.env.SERVICE_NAME_IOS || this.service || process.env.PRODUCT_BUNDLE_IDENTIFIER
 
     if (!this.infoPlistPath && process.env.PROJECT_DIR && process.env.INFOPLIST_FILE) {

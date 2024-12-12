@@ -115,6 +115,34 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 #### `gate`
 - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 
+
+### FIPS support
+
+The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provider if the OpenSSL library installed on the host system provides it.
+
+**Note**: `datadog-ci` cannot assert if such a provider is available, and doesn't throw any error if the provider is not FIPS validated.
+
+Node.js versions below 17 are incompatible with OpenSSL 3, which provides FIPS support.
+If you are using a Node.js version below 17, enabling the `fips` option causes the command to throw an error.
+The option `fips-ignore-error` ignores this error.
+The released `datadog-ci` binary now uses Node.js version 18 to be compatible with OpenSSL 3.
+
+#### `fips`
+Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
+If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
+
+ENV variable: `DATADOG_FIPS=true`
+CLI param: `--fips`
+
+#### `fips-ignore-error`
+Ignore Node.js errors if FIPS cannot be enabled on the host system.
+
+**Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
+
+ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
+CLI param: `--fips-ignore-error`
+
+
 ## More ways to install the CLI
 
 ### Standalone binary

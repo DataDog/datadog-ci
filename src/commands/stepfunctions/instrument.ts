@@ -3,6 +3,9 @@ import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {version} from '../../helpers/version'
 
 import {
@@ -62,7 +65,16 @@ export class InstrumentStepFunctionsCommand extends Command {
   )
   private propagateUpstreamTrace = Option.Boolean('--propagate-upstream-trace', false)
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute(): Promise<0 | 1> {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] `--forwarder` is required\n')
