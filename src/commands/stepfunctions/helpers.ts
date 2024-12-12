@@ -159,18 +159,9 @@ export type ParametersType = {
 //      | "Payload.$": "$$['Execution', 'State', 'StateMachine']"  |
 //  4.3 | Custom "Payload.$"                                       | false
 export const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
-  if (step.Resource?.startsWith('arn:aws:lambda')) {
-    context.stdout.write(
-      `[Warn] Step ${stepName} may be using the basic legacy integration, which does not support merging lambda trace(s) with Step Functions trace.
-          To merge lambda trace(s) with Step Functions trace, please consider using the latest integration.
-          More details can be found on https://docs.aws.amazon.com/step-functions/latest/dg/connect-lambda.html \n`
-    )
-
-    return false
-  }
-
-  // not default lambda api
-  if (step.Resource !== 'arn:aws:states:::lambda:invoke') {
+  // not default lambda api or legacy lambda definition
+  // Using startsWith on the lambda invoke to allow for waitForTaskToken invocations
+  if (!step.Resource?.startsWith('arn:aws:states:::lambda:invoke') && !step.Resource?.startsWith('arn:aws:lambda')) {
     return false
   }
 

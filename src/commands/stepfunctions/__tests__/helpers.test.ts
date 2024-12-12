@@ -30,29 +30,59 @@ const createMockContext = (): BaseContext => {
 describe('stepfunctions command helpers tests', () => {
   const context = createMockContext()
   describe('injectContextForLambdaFunctions test', () => {
-    test('Case 4.2: already has JsonMerge added to payload field', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          'Payload.$': 'States.JsonMerge($$, $, false)',
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            'Payload.$': 'States.JsonMerge($$, $, false)',
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:us-east-1:123456789012:function:HelloFunction',
+          Parameters: {
+            'Payload.$': 'States.JsonMerge($$, $, false)',
+          },
+          End: true,
+        },
+      ],
+    ])('Case 4.2: already has JsonMerge added to payload field using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('Case 4.2: context injection already set up', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          'Payload.$': `$$['Execution', 'State', 'StateMachine']`,
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            'Payload.$': `$$['Execution', 'State', 'StateMachine']`,
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            'Payload.$': `$$['Execution', 'State', 'StateMachine']`,
+          },
+          End: true,
+        },
+      ],
+    ])('Case 4.2: context injection already set up using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
@@ -69,61 +99,139 @@ describe('stepfunctions command helpers tests', () => {
       expect(step.Parameters?.['Payload.$']).toEqual(`$$['Execution', 'State', 'StateMachine']`)
     })
 
-    test('Case 3: Payload is not a JSON object', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          Payload: 'Just a string!',
-        },
-        End: true,
-      }
-      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
-    })
-
-    test('Case 2.1: already injected Execution, State and StateMachine into Payload', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          Payload: {
-            'Execution.$': '$$.Execution',
-            'State.$': '$$.State',
-            'StateMachine.$': '$$.StateMachine',
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: 'Just a string!',
           },
+          End: true,
         },
-        End: true,
-      }
-      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
-    })
-
-    test('Case 2.2: custom State field in Payload', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          Payload: {
-            State: {Name: 'Lambda Invoke'},
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            Payload: 'Just a string!',
           },
+          End: true,
         },
-        End: true,
-      }
+      ],
+    ])('Case 3: Payload is not a JSON object using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('Case 2.3: no Execution, State, or StateMachine field in Payload', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          Payload: {},
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: {
+              'Execution.$': '$$.Execution',
+              'State.$': '$$.State',
+              'StateMachine.$': '$$.StateMachine',
+            },
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            Payload: {
+              'Execution.$': '$$.Execution',
+              'State.$': '$$.State',
+              'StateMachine.$': '$$.StateMachine',
+            },
+          },
+          End: true,
+        },
+      ],
+    ])('Case 2.1: already injected Execution, State and StateMachine into Payload using %d definition', (_, step) => {
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: {
+              State: {Name: 'Lambda Invoke'},
+            },
+          },
+          End: true,
+        },
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            Payload: {
+              State: {Name: 'Lambda Invoke'},
+            },
+          },
+          End: true,
+        },
+      ],
+    ])('Case 2.2: custom State field in Payload using %s definition', (_, step) => {
+      expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
+    })
+
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: {},
+          },
+          End: true,
+        },
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            Payload: {},
+          },
+          End: true,
+        },
+      ],
+      [
+        'WaitForTaskToken',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke.waitForTaskToken',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: {},
+          },
+          End: true,
+        },
+      ],
+    ])('Case 2.3: no Execution, State, or StateMachine field in Payload using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
       const payload = step.Parameters?.['Payload'] as PayloadObject
       expect(payload['Execution.$']).toEqual('$$.Execution')
@@ -131,47 +239,92 @@ describe('stepfunctions command helpers tests', () => {
       expect(payload['StateMachine.$']).toEqual('$$.StateMachine')
     })
 
-    test('Case 4.1: default payload field of $', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          'Payload.$': '$',
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            'Payload.$': '$',
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            'Payload.$': '$',
+          },
+          End: true,
+        },
+      ],
+    ])('Case 4.1: default payload field of $ using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeTruthy()
       expect(step.Parameters?.['Payload.$']).toEqual('States.JsonMerge($$, $, false)')
     })
 
-    test('Case 4.3: custom payload field not using JsonPath expression', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          Payload: '{"action": "service/delete_customer"}',
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            Payload: '{"action": "service/delete_customer"}',
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            Payload: '{"action": "service/delete_customer"}',
+          },
+          End: true,
+        },
+      ],
+    ])('Case 4.3: custom payload field not using JsonPath expression using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('Case 4.3: custom payload field using JsonPath expression', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:states:::lambda:invoke',
-        Parameters: {
-          FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
-          'Payload.$': '{"customer.$": "$.customer"}',
+    test.each([
+      [
+        'Standard',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:states:::lambda:invoke',
+          Parameters: {
+            FunctionName: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+            'Payload.$': '{"customer.$": "$.customer"}',
+          },
+          End: true,
         },
-        End: true,
-      }
+      ],
+      [
+        'Legacy',
+        {
+          Type: 'Task',
+          Resource: 'arn:aws:lambda:sa-east-1:425362991234:function:unit-test-lambda-function',
+          Parameters: {
+            'Payload.$': '{"customer.$": "$.customer"}',
+          },
+          End: true,
+        },
+      ],
+    ])('Case 4.3: custom payload field using JsonPath expression using %s definition', (_, step) => {
       expect(injectContextForLambdaFunctions(step, context, 'Lambda Invoke')).toBeFalsy()
     })
 
-    test('none-lambda step should not be updated', () => {
+    test('non-lambda step should not be updated', () => {
       const step: StepType = {
         Type: 'Task',
         Resource: 'arn:aws:states:::dynamodb:updateItem',
@@ -181,15 +334,6 @@ describe('stepfunctions command helpers tests', () => {
         End: true,
       }
       expect(injectContextForLambdaFunctions(step, context, 'DynamoDB Update')).toBeFalsy()
-    })
-
-    test('legacy lambda api should not be updated', () => {
-      const step: StepType = {
-        Type: 'Task',
-        Resource: 'arn:aws:lambda:sa-east-1:601427271234:function:hello-function',
-        End: true,
-      }
-      expect(injectContextForLambdaFunctions(step, context, 'Legacy Lambda')).toBeFalsy()
     })
   })
 
