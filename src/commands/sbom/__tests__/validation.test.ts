@@ -59,10 +59,10 @@ describe('validation of sbom file', () => {
       validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/osv-scanner-files.json', true)
     ).toBeTruthy()
   })
-  test('SBOM with no components is not valid', () => {
+  test('SBOM with no components is valid', () => {
     expect(
       validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-no-components.json', true)
-    ).toBeFalsy()
+    ).toBeTruthy()
   })
   test('does not validate random data', () => {
     expect(

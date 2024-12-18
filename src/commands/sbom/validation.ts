@@ -102,6 +102,10 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
 
     const components = fileContent['components']
 
+    if (!components) {
+      return true
+    }
+
     for (const component of components) {
       if (!component['type']) {
         return false
