@@ -10,7 +10,7 @@ import {isFile} from '../commands/junit/utils'
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
-import {SpanTags} from './interfaces'
+import {SpanTag, SpanTags} from './interfaces'
 import {getUserGitSpanTags} from './user-provided-git'
 
 export const CI_PIPELINE_URL = 'ci.pipeline.url'
@@ -205,14 +205,31 @@ export const parseMeasuresFile = (
 /**
  * These are required git tags for the following commands: sarif and sbom.
  */
-export const REQUIRED_GIT_TAGS: Record<string, boolean> = {
-  [GIT_REPOSITORY_URL]: true,
-  [GIT_BRANCH]: true,
-  [GIT_SHA]: true,
-  [GIT_COMMIT_AUTHOR_EMAIL]: true,
-  [GIT_COMMIT_AUTHOR_NAME]: true,
-  [GIT_COMMIT_COMMITTER_EMAIL]: true,
-  [GIT_COMMIT_COMMITTER_NAME]: true,
+export const REQUIRED_GIT_TAGS: SpanTag[] = [
+  GIT_REPOSITORY_URL,
+  GIT_BRANCH,
+  GIT_SHA,
+  GIT_COMMIT_AUTHOR_EMAIL,
+  GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_COMMITTER_EMAIL,
+  GIT_COMMIT_COMMITTER_NAME,
+]
+
+/**
+ * A utility to determine which required git tags are missing.
+ * @param tags - the tags to check
+ * @returns an array of the missing required git tags (ex. ['git.repository_url', 'git.branch'])
+ */
+export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
+  const missingTags = REQUIRED_GIT_TAGS.reduce((acc: string[], tag: SpanTag) => {
+    if (!tags[tag] || (tags[tag] as string).trim() === '') {
+      acc.push(tag)
+    }
+
+    return acc
+  }, [])
+
+  return missingTags
 }
 
 /**

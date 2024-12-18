@@ -12,7 +12,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
-import {GIT_SHA, getSpanTags, REQUIRED_GIT_TAGS} from '../../helpers/tags'
+import {GIT_SHA, getSpanTags, getMissingRequiredGitTags} from '../../helpers/tags'
 import {buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
@@ -100,14 +100,7 @@ export class UploadSarifReportCommand extends Command {
     const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
     // Gather any missing mandatory git fields to display to the user
-    const missingGitFields = Object.entries(spanTags).reduce((acc: string[], [tag, value]) => {
-      if (REQUIRED_GIT_TAGS[tag] && !value) {
-        acc.push(tag)
-      }
-
-      return acc
-    }, [])
-
+    const missingGitFields = getMissingRequiredGitTags(spanTags)
     if (missingGitFields.length > 0) {
       this.context.stdout.write(renderMissingTags(missingGitFields))
 

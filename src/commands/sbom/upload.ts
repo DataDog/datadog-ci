@@ -8,7 +8,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {GIT_SHA, getSpanTags, GIT_REPOSITORY_URL, REQUIRED_GIT_TAGS} from '../../helpers/tags'
+import {GIT_SHA, GIT_REPOSITORY_URL, getSpanTags, getMissingRequiredGitTags} from '../../helpers/tags'
 
 import {renderMissingTags} from '../sarif/renderer'
 
@@ -98,14 +98,7 @@ export class UploadSbomCommand extends Command {
     const tags = await getSpanTags(this.config, this.tags, !this.noCiTags)
 
     // Gather any missing mandatory git fields to display to the user
-    const missingGitFields = Object.entries(tags).reduce((acc: string[], [tag, value]) => {
-      if (REQUIRED_GIT_TAGS[tag] && !value) {
-        acc.push(tag)
-      }
-
-      return acc
-    }, [])
-
+    const missingGitFields = getMissingRequiredGitTags(tags)
     if (missingGitFields.length > 0) {
       this.context.stdout.write(renderMissingTags(missingGitFields))
 
