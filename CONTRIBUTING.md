@@ -125,7 +125,7 @@ To release a new version of `datadog-ci`:
 6. The `npm-publish` job is waiting for an approval from a datadog-ci maintainer: ask for approval and wait for it and its downstream jobs to succeed.
 7. Go to the draft GitHub Release, and publish it as **latest**.
    - There should be 5 binaries available in the release's assets.
-8. Finally, go to the [GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
+8. Finally, go to the [_GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
    - Make sure all the jobs and downstream jobs succeed.
 
 Thanks for creating a release! 🎉
