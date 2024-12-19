@@ -1,7 +1,24 @@
 import {BaseContext} from 'clipanion'
+import simpleGit from 'simple-git'
 
 import {SpanTags} from '../interfaces'
-import {parseTags, parseMetrics, getSpanTags, parseTagsFile, parseMeasuresFile} from '../tags'
+import {
+  parseTags,
+  parseMetrics,
+  getSpanTags,
+  parseTagsFile,
+  parseMeasuresFile,
+  getMissingRequiredGitTags,
+  GIT_REPOSITORY_URL,
+  GIT_BRANCH,
+  GIT_SHA,
+  GIT_COMMIT_AUTHOR_EMAIL,
+  GIT_COMMIT_AUTHOR_NAME,
+  GIT_COMMIT_COMMITTER_EMAIL,
+  GIT_COMMIT_COMMITTER_NAME,
+} from '../tags'
+
+jest.mock('simple-git')
 
 const fixturesPath = './src/helpers/__tests__/tags-fixtures'
 const createMockContext = (): BaseContext => {
@@ -169,5 +186,169 @@ describe('getSpanTags', () => {
       key1: 'value1',
       key2: 'value2',
     })
+  })
+})
+
+describe('sarif and sbom upload required git tags', () => {
+  // throwError will be used to simulate an error being thrown from simple-git
+  // commands and is used to condense the tests code.
+  const throwError = () => {
+    throw new Error()
+  }
+
+  // Reset all env vars before each test
+  beforeEach(() => {
+    // User defined env vars
+    process.env.DD_GIT_BRANCH = ''
+    process.env.DD_GIT_COMMIT_SHA = ''
+    process.env.DD_GIT_COMMIT_AUTHOR_EMAIL = ''
+    process.env.DD_GIT_COMMIT_AUTHOR_NAME = ''
+    process.env.DD_GIT_COMMIT_COMMITTER_EMAIL = ''
+    process.env.DD_GIT_COMMIT_COMMITTER_NAME = ''
+    // CI defined env vars - needed for tests to pass in the CI
+    process.env.GITHUB_SHA = ''
+    process.env.GITHUB_HEAD_REF = ''
+    process.env.GITHUB_REF = ''
+  })
+
+  test('should be valid as we have all required git fields', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: () => ({current: 'main'}),
+      listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
+      revparse: () => 'commitSHA',
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
+          return 'commit message'
+        }
+
+        return 'authorName,authorEmail,authorDate,committerName,committerEmail,committerDate'
+      },
+    }))
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      [],
+      true
+    )
+    const missingTags = getMissingRequiredGitTags(spanTags)
+    expect(missingTags).toHaveLength(0)
+  })
+
+  test('should be valid when all fields are specified using env vars', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: throwError,
+      listRemote: throwError,
+      revparse: throwError,
+      show: throwError,
+    }))
+
+    process.env.DD_GIT_REPOSITORY_URL = 'https://www.github.com/datadog/safe-repository'
+    process.env.DD_GIT_BRANCH = 'main'
+    process.env.DD_GIT_COMMIT_SHA = 'commitSHA'
+    process.env.DD_GIT_COMMIT_AUTHOR_EMAIL = 'authorEmail'
+    process.env.DD_GIT_COMMIT_AUTHOR_NAME = 'authorName'
+    process.env.DD_GIT_COMMIT_COMMITTER_EMAIL = 'committerEmail'
+    process.env.DD_GIT_COMMIT_COMMITTER_NAME = 'committerName'
+
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      [],
+      true
+    )
+    const missingTags = getMissingRequiredGitTags(spanTags)
+    expect(missingTags).toHaveLength(0)
+  })
+
+  test('should not be valid when missing an env var', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: throwError,
+      listRemote: throwError,
+      revparse: throwError,
+      show: throwError,
+    }))
+
+    process.env.DD_GIT_REPOSITORY_URL = 'https://www.github.com/datadog/safe-repository'
+    process.env.DD_GIT_BRANCH = 'main'
+    // missing DD_GIT_COMMIT_SHA
+    process.env.DD_GIT_COMMIT_AUTHOR_EMAIL = 'authorEmail'
+    process.env.DD_GIT_COMMIT_AUTHOR_NAME = 'authorName'
+    process.env.DD_GIT_COMMIT_COMMITTER_EMAIL = 'committerEmail'
+    process.env.DD_GIT_COMMIT_COMMITTER_NAME = 'committerName'
+
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      [],
+      true
+    )
+    const missingTags = getMissingRequiredGitTags(spanTags)
+    expect(missingTags).toHaveLength(1)
+    expect(missingTags).toContain(GIT_SHA)
+  })
+
+  test('should be invalid when no git metadata is there (no .git)', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: throwError,
+      listRemote: throwError,
+      revparse: throwError,
+      show: throwError,
+    }))
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      [],
+      true
+    )
+    const missingTags = getMissingRequiredGitTags(spanTags)
+    expect(missingTags).toHaveLength(6)
+    expect(missingTags).toContain(GIT_BRANCH)
+    expect(missingTags).toContain(GIT_SHA)
+    expect(missingTags).toContain(GIT_COMMIT_AUTHOR_EMAIL)
+    expect(missingTags).toContain(GIT_COMMIT_AUTHOR_NAME)
+    expect(missingTags).toContain(GIT_COMMIT_COMMITTER_EMAIL)
+    expect(missingTags).toContain(GIT_COMMIT_COMMITTER_NAME)
+  })
+
+  test('should be invalid when an env var overrides a value retrieved from git', async () => {
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: () => ({current: 'main'}),
+      listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
+      revparse: () => 'commitSHA',
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
+          return 'commit message'
+        }
+
+        return 'authorName,authorEmail,authorDate,committerName,committerEmail,committerDate'
+      },
+    }))
+
+    process.env.DD_GIT_BRANCH = '    '
+
+    const spanTags: SpanTags = await getSpanTags(
+      {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      },
+      [],
+      true
+    )
+    const missingTags = getMissingRequiredGitTags(spanTags)
+    expect(missingTags).toHaveLength(1)
+    expect(missingTags).toContain(GIT_BRANCH)
   })
 })
