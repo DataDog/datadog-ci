@@ -1,6 +1,8 @@
 import chalk from 'chalk'
 
 import {getBaseUrl} from '../junit/utils'
+import {Dependency} from './types'
+import {validateDependency, validateDependencyName} from './validation'
 
 const ICONS = {
   FAILED: '❌',
@@ -73,4 +75,16 @@ export const renderSuccessfulCommand = (duration: number) => {
   )
 
   return fullStr
+}
+
+export const renderPayloadWarning = (dependencies: Dependency[]): string => {
+  let ret = ''
+
+  for (const dep of dependencies) {
+    if (!validateDependencyName(dep)) {
+      ret += `invalid dependency name ${dep.name}\n`
+    }
+  }
+
+  return ret
 }

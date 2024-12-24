@@ -8,6 +8,7 @@ import cycloneDxSchema14 from './json-schema/cyclonedx/bom-1.4.schema.json'
 import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
+import {Dependency, DependencyLanguage} from './types'
 
 /**
  * Get the validate function. Read all the schemas and return
@@ -145,5 +146,14 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
     return false
   }
 
+  return true
+}
+
+const pythonPackaNameRegex = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\\-_.]*[a-zA-Z0-9]$')
+
+export const validateDependencyName = (dependency: Dependency): boolean => {
+  if (dependency.language === DependencyLanguage.PYTHON && !pythonPackaNameRegex.test(dependency.name)) {
+    return false
+  }
   return true
 }
