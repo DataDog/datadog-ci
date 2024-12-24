@@ -2,7 +2,7 @@ import chalk from 'chalk'
 
 import {getBaseUrl} from '../junit/utils'
 import {Dependency} from './types'
-import {validateDependency, validateDependencyName} from './validation'
+import {validateDependencyName} from './validation'
 
 const ICONS = {
   FAILED: '❌',
