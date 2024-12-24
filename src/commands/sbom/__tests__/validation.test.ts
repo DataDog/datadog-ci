@@ -1,10 +1,10 @@
+import {DependencyLanguage} from '../types'
 import {
   getValidator,
   validateDependencyName,
   validateFileAgainstToolRequirements,
   validateSbomFileAgainstSchema,
 } from '../validation'
-import {DependencyLanguage} from '../types'
 
 const validator = getValidator()
 

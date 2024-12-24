@@ -155,5 +155,6 @@ export const validateDependencyName = (dependency: Dependency): boolean => {
   if (dependency.language === DependencyLanguage.PYTHON && !pythonPackaNameRegex.test(dependency.name)) {
     return false
   }
+
   return true
 }

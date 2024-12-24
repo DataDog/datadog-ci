@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 
 import {getBaseUrl} from '../junit/utils'
+
 import {Dependency} from './types'
 import {validateDependencyName} from './validation'
 
