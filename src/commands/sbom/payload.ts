@@ -103,7 +103,7 @@ export const generatePayload = (
           continue
         }
 
-        if (component['type'] === 'library') {
+        if (component['type'] === 'library' || component['type'] === 'framework') {
           const dependency = extractingDependency(component)
           if (dependency !== undefined) {
             dependencies.push(dependency)
