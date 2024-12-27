@@ -12,7 +12,12 @@ import {
   GIT_SHA,
 } from '../../helpers/tags'
 
-import {FILE_PACKAGE_PROPERTY_KEY, IS_DEPENDENCY_DIRECT_PROPERTY_KEY, PACKAGE_MANAGER_PROPERTY_KEY} from './constants'
+import {
+  FILE_PACKAGE_PROPERTY_KEY,
+  IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
+  IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
+  PACKAGE_MANAGER_PROPERTY_KEY,
+} from './constants'
 import {getLanguageFromComponent} from './language'
 import {Relations, Dependency, File, Location, LocationFromFile, Locations, ScaRequest} from './types'
 
@@ -187,11 +192,14 @@ const extractingDependency = (component: any): Dependency | undefined => {
 
   let packageManager = ''
   let isDirect
+  let isDev
   for (const property of component['properties'] ?? []) {
     if (property['name'] === PACKAGE_MANAGER_PROPERTY_KEY) {
       packageManager = property['value']
     } else if (property['name'] === IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
       isDirect = property['value'].toLowerCase() === 'true' ? true : undefined
+    } else if (property['name'] === IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
+      isDev = property['value'].toLowerCase() === 'true' ? true : undefined
     }
   }
 
@@ -204,6 +212,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     purl,
     locations,
     is_direct: isDirect,
+    is_dev: isDev,
     package_manager: packageManager,
   }
 

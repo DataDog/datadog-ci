@@ -72,6 +72,9 @@ describe('generation of payload', () => {
     const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
     expect(directDependencies?.length).toBe(1)
 
+    const devDependencies = payload?.dependencies.filter((d) => d.is_dev)
+    expect(devDependencies?.length).toBe(1)
+
     const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
     expect(dependenciesWithPackageManager?.length).toBe(1)
 
