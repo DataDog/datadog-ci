@@ -9,6 +9,7 @@ import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
 import cycloneDxSchema16 from './json-schema/cyclonedx/bom-1.6.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
+import {ErrorObject} from 'ajv/lib/types'
 
 /**
  * Get the validate function. Read all the schemas and return
@@ -31,6 +32,14 @@ export const getValidator = (): Ajv => {
  * @param debug - if we need to show debug information
  */
 export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boolean): boolean => {
+  const showValidationErrors = (version: string, path: string, errors: ErrorObject[]): void => {
+    errors.forEach((message) => {
+      process.stderr.write(
+        `Error while validating file against CycloneDX ${version}: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
+      )
+    })
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
@@ -61,39 +70,19 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
 
     // show the errors
     if (!isValid16) {
-      const errors15 = validateFunctionCycloneDx16.errors || []
-
       if (debug) {
-        errors15.forEach((message) => {
-          process.stderr.write(
-            `Error while validating file against CycloneDX 1.6: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
-          )
-        })
+        showValidationErrors('1.6', path, validateFunctionCycloneDx16.errors || [])
       }
     }
 
     // show the errors
     if (!isValid15) {
-      const errors15 = validateFunctionCycloneDx15.errors || []
-
-      if (debug) {
-        errors15.forEach((message) => {
-          process.stderr.write(
-            `Error while validating file against CycloneDX 1.5: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
-          )
-        })
-      }
+      showValidationErrors('1.5', path, validateFunctionCycloneDx15.errors || [])
     }
 
     if (!isValid14) {
-      const errors14 = validateFunctionCycloneDx14.errors || []
-
       if (debug) {
-        errors14.forEach((message) => {
-          process.stderr.write(
-            `Error while validating file against CycloneDX 1.4: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
-          )
-        })
+        showValidationErrors('1.4', path, validateFunctionCycloneDx14.errors || [])
       }
     }
 
