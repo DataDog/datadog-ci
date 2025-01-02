@@ -160,6 +160,10 @@
         {
           "name": "osv-scanner:package-manager",
           "value": "Npm"
+        },
+        {
+          "name": "osv-scanner:is-dev",
+          "value": "true"
         }
       ]
     },

@@ -94,6 +94,7 @@ export interface Dependency {
   purl: string
   locations: undefined | Locations[]
   is_direct: undefined | boolean
+  is_dev: undefined | boolean
   package_manager: string
 }
 
