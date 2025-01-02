@@ -92,12 +92,12 @@ export const isTimedOutRetry = (
 }
 
 export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
-  return triggerConfig ? 'localTestDefinition' in triggerConfig : false
+  return triggerConfig ? 'local_test_definition' in triggerConfig : false
 }
 
 export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
   if (isLocalTriggerConfig(triggerConfig)) {
-    return triggerConfig.localTestDefinition.public_id
+    return triggerConfig.local_test_definition.public_id
   }
 
   return triggerConfig.id

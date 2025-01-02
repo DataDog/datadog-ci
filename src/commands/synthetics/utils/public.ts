@@ -82,7 +82,7 @@ export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, public
   if (isLocalTriggerConfig(triggerConfig)) {
     return {
       ...getBasePayload(test, triggerConfig.testOverrides),
-      local_test_definition: triggerConfig.localTestDefinition,
+      local_test_definition: triggerConfig.local_test_definition,
     }
   }
 
