@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import Ajv from 'ajv'
+import Ajv, {ErrorObject} from 'ajv'
 import addFormats from 'ajv-formats'
 import {PackageURL} from 'packageurl-js'
 
@@ -32,7 +32,7 @@ export const getValidator = (): Ajv => {
  * @param debug - if we need to show debug information
  */
 export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boolean): boolean => {
-  const showValidationErrors = (version: string, path: string, errors: ErrorObject[]): void => {
+  const showValidationErrors = (version: string, errors: ErrorObject[]): void => {
     errors.forEach((message) => {
       process.stderr.write(
         `Error while validating file against CycloneDX ${version}: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
@@ -71,18 +71,18 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
     // show the errors
     if (!isValid16) {
       if (debug) {
-        showValidationErrors('1.6', path, validateFunctionCycloneDx16.errors || [])
+        showValidationErrors('1.6', validateFunctionCycloneDx16.errors || [])
       }
     }
 
     // show the errors
     if (!isValid15) {
-      showValidationErrors('1.5', path, validateFunctionCycloneDx15.errors || [])
+      showValidationErrors('1.5', validateFunctionCycloneDx15.errors || [])
     }
 
     if (!isValid14) {
       if (debug) {
-        showValidationErrors('1.4', path, validateFunctionCycloneDx14.errors || [])
+        showValidationErrors('1.4', validateFunctionCycloneDx14.errors || [])
       }
     }
 
