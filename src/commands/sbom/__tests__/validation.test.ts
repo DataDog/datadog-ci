@@ -1,4 +1,10 @@
-import {getValidator, validateFileAgainstToolRequirements, validateSbomFileAgainstSchema} from '../validation'
+import {DependencyLanguage} from '../types'
+import {
+  getValidator,
+  validateDependencyName,
+  validateFileAgainstToolRequirements,
+  validateSbomFileAgainstSchema,
+} from '../validation'
 
 const validator = getValidator()
 
@@ -69,5 +75,59 @@ describe('validation of sbom file', () => {
       validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/random-data', validator, true)
     ).toBeFalsy()
     expect(validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/random-data', true)).toBeFalsy()
+  })
+  test('should have valid package name', () => {
+    expect(
+      validateDependencyName({
+        name: 'foo bar',
+        language: DependencyLanguage.PYTHON,
+        version: undefined,
+        group: undefined,
+        licenses: [],
+        purl: '',
+        locations: [],
+        is_direct: undefined,
+        package_manager: 'pypi',
+      })
+    ).toBeFalsy()
+    expect(
+      validateDependencyName({
+        name: 'foobar',
+        language: DependencyLanguage.PYTHON,
+        version: undefined,
+        group: undefined,
+        licenses: [],
+        purl: '',
+        locations: [],
+        is_direct: undefined,
+        package_manager: 'pypi',
+      })
+    ).toBeTruthy()
+    expect(
+      validateDependencyName({
+        name: 'py',
+        language: DependencyLanguage.PYTHON,
+        version: undefined,
+        group: undefined,
+        licenses: [],
+        purl: '',
+        locations: [],
+        is_direct: undefined,
+        package_manager: 'pypi',
+      })
+    ).toBeTruthy()
+    expect(
+      validateDependencyName({
+        name: 'rx',
+        language: DependencyLanguage.PYTHON,
+        version: undefined,
+        group: undefined,
+        licenses: [],
+        purl: '',
+        locations: [],
+        is_direct: undefined,
+        package_manager: 'pypi',
+      })
+    ).toBeTruthy()
   })
 })

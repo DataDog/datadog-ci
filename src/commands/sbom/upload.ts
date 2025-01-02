@@ -20,6 +20,7 @@ import {
   renderInvalidFile,
   renderInvalidPayload,
   renderNoDefaultBranch,
+  renderPayloadWarning,
   renderSuccessfulCommand,
   renderUploading,
 } from './renderer'
@@ -130,12 +131,16 @@ export class UploadSbomCommand extends Command {
     // Upload content
     try {
       const scaPayload = generatePayload(jsonContent, tags, service, environment)
+
       if (!scaPayload) {
         this.context.stdout.write(renderInvalidPayload(basePath))
 
         return 1
       }
+      this.context.stdout.write(renderPayloadWarning(scaPayload.dependencies))
+
       this.context.stdout.write(renderUploading(basePath))
+
       await api(scaPayload)
       if (this.debug) {
         this.context.stdout.write(`Upload done for ${basePath}.\n`)
