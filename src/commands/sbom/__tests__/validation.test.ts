@@ -17,6 +17,11 @@ describe('validation of sbom file', () => {
       validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', false)
     ).toBeTruthy()
   })
+  test('should succeed when called on a valid CycloneDX 1.6 SBOM file', () => {
+    expect(
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json', validator, false)
+    ).toBeTruthy()
+  })
   test('should succeed when called on a valid CycloneDX 1.5 SBOM file', () => {
     expect(
       validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', validator, false)

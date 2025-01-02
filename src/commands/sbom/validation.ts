@@ -1,11 +1,12 @@
 import fs from 'fs'
 
-import Ajv from 'ajv'
+import Ajv, {ErrorObject} from 'ajv'
 import addFormats from 'ajv-formats'
 import {PackageURL} from 'packageurl-js'
 
 import cycloneDxSchema14 from './json-schema/cyclonedx/bom-1.4.schema.json'
 import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
+import cycloneDxSchema16 from './json-schema/cyclonedx/bom-1.6.schema.json'
 import jsfSchema from './json-schema/jsf/jsf-0.82.schema.json'
 import spdxSchema from './json-schema/spdx/spdx.schema.json'
 import {Dependency, DependencyLanguage} from './types'
@@ -31,16 +32,30 @@ export const getValidator = (): Ajv => {
  * @param debug - if we need to show debug information
  */
 export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boolean): boolean => {
+  const showValidationErrors = (version: string, errors: ErrorObject[]): void => {
+    errors.forEach((message) => {
+      process.stderr.write(
+        `Error while validating file against CycloneDX ${version}: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
+      )
+    })
+  }
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
+    const validateFunctionCycloneDx16 = ajv.compile(cycloneDxSchema16)
     const validateFunctionCycloneDx15 = ajv.compile(cycloneDxSchema15)
     const validateFunctionCycloneDx14 = ajv.compile(cycloneDxSchema14)
 
+    const isValid16 = validateFunctionCycloneDx16(fileContent)
     const isValid15 = validateFunctionCycloneDx15(fileContent)
     const isValid14 = validateFunctionCycloneDx14(fileContent)
 
     // if debug is set, we should show what version is valid, either CycloneDX 1.4 or 1.5
+    if (isValid16 && debug) {
+      process.stdout.write('File is a valid CycloneDX 1.6 file\n')
+    }
+
     if (isValid15 && debug) {
       process.stdout.write('File is a valid CycloneDX 1.5 file\n')
     }
@@ -49,32 +64,25 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
       process.stdout.write('File is a valid CycloneDX 1.4 file\n')
     }
 
-    if (isValid14 || isValid15) {
+    if (isValid14 || isValid15 || isValid16) {
       return true
     }
 
     // show the errors
-    if (!isValid15) {
-      const errors15 = validateFunctionCycloneDx15.errors || []
-
+    if (!isValid16) {
       if (debug) {
-        errors15.forEach((message) => {
-          process.stderr.write(
-            `Error while validating file against CycloneDX 1.5: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
-          )
-        })
+        showValidationErrors('1.6', validateFunctionCycloneDx16.errors || [])
       }
     }
 
-    if (!isValid14) {
-      const errors14 = validateFunctionCycloneDx14.errors || []
+    // show the errors
+    if (!isValid15) {
+      showValidationErrors('1.5', validateFunctionCycloneDx15.errors || [])
+    }
 
+    if (!isValid14) {
       if (debug) {
-        errors14.forEach((message) => {
-          process.stderr.write(
-            `Error while validating file against CycloneDX 1.4: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
-          )
-        })
+        showValidationErrors('1.4', validateFunctionCycloneDx14.errors || [])
       }
     }
 

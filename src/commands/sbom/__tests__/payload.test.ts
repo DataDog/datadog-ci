@@ -40,6 +40,40 @@ describe('generation of payload', () => {
     expect(payload?.dependencies[0].licenses.length).toBe(0)
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
   })
+
+  test('should correctly work with a CycloneDX 1.6 file', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+
+    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.committer_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.committer_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.branch).toStrictEqual(expect.any(String))
+    expect(payload?.repository.url).toContain('github.com')
+    expect(payload?.repository.url).toContain('DataDog/datadog-ci')
+    expect(payload?.dependencies).toHaveLength(2)
+    expect(payload?.dependencies[0].name).toBe('Flask')
+    expect(payload?.dependencies[0].version).toBe('3.0.0')
+    expect(payload?.dependencies[0].licenses).toHaveLength(0)
+    expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PYTHON)
+    expect(payload?.dependencies[1].name).toBe('requests')
+    expect(payload?.dependencies[1].version).toBe('2.31.0')
+    expect(payload?.dependencies[1].licenses).toHaveLength(0)
+    expect(payload?.dependencies[1].language).toBe(DependencyLanguage.PYTHON)
+  })
+
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
     const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
