@@ -93,6 +93,7 @@ describe('validation of sbom file', () => {
         locations: [],
         is_direct: undefined,
         package_manager: 'pypi',
+        is_dev: undefined,
       })
     ).toBeFalsy()
     expect(
@@ -106,6 +107,7 @@ describe('validation of sbom file', () => {
         locations: [],
         is_direct: undefined,
         package_manager: 'pypi',
+        is_dev: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -119,6 +121,7 @@ describe('validation of sbom file', () => {
         locations: [],
         is_direct: undefined,
         package_manager: 'pypi',
+        is_dev: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -132,6 +135,7 @@ describe('validation of sbom file', () => {
         locations: [],
         is_direct: undefined,
         package_manager: 'pypi',
+        is_dev: undefined,
       })
     ).toBeTruthy()
   })
