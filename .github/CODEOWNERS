@@ -24,9 +24,9 @@ src/commands/react-native     @DataDog/datadog-ci @DataDog/rum-mobile
 src/commands/sourcemaps       @DataDog/datadog-ci @DataDog/rum-browser
 
 ## Serverless (label: serverless)
-src/commands/lambda         @DataDog/datadog-ci @DataDog/serverless
-src/commands/stepfunctions  @DataDog/datadog-ci @DataDog/serverless
-src/commands/cloud-run      @DataDog/datadog-ci @DataDog/serverless
+src/commands/lambda         @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
+src/commands/stepfunctions  @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
+src/commands/cloud-run      @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
 src/commands/git-metadata  @DataDog/datadog-ci @DataDog/source-code-integration
