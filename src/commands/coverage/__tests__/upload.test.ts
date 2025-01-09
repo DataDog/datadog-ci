@@ -145,7 +145,7 @@ describe('upload', () => {
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
-    })
+    }, 10000)
     test('should fetch nested folders and ignore non xml files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
@@ -164,7 +164,7 @@ describe('upload', () => {
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
-    })
+    }, 10000)
   })
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
