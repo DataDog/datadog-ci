@@ -8,7 +8,6 @@ import glob from 'glob'
 import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
@@ -16,7 +15,6 @@ import {retryRequest} from '../../helpers/retry'
 import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
 
 import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
@@ -24,29 +22,26 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
 import id from './id'
-import {APIHelper, Flush, Payload} from './interfaces'
+import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
-  renderFailedFlush,
   renderFailedGitDBSync,
   renderFailedUpload,
-  renderFlushInfo,
   renderInvalidFile,
-  renderRetriedFlush,
   renderRetriedUpload,
-  renderSuccessfulUploadCommand,
-  renderSuccessfulFlush,
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
+  renderSuccessfulUploadCommand,
   renderUpload,
-  renderSuccessfulFlushCommand,
 } from './renderer'
-import { detectFormat, isFile, validateCoverageReport } from "./utils";
+import {detectFormat, isFile, validateCoverageReport} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
+
+const MAX_REPORTS_PER_REQUEST = 10
 
 export class UploadCodeCoverageReportCommand extends Command {
   public static paths = [['coverage', 'upload']]
@@ -61,6 +56,10 @@ export class UploadCodeCoverageReportCommand extends Command {
     examples: [
       ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload --path .'],
       ['Send code coverage upload completed signal', 'datadog-ci coverage upload --flush'],
+      [
+        'Upload all code coverage report files in current directory and send code coverage upload completed signal',
+        'datadog-ci coverage upload --path . --flush',
+      ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
         'datadog-ci coverage upload --path src/unit-test-coverage --path src/acceptance-test-coverage',
@@ -88,7 +87,6 @@ export class UploadCodeCoverageReportCommand extends Command {
   private flush = Option.Boolean('--flush')
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
-  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
@@ -117,83 +115,43 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
-    const api = this.getApiHelper()
-
-    const spanTags = await this.getSpanTags()
-    const customTags = this.getCustomTags()
-    const customMeasures = this.getCustomMeasures()
-
-    if (this.basePaths) {
-      // Normalizing the basePath to resolve .. and .
-      // Always using the posix version to avoid \ on Windows.
-      this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-      this.logger.info(renderCommandInfo(this.basePaths, this.maxConcurrency, this.dryRun))
-
-      const payloads = await this.getMatchingCoverageReportFiles(spanTags, customTags, customMeasures)
-      const upload = (p: Payload) => this.uploadCodeCoverageReport(api, p)
-
-      const initialTime = new Date().getTime()
-
-      await doWithMaxConcurrency(this.maxConcurrency, payloads, upload)
-
-      const totalTimeSeconds = (Date.now() - initialTime) / 1000
-      this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
-    }
-
-    if (this.flush) {
-      this.logger.info(renderFlushInfo(this.dryRun))
-      const flushSignal: Flush = {
-        hostname: os.hostname(),
-        spanTags,
-        customTags,
-        customMeasures,
-      }
-      const initialTime = new Date().getTime()
-      await this.sendFlush(api, flushSignal)
-      const totalTimeSeconds = (Date.now() - initialTime) / 1000
-      this.logger.info(renderSuccessfulFlush(this.dryRun, totalTimeSeconds))
-    }
+    await this.uploadCodeCoverageReports()
 
     if (!this.skipGitMetadataUpload) {
-      if (await isGitRepo()) {
-        const traceId = id()
-
-        const requestBuilder = getRequestBuilder({
-          baseUrl: apiUrl,
-          apiKey: this.config.apiKey!,
-          headers: new Map([
-            [TRACE_ID_HTTP_HEADER, traceId],
-            [PARENT_ID_HTTP_HEADER, traceId],
-          ]),
-        })
-        try {
-          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
-          let elapsed = 0
-          if (!this.dryRun) {
-            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
-          }
-          this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
-        } catch (err) {
-          this.logger.info(renderFailedGitDBSync(err))
-        }
-      } else {
-        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
-      }
+      await this.uploadGitMetadata()
     } else {
       this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
     }
 
     if (!this.dryRun) {
-      if (this.basePaths) {
-        this.context.stdout.write(renderSuccessfulUploadCommand())
-      } else {
-        this.context.stdout.write(renderSuccessfulFlushCommand())
-      }
+      this.context.stdout.write(renderSuccessfulUploadCommand(this.basePaths, this.flush))
     }
   }
 
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+  private async uploadCodeCoverageReports() {
+    if (this.basePaths) {
+      // Normalizing the basePath to resolve .. and .
+      // Always using the posix version to avoid \ on Windows.
+      this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    }
+
+    this.logger.info(renderCommandInfo(this.basePaths, this.flush, this.dryRun))
+
+    const api = this.getApiHelper()
+    const payloads = await this.generatePayloads()
+
+    let fileCount = 0
+    let flushed = false
+
+    const initialTime = new Date().getTime()
+    for (const payload of payloads) {
+      fileCount += payload.paths.length
+      flushed = flushed || payload.flush
+      await this.uploadCodeCoverageReport(api, payload)
+    }
+    const totalTimeSeconds = (Date.now() - initialTime) / 1000
+
+    this.logger.info(renderSuccessfulUpload(this.dryRun, fileCount, flushed, totalTimeSeconds))
   }
 
   private getApiHelper(): APIHelper {
@@ -207,50 +165,45 @@ export class UploadCodeCoverageReportCommand extends Command {
     return apiConstructor(intakeUrl, this.config.apiKey)
   }
 
-  private async getMatchingCoverageReportFiles(
-    spanTags: SpanTags,
-    customTags: Record<string, string>,
-    customMeasures: Record<string, number>
-  ): Promise<Payload[]> {
-    const codeCoverageReportFiles = (this.basePaths || [])
-      .reduce((acc: string[], basePath: string) => {
-        if (isFile(basePath)) {
-          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-        }
-        let globPattern
-        // It's either a folder or a glob pattern
-        if (glob.hasMagic(basePath)) {
-          // It's a glob pattern so we just use it as is
-          globPattern = basePath
-        } else {
-          // It's a folder
-          globPattern = buildPath(basePath, '*.xml') // TODO update the logic to not assume that every report has .xml extension
-        }
+  private async generatePayloads(): Promise<Payload[]> {
+    const spanTags = await this.getSpanTags()
+    const customTags = this.getCustomTags()
+    const customMeasures = this.getCustomMeasures()
 
-        const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
+    let reports: {format: string; paths: string[]}[] = []
+    if (this.basePaths) {
+      reports = await this.getMatchingCoverageReportFilesByFormat()
+    }
 
-        return acc.concat(filesToUpload)
-      }, [])
-      .filter(isFile)
-
-    const uniqueFiles = [...new Set(codeCoverageReportFiles)]
     const payloads: Payload[] = []
-
-    for (const codeCoverageReportPath of uniqueFiles) {
-      const format: string | undefined = (await detectFormat(codeCoverageReportPath)) || this.format
-      const validationErrorMessage = await validateCoverageReport(codeCoverageReportPath, format, this.format)
-      if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(codeCoverageReportPath, validationErrorMessage))
-      } else {
-        payloads.push({
-          hostname: os.hostname(),
-          spanTags,
-          customTags,
-          customMeasures,
-          path: codeCoverageReportPath,
-          format: format as string,
-        })
+    if (reports.length) {
+      for (let i = 0; i < reports.length; i++) {
+        const {format, paths} = reports[i]
+        for (let j = 0; j < paths.length; j += MAX_REPORTS_PER_REQUEST) {
+          const chunkedPaths = paths.slice(j, j + MAX_REPORTS_PER_REQUEST)
+          payloads.push({
+            format,
+            paths: chunkedPaths,
+            // send flush signal with the last payload, and only if the flush flag is set
+            flush: i === reports.length - 1 && j + MAX_REPORTS_PER_REQUEST >= paths.length ? !!this.flush : false,
+            spanTags,
+            customTags,
+            customMeasures,
+            hostname: os.hostname(),
+          })
+        }
       }
+    } else if (this.flush) {
+      // no reports to upload, only send the flush signal
+      payloads.push({
+        format: undefined,
+        paths: [],
+        flush: true,
+        spanTags,
+        customTags,
+        customMeasures,
+        hostname: os.hostname(),
+      })
     }
 
     return payloads
@@ -299,6 +252,49 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
   }
 
+  private async getMatchingCoverageReportFilesByFormat(): Promise<{format: string; paths: string[]}[]> {
+    const codeCoverageReportFiles = (this.basePaths || [])
+      .reduce((acc: string[], basePath: string) => {
+        if (isFile(basePath)) {
+          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
+        }
+        let globPattern
+        // It's either a folder or a glob pattern
+        if (glob.hasMagic(basePath)) {
+          // It's a glob pattern so we just use it as is
+          globPattern = basePath
+        } else {
+          // It's a folder
+          globPattern = buildPath(basePath, '*.xml') // TODO update the logic to not assume that every report has .xml extension
+        }
+
+        const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
+
+        return acc.concat(filesToUpload)
+      }, [])
+      .filter(isFile)
+
+    const uniqueFiles = [...new Set(codeCoverageReportFiles)]
+    const pathsByFormat: {format: string; paths: string[]}[] = []
+
+    for (const codeCoverageReportPath of uniqueFiles) {
+      const format: string | undefined = (await detectFormat(codeCoverageReportPath)) || this.format
+      const validationErrorMessage = await validateCoverageReport(codeCoverageReportPath, format, this.format)
+      if (validationErrorMessage) {
+        this.context.stdout.write(renderInvalidFile(codeCoverageReportPath, validationErrorMessage))
+      } else {
+        let formatEntry = pathsByFormat.find((entry) => entry.format === format)
+        if (!formatEntry) {
+          formatEntry = {format: format as string, paths: []}
+          pathsByFormat.push(formatEntry)
+        }
+        formatEntry.paths.push(codeCoverageReportPath)
+      }
+    }
+
+    return pathsByFormat
+  }
+
   private async uploadCodeCoverageReport(api: APIHelper, codeCoverageReport: Payload) {
     if (this.dryRun) {
       this.logger.info(renderDryRunUpload(codeCoverageReport))
@@ -327,28 +323,34 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
   }
 
-  private async sendFlush(api: APIHelper, flushSignal: Flush) {
-    if (this.dryRun) {
-      return
-    }
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+  }
 
-    try {
-      await retryRequest(() => api.flushCodeCoverage(flushSignal), {
-        onRetry: (e, attempt) => {
-          this.context.stderr.write(renderRetriedFlush(e.message, attempt))
-        },
-        retries: 5,
+  private async uploadGitMetadata() {
+    if (await isGitRepo()) {
+      const traceId = id()
+
+      const requestBuilder = getRequestBuilder({
+        baseUrl: apiUrl,
+        apiKey: this.config.apiKey!,
+        headers: new Map([
+          [TRACE_ID_HTTP_HEADER, traceId],
+          [PARENT_ID_HTTP_HEADER, traceId],
+        ]),
       })
-    } catch (error) {
-      this.context.stderr.write(renderFailedFlush(error))
-      if (error.response) {
-        // If it's an axios error
-        if (!errorCodesStopUpload.includes(error.response.status)) {
-          // And a status code that should not stop the whole upload, just return
-          return
+      try {
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
+        let elapsed = 0
+        if (!this.dryRun) {
+          elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
         }
+        this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+      } catch (err) {
+        this.logger.info(renderFailedGitDBSync(err))
       }
-      throw error
+    } else {
+      this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
     }
   }
 }

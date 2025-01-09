@@ -11,7 +11,7 @@ Upload your code coverage report files.
 This command will upload your code coverage reports to Datadog.
 
 ```bash
-datadog-ci coverage upload [--max-concurrency] [--dry-run] [--tags] --path <path> --path <another_path>
+datadog-ci coverage upload [--dry-run] [--tags] --path <path> --path <another_path>
 ```
 
 For example:
@@ -26,13 +26,12 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
-- `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--skip-git-metadata-upload` (default: `true`): if you want to upload git metadata, you may pass `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false`.
 - `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 
-Either `--path` or `--flush` (or both) have to be provided.
+Either `--path` or `--flush` (or both) must be provided.
 
 #### Environment variables
 

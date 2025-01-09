@@ -23,27 +23,22 @@ describe('upload', () => {
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
   })
-  describe('getMatchingCoverageReportFiles', () => {
+  describe('getMatchingCoverageReportFilesByFormat', () => {
     test('should read all xml files and reject invalid ones', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const [firstFile, secondFile] = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['./src/commands/coverage/__tests__/fixtures'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: ['./src/commands/coverage/__tests__/fixtures'],
+        config: {},
+        context,
+      })
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
 
-      expect(firstFile).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
-      })
-      expect(secondFile).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-      })
+      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
+      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
 
       const output = context.stdout.toString()
       expect(output).toContain(
@@ -62,115 +57,88 @@ describe('upload', () => {
     test('should allow single files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const files = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['./src/commands/coverage/__tests__/fixtures/jacoco-report.xml'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
-
-      expect(files.length).toEqual(1)
-
-      expect(files[0]).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: ['./src/commands/coverage/__tests__/fixtures/jacoco-report.xml'],
+        config: {},
+        context,
       })
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
+
+      expect(fileNames.length).toEqual(1)
+
+      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
     })
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const files = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['./src/commands/coverage/__tests__/fixtures/does-not-exist.xml'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: ['./src/commands/coverage/__tests__/fixtures/does-not-exist.xml'],
+        config: {},
+        context,
+      })
 
-      expect(files.length).toEqual(0)
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
+
+      expect(fileNames.length).toEqual(0)
     })
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const [firstFile, secondFile, thirdFile] = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: [
-            './src/commands/coverage/__tests__/fixtures',
-            './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
-          ],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
-      expect(firstFile).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: [
+          './src/commands/coverage/__tests__/fixtures',
+          './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
+        ],
+        config: {},
+        context,
       })
-      expect(secondFile).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-      })
-      expect(thirdFile).toMatchObject({
-        path: './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
-      })
+
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
+
+      expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
+      expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames[2]).toEqual('./src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml')
     })
     test('should not have repeated files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const files = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: [
-            './src/commands/coverage/__tests__/fixtures',
-            './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-          ],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: [
+          './src/commands/coverage/__tests__/fixtures',
+          './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        ],
+        config: {},
+        context,
+      })
 
-      expect(files.length).toEqual(2)
-    })
-    test('should set hostname', async () => {
-      const context = createMockContext()
-      const command = new UploadCodeCoverageReportCommand()
-      const [firstFile, secondFile] = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['./src/commands/coverage/__tests__/fixtures'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
 
-      expect(firstFile.hostname).toEqual(os.hostname())
-      expect(secondFile.hostname).toEqual(os.hostname())
+      expect(fileNames.length).toEqual(2)
     })
     test('should fetch nested folders', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const files = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['**/coverage/**/*.xml'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
-      const fileNames = files.map((file) => file.path)
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: ['**/coverage/**/*.xml'],
+        config: {},
+        context,
+      })
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
 
       expect(fileNames).toEqual([
         'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
@@ -181,17 +149,15 @@ describe('upload', () => {
     test('should fetch nested folders and ignore non xml files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const files = await command['getMatchingCoverageReportFiles'].call(
-        {
-          basePaths: ['**/coverage/**'],
-          config: {},
-          context,
-        },
-        {},
-        {},
-        {}
-      )
-      const fileNames = files.map((file) => file.path)
+      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+        basePaths: ['**/coverage/**'],
+        config: {},
+        context,
+      })
+      const fileNames = []
+      for (const r of result) {
+        fileNames.push(...r.paths)
+      }
 
       expect(fileNames).toEqual([
         'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
@@ -296,7 +262,6 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/__tests__/fixtures'],
-      concurrency: 20,
     })
   })
   test('multiple paths', async () => {
@@ -310,7 +275,6 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/first/', 'src/commands/coverage/second/'],
-      concurrency: 20,
     })
   })
 
@@ -320,7 +284,6 @@ describe('execute', () => {
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/coverage/__tests__/fixtures`],
-      concurrency: 20,
     })
   })
 
@@ -333,7 +296,7 @@ describe('execute', () => {
     const path = `${process.cwd()}/src/commands/coverage/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
-    expect(output[1]).toContain('Starting upload with concurrency 20.')
+    expect(output[1]).toContain('Starting upload')
     expect(output[2]).toContain(`Will upload code coverage report file ${path}`)
   })
 
@@ -346,7 +309,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(id).toHaveBeenCalled()
     expect(code).toBe(0)
-    expect(output[5]).toContain('Syncing git metadata')
+    expect(output[4]).toContain('Syncing git metadata')
   })
 
   test('without git metadata (with argument)', async () => {
@@ -359,7 +322,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
-    expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
+    expect(output[4]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
 
   test('without git metadata (with argument set to 1)', async () => {
@@ -372,7 +335,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
-    expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
+    expect(output[4]).toContain('Not syncing git metadata (skip git upload flag detected)')
   })
 
   test('with git metadata (with argument set to 0)', async () => {
@@ -383,7 +346,7 @@ describe('execute', () => {
     ])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
-    expect(output[5]).toContain('Syncing git metadata')
+    expect(output[4]).toContain('Syncing git metadata')
   })
 
   test('id headers are added when git metadata is uploaded', async () => {
@@ -394,23 +357,15 @@ describe('execute', () => {
     ])
     expect(id).toHaveBeenCalled()
   }, 10000000)
-
-  test('flush', async () => {
-    const {context, code} = await runCLI(['--flush'])
-    const output = context.stdout.toString().split(os.EOL)
-    expect(code).toBe(0)
-    expect(output[1]).toContain('Sending code coverage flush signal')
-  }, 10000000)
 })
 
 interface ExpectedOutput {
   basePaths: string[]
-  concurrency: number
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
-  expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
+  expect(output[1]).toContain(`Starting upload`)
   expect(output[2]).toContain(`Will look for code coverage report files in ${expected.basePaths.join(', ')}`)
 }
 
