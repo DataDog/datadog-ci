@@ -13,10 +13,7 @@ export const isFile = (filePath: string) => {
   }
 }
 
-export const validateCoverageReport = (
-  filePath: string,
-  format: string
-) => {
+export const validateCoverageReport = (filePath: string, format: string) => {
   if (format === 'jacoco') {
     const xmlFileContentString = String(fs.readFileSync(filePath))
     const validationOutput = XMLValidator.validate(xmlFileContentString)
