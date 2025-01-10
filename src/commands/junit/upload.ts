@@ -11,6 +11,7 @@ import * as t from 'typanion'
 import {getCISpanTags} from '../../helpers/ci'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import id from '../../helpers/id'
 import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
@@ -24,7 +25,6 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
-import id from './id'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,

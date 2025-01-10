@@ -3,6 +3,8 @@ import path from 'path'
 
 import {XMLValidator} from 'fast-xml-parser'
 
+import {renderFileReadError} from './renderer'
+
 export const isFile = (filePath: string) => {
   try {
     return lstatSync(filePath).isFile()
@@ -11,7 +13,7 @@ export const isFile = (filePath: string) => {
   }
 }
 
-export const validateCoverageReport = async (
+export const validateCoverageReport = (
   filePath: string,
   format: string | undefined,
   userProvidedFormat: string | undefined
@@ -20,11 +22,11 @@ export const validateCoverageReport = async (
     if (userProvidedFormat) {
       format = userProvidedFormat
     } else {
-      return 'Could not detect format of ' + filePath + ', please specify the format manually using the --format option'
+      return `Could not detect format of ${filePath}, please specify the format manually using the --format option`
     }
   } else {
     if (userProvidedFormat && format !== userProvidedFormat) {
-      return 'Detected format ' + format + ' for ' + filePath + ', but user-provided format is ' + userProvidedFormat
+      return `Detected format ${format} for ${filePath}, but user-provided format is ${userProvidedFormat}`
     }
   }
 
@@ -41,30 +43,31 @@ export const validateCoverageReport = async (
   return undefined
 }
 
-export const detectFormat = (filePath: string): Promise<'jacoco' | undefined> => {
+export const detectFormat = (filePath: string): 'jacoco' | undefined => {
   if (!fs.existsSync(filePath)) {
-    return Promise.resolve(undefined)
+    return undefined
   }
   if (path.extname(filePath).toLowerCase() !== '.xml') {
-    return Promise.resolve(undefined)
+    return undefined
   }
 
-  const stream = fs.createReadStream(filePath, {encoding: 'utf8', start: 0, end: 1024})
-  let data = ''
+  let fd: number | undefined
+  try {
+    fd = fs.openSync(filePath, 'r')
+    const buffer = Buffer.alloc(1024)
+    fs.readSync(fd, buffer, 0, 1024, 0)
+    const data = buffer.toString('utf8')
 
-  return new Promise<'jacoco' | undefined>((resolve) => {
-    stream.on('data', (chunk) => {
-      data += chunk
-      if (data.includes('<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"')) {
-        stream.close()
-        resolve('jacoco')
-      }
-    })
-    stream.on('end', () => {
-      resolve(undefined)
-    })
-    stream.on('error', () => {
-      resolve(undefined)
-    })
-  })
+    if (data.includes('<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"')) {
+      return 'jacoco'
+    }
+  } catch (error) {
+    renderFileReadError(filePath, error)
+  } finally {
+    if (fd !== undefined) {
+      fs.closeSync(fd)
+    }
+  }
+
+  return undefined
 }

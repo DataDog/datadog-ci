@@ -8,30 +8,29 @@ Upload your code coverage report files.
 
 ##### `upload`
 
-This command will upload your code coverage reports to Datadog.
+This command uploads your code coverage reports to Datadog.
 
 ```bash
-datadog-ci coverage upload [--dry-run] [--tags] --path <path> --path <another_path>
+datadog-ci coverage upload [--dry-run] [--tags] [--flush] <path> <another_path>
 ```
 
 For example:
 
 ```bash
-datadog-ci coverage upload --tags key1:value1 --tags key2:value2 --path unit-tests/coverage-reports --path acceptance-tests/coverage-reports --path e2e-tests/coverage-report.xml
+datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/coverage-reports acceptance-tests/coverage-reports e2e-tests/coverage-report.xml
 ```
 
-- `--path` is the directory or file path in which the code coverage reports are located. If you pass a folder, the CLI will look for all `.xml` files in it. This argument can be provided multiple times with different values
-- `--flush` (default: `false`): you may pass `--flush=1` or `--flush=true` to signal that you have uploaded all the coverage reports for the current commit/PR. This will trigger the coverage reports to be processed and the results to displayed in the UI.
+- The positional arguments are the directories or file paths in which the code coverage reports are located. If you pass a folder, the CLI will look for all `.xml` files in it.
+- `--flush` (default: `false`): you may pass `--flush`, `--flush=1` or `--flush=true` to signal that you have uploaded all the coverage reports for the current commit/PR. This will trigger the coverage reports to be processed and the results to displayed in the UI.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--skip-git-metadata-upload` (default: `true`): if you want to upload git metadata, you may pass `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false`.
-- `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 
-Either `--path` or `--flush` (or both) must be provided.
+Either positional arguments or `--flush` (or both) must be provided.
 
 #### Environment variables
 
@@ -56,7 +55,7 @@ To verify this command works as expected, you can use `--dry-run`:
 ```bash
 export DD_API_KEY='<API key>'
 
-yarn launch coverage upload --dry-run --path ./src/commands/coverage/__tests__/fixtures/jacoco-report.xml 
+yarn launch coverage upload --dry-run ./src/commands/coverage/__tests__/fixtures/jacoco-report.xml 
 ```
 
 Successful output should look like this:

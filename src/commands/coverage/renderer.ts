@@ -10,6 +10,12 @@ const ICONS = {
   WARNING: '⚠️',
 }
 
+export const renderFileReadError = (filePath: string, errorMessage: string) => {
+  const reportPath = `[${chalk.bold.dim(filePath)}]`
+
+  return chalk.red(`${ICONS.FAILED} Error while reading report file ${reportPath}: ${errorMessage}\n`)
+}
+
 export const renderInvalidFile = (filePath: string, errorMessage: string) => {
   const reportPath = `[${chalk.bold.dim(filePath)}]`
 
@@ -45,12 +51,12 @@ export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
 }
 
 // TODO add some Datadog links to the output
-export const renderSuccessfulUploadCommand = (basePaths: string[] | undefined, flush: boolean | undefined) => {
+export const renderSuccessfulUploadCommand = (basePaths: string[], flush: boolean | undefined) => {
   let fullStr = ''
   fullStr += chalk.green(
     '=================================================================================================\n'
   )
-  if (basePaths) {
+  if (!!basePaths.length) {
     fullStr += chalk.green('* Code coverage report(s) upload successful\n')
   }
   if (flush) {
@@ -75,7 +81,7 @@ export const renderUpload = (payload: Payload): string => {
   }
 }
 
-export const renderCommandInfo = (basePaths: string[] | undefined, flush: boolean | undefined, dryRun: boolean) => {
+export const renderCommandInfo = (basePaths: string[], flush: boolean | undefined, dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(
@@ -83,7 +89,7 @@ export const renderCommandInfo = (basePaths: string[] | undefined, flush: boolea
     )
   }
   fullStr += chalk.green(`${new Date().toLocaleString()} - Starting upload. \n`)
-  if (basePaths) {
+  if (!!basePaths.length) {
     if (basePaths.length === 1 && !!path.extname(basePaths[0])) {
       fullStr += chalk.green(`Will upload code coverage report file ${basePaths[0]}`)
     } else {

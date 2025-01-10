@@ -3,13 +3,13 @@ import os from 'os'
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
 
-import id from '../id'
 import {renderInvalidFile} from '../renderer'
 import {UploadCodeCoverageReportCommand} from '../upload'
 
-jest.mock('../id', () => jest.fn())
+jest.mock('../../../helpers/id', () => jest.fn())
 
 describe('upload', () => {
   describe('getApiHelper', () => {
@@ -27,15 +27,12 @@ describe('upload', () => {
     test('should read all xml files and reject invalid ones', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['./src/commands/coverage/__tests__/fixtures'],
         config: {},
         context,
       })
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
       expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
@@ -57,15 +54,12 @@ describe('upload', () => {
     test('should allow single files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['./src/commands/coverage/__tests__/fixtures/jacoco-report.xml'],
         config: {},
         context,
       })
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(1)
 
@@ -74,23 +68,20 @@ describe('upload', () => {
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['./src/commands/coverage/__tests__/fixtures/does-not-exist.xml'],
         config: {},
         context,
       })
 
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(0)
     })
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: [
           './src/commands/coverage/__tests__/fixtures',
           './src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
@@ -99,10 +90,7 @@ describe('upload', () => {
         context,
       })
 
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml')
       expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
@@ -111,7 +99,7 @@ describe('upload', () => {
     test('should not have repeated files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: [
           './src/commands/coverage/__tests__/fixtures',
           './src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
@@ -120,25 +108,20 @@ describe('upload', () => {
         context,
       })
 
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(2)
     })
     test('should fetch nested folders', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['**/coverage/**/*.xml'],
         config: {},
         context,
       })
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames).toEqual([
         'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
@@ -149,15 +132,13 @@ describe('upload', () => {
     test('should fetch nested folders and ignore non xml files', async () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
-      const result = await command['getMatchingCoverageReportFilesByFormat'].call({
+      const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['**/coverage/**'],
         config: {},
         context,
       })
-      const fileNames = []
-      for (const r of result) {
-        fileNames.push(...r.paths)
-      }
+
+      const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames).toEqual([
         'src/commands/coverage/__tests__/fixtures/another-jacoco-report.xml',
@@ -257,7 +238,7 @@ describe('execute', () => {
     return {context, code}
   }
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['--path', './src/commands/coverage/__tests__/doesnotexist/../fixtures'])
+    const {context, code} = await runCLI(['./src/commands/coverage/__tests__/doesnotexist/../fixtures'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -265,12 +246,7 @@ describe('execute', () => {
     })
   })
   test('multiple paths', async () => {
-    const {context, code} = await runCLI([
-      '--path',
-      './src/commands/coverage/first/',
-      '--path',
-      './src/commands/coverage/second/',
-    ])
+    const {context, code} = await runCLI(['./src/commands/coverage/first/', './src/commands/coverage/second/'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -279,7 +255,7 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI(['--path', process.cwd() + '/src/commands/coverage/__tests__/fixtures'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/coverage/__tests__/fixtures'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -288,10 +264,7 @@ describe('execute', () => {
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([
-      '--path',
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/coverage/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
@@ -303,7 +276,6 @@ describe('execute', () => {
   test('with git metadata without argument (default value is true)', async () => {
     const {context, code} = await runCLI([
       '--verbose',
-      '--path',
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -316,7 +288,6 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
-      '--path',
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -329,7 +300,6 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
-      '--path',
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -341,7 +311,6 @@ describe('execute', () => {
   test('with git metadata (with argument set to 0)', async () => {
     const {context, code} = await runCLI([
       '--skip-git-metadata-upload=0',
-      '--path',
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split(os.EOL)
@@ -352,7 +321,6 @@ describe('execute', () => {
   test('id headers are added when git metadata is uploaded', async () => {
     await runCLI([
       '--skip-git-metadata-upload=0',
-      '--path',
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     expect(id).toHaveBeenCalled()

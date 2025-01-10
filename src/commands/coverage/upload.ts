@@ -9,6 +9,7 @@ import * as t from 'typanion'
 
 import {getCISpanTags} from '../../helpers/ci'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import id from '../../helpers/id'
 import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
@@ -21,7 +22,6 @@ import {newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
-import id from './id'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -54,19 +54,19 @@ export class UploadCodeCoverageReportCommand extends Command {
       See README for details.
     `,
     examples: [
-      ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload --path .'],
+      ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload .'],
       ['Send code coverage upload completed signal', 'datadog-ci coverage upload --flush'],
       [
         'Upload all code coverage report files in current directory and send code coverage upload completed signal',
-        'datadog-ci coverage upload --path . --flush',
+        'datadog-ci coverage upload --flush .',
       ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
-        'datadog-ci coverage upload --path src/unit-test-coverage --path src/acceptance-test-coverage',
+        'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
       ],
       [
         'Upload all code coverage report files in current directory and add extra tags globally',
-        'datadog-ci coverage upload --tags key1:value1 --tags key2:value2 --path .',
+        'datadog-ci coverage upload --tags key1:value1 --tags key2:value2 .',
       ],
       [
         'Upload all code coverage report files in current directory and add extra measures globally',
@@ -74,23 +74,22 @@ export class UploadCodeCoverageReportCommand extends Command {
       ],
       [
         'Upload all code coverage report files in current directory to the datadoghq.eu site',
-        'DD_SITE=datadoghq.eu datadog-ci coverage upload --path .',
+        'DD_SITE=datadoghq.eu datadog-ci coverage upload .',
       ],
       [
         'Upload all code coverage report files in current directory with extra verbosity',
-        'datadog-ci coverage upload --verbose --path .',
+        'datadog-ci coverage upload --verbose .',
       ],
     ],
   })
 
-  private basePaths = Option.Array('--path')
+  private basePaths = Option.Rest({required: 1})
   private flush = Option.Boolean('--flush')
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
-  private gitRepositoryURL = Option.String('--git-repository-url')
   private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'false', {
     validator: t.isBoolean(),
     tolerateBoolean: true,
@@ -109,8 +108,8 @@ export class UploadCodeCoverageReportCommand extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
-    if (this.flush === undefined && this.basePaths === undefined) {
-      this.context.stderr.write('Either --path or --flush must be provided\n')
+    if (this.flush === undefined && !this.basePaths.length) {
+      this.context.stderr.write('Either positional arguments or --flush must be provided\n')
 
       return 1
     }
@@ -129,11 +128,9 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async uploadCodeCoverageReports() {
-    if (this.basePaths) {
-      // Normalizing the basePath to resolve .. and .
-      // Always using the posix version to avoid \ on Windows.
-      this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
-    }
+    // Normalizing the basePath to resolve .. and .
+    // Always using the posix version to avoid \ on Windows.
+    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
     this.logger.info(renderCommandInfo(this.basePaths, this.flush, this.dryRun))
 
@@ -170,29 +167,26 @@ export class UploadCodeCoverageReportCommand extends Command {
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
 
-    let reports: {format: string; paths: string[]}[] = []
-    if (this.basePaths) {
-      reports = await this.getMatchingCoverageReportFilesByFormat()
-    }
+    const reports = this.getMatchingCoverageReportFilesByFormat()
 
-    const payloads: Payload[] = []
-    if (reports.length) {
-      for (let i = 0; i < reports.length; i++) {
-        const {format, paths} = reports[i]
-        for (let j = 0; j < paths.length; j += MAX_REPORTS_PER_REQUEST) {
-          const chunkedPaths = paths.slice(j, j + MAX_REPORTS_PER_REQUEST)
-          payloads.push({
-            format,
-            paths: chunkedPaths,
-            // send flush signal with the last payload, and only if the flush flag is set
-            flush: i === reports.length - 1 && j + MAX_REPORTS_PER_REQUEST >= paths.length ? !!this.flush : false,
-            spanTags,
-            customTags,
-            customMeasures,
-            hostname: os.hostname(),
-          })
-        }
-      }
+    let payloads: Payload[] = []
+    if (Object.keys(reports).length) {
+      payloads = Object.entries(reports).flatMap(([format, paths]) => {
+        const numChunks = Math.ceil(paths.length / MAX_REPORTS_PER_REQUEST)
+
+        return Array.from({length: numChunks}, (_, i) => ({
+          format,
+          paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
+          flush: false,
+          spanTags,
+          customTags,
+          customMeasures,
+          hostname: os.hostname(),
+        }))
+      })
+
+      // to set the last payload to flush
+      payloads[payloads.length - 1].flush = !!this.flush
     } else if (this.flush) {
       // no reports to upload, only send the flush signal
       payloads.push({
@@ -252,8 +246,8 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
   }
 
-  private async getMatchingCoverageReportFilesByFormat(): Promise<{format: string; paths: string[]}[]> {
-    const codeCoverageReportFiles = (this.basePaths || [])
+  private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
+    const codeCoverageReportFiles = this.basePaths
       .reduce((acc: string[], basePath: string) => {
         if (isFile(basePath)) {
           return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
@@ -265,7 +259,7 @@ export class UploadCodeCoverageReportCommand extends Command {
           globPattern = basePath
         } else {
           // It's a folder
-          globPattern = buildPath(basePath, '*.xml') // TODO update the logic to not assume that every report has .xml extension
+          globPattern = buildPath(basePath, '*.xml')
         }
 
         const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
@@ -275,20 +269,20 @@ export class UploadCodeCoverageReportCommand extends Command {
       .filter(isFile)
 
     const uniqueFiles = [...new Set(codeCoverageReportFiles)]
-    const pathsByFormat: {format: string; paths: string[]}[] = []
+    const pathsByFormat: {[key: string]: string[]} = {}
 
     for (const codeCoverageReportPath of uniqueFiles) {
-      const format: string | undefined = (await detectFormat(codeCoverageReportPath)) || this.format
-      const validationErrorMessage = await validateCoverageReport(codeCoverageReportPath, format, this.format)
+      const format = detectFormat(codeCoverageReportPath) || this.format
+      const validationErrorMessage = validateCoverageReport(codeCoverageReportPath, format, this.format)
       if (validationErrorMessage) {
         this.context.stdout.write(renderInvalidFile(codeCoverageReportPath, validationErrorMessage))
       } else {
-        let formatEntry = pathsByFormat.find((entry) => entry.format === format)
-        if (!formatEntry) {
-          formatEntry = {format: format as string, paths: []}
-          pathsByFormat.push(formatEntry)
+        const paths = pathsByFormat[format as string]
+        if (!paths) {
+          pathsByFormat[format as string] = [codeCoverageReportPath]
+        } else {
+          pathsByFormat[format as string].push(codeCoverageReportPath)
         }
-        formatEntry.paths.push(codeCoverageReportPath)
       }
     }
 
@@ -324,7 +318,7 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun, this.gitRepositoryURL)
+    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun)
   }
 
   private async uploadGitMetadata() {
