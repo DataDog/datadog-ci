@@ -17,7 +17,7 @@ datadog-ci coverage upload [--dry-run] [--tags] --path <path> --path <another_pa
 For example:
 
 ```bash
-datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/coverage-reports acceptance-tests/coverage-reports e2e-tests/coverage-report.xml
+datadog-ci coverage upload --tags key1:value1 --tags key2:value2 --path unit-tests/coverage-reports --path acceptance-tests/coverage-reports --path e2e-tests/coverage-report.xml
 ```
 
 - `--path` is the directory or file path in which the code coverage reports are located. If you pass a folder, the CLI will look for all `.xml` files in it. This argument can be provided multiple times with different values
@@ -63,7 +63,7 @@ Successful output should look like this:
 
 ```bash
 ⚠️ DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT
-Starting upload with concurrency 20.
+Starting upload.
 Will upload ode coverage report file src/commands/coverage/__tests__/fixtures/jacoco-report.xml
 [DRYRUN] Uploading code coverage report file in src/commands/coverage/__tests__/fixtures/jacoco-report.xml
 ✅ Uploaded 1 files in 0 seconds.
