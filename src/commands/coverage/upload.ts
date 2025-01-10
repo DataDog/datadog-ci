@@ -272,16 +272,26 @@ export class UploadCodeCoverageReportCommand extends Command {
     const pathsByFormat: {[key: string]: string[]} = {}
 
     for (const codeCoverageReportPath of uniqueFiles) {
-      const format = detectFormat(codeCoverageReportPath) || this.format
-      const validationErrorMessage = validateCoverageReport(codeCoverageReportPath, format, this.format)
+      const format = this.format || detectFormat(codeCoverageReportPath)
+      if (format === undefined) {
+        this.context.stdout.write(
+          renderInvalidFile(
+            codeCoverageReportPath,
+            `Could not detect format of ${codeCoverageReportPath}, please specify the format manually using the --format option`
+          )
+        )
+        continue
+      }
+
+      const validationErrorMessage = validateCoverageReport(codeCoverageReportPath, format)
       if (validationErrorMessage) {
         this.context.stdout.write(renderInvalidFile(codeCoverageReportPath, validationErrorMessage))
       } else {
-        const paths = pathsByFormat[format as string]
+        const paths = pathsByFormat[format]
         if (!paths) {
-          pathsByFormat[format as string] = [codeCoverageReportPath]
+          pathsByFormat[format] = [codeCoverageReportPath]
         } else {
-          pathsByFormat[format as string].push(codeCoverageReportPath)
+          pathsByFormat[format].push(codeCoverageReportPath)
         }
       }
     }

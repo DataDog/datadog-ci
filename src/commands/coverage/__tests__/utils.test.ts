@@ -21,44 +21,34 @@ describe('utils', () => {
   describe('validateCoverageReport', () => {
     test('Returns undefined for a valid Jacoco report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report.xml'
-      expect(await validateCoverageReport(filePath, 'jacoco', undefined)).toBeUndefined()
+      expect(validateCoverageReport(filePath, 'jacoco')).toBeUndefined()
     })
 
     test('Returns undefined for a valid Jacoco report with user-provided format', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report.xml'
-      expect(await validateCoverageReport(filePath, 'jacoco', 'jacoco')).toBeUndefined()
+      expect(validateCoverageReport(filePath, 'jacoco')).toBeUndefined()
     })
 
     test('Returns error message for an invalid Jacoco report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/invalid-jacoco-report.xml'
-      expect(await validateCoverageReport(filePath, 'jacoco', undefined)).toMatch(/.+/)
-    })
-
-    test('Returns error message for a non-XML file', async () => {
-      const filePath = './src/commands/coverage/__tests__/fixtures/non-xml-file.txt'
-      expect(await validateCoverageReport(filePath, undefined, undefined)).toMatch(/.+/)
-    })
-
-    test('Returns error message for mismatched user-provided format', async () => {
-      const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report.xml'
-      expect(await validateCoverageReport(filePath, 'jacoco', 'otherFormat')).toMatch(/.+/)
+      expect(validateCoverageReport(filePath, 'jacoco')).toMatch(/.+/)
     })
   })
 
   describe('detectFormat', () => {
     test('Detects Jacoco format for a valid Jacoco report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report.xml'
-      expect(await detectFormat(filePath)).toEqual('jacoco')
+      expect(detectFormat(filePath)).toEqual('jacoco')
     })
 
     test('Returns undefined for a non-XML file', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/non-xml-file.txt'
-      expect(await detectFormat(filePath)).toBeUndefined()
+      expect(detectFormat(filePath)).toBeUndefined()
     })
 
     test('Returns undefined for a non-Jacoco XML file', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/random-file.xml'
-      expect(await detectFormat(filePath)).toBeUndefined()
+      expect(detectFormat(filePath)).toBeUndefined()
     })
   })
 })

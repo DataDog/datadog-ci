@@ -15,21 +15,8 @@ export const isFile = (filePath: string) => {
 
 export const validateCoverageReport = (
   filePath: string,
-  format: string | undefined,
-  userProvidedFormat: string | undefined
+  format: string
 ) => {
-  if (format === undefined) {
-    if (userProvidedFormat) {
-      format = userProvidedFormat
-    } else {
-      return `Could not detect format of ${filePath}, please specify the format manually using the --format option`
-    }
-  } else {
-    if (userProvidedFormat && format !== userProvidedFormat) {
-      return `Detected format ${format} for ${filePath}, but user-provided format is ${userProvidedFormat}`
-    }
-  }
-
   if (format === 'jacoco') {
     const xmlFileContentString = String(fs.readFileSync(filePath))
     const validationOutput = XMLValidator.validate(xmlFileContentString)
