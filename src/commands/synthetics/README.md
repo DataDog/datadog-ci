@@ -431,6 +431,15 @@ The name of the custom subdomain set to access your Datadog application. If the 
 
 Pass a query to select which Synthetic tests to run.
 
+The syntax for this query is the same as the one used in the [Synthetics tests list page's search bar](https://app.datadoghq.com/synthetics/tests).
+You can craft the query in the UI, then copy and paste it in your command line inside single quotes.
+
+Example of query with a facet, a `value` tag and a `<KEY>:<VALUE>` tag:
+
+```
+datadog-ci synthetics run-tests --search 'team:unicorn tag:e2e-tests tag:"managedBy:terraform"'
+```
+
 **Configuration options**
 
 * Global Config: `"testSearchQuery": "tag:e2e-tests"`
