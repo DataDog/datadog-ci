@@ -602,3 +602,8 @@ export interface MobileApplicationVersion {
   version_name: string
   created_at?: string
 }
+
+export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  publicIds: string[]
+}
