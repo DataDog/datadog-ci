@@ -431,10 +431,10 @@ The name of the custom subdomain set to access your Datadog application. If the 
 
 Pass a query to select which Synthetic tests to run.
 
-The syntax for this query is the same as the one used in the [Synthetics tests list page's search bar](https://app.datadoghq.com/synthetics/tests).
+The syntax for this query is the same as that used in the [Synthetics tests list page's search bar][14].
 You can craft the query in the UI, then copy and paste it in your command line inside single quotes.
 
-Example of query with a facet, a `value` tag and a `<KEY>:<VALUE>` tag:
+Example query with a facet, a `value` tag, and a `<KEY>:<VALUE>` tag:
 
 ```
 datadog-ci synthetics run-tests --search 'team:unicorn tag:e2e-tests tag:"managedBy:terraform"'
@@ -1039,6 +1039,7 @@ Additional helpful documentation, links, and articles:
 [11]: https://registry.terraform.io/providers/DataDog/datadog/latest/docs/resources/synthetics_test#device_ids
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
+[14]: https://app.datadoghq.com/synthetics/tests
 
 <!--
   This page is single-sourced:
