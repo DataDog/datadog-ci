@@ -450,6 +450,10 @@ export interface Suite {
   name?: string
 }
 
+export interface TestConfig {
+  tests: TriggerConfig[]
+}
+
 export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
@@ -605,5 +609,7 @@ export interface MobileApplicationVersion {
 
 export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
+  files: string[]
   publicIds: string[]
+  testSearchQuery?: string
 }

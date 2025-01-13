@@ -8,26 +8,27 @@ import {enableFips} from '../../helpers/fips'
 import {LogLevel, Logger} from '../../helpers/logger'
 import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
-// import {EndpointError} from './api'
-// import {CiError, CriticalError} from './errors'
 import {importTests} from './import-tests-lib'
-import {ImportTestsCommandConfig} from './interfaces'
-// import {uploadMobileApplicationVersion} from './mobile'
-// import {AppUploadReporter} from './reporters/mobile/app-upload'
+import {ImportTestsCommandConfig, MainReporter, Reporter} from './interfaces'
+import {DefaultReporter} from './reporters/default'
+import {getReporter} from './utils/public'
 
 export const DEFAULT_IMPORT_TESTS_COMMAND_CONFIG: ImportTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
+  files: [],
   proxy: {protocol: 'http'},
   publicIds: [],
   // subdomain: '',
+  testSearchQuery: '',
 }
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
 const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
+const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
 
 export class ImportTestsCommand extends Command {
   public static paths = [['synthetics', 'import-tests']]
@@ -51,8 +52,15 @@ export class ImportTestsCommand extends Command {
   private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
   private configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  private files = Option.Array('-f,--files', {
+    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+  })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
+  private testSearchQuery = Option.String('-s,--search', {
+    description: 'Pass a query to select which Synthetic tests to run.',
+  })
 
+  private reporter!: MainReporter
   private config: ImportTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_IMPORT_TESTS_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   private logger: Logger = new Logger((s: string) => {
@@ -67,6 +75,8 @@ export class ImportTestsCommand extends Command {
   }
 
   public async execute() {
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     try {
@@ -77,9 +87,8 @@ export class ImportTestsCommand extends Command {
       return 1
     }
 
-    // const appUploadReporter = new AppUploadReporter(this.context)
     try {
-      await importTests(this.config)
+      await importTests(this.reporter, this.config)
     } catch (error) {
       // if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
       //   this.logger.error(`Error: ${error.message}`)
@@ -111,7 +120,9 @@ export class ImportTestsCommand extends Command {
         appKey: process.env.DATADOG_APP_KEY,
         configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: process.env.DATADOG_SITE,
+        files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
         publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
+        testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
       })
     )
 
@@ -123,7 +134,9 @@ export class ImportTestsCommand extends Command {
         appKey: this.appKey,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
+        files: this.files,
         publicIds: this.publicIds,
+        testSearchQuery: this.testSearchQuery,
       })
     )
   }
