@@ -11,11 +11,21 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     tests: [],
   }
 
-  // TODO fetch public ids from search query of it exists
+  // TODO (later) fetch public ids from search query if it exists
   for (const publicId of config.publicIds) {
-    const test: LocalTriggerConfig = {local_test_definition: await api.getTest(publicId)}
-    testConfigFromBackend.tests.push(test)
-    // console.log(test)
+    let localTriggerConfig: LocalTriggerConfig
+    const test = await api.getTest(publicId)
+    // TODO (answer later) we need the 2nd call because we learn the type from the first one but maybe we can improve in the future
+    if (test.type === 'browser' || test.type === 'mobile') {
+      console.log('test.type ', test.type)
+      const testWithSteps = await api.getTestWithType(publicId, test.type)
+      console.log(testWithSteps)
+      localTriggerConfig = {local_test_definition: testWithSteps}
+    } else {
+      console.log(test)
+      localTriggerConfig = {local_test_definition: test}
+    }
+    testConfigFromBackend.tests.push(localTriggerConfig)
   }
   // console.log('testConfigFromBackend ', testConfigFromBackend)
 
