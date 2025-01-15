@@ -2,7 +2,7 @@ import chalk from 'chalk'
 
 import {getBaseUrl} from '../junit/utils'
 
-import {Dependency} from './types'
+import {Dependency, ScaRequest} from './types'
 import {validateDependencyName} from './validation'
 
 const ICONS = {
@@ -65,7 +65,18 @@ export const renderFailedUpload = (sbomReport: string, error: any) => {
   return fullStr
 }
 
-export const renderUploading = (sbomReport: string): string => `Uploading SBOM report in ${sbomReport}\n`
+export const renderUploading = (sbomReport: string, scaRequest: ScaRequest): string => {
+  const languages = new Set<string>()
+  for (const dep of scaRequest.dependencies) {
+    languages.add(dep.language.toString())
+  }
+
+  return `Uploading SBOM report in ${sbomReport} (${
+    scaRequest.dependencies.length
+  } dependencies detected for languages ${Array.from(languages).join(',')})\nUpload for repository ${
+    scaRequest.repository.url
+  }, branch ${scaRequest.commit.branch}\n`
+}
 
 export const renderSuccessfulCommand = (duration: number) => {
   let fullStr = ''

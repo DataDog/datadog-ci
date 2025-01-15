@@ -25,7 +25,12 @@ import {
   renderUploading,
 } from './renderer'
 import {ScaRequest} from './types'
-import {getValidator, validateFileAgainstToolRequirements, validateSbomFileAgainstSchema} from './validation'
+import {
+  filterInvalidDependencies,
+  getValidator,
+  validateFileAgainstToolRequirements,
+  validateSbomFileAgainstSchema,
+} from './validation'
 
 export class UploadSbomCommand extends Command {
   public static paths = [['sbom', 'upload']]
@@ -137,9 +142,12 @@ export class UploadSbomCommand extends Command {
 
         return 1
       }
+
       this.context.stdout.write(renderPayloadWarning(scaPayload.dependencies))
 
-      this.context.stdout.write(renderUploading(basePath))
+      scaPayload.dependencies = filterInvalidDependencies(scaPayload.dependencies)
+
+      this.context.stdout.write(renderUploading(basePath, scaPayload))
 
       await api(scaPayload)
       if (this.debug) {

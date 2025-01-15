@@ -5,7 +5,13 @@ import {DependencyLanguage} from './types'
 export const getLanguageFromComponent = (component: any): DependencyLanguage | undefined => {
   const componentName = component['name']
 
+  var purlDisplay = 'N/A'
+
   if (component['bom-ref']) {
+    if (component['purl']) {
+      purlDisplay = component['purl']
+    }
+
     if (component['bom-ref'].includes('pkg:npm') || component['purl'].includes('pkg:npm')) {
       return DependencyLanguage.NPM
     }
@@ -32,7 +38,7 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     }
   }
 
-  console.debug(`language for component ${componentName} not found`)
+  console.debug(`language for component ${componentName} (purl: ${purlDisplay}) not found or supported`)
 
   return undefined
 }

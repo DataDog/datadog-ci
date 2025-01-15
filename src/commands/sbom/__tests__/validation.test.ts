@@ -1,10 +1,15 @@
 import {DependencyLanguage} from '../types'
 import {
+  filterInvalidDependencies,
   getValidator,
   validateDependencyName,
   validateFileAgainstToolRequirements,
   validateSbomFileAgainstSchema,
 } from '../validation'
+import fs from 'fs'
+import {DatadogCiConfig} from '../../../helpers/config'
+import {getSpanTags} from '../../../helpers/tags'
+import {generatePayload} from '../payload'
 
 const validator = getValidator()
 
@@ -55,11 +60,6 @@ describe('validation of sbom file', () => {
     expect(
       validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', true)
     ).toBeTruthy()
-  })
-  test('SBOM with invalid purl are being rejected', () => {
-    expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-invalid-purl.json', true)
-    ).toBeFalsy()
   })
   test('should validate SBOM file osv scanner - version 1.5', () => {
     // type and name of the "component" have been removed from the valid file.
@@ -138,5 +138,39 @@ describe('validation of sbom file', () => {
         is_dev: undefined,
       })
     ).toBeTruthy()
+  })
+  test('should not filter purl if all are correct', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+
+    const filteredDependencies = filterInvalidDependencies(payload!.dependencies)
+    expect(filteredDependencies).toHaveLength(payload!.dependencies.length)
+  })
+  test('should filter invalid purl', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-invalid-purl.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+
+    const filteredDependencies = filterInvalidDependencies(payload!.dependencies)
+    expect(filteredDependencies).toHaveLength(1)
   })
 })
