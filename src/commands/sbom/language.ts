@@ -38,7 +38,7 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     }
   }
 
-  console.debug(`language for component ${componentName} (purl: ${purlDisplay}) not found or supported`)
+  console.debug(`language not detected for ${componentName} with due to purl (${purlDisplay})`)
 
   return undefined
 }
