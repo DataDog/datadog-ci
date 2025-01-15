@@ -172,5 +172,6 @@ describe('validation of sbom file', () => {
 
     const filteredDependencies = filterInvalidDependencies(payload!.dependencies)
     expect(filteredDependencies).toHaveLength(1)
+    expect(filteredDependencies[0].purl).toEqual('pkg:pypi/jinja2@3.1.5')
   })
 })

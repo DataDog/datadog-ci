@@ -155,12 +155,16 @@ export const filterInvalidDependencies = (dependencies: Dependency[]): Dependenc
   const filteredDependencies: Dependency[] = []
 
   for (const dep of dependencies) {
+    let isValid = true
     try {
       PackageURL.fromString(dep.purl)
     } catch (purlError) {
-      process.stderr.write(`invalid purl ${dep.purl} for component ${dep.name}: ${purlError.message}\n`)
+      isValid = false
+      process.stderr.write(`invalid purl ${dep.purl} for component ${dep.name}\n`)
     }
-    filteredDependencies.push(dep)
+    if (isValid) {
+      filteredDependencies.push(dep)
+    }
   }
 
   return filteredDependencies
