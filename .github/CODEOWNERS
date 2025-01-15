@@ -13,8 +13,8 @@ src/commands/dora          @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/deployment    @DataDog/datadog-ci @DataDog/ci-app-libraries
 
 ## Static Analysis (label: static-analysis)
-src/commands/sarif   @DataDog/datadog-ci @DataDog/static-analysis-core
-src/commands/sbom    @DataDog/datadog-ci @DataDog/static-analysis-core
+src/commands/sarif   @DataDog/datadog-ci @DataDog/k9-vm-ast
+src/commands/sbom    @DataDog/datadog-ci @DataDog/k9-vm-sca
 
 ## RUM (label: rum)
 src/commands/dsyms            @DataDog/datadog-ci @DataDog/rum-mobile
