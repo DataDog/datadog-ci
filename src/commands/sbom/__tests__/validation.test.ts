@@ -1,3 +1,9 @@
+import fs from 'fs'
+
+import {DatadogCiConfig} from '../../../helpers/config'
+import {getSpanTags} from '../../../helpers/tags'
+
+import {generatePayload} from '../payload'
 import {DependencyLanguage} from '../types'
 import {
   filterInvalidDependencies,
@@ -6,10 +12,6 @@ import {
   validateFileAgainstToolRequirements,
   validateSbomFileAgainstSchema,
 } from '../validation'
-import fs from 'fs'
-import {DatadogCiConfig} from '../../../helpers/config'
-import {getSpanTags} from '../../../helpers/tags'
-import {generatePayload} from '../payload'
 
 const validator = getValidator()
 

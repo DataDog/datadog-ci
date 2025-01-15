@@ -5,7 +5,7 @@ import {DependencyLanguage} from './types'
 export const getLanguageFromComponent = (component: any): DependencyLanguage | undefined => {
   const componentName = component['name']
 
-  var purlDisplay = 'N/A'
+  let purlDisplay = 'N/A'
 
   if (component['bom-ref']) {
     if (component['purl']) {
