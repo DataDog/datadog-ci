@@ -14,13 +14,14 @@ import {
   Test,
   TriggerConfig,
   LocalTestDefinition,
+  ImportTestsCommandConfig,
 } from './interfaces'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
 import {isLocalTriggerConfig} from './utils/internal'
 import {getSuites, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
-  config: RunTestsCommandConfig,
+  config: RunTestsCommandConfig | ImportTestsCommandConfig,
   reporter: MainReporter,
   suites: Suite[] = []
 ): Promise<TriggerConfig[]> => {
