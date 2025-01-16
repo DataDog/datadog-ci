@@ -133,16 +133,6 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
           }
 
           return false
-        } else {
-          try {
-            PackageURL.fromString(component['purl'])
-          } catch (purlError) {
-            process.stderr.write(
-              `invalid purl ${component['purl']} for component ${component['name']}: ${purlError.message}\n`
-            )
-
-            return false
-          }
         }
       }
     }
@@ -155,6 +145,29 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
   }
 
   return true
+}
+
+/**
+ * Filter invalid dependencies if some data is not compliant to what we expect.
+ * @param dependencies
+ */
+export const filterInvalidDependencies = (dependencies: Dependency[]): Dependency[] => {
+  const filteredDependencies: Dependency[] = []
+
+  for (const dep of dependencies) {
+    let isValid = true
+    try {
+      PackageURL.fromString(dep.purl)
+    } catch (purlError) {
+      isValid = false
+      process.stderr.write(`invalid purl ${dep.purl} for component ${dep.name}\n`)
+    }
+    if (isValid) {
+      filteredDependencies.push(dep)
+    }
+  }
+
+  return filteredDependencies
 }
 
 const pythonPackaNameRegex = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\\-_.]*[a-zA-Z0-9]$')
