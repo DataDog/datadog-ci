@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report>
+    <product id="1">
+        <name>Notebook</name>
+        <price>12.99</price>
+        <stock>45</stock>
+    </product>
+    <product id="2">
+        <name>Pen</name>
+        <price>1.25</price>
+        <stock>300</stock>
+    </product>
+    <product id="3">
+        <name>Backpack</name>
+        <price>35.50</price>
+        <stock>10</stock>
+    </product>
+</report>
