@@ -23,6 +23,7 @@ import {
   Trigger,
   MobileAppUploadResult,
   MobileApplicationNewVersionParams,
+  LocalTestDefinition,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -75,6 +76,23 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
       headers: {'X-Trigger-App': ciTriggerApp},
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
+    },
+    request,
+    {retryOn429: true}
+  )
+
+  return resp.data
+}
+
+const editTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (
+  testId: string,
+  data: LocalTestDefinition
+) => {
+  const resp = await retryRequest(
+    {
+      data,
+      method: 'PUT',
+      url: `/synthetics/tests/${testId}`,
     },
     request,
     {retryOn429: true}
@@ -353,6 +371,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getBatch: getBatch(request),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(request),
+    editTest: editTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
     pollResults: pollResults(request),
