@@ -232,7 +232,7 @@ export interface Step {
   }[]
 }
 
-interface TestStep {
+export interface TestStep {
   allowFailure?: boolean
   alwaysExecute?: boolean
   exitIfSucceed?: boolean

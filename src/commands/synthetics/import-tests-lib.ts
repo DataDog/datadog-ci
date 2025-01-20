@@ -1,8 +1,16 @@
 import {writeFile} from 'fs/promises'
 
 import {getApiHelper} from './api'
-import {ImportTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest, TestConfig} from './interfaces'
+import {
+  ImportTestsCommandConfig,
+  LocalTriggerConfig,
+  MainReporter,
+  ServerTest,
+  TestConfig,
+  TestStep,
+} from './interfaces'
 import {getTestConfigs} from './test'
+import {isLocalTriggerConfig} from './utils/internal'
 
 const BASE_FIELDS_TRIM = [
   'created_at',
@@ -60,16 +68,13 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     // TODO remove unsupported fields
     testConfigFromBackend.tests.push(localTriggerConfig)
   }
-  // console.log('testConfigFromBackend ', testConfigFromBackend)
 
   // TODO (answer later) what if there's more than one test file in which the public_ids exist?
   const testConfigFromFile: TestConfig = {
     tests: await getTestConfigs(config, reporter),
   }
-  // console.log('testConfigFromFile ', testConfigFromFile)
 
   const testConfig = overwriteTestConfig(testConfigFromBackend, testConfigFromFile)
-  // console.log('testConfig ', testConfig)
 
   // eslint-disable-next-line no-null/no-null
   const jsonString = JSON.stringify(testConfig, null, 2)
@@ -84,7 +89,10 @@ const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestCon
   for (const test of testConfig.tests) {
     // TODO (answer later) what if there's more than 1 test with this public_id?
     const index = testConfigFromFile.tests.findIndex(
-      (t) => t.local_test_definition.public_id === test.local_test_definition.public_id
+      (t) =>
+        isLocalTriggerConfig(t) &&
+        isLocalTriggerConfig(test) &&
+        t.local_test_definition.public_id === test.local_test_definition.public_id
     )
 
     if (index !== -1) {
@@ -135,7 +143,7 @@ const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
     }
     for (const field of STEP_FIELDS_TRIM) {
       if (field in step) {
-        delete step[field as keyof ServerTest['steps'][0]]
+        delete step[field as keyof TestStep]
       }
     }
   }
