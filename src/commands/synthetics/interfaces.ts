@@ -232,6 +232,71 @@ export interface Step {
   }[]
 }
 
+interface TestStep {
+  allowFailure?: boolean
+  alwaysExecute?: boolean
+  exitIfSucceed?: boolean
+  isCritical?: boolean
+  name: string
+  noScreenshot?: boolean
+  params: StepParams
+  public_id?: string
+  timeout?: number
+  type: string
+}
+
+interface StepParams {
+  attribute?: string
+  check?: string
+  click_type?: string
+  code?: string
+  delay?: number
+  element?: ParamsElement
+  element_user_locator?: UserLocator
+  email?: string
+  file?: string
+  files?: string
+  modifiers?: number
+  playing_tab_id?: string
+  request?: string
+  subtest_public_id?: string
+  value?: string
+  variable?: ParamVariable[]
+  with_click?: boolean
+  x?: number
+  y?: number
+}
+
+interface ParamsElement {
+  bucketKe?: string
+  html?: string
+  multiLocator?: MultiLocator
+  targetOuterHTML?: string
+  url?: string
+  userLocator?: UserLocator
+  shadowHtmls?: string[]
+}
+
+interface MultiLocator {
+  ab?: string
+  at?: string
+  cl?: string
+  clt?: string
+  co?: string
+  ro?: string
+}
+
+interface UserLocator {
+  failTestOnCannotLocate: boolean
+  values: {type: string; value: string}[]
+}
+
+interface ParamVariable {
+  name: string
+  example: string
+  secure?: boolean
+}
+
 export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
@@ -247,6 +312,7 @@ export interface LocalTestDefinition {
     steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
+  creation_source?: string
   locations: string[]
   message: string
   name: string
@@ -262,8 +328,10 @@ export interface LocalTestDefinition {
   }
   /** Can be used to link to an existing remote test. */
   public_id?: string
-  subtype: string
-  tags: string[]
+  subtype?: string
+  steps?: TestStep[] // From browser schema
+  status?: string
+  tags?: string[]
   type: string
 }
 
