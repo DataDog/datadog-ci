@@ -1,19 +1,123 @@
 {
   "tests": [
     {
-      "id": "https://app.datadoghq.com/synthetics/details/pwd-mwg-3p5",
-      "config": {
-        "headers": {
-          "X-Fake-Header": "fake value"
-        }
+      "local_test_definition": {
+        "public_id": "77k-qct-9he",
+        "name": "[cg] Test on shopist",
+        "type": "browser",
+        "config": {
+          "assertions": [],
+          "configVariables": [],
+          "request": {
+            "method": "GET",
+            "headers": {},
+            "url": "https://shopist.io"
+          },
+          "setCookie": "",
+          "variables": []
+        },
+        "options": {
+          "device_ids": ["chrome.laptop_large"],
+          "ignoreServerCertificateError": false,
+          "disableCors": false,
+          "disableCsp": false,
+          "noScreenshot": false,
+          "retry": {
+            "count": 3,
+            "interval": 230
+          },
+          "rumSettings": {
+            "isEnabled": false
+          }
+        },
+        "locations": ["aws:eu-central-1"],
+        "steps": [
+          {
+            "name": "Click on div \"Shop now\"",
+            "params": {
+              "element": {
+                "url": "https://shopist.io/",
+                "bucketKey": "e2e-tests/1737979/step-elements/2025-01-09T09:53:47.833774_steps.json",
+                "targetOuterHTML": "<div data-v-fc3720cd=\"\">Shop now</div>",
+                "userLocator": {
+                  "values": [
+                    {
+                      "type": "xpath",
+                      "value": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"section\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"section\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"a\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]"
+                    }
+                  ],
+                  "failTestOnCannotLocate": true
+                }
+              }
+            },
+            "type": "click",
+            "allowFailure": false,
+            "isCritical": true,
+            "noScreenshot": false,
+            "exitIfSucceed": false,
+            "alwaysExecute": false
+          }
+        ]
       }
     },
     {
-      "id": "https://app.datadoghq.com/synthetics/details/2r9-q7u-4nn",
-      "config": {
-        "headers": {
-          "X-Fake-Header": "fake value"
-        }
+      "local_test_definition": {
+        "public_id": "eb9-5g9-k5u",
+        "name": "[cg] Test on shopist",
+        "type": "browser",
+        "config": {
+          "assertions": [],
+          "configVariables": [],
+          "request": {
+            "method": "GET",
+            "headers": {},
+            "url": "https://shopist.io"
+          },
+          "setCookie": "",
+          "variables": []
+        },
+        "options": {
+          "device_ids": ["chrome.laptop_large"],
+          "ignoreServerCertificateError": false,
+          "disableCors": false,
+          "disableCsp": false,
+          "noScreenshot": false,
+          "retry": {
+            "count": 3,
+            "interval": 230
+          },
+          "rumSettings": {
+            "isEnabled": false
+          }
+        },
+        "locations": ["aws:eu-central-1"],
+        "steps": [
+          {
+            "name": "Click on div \"Shop now\"",
+            "params": {
+              "element": {
+                "url": "https://shopist.io/",
+                "bucketKey": "e2e-tests/1737979/step-elements/2025-01-09T09:53:47.833774_steps.json",
+                "targetOuterHTML": "<div data-v-fc3720cd=\"\">Shop now</div>",
+                "userLocator": {
+                  "values": [
+                    {
+                      "type": "xpath",
+                      "value": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"section\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"section\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"a\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]"
+                    }
+                  ],
+                  "failTestOnCannotLocate": true
+                }
+              }
+            },
+            "type": "click",
+            "allowFailure": false,
+            "isCritical": true,
+            "noScreenshot": false,
+            "exitIfSucceed": false,
+            "alwaysExecute": false
+          }
+        ]
       }
     }
   ]
