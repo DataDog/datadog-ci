@@ -1,8 +1,38 @@
 import {writeFile} from 'fs/promises'
 
 import {getApiHelper} from './api'
-import {ImportTestsCommandConfig, LocalTriggerConfig, MainReporter, TestConfig} from './interfaces'
+import {ImportTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest, TestConfig} from './interfaces'
 import {getTestConfigs} from './test'
+
+const BASE_FIELDS_TRIM = [
+  'created_at',
+  'created_by',
+  'creator',
+  'message',
+  'modified_at',
+  'modified_by',
+  'monitor_id',
+  'overall_state',
+  'overall_state_modified',
+  'status',
+  'stepCount',
+  'tags',
+  'version',
+  'version_uuid',
+]
+
+const OPTIONS_FIELDS_TRIM = [
+  'min_failure_duration',
+  'min_location_failed',
+  'monitor_name',
+  'monitor_options',
+  'monitor_priority',
+  'tick_every',
+]
+
+const CONFIG_FIELDS_TRIM = ['oneClickCreationClassification']
+
+const STEP_FIELDS_TRIM = ['position', 'public_id']
 
 export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig) => {
   const api = getApiHelper(config)
@@ -20,23 +50,23 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
       console.log('test.type ', test.type)
       const testWithSteps = await api.getTestWithType(publicId, test.type)
       console.log(testWithSteps)
-      localTriggerConfig = {local_test_definition: testWithSteps}
+      // localTriggerConfig = {local_test_definition: testWithSteps}
+      localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
     } else {
       console.log(test)
-      localTriggerConfig = {local_test_definition: test}
+      // localTriggerConfig = {local_test_definition: test}
+      localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(test)}
     }
+    // TODO remove unsupported fields
     testConfigFromBackend.tests.push(localTriggerConfig)
   }
   // console.log('testConfigFromBackend ', testConfigFromBackend)
-
-  // TODO get steps
 
   // TODO (answer later) what if there's more than one test file in which the public_ids exist?
   const testConfigFromFile: TestConfig = {
     tests: await getTestConfigs(config, reporter),
   }
   // console.log('testConfigFromFile ', testConfigFromFile)
-  // TODO remove unsupported fields
 
   const testConfig = overwriteTestConfig(testConfigFromBackend, testConfigFromFile)
   // console.log('testConfig ', testConfig)
@@ -66,4 +96,49 @@ const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestCon
   }
 
   return testConfigFromFile
+}
+
+const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
+  for (const field of BASE_FIELDS_TRIM) {
+    delete testConfig[field as keyof ServerTest]
+  }
+  for (const field of OPTIONS_FIELDS_TRIM) {
+    delete testConfig.options[field as keyof ServerTest['options']]
+  }
+  for (const field of CONFIG_FIELDS_TRIM) {
+    if (field in testConfig.config) {
+      delete testConfig.config[field as keyof ServerTest['config']]
+    }
+  }
+
+  for (const step of testConfig.steps || []) {
+    if ('element' in step.params && !!step.params.element) {
+      if ('multiLocator' in step.params.element && !!step.params.element.multiLocator) {
+        if ('ab' in step.params.element.multiLocator && !!step.params.element.multiLocator.ab) {
+          if (!step.params.element.userLocator) {
+            step.params.element.userLocator = {
+              values: [
+                {
+                  type: 'xpath',
+                  value: step.params.element.multiLocator.ab,
+                },
+              ],
+              failTestOnCannotLocate: true,
+            }
+          }
+          delete step.params.element.multiLocator
+        }
+        if ('bucketKey' in step.params.element) {
+          delete step.params.element['bucketKey']
+        }
+      }
+    }
+    for (const field of STEP_FIELDS_TRIM) {
+      if (field in step) {
+        delete step[field as keyof ServerTest['steps'][0]]
+      }
+    }
+  }
+
+  return testConfig
 }
