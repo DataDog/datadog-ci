@@ -49,24 +49,20 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     tests: [],
   }
 
-  // TODO (later) fetch public ids from search query if it exists
   for (const publicId of config.publicIds) {
     console.log(`Fetching test with public_id: ${publicId}`)
     let localTriggerConfig: LocalTriggerConfig
     const test = await api.getTest(publicId)
 
-    // TODO (answer later) we need the 2nd call because we learn the type from the first one but maybe we can improve in the future
     if (test.type === 'browser' || test.type === 'mobile') {
       const testWithSteps = await api.getTestWithType(publicId, test.type)
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
     } else {
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(test)}
     }
-    // TODO remove unsupported fields
     testConfigFromBackend.tests.push(localTriggerConfig)
   }
 
-  // TODO (answer later) what if there's more than one test file in which the public_ids exist?
   const testConfigFromFile: TestConfig = {
     tests: await getTestConfigs(config, reporter),
   }
@@ -84,7 +80,6 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
 }
 const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestConfig): TestConfig => {
   for (const test of testConfig.tests) {
-    // TODO (answer later) what if there's more than 1 test with this public_id?
     const index = testConfigFromFile.tests.findIndex(
       (t) =>
         isLocalTriggerConfig(t) &&
@@ -93,7 +88,6 @@ const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestCon
     )
 
     if (index !== -1) {
-      // TODO (answer later) we can maybe ask the user here if they are sure they want to override the test or extend it
       testConfigFromFile.tests[index] = test
     } else {
       testConfigFromFile.tests.push(test)
