@@ -15,17 +15,10 @@ describe('import-tests', () => {
     jest.mock('fs/promises', () => ({
       writeFile: jest.fn().mockResolvedValue(undefined),
     }))
-    // jest.spyOn(ciUtils, 'getConfig').mockImplementation(async () => ({}))
     process.env = {}
   })
 
   describe('importTests', () => {
-    // test is written to new file
-    // test multiple public_ids
-    // test browser test has steps
-    // test already existing file is edited
-    // test unsupported fields are not present
-
     test('we write imported test to file', async () => {
       const filePath = 'test.synthetics.json'
       const config = DEFAULT_IMPORT_TESTS_COMMAND_CONFIG
