@@ -23,8 +23,9 @@ describe('upload', () => {
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
   })
+
   describe('getMatchingCoverageReportFilesByFormat', () => {
-    test('should read all xml files and reject invalid ones', async () => {
+    test('should read all xml files and reject invalid ones', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -51,7 +52,8 @@ describe('upload', () => {
         )
       )
     })
-    test('should allow single files', async () => {
+
+    test('should allow single files', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -65,7 +67,8 @@ describe('upload', () => {
 
       expect(fileNames[0]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
     })
-    test('should not fail for invalid single files', async () => {
+
+    test('should not fail for invalid single files', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -78,7 +81,8 @@ describe('upload', () => {
 
       expect(fileNames.length).toEqual(0)
     })
-    test('should allow folder and single unit paths', async () => {
+
+    test('should allow folder and single unit paths', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -96,7 +100,8 @@ describe('upload', () => {
       expect(fileNames[1]).toEqual('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames[2]).toEqual('./src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml')
     })
-    test('should not have repeated files', async () => {
+
+    test('should not have repeated files', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -112,7 +117,8 @@ describe('upload', () => {
 
       expect(fileNames.length).toEqual(2)
     })
-    test('should fetch nested folders', async () => {
+
+    test('should fetch nested folders', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -128,8 +134,9 @@ describe('upload', () => {
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
-    }, 10000)
-    test('should fetch nested folders and ignore non xml files', async () => {
+    })
+
+    test('should fetch nested folders and ignore non xml files', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -145,8 +152,9 @@ describe('upload', () => {
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/subfolder/nested-jacoco-report.xml',
       ])
-    }, 10000)
+    })
   })
+
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
@@ -163,8 +171,9 @@ describe('upload', () => {
       })
     })
   })
+
   describe('parseCustomTags', () => {
-    test('should parse tags argument', async () => {
+    test('should parse tags argument', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const spanTags: SpanTags = command['getCustomTags'].call({
@@ -178,8 +187,9 @@ describe('upload', () => {
         key2: 'value2',
       })
     })
-    test('should parse DD_TAGS environment variable', async () => {
-      process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
+
+    test('should parse DD_TAGS environment variable', () => {
+      process.env.DD_TAGS = 'key1:https://google.com,key2:value2,key3:1234321'
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const spanTags: SpanTags = command['getCustomTags'].call({
@@ -191,9 +201,11 @@ describe('upload', () => {
       expect(spanTags).toMatchObject({
         key1: 'https://google.com',
         key2: 'value2',
+        key3: '1234321',
       })
     })
-    test('should parse measures argument', async () => {
+
+    test('should parse measures argument', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const spanTags: SpanTags = command['getCustomMeasures'].call({
@@ -207,7 +219,8 @@ describe('upload', () => {
         key2: 20,
       })
     })
-    test('should parse DD_MEASURES environment variable', async () => {
+
+    test('should parse DD_MEASURES environment variable', () => {
       process.env.DD_MEASURES = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
@@ -225,6 +238,20 @@ describe('upload', () => {
         key5: -12.1,
       })
     })
+
+    test('should ignore DD_MEASURES if a non-numeric value is passed', () => {
+      process.env.DD_MEASURES = 'key1:321,key2:abc'
+      const context = createMockContext()
+      const command = new UploadCodeCoverageReportCommand()
+      const spanTags: SpanTags = command['getCustomMeasures'].call({
+        config: {
+          envVarMeasures: process.env.DD_MEASURES,
+        },
+        context,
+      })
+
+      expect(spanTags).toMatchObject({})
+    })
   })
 })
 
@@ -237,6 +264,7 @@ describe('execute', () => {
 
     return {context, code}
   }
+
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/coverage/__tests__/doesnotexist/../fixtures'])
     const output = context.stdout.toString().split(os.EOL)
@@ -245,6 +273,7 @@ describe('execute', () => {
       basePaths: ['src/commands/coverage/__tests__/fixtures'],
     })
   })
+
   test('multiple paths', async () => {
     const {context, code} = await runCLI(['./src/commands/coverage/first/', './src/commands/coverage/second/'])
     const output = context.stdout.toString().split(os.EOL)
@@ -324,7 +353,7 @@ describe('execute', () => {
       process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
     ])
     expect(id).toHaveBeenCalled()
-  }, 10000000)
+  }, 10000)
 })
 
 interface ExpectedOutput {

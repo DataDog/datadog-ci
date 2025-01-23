@@ -75,9 +75,9 @@ export const renderUpload = (payload: Payload): string => {
   if (payload.paths && payload.paths.length) {
     return `Uploading code coverage report file(s) in ${payload.paths}`
   } else if (payload.flush) {
-    return `Sending code coverage flush signal`
+    return 'Sending code coverage flush signal'
   } else {
-    return `No code coverage report paths and no flush flag, doing nothing`
+    return 'No code coverage report paths and no flush flag, doing nothing'
   }
 }
 
@@ -97,7 +97,7 @@ export const renderCommandInfo = (basePaths: string[], flush: boolean | undefine
     }
   }
   if (flush) {
-    fullStr += chalk.green(`Will send a flush signal`)
+    fullStr += chalk.green('Will send a flush signal')
   }
 
   return fullStr
