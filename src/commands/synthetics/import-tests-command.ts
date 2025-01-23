@@ -21,7 +21,6 @@ export const DEFAULT_IMPORT_TESTS_COMMAND_CONFIG: ImportTestsCommandConfig = {
   files: [],
   proxy: {protocol: 'http'},
   publicIds: [],
-  // subdomain: '',
   testSearchQuery: '',
 }
 
@@ -90,9 +89,7 @@ export class ImportTestsCommand extends Command {
     try {
       await importTests(this.reporter, this.config)
     } catch (error) {
-      // if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
-      //   this.logger.error(`Error: ${error.message}`)
-      // }
+      this.logger.error(`Error: ${error.message}`)
 
       return 1
     }

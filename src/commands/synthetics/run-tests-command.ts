@@ -292,7 +292,6 @@ export class RunTestsCommand extends Command {
         jUnitReport: process.env.DATADOG_SYNTHETICS_JUNIT_REPORT,
         publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
         selectiveRerun: toBoolean(process.env.DATADOG_SYNTHETICS_SELECTIVE_RERUN),
-        subdomain: process.env.DATADOG_SUBDOMAIN,
         testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
         tunnel: toBoolean(process.env.DATADOG_SYNTHETICS_TUNNEL),
       })

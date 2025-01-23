@@ -42,7 +42,7 @@ const CONFIG_FIELDS_TRIM = ['oneClickCreationClassification']
 
 const STEP_FIELDS_TRIM = ['position', 'public_id']
 
-export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig) => {
+export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig): Promise<void> => {
   const api = getApiHelper(config)
   console.log('Importing tests...')
   const testConfigFromBackend: TestConfig = {
@@ -51,18 +51,15 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
 
   // TODO (later) fetch public ids from search query if it exists
   for (const publicId of config.publicIds) {
+    console.log(`Fetching test with public_id: ${publicId}`)
     let localTriggerConfig: LocalTriggerConfig
     const test = await api.getTest(publicId)
+
     // TODO (answer later) we need the 2nd call because we learn the type from the first one but maybe we can improve in the future
     if (test.type === 'browser' || test.type === 'mobile') {
-      console.log('test.type ', test.type)
       const testWithSteps = await api.getTestWithType(publicId, test.type)
-      console.log(testWithSteps)
-      // localTriggerConfig = {local_test_definition: testWithSteps}
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
     } else {
-      console.log(test)
-      // localTriggerConfig = {local_test_definition: test}
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(test)}
     }
     // TODO remove unsupported fields
@@ -97,7 +94,7 @@ const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestCon
 
     if (index !== -1) {
       // TODO (answer later) we can maybe ask the user here if they are sure they want to override the test or extend it
-      testConfigFromFile.tests[index] = testConfig.tests[index]
+      testConfigFromFile.tests[index] = test
     } else {
       testConfigFromFile.tests.push(test)
     }
