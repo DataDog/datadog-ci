@@ -239,62 +239,13 @@ export interface TestStep {
   isCritical?: boolean
   name: string
   noScreenshot?: boolean
-  params: StepParams
-  public_id?: string
+  params: any
   timeout?: number
   type: string
 }
 
-interface StepParams {
-  attribute?: string
-  check?: string
-  click_type?: string
-  code?: string
-  delay?: number
-  element?: ParamsElement
-  element_user_locator?: UserLocator
-  email?: string
-  file?: string
-  files?: string
-  modifiers?: number
-  playing_tab_id?: string
-  request?: string
-  subtest_public_id?: string
-  value?: string
-  variable?: ParamVariable[]
-  with_click?: boolean
-  x?: number
-  y?: number
-}
-
-interface ParamsElement {
-  bucketKe?: string
-  html?: string
-  multiLocator?: MultiLocator
-  targetOuterHTML?: string
-  url?: string
-  userLocator?: UserLocator
-  shadowHtmls?: string[]
-}
-
-interface MultiLocator {
-  ab?: string
-  at?: string
-  cl?: string
-  clt?: string
-  co?: string
-  ro?: string
-}
-
-interface UserLocator {
-  failTestOnCannotLocate: boolean
-  values: {type: string; value: string}[]
-}
-
-interface ParamVariable {
-  name: string
-  example: string
-  secure?: boolean
+interface TestStepWithUnsupportedFields extends TestStep {
+  public_id?: string
 }
 
 export interface LocalTestDefinition {
@@ -312,9 +263,7 @@ export interface LocalTestDefinition {
     steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
-  creation_source?: string
   locations: string[]
-  message: string
   name: string
   options: {
     ci?: {
@@ -329,19 +278,23 @@ export interface LocalTestDefinition {
   /** Can be used to link to an existing remote test. */
   public_id?: string
   subtype?: string
-  steps?: TestStep[] // From browser schema
-  status?: string
-  tags?: string[]
+  steps?: TestStepWithUnsupportedFields[] // From browser schema
   type: string
 }
 
-export interface ServerTest extends LocalTestDefinition {
+interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
+  creation_source?: string
+  status?: string
+  tags?: string[]
+  message?: string
+}
+export interface ServerTest extends LocalTestDefinitionWithUnsupportedFields {
   monitor_id: number
   status: 'live' | 'paused'
   public_id: string
 }
 
-export type Test = (ServerTest | LocalTestDefinition) & {
+export type Test = (ServerTest | LocalTestDefinitionWithUnsupportedFields) & {
   suite?: string
 }
 

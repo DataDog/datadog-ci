@@ -78,8 +78,8 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     console.error('Error writing file:', error)
   }
 }
-const overwriteTestConfig = (testConfig: TestConfig, testConfigFromFile: TestConfig): TestConfig => {
-  for (const test of testConfig.tests) {
+const overwriteTestConfig = (testConfigFromBackend: TestConfig, testConfigFromFile: TestConfig): TestConfig => {
+  for (const test of testConfigFromBackend.tests) {
     const index = testConfigFromFile.tests.findIndex(
       (t) =>
         isLocalTriggerConfig(t) &&
