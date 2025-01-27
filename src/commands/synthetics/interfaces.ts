@@ -244,7 +244,7 @@ export interface TestStep {
   type: string
 }
 
-interface TestStepWithUnsupportedFields extends TestStep {
+export interface TestStepWithUnsupportedFields extends TestStep {
   public_id?: string
 }
 
