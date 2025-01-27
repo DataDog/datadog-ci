@@ -43,7 +43,7 @@ export class ImportTestsCommand extends Command {
         'Explicitly specify multiple tests to run',
         'datadog-ci synthetics import-tests --public-id pub-lic-id1 --public-id pub-lic-id2',
       ],
-      ['Override the default glob pattern', 'datadog-ci synthetics import-tests -f ./component-1/**/*.synthetics.json'],
+      ['Override the default glob pattern', 'datadog-ci synthetics import-tests -f test-file.synthetics.json'],
     ],
   })
 
@@ -52,7 +52,7 @@ export class ImportTestsCommand extends Command {
   private configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+    description: `Glob pattern to detect Synthetic test files ${$2('configuration files')}} and write to this file.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
   private testSearchQuery = Option.String('-s,--search', {
