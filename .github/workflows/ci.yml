@@ -24,7 +24,7 @@ jobs:
         with:
           api-key: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           service: my-custom-service
-          files: ./junit.xml ./junit-2.xml
+          files: ./folder-1 ./folder-2
       - run: yarn install --immutable
       - run: yarn build
       - name: Run yarn lint:ci
