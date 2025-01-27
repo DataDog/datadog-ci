@@ -20,6 +20,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.version }}
+      - uses: datadog/junit-upload-github-action@v1
+        with:
+          api-key: ${{ secrets.MISSING_KEY }}
+          service: my-app
+          files: ./junit.xml
       - run: yarn install --immutable
       - run: yarn build
       - name: Run yarn lint:ci
