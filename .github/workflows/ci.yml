@@ -22,9 +22,9 @@ jobs:
           node-version: ${{ matrix.version }}
       - uses: datadog/junit-upload-github-action@v1
         with:
-          api-key: ${{ secrets.MISSING_KEY }}
-          service: my-app
-          files: ./junit.xml
+          api-key: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          service: my-custom-service
+          files: ./junit.xml ./junit-2.xml
       - run: yarn install --immutable
       - run: yarn build
       - name: Run yarn lint:ci
