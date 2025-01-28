@@ -232,20 +232,11 @@ export interface Step {
   }[]
 }
 
-export interface TestStep {
-  allowFailure?: boolean
-  alwaysExecute?: boolean
-  exitIfSucceed?: boolean
-  isCritical?: boolean
-  name: string
-  noScreenshot?: boolean
-  params: any
-  timeout?: number
-  type: string
-}
+// TODO SYNTH-17944 Remove unsupported fields
 
-export interface TestStepWithUnsupportedFields extends TestStep {
+export interface TestStepWithUnsupportedFields {
   public_id?: string
+  params: any
 }
 
 export interface LocalTestDefinition {
@@ -265,28 +256,54 @@ export interface LocalTestDefinition {
   }
   locations: string[]
   name: string
-  options: {
-    ci?: {
-      executionRule: ExecutionRule
-    }
-    device_ids?: string[]
-    mobileApplication?: MobileApplication
-    retry?: {
-      count?: number
-    }
-  }
+  options: OptionsWithUnsupportedFields
   /** Can be used to link to an existing remote test. */
   public_id?: string
-  subtype?: string
+  subtype: string // This is optional in the browser and api schemas
   steps?: TestStepWithUnsupportedFields[] // From browser schema
   type: string
 }
 
+interface Options {
+  ci?: {
+    executionRule: ExecutionRule
+  }
+  device_ids?: string[]
+  mobileApplication?: MobileApplication
+  retry?: {
+    count?: number
+  }
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+
+interface OptionsWithUnsupportedFields extends Options {
+  min_failure_duration?: number
+  min_location_failed?: any
+  monitor_name?: string
+  monitor_options?: any
+  monitor_priority?: number
+  tick_every?: number
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+// I think a bunch of these are front-end specific fields
 interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
+  created_at?: any
+  created_by?: any
+  creator?: any
   creation_source?: string
-  status?: string
-  tags?: string[]
   message?: string
+  modified_at?: any
+  modified_by?: any
+  monitor_id?: number
+  overall_state?: any
+  overall_state_modified?: any
+  status?: string
+  stepCount?: any
+  tags?: string[]
+  version?: any
+  version_uuid?: any
 }
 export interface ServerTest extends LocalTestDefinitionWithUnsupportedFields {
   monitor_id: number

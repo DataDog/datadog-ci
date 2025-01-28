@@ -160,7 +160,7 @@ const renderResultOutcome = (
   }
 }
 
-const renderApiRequestDescription = (subType = '<no subtype>', config: Test['config']): string => {
+const renderApiRequestDescription = (subType: string, config: Test['config']): string => {
   const {request, steps} = config
   if (subType === 'dns') {
     const text = `Query for ${request.host}`

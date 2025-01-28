@@ -7,12 +7,12 @@ import {
   MainReporter,
   ServerTest,
   TestConfig,
-  TestStep,
+  TestStepWithUnsupportedFields,
 } from './interfaces'
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
 
-const BASE_FIELDS_TRIM = [
+const BASE_FIELDS_TRIM: (keyof ServerTest)[] = [
   'created_at',
   'created_by',
   'creator',
@@ -29,7 +29,7 @@ const BASE_FIELDS_TRIM = [
   'version_uuid',
 ]
 
-const OPTIONS_FIELDS_TRIM = [
+const OPTIONS_FIELDS_TRIM: (keyof ServerTest['options'])[] = [
   'min_failure_duration',
   'min_location_failed',
   'monitor_name',
@@ -38,9 +38,7 @@ const OPTIONS_FIELDS_TRIM = [
   'tick_every',
 ]
 
-const CONFIG_FIELDS_TRIM = ['oneClickCreationClassification']
-
-const STEP_FIELDS_TRIM = ['position', 'public_id']
+const STEP_FIELDS_TRIM: (keyof TestStepWithUnsupportedFields)[] = ['public_id']
 
 export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig): Promise<void> => {
   const api = getApiHelper(config)
@@ -54,9 +52,13 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     let localTriggerConfig: LocalTriggerConfig
     const test = await api.getTest(publicId)
 
-    if (test.type === 'browser' || test.type === 'mobile') {
+    if (test.type === 'browser') {
       const testWithSteps = await api.getTestWithType(publicId, test.type)
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
+    } else if (test.type === 'mobile') {
+      console.error('Unsupported test type: mobile')
+
+      return
     } else {
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(test)}
     }
@@ -78,6 +80,7 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
     console.error('Error writing file:', error)
   }
 }
+
 const overwriteTestConfig = (testConfigFromBackend: TestConfig, testConfigFromFile: TestConfig): TestConfig => {
   for (const test of testConfigFromBackend.tests) {
     const index = testConfigFromFile.tests.findIndex(
@@ -99,15 +102,10 @@ const overwriteTestConfig = (testConfigFromBackend: TestConfig, testConfigFromFi
 
 const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
   for (const field of BASE_FIELDS_TRIM) {
-    delete testConfig[field as keyof ServerTest]
+    delete testConfig[field]
   }
   for (const field of OPTIONS_FIELDS_TRIM) {
-    delete testConfig.options[field as keyof ServerTest['options']]
-  }
-  for (const field of CONFIG_FIELDS_TRIM) {
-    if (field in testConfig.config) {
-      delete testConfig.config[field as keyof ServerTest['config']]
-    }
+    delete testConfig.options[field]
   }
 
   for (const step of testConfig.steps || []) {
@@ -134,7 +132,7 @@ const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
     }
     for (const field of STEP_FIELDS_TRIM) {
       if (field in step) {
-        delete step[field as keyof TestStep]
+        delete step[field]
       }
     }
   }
