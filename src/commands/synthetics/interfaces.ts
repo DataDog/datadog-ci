@@ -277,7 +277,7 @@ interface Options {
 
 // TODO SYNTH-17944 Remove unsupported fields
 
-interface OptionsWithUnsupportedFields extends Options {
+export interface OptionsWithUnsupportedFields extends Options {
   min_failure_duration?: number
   min_location_failed?: any
   monitor_name?: string
