@@ -232,6 +232,13 @@ export interface Step {
   }[]
 }
 
+// TODO SYNTH-17944 Remove unsupported fields
+
+export interface TestStepWithUnsupportedFields {
+  public_id?: string
+  params: any
+}
+
 export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
@@ -248,32 +255,63 @@ export interface LocalTestDefinition {
     variables: string[]
   }
   locations: string[]
-  message: string
   name: string
-  options: {
-    ci?: {
-      executionRule: ExecutionRule
-    }
-    device_ids?: string[]
-    mobileApplication?: MobileApplication
-    retry?: {
-      count?: number
-    }
-  }
+  options: OptionsWithUnsupportedFields
   /** Can be used to link to an existing remote test. */
   public_id?: string
-  subtype: string
-  tags: string[]
+  subtype: string // This is optional in the browser and api schemas
+  steps?: TestStepWithUnsupportedFields[] // From browser schema
   type: string
 }
 
-export interface ServerTest extends LocalTestDefinition {
+interface Options {
+  ci?: {
+    executionRule: ExecutionRule
+  }
+  device_ids?: string[]
+  mobileApplication?: MobileApplication
+  retry?: {
+    count?: number
+  }
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+
+export interface OptionsWithUnsupportedFields extends Options {
+  min_failure_duration?: number
+  min_location_failed?: any
+  monitor_name?: string
+  monitor_options?: any
+  monitor_priority?: number
+  tick_every?: number
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+// I think a bunch of these are front-end specific fields
+interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
+  created_at?: any
+  created_by?: any
+  creator?: any
+  creation_source?: string
+  message?: string
+  modified_at?: any
+  modified_by?: any
+  monitor_id?: number
+  overall_state?: any
+  overall_state_modified?: any
+  status?: string
+  stepCount?: any
+  tags?: string[]
+  version?: any
+  version_uuid?: any
+}
+export interface ServerTest extends LocalTestDefinitionWithUnsupportedFields {
   monitor_id: number
   status: 'live' | 'paused'
   public_id: string
 }
 
-export type Test = (ServerTest | LocalTestDefinition) & {
+export type Test = (ServerTest | LocalTestDefinitionWithUnsupportedFields) & {
   suite?: string
 }
 
@@ -450,6 +488,10 @@ export interface Suite {
   name?: string
 }
 
+export interface TestConfig {
+  tests: TriggerConfig[]
+}
+
 export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
@@ -601,4 +643,11 @@ export interface MobileApplicationVersion {
   is_latest: boolean
   version_name: string
   created_at?: string
+}
+
+export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  files: string[]
+  publicIds: string[]
+  testSearchQuery?: string
 }
