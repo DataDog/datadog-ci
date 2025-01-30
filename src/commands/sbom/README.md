@@ -14,6 +14,10 @@ This command lets you upload SBOM files to the Datadog intake endpoint.
 datadog-ci sbom upload <path/to/sbom.json>
 ```
 
+### Optional arguments
+
+- `--env` is a string that represents the environment in which you want your tests to appear.
+
 ### Environment variables
 
 The following environment variables must be defined:
