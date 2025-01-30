@@ -42,7 +42,7 @@ export class UploadSarifReportCommand extends Command {
       See README for details.
     `,
     examples: [
-      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload .'],
+      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload.'],
       [
         'Upload all SARIF report files in src/sarif-go-reports and src/sarif-java-reports',
         'datadog-ci sarif upload src/sarif-go-reports src/sarif-java-reports',
@@ -53,7 +53,7 @@ export class UploadSarifReportCommand extends Command {
       ],
       [
         'Upload all SARIF report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload .',
+        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload.',
       ],
     ],
   })
@@ -83,13 +83,13 @@ export class UploadSarifReportCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    // remove this notice in April 2025
-    if (this.serviceFromCli !== undefined) {
+   // TODO(julien): remove this notice in April 2025
+    if (this.serviceFromCli) {
       this.context.stderr.write(
-        'CLI flag --service is deprecated and will be removed in future versions of datadog-ci\n'
+        'The CLI flag `--service` is deprecated and will be removed in a future version of datadog-ci\n'
       )
       this.context.stderr.write(
-        'To associate findings with services, consider using service/repo mapping from service catalog\n'
+        'To associate findings with services, consider using the service-to-repo mapping from service catalog\n'
       )
       this.context.stderr.write(
         'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
