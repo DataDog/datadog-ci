@@ -83,7 +83,7 @@ export class UploadSarifReportCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-   // TODO(julien): remove this notice in April 2025
+    // TODO(julien): remove this notice in April 2025
     if (this.serviceFromCli) {
       this.context.stderr.write(
         'The CLI flag `--service` is deprecated and will be removed in a future version of datadog-ci\n'
