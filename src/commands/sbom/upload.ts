@@ -41,11 +41,11 @@ export class UploadSbomCommand extends Command {
     details: `
       This command uploads SBOM files to Datadog for dependency tracking.
     `,
-    examples: [['Upload the SBOM file sbom.json', 'datadog-ci sbom upload --service my-service file.sbom']],
+    examples: [['Upload the SBOM file sbom.json', 'datadog-ci sbom upload file.sbom']],
   })
 
   private basePath = Option.String()
-  private service = Option.String('--service', 'datadog-ci')
+  private serviceFromCli = Option.String('--service')
   private env = Option.String('--env', 'ci')
   private tags = Option.Array('--tags')
   private debug = Option.Boolean('--debug')
@@ -73,7 +73,20 @@ export class UploadSbomCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    const service: string = this.service
+    // remove this notice in April 2025
+    if (this.serviceFromCli !== undefined) {
+      this.context.stderr.write(
+        'CLI flag --service is deprecated and will be removed in future versions of datadog-ci\n'
+      )
+      this.context.stderr.write(
+        'To associate findings with services, consider using service/repo mapping from service catalog\n'
+      )
+      this.context.stderr.write(
+        'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
+      )
+    }
+
+    const service = 'datadog-ci'
 
     const environment = this.env
 

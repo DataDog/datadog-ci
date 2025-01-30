@@ -42,18 +42,18 @@ export class UploadSarifReportCommand extends Command {
       See README for details.
     `,
     examples: [
-      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload --service my-service .'],
+      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload .'],
       [
         'Upload all SARIF report files in src/sarif-go-reports and src/sarif-java-reports',
-        'datadog-ci sarif upload --service my-service src/sarif-go-reports src/sarif-java-reports',
+        'datadog-ci sarif upload src/sarif-go-reports src/sarif-java-reports',
       ],
       [
         'Upload all SARIF report files in current directory and add extra tags globally',
-        'datadog-ci sarif upload --service my-service --tags key1:value1 --tags key2:value2 .',
+        'datadog-ci sarif upload --tags key1:value1 --tags key2:value2 .',
       ],
       [
         'Upload all SARIF report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload --service my-service .',
+        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload .',
       ],
     ],
   })
@@ -62,7 +62,7 @@ export class UploadSarifReportCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private env = Option.String('--env', 'ci')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private service = Option.String('--service', 'datadog-ci')
+  private serviceFromCli = Option.String('--service')
   private tags = Option.Array('--tags')
   private noVerify = Option.Boolean('--no-verify', false)
   private noCiTags = Option.Boolean('--no-ci-tags', false)
@@ -82,6 +82,19 @@ export class UploadSarifReportCommand extends Command {
 
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
+    // remove this notice in April 2025
+    if (this.serviceFromCli !== undefined) {
+      this.context.stderr.write(
+        'CLI flag --service is deprecated and will be removed in future versions of datadog-ci\n'
+      )
+      this.context.stderr.write(
+        'To associate findings with services, consider using service/repo mapping from service catalog\n'
+      )
+      this.context.stderr.write(
+        'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
+      )
+    }
 
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
@@ -110,7 +123,7 @@ export class UploadSarifReportCommand extends Command {
     const payloads = await this.getMatchingSarifReports(spanTags)
 
     if (payloads.length === 0) {
-      this.context.stdout.write(renderFilesNotFound(this.basePaths, this.service))
+      this.context.stdout.write(renderFilesNotFound(this.basePaths))
 
       return 1
     }
@@ -118,7 +131,7 @@ export class UploadSarifReportCommand extends Command {
     const sha = spanTags[GIT_SHA] || 'sha-not-found'
     const env = this.config.env || 'env-not-set'
     this.context.stdout.write(
-      renderCommandInfo(this.basePaths, this.service, env, sha, this.maxConcurrency, this.dryRun, this.noVerify)
+      renderCommandInfo(this.basePaths, env, sha, this.maxConcurrency, this.dryRun, this.noVerify)
     )
     const upload = (p: Payload) => this.uploadSarifReport(api, p)
 
@@ -198,7 +211,6 @@ export class UploadSarifReportCommand extends Command {
     })
 
     return validUniqueFiles.map((sarifReport) => ({
-      service: this.service,
       reportPath: sarifReport,
       spanTags,
     }))
