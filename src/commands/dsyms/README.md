@@ -86,3 +86,4 @@ Additional helpful documentation, links, and articles:
 - [Learn about iOS Crash Reporting and Error Tracking][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/
+[2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
