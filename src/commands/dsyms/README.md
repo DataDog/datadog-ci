@@ -15,7 +15,7 @@ You need to have `DATADOG_API_KEY` in your environment.
 export DATADOG_API_KEY="<API KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. This is also required if you are using a US site other than US1. By default the requests are sent to Datadog US1.
+By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
 
 ```bash
 # Non-US1 site setup
