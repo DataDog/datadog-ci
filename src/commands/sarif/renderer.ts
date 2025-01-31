@@ -76,7 +76,6 @@ export const renderUpload = (payload: Payload): string => `Uploading SARIF repor
 
 export const renderCommandInfo = (
   basePaths: string[],
-  service: string,
   env: string,
   sha: string,
   concurrency: number,
@@ -98,19 +97,17 @@ export const renderCommandInfo = (
   } else {
     fullStr += chalk.green(`Will look for SARIF report files in ${basePaths.join(', ')}\n`)
   }
-  fullStr += `Only one upload per commit, env, service and tool\n`
-  fullStr += `Preparing upload for sha:${sha} env:${env} service:${service}\n`
+  fullStr += `Only one upload per commit, env and tool\n`
+  fullStr += `Preparing upload for sha:${sha} env:${env}\n`
 
   return fullStr
 }
 
-export const renderFilesNotFound = (basePaths: string[], service: string) => {
+export const renderFilesNotFound = (basePaths: string[]) => {
   let fullStr = ''
   const paths = basePaths.length === 1 && !!path.extname(basePaths[0]) ? basePaths[0] : basePaths.join(', ')
 
-  fullStr += chalk.yellow(
-    `${ICONS.WARNING} Cannot find valid SARIF report files to upload in ${paths} for service ${service}.\n`
-  )
+  fullStr += chalk.yellow(`${ICONS.WARNING} Cannot find valid SARIF report files to upload in ${paths}.\n`)
   fullStr += chalk.yellow(`Check the files exist and are valid.\n`)
 
   return fullStr

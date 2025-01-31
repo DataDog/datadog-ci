@@ -52,17 +52,14 @@ describe('upload', () => {
           basePaths: ['./src/commands/sarif/__tests__/fixtures'],
           config: {},
           context,
-          service: 'service',
         },
         {}
       )
 
       expect(firstFile).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
 
@@ -100,7 +97,6 @@ describe('upload', () => {
           basePaths: ['./src/commands/sarif/__tests__/fixtures/valid-results.sarif'],
           config: {},
           context,
-          service: 'service',
         },
         {}
       )
@@ -108,7 +104,6 @@ describe('upload', () => {
       expect(files.length).toEqual(1)
 
       expect(files[0]).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
     })
@@ -120,7 +115,6 @@ describe('upload', () => {
           basePaths: ['./src/commands/sarif/__tests__/fixtures/does-not-exist.sarif'],
           config: {},
           context,
-          service: 'service',
         },
         {}
       )
@@ -138,20 +132,16 @@ describe('upload', () => {
           ],
           config: {},
           context,
-          service: 'service',
         },
         {}
       )
       expect(firstFile).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
       expect(thirdFile).toMatchObject({
-        service: 'service',
         reportPath: './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
       })
     })
@@ -166,7 +156,6 @@ describe('upload', () => {
           ],
           config: {},
           context,
-          service: 'service',
         },
         {}
       )
@@ -181,10 +170,7 @@ describe('execute', () => {
     const cli = makeCli()
     const context = createMockContext() as any
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(
-      ['sarif', 'upload', '--service', 'test-service', '--env', 'ci', '--dry-run', ...paths],
-      context
-    )
+    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...paths], context)
 
     return {context, code}
   }
@@ -195,7 +181,6 @@ describe('execute', () => {
     checkConsoleOutput(output, {
       basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
       concurrency: 20,
-      service: 'test-service',
       env: 'ci',
     })
   })
@@ -212,7 +197,6 @@ describe('execute', () => {
         'src/commands/sarif/__tests__/fixtures/another_subfolder/',
       ],
       concurrency: 20,
-      service: 'test-service',
       env: 'ci',
     })
   })
@@ -224,7 +208,6 @@ describe('execute', () => {
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
       concurrency: 20,
-      service: 'test-service',
       env: 'ci',
     })
   })
@@ -237,9 +220,9 @@ describe('execute', () => {
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
     expect(output[2]).toContain(`Will upload SARIF report file ${path}`)
-    expect(output[3]).toContain('Only one upload per commit, env, service and tool')
+    expect(output[3]).toContain('Only one upload per commit, env and tool')
     expect(output[4]).toContain(`Preparing upload for`)
-    expect(output[4]).toContain(`env:ci service:test-service`)
+    expect(output[4]).toContain(`env:ci`)
   })
 
   test('not found file', async () => {
@@ -247,7 +230,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
-    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path} for service test-service`)
+    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path}`)
     expect(output[1]).toContain('Check the files exist and are valid.')
   })
 })
@@ -255,7 +238,6 @@ describe('execute', () => {
 interface ExpectedOutput {
   basePaths: string[]
   concurrency: number
-  service: string
   env: string
 }
 
@@ -263,7 +245,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
   expect(output[1]).toContain(`Starting upload with concurrency ${expected.concurrency}.`)
   expect(output[2]).toContain(`Will look for SARIF report files in ${expected.basePaths.join(', ')}`)
-  expect(output[3]).toContain('Only one upload per commit, env, service and tool')
+  expect(output[3]).toContain('Only one upload per commit, env and tool')
   expect(output[4]).toContain(`Preparing upload for`)
-  expect(output[4]).toContain(`env:${expected.env} service:${expected.service}`)
+  expect(output[4]).toContain(`env:${expected.env}`)
 }

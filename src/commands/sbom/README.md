@@ -16,7 +16,6 @@ datadog-ci sbom upload <path/to/sbom.json>
 
 ### Optional arguments
 
-- `--service` should be set to the name of the service you're uploading SBOM reports from.
 - `--env` is a string that represents the environment in which you want your tests to appear.
 
 ### Environment variables
@@ -32,7 +31,7 @@ The following environment variables must be defined:
 When developing software, you can try with the following command:
 
 ```bash
-yarn launch sbom upload --service <your-service> --env <your-environment> /path/to/sbom.json
+yarn launch sbom upload /path/to/sbom.json
 ```
 
 ## Further reading

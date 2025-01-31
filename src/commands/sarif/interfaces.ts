@@ -7,7 +7,6 @@ import {SpanTags} from '../../helpers/interfaces'
 export interface Payload {
   reportPath: string
   spanTags: SpanTags
-  service: string
 }
 
 export interface APIHelper {
