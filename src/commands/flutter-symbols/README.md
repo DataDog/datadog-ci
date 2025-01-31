@@ -67,3 +67,4 @@ Additional helpful documentation, links, and articles:
 - [Learn about Flutter Crash Reporting and Error Tracking][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/
+[2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
