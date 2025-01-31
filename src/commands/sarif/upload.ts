@@ -42,7 +42,7 @@ export class UploadSarifReportCommand extends Command {
       See README for details.
     `,
     examples: [
-      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload.'],
+      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload .'],
       [
         'Upload all SARIF report files in src/sarif-go-reports and src/sarif-java-reports',
         'datadog-ci sarif upload src/sarif-go-reports src/sarif-java-reports',
@@ -53,7 +53,7 @@ export class UploadSarifReportCommand extends Command {
       ],
       [
         'Upload all SARIF report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload.',
+        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload .',
       ],
     ],
   })
