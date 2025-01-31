@@ -14,8 +14,8 @@ export DATADOG_API_KEY="<API KEY>"
 By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
 
 ```bash
-# Non-US1 site setup
-export DATADOG_SITE="us5.datadoghq.com" # example
+# Example environment setup for US5
+export DATADOG_SITE="us5.datadoghq.com"
 ```
 
 To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
