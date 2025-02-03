@@ -11,7 +11,12 @@ You need to have `DATADOG_API_KEY` in your environment.
 export DATADOG_API_KEY="<API KEY>"
 ```
 
-You can configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
+By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
+
+```bash
+# Example environment setup for US5
+export DATADOG_SITE="us5.datadoghq.com"
+```
 
 To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
 
@@ -62,3 +67,4 @@ Additional helpful documentation, links, and articles:
 - [Learn about Flutter Crash Reporting and Error Tracking][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/
+[2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
