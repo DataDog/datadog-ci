@@ -87,3 +87,7 @@ src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# nix
+
+/result
