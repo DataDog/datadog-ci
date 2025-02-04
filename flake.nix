@@ -43,7 +43,7 @@
             pathsToLink = [ "/bin" ];
           };
           config = {
-            entrypoint = [ "/bin/ddapm-test-agent" ];
+            entrypoint = [ "/bin/datadog-ci" ];
           };
         };
       in
