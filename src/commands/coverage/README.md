@@ -11,7 +11,7 @@ Upload your code coverage report files.
 This command uploads your code coverage reports to Datadog.
 
 ```bash
-datadog-ci coverage upload [--dry-run] [--tags] [--flush] <path> <another_path>
+datadog-ci coverage upload [--dry-run] [--tags] <path> <another_path>
 ```
 
 For example:
@@ -21,7 +21,6 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 ```
 
 - The positional arguments are the directories or file paths in which the code coverage reports are located. If you pass a folder, the CLI will look for all `.xml` files in it.
-- `--flush` (default: `false`): you may pass `--flush`, `--flush=1` or `--flush=true` to signal that you have uploaded all the coverage reports for the current commit/PR. This will trigger the coverage reports to be processed and the results to displayed in the UI.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
@@ -29,8 +28,6 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--skip-git-metadata-upload` (default: `true`): if you want to upload git metadata, you may pass `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false`.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
-
-Either positional arguments or `--flush` (or both) must be provided.
 
 #### Environment variables
 

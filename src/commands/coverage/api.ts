@@ -26,16 +26,10 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
   const event: Record<string, any> = {
     type: 'coverage_report',
     '_dd.hostname': payload.hostname,
+    format: payload.format,
     ...payload.spanTags,
     ...payload.customTags,
     ...payload.customMeasures,
-  }
-
-  if (payload.format) {
-    event.format = payload.format
-  }
-  if (payload.flush) {
-    event.flush = true
   }
 
   form.append('event', JSON.stringify(event), {filename: 'event.json'})

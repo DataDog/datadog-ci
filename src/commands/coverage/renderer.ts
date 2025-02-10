@@ -23,13 +23,13 @@ export const renderInvalidFile = (filePath: string, errorMessage: string) => {
 }
 
 export const renderFailedUpload = (payload: Payload, errorMessage: string) => {
-  const payloadDetails = `${chalk.bold.dim(payload.paths ? payload.paths : 'flush signal')}`
+  const payloadDetails = `${chalk.bold.dim(payload.paths)}`
 
   return chalk.red(`${ICONS.FAILED} Upload failed for ${payloadDetails}: ${errorMessage}\n`)
 }
 
 export const renderRetriedUpload = (payload: Payload, errorMessage: string, attempt: number) => {
-  const payloadDetails = `${chalk.bold.dim(payload.paths ? payload.paths : 'flush signal')}`
+  const payloadDetails = `${chalk.bold.dim(payload.paths)}`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying coverage report upload ${payloadDetails}: ${errorMessage}\n`)
 }
@@ -38,12 +38,8 @@ export const renderFailedGitDBSync = (err: any) => {
   return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
 }
 
-export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, flush: boolean, duration: number) => {
-  return chalk.green(
-    `${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files ${
-      flush ? 'and sent a flush signal ' : ''
-    }in ${duration} seconds.`
-  )
+export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, duration: number) => {
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.`)
 }
 
 export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
@@ -51,17 +47,12 @@ export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
 }
 
 // TODO add some Datadog links to the output
-export const renderSuccessfulUploadCommand = (basePaths: string[], flush: boolean | undefined) => {
+export const renderSuccessfulUploadCommand = () => {
   let fullStr = ''
   fullStr += chalk.green(
     '=================================================================================================\n'
   )
-  if (!!basePaths.length) {
-    fullStr += chalk.green('* Code coverage report(s) upload successful\n')
-  }
-  if (flush) {
-    fullStr += chalk.green('* Code coverage flush successful\n')
-  }
+  fullStr += chalk.green('* Code coverage report(s) upload successful\n')
   fullStr += chalk.green(
     '=================================================================================================\n'
   )
@@ -74,18 +65,16 @@ export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${rend
 export const renderUpload = (payload: Payload): string => {
   if (payload.paths && payload.paths.length) {
     return `Uploading code coverage report file(s) in ${payload.paths}`
-  } else if (payload.flush) {
-    return 'Sending code coverage flush signal'
   } else {
-    return 'No code coverage report paths and no flush flag, doing nothing'
+    return 'No code coverage report paths, doing nothing'
   }
 }
 
-export const renderCommandInfo = (basePaths: string[], flush: boolean | undefined, dryRun: boolean) => {
+export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(
-      `${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORTS AND/OR SEND FLUSH SIGNAL\n`
+      `${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORTS\n`
     )
   }
   fullStr += chalk.green(`${new Date().toLocaleString()} - Starting upload. \n`)
@@ -95,9 +84,6 @@ export const renderCommandInfo = (basePaths: string[], flush: boolean | undefine
     } else {
       fullStr += chalk.green(`Will look for code coverage report files in ${basePaths.join(', ')}`)
     }
-  }
-  if (flush) {
-    fullStr += chalk.green('Will send a flush signal')
   }
 
   return fullStr

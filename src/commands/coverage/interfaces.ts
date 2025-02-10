@@ -8,8 +8,7 @@ export interface Payload {
   customTags: Record<string, string>
   customMeasures: Record<string, number>
   paths: string[]
-  format: string | undefined
-  flush: boolean
+  format: string
 }
 
 export interface APIHelper {

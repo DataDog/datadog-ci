@@ -55,11 +55,6 @@ export class UploadCodeCoverageReportCommand extends Command {
     `,
     examples: [
       ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload .'],
-      ['Send code coverage upload completed signal', 'datadog-ci coverage upload --flush'],
-      [
-        'Upload all code coverage report files in current directory and send code coverage upload completed signal',
-        'datadog-ci coverage upload --flush .',
-      ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
         'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
@@ -84,7 +79,6 @@ export class UploadCodeCoverageReportCommand extends Command {
   })
 
   private basePaths = Option.Rest({required: 1})
-  private flush = Option.Boolean('--flush')
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private measures = Option.Array('--measures')
@@ -108,8 +102,8 @@ export class UploadCodeCoverageReportCommand extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
-    if (this.flush === undefined && !this.basePaths.length) {
-      this.context.stderr.write('Either positional arguments or --flush must be provided\n')
+    if (!this.basePaths.length) {
+      this.context.stderr.write('Positional arguments must be provided\n')
 
       return 1
     }
@@ -123,7 +117,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
 
     if (!this.dryRun) {
-      this.context.stdout.write(renderSuccessfulUploadCommand(this.basePaths, this.flush))
+      this.context.stdout.write(renderSuccessfulUploadCommand())
     }
   }
 
@@ -132,23 +126,21 @@ export class UploadCodeCoverageReportCommand extends Command {
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
-    this.logger.info(renderCommandInfo(this.basePaths, this.flush, this.dryRun))
+    this.logger.info(renderCommandInfo(this.basePaths, this.dryRun))
 
     const api = this.getApiHelper()
     const payloads = await this.generatePayloads()
 
     let fileCount = 0
-    let flushed = false
 
     const initialTime = new Date().getTime()
     for (const payload of payloads) {
       fileCount += payload.paths.length
-      flushed = flushed || payload.flush
       await this.uploadCodeCoverageReport(api, payload)
     }
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
 
-    this.logger.info(renderSuccessfulUpload(this.dryRun, fileCount, flushed, totalTimeSeconds))
+    this.logger.info(renderSuccessfulUpload(this.dryRun, fileCount, totalTimeSeconds))
   }
 
   private getApiHelper(): APIHelper {
@@ -177,26 +169,11 @@ export class UploadCodeCoverageReportCommand extends Command {
         return Array.from({length: numChunks}, (_, i) => ({
           format,
           paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
-          flush: false,
           spanTags,
           customTags,
           customMeasures,
           hostname: os.hostname(),
         }))
-      })
-
-      // to set the last payload to flush
-      payloads[payloads.length - 1].flush = !!this.flush
-    } else if (this.flush) {
-      // no reports to upload, only send the flush signal
-      payloads.push({
-        format: undefined,
-        paths: [],
-        flush: true,
-        spanTags,
-        customTags,
-        customMeasures,
-        hostname: os.hostname(),
       })
     }
 
