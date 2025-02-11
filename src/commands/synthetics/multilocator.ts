@@ -11,6 +11,7 @@ import {
   TestConfig,
   ImportTestsCommandConfig,
   MainReporter,
+  TriggerConfig,
 } from './interfaces'
 import {ICONS} from './reporters/constants'
 import {getTestConfigs} from './test'
@@ -107,28 +108,36 @@ const overwriteMultiLocatorsInTestConfig = (
   testConfigFromFile: TestConfig
 ): TestConfig => {
   for (const publicId of Object.keys(multiLocatorMap)) {
-    const index = testConfigFromFile.tests.findIndex(
-      (t) => isLocalTriggerConfig(t) && t.local_test_definition.public_id === publicId
-    )
+    const test = findUniqueLocalTestDefinition(testConfigFromFile, publicId)
 
-    if (index !== -1) {
-      const test = testConfigFromFile.tests[index]
-      if (isLocalTriggerConfig(test) && test.local_test_definition.steps) {
-        const steps = test.local_test_definition.steps || []
-        for (const [stepIndex, step] of steps.entries()) {
-          const multiLocator = multiLocatorMap[publicId][stepIndex]
-          if (multiLocator) {
-            if (step.params.element === undefined) {
-              throw new Error(`[Multilocator Update] Step ${stepIndex} in test ${publicId} does not have an element`)
-            }
-            step.params.element.multiLocator = multiLocator
+    if (test && isLocalTriggerConfig(test) && test.local_test_definition.steps) {
+      const steps = test.local_test_definition.steps || []
+      for (const [stepIndex, step] of steps.entries()) {
+        const multiLocator = multiLocatorMap[publicId][stepIndex]
+        if (multiLocator) {
+          if (!step.params.element) {
+            step.params.element = {}
           }
+          step.params.element.multiLocator = multiLocator
         }
       }
-    } else {
-      throw new Error(`[Multilocator Update] Could not find test with publicId ${publicId} in the local test config`)
     }
   }
 
   return testConfigFromFile
+}
+const findUniqueLocalTestDefinition = (testConfig: TestConfig, publicId: string): TriggerConfig => {
+  const matchingTests = testConfig.tests.filter(
+    (t) => isLocalTriggerConfig(t) && t.local_test_definition.public_id === publicId
+  )
+
+  if (matchingTests.length > 1) {
+    throw new Error(`Cannot have multiple local test definitions with same publicId: ${publicId}.`)
+  }
+
+  if (matchingTests.length === 0) {
+    throw new Error(`No local test definition found with publicId ${publicId}.`)
+  }
+
+  return matchingTests[0]
 }

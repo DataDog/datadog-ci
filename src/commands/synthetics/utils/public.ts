@@ -891,6 +891,11 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
     case 'UNAVAILABLE_TUNNEL_CONFIG':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to get tunnel configuration ')}\n${error.message}\n\n`)
       break
+    case 'LTD_MULTILOCATORS_UPDATE_FAILED':
+      reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: unable to update multilocators in local test definition')}\n${error.message}\n\n`
+      )
+      break
 
     default:
       reporter.error(`\n${chalk.bgRed.bold(' ERROR ')}\n${error.message}\n\n`)
