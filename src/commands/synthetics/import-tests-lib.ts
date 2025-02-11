@@ -42,13 +42,13 @@ const STEP_FIELDS_TRIM: (keyof TestStepWithUnsupportedFields)[] = ['public_id']
 
 export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig): Promise<void> => {
   const api = getApiHelper(config)
-  console.log('Importing tests...')
+  reporter.log('Importing tests...\n')
   const testConfigFromBackend: TestConfig = {
     tests: [],
   }
 
   for (const publicId of config.publicIds) {
-    console.log(`Fetching test with public_id: ${publicId}`)
+    reporter.log(`Fetching test with public_id: ${publicId}\n`)
     let localTriggerConfig: LocalTriggerConfig
     const test = await api.getTest(publicId)
 
@@ -56,7 +56,7 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
       const testWithSteps = await api.getTestWithType(publicId, test.type)
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
     } else if (test.type === 'mobile') {
-      console.error('Unsupported test type: mobile')
+      reporter.error('Unsupported test type: mobile\n')
 
       return
     } else {
@@ -75,9 +75,9 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
   const jsonString = JSON.stringify(testConfig, null, 2)
   try {
     await writeFile(config.files[0], jsonString, 'utf8')
-    console.log(`Object has been written to ${config.files[0]}`)
+    reporter.log(`Object has been written to ${config.files[0]}\n`)
   } catch (error) {
-    console.error('Error writing file:', error)
+    reporter.error(`Error writing file: ${error}\n`)
   }
 }
 

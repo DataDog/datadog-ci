@@ -21,6 +21,7 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
+import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
@@ -170,6 +171,12 @@ export const executeTests = async (
       reporter,
       tunnel
     )
+
+    try {
+      await updateLTDMultiLocators(reporter, config, results)
+    } catch (error) {
+      throw new CriticalError('LTD_MULTILOCATORS_UPDATE_FAILED', error.message)
+    }
 
     return {
       results,
