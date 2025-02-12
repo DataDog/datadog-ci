@@ -73,9 +73,7 @@ export const renderUpload = (payload: Payload): string => {
 export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
-    fullStr += chalk.yellow(
-      `${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORTS\n`
-    )
+    fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORTS\n`)
   }
   fullStr += chalk.green(`${new Date().toLocaleString()} - Starting upload. \n`)
   if (!!basePaths.length) {
