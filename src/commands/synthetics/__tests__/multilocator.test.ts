@@ -71,7 +71,9 @@ describe('multilocator', () => {
 
       expect(tests.getTestConfigs).not.toHaveBeenCalled()
       expect(fsPromises.writeFile).not.toHaveBeenCalled()
-      expect(mockReporter.log).toHaveBeenCalledWith(expect.stringContaining('No MultiLocator updates found. No changes will be made.'))
+      expect(mockReporter.log).toHaveBeenCalledWith(
+        expect.stringContaining('No MultiLocator updates found. No changes will be made.')
+      )
     })
 
     test('should not overwrite file if user declines update prompt', async () => {
