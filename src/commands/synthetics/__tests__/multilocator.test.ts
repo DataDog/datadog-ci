@@ -71,6 +71,7 @@ describe('multilocator', () => {
 
       expect(tests.getTestConfigs).not.toHaveBeenCalled()
       expect(fsPromises.writeFile).not.toHaveBeenCalled()
+      expect(mockReporter.log).toHaveBeenCalledWith(expect.stringContaining('No MultiLocator updates found. No changes will be made.'))
     })
 
     test('should not overwrite file if user declines update prompt', async () => {
@@ -80,6 +81,7 @@ describe('multilocator', () => {
 
       expect(tests.getTestConfigs).not.toHaveBeenCalled()
       expect(fsPromises.writeFile).not.toHaveBeenCalled()
+      expect(mockReporter.log).toHaveBeenCalledWith(expect.stringContaining('MultiLocator updates aborted by user.'))
     })
 
     test('should handle errors during file write gracefully', async () => {
@@ -88,7 +90,7 @@ describe('multilocator', () => {
       await expect(updateLTDMultiLocators(mockReporter, mockConfig, mockResults)).resolves.not.toThrow()
 
       expect(fsPromises.writeFile).toHaveBeenCalled()
-      expect(mockReporter.error).toHaveBeenCalledWith(expect.stringContaining('Error writing file'))
+      expect(mockReporter.error).toHaveBeenCalledWith(expect.stringContaining('Error writing to file'))
     })
     test('should throw an error if multiple LTDs with the same publicId are found', async () => {
       mockTestConfig.tests.push({
