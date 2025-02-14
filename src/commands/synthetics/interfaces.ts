@@ -220,6 +220,9 @@ export interface Step {
   publicId?: string
   skipped: boolean
   stepId: number
+  stepElementUpdates?: {
+    multiLocator?: MultiLocator
+  }
   subTestPublicId?: string
   subTestStepDetails?: Step[]
   type: string
@@ -232,11 +235,20 @@ export interface Step {
   }[]
 }
 
+export interface MultiLocator {
+  [key: string]: unknown
+}
+
 // TODO SYNTH-17944 Remove unsupported fields
 
 export interface TestStepWithUnsupportedFields {
   public_id?: string
-  params: any
+  params: {
+    element?: {
+      multiLocator?: MultiLocator
+      userLocator?: unknown
+    }
+  }
 }
 
 export interface LocalTestDefinition {

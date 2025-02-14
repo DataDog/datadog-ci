@@ -22,6 +22,7 @@ const criticalErrorCodes = [
   'INVALID_MOBILE_APP_UPLOAD_PARAMETERS',
   'MOBILE_APP_UPLOAD_TIMEOUT',
   'UNKNOWN_MOBILE_APP_UPLOAD_FAILURE',
+  'LTD_MULTILOCATORS_UPDATE_FAILED',
 ] as const
 export type CriticalCiErrorCode = typeof criticalErrorCodes[number]
 

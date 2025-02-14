@@ -42,13 +42,13 @@ const STEP_FIELDS_TRIM: (keyof TestStepWithUnsupportedFields)[] = ['public_id']
 
 export const importTests = async (reporter: MainReporter, config: ImportTestsCommandConfig): Promise<void> => {
   const api = getApiHelper(config)
-  console.log('Importing tests...')
+  reporter.log('Importing tests...\n')
   const testConfigFromBackend: TestConfig = {
     tests: [],
   }
 
   for (const publicId of config.publicIds) {
-    console.log(`Fetching test with public_id: ${publicId}`)
+    reporter.log(`Fetching test with public_id: ${publicId}\n`)
     let localTriggerConfig: LocalTriggerConfig
     const test = await api.getTest(publicId)
 
@@ -56,7 +56,7 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
       const testWithSteps = await api.getTestWithType(publicId, test.type)
       localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
     } else if (test.type === 'mobile') {
-      console.error('Unsupported test type: mobile')
+      reporter.error('Unsupported test type: mobile\n')
 
       return
     } else {
@@ -71,13 +71,12 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
 
   const testConfig = overwriteTestConfig(testConfigFromBackend, testConfigFromFile)
 
-  // eslint-disable-next-line no-null/no-null
-  const jsonString = JSON.stringify(testConfig, null, 2)
+  const jsonString = JSON.stringify(testConfig, undefined, 2)
   try {
     await writeFile(config.files[0], jsonString, 'utf8')
-    console.log(`Object has been written to ${config.files[0]}`)
+    reporter.log(`Local test definition written to ${config.files[0]}\n`)
   } catch (error) {
-    console.error('Error writing file:', error)
+    reporter.error(`Error writing file: ${error}\n`)
   }
 }
 
@@ -111,7 +110,7 @@ const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
   for (const step of testConfig.steps || []) {
     if ('element' in step.params && !!step.params.element) {
       if ('multiLocator' in step.params.element && !!step.params.element.multiLocator) {
-        if ('ab' in step.params.element.multiLocator && !!step.params.element.multiLocator.ab) {
+        if ('ab' in step.params.element.multiLocator && typeof step.params.element.multiLocator.ab === 'string') {
           if (!step.params.element.userLocator) {
             step.params.element.userLocator = {
               values: [
