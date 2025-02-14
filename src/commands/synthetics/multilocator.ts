@@ -14,7 +14,7 @@ export const updateLTDMultiLocators = async (
   config: ImportTestsCommandConfig,
   results: Result[]
 ) => {
-  reporter.log('Checking for MultiLocator updates...\r')
+  reporter.log('Checking for MultiLocator updates...\r') // replaced by next log
   const multiLocatorMap = getMultiLocatorsFromResults(results)
 
   const hasMLUpdates = Object.values(multiLocatorMap).some((steps) => steps.some((ml) => ml !== undefined))
