@@ -2,20 +2,10 @@ import {writeFile} from 'fs/promises'
 
 import inquirer from 'inquirer'
 
-import {
-  Result,
-  BaseResult,
-  MultiLocator,
-  ServerResult,
-  BrowserServerResult,
-  TestConfig,
-  ImportTestsCommandConfig,
-  MainReporter,
-  TriggerConfig,
-} from './interfaces'
+import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter, TriggerConfig} from './interfaces'
 import {ICONS} from './reporters/constants'
 import {getTestConfigs} from './test'
-import {isLocalTriggerConfig} from './utils/internal'
+import {hasDefinedResult, isBrowserServerResult, isLocalTriggerConfig} from './utils/internal'
 
 type MultiLocatorMap = {[key: string]: (MultiLocator | undefined)[]}
 
@@ -48,8 +38,7 @@ export const updateLTDMultiLocators = async (
   const testConfig = overwriteMultiLocatorsInTestConfig(multiLocatorMap, testConfigFromFile)
 
   try {
-    // eslint-disable-next-line no-null/no-null
-    await writeFile(config.files[0], JSON.stringify(testConfig, null, 2), 'utf8')
+    await writeFile(config.files[0], JSON.stringify(testConfig, undefined, 2), 'utf8')
     reporter.log(`${ICONS.SUCCESS} MultiLocator updates have been successfully applied in ${config.files[0]}\n`)
   } catch (error) {
     reporter.error(`${ICONS.FAILED} Error writing to file: ${error}\n`)
@@ -67,7 +56,7 @@ const getMultiLocatorsFromResults = (results: Result[]): MultiLocatorMap => {
 
     const stepMLUpdates: (MultiLocator | undefined)[] = []
 
-    if (isBaseResult(result) && result.result && isBrowserServerResult(result.result)) {
+    if (hasDefinedResult(result) && result.result && isBrowserServerResult(result.result)) {
       const steps = result.result.stepDetails.slice(1) // Skip first step (navigation)
       for (const step of steps) {
         const multiLocator = step.stepElementUpdates?.multiLocator
@@ -81,14 +70,6 @@ const getMultiLocatorsFromResults = (results: Result[]): MultiLocatorMap => {
   }
 
   return multiLocatorMap
-}
-
-const isBaseResult = (result: Result): result is BaseResult => {
-  return (result as BaseResult).result !== undefined
-}
-
-const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {
-  return (serverResult as BrowserServerResult).stepDetails !== undefined
 }
 
 export const promptUser = async (message: string): Promise<boolean> => {

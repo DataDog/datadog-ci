@@ -236,7 +236,7 @@ export interface Step {
 }
 
 export interface MultiLocator {
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // TODO SYNTH-17944 Remove unsupported fields
@@ -246,7 +246,7 @@ export interface TestStepWithUnsupportedFields {
   params: {
     element?: {
       multiLocator?: MultiLocator
-      userLocator?: any
+      userLocator?: unknown
     }
   }
 }

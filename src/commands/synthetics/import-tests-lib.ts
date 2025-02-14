@@ -71,11 +71,10 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
 
   const testConfig = overwriteTestConfig(testConfigFromBackend, testConfigFromFile)
 
-  // eslint-disable-next-line no-null/no-null
-  const jsonString = JSON.stringify(testConfig, null, 2)
+  const jsonString = JSON.stringify(testConfig, undefined, 2)
   try {
     await writeFile(config.files[0], jsonString, 'utf8')
-    reporter.log(`Object has been written to ${config.files[0]}\n`)
+    reporter.log(`Local test definition written to ${config.files[0]}\n`)
   } catch (error) {
     reporter.error(`Error writing file: ${error}\n`)
   }
@@ -111,7 +110,7 @@ const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
   for (const step of testConfig.steps || []) {
     if ('element' in step.params && !!step.params.element) {
       if ('multiLocator' in step.params.element && !!step.params.element.multiLocator) {
-        if ('ab' in step.params.element.multiLocator && !!step.params.element.multiLocator.ab) {
+        if ('ab' in step.params.element.multiLocator && typeof step.params.element.multiLocator.ab === 'string') {
           if (!step.params.element.userLocator) {
             step.params.element.userLocator = {
               values: [

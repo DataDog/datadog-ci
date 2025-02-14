@@ -5,6 +5,7 @@ import {
   BaseResult,
   BaseTestPayload,
   BasicAuthCredentials,
+  BrowserServerResult,
   CookiesObject,
   ExecutionRule,
   LocalTriggerConfig,
@@ -93,6 +94,10 @@ export const isTimedOutRetry = (
 
 export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
   return triggerConfig ? 'local_test_definition' in triggerConfig : false
+}
+
+export const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {
+  return (serverResult as BrowserServerResult).stepDetails !== undefined
 }
 
 export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
