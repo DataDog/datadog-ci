@@ -4,6 +4,7 @@
 # Commands (grouped by product)
 
 ## CI Visibility (label: ci-visibility)
+src/commands/junit/__tests__/example.test.ts @DataDog/example
 src/commands/junit         @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/gate          @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/metric        @DataDog/datadog-ci @DataDog/ci-app-libraries
