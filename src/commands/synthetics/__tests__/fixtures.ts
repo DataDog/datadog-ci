@@ -605,6 +605,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
     getMobileApplicationPresignedURLs: jest.fn(),
     getTest: jest.fn(),
     getTestWithType: jest.fn(),
+    editTest: jest.fn(),
     getSyntheticsOrgSettings: jest.fn(),
     getTunnelPresignedURL: jest.fn(),
     pollResults: jest.fn(),

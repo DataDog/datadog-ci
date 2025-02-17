@@ -2,12 +2,13 @@ import {writeFile} from 'fs/promises'
 
 import inquirer from 'inquirer'
 
-import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter, TriggerConfig} from './interfaces'
+import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter} from './interfaces'
+import {findUniqueLocalTestDefinition} from './local-test-definition'
 import {ICONS} from './reporters/constants'
 import {getTestConfigs} from './test'
-import {hasDefinedResult, isBrowserServerResult, isLocalTriggerConfig} from './utils/internal'
+import {hasDefinedResult, isBrowserServerResult} from './utils/internal'
 
-type MultiLocatorMap = {[key: string]: (MultiLocator | undefined)[]}
+type MultiLocatorMap = {[publicId: string]: (MultiLocator | undefined)[]}
 
 export const updateLTDMultiLocators = async (
   reporter: MainReporter,
@@ -91,7 +92,7 @@ const overwriteMultiLocatorsInTestConfig = (
   for (const publicId of Object.keys(multiLocatorMap)) {
     const test = findUniqueLocalTestDefinition(testConfigFromFile, publicId)
 
-    if (test && isLocalTriggerConfig(test) && test.local_test_definition.steps) {
+    if (test && test.local_test_definition.steps) {
       const steps = test.local_test_definition.steps
       for (const [stepIndex, step] of steps.entries()) {
         const multiLocator = multiLocatorMap[publicId][stepIndex]
@@ -106,19 +107,4 @@ const overwriteMultiLocatorsInTestConfig = (
   }
 
   return testConfigFromFile
-}
-const findUniqueLocalTestDefinition = (testConfig: TestConfig, publicId: string): TriggerConfig => {
-  const matchingTests = testConfig.tests.filter(
-    (t) => isLocalTriggerConfig(t) && t.local_test_definition.public_id === publicId
-  )
-
-  if (matchingTests.length > 1) {
-    throw new Error(`Cannot have multiple local test definitions with same publicId: ${publicId}.`)
-  }
-
-  if (matchingTests.length === 0) {
-    throw new Error(`No local test definition found with publicId ${publicId}.`)
-  }
-
-  return matchingTests[0]
 }
