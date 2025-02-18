@@ -570,7 +570,7 @@ describe('run-test', () => {
             testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
             variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
 
-            // Added to make test pass, we currently don't have an ENV variable for `mobileApplicationVersionFilePath`.
+            // XXX: Added to make the test pass as we don't have an ENV variable for `mobileApplicationVersionFilePath`.
             mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
           },
           failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
@@ -584,9 +584,10 @@ describe('run-test', () => {
           testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
           tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
 
-          // All the following variables should be removed in the future, as they are either deprecated or misaligned (no ENV variable for now)
           // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
           global: {},
+
+          // XXX: Added to make the test pass as we use well-known ENV variables to configure the proxy.
           proxy: configFile.proxy,
         }
 
@@ -706,8 +707,7 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`, `mobileApplicationVersionFilePath`, `proxy`, etc.
-        // This fixes are only here for the test to run, and to maintain backward compatibility.
+        // TODO SYNTH-12989: Clean up deprecated `global`
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,
@@ -872,8 +872,7 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`, `mobileApplicationVersionFilePath`, `proxy` etc.
-        // This fixes are only here for the test to run, and to maintain backward compatibility.
+        // TODO SYNTH-12989: Clean up deprecated `global`
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,

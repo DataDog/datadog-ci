@@ -90,7 +90,7 @@ describe('run-test', () => {
           failOnMissingTests: false,
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
-          // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
+          // TODO SYNTH-12989: Clean up deprecated `global`
           global: {},
           proxy: {protocol: 'http'},
           publicIds: [],
