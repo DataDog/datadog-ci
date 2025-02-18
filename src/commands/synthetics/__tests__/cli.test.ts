@@ -216,7 +216,6 @@ describe('run-test', () => {
           locations: ['aws:us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
-          pollingTimeout: 3,
           retry: {count: 2, interval: 300},
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
           startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
@@ -249,7 +248,6 @@ describe('run-test', () => {
           locations: ['aws:us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
-          pollingTimeout: 2, // not overridden (backwards compatibility not supported)
           retry: {count: 2, interval: 300},
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
           startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
@@ -259,8 +257,6 @@ describe('run-test', () => {
         jUnitReport: 'junit-report.xml',
         // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
         locations: [],
-        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        pollingTimeout: 1,
         proxy: {
           protocol: 'https',
         },
@@ -285,7 +281,7 @@ describe('run-test', () => {
       const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        batchTimeout: 1, // not used in the first test case
+        batchTimeout: 1,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
@@ -294,7 +290,6 @@ describe('run-test', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         mobileApplicationVersionFilePath: './path/to/application.apk',
-        pollingTimeout: 2,
         publicIds: ['ran-dom-id2'],
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
@@ -321,8 +316,6 @@ describe('run-test', () => {
         headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
         locations: ['us-east-1', 'us-west-1'],
         mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-        // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
-        pollingTimeout: 3,
         resourceUrlSubstitutionRegexes: [
           's/(https://www.)(.*)/$1extra-$2',
           'https://example.com(.*)|http://subdomain.example.com$1',
@@ -340,7 +333,7 @@ describe('run-test', () => {
       const command = createCommand(RunTestsCommand)
       command['apiKey'] = overrideCLI.apiKey
       command['appKey'] = overrideCLI.appKey
-      // `command['batchTimeout']` not used in the first test case
+      command['batchTimeout'] = overrideCLI.batchTimeout
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
       // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
@@ -352,8 +345,6 @@ describe('run-test', () => {
       command['jUnitReport'] = overrideCLI.jUnitReport
       command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
       command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
-      // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-      command['pollingTimeout'] = overrideCLI.pollingTimeout
       command['publicIds'] = overrideCLI.publicIds
       command['selectiveRerun'] = overrideCLI.selectiveRerun
       command['subdomain'] = overrideCLI.subdomain
@@ -378,8 +369,6 @@ describe('run-test', () => {
         `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
         `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
         `locations=${defaultTestOverrides.locations?.join(';')}`,
-        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        `pollingTimeout=${defaultTestOverrides.pollingTimeout}`,
         `retry.count=${defaultTestOverrides.retry?.count}`,
         `retry.interval=${defaultTestOverrides.retry?.interval}`,
         `startUrl=${defaultTestOverrides.startUrl}`,
@@ -390,67 +379,6 @@ describe('run-test', () => {
         `variables.var2=${defaultTestOverrides.variables?.var2}`,
       ]
 
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        apiKey: 'fake_api_key',
-        appKey: 'fake_app_key',
-        batchTimeout: 2,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
-        datadogSite: 'datadoghq.eu',
-        defaultTestOverrides: {
-          allowInsecureCertificates: true,
-          basicAuth: {
-            password: 'password',
-            username: 'username',
-          },
-          body: 'a body',
-          bodyType: 'bodyType',
-          cookies: {
-            value: 'name1=value1;name2=value2;',
-            append: true,
-          },
-          setCookies: {
-            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
-            append: true,
-          },
-          defaultStepTimeout: 42,
-          deviceIds: ['chrome.laptop_large', 'chrome.laptop_small', 'firefox.laptop_large'],
-          executionRule: ExecutionRule.BLOCKING,
-          followRedirects: true,
-          headers: {'Content-Type': 'application/json', Authorization: 'Bearer token'},
-          locations: ['us-east-1', 'us-west-1'],
-          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-          mobileApplicationVersionFilePath: './path/to/application.apk',
-          // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
-          resourceUrlSubstitutionRegexes: [
-            's/(https://www.)(.*)/$1extra-$2',
-            'https://example.com(.*)|http://subdomain.example.com$1',
-          ],
-          retry: {
-            count: 5,
-            interval: 42,
-          },
-          startUrl: 'startUrl',
-          startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
-          testTimeout: 42,
-          variables: {var1: 'value1', var2: 'value2'},
-        },
-        failOnCriticalErrors: true,
-        failOnMissingTests: true,
-        failOnTimeout: false,
-        files: ['new-file'],
-        jUnitReport: 'junit-report.xml',
-        pollingTimeout: 2,
-        publicIds: ['ran-dom-id2'],
-        selectiveRerun: true,
-        subdomain: 'new-sub-domain',
-        testSearchQuery: 'a-search-query',
-        tunnel: true,
-      })
-
-      // TODO SYNTH-12989: Merge those 2 test cases when `pollingTimeout` is removed
-      command['batchTimeout'] = overrideCLI.batchTimeout // when both are used, `batchTimeout` takes precedence
       await command['resolveConfig']()
       expect(command['config']).toEqual({
         ...DEFAULT_COMMAND_CONFIG,
@@ -483,7 +411,6 @@ describe('run-test', () => {
           locations: ['us-east-1', 'us-west-1'],
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
-          // TODO SYNTH-12989: Clean up `pollingTimeout` from `defaultTestOverrides`
           resourceUrlSubstitutionRegexes: [
             's/(https://www.)(.*)/$1extra-$2',
             'https://example.com(.*)|http://subdomain.example.com$1',
@@ -495,10 +422,7 @@ describe('run-test', () => {
           startUrl: 'startUrl',
           startUrlSubstitutionRegex: 'startUrlSubstitutionRegex',
           testTimeout: 42,
-          variables: {
-            var1: 'value1',
-            var2: 'value2',
-          },
+          variables: {var1: 'value1', var2: 'value2'},
         },
         failOnCriticalErrors: true,
         failOnMissingTests: true,
@@ -506,7 +430,6 @@ describe('run-test', () => {
         files: ['new-file'],
         jUnitReport: 'junit-report.xml',
         publicIds: ['ran-dom-id2'],
-        pollingTimeout: 1,
         selectiveRerun: true,
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
@@ -537,21 +460,6 @@ describe('run-test', () => {
         defaultTestOverrides: {
           variables: {var1: 'value1', var2: 'value2'},
         },
-      })
-    })
-
-    test("Root config file 'pollingTimeout' still works (deprecated)", async () => {
-      const command = createCommand(RunTestsCommand)
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json'
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        batchTimeout: 333,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-global-polling-timeout.json',
-        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {followRedirects: false},
-        defaultTestOverrides: {followRedirects: false},
-        pollingTimeout: 333,
       })
     })
 
@@ -590,7 +498,6 @@ describe('run-test', () => {
           headers: {'Config-File': 'This is a mess'},
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000-config-file',
           mobileApplicationVersionFilePath: './path/to/application-from-config-file.apk',
-          pollingTimeout: 2,
           retry: {count: 2, interval: 300},
           resourceUrlSubstitutionRegexes: ['regex1-from-config-file', 'regex2-from-config-file'],
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
@@ -710,9 +617,8 @@ describe('run-test', () => {
             testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
             variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
 
-            // Added to make the test work, should be changed in the future when cleaning up
+            // Added to make test pass, we currently don't have an ENV variable for `mobileApplicationVersionFilePath`.
             mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
-            pollingTimeout: configFile.defaultTestOverrides.pollingTimeout,
           },
           failOnCriticalErrors: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
           failOnMissingTests: toBoolean(overrideEnv.DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS),
@@ -730,7 +636,6 @@ describe('run-test', () => {
           global: {},
           // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
           locations: configFile.locations,
-          pollingTimeout: 1,
           proxy: configFile.proxy,
           variableStrings: configFile.variableStrings,
         }
@@ -760,7 +665,6 @@ describe('run-test', () => {
           files: ['new-file-from-cli'],
           jUnitReport: 'junit-report-from-cli.xml',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
-          pollingTimeout: 10,
           publicIds: ['public-id-from-cli'],
           selectiveRerun: true,
           subdomain: 'subdomain-from-cli',
@@ -822,7 +726,6 @@ describe('run-test', () => {
         command['jUnitReport'] = overrideCLI.jUnitReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
-        command['pollingTimeout'] = overrideCLI.pollingTimeout
         command['publicIds'] = overrideCLI.publicIds
         command['selectiveRerun'] = overrideCLI.selectiveRerun
         command['subdomain'] = overrideCLI.subdomain
@@ -869,9 +772,7 @@ describe('run-test', () => {
           defaultTestOverrides: {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,
-            pollingTimeout: configFile.defaultTestOverrides.pollingTimeout,
           },
-          pollingTimeout: 1,
           proxy: configFile.proxy,
           variableStrings: configFile.variableStrings,
         }
@@ -938,7 +839,6 @@ describe('run-test', () => {
           files: ['file-from-cli-1;file-from-cli-2'],
           jUnitReport: 'junit-report-from-cli.xml',
           mobileApplicationVersionFilePath: './path/to/application-from-cli.apk',
-          pollingTimeout: 10,
           publicIds: ['public-id-from-cli-1', 'public-id-from-cli-2'],
           selectiveRerun: false,
           subdomain: 'subdomain-from-cli',
@@ -1002,7 +902,6 @@ describe('run-test', () => {
         command['jUnitReport'] = overrideCLI.jUnitReport
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['mobileApplicationVersionFilePath'] = overrideCLI.mobileApplicationVersionFilePath
-        command['pollingTimeout'] = overrideCLI.pollingTimeout
         command['publicIds'] = overrideCLI.publicIds
         command['selectiveRerun'] = overrideCLI.selectiveRerun
         command['subdomain'] = overrideCLI.subdomain
@@ -1050,7 +949,6 @@ describe('run-test', () => {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,
           },
-          pollingTimeout: 1,
           proxy: {protocol: 'http'},
           variableStrings: [],
         }
@@ -1084,7 +982,6 @@ describe('run-test', () => {
         headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from test file'},
         locations: ['test-file-loc-1', 'test-file-loc-2'],
         mobileApplicationVersion: 'test-file-00000000-0000-0000-0000-000000000000',
-        pollingTimeout: 32,
         resourceUrlSubstitutionRegexes: [
           'from-test-file-regex1',
           's/(https://www.)(.*)/$1extra-$2',
@@ -1225,7 +1122,6 @@ describe('run-test', () => {
           headers: {'Content-Type': 'application/json', Authorization: 'Bearer token from cli'},
           locations: ['cli-loc-1', 'cli-loc-2'],
           mobileApplicationVersion: 'cli-00000000-0000-0000-0000-000000000000',
-          pollingTimeout: 12,
           resourceUrlSubstitutionRegexes: [
             'from-cli-regex1',
             's/(https://www.)(.*)/$1extra-$2',

@@ -60,7 +60,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../../interfaces'
-import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT} from '../../run-tests-command'
+import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
 import * as utils from '../../utils/public'
 
 import {
@@ -302,7 +302,6 @@ describe('utils', () => {
         followRedirects: true,
         headers: {'header-name': 'value'},
         locations: ['location'],
-        pollingTimeout: 60 * 1000,
         retry: {count: 5, interval: 30},
         startUrl: 'http://127.0.0.1:60/newPath',
         startUrlSubstitutionRegex: '.*',
@@ -327,10 +326,6 @@ describe('utils', () => {
       expect(utils.getTestOverridesCount({headers: {}})).toBe(1)
 
       expect(utils.getTestOverridesCount({deviceIds: ['a']})).toBe(1)
-      expect(utils.getTestOverridesCount({pollingTimeout: 123})).toBe(1)
-
-      // Should ignore the default value for the pollingTimeout
-      expect(utils.getTestOverridesCount({pollingTimeout: DEFAULT_POLLING_TIMEOUT})).toBe(0)
     })
   })
 

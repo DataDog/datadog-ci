@@ -30,7 +30,6 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
-    "pollingTimeout": 2,
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
@@ -58,7 +57,6 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
-    "pollingTimeout": 3,
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
@@ -66,7 +64,6 @@
     "variables": {"titleVariable": "new value"}
   },
   "locations": [],
-  "pollingTimeout": 4,
   "proxy": {
     "protocol": "https"
   },

@@ -31,7 +31,6 @@ import {
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {DEFAULT_POLLING_TIMEOUT} from '../run-tests-command'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
@@ -77,16 +76,7 @@ export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, public
 }
 
 export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
-  return Object.keys(testOverrides).reduce((count, configKey) => {
-    // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
-    // We always send a value for `pollingTimeout` to the backend, even when the user doesn't override it.
-    // In that case, it shouldn't be counted.
-    if (configKey === 'pollingTimeout' && testOverrides[configKey] === DEFAULT_POLLING_TIMEOUT) {
-      return count
-    }
-
-    return count + 1
-  }, 0)
+  return Object.keys(testOverrides).reduce((count) => count + 1, 0)
 }
 
 export const setCiTriggerApp = (source: string): void => {

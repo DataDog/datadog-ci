@@ -67,7 +67,6 @@ describe('run-test', () => {
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           global: {}, // deprecated
           locations: [], // deprecated
-          pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
           selectiveRerun: false,
@@ -96,7 +95,6 @@ describe('run-test', () => {
           // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
           locations: [],
-          pollingTimeout: 2 * 60 * 1000,
           proxy: {protocol: 'http'},
           publicIds: [],
           selectiveRerun: false,
@@ -1009,7 +1007,6 @@ describe('run-test', () => {
                 locations: ['aws:us-east-1'],
                 mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
                 mobileApplicationVersionFilePath: 'path/to/application.apk',
-                pollingTimeout: 30000,
                 retry: {count: 2, interval: 300},
                 testTimeout: 300,
                 variables: {MY_VARIABLE: 'new title'},
@@ -1047,7 +1044,6 @@ describe('run-test', () => {
             locations: ['aws:us-east-1'],
             mobileApplicationVersion: '01234567-8888-9999-abcd-efffffffffff',
             mobileApplicationVersionFilePath: 'path/to/application.apk',
-            pollingTimeout: 30000,
             retry: {count: 2, interval: 300},
             testTimeout: 300,
             variables: {MY_VARIABLE: 'new title'},

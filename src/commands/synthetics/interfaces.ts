@@ -401,9 +401,6 @@ export interface BaseConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   resourceUrlSubstitutionRegexes?: string[]
   retry?: RetryConfig
   startUrl?: string
@@ -560,9 +557,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
   locations?: string[]
   mobileApplicationVersionFilePath?: string
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
