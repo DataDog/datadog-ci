@@ -97,7 +97,6 @@ export interface XMLJSON {
       // https://github.com/windyroad/JUnit-Schema/blob/master/JUnit.xsd
       batch_id: string
       batch_url: string
-      // TODO SYNTH-12989: Clean up deprecated `--runName`
       name: string
       tests_critical_error: number
       tests_failed: number
@@ -119,8 +118,6 @@ interface XMLError {
 export interface Args {
   context: CommandContext
   jUnitReport?: string
-  // TODO SYNTH-12989: Clean up deprecated `--runName`
-  /** @deprecated This CLI parameter is deprecated */
   runName?: string
 }
 
@@ -203,7 +200,6 @@ export class JUnitReporter implements Reporter {
         $: {
           batch_id: '',
           batch_url: '',
-          // TODO SYNTH-12989: Clean up deprecated `--runName`
           name: runName || 'Undefined run',
           tests_critical_error: 0,
           tests_failed: 0,
