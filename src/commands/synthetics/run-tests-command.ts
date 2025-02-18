@@ -9,7 +9,6 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -43,8 +42,6 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   failOnMissingTests: false,
   failOnTimeout: true,
   files: [],
-  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  global: {},
   jUnitReport: '',
   proxy: {protocol: 'http'},
   publicIds: [],
@@ -238,9 +235,6 @@ export class RunTestsCommand extends Command {
     if (typeof this.config.defaultTestOverrides?.setCookies === 'string') {
       this.config.defaultTestOverrides.setCookies = {value: this.config.defaultTestOverrides.setCookies}
     }
-
-    // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-    this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
     // Override with ENV variables
     this.config = deepExtend(
