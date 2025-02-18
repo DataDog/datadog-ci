@@ -28,7 +28,6 @@ test('all option flags are supported', async () => {
     'appKey',
     'config',
     'datadogSite',
-    'deviceIds',
     'failOnCriticalErrors',
     'failOnMissingTests',
     'failOnTimeout',
@@ -327,8 +326,6 @@ describe('run-test', () => {
       command['batchTimeout'] = overrideCLI.batchTimeout
       command['configPath'] = overrideCLI.configPath
       command['datadogSite'] = overrideCLI.datadogSite
-      // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-      command['deviceIds'] = ['my-old-device']
       command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
       command['failOnMissingTests'] = overrideCLI.failOnMissingTests
       command['failOnTimeout'] = overrideCLI.failOnTimeout
@@ -423,19 +420,6 @@ describe('run-test', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
-      })
-    })
-
-    // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-    test("CLI parameter '--deviceIds' still works (deprecated)", async () => {
-      const command = createCommand(RunTestsCommand)
-      command['deviceIds'] = ['dev1', 'dev2']
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        defaultTestOverrides: {
-          deviceIds: ['dev1', 'dev2'],
-        },
       })
     })
 
@@ -681,8 +665,6 @@ describe('run-test', () => {
         command['batchTimeout'] = overrideCLI.batchTimeout
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
-        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-        command['deviceIds'] = ['my-old-device']
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
         command['failOnMissingTests'] = overrideCLI.failOnMissingTests
         command['failOnTimeout'] = overrideCLI.failOnTimeout
@@ -849,8 +831,6 @@ describe('run-test', () => {
         command['batchTimeout'] = overrideCLI.batchTimeout
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
-        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-        command['deviceIds'] = ['my-old-device']
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
         command['failOnMissingTests'] = overrideCLI.failOnMissingTests
         command['failOnTimeout'] = overrideCLI.failOnTimeout
@@ -1087,8 +1067,6 @@ describe('run-test', () => {
           variables: {cliVar1: 'value1', cliVar2: 'value2'},
         }
 
-        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-        command['deviceIds'] = ['my-old-device']
         command['mobileApplicationVersion'] = defaultTestOverrides.mobileApplicationVersion
         command['overrides'] = [
           `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,

@@ -102,12 +102,6 @@ export class RunTestsCommand extends Command {
     validator: validation.isInteger(),
   })
   private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
-  // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-  /** @deprecated This CLI parameter is deprecated, please use `--override deviceIds="dev1;dev2;..."` instead. */
-  private deviceIds = Option.Array('--deviceIds', {
-    description:
-      '**DEPRECATED** Override the mobile device(s) to run your mobile test. Please use `--override deviceIds="dev1;dev2;..."` instead.',
-  })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
       'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
@@ -386,8 +380,7 @@ export class RunTestsCommand extends Command {
         cookies: Object.keys(cliOverrideCookies).length > 0 ? cliOverrideCookies : undefined,
         setCookies: Object.keys(cliOverrideSetCookies).length > 0 ? cliOverrideSetCookies : undefined,
         defaultStepTimeout: validatedOverrides.defaultStepTimeout,
-        // TODO SYNTH-12989: Clean up deprecated `--deviceIds` in favor of `--override deviceIds="dev1;dev2;..."`
-        deviceIds: validatedOverrides.deviceIds ?? this.deviceIds,
+        deviceIds: validatedOverrides.deviceIds,
         executionRule: validatedOverrides.executionRule,
         followRedirects: validatedOverrides.followRedirects,
         locations: validatedOverrides.locations,
