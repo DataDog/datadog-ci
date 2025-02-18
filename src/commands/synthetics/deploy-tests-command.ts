@@ -35,13 +35,13 @@ export class DeployTestsCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Synthetics',
-    description: 'Deploy Local Test Definitions as scheduled tests in Datadog.',
+    description: 'Deploy Local Test Definitions as Main Test Definitions in Datadog.',
     details: `
-      This command deploys Local Test Definitions as scheduled tests in Datadog, usually when a feature branch is merged.
+      This command deploys Local Test Definitions as Main Test Definitions in Datadog, usually when a feature branch is merged or during a deployment.
     `,
     examples: [
       [
-        'Explicitly specify multiple tests to run',
+        'Explicitly specify the local test definitions to deploy',
         'datadog-ci synthetics deploy-tests --public-id pub-lic-id1 --public-id pub-lic-id2',
       ],
       [
