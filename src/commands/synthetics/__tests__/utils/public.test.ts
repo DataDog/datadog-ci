@@ -571,10 +571,10 @@ describe('utils', () => {
     })
   })
 
-  describe('getOverriddenConfig', () => {
+  describe('makeTestPayload', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.makeTestPayload({public_id: publicId} as Test, {id: publicId}, publicId)).toEqual({
         public_id: publicId,
       })
     })
@@ -596,13 +596,12 @@ describe('utils', () => {
           fakeTest.options.ci = {executionRule: testExecutionRule}
         }
 
-        const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
+        const testOverrides = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        const overriddenConfig = utils.getOverriddenConfig(
+        const overriddenConfig = utils.makeTestPayload(
           fakeTest,
-          publicId,
-          mockReporter,
-          configOverride
+          {id: publicId, testOverrides},
+          publicId
         ) as RemoteTestPayload
 
         expect(overriddenConfig.public_id).toBe(publicId)
@@ -642,15 +641,14 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride = {
+      const testOverrides = {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(
+      const overriddenConfig = utils.makeTestPayload(
         fakeTest,
-        publicId,
-        mockReporter,
-        configOverride
+        {id: publicId, testOverrides},
+        publicId
       ) as RemoteTestPayload
 
       expect(overriddenConfig.public_id).toBe(publicId)
@@ -665,7 +663,7 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride: UserConfigOverride = {
+      const testOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',
@@ -687,8 +685,8 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
-        ...configOverride,
+      expect(utils.makeTestPayload(fakeTest, {id: publicId, testOverrides}, publicId)).toEqual({
+        ...testOverrides,
         public_id: publicId,
       })
     })

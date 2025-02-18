@@ -92,19 +92,6 @@ export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, public
   }
 }
 
-/** @deprecated This function doesn't work for local test definitions. Please use {@link makeTestPayload} instead. */
-export const getOverriddenConfig = (
-  test: Test,
-  publicId: string,
-  reporter: MainReporter,
-  testOverrides?: UserConfigOverride
-): TestPayload => {
-  return {
-    ...getBasePayload(test, testOverrides),
-    public_id: publicId,
-  }
-}
-
 export const getTestOverridesCount = (testOverrides: UserConfigOverride) => {
   return Object.keys(testOverrides).reduce((count, configKey) => {
     // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
