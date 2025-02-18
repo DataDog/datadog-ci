@@ -614,9 +614,7 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
-// XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
-//      interface that we need, and it's better semantically.
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConfig, 'datadogSite' | 'subdomain'>) => {
+export const getAppBaseURL = ({datadogSite, subdomain}: {datadogSite: string; subdomain: string}) => {
   return getCommonAppBaseURL(datadogSite, subdomain)
 }
 
