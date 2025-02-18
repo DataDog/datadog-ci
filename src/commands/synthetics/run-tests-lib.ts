@@ -1,6 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {waitForResults} from './batch'
 import {
   moveLocationsToTestOverrides,
   replaceGlobalWithDefaultTestOverrides,
@@ -35,7 +36,6 @@ import {
   InitialSummary,
   renderResults,
   runTests,
-  waitForResults,
   getExitReason,
   toExitCode,
   reportExitLogs,

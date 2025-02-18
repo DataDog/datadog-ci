@@ -12,20 +12,17 @@ import {getCIMetadata} from '../../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
-import {waitForBatchToFinish} from '../batch'
 import {replaceConfigWithTestOverrides} from '../compatibility'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
   BrowserServerResult,
   ExecutionRule,
-  LocationsMapping,
   MainReporter,
   Operator,
   Payload,
   Reporter,
   Result,
-  ResultDisplayInfo,
   ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
@@ -45,7 +42,6 @@ import {
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
-import {Tunnel} from '../tunnel'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
@@ -243,52 +239,6 @@ export const getOrgSettings = async (
 
 export const isResultSkippedBySelectiveRerun = (result: Result): result is ResultSkippedBySelectiveRerun => {
   return result.selectiveRerun?.decision === 'skip'
-}
-
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const waitForResults = async (
-  api: APIHelper,
-  trigger: Trigger,
-  tests: Test[],
-  options: ResultDisplayInfo['options'],
-  reporter: MainReporter,
-  tunnel?: Tunnel
-): Promise<Result[]> => {
-  let isTunnelConnected = true
-  if (tunnel) {
-    tunnel
-      .keepAlive()
-      .then(() => (isTunnelConnected = false))
-      .catch(() => (isTunnelConnected = false))
-  }
-
-  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
-
-  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
-    mapping[location.name] = location.display_name
-
-    return mapping
-  }, {})
-
-  const getLocation = (dcId: string, test: Test) => {
-    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
-
-    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
-  }
-
-  const resultDisplayInfo = {
-    getLocation,
-    options,
-    tests,
-  }
-
-  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
-
-  if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
-  }
-
-  return results
 }
 
 export type InitialSummary = Omit<Summary, 'batchId'>

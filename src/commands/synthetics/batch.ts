@@ -5,13 +5,16 @@ import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
+  LocationsMapping,
   MainReporter,
   PollResult,
   Result,
   ResultDisplayInfo,
   ResultInBatch,
   Test,
+  Trigger,
 } from './interfaces'
+import {Tunnel} from './tunnel'
 import {
   isResultInBatchSkippedBySelectiveRerun,
   getResultIdOrLinkedResultId,
@@ -20,11 +23,56 @@ import {
   isNonFinalResult,
   wait,
 } from './utils/internal'
-import {getAppBaseURL} from './utils/public'
+import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
 
-export const waitForBatchToFinish = async (
+export const waitForResults = async (
+  api: APIHelper,
+  trigger: Trigger,
+  tests: Test[],
+  options: ResultDisplayInfo['options'],
+  reporter: MainReporter,
+  tunnel?: Tunnel
+): Promise<Result[]> => {
+  let isTunnelConnected = true
+  if (tunnel) {
+    tunnel
+      .keepAlive()
+      .then(() => (isTunnelConnected = false))
+      .catch(() => (isTunnelConnected = false))
+  }
+
+  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
+
+  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
+    mapping[location.name] = location.display_name
+
+    return mapping
+  }, {})
+
+  const getLocation = (dcId: string, test: Test) => {
+    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
+
+    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
+  }
+
+  const resultDisplayInfo = {
+    getLocation,
+    options,
+    tests,
+  }
+
+  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
+
+  if (tunnel && !isTunnelConnected) {
+    reporter.error('The tunnel has stopped working, this may have affected the results.')
+  }
+
+  return results
+}
+
+const waitForBatchToFinish = async (
   api: APIHelper,
   batchId: string,
   batchTimeout: number,
