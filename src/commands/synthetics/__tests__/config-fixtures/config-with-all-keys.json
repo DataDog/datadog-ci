@@ -63,7 +63,6 @@
     "testTimeout": 200000,
     "variables": {"titleVariable": "new value"}
   },
-  "locations": [],
   "proxy": {
     "protocol": "https"
   },

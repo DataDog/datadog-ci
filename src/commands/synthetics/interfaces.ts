@@ -553,9 +553,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
   global?: UserConfigOverride
   jUnitReport?: string
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
-  locations?: string[]
   mobileApplicationVersionFilePath?: string
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */

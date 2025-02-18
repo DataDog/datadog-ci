@@ -1,34 +1,5 @@
 import {MainReporter, RunTestsCommandConfig, Suite, UserConfigOverride} from './interfaces'
 
-export const moveLocationsToTestOverrides = (
-  config: RunTestsCommandConfig,
-  reporter: MainReporter,
-  warnDeprecatedLocations = false
-): RunTestsCommandConfig => {
-  const isLocationsUsedInRoot = (config.locations ?? []).length !== 0
-  // At this point, `global` should already have been moved to `defaultTestOverrides`
-  const isLocationsUsedInDefaultTestOverrides = (config.defaultTestOverrides?.locations ?? []).length !== 0
-
-  if (isLocationsUsedInRoot && warnDeprecatedLocations) {
-    reporter.error(
-      "The 'locations' property should not be used at the root level of the global configuration file. Please put it in 'defaultTestOverrides' instead.\n If 'locations' exists in both places, only the one in 'defaultTestOverrides' is used!\n"
-    )
-  }
-
-  // If the user hasn't migrated and is still using `locations` at the root level, move it in the `defaultTestOverrides`
-  if (!isLocationsUsedInDefaultTestOverrides && isLocationsUsedInRoot) {
-    return {
-      ...config,
-      defaultTestOverrides: {
-        ...config.defaultTestOverrides,
-        locations: config.locations,
-      },
-    }
-  }
-
-  return config
-}
-
 export const replaceConfigWithTestOverrides = (
   config: UserConfigOverride | undefined,
   testOverrides: UserConfigOverride | undefined

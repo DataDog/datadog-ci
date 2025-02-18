@@ -6,7 +6,7 @@ import * as ciUtils from '../../../helpers/utils'
 import * as api from '../api'
 import * as batchUtils from '../batch'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
-import {ExecutionRule, RunTestsCommandConfig, Suite, Summary, UserConfigOverride} from '../interfaces'
+import {ExecutionRule, Suite, Summary} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
@@ -66,7 +66,6 @@ describe('run-test', () => {
           failOnTimeout: true,
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           global: {}, // deprecated
-          locations: [], // deprecated
           proxy: {protocol: 'http'},
           publicIds: [],
           selectiveRerun: false,
@@ -94,7 +93,6 @@ describe('run-test', () => {
           files: ['{,!(node_modules)/**/}*.synthetics.json'],
           // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
           global: {},
-          locations: [],
           proxy: {protocol: 'http'},
           publicIds: [],
           selectiveRerun: false,
@@ -147,74 +145,37 @@ describe('run-test', () => {
       }
     )
 
-    test.each([
-      // TODO SYNTH-12989: Clean up deprecated `global` and `locations`
-      [
-        'locations in global object only (deprecated)',
-        {global: {locations: ['global-location-1']}},
-        {locations: ['global-location-1']},
-      ],
-      [
-        'locations at root level only (deprecated)',
-        {locations: ['envvar-location-1', 'envvar-location-2']},
-        {locations: ['envvar-location-1', 'envvar-location-2']},
-      ],
-      [
-        'locations in global (deprecated), defaultTestOverrides and at the root level',
-        {
-          global: {locations: ['global-location-1']},
-          defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']},
-          locations: ['envvar-location-1', 'envvar-location-2'],
-        },
-        {locations: ['defaultTestOverrides-location-1']},
-      ],
-      [
-        'locations in defaultTestOverrides only',
-        {defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']}},
-        {locations: ['defaultTestOverrides-location-1']},
-      ],
-      [
-        'locations in both defaultTestOverrides and at the root level',
-        {
-          defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']},
-          locations: ['envvar-location-1', 'envvar-location-2'],
-        },
-        {locations: ['defaultTestOverrides-location-1']},
-      ],
-    ] as [string, Partial<RunTestsCommandConfig>, UserConfigOverride][])(
-      'Use appropriate list of locations for tests triggered by public id: %s',
-      async (text, partialCIConfig, expectedOverriddenConfig) => {
-        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
-          Promise.resolve({
-            initialSummary: utils.createInitialSummary(),
-            overriddenTestsToTrigger: [],
-            tests: [],
-          })
-        )
+    test('Use appropriate list of locations for tests triggered by public id', async () => {
+      const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
+          overriddenTestsToTrigger: [],
+          tests: [],
+        })
+      )
 
-        const apiHelper = {}
+      const apiHelper = {}
 
-        jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
-        await expect(
-          runTests.executeTests(mockReporter, {
-            ...ciConfig,
-            ...partialCIConfig,
-            publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
-          })
-        ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: expectedOverriddenConfig}),
-            expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: expectedOverriddenConfig}),
-          ]),
-          expect.anything(),
-          false,
-          false,
-          false
-        )
-      }
-    )
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          defaultTestOverrides: {locations: ['defaultTestOverrides-location-1']},
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: {locations: ['defaultTestOverrides-location-1']}}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: {locations: ['defaultTestOverrides-location-1']}}),
+        ]),
+        expect.anything(),
+        false,
+        false,
+        false
+      )
+    })
 
     test.each(compat)(
       'should not wait for `skipped` only tests batch results ($compat)',

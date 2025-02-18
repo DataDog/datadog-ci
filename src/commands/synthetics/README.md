@@ -201,7 +201,6 @@ The following is a list of the changes:
 
 * The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 * The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
-* The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favor of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
 
 ## Run Tests Command
 

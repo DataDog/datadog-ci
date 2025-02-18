@@ -75,8 +75,6 @@ describe('run-test', () => {
         DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'false',
         DATADOG_SYNTHETICS_FILES: 'test-file1;test-file2;test-file3',
         DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report.xml',
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-        DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
         DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id;another-public-id',
         DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
         DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query',
@@ -255,8 +253,6 @@ describe('run-test', () => {
           variables: {titleVariable: 'new value'},
         },
         jUnitReport: 'junit-report.xml',
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-        locations: [],
         proxy: {
           protocol: 'https',
         },
@@ -512,8 +508,6 @@ describe('run-test', () => {
         // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
         global: {},
         jUnitReport: 'junit-report-from-config-file.xml',
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-        locations: ['location_1_from_config_file', 'location_2_from_config_file'],
         proxy: {protocol: 'http'},
         publicIds: ['public-id-from-config-file'],
         selectiveRerun: false,
@@ -542,8 +536,6 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -602,7 +594,6 @@ describe('run-test', () => {
             executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
             followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
             headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
-            // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
             locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
             mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
             resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -634,8 +625,6 @@ describe('run-test', () => {
           // All the following variables should be removed in the future, as they are either deprecated or misaligned (no ENV variable for now)
           // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
           global: {},
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          locations: configFile.locations,
           proxy: configFile.proxy,
           variableStrings: configFile.variableStrings,
         }
@@ -767,7 +756,6 @@ describe('run-test', () => {
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,
-          locations: configFile.locations,
           global: {},
           defaultTestOverrides: {
             ...defaultTestOverrides,
@@ -794,8 +782,6 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
           DATADOG_SYNTHETICS_FILES: '1_from_env.json;2_from_env.json',
           DATADOG_SYNTHETICS_JUNIT_REPORT: 'junit-report-from-env.xml',
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_PUBLIC_IDS: 'a-public-id-from-env;another-public-id-from-env',
           DATADOG_SYNTHETICS_SELECTIVE_RERUN: 'true',
           DATADOG_SYNTHETICS_TEST_SEARCH_QUERY: 'a-search-query-from-env',
@@ -938,12 +924,11 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`, `location`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy` etc.
+        // TODO SYNTH-12989: Clean up deprecated `global`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy` etc.
         // This fixes are only here for the test to run, and to maintain backward compatibility.
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,
-          locations: [],
           global: {},
           defaultTestOverrides: {
             ...defaultTestOverrides,
@@ -1071,8 +1056,6 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS: 'true',
           DATADOG_SYNTHETICS_OVERRIDE_HEADERS:
             "{'Content-Type': 'application/json', 'Authorization': 'Bearer token from env'}",
-          // TODO SYNTH-12989: Clean up `locations` that should only be part of the testOverrides
-          DATADOG_SYNTHETICS_LOCATIONS: 'Wonderland;FarFarAway',
           DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS: 'location_1_from_env;location_2_from_env',
           DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION: 'env-00000000-0000-0000-0000-000000000000',
           DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES: 'env-regex1;env-regex2',

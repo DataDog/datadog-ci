@@ -9,7 +9,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
-import {moveLocationsToTestOverrides, replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -47,8 +47,6 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   global: {},
   jUnitReport: '',
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  locations: [],
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
@@ -258,9 +256,6 @@ export class RunTestsCommand extends Command {
     // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
     this.config = replaceGlobalWithDefaultTestOverrides(this.config, this.reporter)
 
-    // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-    this.config = moveLocationsToTestOverrides(this.config, this.reporter)
-
     // Override with ENV variables
     this.config = deepExtend(
       this.config,
@@ -319,10 +314,7 @@ export class RunTestsCommand extends Command {
         deviceIds: process.env.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS?.split(';'),
         executionRule: toExecutionRule(process.env.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
         followRedirects: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-        // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-        locations:
-          process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';') ??
-          process.env.DATADOG_SYNTHETICS_LOCATIONS?.split(';'),
+        locations: process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
         resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
           ';'

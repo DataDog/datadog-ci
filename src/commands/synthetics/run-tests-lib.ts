@@ -2,7 +2,7 @@ import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {runTests, waitForResults} from './batch'
-import {moveLocationsToTestOverrides, replaceGlobalWithDefaultTestOverrides} from './compatibility'
+import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -62,9 +62,6 @@ export const executeTests = async (
 
   // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
   config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
-
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  config = moveLocationsToTestOverrides(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
