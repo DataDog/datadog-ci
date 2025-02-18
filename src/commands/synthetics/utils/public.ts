@@ -335,35 +335,6 @@ export const retry = async <T, E extends Error>(
   return trier()
 }
 
-// TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-export const parseVariablesFromCli = (
-  variableArguments: string[] = [],
-  logFunction: (log: string) => void
-): {[key: string]: string} | undefined => {
-  const variables: {[key: string]: string} = {}
-
-  for (const variableArgument of variableArguments) {
-    const separatorIndex = variableArgument.indexOf('=')
-
-    if (separatorIndex === -1) {
-      logFunction(`Ignoring variable "${variableArgument}" as separator "=" was not found`)
-      continue
-    }
-
-    if (separatorIndex === 0) {
-      logFunction(`Ignoring variable "${variableArgument}" as variable name is empty`)
-      continue
-    }
-
-    const key = variableArgument.substring(0, separatorIndex)
-    const value = variableArgument.substring(separatorIndex + 1)
-
-    variables[key] = value
-  }
-
-  return Object.keys(variables).length > 0 ? variables : undefined
-}
-
 export const getAppBaseURL = ({datadogSite, subdomain}: {datadogSite: string; subdomain: string}) => {
   return getCommonAppBaseURL(datadogSite, subdomain)
 }

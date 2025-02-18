@@ -41,7 +41,6 @@ test('all option flags are supported', async () => {
     'search',
     'subdomain',
     'tunnel',
-    'variable',
   ]
 
   const cli = new Cli()
@@ -261,8 +260,6 @@ describe('run-test', () => {
         subdomain: 'ppa',
         testSearchQuery: 'a-search-query',
         tunnel: true,
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variableStrings: [],
       }
 
       const command = createCommand(RunTestsCommand)
@@ -291,8 +288,6 @@ describe('run-test', () => {
         subdomain: 'new-sub-domain',
         testSearchQuery: 'a-search-query',
         tunnel: true,
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variableStrings: ['var3=value3', 'var4=value4'],
       }
       /** Values passed to `--override`. */
       const defaultTestOverrides: UserConfigOverride = {
@@ -346,8 +341,6 @@ describe('run-test', () => {
       command['subdomain'] = overrideCLI.subdomain
       command['tunnel'] = overrideCLI.tunnel
       command['testSearchQuery'] = overrideCLI.testSearchQuery
-      // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-      command['variableStrings'] = overrideCLI.variableStrings
       command['overrides'] = [
         `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
         `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
@@ -446,19 +439,6 @@ describe('run-test', () => {
       })
     })
 
-    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-    test("CLI parameter '--variable' still works (deprecated)", async () => {
-      const command = createCommand(RunTestsCommand)
-      command['variableStrings'] = ['var1=value1', 'var2=value2']
-      await command['resolveConfig']()
-      expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
-        defaultTestOverrides: {
-          variables: {var1: 'value1', var2: 'value2'},
-        },
-      })
-    })
-
     // We have 2 code paths that handle different levels of configuration overrides:
     //  1)  config file (configuration of datadog-ci)             <   ENV (environment variables)   <   CLI (command flags)
     //  2)  global (global config object, aka. `config.global`)   <   ENV (environment variables)   <   test file (test configuration)
@@ -514,8 +494,6 @@ describe('run-test', () => {
         subdomain: 'subdomain_from_config_file',
         testSearchQuery: 'a-search-query-from-config-file',
         tunnel: false,
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        variableStrings: ['configVar1=configValue1', 'configVar2=configValue2'],
       }
 
       test('config file < ENV', async () => {
@@ -626,7 +604,6 @@ describe('run-test', () => {
           // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
           global: {},
           proxy: configFile.proxy,
-          variableStrings: configFile.variableStrings,
         }
 
         process.env = overrideEnv
@@ -659,8 +636,6 @@ describe('run-test', () => {
           subdomain: 'subdomain-from-cli',
           testSearchQuery: 'a-search-query-from-cli',
           tunnel: true,
-          // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-          variableStrings: ['cliVar3=value3', 'cliVar4=value4'],
         }
         const defaultTestOverrides: UserConfigOverride = {
           allowInsecureCertificates: false,
@@ -720,8 +695,6 @@ describe('run-test', () => {
         command['subdomain'] = overrideCLI.subdomain
         command['tunnel'] = overrideCLI.tunnel
         command['testSearchQuery'] = overrideCLI.testSearchQuery
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        command['variableStrings'] = overrideCLI.variableStrings
         command['overrides'] = [
           `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
           `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
@@ -751,7 +724,7 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`, `location`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy`, etc.
+        // TODO SYNTH-12989: Clean up deprecated `global`, `mobileApplicationVersionFilePath`, `proxy`, etc.
         // This fixes are only here for the test to run, and to maintain backward compatibility.
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
@@ -762,7 +735,6 @@ describe('run-test', () => {
             mobileApplicationVersionFilePath,
           },
           proxy: configFile.proxy,
-          variableStrings: configFile.variableStrings,
         }
 
         expect(command['config']).toEqual(expectedCLIOverrideResult)
@@ -830,8 +802,6 @@ describe('run-test', () => {
           subdomain: 'subdomain-from-cli',
           testSearchQuery: 'a-search-query-from-cli',
           tunnel: true,
-          // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-          variableStrings: ['cliVar3=value3', 'cliVar4=value4'],
         }
         const defaultTestOverrides: UserConfigOverride = {
           allowInsecureCertificates: false,
@@ -893,8 +863,6 @@ describe('run-test', () => {
         command['subdomain'] = overrideCLI.subdomain
         command['tunnel'] = overrideCLI.tunnel
         command['testSearchQuery'] = overrideCLI.testSearchQuery
-        // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-        command['variableStrings'] = overrideCLI.variableStrings
         command['overrides'] = [
           `allowInsecureCertificates=${defaultTestOverrides.allowInsecureCertificates}`,
           `basicAuth.password=${defaultTestOverrides.basicAuth?.password}`,
@@ -924,7 +892,7 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`, `variableStrings`, `mobileApplicationVersionFilePath`, `proxy` etc.
+        // TODO SYNTH-12989: Clean up deprecated `global`, `mobileApplicationVersionFilePath`, `proxy` etc.
         // This fixes are only here for the test to run, and to maintain backward compatibility.
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
@@ -935,7 +903,6 @@ describe('run-test', () => {
             mobileApplicationVersionFilePath,
           },
           proxy: {protocol: 'http'},
-          variableStrings: [],
         }
         expect(command['config']).toEqual(expectedCLIOverrideResult)
       })

@@ -76,7 +76,6 @@ export const ciConfig: RunTestsCommandConfig = {
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
-  variableStrings: [],
 }
 
 export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<ServerTest> = {}): ServerTest => ({

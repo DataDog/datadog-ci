@@ -71,7 +71,6 @@ describe('run-test', () => {
           selectiveRerun: false,
           subdomain: 'app',
           tunnel: false,
-          variableStrings: [], // deprecated
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
     })
@@ -98,8 +97,6 @@ describe('run-test', () => {
           selectiveRerun: false,
           subdomain: 'app',
           tunnel: false,
-          // TODO SYNTH-12989: Clean up deprecated `variableStrings`
-          variableStrings: [],
         })
       ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
     })

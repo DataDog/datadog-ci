@@ -20,7 +20,6 @@ import {
   getExitReason,
   getOrgSettings,
   getReporter,
-  parseVariablesFromCli,
   renderResults,
   reportCiError,
   toExitCode,
@@ -52,8 +51,6 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
-  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-  variableStrings: [],
 }
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
@@ -84,7 +81,7 @@ export class RunTestsCommand extends Command {
       ],
       [
         'Pass variables as arguments',
-        'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json --variable PASSWORD=$PASSWORD',
+        'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json --override variables.NAME=VALUE',
       ],
     ],
   })
@@ -149,11 +146,6 @@ export class RunTestsCommand extends Command {
   })
   private tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
-  })
-  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-  /** @deprecated This CLI parameter is deprecated, please use `--override variables.NAME=VALUE` instead. */
-  private variableStrings = Option.Array('-v,--variable', {
-    description: '**DEPRECATED** Pass a variable override. Please use `--override variables.NAME=VALUE` instead.',
   })
 
   private reporter!: MainReporter
@@ -410,13 +402,11 @@ export class RunTestsCommand extends Command {
     )
 
     // We do not want to extend headers and variables, but rather override them completely
-    // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
     if (validatedOverrides.headers) {
       this.config.defaultTestOverrides.headers = validatedOverrides.headers
     }
-    if (validatedOverrides.variables || this.variableStrings) {
-      this.config.defaultTestOverrides.variables =
-        validatedOverrides.variables ?? parseVariablesFromCli(this.variableStrings, (log) => this.reporter.log(log))
+    if (validatedOverrides.variables) {
+      this.config.defaultTestOverrides.variables = validatedOverrides.variables
     }
 
     if (typeof this.config.files === 'string') {

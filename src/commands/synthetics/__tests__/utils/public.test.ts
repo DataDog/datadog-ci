@@ -447,18 +447,6 @@ describe('utils', () => {
     })
   })
 
-  test('parseVariablesFromCli', () => {
-    const mockLogFunction = (message: string) => undefined
-    expect(utils.parseVariablesFromCli(['TEST=42'], mockLogFunction)).toEqual({TEST: '42'})
-    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'], mockLogFunction)).toEqual({
-      TEST: '42 with some spaces',
-    })
-    expect(utils.parseVariablesFromCli(['TEST=42=43=44'], mockLogFunction)).toEqual({TEST: '42=43=44'})
-    expect(utils.parseVariablesFromCli(['TEST='], mockLogFunction)).toEqual({TEST: ''})
-    expect(utils.parseVariablesFromCli([''], mockLogFunction)).toBeUndefined()
-    expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
-  })
-
   describe('sortResultsByOutcome', () => {
     const results: Result[] = getResults([
       {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
