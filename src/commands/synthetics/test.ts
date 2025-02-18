@@ -6,6 +6,7 @@ import {
   warnIfDeprecatedConfigUsed,
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
+import {CriticalError} from './errors'
 import {
   RemoteTriggerConfig,
   MainReporter,
@@ -15,10 +16,14 @@ import {
   TriggerConfig,
   LocalTestDefinition,
   ImportTestsCommandConfig,
+  ExecutionRule,
+  TestNotFound,
+  TestSkipped,
+  TestWithOverride,
 } from './interfaces'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
-import {isLocalTriggerConfig} from './utils/internal'
-import {getSuites, normalizePublicId} from './utils/public'
+import {getPublicIdOrPlaceholder, getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
+import {InitialSummary, getSuites, isTestSupportedByTunnel, makeTestPayload, normalizePublicId} from './utils/public'
 
 export const getTestConfigs = async (
   config: RunTestsCommandConfig | ImportTestsCommandConfig,
@@ -81,7 +86,68 @@ export const getTestsFromSearchQuery = async (
   }))
 }
 
-export const getTest = async (
+export const getTestAndOverrideConfig = async (
+  api: APIHelper,
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  triggerConfig: TriggerConfig,
+  reporter: MainReporter,
+  summary: InitialSummary,
+  isTunnelEnabled?: boolean
+): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
+  const publicIdOrPlaceholder = getPublicIdOrPlaceholder({public_id: getTriggerConfigPublicId(triggerConfig)})
+  const normalizedId = normalizePublicId(publicIdOrPlaceholder)
+  if (!normalizedId) {
+    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${publicIdOrPlaceholder}\``)
+  }
+
+  const testResult = await getTest(api, triggerConfig)
+  if ('errorMessage' in testResult) {
+    summary.testsNotFound.add(normalizedId)
+
+    return {errorMessage: testResult.errorMessage}
+  }
+
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  triggerConfig.testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
+
+  const {test} = testResult
+  const overriddenConfig = makeTestPayload(test, triggerConfig, normalizedId)
+  const testExecutionRule = test?.options?.ci?.executionRule
+  const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
+
+  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides)
+  if (executionRule === ExecutionRule.SKIPPED) {
+    summary.skipped++
+
+    return {overriddenConfig}
+  }
+  reporter.testWait(test)
+
+  if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
+    const details = [`public ID: ${normalizedId}`, `type: ${test.type}`]
+
+    if (test.subtype) {
+      details.push(`sub-type: ${test.subtype}`)
+    }
+
+    if (test.subtype === 'multi') {
+      const unsupportedStepSubTypes = (test.config.steps || [])
+        .filter((step) => step.subtype !== 'http')
+        .map(({subtype}) => subtype)
+
+      details.push(`step sub-types: [${unsupportedStepSubTypes.join(', ')}]`)
+    }
+
+    throw new CriticalError(
+      'TUNNEL_NOT_SUPPORTED',
+      `The tunnel is only supported with HTTP API tests and Browser tests (${details.join(', ')}).`
+    )
+  }
+
+  return {test, overriddenConfig}
+}
+
+const getTest = async (
   api: APIHelper,
   triggerConfig: TriggerConfig
 ): Promise<{test: Test} | {errorMessage: string}> => {

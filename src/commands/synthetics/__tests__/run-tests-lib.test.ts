@@ -11,6 +11,7 @@ import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
 import * as runTests from '../run-tests-lib'
+import * as testUtils from '../test'
 import {Tunnel} from '../tunnel'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
@@ -396,7 +397,7 @@ describe('run-test', () => {
 
     test.each(compat)('getMobileApplicationPresignedURLs throws ($compat)', async ({defaultTestOverrides}) => {
       const mobileTest = getMobileTest()
-      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+      jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,
@@ -430,7 +431,7 @@ describe('run-test', () => {
 
     test.each(compat)('uploadMobileApplicationPart throws ($compat)', async ({defaultTestOverrides}) => {
       const mobileTest = getMobileTest()
-      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+      jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,

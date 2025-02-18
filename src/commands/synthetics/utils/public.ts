@@ -28,23 +28,18 @@ import {
   SyntheticsCIConfig,
   SyntheticsOrgSettings,
   Test,
-  TestNotFound,
   TestPayload,
-  TestSkipped,
-  TestWithOverride,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
 import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import {getTest} from '../test'
+import {getTestAndOverrideConfig} from '../test'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
-  getTriggerConfigPublicId,
   hasDefinedResult,
   isMobileTestWithOverride,
-  getPublicIdOrPlaceholder,
   getBasePayload,
   isLocalTriggerConfig,
   wait,
@@ -323,68 +318,6 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
     }
   },
 })
-
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const getTestAndOverrideConfig = async (
-  api: APIHelper,
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfig: TriggerConfig,
-  reporter: MainReporter,
-  summary: InitialSummary,
-  isTunnelEnabled?: boolean
-): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
-  const publicIdOrPlaceholder = getPublicIdOrPlaceholder({public_id: getTriggerConfigPublicId(triggerConfig)})
-  const normalizedId = normalizePublicId(publicIdOrPlaceholder)
-  if (!normalizedId) {
-    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${publicIdOrPlaceholder}\``)
-  }
-
-  const testResult = await getTest(api, triggerConfig)
-  if ('errorMessage' in testResult) {
-    summary.testsNotFound.add(normalizedId)
-
-    return {errorMessage: testResult.errorMessage}
-  }
-
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfig.testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
-
-  const {test} = testResult
-  const overriddenConfig = makeTestPayload(test, triggerConfig, normalizedId)
-  const testExecutionRule = test?.options?.ci?.executionRule
-  const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
-
-  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides)
-  if (executionRule === ExecutionRule.SKIPPED) {
-    summary.skipped++
-
-    return {overriddenConfig}
-  }
-  reporter.testWait(test)
-
-  if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
-    const details = [`public ID: ${normalizedId}`, `type: ${test.type}`]
-
-    if (test.subtype) {
-      details.push(`sub-type: ${test.subtype}`)
-    }
-
-    if (test.subtype === 'multi') {
-      const unsupportedStepSubTypes = (test.config.steps || [])
-        .filter((step) => step.subtype !== 'http')
-        .map(({subtype}) => subtype)
-
-      details.push(`step sub-types: [${unsupportedStepSubTypes.join(', ')}]`)
-    }
-
-    throw new CriticalError(
-      'TUNNEL_NOT_SUPPORTED',
-      `The tunnel is only supported with HTTP API tests and Browser tests (${details.join(', ')}).`
-    )
-  }
-
-  return {test, overriddenConfig}
-}
 
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
   'device' in result && result.device !== undefined
