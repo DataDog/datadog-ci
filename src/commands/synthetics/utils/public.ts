@@ -306,20 +306,6 @@ export const createInitialSummary = (): InitialSummary => ({
   timedOut: 0,
 })
 
-/**
- * @deprecated Please use `Result.duration` instead.
- */
-export const getResultDuration = (result: ServerResult): number => {
-  if ('duration' in result) {
-    return Math.round(result.duration)
-  }
-  if ('timings' in result) {
-    return Math.round(result.timings.total)
-  }
-
-  return 0
-}
-
 export const getReporter = (reporters: Reporter[]): MainReporter => ({
   error: (error) => {
     for (const reporter of reporters) {
