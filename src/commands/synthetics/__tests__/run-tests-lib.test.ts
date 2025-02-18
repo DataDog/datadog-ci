@@ -1078,7 +1078,7 @@ describe('run-test', () => {
               },
             },
             {
-              local_test_definition: localTestDefinition,
+              localTestDefinition,
               testOverrides: {
                 startUrl: 'fakeUrl',
               },
@@ -1095,7 +1095,7 @@ describe('run-test', () => {
           testOverrides: {startUrl: 'fakeUrl'},
         },
         {
-          local_test_definition: localTestDefinition,
+          localTestDefinition,
           suite: 'Suite with local test definitions',
           testOverrides: {startUrl: 'fakeUrl'},
         },
@@ -1115,7 +1115,7 @@ describe('run-test', () => {
               },
             },
             {
-              local_test_definition: localTestDefinition,
+              localTestDefinition,
               testOverrides: {
                 startUrl: 'fakeUrl',
               },
@@ -1129,7 +1129,7 @@ describe('run-test', () => {
         runTests.getTriggerConfigs(fakeApi, {...ciConfig, files: ['glob'], publicIds: ['bbb-bbb-bbb']}, mockReporter)
       ).resolves.toEqual([
         {
-          local_test_definition: localTestDefinition,
+          localTestDefinition,
           suite: 'Suite with local test definitions',
           testOverrides: {startUrl: 'fakeUrl'},
         },

@@ -93,7 +93,7 @@ export const isTimedOutRetry = (
 }
 
 export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
-  return triggerConfig ? 'local_test_definition' in triggerConfig : false
+  return triggerConfig ? 'localTestDefinition' in triggerConfig : false
 }
 
 export const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {
@@ -102,7 +102,7 @@ export const isBrowserServerResult = (serverResult: ServerResult): serverResult 
 
 export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
   if (isLocalTriggerConfig(triggerConfig)) {
-    return triggerConfig.local_test_definition.public_id
+    return triggerConfig.localTestDefinition.public_id
   }
 
   return triggerConfig.id

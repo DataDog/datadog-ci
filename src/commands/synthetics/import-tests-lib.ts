@@ -54,13 +54,13 @@ export const importTests = async (reporter: MainReporter, config: ImportTestsCom
 
     if (test.type === 'browser') {
       const testWithSteps = await api.getTestWithType(publicId, test.type)
-      localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(testWithSteps)}
+      localTriggerConfig = {localTestDefinition: removeUnsupportedLTDFields(testWithSteps)}
     } else if (test.type === 'mobile') {
       reporter.error('Unsupported test type: mobile\n')
 
       return
     } else {
-      localTriggerConfig = {local_test_definition: removeUnsupportedLTDFields(test)}
+      localTriggerConfig = {localTestDefinition: removeUnsupportedLTDFields(test)}
     }
     testConfigFromBackend.tests.push(localTriggerConfig)
   }
@@ -86,7 +86,7 @@ const overwriteTestConfig = (testConfigFromBackend: TestConfig, testConfigFromFi
       (t) =>
         isLocalTriggerConfig(t) &&
         isLocalTriggerConfig(test) &&
-        t.local_test_definition.public_id === test.local_test_definition.public_id
+        t.localTestDefinition.public_id === test.localTestDefinition.public_id
     )
 
     if (index !== -1) {
