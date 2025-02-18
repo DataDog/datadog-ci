@@ -92,9 +92,9 @@ describe('getTestsToTrigger', () => {
 
   test('only existing tests are returned', async () => {
     const triggerConfigs = [
-      {suite: 'Suite 1', config: {}, id: '123-456-789'},
-      {suite: 'Suite 2', config: {}, id: '987-654-321'},
-      {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
+      {suite: 'Suite 1', id: '123-456-789'},
+      {suite: 'Suite 2', id: '987-654-321'},
+      {suite: 'Suite 3', id: 'ski-ppe-d01'},
     ]
     const {tests, overriddenTestsToTrigger, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
 
@@ -160,8 +160,8 @@ describe('getTestsToTrigger', () => {
   test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
     const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
     const triggerConfigs = [
-      {suite: 'Suite 1', config: {}, id: '123-456-789'},
-      {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
+      {suite: 'Suite 1', id: '123-456-789'},
+      {suite: 'Suite 3', id: 'mob-ile-tes'},
     ]
 
     await getTestsToTrigger(api, triggerConfigs, mockReporter)
@@ -186,7 +186,7 @@ describe('getTestAndOverrideConfig', () => {
       throw getAxiosError(403, {message: 'Forbidden'})
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
 
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
       'Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n'
@@ -199,7 +199,7 @@ describe('getTestAndOverrideConfig', () => {
       return {data: {subtype: 'http', public_id: '123-456-789'}}
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
       expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
     )
@@ -208,7 +208,7 @@ describe('getTestAndOverrideConfig', () => {
   test('Fails when public ID is NOT valid', async () => {
     const expectedError = new CiError('INVALID_CONFIG', `No valid public ID found in: \`a123-456-789\``)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: 'a123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: 'a123-456-789'}
     await expect(getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
       expectedError
     )
@@ -220,7 +220,7 @@ describe('getTestAndOverrideConfig', () => {
       return {data: {subtype: 'http', public_id: '123-456-789'}}
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
       expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
     )
@@ -232,7 +232,7 @@ describe('getTestAndOverrideConfig', () => {
       return {data: {type: 'browser', public_id: '123-456-789'}}
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
       expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', type: 'browser'})})
     )
@@ -251,7 +251,7 @@ describe('getTestAndOverrideConfig', () => {
       }
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
       expect.objectContaining({
         test: expect.objectContaining({
@@ -270,7 +270,7 @@ describe('getTestAndOverrideConfig', () => {
       return {data: {subtype: 'grpc', type: 'api', public_id: '123-456-789'}}
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(
       'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: grpc).'
     )
@@ -289,7 +289,7 @@ describe('getTestAndOverrideConfig', () => {
       }
     }) as any)
 
-    const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
+    const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
     await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).rejects.toThrow(
       'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: multi, step sub-types: [dns, ssl]).'
     )

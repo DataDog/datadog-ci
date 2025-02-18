@@ -1,7 +1,6 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {replaceConfigWithTestOverrides, warnIfDeprecatedConfigUsed} from './compatibility'
 import {CiError, CriticalError} from './errors'
 import {
   RemoteTriggerConfig,
@@ -55,14 +54,11 @@ export const getTestConfigs = async (
 
   suites.push(...suitesFromFiles)
 
-  warnIfDeprecatedConfigUsed(suites, reporter)
-
   const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map((test) => {
         return {
-          // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-          testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
+          testOverrides: test.testOverrides,
           suite: suite.name,
           ...(isLocalTriggerConfig(test)
             ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
@@ -104,12 +100,6 @@ export const getTestsToTrigger = async (
   isTunnelEnabled?: boolean
 ) => {
   const errorMessages: string[] = []
-
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfigs = triggerConfigs.map((triggerConfig) => ({
-    ...triggerConfig,
-    testOverrides: replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides),
-  }))
 
   // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
   // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
@@ -173,7 +163,6 @@ export const getTestsToTrigger = async (
 
 export const getTestAndOverrideConfig = async (
   api: APIHelper,
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
   triggerConfig: TriggerConfig,
   reporter: MainReporter,
   summary: InitialSummary,
@@ -192,15 +181,12 @@ export const getTestAndOverrideConfig = async (
     return {errorMessage: testResult.errorMessage}
   }
 
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfig.testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
-
   const {test} = testResult
   const overriddenConfig = makeTestPayload(test, triggerConfig, normalizedId)
   const testExecutionRule = test?.options?.ci?.executionRule
   const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
 
-  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides)
+  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides ?? {})
   if (executionRule === ExecutionRule.SKIPPED) {
     summary.skipped++
 

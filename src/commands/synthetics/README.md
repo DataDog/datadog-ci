@@ -969,18 +969,18 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ### Available hooks
 
-| Hook name        | Parameters                                                                               | Description                                                     |
-| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                          | Called for logging.                                             |
-| `error`          | `(error: string)`                                                                        | Called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                     | Called whenever an error occurs during the tests parsing phase. |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | Called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
-| `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
-| `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
-| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
+| Hook name        | Parameters                                                                                      | Description                                                     |
+| :--------------- | :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                                 | Called for logging.                                             |
+| `error`          | `(error: string)`                                                                               | Called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                            | Called whenever an error occurs during the tests parsing phase. |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride)` | Called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                                  | Called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`                      | Called when all tests are waiting to receive their results.     |
+| `resultReceived` | `(result: ResultInBatch)`                                                                       | Called when a result is received.                               |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                             | Called for each result at the end of all results.               |
+| `reportStart`    | `(timings: {startTime: number})`                                                                | Called at the start of the report.                              |
+| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`                      | Called at the end of the run.                                   |
 
 ## View test results
 

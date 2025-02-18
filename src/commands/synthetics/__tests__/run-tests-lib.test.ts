@@ -605,14 +605,6 @@ describe('run-test', () => {
     const conf2 = {
       tests: [{testOverrides: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pqr'}],
     }
-    // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-    // The following two cases are testing the behavior while we're migrating from config to testOverrides
-    const conf3 = {
-      tests: [{config: {startUrl: 'someOtherFakeUrl'}, id: 'jkl-mno-pq1'}],
-    }
-    const conf4 = {
-      tests: [{config: {startUrl: 'someOtherFakeUrl'}, testOverrides: {startUrl: 'theFakestUrl'}, id: 'jkl-mno-pq2'}],
-    }
     const fakeSuites = [
       {
         content: conf1,
@@ -621,14 +613,6 @@ describe('run-test', () => {
       {
         content: conf2,
         name: 'Suite 2',
-      },
-      {
-        content: conf3,
-        name: 'Suite 3',
-      },
-      {
-        content: conf4,
-        name: 'Suite 4',
       },
     ]
     const fakeApi = {
@@ -657,16 +641,6 @@ describe('run-test', () => {
           testOverrides: {startUrl: 'someOtherFakeUrl', locations},
           id: 'jkl-mno-pqr',
           suite: 'Suite 2',
-        },
-        {
-          testOverrides: {startUrl: 'someOtherFakeUrl', locations},
-          id: 'jkl-mno-pq1',
-          suite: 'Suite 3',
-        },
-        {
-          testOverrides: {startUrl: 'theFakestUrl', locations},
-          id: 'jkl-mno-pq2',
-          suite: 'Suite 4',
         },
       ])
 
@@ -835,8 +809,6 @@ describe('run-test', () => {
           suite: fakeSuites[0].name,
         },
         {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf2.tests[0].id, suite: fakeSuites[1].name},
-        {testOverrides: {startUrl: 'someOtherFakeUrl'}, id: conf3.tests[0].id, suite: fakeSuites[2].name},
-        {testOverrides: {startUrl: 'theFakestUrl'}, id: conf4.tests[0].id, suite: fakeSuites[3].name},
       ])
 
       expect(getSuitesMock).toHaveBeenCalledTimes(0)
