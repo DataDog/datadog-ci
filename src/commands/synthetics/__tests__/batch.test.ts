@@ -1,14 +1,20 @@
+import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 
 import {MOCK_BASE_URL, getAxiosError} from '../../../helpers/__tests__/fixtures'
+import * as ciHelpers from '../../../helpers/ci'
+import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
+process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
+
 import {apiConstructor} from '../api'
-import {getResultsToReport, reportReceivedResults, waitForResults} from '../batch'
+import {getResultsToReport, reportReceivedResults, runTests, waitForResults} from '../batch'
 import {BatchTimeoutRunawayError} from '../errors'
-import {BaseResult, Batch, ExecutionRule, PollResult, Result, ResultInBatch, ServerResult} from '../interfaces'
+import {BaseResult, Batch, ExecutionRule, PollResult, Result, ResultInBatch, ServerResult, Trigger} from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG} from '../run-tests-command'
 import * as internalUtils from '../utils/internal'
+import * as utils from '../utils/public'
 
 import {
   getApiTest,
@@ -23,17 +29,113 @@ import {
   mockReporter,
 } from './fixtures'
 
-describe('waitForResults', () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
-  const api = apiConstructor(apiConfiguration)
+const apiConfiguration = {
+  apiKey: '123',
+  appKey: '123',
+  baseIntakeUrl: 'baseintake',
+  baseUnstableUrl: 'baseUnstable',
+  baseUrl: 'base',
+  proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+}
+const api = apiConstructor(apiConfiguration)
 
+describe('runTests', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  const fakeId = '123-456-789'
+  const fakeTrigger: Trigger = {
+    batch_id: 'bid',
+    locations: [],
+  }
+
+  test('should run test', async () => {
+    jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
+    const output = await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    expect(output).toEqual(fakeTrigger)
+  })
+
+  test('runTests sends batch metadata', async () => {
+    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
+
+    const payloadMetadataSpy = jest.fn()
+    jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+      payloadMetadataSpy(request.data.metadata)
+      if (request.url === '/synthetics/tests/trigger/ci') {
+        return {data: fakeTrigger}
+      }
+    }) as any)
+
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
+
+    const metadata: Metadata = {
+      ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
+      git: {commit: {author: {}, committer: {}, message: 'test'}},
+    }
+    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
+
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
+  })
+
+  test('runTests api call has the right payload and trigger app header', async () => {
+    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
+
+    const testsPayloadSpy = jest.fn()
+    const headersMetadataSpy = jest.fn()
+    jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
+      testsPayloadSpy(request.data.tests)
+      headersMetadataSpy(request.headers)
+      if (request.url === '/synthetics/tests/trigger/ci') {
+        return {data: fakeTrigger}
+      }
+    }) as any)
+
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
+    expect(testsPayloadSpy).toHaveBeenCalledWith([
+      {
+        public_id: fakeId,
+        executionRule: ExecutionRule.NON_BLOCKING,
+      },
+    ])
+
+    utils.setCiTriggerApp('unit_test')
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
+    expect(testsPayloadSpy).toHaveBeenCalledWith([
+      {
+        public_id: fakeId,
+        executionRule: ExecutionRule.NON_BLOCKING,
+      },
+    ])
+  })
+
+  test('should run test with publicId from url', async () => {
+    jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
+    const output = await runTests(api, [
+      {
+        executionRule: ExecutionRule.NON_BLOCKING,
+        public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+      },
+    ])
+    expect(output).toEqual(fakeTrigger)
+  })
+
+  test('triggerTests throws', async () => {
+    jest.spyOn(api, 'triggerTests').mockImplementation(() => {
+      throw getAxiosError(502, {message: 'Server Error'})
+    })
+
+    await expect(runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])).rejects.toThrow(
+      /Failed to trigger tests:/
+    )
+  })
+})
+
+describe('waitForResults', () => {
   beforeEach(() => {
     jest.useFakeTimers({now: 123})
     jest.spyOn(internalUtils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))

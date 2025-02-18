@@ -50,8 +50,6 @@ import glob from 'glob'
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
-import * as ciHelpers from '../../../../helpers/ci'
-import {Metadata} from '../../../../helpers/interfaces'
 import * as ciUtils from '../../../../helpers/utils'
 
 import {apiConstructor, APIHelper} from '../../api'
@@ -63,7 +61,6 @@ import {
   SelectiveRerunDecision,
   SyntheticsCIConfig,
   Test,
-  Trigger,
   UserConfigOverride,
 } from '../../interfaces'
 import * as mobile from '../../mobile'
@@ -190,109 +187,6 @@ describe('utils', () => {
       await expect(utils.getFilePathRelativeToRepo(`${pathToGitRepositorySubfolder}/config.json`)).resolves.toEqual(
         'subfolder/config.json'
       )
-    })
-  })
-
-  describe('runTest', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
-    const fakeId = '123-456-789'
-    const fakeTrigger: Trigger = {
-      batch_id: 'bid',
-      locations: [],
-    }
-
-    test('should run test', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(output).toEqual(fakeTrigger)
-    })
-
-    test('runTests sends batch metadata', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const payloadMetadataSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        payloadMetadataSpy(request.data.metadata)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
-
-      const metadata: Metadata = {
-        ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
-        git: {commit: {author: {}, committer: {}, message: 'test'}},
-      }
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
-    })
-
-    test('runTests api call includes trigger app header', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const headersMetadataSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        headersMetadataSpy(request.headers)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
-
-      utils.setCiTriggerApp('unit_test')
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
-    })
-
-    test('runTests api call does not send deprecated properties', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const testsPayloadSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        testsPayloadSpy(request.data.tests)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING, pollingTimeout: 1}])
-      expect(testsPayloadSpy).toHaveBeenCalledWith([
-        {
-          public_id: fakeId,
-          executionRule: ExecutionRule.NON_BLOCKING,
-          // no pollingTimeout
-        },
-      ])
-    })
-
-    test('should run test with publicId from url', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-      const output = await utils.runTests(api, [
-        {
-          executionRule: ExecutionRule.NON_BLOCKING,
-          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
-        },
-      ])
-      expect(output).toEqual(fakeTrigger)
-    })
-
-    test('triggerTests throws', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        throw getAxiosError(502, {message: 'Server Error'})
-      })
-
-      await expect(
-        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      ).rejects.toThrow(/Failed to trigger tests:/)
     })
   })
 

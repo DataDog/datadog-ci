@@ -8,10 +8,8 @@ import chalk from 'chalk'
 import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
-import {getCIMetadata} from '../../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
+import {APIHelper, formatBackendErrors, getApiHelper} from '../api'
 import {replaceConfigWithTestOverrides} from '../compatibility'
 import {CiError, CriticalError} from '../errors'
 import {
@@ -20,7 +18,6 @@ import {
   ExecutionRule,
   MainReporter,
   Operator,
-  Payload,
   Reporter,
   Result,
   ResultSkippedBySelectiveRerun,
@@ -35,12 +32,11 @@ import {
   TestPayload,
   TestSkipped,
   TestWithOverride,
-  Trigger,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
-import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import {getTest} from '../test'
 
 import {
@@ -468,43 +464,6 @@ export const getTestsToTrigger = async (
   }
 
   return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
-}
-
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const runTests = async (
-  api: APIHelper,
-  testsToTrigger: TestPayload[],
-  selectiveRerun?: boolean,
-  batchTimeout = DEFAULT_BATCH_TIMEOUT
-): Promise<Trigger> => {
-  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
-  // Although the backend is backwards compatible, let's stop sending deprecated properties
-  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
-
-  const payload: Payload = {
-    tests,
-    options: {
-      batch_timeout: batchTimeout,
-      selective_rerun: selectiveRerun,
-    },
-  }
-  const tagsToLimit = {
-    [GIT_COMMIT_MESSAGE]: 500,
-  }
-  const ciMetadata = getCIMetadata(tagsToLimit)
-
-  if (ciMetadata) {
-    payload.metadata = ciMetadata
-  }
-
-  try {
-    return await api.triggerTests(payload)
-  } catch (e) {
-    const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
-    // Rewrite error message
-    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
-  }
 }
 
 export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {

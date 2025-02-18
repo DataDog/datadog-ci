@@ -4,6 +4,7 @@ import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
+import * as batchUtils from '../batch'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ExecutionRule, RunTestsCommandConfig, Suite, Summary, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
@@ -50,7 +51,7 @@ describe('run-test', () => {
 
   describe('executeTests', () => {
     test('deprecated usage', async () => {
-      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(batchUtils, 'runTests').mockImplementation()
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
@@ -77,7 +78,7 @@ describe('run-test', () => {
     })
 
     test('current usage', async () => {
-      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(batchUtils, 'runTests').mockImplementation()
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
@@ -116,7 +117,7 @@ describe('run-test', () => {
             tests: [],
           })
         )
-        jest.spyOn(utils, 'runTests').mockImplementation()
+        jest.spyOn(batchUtils, 'runTests').mockImplementation()
 
         const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
         const locations = ['location1', 'location2']
@@ -304,7 +305,7 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
+      jest.spyOn(batchUtils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
 
       const apiHelper = {
         getBatch: () => ({results: []}),
@@ -521,7 +522,7 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockReturnValue(
+      jest.spyOn(batchUtils, 'runTests').mockReturnValue(
         Promise.resolve({
           batch_id: 'bid',
           locations: [location],
@@ -561,7 +562,7 @@ describe('run-test', () => {
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
         })
       )
-      jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
+      jest.spyOn(batchUtils, 'runTests').mockImplementation(async () => ({
         batch_id: 'bid',
         locations: [],
         selective_rerun_rate_limited: true,

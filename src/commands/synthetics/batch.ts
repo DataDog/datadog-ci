@@ -1,5 +1,8 @@
 import deepExtend from 'deep-extend'
 
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+
 import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError} from './errors'
 import {
@@ -7,13 +10,16 @@ import {
   Batch,
   LocationsMapping,
   MainReporter,
+  Payload,
   PollResult,
   Result,
   ResultDisplayInfo,
   ResultInBatch,
   Test,
+  TestPayload,
   Trigger,
 } from './interfaces'
+import {DEFAULT_BATCH_TIMEOUT} from './run-tests-command'
 import {Tunnel} from './tunnel'
 import {
   isResultInBatchSkippedBySelectiveRerun,
@@ -21,11 +27,48 @@ import {
   hasResultPassed,
   isTimedOutRetry,
   isNonFinalResult,
+  getPublicIdOrPlaceholder,
   wait,
 } from './utils/internal'
 import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
+
+export const runTests = async (
+  api: APIHelper,
+  testsToTrigger: TestPayload[],
+  selectiveRerun?: boolean,
+  batchTimeout = DEFAULT_BATCH_TIMEOUT
+): Promise<Trigger> => {
+  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
+  // Although the backend is backwards compatible, let's stop sending deprecated properties
+  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
+
+  const payload: Payload = {
+    tests,
+    options: {
+      batch_timeout: batchTimeout,
+      selective_rerun: selectiveRerun,
+    },
+  }
+  const tagsToLimit = {
+    [GIT_COMMIT_MESSAGE]: 500,
+  }
+  const ciMetadata = getCIMetadata(tagsToLimit)
+
+  if (ciMetadata) {
+    payload.metadata = ciMetadata
+  }
+
+  try {
+    return await api.triggerTests(payload)
+  } catch (e) {
+    const errorMessage = formatBackendErrors(e)
+    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
+    // Rewrite error message
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
+  }
+}
 
 export const waitForResults = async (
   api: APIHelper,
