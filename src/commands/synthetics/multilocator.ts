@@ -91,8 +91,8 @@ const overwriteMultiLocatorsInTestConfig = (
   for (const publicId of Object.keys(multiLocatorMap)) {
     const test = findUniqueLocalTestDefinition(testConfigFromFile, publicId)
 
-    if (test && isLocalTriggerConfig(test) && test.local_test_definition.steps) {
-      const steps = test.local_test_definition.steps
+    if (test && isLocalTriggerConfig(test) && test.localTestDefinition.steps) {
+      const steps = test.localTestDefinition.steps
       for (const [stepIndex, step] of steps.entries()) {
         const multiLocator = multiLocatorMap[publicId][stepIndex]
         if (multiLocator) {
@@ -109,7 +109,7 @@ const overwriteMultiLocatorsInTestConfig = (
 }
 const findUniqueLocalTestDefinition = (testConfig: TestConfig, publicId: string): TriggerConfig => {
   const matchingTests = testConfig.tests.filter(
-    (t) => isLocalTriggerConfig(t) && t.local_test_definition.public_id === publicId
+    (t) => isLocalTriggerConfig(t) && t.localTestDefinition.public_id === publicId
   )
 
   if (matchingTests.length > 1) {
