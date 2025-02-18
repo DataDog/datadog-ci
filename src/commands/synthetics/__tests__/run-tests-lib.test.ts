@@ -26,23 +26,6 @@ import {
   mockTestTriggerResponse,
 } from './fixtures'
 
-/**
- * Parameterize a test to run in both a backwards compatible way, and the new way.
- */
-// TODO SYNTH-12989: Clean up this parameterization when getting rid of `global` and `config`
-const compat = [
-  {
-    compat: 'current',
-    defaultTestOverrides: 'defaultTestOverrides' as const,
-    testOverrides: 'testOverrides' as const,
-  },
-  {
-    compat: 'deprecated',
-    defaultTestOverrides: 'global' as const,
-    testOverrides: 'config' as const,
-  },
-]
-
 describe('run-test', () => {
   beforeEach(() => {
     jest.restoreAllMocks()
@@ -51,96 +34,43 @@ describe('run-test', () => {
   })
 
   describe('executeTests', () => {
-    test('deprecated usage', async () => {
+    test('should apply config override for tests triggered by public id', async () => {
+      const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
+          overriddenTestsToTrigger: [],
+          tests: [],
+        })
+      )
       jest.spyOn(batchUtils, 'runTests').mockImplementation()
+
+      const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
+      const locations = ['location1', 'location2']
+      const userConfigOverride = {locations, startUrl}
+
+      const apiHelper = {}
+
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
         runTests.executeTests(mockReporter, {
-          apiKey: '',
-          appKey: '',
-          configPath: 'datadog-ci.json',
-          datadogSite: 'datadoghq.com',
-          failOnCriticalErrors: false,
-          failOnMissingTests: false,
-          failOnTimeout: true,
-          files: ['{,!(node_modules)/**/}*.synthetics.json'],
-          global: {}, // deprecated
-          proxy: {protocol: 'http'},
-          publicIds: [],
-          selectiveRerun: false,
-          subdomain: 'app',
-          tunnel: false,
+          ...ciConfig,
+          defaultTestOverrides: userConfigOverride,
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
         })
-      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+      ).rejects.toThrow()
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: userConfigOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: userConfigOverride}),
+        ]),
+        expect.anything(),
+        false,
+        false,
+        false
+      )
     })
-
-    test('current usage', async () => {
-      jest.spyOn(batchUtils, 'runTests').mockImplementation()
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
-
-      await expect(
-        runTests.executeTests(mockReporter, {
-          apiKey: '',
-          appKey: '',
-          configPath: 'datadog-ci.json',
-          datadogSite: 'datadoghq.com',
-          defaultTestOverrides: {},
-          failOnCriticalErrors: false,
-          failOnMissingTests: false,
-          failOnTimeout: true,
-          files: ['{,!(node_modules)/**/}*.synthetics.json'],
-          // TODO SYNTH-12989: Clean up deprecated `global`
-          global: {},
-          proxy: {protocol: 'http'},
-          publicIds: [],
-          selectiveRerun: false,
-          subdomain: 'app',
-          tunnel: false,
-        })
-      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
-    })
-
-    test.each(compat)(
-      'should apply config override for tests triggered by public id ($compat)',
-      async ({defaultTestOverrides}) => {
-        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
-          Promise.resolve({
-            initialSummary: utils.createInitialSummary(),
-            overriddenTestsToTrigger: [],
-            tests: [],
-          })
-        )
-        jest.spyOn(batchUtils, 'runTests').mockImplementation()
-
-        const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
-        const locations = ['location1', 'location2']
-        const userConfigOverride = {locations, startUrl}
-
-        const apiHelper = {}
-
-        jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
-
-        await expect(
-          runTests.executeTests(mockReporter, {
-            ...ciConfig,
-            [defaultTestOverrides]: userConfigOverride,
-            publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
-          })
-        ).rejects.toThrow()
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: userConfigOverride}),
-            expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: userConfigOverride}),
-          ]),
-          expect.anything(),
-          false,
-          false,
-          false
-        )
-      }
-    )
 
     test('Use appropriate list of locations for tests triggered by public id', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
@@ -174,43 +104,40 @@ describe('run-test', () => {
       )
     })
 
-    test.each(compat)(
-      'should not wait for `skipped` only tests batch results ($compat)',
-      async ({defaultTestOverrides}) => {
-        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
-          Promise.resolve({
-            initialSummary: utils.createInitialSummary(),
-            overriddenTestsToTrigger: [],
-            tests: [],
-          })
-        )
+    test('should not wait for `skipped` only tests batch results', async () => {
+      const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
+        Promise.resolve({
+          initialSummary: utils.createInitialSummary(),
+          overriddenTestsToTrigger: [],
+          tests: [],
+        })
+      )
 
-        const apiHelper = {}
-        const configOverride = {executionRule: ExecutionRule.SKIPPED}
+      const apiHelper = {}
+      const configOverride = {executionRule: ExecutionRule.SKIPPED}
 
-        jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
-        await expect(
-          runTests.executeTests(mockReporter, {
-            ...ciConfig,
-            [defaultTestOverrides]: configOverride,
-            publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
-          })
-        ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
-        expect(getTestsToTriggersMock).toHaveBeenCalledWith(
-          apiHelper,
-          expect.arrayContaining([
-            expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: configOverride}),
-            expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: configOverride}),
-          ]),
-          expect.anything(),
-          false,
-          false,
-          false
-        )
-      }
-    )
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+      await expect(
+        runTests.executeTests(mockReporter, {
+          ...ciConfig,
+          defaultTestOverrides: configOverride,
+          publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
+        })
+      ).rejects.toThrow(new CiError('NO_TESTS_TO_RUN'))
+      expect(getTestsToTriggersMock).toHaveBeenCalledWith(
+        apiHelper,
+        expect.arrayContaining([
+          expect.objectContaining({id: 'aaa-aaa-aaa', testOverrides: configOverride}),
+          expect.objectContaining({id: 'bbb-bbb-bbb', testOverrides: configOverride}),
+        ]),
+        expect.anything(),
+        false,
+        false,
+        false
+      )
+    })
 
-    test.each(compat)('should not open tunnel if no test to run ($compat)', async ({defaultTestOverrides}) => {
+    test('should not open tunnel if no test to run', async () => {
       const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
@@ -228,7 +155,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          [defaultTestOverrides]: configOverride,
+          defaultTestOverrides: configOverride,
           publicIds: ['aaa-aaa-aaa', 'bbb-bbb-bbb'],
           tunnel: true,
         })
@@ -351,7 +278,7 @@ describe('run-test', () => {
       ).rejects.toThrow(new CriticalError('UNAVAILABLE_TUNNEL_CONFIG', 'Server Error'))
     })
 
-    test.each(compat)('getMobileApplicationPresignedURLs throws ($compat)', async ({defaultTestOverrides}) => {
+    test('getMobileApplicationPresignedURLs throws', async () => {
       const mobileTest = getMobileTest()
       jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
@@ -379,13 +306,13 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          [defaultTestOverrides]: {mobileApplicationVersionFilePath: 'filePath'},
+          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to get presigned URL: could not query https://app.datadoghq.com/example')
     })
 
-    test.each(compat)('uploadMobileApplicationPart throws ($compat)', async ({defaultTestOverrides}) => {
+    test('uploadMobileApplicationPart throws', async () => {
       const mobileTest = getMobileTest()
       jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
@@ -416,7 +343,7 @@ describe('run-test', () => {
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
-          [defaultTestOverrides]: {mobileApplicationVersionFilePath: 'filePath'},
+          defaultTestOverrides: {mobileApplicationVersionFilePath: 'filePath'},
           publicIds: [mobileTest.public_id],
         })
       ).rejects.toThrow('Failed to upload mobile application: could not query https://app.datadoghq.com/example')

@@ -2,7 +2,6 @@ import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {runTests, waitForResults} from './batch'
-import {replaceGlobalWithDefaultTestOverrides} from './compatibility'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -59,9 +58,6 @@ export const executeTests = async (
       await tunnel.stop()
     }
   }
-
-  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)

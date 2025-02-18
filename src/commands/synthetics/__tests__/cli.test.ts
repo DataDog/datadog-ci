@@ -222,34 +222,6 @@ describe('run-test', () => {
         failOnMissingTests: true,
         failOnTimeout: false,
         files: ['my-new-file'],
-        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {
-          allowInsecureCertificates: true,
-          basicAuth: {username: 'test', password: 'test'},
-          body: '{"fakeContent":true}',
-          bodyType: 'application/json',
-          cookies: {
-            value: 'name1=value1;name2=value2;',
-            append: true,
-          },
-          setCookies: {
-            value: 'name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly',
-            append: true,
-          },
-          defaultStepTimeout: 10000,
-          deviceIds: ['chrome.laptop_large'],
-          executionRule: ExecutionRule.BLOCKING,
-          followRedirects: true,
-          headers: {'<NEW_HEADER>': '<NEW_VALUE>'},
-          locations: ['aws:us-west-1'],
-          mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
-          mobileApplicationVersionFilePath: './path/to/application.apk',
-          retry: {count: 2, interval: 300},
-          startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
-          startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
-          testTimeout: 200000,
-          variables: {titleVariable: 'new value'},
-        },
         jUnitReport: 'junit-report.xml',
         proxy: {
           protocol: 'https',
@@ -269,8 +241,7 @@ describe('run-test', () => {
     })
 
     test('override from CLI', async () => {
-      // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-      const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+      const overrideCLI: Omit<RunTestsCommandConfig, 'defaultTestOverrides' | 'proxy'> = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
@@ -424,10 +395,10 @@ describe('run-test', () => {
     })
 
     // We have 2 code paths that handle different levels of configuration overrides:
-    //  1)  config file (configuration of datadog-ci)             <   ENV (environment variables)   <   CLI (command flags)
-    //  2)  global (global config object, aka. `config.global`)   <   ENV (environment variables)   <   test file (test configuration)
+    //  1)  entire global config file                    <   ENV (environment variables)   <   CLI (command flags)
+    //  2)  defaultTestOverrides in global config file   <   ENV (environment variables)   <   test file (test configuration)
     //
-    // First, 1) configures datadog-ci itself and `config.global`,
+    // First, 1) configures datadog-ci itself and `defaultTestOverrides`,
     // Then, 2) configures the Synthetic tests to execute.
     //
     // So the bigger picture is:
@@ -469,8 +440,6 @@ describe('run-test', () => {
         failOnMissingTests: false,
         failOnTimeout: false,
         files: ['from_config_file.json'],
-        // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-        global: {},
         jUnitReport: 'junit-report-from-config-file.xml',
         proxy: {protocol: 'http'},
         publicIds: ['public-id-from-config-file'],
@@ -584,9 +553,6 @@ describe('run-test', () => {
           testSearchQuery: overrideEnv.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
           tunnel: toBoolean(overrideEnv.DATADOG_SYNTHETICS_TUNNEL),
 
-          // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-          global: {},
-
           // XXX: Added to make the test pass as we use well-known ENV variables to configure the proxy.
           proxy: configFile.proxy,
         }
@@ -604,7 +570,7 @@ describe('run-test', () => {
           ...configFile,
         }))
 
-        const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+        const overrideCLI: Omit<RunTestsCommandConfig, 'defaultTestOverrides' | 'proxy'> = {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
@@ -707,11 +673,9 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,
-          global: {},
           defaultTestOverrides: {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,
@@ -767,7 +731,7 @@ describe('run-test', () => {
           DATADOG_SYNTHETICS_OVERRIDE_VARIABLES: "{'envVar1': 'value1', 'envVar2': 'value2'}",
         }
 
-        const overrideCLI: Omit<RunTestsCommandConfig, 'global' | 'defaultTestOverrides' | 'proxy'> = {
+        const overrideCLI: Omit<RunTestsCommandConfig, 'defaultTestOverrides' | 'proxy'> = {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
@@ -872,11 +836,9 @@ describe('run-test', () => {
 
         await command['resolveConfig']()
 
-        // TODO SYNTH-12989: Clean up deprecated `global`
         const {mobileApplicationVersionFilePath, ...filteredOverrideCLI} = overrideCLI
         const expectedCLIOverrideResult = {
           ...filteredOverrideCLI,
-          global: {},
           defaultTestOverrides: {
             ...defaultTestOverrides,
             mobileApplicationVersionFilePath,

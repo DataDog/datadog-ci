@@ -199,7 +199,6 @@ Datadog is streamlining and enhancing the datadog-ci synthetics commands. In thi
 
 The following is a list of the changes:
 
-* The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
 * The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
 
 ## Run Tests Command
@@ -296,7 +295,7 @@ The duration (integer in milliseconds) after which `datadog-ci` stops waiting fo
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
 
 **Configuration options**
 
@@ -817,7 +816,7 @@ The application key used to query the Datadog API.
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
 
 **Configuration options**
 
