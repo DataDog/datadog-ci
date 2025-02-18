@@ -73,6 +73,7 @@ import {
 } from '../../interfaces'
 import * as mobile from '../../mobile'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import * as internalUtils from '../../utils/internal'
 import * as utils from '../../utils/public'
 
 import {
@@ -768,7 +769,7 @@ describe('utils', () => {
   describe('waitForResults', () => {
     beforeEach(() => {
       jest.useFakeTimers({now: 123})
-      jest.spyOn(utils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
     })
 
     afterEach(() => {
@@ -852,7 +853,7 @@ describe('utils', () => {
     })
 
     test('should show results as they arrive', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1061,7 +1062,7 @@ describe('utils', () => {
     })
 
     test('skipped results are reported as received', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1143,7 +1144,7 @@ describe('utils', () => {
     })
 
     test('should wait for incomplete results', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1282,7 +1283,7 @@ describe('utils', () => {
     })
 
     test('should wait for incomplete results caused by 404', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1497,7 +1498,7 @@ describe('utils', () => {
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL, 'bid')
 
       // Failed directly.
-      expect(utils.wait).toHaveBeenCalledTimes(0)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(0)
     })
 
     test('results should be timed out with a different error if the backend did not say so', async () => {
@@ -1553,7 +1554,7 @@ describe('utils', () => {
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
 
       // Initial wait + 3 polling cycles.
-      expect(utils.wait).toHaveBeenCalledTimes(4)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(4)
     })
 
     test('results failure should be ignored if timed out', async () => {
@@ -1660,7 +1661,7 @@ describe('utils', () => {
       ).toEqual([result])
 
       expect(getBatchMock).toHaveBeenCalledTimes(3)
-      expect(utils.wait).toHaveBeenCalledTimes(2)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(2)
     })
 
     test('correct number of passed and timed out results', async () => {

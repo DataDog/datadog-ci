@@ -28,6 +28,8 @@ import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './publ
 
 const levenshtein = require('fast-levenshtein')
 
+export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
+
 export const getOverriddenExecutionRule = (
   test?: Test,
   testOverrides?: UserConfigOverride

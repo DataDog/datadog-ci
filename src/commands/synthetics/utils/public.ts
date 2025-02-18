@@ -55,6 +55,7 @@ import {
   getPublicIdOrPlaceholder,
   getBasePayload,
   isLocalTriggerConfig,
+  wait,
 } from './internal'
 
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -223,8 +224,6 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
   return path.join(relativeDirectory, filename)
 }
-
-export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
 export const normalizePublicId = (id: string): string | undefined =>
   id === LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER ? id : id.match(PUBLIC_ID_REGEX)?.[0]

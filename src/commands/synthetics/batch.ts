@@ -18,8 +18,9 @@ import {
   hasResultPassed,
   isTimedOutRetry,
   isNonFinalResult,
+  wait,
 } from './utils/internal'
-import {wait, getAppBaseURL} from './utils/public'
+import {getAppBaseURL} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
 
