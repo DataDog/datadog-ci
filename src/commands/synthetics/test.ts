@@ -6,7 +6,7 @@ import {
   warnIfDeprecatedConfigUsed,
   warnIfDeprecatedPollingTimeoutUsed,
 } from './compatibility'
-import {CriticalError} from './errors'
+import {CiError, CriticalError} from './errors'
 import {
   RemoteTriggerConfig,
   MainReporter,
@@ -20,10 +20,24 @@ import {
   TestNotFound,
   TestSkipped,
   TestWithOverride,
+  TestPayload,
 } from './interfaces'
-import {DEFAULT_TEST_CONFIG_FILES_GLOB} from './run-tests-command'
-import {getPublicIdOrPlaceholder, getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
-import {InitialSummary, getSuites, isTestSupportedByTunnel, makeTestPayload, normalizePublicId} from './utils/public'
+import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
+import {DEFAULT_TEST_CONFIG_FILES_GLOB, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {
+  getPublicIdOrPlaceholder,
+  getTriggerConfigPublicId,
+  isLocalTriggerConfig,
+  isMobileTestWithOverride,
+} from './utils/internal'
+import {
+  InitialSummary,
+  createInitialSummary,
+  getSuites,
+  isTestSupportedByTunnel,
+  makeTestPayload,
+  normalizePublicId,
+} from './utils/public'
 
 export const getTestConfigs = async (
   config: RunTestsCommandConfig | ImportTestsCommandConfig,
@@ -84,6 +98,82 @@ export const getTestsFromSearchQuery = async (
     id: test.public_id,
     suite: `Query: ${testSearchQuery}`,
   }))
+}
+
+export const getTestsToTrigger = async (
+  api: APIHelper,
+  triggerConfigs: TriggerConfig[],
+  reporter: MainReporter,
+  triggerFromSearch?: boolean,
+  failOnMissingTests?: boolean,
+  isTunnelEnabled?: boolean
+) => {
+  const errorMessages: string[] = []
+
+  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
+  triggerConfigs = triggerConfigs.map((triggerConfig) => ({
+    ...triggerConfig,
+    testOverrides: replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides),
+  }))
+
+  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
+  // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
+  if (triggerFromSearch && triggerConfigs.length > MAX_TESTS_TO_TRIGGER) {
+    const testsCount = triggerConfigs.length
+    triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
+    const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
+    errorMessages.push(
+      chalk.yellow(`The search query returned ${testsCount} tests, only the first ${maxTests} will be triggered.\n`)
+    )
+  }
+
+  const initialSummary = createInitialSummary()
+  const testsAndConfigsOverride = await Promise.all(
+    triggerConfigs.map((triggerConfig) =>
+      getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary, isTunnelEnabled)
+    )
+  )
+
+  await uploadMobileApplicationsAndUpdateOverrideConfigs(
+    api,
+    triggerConfigs,
+    testsAndConfigsOverride.filter(isMobileTestWithOverride)
+  )
+
+  const overriddenTestsToTrigger: TestPayload[] = []
+  const waitedTests: Test[] = []
+  testsAndConfigsOverride.forEach((item) => {
+    if ('errorMessage' in item) {
+      errorMessages.push(item.errorMessage)
+    }
+
+    if ('overriddenConfig' in item) {
+      overriddenTestsToTrigger.push(item.overriddenConfig)
+    }
+
+    if ('test' in item) {
+      waitedTests.push(item.test)
+    }
+  })
+
+  // Display errors at the end of all tests for better visibility.
+  reporter.initErrors(errorMessages)
+
+  if (failOnMissingTests && initialSummary.testsNotFound.size > 0) {
+    const testsNotFoundListStr = [...initialSummary.testsNotFound].join(', ')
+    throw new CiError('MISSING_TESTS', testsNotFoundListStr)
+  }
+
+  if (!overriddenTestsToTrigger.length) {
+    throw new CiError('NO_TESTS_TO_RUN')
+  } else if (overriddenTestsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
+    throw new CriticalError(
+      'TOO_MANY_TESTS_TO_TRIGGER',
+      `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
+    )
+  }
+
+  return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
 }
 
 export const getTestAndOverrideConfig = async (

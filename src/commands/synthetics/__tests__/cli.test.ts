@@ -16,6 +16,7 @@ import {
   UserConfigOverride,
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
+import * as testUtils from '../test'
 import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
 import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
@@ -1108,7 +1109,7 @@ describe('run-test', () => {
       })
       const getExpectedTestsToTriggerArguments = (
         testOverrides: Partial<UserConfigOverride>
-      ): Parameters<typeof utils['getTestsToTrigger']> => {
+      ): Parameters<typeof testUtils['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
           (apiHelper as unknown) as api.APIHelper,
@@ -1124,7 +1125,7 @@ describe('run-test', () => {
       const testFile = {name: 'Suite 1', content: {tests: [{id: 'aaa-bbb-ccc', testOverrides: {}}]}}
 
       test('config file < test file', async () => {
-        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const getTestsToTriggerMock = jest.spyOn(testUtils, 'getTestsToTrigger')
         const command = createCommand(RunTestsCommand)
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementationOnce(async <T>(baseConfig: T) => {
           return {
@@ -1148,7 +1149,7 @@ describe('run-test', () => {
         )
       })
       test('ENV < test file', async () => {
-        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const getTestsToTriggerMock = jest.spyOn(testUtils, 'getTestsToTrigger')
         const command = createCommand(RunTestsCommand)
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
         jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
@@ -1195,7 +1196,7 @@ describe('run-test', () => {
         )
       })
       test('CLI < test file', async () => {
-        const getTestsToTriggerMock = jest.spyOn(utils, 'getTestsToTrigger')
+        const getTestsToTriggerMock = jest.spyOn(testUtils, 'getTestsToTrigger')
         const command = createCommand(RunTestsCommand)
         jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, _) => config)
         jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)

@@ -3,11 +3,15 @@ import {default as axios} from 'axios'
 import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {APIHelper, apiConstructor} from '../api'
 import {CiError} from '../errors'
-import {getTestAndOverrideConfig, getTestsFromSearchQuery} from '../test'
+import {ExecutionRule} from '../interfaces'
+import * as mobile from '../mobile'
+import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import {getTestAndOverrideConfig, getTestsFromSearchQuery, getTestsToTrigger} from '../test'
+import {InitialSummary} from '../utils/public'
 
-import {getSummary, mockReporter} from './fixtures'
+import {getApiTest, getSummary, mockReporter} from './fixtures'
 
 describe('getTestsFromSearchQuery', () => {
   it('should return an empty array if an empty string is given', async () => {
@@ -32,6 +36,138 @@ describe('getTestsFromSearchQuery', () => {
     const result = await getTestsFromSearchQuery(api as any, config)
 
     expect(result).toEqual([])
+  })
+})
+
+describe('getTestsToTrigger', () => {
+  const apiConfiguration = {
+    apiKey: '123',
+    appKey: '123',
+    baseIntakeUrl: 'baseintake',
+    baseUnstableUrl: 'baseUnstable',
+    baseUrl: 'base',
+    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+  }
+  const api = apiConstructor(apiConfiguration)
+
+  const fakeTests: {[id: string]: any} = {
+    '123-456-789': {
+      config: {request: {url: 'http://example.org/'}},
+      name: 'Fake Test',
+      public_id: '123-456-789',
+      suite: 'Suite 1',
+    },
+    'mob-ile-tes': {
+      config: {},
+      name: 'Fake Mobile Test',
+      options: {
+        mobileApplication: {
+          applicationId: 'appId',
+          referenceId: 'versionId',
+          referenceType: 'version',
+        },
+      },
+      public_id: 'mob-ile-tes',
+      suite: 'Suite 3',
+      type: 'mobile',
+    },
+    'ski-ppe-d01': {
+      config: {request: {url: 'http://example.org/'}},
+      name: 'Skipped Fake Test',
+      options: {ci: {executionRule: 'skipped'}},
+      public_id: 'ski-ppe-d01',
+      suite: 'Suite 3',
+    },
+  }
+
+  beforeEach(() => {
+    const axiosMock = jest.spyOn(axios, 'create')
+    axiosMock.mockImplementation((() => (e: any) => {
+      const publicId = e.url.slice(18)
+      if (fakeTests[publicId]) {
+        return {data: fakeTests[publicId]}
+      }
+
+      throw getAxiosError(404, {errors: ['Not found']})
+    }) as any)
+  })
+
+  test('only existing tests are returned', async () => {
+    const triggerConfigs = [
+      {suite: 'Suite 1', config: {}, id: '123-456-789'},
+      {suite: 'Suite 2', config: {}, id: '987-654-321'},
+      {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
+    ]
+    const {tests, overriddenTestsToTrigger, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
+
+    expect(tests).toStrictEqual([fakeTests['123-456-789']])
+    expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789'}, {public_id: 'ski-ppe-d01'}])
+
+    const expectedSummary: InitialSummary = {
+      criticalErrors: 0,
+      expected: 0,
+      failed: 0,
+      failedNonBlocking: 0,
+      passed: 0,
+      previouslyPassed: 0,
+      skipped: 1,
+      testsNotFound: new Set(['987-654-321']),
+      timedOut: 0,
+    }
+    expect(initialSummary).toEqual(expectedSummary)
+  })
+
+  test('no tests triggered throws an error', async () => {
+    await expect(getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
+  })
+
+  describe('too many tests to trigger', () => {
+    const fakeApi: APIHelper = {
+      ...api,
+      getTest: (id: string) => {
+        if (id === 'missing') {
+          throw new Error('Request error')
+        }
+
+        const test = {...getApiTest(id)}
+        if (id === 'skipped') {
+          test.options.ci = {executionRule: ExecutionRule.SKIPPED}
+        }
+
+        return Promise.resolve(test)
+      },
+    }
+
+    test('trim and warn if from search', async () => {
+      const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
+      const tests = await getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
+      expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+      expect(mockReporter.initErrors).toMatchSnapshot()
+    })
+
+    test('fails outside of search', async () => {
+      const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
+      await expect(getTestsToTrigger(fakeApi, tooManyTests, mockReporter, false)).rejects.toEqual(
+        new Error(`Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${tooManyTests.length})`)
+      )
+    })
+
+    test('does not account for skipped/not found tests outside of search', async () => {
+      const tooManyTests = [...Array(MAX_TESTS_TO_TRIGGER).fill({id: 'stu-vwx-yza'}), {id: 'skipped'}, {id: 'missing'}]
+      const tests = await getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
+      expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
+    })
+  })
+
+  test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
+    const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
+    const triggerConfigs = [
+      {suite: 'Suite 1', config: {}, id: '123-456-789'},
+      {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
+    ]
+
+    await getTestsToTrigger(api, triggerConfigs, mockReporter)
+    expect(spy).toHaveBeenCalledTimes(1)
   })
 })
 
