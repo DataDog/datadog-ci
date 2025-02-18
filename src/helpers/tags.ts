@@ -24,8 +24,6 @@ export const CI_JOB_URL = 'ci.job.url'
 export const CI_JOB_NAME = 'ci.job.name'
 export const CI_STAGE_NAME = 'ci.stage.name'
 export const CI_LEVEL = '_dd.ci.level'
-// @deprecated TODO: remove this once backend is updated
-export const CI_BUILD_LEVEL = '_dd.ci.build_level'
 
 export const CI_ENV_VARS = '_dd.ci.env_vars'
 export const CI_NODE_NAME = 'ci.node.name'
