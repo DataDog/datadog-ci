@@ -14,7 +14,7 @@ import {DeployTestsCommandConfig, MainReporter, Reporter, RunTestsCommandConfig}
 import {DefaultReporter} from './reporters/default'
 import {getReporter, reportCiError} from './utils/public'
 
-export const DEFAULT_COMMAND_CONFIG: DeployTestsCommandConfig = {
+export const DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG: DeployTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   configPath: 'datadog-ci.json',
@@ -66,7 +66,7 @@ export class DeployTestsCommand extends Command {
   })
 
   private reporter!: MainReporter
-  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
+  private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
