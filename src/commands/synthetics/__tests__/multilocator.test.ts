@@ -11,7 +11,7 @@ import {getBrowserTest, getBrowserResult, mockReporter, getStep} from './fixture
 describe('multilocator', () => {
   let mockConfig: ImportTestsCommandConfig
   let mockResults: Result[]
-  let mockTestConfig: {tests: {local_test_definition: LocalTestDefinition}[]}
+  let mockTestConfig: {tests: {localTestDefinition: LocalTestDefinition}[]}
 
   const browserTest = getBrowserTest('test-1')
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -34,7 +34,7 @@ describe('multilocator', () => {
     mockTestConfig = {
       tests: [
         {
-          local_test_definition: {
+          localTestDefinition: {
             ...baseBrowserLTD,
             public_id: 'test-1',
             steps: [{params: {element: {}}}, {params: {element: {}}}],
@@ -53,7 +53,7 @@ describe('multilocator', () => {
       await updateLTDMultiLocators(mockReporter, mockConfig, mockResults)
 
       expect(tests.getTestConfigs).toHaveBeenCalledWith(mockConfig, mockReporter)
-      const steps = mockTestConfig.tests[0].local_test_definition.steps ?? []
+      const steps = mockTestConfig.tests[0].localTestDefinition.steps ?? []
       expect(steps[1].params.element?.multiLocator).toEqual({
         ab: 'xpath-1',
       })
@@ -96,7 +96,7 @@ describe('multilocator', () => {
     })
     test('should throw an error if multiple LTDs with the same publicId are found', async () => {
       mockTestConfig.tests.push({
-        local_test_definition: {
+        localTestDefinition: {
           ...baseBrowserLTD,
           public_id: 'test-1', // Duplicate public_id
           steps: [{params: {element: {}}}],

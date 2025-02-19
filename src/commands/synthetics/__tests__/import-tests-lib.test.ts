@@ -31,7 +31,7 @@ describe('import-tests', () => {
       const mockLTD = {
         tests: [
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
             },
           },
@@ -68,13 +68,13 @@ describe('import-tests', () => {
       const mockLTD = {
         tests: [
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
               public_id: config['publicIds'][0],
             },
           },
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
               public_id: config['publicIds'][1],
             },
@@ -113,7 +113,7 @@ describe('import-tests', () => {
       const mockLTD = {
         tests: [
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
             },
           },
@@ -152,13 +152,13 @@ describe('import-tests', () => {
 
       const mockTriggerConfig: TriggerConfig[] = [
         {
-          local_test_definition: {
+          localTestDefinition: {
             ...mockTest,
             public_id: 'abc-def-ghi',
           },
         },
         {
-          local_test_definition: {
+          localTestDefinition: {
             ...mockTest,
             public_id: config['publicIds'][0],
           },
@@ -170,20 +170,20 @@ describe('import-tests', () => {
       const expectedLTD = {
         tests: [
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTest,
               public_id: 'abc-def-ghi',
             },
           },
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
               public_id: config['publicIds'][0],
               name: 'Some other name',
             },
           },
           {
-            local_test_definition: {
+            localTestDefinition: {
               ...mockTestWithoutUnsupportedFields,
               public_id: config['publicIds'][1],
             },

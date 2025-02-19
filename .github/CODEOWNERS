@@ -4,13 +4,13 @@
 # Commands (grouped by product)
 
 ## CI Visibility (label: ci-visibility)
-src/commands/junit         @DataDog/datadog-ci @DataDog/ci-app-libraries
+src/commands/deployment    @DataDog/datadog-ci @DataDog/ci-app-libraries
+src/commands/dora          @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/gate          @DataDog/datadog-ci @DataDog/ci-app-libraries
-src/commands/metric        @DataDog/datadog-ci @DataDog/ci-app-libraries
+src/commands/junit         @DataDog/datadog-ci @DataDog/ci-app-libraries
+src/commands/measure       @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/tag           @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/trace         @DataDog/datadog-ci @DataDog/ci-app-libraries
-src/commands/dora          @DataDog/datadog-ci @DataDog/ci-app-libraries
-src/commands/deployment    @DataDog/datadog-ci @DataDog/ci-app-libraries
 
 ## Static Analysis (label: static-analysis)
 src/commands/sarif   @DataDog/datadog-ci @DataDog/k9-vm-ast
@@ -19,14 +19,14 @@ src/commands/sbom    @DataDog/datadog-ci @DataDog/k9-vm-sca
 ## RUM (label: rum)
 src/commands/dsyms            @DataDog/datadog-ci @DataDog/rum-mobile
 src/commands/flutter-symbols  @DataDog/datadog-ci @DataDog/rum-mobile
-src/commands/unity-symbols    @DataDog/datadog-ci @Datadog/rum-mobile
 src/commands/react-native     @DataDog/datadog-ci @DataDog/rum-mobile
 src/commands/sourcemaps       @DataDog/datadog-ci @DataDog/rum-browser
+src/commands/unity-symbols    @DataDog/datadog-ci @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
+src/commands/cloud-run      @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 src/commands/lambda         @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 src/commands/stepfunctions  @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
-src/commands/cloud-run      @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
 src/commands/git-metadata  @DataDog/datadog-ci @DataDog/source-code-integration

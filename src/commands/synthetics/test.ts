@@ -51,7 +51,7 @@ export const getTestConfigs = async (
           testOverrides: replaceConfigWithTestOverrides(test.config, test.testOverrides),
           suite: suite.name,
           ...(isLocalTriggerConfig(test)
-            ? {local_test_definition: normalizeLocalTestDefinition(test.local_test_definition)}
+            ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
             : {id: normalizePublicId(test.id) ?? ''}),
         }
       })
@@ -87,7 +87,7 @@ export const getTest = async (
 ): Promise<{test: Test} | {errorMessage: string}> => {
   if (isLocalTriggerConfig(triggerConfig)) {
     const test = {
-      ...triggerConfig.local_test_definition,
+      ...triggerConfig.localTestDefinition,
       suite: triggerConfig.suite,
     }
 
