@@ -17,11 +17,13 @@ export const LAYER_LOOKUP = {
   'nodejs16.x': 'Datadog-Node16-x',
   'nodejs18.x': 'Datadog-Node18-x',
   'nodejs20.x': 'Datadog-Node20-x',
+  'nodejs22.x': 'Datadog-Node22-x',
   'python3.8': 'Datadog-Python38',
   'python3.9': 'Datadog-Python39',
   'python3.10': 'Datadog-Python310',
   'python3.11': 'Datadog-Python311',
   'python3.12': 'Datadog-Python312',
+  'python3.13': 'Datadog-Python313',
   'ruby3.2': 'Datadog-Ruby3-2',
 } as const
 
@@ -45,12 +47,14 @@ export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   'nodejs16.x': RuntimeType.NODE,
   'nodejs18.x': RuntimeType.NODE,
   'nodejs20.x': RuntimeType.NODE,
+  'nodejs22.x': RuntimeType.NODE,
   'provided.al2': RuntimeType.CUSTOM,
   'python3.8': RuntimeType.PYTHON,
   'python3.9': RuntimeType.PYTHON,
   'python3.10': RuntimeType.PYTHON,
   'python3.11': RuntimeType.PYTHON,
   'python3.12': RuntimeType.PYTHON,
+  'python3.13': RuntimeType.PYTHON,
   'ruby3.2': RuntimeType.RUBY,
 }
 
