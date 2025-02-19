@@ -396,11 +396,6 @@ export class RunTestsCommand extends Command {
       this.config.defaultTestOverrides.variables = validatedOverrides.variables
     }
 
-    if (typeof this.config.files === 'string') {
-      this.reporter.log('[DEPRECATED] "files" should be an array of string instead of a string.\n')
-      this.config.files = [this.config.files]
-    }
-
     if (!isValidDatadogSite(this.config.datadogSite)) {
       throw new CiError(
         'INVALID_CONFIG',
