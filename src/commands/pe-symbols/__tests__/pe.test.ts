@@ -35,7 +35,7 @@ describe('pe', () => {
 
   describe('getFileMetadata', () => {
     test('return metadata for 32 bit PE file', async () => {
-      expect(await getPEFileMetadata(`${fixtureDir}/x86/Exports.dll`)).toEqual({
+      expect(await getPEFileMetadata(`${fixtureDir}/exports_with_pdb_32.dll`)).toEqual({
         isPE: true,
         hasPdbInfo: true,
         arch: 1,
@@ -45,14 +45,36 @@ describe('pe', () => {
       })
     })
 
+    test('return no metadata for 32 bit release PE file', async () => {
+      expect(await getPEFileMetadata(`${fixtureDir}/exports_without_pdb_32.dll`)).toEqual({
+        isPE: true,
+        hasPdbInfo: false,
+        arch: 1,
+        pdbAge: 0,
+        pdbSig: null,
+        filename: '',
+      })
+    })
+
     test('return metadata for 64 bit PE file', async () => {
-      expect(await getPEFileMetadata(`${fixtureDir}/x64/Exports.dll`)).toEqual({
+      expect(await getPEFileMetadata(`${fixtureDir}/exports_with_pdb_64.dll`)).toEqual({
         isPE: true,
         hasPdbInfo: true,
         arch: 2,
         pdbAge: 1,
         pdbSig: '3E3A3E3A-1C05-4E67-B9B7-99D781E5FB5C',
         filename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\x64\\Release\\Exports.pdb',
+      })
+    })
+
+    test('return no metadata for 64 bit release PE file', async () => {
+      expect(await getPEFileMetadata(`${fixtureDir}/exports_without_pdb_64.dll`)).toEqual({
+        isPE: true,
+        hasPdbInfo: false,
+        arch: 2,
+        pdbAge: 0,
+        pdbSig: null,
+        filename: '',
       })
     })
 
