@@ -2,7 +2,6 @@
 
 Upload Windows PE debug info files to Datadog to symbolicate your profiles.
 
-**This command requires `objcopy` from binutils package.**
 
 ## Setup
 
