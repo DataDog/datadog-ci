@@ -105,6 +105,20 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
+      - name: Run junit upload test (measures), passing glob as literal string
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Check that test data can be queried (measures)
+        run: |
+          yarn add @datadog/datadog-api-client
+          yarn check-junit-upload
+        env:
+          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
+          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          DD_SERVICE: datadog-ci-e2e-tests-junit
       - name: Run sarif upload test
         run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
         env:
