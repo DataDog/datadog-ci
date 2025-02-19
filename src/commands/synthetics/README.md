@@ -193,14 +193,6 @@ If you want to confirm that a proxy is being used, you can set the `DEBUG` envir
 DEBUG=proxy-agent yarn datadog-ci synthetics run-tests
 ```
 
-### Deprecated fields
-
-Datadog is streamlining and enhancing the datadog-ci synthetics commands. In this effort, certain fields have been marked as deprecated. While these fields remain backwards compatible for now, they will not be supported with the release of a new major version. We highly advise transitioning away from these deprecated fields.
-
-The following is a list of the changes:
-
-* The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
-
 ## Run Tests Command
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (see [test files](#test-files)) or specify the tests you want to run using the `-p,--public-id` flag.
