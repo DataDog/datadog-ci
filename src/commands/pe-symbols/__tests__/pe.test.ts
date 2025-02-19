@@ -1,4 +1,4 @@
-import { getPEFileMetadata } from '../pe'
+import {getPEFileMetadata } from '../pe'
 
 const fixtureDir = './src/commands/pe-symbols/__tests__/fixtures'
 
@@ -12,14 +12,14 @@ describe('pe', () => {
       const result = await getPEFileMetadata(`${fixtureDir}/small_invalid.dll`)
       expect(result.isPE).toBeFalsy()
       expect(result.hasPdbInfo).toBeFalsy()
-      expect(result.error?.message !== '')
+      expect(result.error?.message !== '').toBeTruthy()
     })
 
     test('return false if a file is not a PE file', async () => {
       const result = await getPEFileMetadata(`${fixtureDir}/invalid.dll`)
       expect(result.isPE).toBeFalsy()
       expect(result.hasPdbInfo).toBeFalsy()
-      expect(result.error?.message !== '')
+      expect(result.error?.message !== '').toBeTruthy()
     })
   })
 
@@ -41,7 +41,7 @@ describe('pe', () => {
         hasPdbInfo: false,
         arch: 1,
         pdbAge: 0,
-        pdbSig: null,
+        pdbSig: undefined,
         filename: '',
       })
     })
@@ -63,7 +63,7 @@ describe('pe', () => {
         hasPdbInfo: false,
         arch: 2,
         pdbAge: 0,
-        pdbSig: null,
+        pdbSig: undefined,
         filename: '',
       })
     })
