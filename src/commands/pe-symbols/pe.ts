@@ -1,20 +1,9 @@
 import fs from 'fs'
-
-import type { 
-    Reader
-} from './filereader';
-
-import { 
-    FileReader,
-    createReaderFromFile,
-    createReadFunctions
-
-} from './filereader';
-
-import { 
+import type { Reader } from './filereader';
+import { FileReader } from './filereader';
+import {
     CV_INFO_AGE_OFFSET,
     CV_INFO_GUID_OFFSET,
-    CV_INFO_PDB70_SIZE,
     CV_INFO_PDB_FILENAME_OFFSET,
     CV_INFO_SIGNATURE_OFFSET,
     DOS_HEADER_LFANEW_OFFSET,
@@ -52,7 +41,6 @@ import {
     PDB70_SIGNATURE
 } from './pe-constants';
 
-
 export type GUID =
 {
     Data1: number;      // unsigned long (32-bit)
@@ -81,20 +69,17 @@ export type PEFileMetadata = {
     arch: MachineArchitecture,
     hasPdbInfo: boolean,
     pdbAge: number,
-    pdbSig: string | null
-//    error?: Error | unknown  // TODO: check how to handle caught exceptions...
-    error?: Error  // TODO: check how to handle caught exceptions...
+    pdbSig: string | null,
+    error?: Error
   }
 
 export type PEResult = {
     isPE: boolean,
     peHeader?: PEHeader,
-//    error?: Error | unknown  // TODO: check how to handle caught exceptions...
-    error?: Error  // TODO: check how to handle caught exceptions...
+    error?: Error
 }
 
-
- function getArchitecture (machine: number): MachineArchitecture {
+function getArchitecture (machine: number): MachineArchitecture {
     let architecture: MachineArchitecture = MachineArchitecture.unknown;
 
     if (machine === IMAGE_FILE_MACHINE_I386)

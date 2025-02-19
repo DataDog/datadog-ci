@@ -1,14 +1,4 @@
-//import path from 'path'
-
-import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
-
-import {
-  getPEFileMetadata,
-} from '../pe'
-
-import {
-  MachineArchitecture, 
-} from '../pe-constants'
+import { getPEFileMetadata } from '../pe'
 
 const fixtureDir = './src/commands/pe-symbols/__tests__/fixtures'
 
@@ -77,6 +67,5 @@ describe('pe', () => {
         filename: '',
       })
     })
-
   })
 })
