@@ -1192,7 +1192,7 @@ describe('run-test', () => {
         jest.spyOn(utils, 'getSuites').mockResolvedValue([
           {
             content: {
-              tests: tests.map((testId) => ({config: {}, id: testId})),
+              tests: tests.map((testId) => ({id: testId})),
             },
             name: 'Suite 1',
           },

@@ -9,7 +9,7 @@ export interface MainReporter {
   log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void
   testWait(test: Test): void
   testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   resultReceived(result: ResultInBatch): void
@@ -470,9 +470,6 @@ export interface BasicAuthCredentials {
 }
 
 interface BaseTriggerConfig {
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  /** @deprecated This property is deprecated, please use `testOverrides` instead. */
-  config?: UserConfigOverride
   testOverrides?: UserConfigOverride
   suite?: string
 }
