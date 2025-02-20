@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "bin": "dist/cli.js",
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
   "volta": {
     "node": "20.11.0",
