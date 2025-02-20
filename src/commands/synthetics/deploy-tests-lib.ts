@@ -28,12 +28,13 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
   })
 
   for (const localTestDefinition of localTestDefinitionsToDeploy) {
+    // SYNTH-18434: public ID should be made required
     const publicId = localTestDefinition.local_test_definition.public_id!
 
     try {
       await deployLocalTestDefinition(api, localTestDefinition)
 
-      // SYNTH-17840: the edit test endpoint should return a version in the response, so we can print it in the logs and see it in version history
+      // SYNTH-18527: the edit test endpoint should return a version in the response, so we can print it in the logs and see it in version history
       const baseUrl = getCommonAppBaseURL(config.datadogSite, config.subdomain)
       const testLink = `${baseUrl}synthetics/details/${publicId}`
 
@@ -46,8 +47,6 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
       )
     }
   }
-
-  reporter.log(`Deployed local test definitions defined in ${config.files[0]}\n`)
 }
 
 const deployLocalTestDefinition = async (api: APIHelper, test: LocalTriggerConfig): Promise<void> => {
@@ -56,7 +55,7 @@ const deployLocalTestDefinition = async (api: APIHelper, test: LocalTriggerConfi
 
   const existingRemoteTest = await api.getTest(publicId)
 
-  // XXX: We should detect noop updates in the backend
+  // SYNTH-18528: the client should not have to handle the merge for partial update
   const newRemoteTest = removeUnsupportedEditTestFields({
     ...existingRemoteTest,
     ...test.local_test_definition,
