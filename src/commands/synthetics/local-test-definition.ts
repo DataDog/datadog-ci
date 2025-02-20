@@ -3,7 +3,7 @@ import {isLocalTriggerConfig} from './utils/internal'
 
 export const findUniqueLocalTestDefinition = (testConfig: TestConfig, publicId: string): LocalTriggerConfig => {
   const matchingTests = testConfig.tests.flatMap((t) =>
-    isLocalTriggerConfig(t) && t.local_test_definition.public_id === publicId ? [t] : []
+    isLocalTriggerConfig(t) && t.localTestDefinition.public_id === publicId ? [t] : []
   )
 
   if (matchingTests.length > 1) {

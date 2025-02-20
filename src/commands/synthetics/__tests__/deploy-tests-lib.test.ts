@@ -13,8 +13,8 @@ describe('deploy-tests', () => {
       jest
         .spyOn(tests, 'getTestConfigs')
         .mockImplementation(async () => [
-          {local_test_definition: getApiLocalTestDefinition('123-456-789')},
-          {local_test_definition: getApiLocalTestDefinition('987-654-321')},
+          {localTestDefinition: getApiLocalTestDefinition('123-456-789')},
+          {localTestDefinition: getApiLocalTestDefinition('987-654-321')},
         ])
 
       const apiHelper = mockApi({
@@ -50,8 +50,8 @@ describe('deploy-tests', () => {
       jest
         .spyOn(tests, 'getTestConfigs')
         .mockImplementation(async () => [
-          {local_test_definition: getApiLocalTestDefinition('123-456-789')},
-          {local_test_definition: getApiLocalTestDefinition('987-654-321')},
+          {localTestDefinition: getApiLocalTestDefinition('123-456-789')},
+          {localTestDefinition: getApiLocalTestDefinition('987-654-321')},
         ])
 
       const apiHelper = mockApi({

@@ -16,11 +16,11 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
       return []
     }
 
-    if (!triggerConfig.local_test_definition.public_id) {
+    if (!triggerConfig.localTestDefinition.public_id) {
       throw new Error('Local test definition is missing a public_id')
     }
 
-    if (config.publicIds.length > 0 && !config.publicIds.includes(triggerConfig.local_test_definition.public_id)) {
+    if (config.publicIds.length > 0 && !config.publicIds.includes(triggerConfig.localTestDefinition.public_id)) {
       return []
     }
 
@@ -29,7 +29,7 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
 
   for (const localTestDefinition of localTestDefinitionsToDeploy) {
     // SYNTH-18434: public ID should be made required
-    const publicId = localTestDefinition.local_test_definition.public_id!
+    const publicId = localTestDefinition.localTestDefinition.public_id!
 
     try {
       await deployLocalTestDefinition(api, localTestDefinition)
@@ -51,21 +51,21 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
 
 const deployLocalTestDefinition = async (api: APIHelper, test: LocalTriggerConfig): Promise<void> => {
   // SYNTH-18434: public ID should be made required
-  const publicId = test.local_test_definition.public_id!
+  const publicId = test.localTestDefinition.public_id!
 
   const existingRemoteTest = await api.getTest(publicId)
 
   // SYNTH-18528: the client should not have to handle the merge for partial update
   const newRemoteTest = removeUnsupportedEditTestFields({
     ...existingRemoteTest,
-    ...test.local_test_definition,
+    ...test.localTestDefinition,
     config: {
       ...existingRemoteTest.config,
-      ...test.local_test_definition.config,
+      ...test.localTestDefinition.config,
     },
     options: {
       ...existingRemoteTest.options,
-      ...test.local_test_definition.options,
+      ...test.localTestDefinition.options,
     },
   })
 
