@@ -68,5 +68,5 @@ Will upload ode coverage report file src/commands/coverage/__tests__/fixtures/ja
 
 ## Further reading
 
-- TODO: Add link to the documentation page
-- TODO: Add link to the documentation page in main README beta section
+[//]: <> (TODO: Add link to the documentation page)
+[//]: <> (TODO: Add link to the documentation page in main README beta section)
