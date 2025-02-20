@@ -1,8 +1,7 @@
 import {getCommonAppBaseURL} from '../../helpers/app'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
-import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest, TestConfig} from './interfaces'
-import {findUniqueLocalTestDefinition} from './local-test-definition'
+import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
 
@@ -11,30 +10,28 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
 
   reporter.log('Deploying tests...\n\n')
 
-  const testConfigFromFile: TestConfig = {
-    tests: await getTestConfigs(config, reporter),
-  }
+  const triggerConfigs = await getTestConfigs(config, reporter)
+  const localTestDefinitionsToDeploy = triggerConfigs.flatMap((triggerConfig) => {
+    if (!isLocalTriggerConfig(triggerConfig)) {
+      return []
+    }
 
-  if (config.publicIds.length > 0) {
-    testConfigFromFile.tests = testConfigFromFile.tests.filter(
-      (test) =>
-        isLocalTriggerConfig(test) &&
-        test.local_test_definition.public_id &&
-        config.publicIds.includes(test.local_test_definition.public_id)
-    )
-  }
+    if (!triggerConfig.local_test_definition.public_id) {
+      throw new Error('Local test definition is missing a public_id')
+    }
 
-  const publicIds = new Set(
-    testConfigFromFile.tests.flatMap((test) =>
-      isLocalTriggerConfig(test) && test.local_test_definition.public_id ? [test.local_test_definition.public_id] : []
-    )
-  )
+    if (config.publicIds.length > 0 && !config.publicIds.includes(triggerConfig.local_test_definition.public_id)) {
+      return []
+    }
 
-  for (const publicId of publicIds) {
-    const test = findUniqueLocalTestDefinition(testConfigFromFile, publicId)
+    return [triggerConfig]
+  })
+
+  for (const localTestDefinition of localTestDefinitionsToDeploy) {
+    const publicId = localTestDefinition.local_test_definition.public_id!
 
     try {
-      await deployLocalTestDefinition(api, test)
+      await deployLocalTestDefinition(api, localTestDefinition)
 
       // SYNTH-17840: the edit test endpoint should return a version in the response, so we can print it in the logs and see it in version history
       const baseUrl = getCommonAppBaseURL(config.datadogSite, config.subdomain)

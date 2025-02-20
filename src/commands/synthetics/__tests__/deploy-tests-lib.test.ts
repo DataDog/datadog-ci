@@ -74,21 +74,5 @@ describe('deploy-tests', () => {
       const {public_id, monitor_id, ...expectedUpdate} = getApiTest('123-456-789')
       expect(apiHelper.editTest).toHaveBeenNthCalledWith(1, '123-456-789', expectedUpdate)
     })
-
-    it('fails if public ids are not unique', async () => {
-      const config = DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG
-      config['publicIds'] = ['123-456-789']
-
-      jest
-        .spyOn(tests, 'getTestConfigs')
-        .mockImplementation(async () => [
-          {local_test_definition: getApiLocalTestDefinition('123-456-789')},
-          {local_test_definition: getApiLocalTestDefinition('123-456-789')},
-        ])
-
-      await expect(deployTests(mockReporter, config)).rejects.toThrow(
-        'Cannot have multiple local test definitions with same publicId: 123-456-789.'
-      )
-    })
   })
 })
