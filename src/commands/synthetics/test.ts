@@ -1,11 +1,7 @@
 import chalk from 'chalk'
 
 import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
-import {
-  replaceConfigWithTestOverrides,
-  warnIfDeprecatedConfigUsed,
-  warnIfDeprecatedPollingTimeoutUsed,
-} from './compatibility'
+import {replaceConfigWithTestOverrides, warnIfDeprecatedConfigUsed} from './compatibility'
 import {CiError, CriticalError} from './errors'
 import {
   RemoteTriggerConfig,
@@ -67,7 +63,6 @@ export const getTestConfigs = async (
   suites.push(...suitesFromFiles)
 
   warnIfDeprecatedConfigUsed(suites, reporter)
-  warnIfDeprecatedPollingTimeoutUsed(suites, reporter)
 
   const testConfigs = suites
     .map((suite) =>

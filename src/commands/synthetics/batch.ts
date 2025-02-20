@@ -40,12 +40,8 @@ export const runTests = async (
   selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<Trigger> => {
-  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
-  // Although the backend is backwards compatible, let's stop sending deprecated properties
-  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
-
   const payload: Payload = {
-    tests,
+    tests: testsToTrigger,
     options: {
       batch_timeout: batchTimeout,
       selective_rerun: selectiveRerun,

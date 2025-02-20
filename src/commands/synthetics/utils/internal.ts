@@ -177,7 +177,6 @@ const allOverrideKeys: AccumulatorBaseConfigOverrideKey[] = [
   'followRedirects',
   'headers',
   'locations',
-  'pollingTimeout',
   'resourceUrlSubstitutionRegexes',
   'startUrl',
   'startUrlSubstitutionRegex',
@@ -232,8 +231,6 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
       switch (key) {
         // Convert to number
         case 'defaultStepTimeout':
-        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        case 'pollingTimeout':
         case 'testTimeout':
           acc[key] = parseOverrideValue(value, 'number') as number
           break
@@ -367,8 +364,6 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'followRedirects',
       'headers',
       'locations',
-      // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
-      'pollingTimeout',
       'resourceUrlSubstitutionRegexes',
       'retry',
       'startUrlSubstitutionRegex',

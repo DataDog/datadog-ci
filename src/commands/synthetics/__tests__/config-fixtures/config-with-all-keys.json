@@ -30,7 +30,6 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
-    "pollingTimeout": 2,
     "resourceUrlSubstitutionRegexes": [
       "s/(https://www.)(.*)/$1extra-$2",
       "https://example.com(.*)|http://subdomain.example.com$1"
@@ -62,7 +61,6 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
-    "pollingTimeout": 3,
     "resourceUrlSubstitutionRegexes": [
       "s/(https://www.)(.*)/$1extra-$2",
       "https://example.com(.*)|http://subdomain.example.com$1"
@@ -73,8 +71,6 @@
     "testTimeout": 200000,
     "variables": {"titleVariable": "new value"}
   },
-  "locations": [],
-  "pollingTimeout": 4,
   "proxy": {
     "protocol": "https"
   },
@@ -82,6 +78,5 @@
   "selectiveRerun": true,
   "subdomain": "ppa",
   "testSearchQuery": "a-search-query",
-  "tunnel": true,
-  "variableStrings": []
+  "tunnel": true
 }
