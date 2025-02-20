@@ -644,7 +644,7 @@ Each regex pattern should be in the format:
 **Configuration options**
 
 * Global/Test Config: `"resourceUrlSubstitutionRegexes": ["s/(https://www.)(.*)/$1staging-$2/"]`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='s/(https://www.)(.*)/$1staging-$2/`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='s/(https://www.)(.*)/$1staging-$2/'`
 * CLI param: `--override resourceUrlSubstitutionRegexes='/(https://www.)(.*)/$1staging-$2/'`
 
 #### `retry` (Object)
