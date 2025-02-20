@@ -3,13 +3,13 @@ import os from 'os'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
 
-import id from '../id'
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
 
-jest.mock('../id', () => jest.fn())
+jest.mock('../../../helpers/id', () => jest.fn())
 
 const makeCli = () => {
   const cli = new Cli()
