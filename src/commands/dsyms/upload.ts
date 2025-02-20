@@ -76,9 +76,7 @@ export class UploadCommand extends Command {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   } as const
 
-  private config: Record<string, string> = {
-    datadogSite: getDatadogSite(),
-  }
+  private config: Record<string, string> = {}
 
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
@@ -91,6 +89,7 @@ export class UploadCommand extends Command {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY,
+        datadogSite: getDatadogSite(),
       },
       {
         configPath: this.configPath,

@@ -1,3 +1,4 @@
 {
-  "apiKey": "PLACEHOLDER"
+  "apiKey": "PLACEHOLDER",
+  "datadogSite": "datadoghq.com"
 }

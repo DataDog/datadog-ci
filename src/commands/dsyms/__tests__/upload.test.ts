@@ -380,6 +380,7 @@ describe('execute', () => {
       configPath: 'src/commands/dsyms/__tests__/fixtures/datadog-ci.json',
       env: {
         DATADOG_API_KEY: 'env_API_key',
+        DATADOG_SITE: 'us3.datadoghq.com',
       },
     })
 
@@ -389,7 +390,7 @@ describe('execute', () => {
 
     expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
       apiKey: 'env_API_key',
-      datadogSite: expect.anything(),
+      datadogSite: 'us3.datadoghq.com',
       metricsLogger: expect.anything(),
     })
     expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
