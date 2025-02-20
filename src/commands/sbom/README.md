@@ -31,7 +31,7 @@ The following environment variables must be defined:
 When developing software, you can try with the following command:
 
 ```bash
-yarn launch sbom upload /path/to/sbom.json
+bun launch sbom upload /path/to/sbom.json
 ```
 
 ## Further reading

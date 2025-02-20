@@ -45,7 +45,7 @@ To verify the command works as expected, use `--dry-run`:
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-yarn launch sarif upload ./src/commands/sarif/__tests__/fixtures/valid-results.sarif --dry-run
+bun launch sarif upload ./src/commands/sarif/__tests__/fixtures/valid-results.sarif --dry-run
 ```
 
 Successful output looks like the example below:

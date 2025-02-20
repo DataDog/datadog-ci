@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - uses: actions/setup-node@v4
         with:
           node-version: 20.11.0
@@ -16,10 +19,9 @@ jobs:
           if ((${#ARR_TAG[@]} <= 1)); then echo "Missing channel in given tag '$TAG'. Should be in the format '<version>-<channel>'" && exit 1; fi
           TAG_TO_PUBLISH=${ARR_TAG[${#ARR_TAG[@]} - 1]}
 
-          # Publish on npm in the correct channel
-          yarn
+          bun install --frozen-lockfile
           echo "Publishing on $TAG_TO_PUBLISH channel."
-          yarn npm publish --tag=$TAG_TO_PUBLISH
+          bun publish --tag=$TAG_TO_PUBLISH
         env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
           TAG: ${{ github.event.release.tag_name }}

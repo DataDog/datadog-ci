@@ -16,27 +16,31 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.version }}
-      - run: yarn install --immutable
-      - run: yarn build
-      - name: Run yarn lint:ci
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: bun run lint:ci
         run: |
-          if ! yarn lint:ci ; then
+          if ! bun run lint:ci ; then
             echo "ESLint failed with the following errors:"
             jq '.runs[].results' sarif-datadog-ci.sarif
 
             echo ""
             echo "Find the full SARIF report in the Artifacts section here: https://github.com/DataDog/datadog-ci/actions/runs/${{ github.run_id }}"
-            echo "You can fix this by running ==> yarn format <=="
+            echo "You can fix this by running ==> bun run format <=="
             echo ""
             exit 1
           fi
-      - run: yarn no-only-in-tests
+      - run: bun run no-only-in-tests
 
-      - run: yarn test
+      - run: bun run test
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
@@ -46,7 +50,8 @@ jobs:
           DD_ENV: ci
           NODE_OPTIONS: -r dd-trace/ci/init
       - run: mkdir artifacts
-      - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
+      - run: bun pm pack --destination datadog-ci-${{ matrix.version }}
+      - run: bun exec "mv datadog-ci-${{ matrix.version }}/*.tgz artifacts/datadog-ci-${{ matrix.version }}.tgz"
       - run: cp -r .github/workflows/e2e artifacts/
       - uses: actions/upload-artifact@v4
         with:
@@ -72,6 +77,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
@@ -80,25 +89,25 @@ jobs:
         with:
           name: artifacts-${{ matrix.version }}
           path: artifacts/
-      - run: yarn add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
+      - run: bun add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
       - name: Run synthetics test
-        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+        run: bun run datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
       - name: Run sourcemaps upload test
-        run: yarn datadog-ci sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
+        run: bun run datadog-ci sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
       - name: Run junit upload test (measures)
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
+        run: bun run datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (measures)
         run: |
-          yarn add @datadog/datadog-api-client
-          yarn check-junit-upload
+          bun add @datadog/datadog-api-client
+          bun run check-junit-upload
         env:
           EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
           EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
@@ -106,13 +115,13 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
       - name: Run junit upload test (measures), passing glob as literal string
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
+        run: bun run datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Check that test data can be queried (measures)
         run: |
-          yarn add @datadog/datadog-api-client
-          yarn check-junit-upload
+          bun add @datadog/datadog-api-client
+          bun run check-junit-upload
         env:
           EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
           EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
@@ -120,11 +129,11 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
       - name: Run sarif upload test
-        run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
+        run: bun run datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
       - name: Run sbom upload test
-        run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
+        run: bun run datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
@@ -134,20 +143,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: yarn install --immutable
-      - run: yarn build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
+        run: bun run dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
@@ -156,42 +169,48 @@ jobs:
       labels: arm-4core-linux
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: npm install -g yarn
-        name: Install Yarn # Yarn is not installed by default in this runner
-      - run: yarn install --immutable
-      - run: yarn build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
+        run: bun run dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: yarn install --immutable
-      - run: yarn build:win
+      - run: bun install --frozen-lockfile
+      - run: bun run build:win
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
+        run: bun run dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm dist -r
           rm src -r
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -200,40 +219,48 @@ jobs:
     runs-on: macos-latest-large
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: yarn install --immutable
-      - run: yarn build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
+        run: bun run dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
 
   standalone-binary-test-macos-arm:
     name: Test standalone binary in ARM macOS
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: yarn install --immutable
-      - run: yarn build
+      - run: bun install --frozen-lockfile
+      - run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
+        run: bun run dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
@@ -275,11 +302,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0
-      # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
-      # by the script `check-licenses` below.
-      - run: yarn install --immutable
-      - run: yarn check-licenses
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - run: bun run check-licenses

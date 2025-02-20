@@ -43,7 +43,7 @@ To verify this command works as expected, you can trace a mock command and valid
 export DD_API_KEY='<API key>'
 export CIRCLECI=true
 
-yarn launch trace --name "Say Hello" echo "Hello World"
+bun launch trace --name "Say Hello" echo "Hello World"
 ```
 
 Successful output should look like this:

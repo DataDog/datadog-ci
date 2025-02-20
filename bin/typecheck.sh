@@ -1,1 +1,1 @@
-yarn tsc -p .
+bun tsc -p .

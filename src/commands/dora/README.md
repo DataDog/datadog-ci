@@ -69,7 +69,7 @@ To verify this command works as expected, you can use `--dry-run`:
 export DD_API_KEY='<API key>'
 export DD_BETA_COMMANDS_ENABLED=1
 
-yarn launch dora deployment --service test-service --started-at `date +%s` --dry-run
+bun launch dora deployment --service test-service --started-at `date +%s` --dry-run
 ```
 
 This is an example of a successful output:

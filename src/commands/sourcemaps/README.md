@@ -99,7 +99,7 @@ export DATADOG_APP_KEY='<application key>'
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
 echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https://fake.website
+bun launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https://fake.website
 rm -rf $TEMP_DIR
 ```
 

@@ -8,27 +8,26 @@ See the [Usage section](#usage) for a list of available commands.
 
 ## How to install the CLI
 
-The package is under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) and can be installed through NPM or Yarn:
+The package is under [@datadog/datadog-ci](https://www.npmjs.com/package/@datadog/datadog-ci) and can be installed using a package manager like NPM, Yarn, or Bun.
 
 ```sh
-# NPM
-npm install --save-dev @datadog/datadog-ci
-
-# Yarn
-yarn add --dev @datadog/datadog-ci
+npm install --save-dev @datadog/datadog-ci # NPM
+yarn add --dev @datadog/datadog-ci # Yarn
+bun add --dev @datadog/datadog-ci # Bun
 ```
 
 If you need `datadog-ci` as a CLI tool instead of a package, you can run it with [`npx`](https://www.npmjs.com/package/npx) or install it globally:
 
+
 ```sh
-# npx
-npx @datadog/datadog-ci [command]
+npx @datadog/datadog-ci [command] # NPM
+bunx @datadog/datadog-ci [command] # Bun
+```
 
-# NPM install globally
-npm install -g @datadog/datadog-ci
-
-# Yarn v1 add globally
-yarn global add @datadog/datadog-ci
+```sh
+npm install -g @datadog/datadog-ci # NPM
+yarn global add @datadog/datadog-ci # Yarn
+bun install -g @datadog/datadog-ci # Bun
 ```
 
 For more ways to install the CLI, see [this section](#more-ways-to-install-the-cli).

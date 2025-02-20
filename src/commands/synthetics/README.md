@@ -52,7 +52,7 @@ To setup the client, your Datadog API and application keys need to be configured
 3. Passed to the CLI when running your tests:
 
     ```bash
-    yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
+    bun datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
     ```
 
 ### Global configuration file options
@@ -125,7 +125,7 @@ The CLI provides another way to set options and configure the behavior of datado
 Example:
 
 ```bash
-yarn datadog-ci synthetics run-tests --public-id pub-lic-id1
+bun datadog-ci synthetics run-tests --public-id pub-lic-id1
 ```
 
 The priority of the 3 forms of configuration is as follows:
@@ -952,7 +952,7 @@ To verify the Synthetics command works as expected, trigger a test run and verif
 export DATADOG_API_KEY='<API_KEY>'
 export DATADOG_APP_KEY='<APPLICATION_KEY>'
 
-yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
+bun datadog-ci synthetics run-tests --public-id abc-def-ghi
 ```
 
 Successful output should look like this:
@@ -981,7 +981,7 @@ Two reporters are supported out-of-the-box:
 To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
 
 ```bash
-yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
+bun datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
 ```
 
 Reporters can hook themselves into the `MainReporter` of the command.
@@ -1008,8 +1008,7 @@ You can see results for CI batches by clicking on a batch in the [Synthetic Moni
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
 ```bash
-  yarn datadog-ci synthetics run-tests --config global-config.json
-  yarn run v1.22.4
+  bun datadog-ci synthetics run-tests --config global-config.json
   $ /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/node_modules/.bin/datadog-ci synthetics run-tests --config global-config.json
   Finding files matching /Users/demo.user/go/src/github.com/Datadog/tmp/test/testDemo/{,!(node_modules)/**/}*.synthetics.json
 
@@ -1028,7 +1027,6 @@ You can also see the outcome of test executions directly in your CI as your test
       x GET - https://www.datadoghq.com
         [INCORRECT_ASSUMPTION] - [{"index":1,"operator":"is","property":"content-type","type":"header","target":"text/html","valid":false,"actual":"text/html"; charset=utf-8"}] 
   error Command failed with exit code 1.
-  info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
 
 ## Further reading

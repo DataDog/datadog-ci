@@ -216,7 +216,7 @@ export DATADOG_API_KEY='<API key>'
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
 echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch react-native upload --platform ios --service com.company.app --bundle $TEMP_DIR/fake.js --sourcemap $TEMP_DIR/fake.js.map --release-version 0.0.1 --build-version 000001
+bun launch react-native upload --platform ios --service com.company.app --bundle $TEMP_DIR/fake.js --sourcemap $TEMP_DIR/fake.js.map --release-version 0.0.1 --build-version 000001
 rm -rf $TEMP_DIR
 ```
 
@@ -238,24 +238,24 @@ Command summary:
 
 You need an AppCenter account to test this command, as it uses the `appcenter codepush deployment history` command.
 
-Generate source maps for your CodePush application, then use `yarn launch react-native codepush` from this repository to trigger an upload.
+Generate source maps for your CodePush application, then use `bun launch react-native codepush` from this repository to trigger an upload.
 
 ### `xcode`
 
 Build and link your local `datadog-ci` package by running this in the directory:
 
 ```bash
-yarn build
-yarn link
+bun run build
+bun link
 ```
 
 Run this command in your project:
 
 ```bash
-yarn link @datadog/datadog-ci
+bun link @datadog/datadog-ci
 ```
 
-If running `yarn datadog-ci` in your project returns `error Command "datadog-ci" not found.`, run the following:
+If running `bun datadog-ci` in your project returns `error Command "datadog-ci" not found.`, run the following:
 
 ```bash
 chmod +x /path/to/datadog-ci/dist/cli.js

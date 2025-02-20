@@ -9,7 +9,7 @@ const INSERT = '#!/usr/bin/env node';
 
 /**
  * The forEach loop below requires an object with script paths as properties to loop over. When the `bin` property in
- * the package.json only has a single property, then the object is converted to a string upon a `yarn install` call
+ * the package.json only has a single property, then the object is converted to a string upon a `npm install` call
  * (see: https://docs.npmjs.com/cli/v9/configuring-npm/package-json#bin). The string to object transformation here thus
  * allows us to support 1+ properties whilst keeping the loop below.
  */

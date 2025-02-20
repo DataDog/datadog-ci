@@ -52,6 +52,8 @@ export const FLARE_PROJECT_FILES = [
   // Node.js
   'package.json',
   'package-lock.json',
+  'bun.lock',
+  'bun.lockb',
   'yarn.lock',
   '.nvmrc',
   // Python

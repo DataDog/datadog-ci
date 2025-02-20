@@ -49,7 +49,7 @@ export DD_API_KEY='<API key>'
 export BUILDKITE=true
 export BUILDKITE_BUILD_ID=uuid
 
-yarn launch measure --level pipeline --measures foo:1
+bun launch measure --level pipeline --measures foo:1
 ```
 
 Successful output should look like this:

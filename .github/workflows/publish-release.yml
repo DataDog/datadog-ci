@@ -52,17 +52,17 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
       - name: Bundle library
-        run: yarn build
+        run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
+        run: bun run dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
       - name: Upload release asset
         uses: actions/github-script@v7
         with:
@@ -85,24 +85,25 @@ jobs:
     needs: create-draft-release
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - name: Install node
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
-      - run: npm install -g yarn
-        name: Install Yarn # Yarn is not installed by default in this runner
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
       - name: Bundle library
-        run: yarn build
+        run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
+        run: bun run dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
       - name: Upload release asset
         uses: actions/github-script@v7
         with:
@@ -128,17 +129,17 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
       - name: Bundle library
-        run: yarn build:win
+        run: bun run build:win
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
+        run: bun run dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm dist -r
           rm src -r
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
       - name: Upload release asset
         uses: actions/github-script@v7
         with:
@@ -166,17 +167,17 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
       - name: Bundle library
-        run: yarn build
+        run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
+        run: bun run dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
       - name: Upload release asset
         uses: actions/github-script@v7
         with:
@@ -202,17 +203,17 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: bun install --frozen-lockfile
       - name: Bundle library
-        run: yarn build
+        run: bun run build
       - name: Create standalone binary
-        run: yarn dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
+        run: bun run dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
       - name: Remove dist folder to check that binary can stand alone
         run: |
           rm -rf dist
           rm -rf src
       - name: Test generated standalone binary
-        run: yarn dist-standalone:test
+        run: bun run dist-standalone:test
       - name: Upload release asset
         uses: actions/github-script@v7
         with:
@@ -235,13 +236,16 @@ jobs:
     needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.2
       - uses: actions/setup-node@v4
         with:
           node-version: 20.11.0
-      - run: yarn
-      - run: yarn npm publish
+      - run: bun install --frozen-lockfile
+      - run: bun publish
         env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
+          NPM_CONFIG_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
 
   bump-ci-integrations:
     name: Bump datadog-ci in integration

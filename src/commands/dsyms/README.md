@@ -61,7 +61,7 @@ export DATADOG_API_KEY='<API key>'
 // at this point, build any project in Xcode so that it produces dSYM files in Derived Data path
 // assuming your Derived Data path is ~/Library/Developer/Xcode/DerivedData/
 
-yarn launch dsyms upload ~/Library/Developer/Xcode/DerivedData/
+bun launch dsyms upload ~/Library/Developer/Xcode/DerivedData/
 ```
 
 Successful output should look like this:

@@ -5,18 +5,19 @@ and discuss your ideas or propose the changes you wish to make. After a resoluti
 
 ### Running command in development environment
 
-When developing the tool, it is possible to run commands using `yarn launch`. It relies on `ts-node`, so does not require building the project for every new change.
+When developing the tool, it is possible to run commands using `bun launch`. It relies on `ts-node`, so does not require building the project for every new change.
 
 ```bash
-yarn launch synthetics run-tests --config dev/global.config.json
+bun launch synthetics run-tests --config dev/global.config.json
 ```
 
 ### Framework and libraries used
 
+- [bun](https://github.com/oven-sh/bun): Package manager.
 - [clipanion](https://github.com/arcanis/clipanion): CLI library to handle the different commands.
 - [eslint](https://github.com/eslint/eslint): Linting ([.eslintrc.js](/.eslintrc.js)).
 - [jest](https://github.com/facebook/jest): Tests are written in Jest.
-- [volta](https://github.com/volta-cli/volta): NodeJS and yarn versioning.
+- [volta](https://github.com/volta-cli/volta): NodeJS versioning.
 
 ### Creating a new command
 
@@ -92,16 +93,16 @@ Then a suite of commands are tested to ensure they work as expected. Each comman
 
 ```bash
 # Compile and watch
-yarn watch
+bun run watch
 
 # Run the tests
-yarn test
+bun run test
 
 # Build code
-yarn build
+bun run build
 
 # Make bin executable
-yarn prepack
+bun pm prepack
 ```
 
 #### Release Process

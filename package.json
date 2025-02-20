@@ -9,10 +9,8 @@
     "node": ">=18"
   },
   "volta": {
-    "node": "20.11.0",
-    "yarn": "3.4.1"
+    "node": "20.11.0"
   },
-  "packageManager": "yarn@3.4.1",
   "files": [
     "dist/**/*",
     "README",
@@ -34,7 +32,7 @@
     ]
   },
   "scripts": {
-    "build": "yarn clean; tsc",
+    "build": "bun run clean && tsc",
     "build:win": "tsc",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
@@ -42,13 +40,13 @@
     "clean": "rm -rf dist/*",
     "dist-standalone": "pkg --compress GZip .",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js",
-    "format": "yarn eslint --fix",
-    "launch": "ts-node --transpile-only src/cli.ts",
+    "format": "bun run eslint --fix",
+    "launch": "bun run src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
-    "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
-    "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
+    "lint": "bun run eslint || (echo \"\nYou can fix this by running ==> bun run format <==\n\" && false)",
+    "lint:ci": "bun run eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
-    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf 'dist/**/__tests__'",
+    "prepack": "bun run build && node ./bin/make-it-executable.js && bun exec \"rm -rf 'dist/**/__tests__'\"",
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",

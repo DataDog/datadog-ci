@@ -58,7 +58,7 @@ export DD_API_KEY='<API key>'
 export BUILDKITE=true
 export BUILDKITE_BUILD_ID=uuid
 
-yarn launch tag --level pipeline --tags foo:bar
+bun launch tag --level pipeline --tags foo:bar
 ```
 
 Successful output should look like this:

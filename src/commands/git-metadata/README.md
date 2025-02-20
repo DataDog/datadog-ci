@@ -53,7 +53,7 @@ To verify this command works as expected, you can trigger a test run and verify 
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-yarn launch git-metadata upload
+bun launch git-metadata upload
 ```
 
 Successful output should look like this:
