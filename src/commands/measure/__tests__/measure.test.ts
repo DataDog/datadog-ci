@@ -1,4 +1,3 @@
-import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {MeasureCommand, parseMeasures} from '../measure'
@@ -109,37 +108,6 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stderr.toString()).toContain(
       'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
-    )
-  })
-})
-
-describe('warnings when deprecated metric mentioned', () => {
-  test('should warn if metric command is used', async () => {
-    const cli = makeCLI()
-    const context = createMockContext() as any
-    await cli.run(['metric', '--level', 'pipeline', '--measures', 'key:1'], context)
-    expect(context.stdout.toString()).toBe(
-      chalk.yellow('[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n')
-    )
-  })
-
-  test('should double warn if metric command is used with metrics option', async () => {
-    const cli = makeCLI()
-    const context = createMockContext() as any
-    await cli.run(['metric', '--level', 'pipeline', '--metrics', 'key:1'], context)
-    expect(context.stdout.toString()).toBe(
-      chalk.yellow(
-        '[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n[WARN] The "--metrics" flag is deprecated. Please use "--measures" flag instead.\n'
-      )
-    )
-  })
-
-  test('should warn if metrics flag is used', async () => {
-    const cli = makeCLI()
-    const context = createMockContext() as any
-    await cli.run(['measure', '--level', 'pipeline', '--metrics', 'key:1'], context)
-    expect(context.stdout.toString()).toBe(
-      chalk.yellow('[WARN] The "--metrics" flag is deprecated. Please use "--measures" flag instead.\n')
     )
   })
 })

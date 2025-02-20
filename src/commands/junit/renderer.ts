@@ -35,12 +35,6 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying jUnitXML upload ${jUnitXMLPath}: ${errorMessage}\n`)
 }
 
-export const renderDeprecatedMention = (deprecatedMention: string, newMention: string, deprecatedType: string) => {
-  return chalk.yellow(
-    `${ICONS.WARNING} The "${deprecatedMention}" ${deprecatedType} is deprecated. Please use the "${newMention}" ${deprecatedType} instead.\n`
-  )
-}
-
 export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, duration: number) => {
   return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.`)
 }
