@@ -1,4 +1,4 @@
-import {getPEFileMetadata } from '../pe'
+import {getPEFileMetadata} from '../pe'
 
 const fixtureDir = './src/commands/pe-symbols/__tests__/fixtures'
 
