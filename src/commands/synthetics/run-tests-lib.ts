@@ -1,6 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
+import {runTests, waitForResults} from './batch'
 import {
   moveLocationsToTestOverrides,
   replaceGlobalWithDefaultTestOverrides,
@@ -25,17 +26,14 @@ import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
-import {getTestConfigs, getTestsFromSearchQuery} from './test'
+import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
 import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
-  getTestsToTrigger,
   InitialSummary,
   renderResults,
-  runTests,
-  waitForResults,
   getExitReason,
   toExitCode,
   reportExitLogs,

@@ -8,24 +8,17 @@ import chalk from 'chalk'
 import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
-import {getCIMetadata} from '../../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../../helpers/tags'
 
-import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from '../api'
-import {waitForBatchToFinish} from '../batch'
-import {replaceConfigWithTestOverrides} from '../compatibility'
+import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
   BrowserServerResult,
   ExecutionRule,
-  LocationsMapping,
   MainReporter,
   Operator,
-  Payload,
   Reporter,
   Result,
-  ResultDisplayInfo,
   ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
   ServerResult,
@@ -34,25 +27,15 @@ import {
   SyntheticsCIConfig,
   SyntheticsOrgSettings,
   Test,
-  TestNotFound,
   TestPayload,
-  TestSkipped,
-  TestWithOverride,
-  Trigger,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {uploadMobileApplicationsAndUpdateOverrideConfigs} from '../mobile'
-import {DEFAULT_BATCH_TIMEOUT, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import {getTest} from '../test'
-import {Tunnel} from '../tunnel'
+import {DEFAULT_POLLING_TIMEOUT} from '../run-tests-command'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
-  getTriggerConfigPublicId,
   hasDefinedResult,
-  isMobileTestWithOverride,
-  getPublicIdOrPlaceholder,
   getBasePayload,
   isLocalTriggerConfig,
   wait,
@@ -245,52 +228,6 @@ export const isResultSkippedBySelectiveRerun = (result: Result): result is Resul
   return result.selectiveRerun?.decision === 'skip'
 }
 
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const waitForResults = async (
-  api: APIHelper,
-  trigger: Trigger,
-  tests: Test[],
-  options: ResultDisplayInfo['options'],
-  reporter: MainReporter,
-  tunnel?: Tunnel
-): Promise<Result[]> => {
-  let isTunnelConnected = true
-  if (tunnel) {
-    tunnel
-      .keepAlive()
-      .then(() => (isTunnelConnected = false))
-      .catch(() => (isTunnelConnected = false))
-  }
-
-  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
-
-  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
-    mapping[location.name] = location.display_name
-
-    return mapping
-  }, {})
-
-  const getLocation = (dcId: string, test: Test) => {
-    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
-
-    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
-  }
-
-  const resultDisplayInfo = {
-    getLocation,
-    options,
-    tests,
-  }
-
-  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
-
-  if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
-  }
-
-  return results
-}
-
 export type InitialSummary = Omit<Summary, 'batchId'>
 
 export const createInitialSummary = (): InitialSummary => ({
@@ -378,184 +315,8 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const getTestAndOverrideConfig = async (
-  api: APIHelper,
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfig: TriggerConfig,
-  reporter: MainReporter,
-  summary: InitialSummary,
-  isTunnelEnabled?: boolean
-): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
-  const publicIdOrPlaceholder = getPublicIdOrPlaceholder({public_id: getTriggerConfigPublicId(triggerConfig)})
-  const normalizedId = normalizePublicId(publicIdOrPlaceholder)
-  if (!normalizedId) {
-    throw new CriticalError('INVALID_CONFIG', `No valid public ID found in: \`${publicIdOrPlaceholder}\``)
-  }
-
-  const testResult = await getTest(api, triggerConfig)
-  if ('errorMessage' in testResult) {
-    summary.testsNotFound.add(normalizedId)
-
-    return {errorMessage: testResult.errorMessage}
-  }
-
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfig.testOverrides = replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides)
-
-  const {test} = testResult
-  const overriddenConfig = makeTestPayload(test, triggerConfig, normalizedId)
-  const testExecutionRule = test?.options?.ci?.executionRule
-  const executionRule = overriddenConfig.executionRule || testExecutionRule || ExecutionRule.BLOCKING
-
-  reporter.testTrigger(test, normalizedId, executionRule, triggerConfig.testOverrides)
-  if (executionRule === ExecutionRule.SKIPPED) {
-    summary.skipped++
-
-    return {overriddenConfig}
-  }
-  reporter.testWait(test)
-
-  if (isTunnelEnabled && !isTestSupportedByTunnel(test)) {
-    const details = [`public ID: ${normalizedId}`, `type: ${test.type}`]
-
-    if (test.subtype) {
-      details.push(`sub-type: ${test.subtype}`)
-    }
-
-    if (test.subtype === 'multi') {
-      const unsupportedStepSubTypes = (test.config.steps || [])
-        .filter((step) => step.subtype !== 'http')
-        .map(({subtype}) => subtype)
-
-      details.push(`step sub-types: [${unsupportedStepSubTypes.join(', ')}]`)
-    }
-
-    throw new CriticalError(
-      'TUNNEL_NOT_SUPPORTED',
-      `The tunnel is only supported with HTTP API tests and Browser tests (${details.join(', ')}).`
-    )
-  }
-
-  return {test, overriddenConfig}
-}
-
 export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
   'device' in result && result.device !== undefined
-
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const getTestsToTrigger = async (
-  api: APIHelper,
-  triggerConfigs: TriggerConfig[],
-  reporter: MainReporter,
-  triggerFromSearch?: boolean,
-  failOnMissingTests?: boolean,
-  isTunnelEnabled?: boolean
-) => {
-  const errorMessages: string[] = []
-
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  triggerConfigs = triggerConfigs.map((triggerConfig) => ({
-    ...triggerConfig,
-    testOverrides: replaceConfigWithTestOverrides(triggerConfig.config, triggerConfig.testOverrides),
-  }))
-
-  // When too many tests are triggered, if fetched from a search query: simply trim them and show a warning,
-  // otherwise: retrieve them and fail later if still exceeding without skipped/missing tests.
-  if (triggerFromSearch && triggerConfigs.length > MAX_TESTS_TO_TRIGGER) {
-    const testsCount = triggerConfigs.length
-    triggerConfigs.splice(MAX_TESTS_TO_TRIGGER)
-    const maxTests = chalk.bold(MAX_TESTS_TO_TRIGGER)
-    errorMessages.push(
-      chalk.yellow(`The search query returned ${testsCount} tests, only the first ${maxTests} will be triggered.\n`)
-    )
-  }
-
-  const initialSummary = createInitialSummary()
-  const testsAndConfigsOverride = await Promise.all(
-    triggerConfigs.map((triggerConfig) =>
-      getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary, isTunnelEnabled)
-    )
-  )
-
-  await uploadMobileApplicationsAndUpdateOverrideConfigs(
-    api,
-    triggerConfigs,
-    testsAndConfigsOverride.filter(isMobileTestWithOverride)
-  )
-
-  const overriddenTestsToTrigger: TestPayload[] = []
-  const waitedTests: Test[] = []
-  testsAndConfigsOverride.forEach((item) => {
-    if ('errorMessage' in item) {
-      errorMessages.push(item.errorMessage)
-    }
-
-    if ('overriddenConfig' in item) {
-      overriddenTestsToTrigger.push(item.overriddenConfig)
-    }
-
-    if ('test' in item) {
-      waitedTests.push(item.test)
-    }
-  })
-
-  // Display errors at the end of all tests for better visibility.
-  reporter.initErrors(errorMessages)
-
-  if (failOnMissingTests && initialSummary.testsNotFound.size > 0) {
-    const testsNotFoundListStr = [...initialSummary.testsNotFound].join(', ')
-    throw new CiError('MISSING_TESTS', testsNotFoundListStr)
-  }
-
-  if (!overriddenTestsToTrigger.length) {
-    throw new CiError('NO_TESTS_TO_RUN')
-  } else if (overriddenTestsToTrigger.length > MAX_TESTS_TO_TRIGGER) {
-    throw new CriticalError(
-      'TOO_MANY_TESTS_TO_TRIGGER',
-      `Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${triggerConfigs.length})`
-    )
-  }
-
-  return {tests: waitedTests, overriddenTestsToTrigger, initialSummary}
-}
-
-// XXX: We shouldn't export functions that take an `APIHelper` because the `utils` module is exported while `api` is not.
-export const runTests = async (
-  api: APIHelper,
-  testsToTrigger: TestPayload[],
-  selectiveRerun?: boolean,
-  batchTimeout = DEFAULT_BATCH_TIMEOUT
-): Promise<Trigger> => {
-  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
-  // Although the backend is backwards compatible, let's stop sending deprecated properties
-  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
-
-  const payload: Payload = {
-    tests,
-    options: {
-      batch_timeout: batchTimeout,
-      selective_rerun: selectiveRerun,
-    },
-  }
-  const tagsToLimit = {
-    [GIT_COMMIT_MESSAGE]: 500,
-  }
-  const ciMetadata = getCIMetadata(tagsToLimit)
-
-  if (ciMetadata) {
-    payload.metadata = ciMetadata
-  }
-
-  try {
-    return await api.triggerTests(payload)
-  } catch (e) {
-    const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
-    // Rewrite error message
-    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
-  }
-}
 
 export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
   const apiHelper = getApiHelper(config)

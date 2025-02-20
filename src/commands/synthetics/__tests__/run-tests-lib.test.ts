@@ -4,12 +4,14 @@ import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
+import * as batchUtils from '../batch'
 import {CiError, CriticalCiErrorCode, CriticalError} from '../errors'
 import {ExecutionRule, RunTestsCommandConfig, Suite, Summary, UserConfigOverride} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
 import * as runTests from '../run-tests-lib'
+import * as testUtils from '../test'
 import {Tunnel} from '../tunnel'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
@@ -50,7 +52,7 @@ describe('run-test', () => {
 
   describe('executeTests', () => {
     test('deprecated usage', async () => {
-      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(batchUtils, 'runTests').mockImplementation()
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
@@ -77,7 +79,7 @@ describe('run-test', () => {
     })
 
     test('current usage', async () => {
-      jest.spyOn(utils, 'runTests').mockImplementation()
+      jest.spyOn(batchUtils, 'runTests').mockImplementation()
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
 
       await expect(
@@ -109,14 +111,14 @@ describe('run-test', () => {
     test.each(compat)(
       'should apply config override for tests triggered by public id ($compat)',
       async ({defaultTestOverrides}) => {
-        const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
           Promise.resolve({
             initialSummary: utils.createInitialSummary(),
             overriddenTestsToTrigger: [],
             tests: [],
           })
         )
-        jest.spyOn(utils, 'runTests').mockImplementation()
+        jest.spyOn(batchUtils, 'runTests').mockImplementation()
 
         const startUrl = '{{PROTOCOL}}//myhost{{PATHNAME}}{{PARAMS}}'
         const locations = ['location1', 'location2']
@@ -184,7 +186,7 @@ describe('run-test', () => {
     ] as [string, Partial<RunTestsCommandConfig>, UserConfigOverride][])(
       'Use appropriate list of locations for tests triggered by public id: %s',
       async (text, partialCIConfig, expectedOverriddenConfig) => {
-        const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
           Promise.resolve({
             initialSummary: utils.createInitialSummary(),
             overriddenTestsToTrigger: [],
@@ -219,7 +221,7 @@ describe('run-test', () => {
     test.each(compat)(
       'should not wait for `skipped` only tests batch results ($compat)',
       async ({defaultTestOverrides}) => {
-        const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+        const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
           Promise.resolve({
             initialSummary: utils.createInitialSummary(),
             overriddenTestsToTrigger: [],
@@ -253,7 +255,7 @@ describe('run-test', () => {
     )
 
     test.each(compat)('should not open tunnel if no test to run ($compat)', async ({defaultTestOverrides}) => {
-      const getTestsToTriggersMock = jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      const getTestsToTriggersMock = jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
@@ -296,7 +298,7 @@ describe('run-test', () => {
         .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
 
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
@@ -304,7 +306,7 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
+      jest.spyOn(batchUtils, 'runTests').mockResolvedValue(mockTestTriggerResponse)
 
       const apiHelper = {
         getBatch: () => ({results: []}),
@@ -369,7 +371,7 @@ describe('run-test', () => {
     })
 
     test('getTunnelPresignedURL throws', async () => {
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
@@ -395,7 +397,7 @@ describe('run-test', () => {
 
     test.each(compat)('getMobileApplicationPresignedURLs throws ($compat)', async ({defaultTestOverrides}) => {
       const mobileTest = getMobileTest()
-      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+      jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,
@@ -429,7 +431,7 @@ describe('run-test', () => {
 
     test.each(compat)('uploadMobileApplicationPart throws ($compat)', async ({defaultTestOverrides}) => {
       const mobileTest = getMobileTest()
-      jest.spyOn(utils, 'getTestAndOverrideConfig').mockImplementation(async () =>
+      jest.spyOn(testUtils, 'getTestAndOverrideConfig').mockImplementation(async () =>
         Promise.resolve({
           overriddenConfig: {executionRule: ExecutionRule.NON_BLOCKING, public_id: mobileTest.public_id},
           test: mobileTest,
@@ -470,7 +472,7 @@ describe('run-test', () => {
         .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
 
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
@@ -513,7 +515,7 @@ describe('run-test', () => {
         .spyOn(Tunnel.prototype, 'start')
         .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))
       const stopTunnelSpy = jest.spyOn(Tunnel.prototype, 'stop')
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
@@ -521,7 +523,7 @@ describe('run-test', () => {
         })
       )
 
-      jest.spyOn(utils, 'runTests').mockReturnValue(
+      jest.spyOn(batchUtils, 'runTests').mockReturnValue(
         Promise.resolve({
           batch_id: 'bid',
           locations: [location],
@@ -554,14 +556,14 @@ describe('run-test', () => {
     })
 
     test('log when selective rerun is rate-limited', async () => {
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],
           tests: [{options: {ci: {executionRule: ExecutionRule.BLOCKING}}, public_id: 'aaa-aaa-aaa'} as any],
         })
       )
-      jest.spyOn(utils, 'runTests').mockImplementation(async () => ({
+      jest.spyOn(batchUtils, 'runTests').mockImplementation(async () => ({
         batch_id: 'bid',
         locations: [],
         selective_rerun_rate_limited: true,
@@ -587,7 +589,7 @@ describe('run-test', () => {
     })
 
     test('selective rerun defaults to undefined', async () => {
-      jest.spyOn(utils, 'getTestsToTrigger').mockReturnValue(
+      jest.spyOn(testUtils, 'getTestsToTrigger').mockReturnValue(
         Promise.resolve({
           initialSummary: utils.createInitialSummary(),
           overriddenTestsToTrigger: [],

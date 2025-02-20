@@ -1,30 +1,121 @@
 import deepExtend from 'deep-extend'
 
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+
 import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
+  LocationsMapping,
   MainReporter,
+  Payload,
   PollResult,
   Result,
   ResultDisplayInfo,
   ResultInBatch,
   Test,
+  TestPayload,
+  Trigger,
 } from './interfaces'
+import {DEFAULT_BATCH_TIMEOUT} from './run-tests-command'
+import {Tunnel} from './tunnel'
 import {
   isResultInBatchSkippedBySelectiveRerun,
   getResultIdOrLinkedResultId,
   hasResultPassed,
   isTimedOutRetry,
   isNonFinalResult,
+  getPublicIdOrPlaceholder,
   wait,
 } from './utils/internal'
-import {getAppBaseURL} from './utils/public'
+import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
 
-export const waitForBatchToFinish = async (
+export const runTests = async (
+  api: APIHelper,
+  testsToTrigger: TestPayload[],
+  selectiveRerun?: boolean,
+  batchTimeout = DEFAULT_BATCH_TIMEOUT
+): Promise<Trigger> => {
+  // TODO SYNTH-12989: Remove this when `pollingTimeout` is removed
+  // Although the backend is backwards compatible, let's stop sending deprecated properties
+  const tests = testsToTrigger.map(({pollingTimeout, ...otherProperties}) => ({...otherProperties}))
+
+  const payload: Payload = {
+    tests,
+    options: {
+      batch_timeout: batchTimeout,
+      selective_rerun: selectiveRerun,
+    },
+  }
+  const tagsToLimit = {
+    [GIT_COMMIT_MESSAGE]: 500,
+  }
+  const ciMetadata = getCIMetadata(tagsToLimit)
+
+  if (ciMetadata) {
+    payload.metadata = ciMetadata
+  }
+
+  try {
+    return await api.triggerTests(payload)
+  } catch (e) {
+    const errorMessage = formatBackendErrors(e)
+    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
+    // Rewrite error message
+    throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
+  }
+}
+
+export const waitForResults = async (
+  api: APIHelper,
+  trigger: Trigger,
+  tests: Test[],
+  options: ResultDisplayInfo['options'],
+  reporter: MainReporter,
+  tunnel?: Tunnel
+): Promise<Result[]> => {
+  let isTunnelConnected = true
+  if (tunnel) {
+    tunnel
+      .keepAlive()
+      .then(() => (isTunnelConnected = false))
+      .catch(() => (isTunnelConnected = false))
+  }
+
+  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
+
+  const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
+    mapping[location.name] = location.display_name
+
+    return mapping
+  }, {})
+
+  const getLocation = (dcId: string, test: Test) => {
+    const hasTunnel = !!tunnel && isTestSupportedByTunnel(test)
+
+    return hasTunnel ? 'Tunneled' : locationNames[dcId] || dcId
+  }
+
+  const resultDisplayInfo = {
+    getLocation,
+    options,
+    tests,
+  }
+
+  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
+
+  if (tunnel && !isTunnelConnected) {
+    reporter.error('The tunnel has stopped working, this may have affected the results.')
+  }
+
+  return results
+}
+
+const waitForBatchToFinish = async (
   api: APIHelper,
   batchId: string,
   batchTimeout: number,
