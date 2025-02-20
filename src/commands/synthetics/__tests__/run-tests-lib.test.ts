@@ -11,6 +11,7 @@ import {JUnitReporter} from '../reporters/junit'
 import * as appUploadReporterModule from '../reporters/mobile/app-upload'
 import * as runTests from '../run-tests-lib'
 import {Tunnel} from '../tunnel'
+import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {
@@ -289,7 +290,7 @@ describe('run-test', () => {
     })
 
     test('open and close tunnel for successful runs', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(() => new Promise((res) => setTimeout(res, 10)))
+      jest.spyOn(internalUtils, 'wait').mockImplementation(() => new Promise((res) => setTimeout(res, 10)))
       const startTunnelSpy = jest
         .spyOn(Tunnel.prototype, 'start')
         .mockImplementation(async () => ({host: 'host', id: 'id', privateKey: 'key'}))

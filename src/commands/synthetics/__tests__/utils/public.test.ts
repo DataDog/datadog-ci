@@ -73,6 +73,7 @@ import {
 } from '../../interfaces'
 import * as mobile from '../../mobile'
 import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import * as internalUtils from '../../utils/internal'
 import * as utils from '../../utils/public'
 
 import {
@@ -571,10 +572,10 @@ describe('utils', () => {
     })
   })
 
-  describe('getOverriddenConfig', () => {
+  describe('makeTestPayload', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.makeTestPayload({public_id: publicId} as Test, {id: publicId}, publicId)).toEqual({
         public_id: publicId,
       })
     })
@@ -596,13 +597,12 @@ describe('utils', () => {
           fakeTest.options.ci = {executionRule: testExecutionRule}
         }
 
-        const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
+        const testOverrides = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        const overriddenConfig = utils.getOverriddenConfig(
+        const overriddenConfig = utils.makeTestPayload(
           fakeTest,
-          publicId,
-          mockReporter,
-          configOverride
+          {id: publicId, testOverrides},
+          publicId
         ) as RemoteTestPayload
 
         expect(overriddenConfig.public_id).toBe(publicId)
@@ -642,15 +642,14 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride = {
+      const testOverrides = {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(
+      const overriddenConfig = utils.makeTestPayload(
         fakeTest,
-        publicId,
-        mockReporter,
-        configOverride
+        {id: publicId, testOverrides},
+        publicId
       ) as RemoteTestPayload
 
       expect(overriddenConfig.public_id).toBe(publicId)
@@ -665,7 +664,7 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride: UserConfigOverride = {
+      const testOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',
@@ -687,8 +686,8 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
-        ...configOverride,
+      expect(utils.makeTestPayload(fakeTest, {id: publicId, testOverrides}, publicId)).toEqual({
+        ...testOverrides,
         public_id: publicId,
       })
     })
@@ -707,68 +706,6 @@ describe('utils', () => {
 
       // Should ignore the default value for the pollingTimeout
       expect(utils.getTestOverridesCount({pollingTimeout: DEFAULT_POLLING_TIMEOUT})).toBe(0)
-    })
-  })
-
-  describe('hasResultPassed (deprecated)', () => {
-    test('complete result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        passed: true,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(true)
-      result.passed = false
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with error', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        failure: {
-          code: 'ERRABORTED',
-          message: 'Connection aborted',
-        },
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with unhealthy result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        failure: {
-          code: 'ERRABORTED',
-          message: 'Connection aborted',
-        },
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-        unhealthy: true,
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with timeout result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, true, true, true)).toBe(false)
-      expect(utils.hasResultPassed(result, true, true, false)).toBe(true)
     })
   })
 
@@ -832,7 +769,7 @@ describe('utils', () => {
   describe('waitForResults', () => {
     beforeEach(() => {
       jest.useFakeTimers({now: 123})
-      jest.spyOn(utils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
     })
 
     afterEach(() => {
@@ -916,7 +853,7 @@ describe('utils', () => {
     })
 
     test('should show results as they arrive', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1125,7 +1062,7 @@ describe('utils', () => {
     })
 
     test('skipped results are reported as received', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1207,7 +1144,7 @@ describe('utils', () => {
     })
 
     test('should wait for incomplete results', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1346,7 +1283,7 @@ describe('utils', () => {
     })
 
     test('should wait for incomplete results caused by 404', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
+      jest.spyOn(internalUtils, 'wait').mockImplementation(async () => waiter.resolve())
 
       const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
 
@@ -1561,7 +1498,7 @@ describe('utils', () => {
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL, 'bid')
 
       // Failed directly.
-      expect(utils.wait).toHaveBeenCalledTimes(0)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(0)
     })
 
     test('results should be timed out with a different error if the backend did not say so', async () => {
@@ -1617,7 +1554,7 @@ describe('utils', () => {
       expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
 
       // Initial wait + 3 polling cycles.
-      expect(utils.wait).toHaveBeenCalledTimes(4)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(4)
     })
 
     test('results failure should be ignored if timed out', async () => {
@@ -1724,7 +1661,7 @@ describe('utils', () => {
       ).toEqual([result])
 
       expect(getBatchMock).toHaveBeenCalledTimes(3)
-      expect(utils.wait).toHaveBeenCalledTimes(2)
+      expect(internalUtils.wait).toHaveBeenCalledTimes(2)
     })
 
     test('correct number of passed and timed out results', async () => {
@@ -2031,7 +1968,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: getResults([{timedOut: true}]),
+        results: getResults([{timedOut: true, passed: true}]),
         summary: {...emptySummary},
       },
       {
@@ -2043,7 +1980,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
-        results: getResults([{timedOut: true}]),
+        results: getResults([{timedOut: true, passed: false}]),
         summary: {...emptySummary},
       },
       {
@@ -2055,7 +1992,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
+        results: getResults([{unhealthy: true, passed: true}]),
         summary: {...emptySummary},
       },
       {
@@ -2067,7 +2004,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
+        results: getResults([{unhealthy: true, passed: false}]),
         summary: {...emptySummary},
       },
       {
@@ -2160,15 +2097,6 @@ describe('utils', () => {
     ]
 
     test.each(cases)('$description', async (testCase) => {
-      testCase.results.forEach((result) => {
-        result.passed = utils.hasResultPassed(
-          (result as BaseResult).result,
-          result.timedOut,
-          testCase.failOnCriticalErrors,
-          testCase.failOnTimeout
-        )
-      })
-
       jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({onDemandConcurrencyCap: 1})
 
       const config = {

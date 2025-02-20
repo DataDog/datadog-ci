@@ -55,6 +55,7 @@ import {
   getPublicIdOrPlaceholder,
   getBasePayload,
   isLocalTriggerConfig,
+  wait,
 } from './internal'
 
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -88,19 +89,6 @@ export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, public
 
   return {
     ...getBasePayload(test, triggerConfig.testOverrides),
-    public_id: publicId,
-  }
-}
-
-/** @deprecated This function doesn't work for local test definitions. Please use {@link makeTestPayload} instead. */
-export const getOverriddenConfig = (
-  test: Test,
-  publicId: string,
-  reporter: MainReporter,
-  testOverrides?: UserConfigOverride
-): TestPayload => {
-  return {
-    ...getBasePayload(test, testOverrides),
     public_id: publicId,
   }
 }
@@ -157,34 +145,6 @@ export const isTestSupportedByTunnel = (test: Test) => {
     test.subtype === 'http' ||
     (test.subtype === 'multi' && test.config.steps?.every((step) => step.subtype === 'http'))
   )
-}
-
-/**
- * @deprecated The concept of `ServerResult` is internal and not the source of truth for a result's status. This function has no public equivalent.
- */
-export const hasResultPassed = (
-  serverResult: ServerResult | undefined,
-  hasTimedOut: boolean,
-  failOnCriticalErrors: boolean,
-  failOnTimeout: boolean
-): boolean => {
-  if (serverResult?.unhealthy && !failOnCriticalErrors) {
-    return true
-  }
-
-  if (hasTimedOut && !failOnTimeout) {
-    return true
-  }
-
-  if (serverResult?.passed !== undefined) {
-    return serverResult.passed
-  }
-
-  if (serverResult?.failure !== undefined) {
-    return false
-  }
-
-  return true
 }
 
 export const enum ResultOutcome {
@@ -265,8 +225,6 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
   return path.join(relativeDirectory, filename)
 }
 
-export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
-
 export const normalizePublicId = (id: string): string | undefined =>
   id === LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER ? id : id.match(PUBLIC_ID_REGEX)?.[0]
 
@@ -346,20 +304,6 @@ export const createInitialSummary = (): InitialSummary => ({
   testsNotFound: new Set(),
   timedOut: 0,
 })
-
-/**
- * @deprecated Please use `Result.duration` instead.
- */
-export const getResultDuration = (result: ServerResult): number => {
-  if ('duration' in result) {
-    return Math.round(result.duration)
-  }
-  if ('timings' in result) {
-    return Math.round(result.timings.total)
-  }
-
-  return 0
-}
 
 export const getReporter = (reporters: Reporter[]): MainReporter => ({
   error: (error) => {
@@ -669,9 +613,7 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
-// XXX: `CommandConfig` should be replaced by `SyntheticsCIConfig` here because it's the smallest
-//      interface that we need, and it's better semantically.
-export const getAppBaseURL = ({datadogSite, subdomain}: Pick<RunTestsCommandConfig, 'datadogSite' | 'subdomain'>) => {
+export const getAppBaseURL = ({datadogSite, subdomain}: {datadogSite: string; subdomain: string}) => {
   return getCommonAppBaseURL(datadogSite, subdomain)
 }
 

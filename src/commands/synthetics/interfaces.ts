@@ -567,6 +567,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
+  /** Used to create URLs to the Datadog UI. */
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
