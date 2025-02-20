@@ -21,6 +21,7 @@ import {
   TestSkipped,
   TestWithOverride,
   TestPayload,
+  DeployTestsCommandConfig,
 } from './interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
@@ -40,7 +41,7 @@ import {
 } from './utils/public'
 
 export const getTestConfigs = async (
-  config: RunTestsCommandConfig | ImportTestsCommandConfig,
+  config: RunTestsCommandConfig | ImportTestsCommandConfig | DeployTestsCommandConfig,
   reporter: MainReporter,
   suites: Suite[] = []
 ): Promise<TriggerConfig[]> => {
@@ -49,7 +50,13 @@ export const getTestConfigs = async (
   // Only auto-discover with the default glob when the user **doesn't give any clue** about which tests to run.
   // If they give any clue (e.g. `publicIds`) without explicitly passing `files`,
   // they might be running the command from their home folder so we shouldn't auto-discover for performance reasons.
-  if (config.publicIds.length === 0 && files.length === 0 && suites.length === 0 && !config.testSearchQuery) {
+  if (
+    config.publicIds.length === 0 &&
+    files.length === 0 &&
+    suites.length === 0 &&
+    'testSearchQuery' in config &&
+    !config.testSearchQuery
+  ) {
     files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
   }
 

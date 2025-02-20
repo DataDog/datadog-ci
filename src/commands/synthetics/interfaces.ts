@@ -290,6 +290,7 @@ interface Options {
 // TODO SYNTH-17944 Remove unsupported fields
 
 export interface OptionsWithUnsupportedFields extends Options {
+  bindings?: null | unknown[]
   min_failure_duration?: number
   min_location_failed?: any
   monitor_name?: string
@@ -663,4 +664,11 @@ export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
   files: string[]
   publicIds: string[]
   testSearchQuery?: string
+}
+
+export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  files: string[]
+  publicIds: string[]
+  subdomain: string
 }
