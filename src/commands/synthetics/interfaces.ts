@@ -484,7 +484,7 @@ export interface RemoteTriggerConfig extends BaseTriggerConfig {
   id: string
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
-  local_test_definition: LocalTestDefinition
+  localTestDefinition: LocalTestDefinition
 }
 export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig
 

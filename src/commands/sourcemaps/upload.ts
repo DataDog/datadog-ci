@@ -60,6 +60,7 @@ export class UploadCommand extends Command {
 
   private basePath = Option.String({required: true})
   private disableGit = Option.Boolean('--disable-git')
+  private quiet = Option.Boolean('--quiet', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private minifiedPathPrefix = Option.String('--minified-path-prefix')
@@ -323,6 +324,9 @@ export class UploadCommand extends Command {
           metricsLogger.logger.increment('retries', 1)
         },
         onUpload: () => {
+          if (this.quiet) {
+            return
+          }
           this.context.stdout.write(renderUpload(sourcemap))
         },
         retries: 5,

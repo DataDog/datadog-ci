@@ -218,6 +218,10 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           pollingTimeout: 3,
+          resourceUrlSubstitutionRegexes: [
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
           retry: {count: 2, interval: 300},
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
           startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
@@ -251,6 +255,10 @@ describe('run-test', () => {
           mobileApplicationVersion: '00000000-0000-0000-0000-000000000000',
           mobileApplicationVersionFilePath: './path/to/application.apk',
           pollingTimeout: 2, // not overridden (backwards compatibility not supported)
+          resourceUrlSubstitutionRegexes: [
+            's/(https://www.)(.*)/$1extra-$2',
+            'https://example.com(.*)|http://subdomain.example.com$1',
+          ],
           retry: {count: 2, interval: 300},
           startUrl: '{{URL}}?static_hash={{STATIC_HASH}}',
           startUrlSubstitutionRegex: 's/(https://www.)(.*)/$1extra-$2/',
