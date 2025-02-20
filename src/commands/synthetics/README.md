@@ -643,9 +643,9 @@ Each regex pattern should be in the format:
 
 **Configuration options**
 
-* Global/Test Config: `"resourceUrlSubstitutionRegexes": ["s/(https://www.)(.*)/$1staging-$2/"]`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='s/(https://www.)(.*)/$1staging-$2/'`
-* CLI param: `--override resourceUrlSubstitutionRegexes='/(https://www.)(.*)/$1staging-$2/'`
+* Global/Test Config: `"resourceUrlSubstitutionRegexes": ["(https://www.)(.*)|$1staging-$2"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='(https://www.)(.*)|$1staging-$2'`
+* CLI param: `--override resourceUrlSubstitutionRegexes='(https://www.)(.*)|$1staging-$2'`
 
 #### `retry` (Object)
 
@@ -687,9 +687,9 @@ There are two possible formats:
 
 **Configuration options**
 
-* Global/Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX='s/(https://www.)(.*)/$1extra-$2/'`
-* CLI param: `--override startUrlSubstitutionRegex='s/(https://www.)(.*)/$1extra-$2/'`
+* Global/Test Config: `"startUrlSubstitutionRegex": "(https://www.)(.*)|$1extra-$2"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX='(https://www.)(.*)|$1extra-$2'`
+* CLI param: `--override startUrlSubstitutionRegex='(https://www.)(.*)|$1extra-$2'`
 
 #### `testTimeout` (Number)
 

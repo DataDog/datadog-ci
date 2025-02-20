@@ -1,5 +1,3 @@
-// import crypto from 'crypto'
-
 import {Builtins, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
@@ -59,6 +57,7 @@ describe('cli', () => {
 
     // Without the required options, the commands are not executed at all
     const requiredOptions: Record<string, string[]> = {
+      'coverage upload': ['.', '--dry-run'],
       'dora deployment': ['--started-at', '0', '--dry-run'],
       'dsyms upload': ['.', '--dry-run'],
       'elf-symbols upload': ['non-existing-file', '--dry-run'],
