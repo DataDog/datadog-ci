@@ -102,6 +102,9 @@ See each command's linked README for more details, or click on [📚](https://do
 
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
 
+#### `coverage`
+- `upload`: Upload code coverage report files to Datadog. (📚: no public documentation page yet)
+
 #### `deployment`
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 - `correlate`: [Correlate](src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
