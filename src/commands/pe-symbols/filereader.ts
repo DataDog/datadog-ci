@@ -7,7 +7,7 @@ export interface Reader {
 
 export class FileReader implements Reader {
   private fd: fs.promises.FileHandle
-   private buffer?: Buffer
+  private buffer?: Buffer
 
   constructor(fd: fs.promises.FileHandle) {
     this.fd = fd
@@ -32,14 +32,14 @@ export const createReaderFromFile = async (filename: string): Promise<FileReader
 
   return new FileReader(fd)
 }
-  
+
 export const createReadFunctions = (buffer: Buffer, littleEndian: boolean, is32bit: boolean) => {
   let position = 0
 
   const readAndIncrementPos = <T>(inc: number, read: (offset: number) => T) => {
     const value = read(position)
     position += inc
-  
+
     return value
   }
 

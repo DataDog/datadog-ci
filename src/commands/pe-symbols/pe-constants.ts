@@ -22,13 +22,12 @@ typedef struct _IMAGE_DOS_HEADER {      // DOS .EXE header
   } IMAGE_DOS_HEADER, *PIMAGE_DOS_HEADER;
 */
 export const DOS_HEADER_SIZE = 64
-export const IMAGE_DOS_SIGNATURE = 0x5A4D // MZ
-export const DOS_HEADER_LFANEW_OFFSET = 0x3C // = 60 bytes - offset to read e_lfanew in DOS header
+export const IMAGE_DOS_SIGNATURE = 0x5a4d // MZ
+export const DOS_HEADER_LFANEW_OFFSET = 0x3c // = 60 bytes - offset to read e_lfanew in DOS header
 export type DOSHeader = {
   e_magic: number
   e_lfanew: number // offset to the PE header
 }
-
 
 /*
 // PE32 and PE64 have different optional headers, which complexify the logic to fetch them
@@ -55,10 +54,10 @@ export const IMAGE_NT_HEADERS_GENERIC_SIZE = 26
 
 // Machine field
 export const IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET = 4 // looking for Machine field
-export const IMAGE_FILE_MACHINE_I386 = 0x014C // 32 bit
+export const IMAGE_FILE_MACHINE_I386 = 0x014c // 32 bit
 export const IMAGE_FILE_MACHINE_AMD64 = 0x8664 // 64 bit
-export const IMAGE_FILE_MACHINE_ARM32 = 0x01C0 // 32 bit
-export const IMAGE_FILE_MACHINE_ARM64 = 0xAA64 // 64 bit
+export const IMAGE_FILE_MACHINE_ARM32 = 0x01c0 // 32 bit
+export const IMAGE_FILE_MACHINE_ARM64 = 0xaa64 // 64 bit
 export enum MachineArchitecture {
   unknown = 0,
   x86 = 1,
@@ -71,13 +70,13 @@ export enum MachineArchitecture {
 export const IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET = 6
 
 // Timestamp field
-export const IMAGE_NT_HEADERS_GENERIC_TIMESTAMP_OFFSET = 8    // looking for Timestamp field
+export const IMAGE_NT_HEADERS_GENERIC_TIMESTAMP_OFFSET = 8 // looking for Timestamp field
 
 // // SizeOfOptionalHeader field
 // export const IMAGE_NT_HEADERS_GENERIC_SIZEOFOPTIONALHEADER_OFFSET: number = 20;
 
 // Magic field
-export const IMAGE_NT_HEADERS_GENERIC_MAGIC_OFFSET = 24  // looking for 32/64 bit info
+export const IMAGE_NT_HEADERS_GENERIC_MAGIC_OFFSET = 24 // looking for 32/64 bit info
 export const IMAGE_NT_OPTIONAL_HDR32_MAGIC = 0x10b
 export const IMAGE_NT_OPTIONAL_HDR64_MAGIC = 0x20b
 

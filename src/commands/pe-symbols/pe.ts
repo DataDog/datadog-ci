@@ -1,5 +1,7 @@
 import fs from 'fs'
+
 import type {Reader} from './filereader'
+
 import {FileReader} from './filereader'
 import {
   CV_INFO_AGE_OFFSET,
@@ -78,26 +80,23 @@ export type PEResult = {
   error?: Error
 }
 
-function getArchitecture (machine: number): MachineArchitecture {
+const getArchitecture = (machine: number): MachineArchitecture => {
   let architecture: MachineArchitecture = MachineArchitecture.unknown
 
   if (machine === IMAGE_FILE_MACHINE_I386) {
     architecture = MachineArchitecture.x86
-  }
-  else if (machine === IMAGE_FILE_MACHINE_AMD64) {
+  } else if (machine === IMAGE_FILE_MACHINE_AMD64) {
     architecture = MachineArchitecture.x64
-  }
-  else if (machine === IMAGE_FILE_MACHINE_ARM32) {
+  } else if (machine === IMAGE_FILE_MACHINE_ARM32) {
     architecture = MachineArchitecture.Arm32
-  }
-  else if (machine === IMAGE_FILE_MACHINE_ARM64) {
+  } else if (machine === IMAGE_FILE_MACHINE_ARM64) {
     architecture = MachineArchitecture.Arm64
   }
 
   return architecture
 }
 
-async function readPEHeader (reader: Reader): Promise<PEResult> {
+const readPEHeader = async (reader: Reader): Promise<PEResult> => {
   const result: PEResult = {
     isPE: false,
   }
@@ -111,7 +110,7 @@ async function readPEHeader (reader: Reader): Promise<PEResult> {
   }
 
   try {
-  // read the DOS header to find the offset to the PE header
+    // read the DOS header to find the offset to the PE header
     const dosHeaderBuffer = await reader.read(DOS_HEADER_SIZE)
     const dosMagic = dosHeaderBuffer.readInt16LE(0)
     if (dosMagic !== IMAGE_DOS_SIGNATURE) {
@@ -135,13 +134,15 @@ async function readPEHeader (reader: Reader): Promise<PEResult> {
 
       return result
     }
-    
+
     // read the Machine field
     const machine = peCommonHeaderBuffer.readUint16LE(IMAGE_NT_HEADERS_GENERIC_MACHINE_OFFSET)
     result.peHeader.architecture = getArchitecture(machine)
 
     // read the NumberOfSections field
-    result.peHeader.numberOfSections = peCommonHeaderBuffer.readUint16LE(IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET)
+    result.peHeader.numberOfSections = peCommonHeaderBuffer.readUint16LE(
+      IMAGE_NT_HEADERS_GENERIC_NUMBEROFSECTIONS_OFFSET
+    )
 
     // read the build time
     const timestamp = peCommonHeaderBuffer.readUint32LE(IMAGE_NT_HEADERS_GENERIC_TIMESTAMP_OFFSET)
@@ -150,21 +151,19 @@ async function readPEHeader (reader: Reader): Promise<PEResult> {
 
     // read the Magic field
     const magic = peCommonHeaderBuffer.readUint16LE(IMAGE_NT_HEADERS_GENERIC_MAGIC_OFFSET)
-    result.peHeader.is64 = (magic === IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+    result.peHeader.is64 = magic === IMAGE_NT_OPTIONAL_HDR64_MAGIC
     result.peHeader.sectionHeadersOffset = result.peHeader.is64 ? IMAGE_NT_HEADERS64_SIZE : IMAGE_NT_HEADERS32_SIZE
     result.isPE = true
-
-    } catch (error) {
-      // console.log(error)
-      if (error instanceof Error) {
-        result.error = error
-      }
-      else {
-        throw error
-      }
+  } catch (error) {
+    // console.log(error)
+    if (error instanceof Error) {
+      result.error = error
+    } else {
+      throw error
     }
+  }
 
-    return result
+  return result
 }
 
 type SectionHeader = {
@@ -174,7 +173,7 @@ type SectionHeader = {
   pointerToRawData: number
 }
 
-async function getSectionHeaders(reader: Reader, peHeader: PEHeader) : Promise<SectionHeader[]> {
+const getSectionHeaders = async (reader: Reader, peHeader: PEHeader): Promise<SectionHeader[]> => {
   const sections = new Array<SectionHeader>(peHeader.numberOfSections)
   const sectionHeadersOffset: number = peHeader.peHeaderOffset + peHeader.sectionHeadersOffset
   const sectionsBuffer = await reader.read(peHeader.numberOfSections * IMAGE_SECTION_HEADER_SIZE, sectionHeadersOffset)
@@ -183,15 +182,19 @@ async function getSectionHeaders(reader: Reader, peHeader: PEHeader) : Promise<S
     // the name is at the beginning of the section header
     let name = ''
     for (let j = 0; j < IMAGE_SHORT_NAME_SIZE; j++) {
-      if (sectionsBuffer[sectionOffset+j] === 0) {
+      if (sectionsBuffer[sectionOffset + j] === 0) {
         break
       }
-      name += String.fromCharCode(sectionsBuffer[sectionOffset+j])
+      name += String.fromCharCode(sectionsBuffer[sectionOffset + j])
     }
     const virtualSize: number = sectionsBuffer.readUInt32LE(sectionOffset + IMAGE_SECTION_HEADER_VIRTUALSIZE_OFFSET)
-    const virtualAddress: number = sectionsBuffer.readUInt32LE(sectionOffset + IMAGE_SECTION_HEADER_VIRTUALADDRESS_OFFSET)
-    const pointerToRawData: number = sectionsBuffer.readUInt32LE(sectionOffset + IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET)
-    sections[i] = { name, virtualSize, virtualAddress, pointerToRawData }
+    const virtualAddress: number = sectionsBuffer.readUInt32LE(
+      sectionOffset + IMAGE_SECTION_HEADER_VIRTUALADDRESS_OFFSET
+    )
+    const pointerToRawData: number = sectionsBuffer.readUInt32LE(
+      sectionOffset + IMAGE_SECTION_HEADER_POINTERTORAWDATA_OFFSET
+    )
+    sections[i] = {name, virtualSize, virtualAddress, pointerToRawData}
 
     sectionOffset += IMAGE_SECTION_HEADER_SIZE
   }
@@ -200,14 +203,12 @@ async function getSectionHeaders(reader: Reader, peHeader: PEHeader) : Promise<S
 }
 
 // from https://github.com/microsoft/clrmd/blob/main/src/Microsoft.Diagnostics.Runtime/Utilities/PEImage/PEImage.cs#L286C1-L303C10
-function rvaToOffset(virtualAddress: number, sections: SectionHeader[]) : number {
+const rvaToOffset = (virtualAddress: number, sections: SectionHeader[]): number => {
   if (virtualAddress < 4096) {
     return virtualAddress
   }
 
-  let offset = 0
-  for (let i = 0; i < sections.length; i++) {
-    const section = sections[i]
+  for (const section of sections) {
     if (section.virtualAddress <= virtualAddress && virtualAddress < section.virtualAddress + section.virtualSize) {
       const offset = section.pointerToRawData + (virtualAddress - section.virtualAddress)
 
@@ -218,18 +219,18 @@ function rvaToOffset(virtualAddress: number, sections: SectionHeader[]) : number
   return 0
 }
 
-function toHex(value: number, length: number): string {
-    return value.toString(16).padStart(length, '0').toUpperCase()
+const toHex = (value: number, length: number): string => {
+  return value.toString(16).padStart(length, '0').toUpperCase()
 }
 
-export async function getPEFileMetadata (filename: string): Promise<PEFileMetadata> {
+export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadata> => {
   const metadata: PEFileMetadata = {
     filename: '',
     isPE: false,
     arch: MachineArchitecture.unknown,
     hasPdbInfo: false,
     pdbAge: 0,
-    pdbSig: undefined
+    pdbSig: undefined,
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -237,7 +238,7 @@ export async function getPEFileMetadata (filename: string): Promise<PEFileMetada
     fileHandle = await fs.promises.open(filename, 'r')
     const reader = new FileReader(fileHandle)
     const peHeaderResult = await readPEHeader(reader)
-    if ((!peHeaderResult.isPE) || (peHeaderResult.peHeader === undefined)) {
+    if (!peHeaderResult.isPE || peHeaderResult.peHeader === undefined) {
       throw peHeaderResult.error
     }
     metadata.isPE = true
@@ -253,7 +254,9 @@ export async function getPEFileMetadata (filename: string): Promise<PEFileMetada
 
     debugSectionOffset += IMAGE_DIRECTORY_ENTRY_DEBUG * IMAGE_DATA_DIRECTORY_SIZE
     const peCommonHeaderBuffer = await reader.read(IMAGE_DATA_DIRECTORY_SIZE, debugSectionOffset)
-    const debugSectionVirtualAddress: number = peCommonHeaderBuffer.readUInt32LE(IMAGE_DATA_DIRECTORY_VIRTUAL_ADDRESS_OFFSET)
+    const debugSectionVirtualAddress: number = peCommonHeaderBuffer.readUInt32LE(
+      IMAGE_DATA_DIRECTORY_VIRTUAL_ADDRESS_OFFSET
+    )
     const debugSectionSize: number = peCommonHeaderBuffer.readUInt32LE(IMAGE_DATA_DIRECTORY_SIZE_OFFSET)
     if (debugSectionVirtualAddress === 0) {
       metadata.hasPdbInfo = false
@@ -261,56 +264,61 @@ export async function getPEFileMetadata (filename: string): Promise<PEFileMetada
       return metadata
     }
 
-    // The "virtual address"  needs to be converted into an offset from the begining of the PE file (like peHeaderOffset). 
-    // To be able to do that, we need to load the array of IMAGE_SECTION_HEADER that follows the optional header; 
+    // The "virtual address"  needs to be converted into an offset from the begining of the PE file (like peHeaderOffset).
+    // To be able to do that, we need to load the array of IMAGE_SECTION_HEADER that follows the optional header;
     // their count is given by the IMAGE_SECTION_HEADER.NumberOfSections field
     const sectionHeaders = await getSectionHeaders(reader, peHeaderResult.peHeader)
     const debugDirectoriesOffset = rvaToOffset(debugSectionVirtualAddress, sectionHeaders)
 
     // look inside the different IMAGE_DEBUG_DIRECTORY
     const debugSectionBuffer = await reader.read(debugSectionSize, debugDirectoriesOffset)
-    const entryCount:number = debugSectionSize / IMAGE_DEBUG_DIRECTORY_SIZE
-    let entryOffset: number = 0
+    const entryCount: number = debugSectionSize / IMAGE_DEBUG_DIRECTORY_SIZE
+    let entryOffset = 0
     for (let i = 0; i < entryCount; i++) {
       const type: number = debugSectionBuffer.readUInt32LE(entryOffset + IMAGE_DEBUG_DIRECTORY_TYPE_OFFSET)
       if (type === IMAGE_DEBUG_TYPE_CODEVIEW) {
-        const pdbInfoSizeOfData: number = debugSectionBuffer.readUInt32LE(entryOffset + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET)
-        const pdbInfoAddress: number = debugSectionBuffer.readUInt32LE(entryOffset + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET)
+        const pdbInfoSizeOfData: number = debugSectionBuffer.readUInt32LE(
+          entryOffset + IMAGE_DEBUG_DIRECTORY_SIZEOFDATA_OFFSET
+        )
+        const pdbInfoAddress: number = debugSectionBuffer.readUInt32LE(
+          entryOffset + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET
+        )
         const pdbInfoOffset: number = rvaToOffset(pdbInfoAddress, sectionHeaders)
         // we are insterested in the .pdb filename that goes beyond the CV_INFO_PDB70 structure
         const pdbInfoBuffer = await reader.read(pdbInfoSizeOfData, pdbInfoOffset)
-        const pdbSignature:number = pdbInfoBuffer.readUInt32LE(CV_INFO_SIGNATURE_OFFSET)
+        const pdbSignature: number = pdbInfoBuffer.readUInt32LE(CV_INFO_SIGNATURE_OFFSET)
         if (pdbSignature === PDB70_SIGNATURE) {
           metadata.hasPdbInfo = true
           metadata.pdbAge = pdbInfoBuffer.readUInt32LE(CV_INFO_AGE_OFFSET)
 
-          // read the GUID that spans 16 bytes and save it as 
+          // read the GUID that spans 16 bytes and save it as
           // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-          metadata.pdbSig = 
-          toHex(pdbInfoBuffer.readUInt32LE(CV_INFO_GUID_OFFSET), 8) + "-" +
-          toHex(pdbInfoBuffer.readUInt16LE(CV_INFO_GUID_OFFSET+4), 4) + "-" +
-          toHex(pdbInfoBuffer.readUInt16LE(CV_INFO_GUID_OFFSET+6), 4) + "-" +
-          toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET+8), 4) + "-" +
-          toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET+10), 4) + 
-          toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET+12), 4) + 
-          toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET+14), 4)
-                    
-          //read .pdb filename that follows in the structure
-          // --> read the characters up to pdnInfoSizeOfData
+          metadata.pdbSig =
+            toHex(pdbInfoBuffer.readUInt32LE(CV_INFO_GUID_OFFSET), 8) +
+            '-' +
+            toHex(pdbInfoBuffer.readUInt16LE(CV_INFO_GUID_OFFSET + 4), 4) +
+            '-' +
+            toHex(pdbInfoBuffer.readUInt16LE(CV_INFO_GUID_OFFSET + 6), 4) +
+            '-' +
+            toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET + 8), 4) +
+            '-' +
+            toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET + 10), 4) +
+            toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET + 12), 4) +
+            toHex(pdbInfoBuffer.readUInt16BE(CV_INFO_GUID_OFFSET + 14), 4)
+
+          // read .pdb filename that follows in the structure
+          // --> read the characters up to pdbInfoSizeOfData
           // this is not working maybe due to the \ that are replaced by \\
-          // const filename = pdbInfoBuffer.toString('utf-8', CV_INFO_PDB_FILENAME_OFFSET, pdbInfoSizeOfData - CV_INFO_PDB_FILENAME_OFFSET + 1)
-          let filename = ''
-          for (let i = CV_INFO_PDB_FILENAME_OFFSET; i < pdbInfoSizeOfData; i++)
-          {
-                        if (pdbInfoBuffer[i] === 0)
-                            break;
-                        filename += String.fromCharCode(pdbInfoBuffer[i]);
+          // const pdbFilename = pdbInfoBuffer.toString('utf-8', CV_INFO_PDB_FILENAME_OFFSET, pdbInfoSizeOfData - CV_INFO_PDB_FILENAME_OFFSET + 1)
+          let pdbFilename = ''
+          for (let j = CV_INFO_PDB_FILENAME_OFFSET; j < pdbInfoSizeOfData; j++) {
+            if (pdbInfoBuffer[j] === 0) {
+              break
+            }
+            pdbFilename += String.fromCharCode(pdbInfoBuffer[j])
           }
-          metadata.filename = filename
-                   
-        }
-        else
-        {
+          metadata.filename = pdbFilename
+        } else {
           metadata.hasPdbInfo = false
         }
 
@@ -323,8 +331,7 @@ export async function getPEFileMetadata (filename: string): Promise<PEFileMetada
     // console.log(error)
     if (error instanceof Error) {
       metadata.error = error
-    }
-    else {
+    } else {
       throw error
     }
   } finally {
