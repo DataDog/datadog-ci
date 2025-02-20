@@ -278,7 +278,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 14.18.3
+          node-version: 20.11.0
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable
