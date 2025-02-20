@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [14, 16, 18, 20]
+        version: [18, 20, 22]
 
     name: Build and test
     runs-on: ubuntu-latest
