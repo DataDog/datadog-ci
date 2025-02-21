@@ -6,13 +6,14 @@ policy:
         label:
           - name: ci-visibility
             keys:
-              - junit
+              - coverage
+              - deployment
+              - dora
               - gate
+              - junit
               - metric
               - tag
               - trace
-              - dora
-              - deployment
           - name: static-analysis
             keys:
               - sarif
@@ -23,17 +24,21 @@ policy:
           - name: rum
             keys:
               - dsyms
-              - unity-symbols
+              - flutter-symbols
               - react-native
               - sourcemaps
+              - unity-symbols
           - name: serverless
             keys:
+              - cloud-run
               - lambda
               - stepfunctions
-              - cloud-run
           - name: source-code-integration
             keys:
               - git-metadata
           - name: synthetics
             keys:
               - synthetics
+          - name: profiling
+            keys:
+              - elf-symbols
