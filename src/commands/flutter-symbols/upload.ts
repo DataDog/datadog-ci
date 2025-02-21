@@ -6,7 +6,7 @@ import yaml from 'js-yaml'
 import semver from 'semver'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getDatadogSite} from '../../helpers/api'
+import {getDatadogApiKeyFromEnv, getDatadogSite} from '../../helpers/api'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
@@ -97,9 +97,7 @@ export class UploadCommand extends Command {
   private version = Option.String('--version')
 
   private cliVersion = version
-  private config: Record<string, string> = {
-    datadogSite: getDatadogSite(),
-  }
+  private config: Record<string, string> = {}
   private gitData?: RepositoryData
 
   private fips = Option.Boolean('--fips', false)
@@ -151,13 +149,15 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
+        apiKey: getDatadogApiKeyFromEnv(),
+        datadogSite: getDatadogSite(),
       },
       {
         configPath: this.configPath,
         defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         configFromFileCallback: (configFromFile: any) => {
           checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(process.env.DD_API_KEY, configFromFile.apiKey, this.context.stdout)
         },
       }
     )

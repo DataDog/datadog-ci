@@ -71,15 +71,15 @@ export class UploadCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private config = {
-    apiKey: '',
-    datadogSite: '',
+  private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
+  private config: Record<string, string> = {}
+
   public async execute() {
-    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
