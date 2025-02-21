@@ -2,9 +2,9 @@ import {getDatadogSite} from './api'
 
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'
 
-export const getCommonAppBaseUrl = (override: {datadogSite?: string; subdomain?: string} = {}) => {
-  const datadogSite = override.datadogSite || getDatadogSite()
-  const subdomain = override.subdomain || process.env.DD_SUBDOMAIN || DEFAULT_DATADOG_SUBDOMAIN
+export const getCommonAppBaseUrl = (config?: {datadogSite?: string; subdomain?: string}): string => {
+  const datadogSite = config?.datadogSite || getDatadogSite()
+  const subdomain = config?.subdomain || process.env.DD_SUBDOMAIN || DEFAULT_DATADOG_SUBDOMAIN
 
   const datadogSiteParts = datadogSite.split('.')
 

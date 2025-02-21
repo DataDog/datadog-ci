@@ -5,6 +5,7 @@ import simpleGit from 'simple-git'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogApiKeyFromEnv} from '../../helpers/api'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {gitRepositoryURL, gitHash} from '../../helpers/git/get-git-data'
@@ -93,7 +94,7 @@ export class SendDeploymentEvent extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
 
   private config = {
-    apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    apiKey: getDatadogApiKeyFromEnv(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }

@@ -2,8 +2,9 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getBaseIntakeUrl, getDatadogSite} from '../../helpers/api'
+import {getDatadogApiKeyFromEnv, getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {getBaseIntakeUrl} from '../../helpers/base-intake-url'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
@@ -53,7 +54,7 @@ export class UploadCommand extends Command {
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
   private config = {
-    apiKey: process.env.DATADOG_API_KEY ?? process.env.DD_API_KEY,
+    apiKey: getDatadogApiKeyFromEnv(),
     datadogSite: getDatadogSite(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
@@ -205,7 +206,7 @@ export class UploadCommand extends Command {
   private getSrcmapRequestBuilder(apiKey: string): RequestBuilder {
     return getRequestBuilder({
       apiKey,
-      baseUrl: getBaseIntakeUrl('sourcemap-intake'),
+      baseUrl: getBaseIntakeUrl('sourcemap-intake', this.config),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci_git-metadata'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],

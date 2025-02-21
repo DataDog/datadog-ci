@@ -5,6 +5,7 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogApiKeyFromEnv, getDatadogSite} from '../../helpers/api'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
@@ -102,14 +103,15 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
+        apiKey: getDatadogApiKeyFromEnv(),
+        datadogSite: getDatadogSite(),
       },
       {
         configPath: this.configPath,
         defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         configFromFileCallback: (configFromFile: any) => {
           checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(process.env.DD_API_KEY, configFromFile.apiKey, this.context.stdout)
         },
       }
     )
@@ -245,7 +247,7 @@ export class UploadCommand extends Command {
 
     const tmpDirectory = await createUniqueTmpDirectory()
 
-    const requestBuilder = getUnityRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getUnityRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, soFiles, async (soFileName) => {
         const elfMetadata = await elf.getElfFileMetadata(soFileName)

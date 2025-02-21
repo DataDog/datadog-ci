@@ -4,6 +4,7 @@ import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getDatadogApiKeyFromEnv} from '../../helpers/api'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
@@ -50,7 +51,7 @@ export class DeploymentCorrelateCommand extends Command {
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
   private config = {
-    apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    apiKey: getDatadogApiKeyFromEnv(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }

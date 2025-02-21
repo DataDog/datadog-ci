@@ -6,7 +6,7 @@ import {Command, Option} from 'clipanion'
 import {v4 as uuidv4} from 'uuid'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getBaseIntakeUrl} from '../../helpers/api'
+import {getBaseIntakeUrl} from '../../helpers/base-intake-url'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'

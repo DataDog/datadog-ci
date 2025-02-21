@@ -14,8 +14,6 @@ import {GoogleAuth} from 'google-auth-library'
 
 import {
   ADDITIONAL_FILES_DIRECTORY,
-  API_KEY_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   FIPS_ENV_VAR,
   FIPS_IGNORE_ERROR_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
@@ -24,6 +22,7 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
+import {getDatadogApiKeyFromEnv} from '../../helpers/api'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
@@ -81,11 +80,10 @@ export class CloudRunFlareCommand extends Command {
   private start = Option.String('--start')
   private end = Option.String('--end')
 
-  private apiKey?: string
-
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private config = {
+    apiKey: getDatadogApiKeyFromEnv(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
@@ -117,11 +115,10 @@ export class CloudRunFlareCommand extends Command {
     }
 
     // Validate Datadog API key
-    this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
-    if (this.apiKey === undefined) {
+    if (this.config.apiKey === undefined) {
       errorMessages.push(
         helpersRenderer.renderError(
-          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
+          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY or DD_API_KEY environment variable.'
         )
       )
     }
@@ -381,7 +378,7 @@ export class CloudRunFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.config.apiKey!, rootFolderPath)
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents

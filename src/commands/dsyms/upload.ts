@@ -6,8 +6,9 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getDatadogSite} from '../../helpers/api'
+import {getDatadogApiKeyFromEnv, getDatadogSite} from '../../helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {getBaseIntakeUrl} from '../../helpers/base-intake-url'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
@@ -37,7 +38,6 @@ import {
   deleteDirectory,
   executeDwarfdump,
   executeLipo,
-  getBaseIntakeUrl,
   isZipFile,
   unzipArchiveToDirectory,
   zipDirectoryToArchive,
@@ -71,15 +71,15 @@ export class UploadCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private fipsConfig = {
+  private config = {
+    apiKey: '',
+    datadogSite: '',
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  } as const
-
-  private config: Record<string, string> = {}
+  }
 
   public async execute() {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
@@ -88,7 +88,7 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
+        apiKey: getDatadogApiKeyFromEnv(),
         datadogSite: getDatadogSite(),
       },
       {
@@ -96,6 +96,7 @@ export class UploadCommand extends Command {
         defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
         configFromFileCallback: (configFromFile: any) => {
           checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(process.env.DD_API_KEY, configFromFile.apiKey, this.context.stdout)
         },
       }
     )
@@ -195,7 +196,7 @@ export class UploadCommand extends Command {
 
     return getRequestBuilder({
       apiKey: this.config.apiKey,
-      baseUrl: getBaseIntakeUrl(this.config.datadogSite),
+      baseUrl: getBaseIntakeUrl('sourcemap-intake', this.config, {datadogSite: process.env['DATADOG_DSYM_INTAKE_URL']}),
       headers: new Map([
         ['DD-EVP-ORIGIN', 'datadog-ci_dsyms'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],

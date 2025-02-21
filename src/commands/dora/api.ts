@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {getDatadogSite} from '../../helpers/api'
+import {getBaseApiUrl} from '../../helpers/api'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {DeploymentEvent} from './interfaces'
@@ -35,7 +35,7 @@ export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => Axios
 }
 
 export const apiConstructor = (apiKey: string) => {
-  const requestAPI = getRequestBuilder({baseUrl: `https://api.${getDatadogSite()}`, apiKey})
+  const requestAPI = getRequestBuilder({baseUrl: getBaseApiUrl(), apiKey})
 
   return {
     sendDeploymentEvent: sendDeploymentEvent(requestAPI),
