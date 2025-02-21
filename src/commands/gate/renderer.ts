@@ -1,9 +1,10 @@
 import chalk from 'chalk'
 
+import {getCommonAppBaseUrl} from '../../helpers/app'
 import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
-import {getStatus, is5xxError, isBadRequestError, isTimeout, getBaseUrl} from './utils'
+import {getStatus, is5xxError, isBadRequestError, isTimeout} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -54,7 +55,7 @@ export const renderStatus = (result: string): string => {
 }
 
 export const renderRuleUrl = (ruleId: string): string => {
-  return `${getBaseUrl()}ci/quality-gates/rule/${ruleId}`
+  return `${getCommonAppBaseUrl()}ci/quality-gates/rule/${ruleId}`
 }
 
 export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => {

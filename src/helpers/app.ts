@@ -1,16 +1,20 @@
+import {getDatadogSite} from './api'
+
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'
 
-export const getCommonAppBaseURL = (datadogSite: string, subdomain: string) => {
-  const validSubdomain = subdomain || DEFAULT_DATADOG_SUBDOMAIN
+export const getCommonAppBaseUrl = (override: {datadogSite?: string; subdomain?: string} = {}) => {
+  const datadogSite = override.datadogSite || getDatadogSite()
+  const subdomain = override.subdomain || process.env.DD_SUBDOMAIN || DEFAULT_DATADOG_SUBDOMAIN
+
   const datadogSiteParts = datadogSite.split('.')
 
   if (datadogSiteParts.length === 3) {
-    if (validSubdomain === DEFAULT_DATADOG_SUBDOMAIN) {
+    if (subdomain === DEFAULT_DATADOG_SUBDOMAIN) {
       return `https://${datadogSite}/`
     }
 
-    return `https://${validSubdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
+    return `https://${subdomain}.${datadogSiteParts[1]}.${datadogSiteParts[2]}/`
   }
 
-  return `https://${validSubdomain}.${datadogSite}/`
+  return `https://${subdomain}.${datadogSite}/`
 }

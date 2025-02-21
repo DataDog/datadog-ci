@@ -2,7 +2,7 @@ import path from 'path'
 
 import chalk from 'chalk'
 
-import {getBaseUrl} from '../junit/utils'
+import {getCommonAppBaseUrl} from '../../helpers/app'
 
 import {Payload} from './interfaces'
 
@@ -62,7 +62,7 @@ export const renderRetriedUpload = (sarifReport: Payload, errorMessage: string, 
 export const renderSuccessfulCommand = (fileCount: number, duration: number) => {
   let fullStr = ''
   fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.\n`)
-  fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getBaseUrl()}ci/code-analysis\n`)
+  fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getCommonAppBaseUrl()}ci/code-analysis\n`)
   fullStr += chalk.green(
     '=================================================================================================\n'
   )

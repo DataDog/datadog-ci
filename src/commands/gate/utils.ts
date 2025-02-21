@@ -1,17 +1,3 @@
-import {getDatadogSite} from '../../helpers/api'
-import {getCommonAppBaseURL} from '../../helpers/app'
-
-export const getBaseUrl = () => {
-  const site = getDatadogSite()
-  const subdomain = process.env.DD_SUBDOMAIN || ''
-
-  return getCommonAppBaseURL(site, subdomain)
-}
-
-export const getBaseIntakeUrl = () => {
-  return `https://quality-gates.${getDatadogSite()}`
-}
-
 /**
  * Receives an array of the form ['key:value', 'key2:value2_1', 'key2:value2_2']
  * and returns an object of the form {key: ['value'], key2: ['value2_1, value2_2']}

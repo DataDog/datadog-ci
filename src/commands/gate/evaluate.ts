@@ -6,6 +6,7 @@ import {Command, Option} from 'clipanion'
 import {v4 as uuidv4} from 'uuid'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getBaseIntakeUrl} from '../../helpers/api'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
@@ -25,7 +26,7 @@ import {
   renderEvaluationRetry,
   renderWaiting,
 } from './renderer'
-import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from './utils'
+import {is4xxError, is5xxError, isTimeout, parseScope} from './utils'
 
 export class GateEvaluateCommand extends Command {
   public static paths = [['gate', 'evaluate']]
@@ -140,7 +141,7 @@ export class GateEvaluateCommand extends Command {
       throw new Error('App key is missing')
     }
 
-    return apiConstructor(getBaseIntakeUrl(), this.config.apiKey, this.config.appKey)
+    return apiConstructor(getBaseIntakeUrl('quality-gates'), this.config.apiKey, this.config.appKey)
   }
 
   private async getSpanTags(): Promise<SpanTags> {

@@ -9,6 +9,7 @@ import glob from 'glob'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getBaseApiUrl, getBaseIntakeUrl} from '../../helpers/api'
 import {getCISpanTags} from '../../helpers/ci'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
@@ -27,7 +28,7 @@ import {newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
-import {apiConstructor, apiUrl, intakeUrl} from './api'
+import {apiConstructor} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -210,7 +211,7 @@ export class UploadJUnitXMLCommand extends Command {
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({
-          baseUrl: apiUrl,
+          baseUrl: getBaseApiUrl(),
           apiKey: this.config.apiKey!,
           headers: new Map([
             [TRACE_ID_HTTP_HEADER, traceId],
@@ -251,7 +252,7 @@ export class UploadJUnitXMLCommand extends Command {
       throw new Error('API key is missing')
     }
 
-    return apiConstructor(intakeUrl, this.config.apiKey)
+    return apiConstructor(getBaseIntakeUrl('cireport-intake'), this.config.apiKey)
   }
 
   private parseXPathTags(rawXPathTags: string[]): Record<string, string> {

@@ -7,7 +7,7 @@ import {promisify} from 'util'
 import chalk from 'chalk'
 import glob from 'glob'
 
-import {getCommonAppBaseURL} from '../../../helpers/app'
+import {getCommonAppBaseUrl} from '../../../helpers/app'
 
 import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'
@@ -374,10 +374,6 @@ export const parseVariablesFromCli = (
   return Object.keys(variables).length > 0 ? variables : undefined
 }
 
-export const getAppBaseURL = ({datadogSite, subdomain}: {datadogSite: string; subdomain: string}) => {
-  return getCommonAppBaseURL(datadogSite, subdomain)
-}
-
 export const getBatchUrl = (baseUrl: string, batchId: string) =>
   `${baseUrl}synthetics/explorer/ci?batchResultId=${batchId}`
 
@@ -465,7 +461,7 @@ export const renderResults = ({
     }
   }
 
-  reporter.runEnd(summary, getAppBaseURL(config), orgSettings)
+  reporter.runEnd(summary, getCommonAppBaseUrl(config), orgSettings)
 }
 
 export const reportExitLogs = (

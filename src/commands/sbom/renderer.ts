@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {getBaseUrl} from '../junit/utils'
+import {getCommonAppBaseUrl} from '../../helpers/app'
 
 import {Dependency, ScaRequest} from './types'
 import {validateDependencyName} from './validation'
@@ -81,7 +81,7 @@ export const renderUploading = (sbomReport: string, scaRequest: ScaRequest): str
 export const renderSuccessfulCommand = (duration: number) => {
   let fullStr = ''
   fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded file in ${duration} seconds.\n`)
-  fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getBaseUrl()}ci/code-analysis\n`)
+  fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getCommonAppBaseUrl()}ci/code-analysis\n`)
   fullStr += chalk.green(
     '=================================================================================================\n'
   )

@@ -1,16 +1,8 @@
 import {lstatSync} from 'fs'
 
-import {getDatadogSite} from '../../helpers/api'
-import {getCommonAppBaseURL} from '../../helpers/app'
+import {getCommonAppBaseUrl} from '../../helpers/app'
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
-
-export const getBaseUrl = () => {
-  const site = getDatadogSite()
-  const subdomain = process.env.DD_SUBDOMAIN || ''
-
-  return getCommonAppBaseURL(site, subdomain)
-}
 
 export const getTestRunsUrl = (spanTags: SpanTags): string => {
   if (!spanTags[CI_PIPELINE_URL] && !spanTags[CI_JOB_URL]) {
@@ -24,7 +16,7 @@ export const getTestRunsUrl = (spanTags: SpanTags): string => {
     query += ` @ci.pipeline.url:"${spanTags[CI_PIPELINE_URL]}"`
   }
 
-  return `${getBaseUrl()}ci/test-runs?query=${encodeURIComponent(query)}`
+  return `${getCommonAppBaseUrl()}ci/test-runs?query=${encodeURIComponent(query)}`
 }
 
 export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, env?: string): string => {
@@ -37,7 +29,7 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
   const encodedBranch = encodeURIComponent(`${spanTags[GIT_BRANCH]}`)
   const commitSha = `${spanTags[GIT_SHA]}`
 
-  let url = `${getBaseUrl()}ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}`
+  let url = `${getCommonAppBaseUrl()}ci/redirect/tests/${encodedRepoUrl}/-/${encodedService}/-/${encodedBranch}/-/${commitSha}`
   if (env) {
     url += `?env=${encodeURIComponent(env)}`
   }

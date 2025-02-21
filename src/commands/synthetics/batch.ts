@@ -1,5 +1,6 @@
 import deepExtend from 'deep-extend'
 
+import {getCommonAppBaseUrl} from '../../helpers/app'
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 
@@ -30,7 +31,7 @@ import {
   getPublicIdOrPlaceholder,
   wait,
 } from './utils/internal'
-import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
+import {isTestSupportedByTunnel} from './utils/public'
 
 const POLLING_INTERVAL = 5000 // In ms
 
@@ -86,7 +87,7 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
-  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
+  reporter.testsWait(tests, getCommonAppBaseUrl(options), trigger.batch_id)
 
   const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
     mapping[location.name] = location.display_name
@@ -259,7 +260,7 @@ const reportResults = (
   safeDeadlineReached: boolean,
   reporter: MainReporter
 ) => {
-  const baseUrl = getAppBaseURL(resultDisplayInfo.options)
+  const baseUrl = getCommonAppBaseUrl(resultDisplayInfo.options)
 
   for (const result of results) {
     reporter.resultEnd(
@@ -276,7 +277,7 @@ const reportWaitingTests = (
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ) => {
-  const baseUrl = getAppBaseURL(resultDisplayInfo.options)
+  const baseUrl = getCommonAppBaseUrl(resultDisplayInfo.options)
   const {tests} = resultDisplayInfo
 
   const inProgressPublicIds = new Set()

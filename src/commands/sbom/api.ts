@@ -1,9 +1,8 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '../../constants'
+import {getCommonAppBaseUrl} from '../../helpers/app'
 import {getRequestBuilder} from '../../helpers/utils'
-
-import {getBaseUrl} from '../junit/utils'
 
 import {API_ENDPOINT} from './constants'
 import {ScaRequest} from './types'
@@ -47,8 +46,7 @@ export const getApiHelper = (
   }
 
   // Get the intake name
-  const url = getBaseUrl()
-  // Get the AXIOS request/response function
+  const url = getCommonAppBaseUrl() // XXX: weird to use App base url for API
   const requestIntake = getRequestBuilder({baseUrl: url, apiKey, appKey})
 
   return uploadSBomPayload(requestIntake)

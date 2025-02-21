@@ -1,4 +1,4 @@
-import {getCommonAppBaseURL} from '../../helpers/app'
+import {getCommonAppBaseUrl} from '../../helpers/app'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'
@@ -35,7 +35,7 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
       await deployLocalTestDefinition(api, localTestDefinition)
 
       // SYNTH-18527: the edit test endpoint should return a version in the response, so we can print it in the logs and see it in version history
-      const baseUrl = getCommonAppBaseURL(config.datadogSite, config.subdomain)
+      const baseUrl = getCommonAppBaseUrl(config)
       const testLink = `${baseUrl}synthetics/details/${publicId}`
 
       reporter.log(`New version successfully deployed for main test definition ${publicId}:\n  ⎋ ${testLink}\n\n`)
