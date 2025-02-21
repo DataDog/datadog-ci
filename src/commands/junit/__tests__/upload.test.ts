@@ -42,7 +42,7 @@ describe('upload', () => {
       expect(command['getApiHelper'].bind(command)).not.toThrow()
       expect(getRequestBuilder).toHaveBeenCalledWith(
         expect.objectContaining({
-          baseUrl: 'https://cireport-intake.datadoghq.com',
+          baseUrl: 'https://cireport-intake.us3.datadoghq.com',
         })
       )
       process.env = {}
