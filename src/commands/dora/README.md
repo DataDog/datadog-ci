@@ -51,11 +51,10 @@ datadog-ci dora deployment --service my-service --env prod \
 
 Additionally, you can configure the `deployment` command with environment variables:
 
-- `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests. For more information about getting a Datadog API key, see the [API key documentation][2].
+- `DATADOG_SITE` or `DD_SITE`: Set the [Datadog site][3]. The default is `datadoghq.com`.
 - `DD_ENV`: you may choose the environment you that the deployment has targetted
 - `DD_SERVICE`: If you haven't specified a service through `--service` you can set it with this env var.
-- `DD_SITE`: Set to you your Datadog site. For example, `datadoghq.com` or `datadoghq.eu`.
-
 
 ### Optional dependencies
 
@@ -97,3 +96,5 @@ Additional helpful documentation, links, and articles:
 - [Learn about DORA Metrics][1]
 
 [1]: https://docs.datadoghq.com/dora_metrics/
+[2]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
+[3]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site

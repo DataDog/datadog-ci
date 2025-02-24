@@ -6,23 +6,12 @@ Upload dSYM files to Datadog to symbolicate your crash reports.
 
 ## Usage
 
-### Setup
+### Environment variables
 
-You need to have `DATADOG_API_KEY` in your environment.
+- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests. For more information about getting a Datadog API key, see the [API key documentation][2].
+- `DATADOG_SITE` or `DD_SITE`: Set the [Datadog site][3]. The default is `datadoghq.com`.
 
-```bash
-# Environment setup
-export DATADOG_API_KEY="<API KEY>"
-```
-
-By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
-
-```bash
-# Example environment setup for US5
-export DATADOG_SITE="us5.datadoghq.com"
-```
-
-It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_DSYM_INTAKE_URL` environment variable.
+To override the base URL for the intake endpoint, define the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
 ### Commands
 
@@ -86,4 +75,5 @@ Additional helpful documentation, links, and articles:
 - [Learn about iOS Crash Reporting and Error Tracking][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/
-[2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
+[2]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
+[3]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site

@@ -47,8 +47,8 @@ datadog-ci deployment correlate --provider argocd
 
 ### Environment variables
 
-- `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_SITE`: choose your Datadog site. For example, datadoghq.com or datadoghq.eu.
+- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests. For more information about getting a Datadog API key, see the [API key documentation][4].
+- `DATADOG_SITE` or `DD_SITE`: Set the [Datadog site][5]. The default is `datadoghq.com`.
 
 ## Further reading
 
@@ -60,3 +60,5 @@ Additional helpful documentation, links, and articles:
 [1]: https://docs.datadoghq.com/continuous_delivery/deployments/ciproviders
 [2]: https://docs.datadoghq.com/continuous_delivery/
 [3]: https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines
+[4]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
+[5]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
