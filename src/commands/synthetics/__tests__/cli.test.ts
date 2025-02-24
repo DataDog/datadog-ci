@@ -51,7 +51,7 @@ test('all option flags are supported', async () => {
   options.forEach((option) => expect(usage).toContain(`--${option}`))
 })
 
-describe('run-test', () => {
+describe('run-tests', () => {
   beforeEach(() => {
     process.env = {}
     jest.restoreAllMocks()
@@ -1069,6 +1069,16 @@ describe('run-test', () => {
           ...getExpectedTestsToTriggerArguments(overrideTestConfig)
         )
       })
+    })
+
+    test('fail on non-existing config file', async () => {
+      const writeMock = jest.fn()
+
+      const command = createCommand(RunTestsCommand, {stdout: {write: writeMock}})
+      command['configPath'] = 'non-existing-config-file.json'
+
+      await expect(command.execute()).resolves.toBe(1)
+      expect(writeMock).toHaveBeenCalledWith(expect.stringMatching('ERROR: invalid config \nConfig file not found'))
     })
   })
 
