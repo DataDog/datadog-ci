@@ -342,3 +342,11 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
 
   return metadata
 }
+
+export const getBuildId = (fileMetadata: PEFileMetadata): string => {
+  if (fileMetadata.isPE && fileMetadata.hasPdbInfo) {
+    return `${fileMetadata.pdbSig}_${fileMetadata.pdbAge}`
+  }
+
+  return '?_?'
+}
