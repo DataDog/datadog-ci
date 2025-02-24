@@ -222,7 +222,7 @@ export class RunTestsCommand extends Command {
       })
     } catch (error) {
       if (this.configPath) {
-        throw error
+        throw new CiError('INVALID_CONFIG', error.message)
       }
     }
 
