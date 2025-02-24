@@ -53,7 +53,7 @@ pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
-rimraf,import,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
+rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White

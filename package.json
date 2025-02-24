@@ -94,7 +94,6 @@
     "ora": "5.4.1",
     "packageurl-js": "^2.0.1",
     "proxy-agent": "^6.4.0",
-    "rimraf": "^5.0.0",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "ssh2": "^1.15.0",
@@ -146,6 +145,7 @@
     "pkg": "5.8.1",
     "prettier": "2.0.5",
     "proxy": "^2.1.1",
+    "rimraf": "^5.0.0",
     "ts-jest": "29.1.1",
     "ts-node": "8.8.1",
     "typescript": "5.1.6"
