@@ -47,9 +47,8 @@ import type * as path from 'path'
 import glob from 'glob'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
-import * as ciUtils from '../../../../helpers/utils'
 
-import {apiConstructor} from '../../api'
+import * as api from '../../api'
 import {CiError, CiErrorCode, CriticalError} from '../../errors'
 import {
   ExecutionRule,
@@ -69,22 +68,13 @@ import {
   getApiTest,
   getResults,
   getSummary,
+  mockApi,
   MockedReporter,
   mockReporter,
   RenderResultsTestCase,
 } from '../fixtures'
 
 describe('utils', () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
-  }
-  const api = apiConstructor(apiConfiguration)
-
   describe('getSuites', () => {
     const GLOB = 'testGlob'
     const FILES = ['file1', 'file2']
@@ -615,7 +605,11 @@ describe('utils', () => {
     ]
 
     test.each(cases)('$description', async (testCase) => {
-      jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({onDemandConcurrencyCap: 1})
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(
+        mockApi({
+          getSyntheticsOrgSettings: jest.fn().mockResolvedValue({onDemandConcurrencyCap: 1}),
+        })
+      )
 
       const config = {
         ...DEFAULT_COMMAND_CONFIG,
@@ -749,12 +743,15 @@ describe('utils', () => {
     })
 
     test('failing to get org settings is not important enough to throw', async () => {
-      jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
-        throw getAxiosError(502, {message: 'Server Error'})
-      })
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(
+        mockApi({
+          getSyntheticsOrgSettings: jest.fn().mockImplementation(() => {
+            throw getAxiosError(502, {message: 'Server Error'})
+          }),
+        })
+      )
 
-      const config = (apiConfiguration as unknown) as SyntheticsCIConfig
-      expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+      expect(await utils.getOrgSettings(mockReporter, {} as SyntheticsCIConfig)).toBeUndefined()
     })
   })
 

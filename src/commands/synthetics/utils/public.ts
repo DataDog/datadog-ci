@@ -205,10 +205,10 @@ export const getOrgSettings = async (
   reporter: MainReporter,
   config: SyntheticsCIConfig
 ): Promise<SyntheticsOrgSettings | undefined> => {
-  const apiHelper = getApiHelper(config)
+  const api = getApiHelper(config)
 
   try {
-    return await apiHelper.getSyntheticsOrgSettings()
+    return await api.getSyntheticsOrgSettings()
   } catch (e) {
     reporter.error(`Failed to get settings: ${formatBackendErrors(e, 'synthetics_default_settings_read')}`)
   }
@@ -309,9 +309,9 @@ export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserS
   'device' in result && result.device !== undefined
 
 export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
-  const apiHelper = getApiHelper(config)
+  const api = getApiHelper(config)
 
-  return apiHelper.getTest(publicId)
+  return api.getTest(publicId)
 }
 
 export const retry = async <T, E extends Error>(
