@@ -193,14 +193,6 @@ If you want to confirm that a proxy is being used, you can set the `DEBUG` envir
 DEBUG=proxy-agent yarn datadog-ci synthetics run-tests
 ```
 
-### Deprecated fields
-
-Datadog is streamlining and enhancing the datadog-ci synthetics commands. In this effort, certain fields have been marked as deprecated. While these fields remain backwards compatible for now, they will not be supported with the release of a new major version. We highly advise transitioning away from these deprecated fields.
-
-The following is a list of the changes:
-
-* The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
-
 ## Run Tests Command
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (see [test files](#test-files)) or specify the tests you want to run using the `-p,--public-id` flag.
@@ -984,18 +976,18 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ### Available hooks
 
-| Hook name        | Parameters                                                                               | Description                                                     |
-| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                          | Called for logging.                                             |
-| `error`          | `(error: string)`                                                                        | Called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                     | Called whenever an error occurs during the tests parsing phase. |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | Called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
-| `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
-| `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
-| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
+| Hook name        | Parameters                                                                                      | Description                                                     |
+| :--------------- | :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                                 | Called for logging.                                             |
+| `error`          | `(error: string)`                                                                               | Called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                            | Called whenever an error occurs during the tests parsing phase. |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride)` | Called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                                  | Called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`                      | Called when all tests are waiting to receive their results.     |
+| `resultReceived` | `(result: ResultInBatch)`                                                                       | Called when a result is received.                               |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                             | Called for each result at the end of all results.               |
+| `reportStart`    | `(timings: {startTime: number})`                                                                | Called at the start of the report.                              |
+| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`                      | Called at the end of the run.                                   |
 
 ## View test results
 

@@ -2,7 +2,7 @@
   "tests": [
     {
       "id": "https://app.datadoghq.com/synthetics/details/pwd-mwg-3p5",
-      "config": {
+      "testOverrides": {
         "headers": {
           "X-Fake-Header": "fake value"
         }
@@ -10,7 +10,7 @@
     },
     {
       "id": "https://app.datadoghq.com/synthetics/details/2r9-q7u-4nn",
-      "config": {
+      "testOverrides": {
         "headers": {
           "X-Fake-Header": "fake value"
         }
