@@ -37,7 +37,7 @@ describe('Junit reporter', () => {
   const commandMock: Args = {
     context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
     jUnitReport: 'junit',
-    runName: 'Test Suite name',
+    runName: 'Custom run name',
   }
 
   let reporter: JUnitReporter
@@ -124,7 +124,7 @@ describe('Junit reporter', () => {
       expect(reporter['json'].testsuites.$).toStrictEqual({
         batch_id: BATCH_ID,
         batch_url: `${MOCK_BASE_URL}synthetics/explorer/ci?batchResultId=${BATCH_ID}`,
-        name: 'Test Suite name',
+        name: 'Custom run name',
         tests_critical_error: 1,
         tests_failed: 2,
         tests_failed_non_blocking: 3,
@@ -393,7 +393,7 @@ describe('GitLab test report compatibility', () => {
   const commandMock: Args = {
     context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
     jUnitReport: 'junit',
-    runName: 'Test Suite name',
+    runName: 'Custom run name',
   }
 
   let reporter: JUnitReporter

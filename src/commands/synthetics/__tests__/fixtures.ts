@@ -37,6 +37,7 @@ import {
   ServerResult,
   APIConfiguration,
   ServerTest,
+  LocalTestDefinition,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -69,18 +70,18 @@ export const ciConfig: RunTestsCommandConfig = {
   failOnTimeout: true,
   files: [],
   jUnitReport: '',
-  global: {},
   defaultTestOverrides: {},
-  locations: [],
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
-  variableStrings: [],
 }
 
-export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<ServerTest> = {}): ServerTest => ({
+export const getApiLocalTestDefinition = (
+  publicId = 'abc-def-ghi',
+  opts: Partial<LocalTestDefinition> = {}
+): LocalTestDefinition & {public_id: string} => ({
   config: {
     assertions: [],
     request: {
@@ -92,18 +93,22 @@ export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<ServerTest> =
     variables: [],
   },
   locations: [],
-  message: '',
-  monitor_id: 0,
   name: 'Test name',
   options: {
     device_ids: [],
   },
   public_id: publicId,
-  status: 'live',
   subtype: 'http',
-  tags: [],
   type: 'api',
   ...opts,
+})
+
+export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<LocalTestDefinition> = {}): ServerTest => ({
+  ...getApiLocalTestDefinition(publicId, opts),
+  message: '',
+  monitor_id: 0,
+  status: 'live',
+  tags: [],
 })
 
 export const getBrowserTest = (
@@ -149,7 +154,7 @@ export const getMultiStep = (): MultiStep => ({
   },
 })
 
-export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
+export const getTestSuite = (): Suite => ({content: {tests: [{testOverrides: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
@@ -605,6 +610,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
     getMobileApplicationPresignedURLs: jest.fn(),
     getTest: jest.fn(),
     getTestWithType: jest.fn(),
+    editTest: jest.fn(),
     getSyntheticsOrgSettings: jest.fn(),
     getTunnelPresignedURL: jest.fn(),
     pollResults: jest.fn(),

@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getTestsToTrigger too many tests to trigger trim and warn if from search 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      [
+        "The search query returned 1010 tests, only the first 1000 will be triggered.
+",
+      ],
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

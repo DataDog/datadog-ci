@@ -5,6 +5,7 @@ import {
   BaseResult,
   BaseTestPayload,
   BasicAuthCredentials,
+  BrowserServerResult,
   CookiesObject,
   ExecutionRule,
   LocalTriggerConfig,
@@ -26,6 +27,8 @@ import {
 import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
 
 const levenshtein = require('fast-levenshtein')
+
+export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
 export const getOverriddenExecutionRule = (
   test?: Test,
@@ -92,12 +95,16 @@ export const isTimedOutRetry = (
 }
 
 export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConfig is LocalTriggerConfig => {
-  return triggerConfig ? 'local_test_definition' in triggerConfig : false
+  return triggerConfig ? 'localTestDefinition' in triggerConfig : false
+}
+
+export const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {
+  return (serverResult as BrowserServerResult).stepDetails !== undefined
 }
 
 export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
   if (isLocalTriggerConfig(triggerConfig)) {
-    return triggerConfig.local_test_definition.public_id
+    return triggerConfig.localTestDefinition.public_id
   }
 
   return triggerConfig.id
@@ -170,7 +177,6 @@ const allOverrideKeys: AccumulatorBaseConfigOverrideKey[] = [
   'followRedirects',
   'headers',
   'locations',
-  'pollingTimeout',
   'resourceUrlSubstitutionRegexes',
   'startUrl',
   'startUrlSubstitutionRegex',
@@ -225,8 +231,6 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
       switch (key) {
         // Convert to number
         case 'defaultStepTimeout':
-        // TODO SYNTH-12989: Clean up `pollingTimeout` in favor of `batchTimeout`
-        case 'pollingTimeout':
         case 'testTimeout':
           acc[key] = parseOverrideValue(value, 'number') as number
           break
@@ -360,8 +364,6 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'followRedirects',
       'headers',
       'locations',
-      // TODO SYNTH-12989: Clean up deprecated `pollingTimeout`
-      'pollingTimeout',
       'resourceUrlSubstitutionRegexes',
       'retry',
       'startUrlSubstitutionRegex',

@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "bin": "dist/cli.js",
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
   "volta": {
     "node": "20.11.0",
@@ -120,7 +120,7 @@
     "@types/inquirer": "8.2.6",
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "14.18.34",
+    "@types/node": "^18.19.76",
     "@types/rimraf": "^3.0.2",
     "@types/semver": "^7.3.12",
     "@types/ssh2": "1.11.6",

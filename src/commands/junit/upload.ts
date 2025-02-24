@@ -14,6 +14,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
+import id from '../../helpers/id'
 import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
@@ -27,7 +28,6 @@ import {uploadToGitDB} from '../git-metadata/gitdb'
 import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
-import id from './id'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
@@ -40,7 +40,6 @@ import {
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderUpload,
-  renderDeprecatedMention,
 } from './renderer'
 import {isFile} from './utils'
 
@@ -122,12 +121,10 @@ export class UploadJUnitXMLCommand extends Command {
     validator: t.isBoolean(),
   })
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private metrics = Option.Array('--metrics', {hidden: true})
   private measures = Option.Array('--measures')
   private service = Option.String('--service', {env: 'DD_SERVICE'})
   private tags = Option.Array('--tags')
   private reportTags = Option.Array('--report-tags')
-  private reportMetrics = Option.Array('--report-metrics', {hidden: true})
   private reportMeasures = Option.Array('--report-measures')
   private rawXPathTags = Option.Array('--xpath-tag')
   private gitRepositoryURL = Option.String('--git-repository-url')
@@ -353,19 +350,9 @@ export class UploadJUnitXMLCommand extends Command {
   private getCustomMeasures(): Record<string, number> {
     const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
     const envVarMeasures = this.config.envVarMeasures ? parseMetrics(this.config.envVarMeasures.split(',')) : {}
-    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
     const cliMeasures = this.measures ? parseMetrics(this.measures) : {}
 
-    // We have renamed "metrics" to "measures", but we will still support the old names for now.
-    if (this.metrics) {
-      this.context.stdout.write(renderDeprecatedMention('--metrics', '--measures', 'option'))
-    }
-    if (this.config.envVarMetrics) {
-      this.context.stdout.write(renderDeprecatedMention('DD_METRICS', 'DD_MEASURES', 'environment variable'))
-    }
-
     return {
-      ...cliMetrics,
       ...cliMeasures,
       ...envVarMetrics,
       ...envVarMeasures,
@@ -377,16 +364,9 @@ export class UploadJUnitXMLCommand extends Command {
   }
 
   private getReportMeasures(): Record<string, number> {
-    const cliMetrics = this.reportMetrics ? parseMetrics(this.reportMetrics) : {}
     const cliMeasures = this.reportMeasures ? parseMetrics(this.reportMeasures) : {}
 
-    // We have renamed "metrics" to "measures", but we will still support the old names for now.
-    if (this.reportMetrics) {
-      this.context.stdout.write(renderDeprecatedMention('--report-metrics', '--report-measures', 'option'))
-    }
-
     return {
-      ...cliMetrics,
       ...cliMeasures,
     }
   }

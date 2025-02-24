@@ -1,11 +1,7 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {
-  moveLocationsToTestOverrides,
-  replaceGlobalWithDefaultTestOverrides,
-  replacePollingTimeoutWithBatchTimeout,
-} from './compatibility'
+import {runTests, waitForResults} from './batch'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -21,20 +17,18 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
+import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
-import {getTestConfigs, getTestsFromSearchQuery} from './test'
+import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
 import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
-  getTestsToTrigger,
   InitialSummary,
   renderResults,
-  runTests,
-  waitForResults,
   getExitReason,
   toExitCode,
   reportExitLogs,
@@ -64,15 +58,6 @@ export const executeTests = async (
       await tunnel.stop()
     }
   }
-
-  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  config = replaceGlobalWithDefaultTestOverrides(config, reporter, true)
-
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  config = moveLocationsToTestOverrides(config, reporter, true)
-
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  config = replacePollingTimeoutWithBatchTimeout(config, reporter, true)
 
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
@@ -154,22 +139,23 @@ export const executeTests = async (
   }
 
   try {
-    // TODO SYNTH-12989: Remove the `maxPollingTimeout` calculation when `pollingTimeout` is removed
-    const maxPollingTimeout = Math.max(
-      ...triggerConfigs.map(
-        (t) => config.batchTimeout || t.testOverrides?.pollingTimeout || config.pollingTimeout || DEFAULT_BATCH_TIMEOUT
-      )
-    )
     const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
+    const batchTimeout = config.batchTimeout || DEFAULT_BATCH_TIMEOUT
 
     const results = await waitForResults(
       api,
       trigger,
       tests,
-      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout: maxPollingTimeout},
+      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout},
       reporter,
       tunnel
     )
+
+    try {
+      await updateLTDMultiLocators(reporter, config, results)
+    } catch (error) {
+      throw new CriticalError('LTD_MULTILOCATORS_UPDATE_FAILED', error.message)
+    }
 
     return {
       results,
@@ -180,6 +166,10 @@ export const executeTests = async (
     }
   } catch (error) {
     if (error instanceof BatchTimeoutRunawayError) {
+      throw error
+    }
+
+    if (error instanceof CriticalError && error.code === 'LTD_MULTILOCATORS_UPDATE_FAILED') {
       throw error
     }
 

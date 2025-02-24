@@ -270,12 +270,12 @@ export class Tunnel {
     this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
     duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
 
-    pipeline([duplex, this.multiplexer], (err) => {
+    pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
         this.reporter?.warn(`Error on duplex connection close: ${err}`)
       }
     })
-    pipeline([this.multiplexer, duplex], (err) => {
+    pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
         this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
       }
