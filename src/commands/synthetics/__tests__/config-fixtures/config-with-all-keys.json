@@ -9,6 +9,37 @@
   "failOnTimeout": false,
   "files": ["my-new-file"],
   "jUnitReport": "junit-report.xml",
+  "global": {
+    "allowInsecureCertificates": true,
+    "basicAuth": {"username": "test", "password": "test"},
+    "body": "{\"fakeContent\":true}",
+    "bodyType": "application/json",
+    "cookies": {
+      "value": "name1=value1;name2=value2;",
+      "append": true
+    },
+    "setCookies": {
+      "value": "name1=value1 \n name2=value2; Domain=example.com \n name3=value3; Secure; HttpOnly",
+      "append": true
+    },
+    "defaultStepTimeout": 10000,
+    "deviceIds": ["chrome.laptop_large"],
+    "executionRule": "blocking",
+    "followRedirects": true,
+    "headers": {"<NEW_HEADER>": "<NEW_VALUE>"},
+    "locations": ["aws:us-west-1"],
+    "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
+    "mobileApplicationVersionFilePath": "./path/to/application.apk",
+    "resourceUrlSubstitutionRegexes": [
+      "s/(https://www.)(.*)/$1extra-$2",
+      "https://example.com(.*)|http://subdomain.example.com$1"
+    ],
+    "retry": {"count": 2, "interval": 300},
+    "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
+    "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",
+    "testTimeout": 200000,
+    "variables": {"titleVariable": "new value"}
+  },
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
@@ -30,6 +61,10 @@
     "locations": ["aws:us-west-1"],
     "mobileApplicationVersion": "00000000-0000-0000-0000-000000000000",
     "mobileApplicationVersionFilePath": "./path/to/application.apk",
+    "resourceUrlSubstitutionRegexes": [
+      "s/(https://www.)(.*)/$1extra-$2",
+      "https://example.com(.*)|http://subdomain.example.com$1"
+    ],
     "retry": {"count": 2, "interval": 300},
     "startUrl": "{{URL}}?static_hash={{STATIC_HASH}}",
     "startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/",

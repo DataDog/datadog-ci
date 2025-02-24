@@ -628,6 +628,21 @@ Override the application version for a Synthetic mobile application test.
 * ENV variable: Not Available
 * CLI param: `--mobileApplicationVersionFilePath=path/to/application.apk`
 
+#### `resourceUrlSubstitutionRegexes` (Array)
+
+An array of regex patterns to modify resource URLs in the test. This can be useful for dynamically changing resource URLs during test execution.
+
+Each regex pattern should be in the format:
+
+* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
+* **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
+
+**Configuration options**
+
+* Global/Test Config: `"resourceUrlSubstitutionRegexes": ["(https://www.)(.*)|$1staging-$2"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='(https://www.)(.*)|$1staging-$2'`
+* CLI param: `--override resourceUrlSubstitutionRegexes='(https://www.)(.*)|$1staging-$2'`
+
 #### `retry` (Object)
 
 The retry policy for the test. The 2 possible attributes for this object are independent:
@@ -668,9 +683,9 @@ There are two possible formats:
 
 **Configuration options**
 
-* Global/Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX="s/(https://www.)(.*)/$1extra-$2/"`
-* CLI param: `--override startUrlSubstitutionRegex="s/(https://www.)(.*)/$1extra-$2/"`
+* Global/Test Config: `"startUrlSubstitutionRegex": "(https://www.)(.*)|$1extra-$2"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX='(https://www.)(.*)|$1extra-$2'`
+* CLI param: `--override startUrlSubstitutionRegex='(https://www.)(.*)|$1extra-$2'`
 
 #### `testTimeout` (Number)
 
