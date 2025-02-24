@@ -402,9 +402,6 @@ export interface BaseConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   resourceUrlSubstitutionRegexes?: string[]
   retry?: RetryConfig
   startUrl?: string
@@ -557,13 +554,7 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
   global?: UserConfigOverride
   jUnitReport?: string
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
-  locations?: string[]
   mobileApplicationVersionFilePath?: string
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
@@ -571,9 +562,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
-  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-  /** @deprecated This property is deprecated, please use `variables` inside of `defaultTestOverrides`. */
-  variableStrings: string[]
 }
 
 export type WrapperConfig = Partial<RunTestsCommandConfig>

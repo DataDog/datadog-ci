@@ -72,13 +72,11 @@ export const ciConfig: RunTestsCommandConfig = {
   jUnitReport: '',
   global: {},
   defaultTestOverrides: {},
-  locations: [],
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
   testSearchQuery: '',
   tunnel: false,
-  variableStrings: [],
 }
 
 export const getApiLocalTestDefinition = (

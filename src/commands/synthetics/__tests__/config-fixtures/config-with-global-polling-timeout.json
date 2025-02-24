@@ -1,6 +1,0 @@
-{
-  "global": {
-    "followRedirects": false
-  },
-  "pollingTimeout": 333
-}
