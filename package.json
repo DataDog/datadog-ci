@@ -120,7 +120,7 @@
     "@types/inquirer": "8.2.6",
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "14.18.34",
+    "@types/node": "^18.19.76",
     "@types/semver": "^7.3.12",
     "@types/ssh2": "1.11.6",
     "@types/ssh2-streams": "0.1.9",

@@ -1936,7 +1936,7 @@ __metadata:
     "@types/inquirer": 8.2.6
     "@types/jest": 29.5.3
     "@types/js-yaml": ^4.0.5
-    "@types/node": 14.18.34
+    "@types/node": ^18.19.76
     "@types/semver": ^7.3.12
     "@types/ssh2": 1.11.6
     "@types/ssh2-streams": 0.1.9
@@ -3681,10 +3681,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:14.18.34":
-  version: 14.18.34
-  resolution: "@types/node@npm:14.18.34"
-  checksum: 25ac3b456a0b7b82c76b37276ec86845849e8276fc81d1470a87227c105c619e299aa7165b6148aa11a4ea156b1452f6d3327935f3e7dc0067ff54dde0e3d4e0
+"@types/node@npm:^18.19.76":
+  version: 18.19.76
+  resolution: "@types/node@npm:18.19.76"
+  dependencies:
+    undici-types: ~5.26.4
+  checksum: 33b477bfff9ebc15721d0d94beacbedbc3c66892587cce758289682a07a2a77e69b536cc68bddf240b82ddcb426700b4e04fc6f1db6fcfb174a98c5ec6d9bbf5
   languageName: node
   linkType: hard
 
