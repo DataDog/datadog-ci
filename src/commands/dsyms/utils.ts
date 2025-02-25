@@ -1,14 +1,12 @@
-import {promises} from 'fs'
+import fs from 'fs/promises'
 import {tmpdir} from 'os'
 import path from 'path'
-
-import rimraf from 'rimraf'
 
 import {buildPath, execute} from '../../helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
   try {
-    const stats = await promises.stat(filepath)
+    const stats = await fs.stat(filepath)
 
     return stats.size !== 0 && path.extname(filepath) === '.zip'
   } catch (error) {
@@ -20,13 +18,14 @@ export const isZipFile = async (filepath: string) => {
 export const createUniqueTmpDirectory = async (): Promise<string> => {
   const uniqueValue = Math.random() * Number.MAX_SAFE_INTEGER
   const directoryPath = buildPath(tmpdir(), uniqueValue.toString())
-  await promises.mkdir(directoryPath, {recursive: true})
+  await fs.mkdir(directoryPath, {recursive: true})
 
   return directoryPath
 }
 
-export const deleteDirectory = async (directoryPath: string): Promise<void> =>
-  new Promise((resolve, reject) => rimraf(directoryPath, () => resolve()))
+export const deleteDirectory = async (directoryPath: string): Promise<void> => {
+  await fs.rm(directoryPath, {recursive: true})
+}
 
 export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
   const cwd = path.dirname(directoryPath)
@@ -35,7 +34,7 @@ export const zipDirectoryToArchive = async (directoryPath: string, archivePath: 
 }
 
 export const unzipArchiveToDirectory = async (archivePath: string, directoryPath: string) => {
-  await promises.mkdir(directoryPath, {recursive: true})
+  await fs.mkdir(directoryPath, {recursive: true})
   await execute(`unzip -o '${archivePath}' -d '${directoryPath}'`)
 }
 
