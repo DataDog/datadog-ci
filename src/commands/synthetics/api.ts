@@ -23,6 +23,7 @@ import {
   Trigger,
   MobileAppUploadResult,
   MobileApplicationNewVersionParams,
+  LocalTestDefinition,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -83,10 +84,13 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
   return resp.data
 }
 
-const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string) => {
+const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (
+  testId: string,
+  testType?: string
+) => {
   const resp = await retryRequest(
     {
-      url: `/synthetics/tests/${testId}`,
+      url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
     },
     request,
     {retryOn429: true}
@@ -95,13 +99,16 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>
   return resp.data
 }
 
-const getTestWithType = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (
+const getLocalTestDefinition = (request: (args: AxiosRequestConfig) => AxiosPromise<LocalTestDefinition>) => async (
   testId: string,
-  testType: string
+  testType?: string
 ) => {
   const resp = await retryRequest(
     {
-      url: `/synthetics/tests/${testType}/${testId}`,
+      params: {
+        format: 'ltd',
+      },
+      url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
     },
     request,
     {retryOn429: true}
@@ -385,7 +392,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getBatch: getBatch(request),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(request),
-    getTestWithType: getTestWithType(request),
+    getLocalTestDefinition: getLocalTestDefinition(request),
     editTest: editTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
