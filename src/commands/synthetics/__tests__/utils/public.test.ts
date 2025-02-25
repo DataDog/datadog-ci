@@ -44,67 +44,37 @@ import process from 'process'
 
 import type * as path from 'path'
 
-import {default as axios} from 'axios'
-import deepExtend from 'deep-extend'
 import glob from 'glob'
 
-process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
+import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
 
-import {getAxiosError, MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
-import * as ciHelpers from '../../../../helpers/ci'
-import {Metadata} from '../../../../helpers/interfaces'
-import * as ciUtils from '../../../../helpers/utils'
-
-import {apiConstructor, APIHelper} from '../../api'
-import {CiError, CiErrorCode, CriticalError, BatchTimeoutRunawayError} from '../../errors'
+import * as api from '../../api'
+import {CiError, CiErrorCode, CriticalError} from '../../errors'
 import {
-  BaseResult,
-  Batch,
   ExecutionRule,
-  PollResult,
   RemoteTestPayload,
   Result,
   SelectiveRerunDecision,
-  ServerResult,
   SyntheticsCIConfig,
   Test,
-  Trigger,
   UserConfigOverride,
 } from '../../interfaces'
-import * as mobile from '../../mobile'
-import {DEFAULT_COMMAND_CONFIG, DEFAULT_POLLING_TIMEOUT, MAX_TESTS_TO_TRIGGER} from '../../run-tests-command'
+import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
 import * as utils from '../../utils/public'
 
 import {
   ciConfig,
   getApiResult,
   getApiTest,
-  getBatch,
-  getBrowserServerResult,
-  getFailedResultInBatch,
-  getIncompleteServerResult,
-  getInProgressResultInBatch,
-  getPassedResultInBatch,
   getResults,
-  getSkippedResultInBatch,
   getSummary,
+  mockApi,
   MockedReporter,
-  mockLocation,
   mockReporter,
   RenderResultsTestCase,
 } from '../fixtures'
 
 describe('utils', () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ciUtils.ProxyConfiguration,
-  }
-  const api = apiConstructor(apiConfiguration)
-
   describe('getSuites', () => {
     const GLOB = 'testGlob'
     const FILES = ['file1', 'file2']
@@ -206,360 +176,6 @@ describe('utils', () => {
     })
   })
 
-  describe('runTest', () => {
-    beforeEach(() => {
-      jest.restoreAllMocks()
-    })
-
-    const fakeId = '123-456-789'
-    const fakeTrigger: Trigger = {
-      batch_id: 'bid',
-      locations: [],
-    }
-
-    test('should run test', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-      const output = await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(output).toEqual(fakeTrigger)
-    })
-
-    test('runTests sends batch metadata', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const payloadMetadataSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        payloadMetadataSpy(request.data.metadata)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
-
-      const metadata: Metadata = {
-        ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
-        git: {commit: {author: {}, committer: {}, message: 'test'}},
-      }
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
-    })
-
-    test('runTests api call includes trigger app header', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const headersMetadataSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        headersMetadataSpy(request.headers)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
-
-      utils.setCiTriggerApp('unit_test')
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
-    })
-
-    test('runTests api call does not send deprecated properties', async () => {
-      jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
-      const testsPayloadSpy = jest.fn()
-      jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
-        testsPayloadSpy(request.data.tests)
-        if (request.url === '/synthetics/tests/trigger/ci') {
-          return {data: fakeTrigger}
-        }
-      }) as any)
-
-      await utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING, pollingTimeout: 1}])
-      expect(testsPayloadSpy).toHaveBeenCalledWith([
-        {
-          public_id: fakeId,
-          executionRule: ExecutionRule.NON_BLOCKING,
-          // no pollingTimeout
-        },
-      ])
-    })
-
-    test('should run test with publicId from url', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-      const output = await utils.runTests(api, [
-        {
-          executionRule: ExecutionRule.NON_BLOCKING,
-          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
-        },
-      ])
-      expect(output).toEqual(fakeTrigger)
-    })
-
-    test('triggerTests throws', async () => {
-      jest.spyOn(api, 'triggerTests').mockImplementation(() => {
-        throw getAxiosError(502, {message: 'Server Error'})
-      })
-
-      await expect(
-        utils.runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-      ).rejects.toThrow(/Failed to trigger tests:/)
-    })
-  })
-
-  describe('getTestsToTrigger', () => {
-    const fakeTests: {[id: string]: any} = {
-      '123-456-789': {
-        config: {request: {url: 'http://example.org/'}},
-        name: 'Fake Test',
-        public_id: '123-456-789',
-        suite: 'Suite 1',
-      },
-      'mob-ile-tes': {
-        config: {},
-        name: 'Fake Mobile Test',
-        options: {
-          mobileApplication: {
-            applicationId: 'appId',
-            referenceId: 'versionId',
-            referenceType: 'version',
-          },
-        },
-        public_id: 'mob-ile-tes',
-        suite: 'Suite 3',
-        type: 'mobile',
-      },
-      'ski-ppe-d01': {
-        config: {request: {url: 'http://example.org/'}},
-        name: 'Skipped Fake Test',
-        options: {ci: {executionRule: 'skipped'}},
-        public_id: 'ski-ppe-d01',
-        suite: 'Suite 3',
-      },
-    }
-
-    beforeEach(() => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        const publicId = e.url.slice(18)
-        if (fakeTests[publicId]) {
-          return {data: fakeTests[publicId]}
-        }
-
-        throw getAxiosError(404, {errors: ['Not found']})
-      }) as any)
-    })
-
-    test('only existing tests are returned', async () => {
-      const triggerConfigs = [
-        {suite: 'Suite 1', config: {}, id: '123-456-789'},
-        {suite: 'Suite 2', config: {}, id: '987-654-321'},
-        {suite: 'Suite 3', config: {}, id: 'ski-ppe-d01'},
-      ]
-      const {tests, overriddenTestsToTrigger, initialSummary} = await utils.getTestsToTrigger(
-        api,
-        triggerConfigs,
-        mockReporter
-      )
-
-      expect(tests).toStrictEqual([fakeTests['123-456-789']])
-      expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789'}, {public_id: 'ski-ppe-d01'}])
-
-      const expectedSummary: utils.InitialSummary = {
-        criticalErrors: 0,
-        expected: 0,
-        failed: 0,
-        failedNonBlocking: 0,
-        passed: 0,
-        previouslyPassed: 0,
-        skipped: 1,
-        testsNotFound: new Set(['987-654-321']),
-        timedOut: 0,
-      }
-      expect(initialSummary).toEqual(expectedSummary)
-    })
-
-    test('no tests triggered throws an error', async () => {
-      await expect(utils.getTestsToTrigger(api, [], mockReporter)).rejects.toEqual(new CiError('NO_TESTS_TO_RUN'))
-    })
-
-    describe('too many tests to trigger', () => {
-      const fakeApi: APIHelper = {
-        ...api,
-        getTest: (id: string) => {
-          if (id === 'missing') {
-            throw new Error('Request error')
-          }
-
-          const test = {...getApiTest(id)}
-          if (id === 'skipped') {
-            test.options.ci = {executionRule: ExecutionRule.SKIPPED}
-          }
-
-          return Promise.resolve(test)
-        },
-      }
-
-      test('trim and warn if from search', async () => {
-        const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
-        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
-        expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
-        expect(mockReporter.initErrors).toMatchSnapshot()
-      })
-
-      test('fails outside of search', async () => {
-        const tooManyTests = Array(MAX_TESTS_TO_TRIGGER + 10).fill({id: 'stu-vwx-yza'})
-        await expect(utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, false)).rejects.toEqual(
-          new Error(`Cannot trigger more than ${MAX_TESTS_TO_TRIGGER} tests (received ${tooManyTests.length})`)
-        )
-      })
-
-      test('does not account for skipped/not found tests outside of search', async () => {
-        const tooManyTests = [
-          ...Array(MAX_TESTS_TO_TRIGGER).fill({id: 'stu-vwx-yza'}),
-          {id: 'skipped'},
-          {id: 'missing'},
-        ]
-        const tests = await utils.getTestsToTrigger(fakeApi, tooManyTests, mockReporter, true)
-        expect(tests.tests.length).toBe(MAX_TESTS_TO_TRIGGER)
-      })
-    })
-
-    test('call uploadApplicationAndOverrideConfig on mobile test', async () => {
-      const spy = jest.spyOn(mobile, 'uploadMobileApplicationsAndUpdateOverrideConfigs').mockImplementation()
-      const triggerConfigs = [
-        {suite: 'Suite 1', config: {}, id: '123-456-789'},
-        {suite: 'Suite 3', config: {}, id: 'mob-ile-tes'},
-      ]
-
-      await utils.getTestsToTrigger(api, triggerConfigs, mockReporter)
-      expect(spy).toHaveBeenCalledTimes(1)
-    })
-  })
-
-  describe('getTestAndOverrideConfig', () => {
-    test('Forbidden error when getting a test', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        throw getAxiosError(403, {message: 'Forbidden'})
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-
-      await expect(() =>
-        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())
-      ).rejects.toThrow('Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n')
-    })
-
-    test('Passes when public ID is valid', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {data: {subtype: 'http', public_id: '123-456-789'}}
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
-        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
-      )
-    })
-
-    test('Fails when public ID is NOT valid', async () => {
-      const expectedError = new CiError('INVALID_CONFIG', `No valid public ID found in: \`a123-456-789\``)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: 'a123-456-789'}
-      await expect(utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
-        expectedError
-      )
-    })
-
-    test('Passes when the tunnel is enabled for HTTP test', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {data: {subtype: 'http', public_id: '123-456-789'}}
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
-        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
-      )
-    })
-
-    test('Passes when the tunnel is enabled for Browser test', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {data: {type: 'browser', public_id: '123-456-789'}}
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
-        expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', type: 'browser'})})
-      )
-    })
-
-    test('Passes when the tunnel is enabled for Multi step test with HTTP steps only', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {
-          data: {
-            type: 'api',
-            subtype: 'multi',
-            config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
-            public_id: '123-456-789',
-          },
-        }
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      expect(await utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)).toEqual(
-        expect.objectContaining({
-          test: expect.objectContaining({
-            public_id: '123-456-789',
-            type: 'api',
-            subtype: 'multi',
-            config: {steps: [{subtype: 'http'}, {subtype: 'http'}]},
-          }),
-        })
-      )
-    })
-
-    test('Fails when the tunnel is enabled for an unsupported test type', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {data: {subtype: 'grpc', type: 'api', public_id: '123-456-789'}}
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      await expect(() =>
-        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)
-      ).rejects.toThrow(
-        'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: grpc).'
-      )
-    })
-
-    test('Fails when the tunnel is enabled for unsupported steps in a Multi step test', async () => {
-      const axiosMock = jest.spyOn(axios, 'create')
-      axiosMock.mockImplementation((() => (e: any) => {
-        return {
-          data: {
-            type: 'api',
-            subtype: 'multi',
-            config: {steps: [{subtype: 'dns'}, {subtype: 'ssl'}, {subtype: 'http'}]},
-            public_id: '123-456-789',
-          },
-        }
-      }) as any)
-
-      const triggerConfig = {suite: 'Suite 1', config: {}, id: '123-456-789'}
-      await expect(() =>
-        utils.getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary(), true)
-      ).rejects.toThrow(
-        'The tunnel is only supported with HTTP API tests and Browser tests (public ID: 123-456-789, type: api, sub-type: multi, step sub-types: [dns, ssl]).'
-      )
-    })
-  })
-
   describe('normalizePublicId', () => {
     test('should normalize public ID', () => {
       expect(utils.normalizePublicId('http://localhost/synthetics/tests/details/123-456-789')).toBe('123-456-789')
@@ -571,10 +187,10 @@ describe('utils', () => {
     })
   })
 
-  describe('getOverriddenConfig', () => {
+  describe('makeTestPayload', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
-      expect(utils.getOverriddenConfig({public_id: publicId} as Test, publicId, mockReporter)).toEqual({
+      expect(utils.makeTestPayload({public_id: publicId} as Test, {id: publicId}, publicId)).toEqual({
         public_id: publicId,
       })
     })
@@ -596,13 +212,12 @@ describe('utils', () => {
           fakeTest.options.ci = {executionRule: testExecutionRule}
         }
 
-        const configOverride = configExecutionRule ? {executionRule: configExecutionRule} : undefined
+        const testOverrides = configExecutionRule ? {executionRule: configExecutionRule} : undefined
 
-        const overriddenConfig = utils.getOverriddenConfig(
+        const overriddenConfig = utils.makeTestPayload(
           fakeTest,
-          publicId,
-          mockReporter,
-          configOverride
+          {id: publicId, testOverrides},
+          publicId
         ) as RemoteTestPayload
 
         expect(overriddenConfig.public_id).toBe(publicId)
@@ -642,15 +257,14 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride = {
+      const testOverrides = {
         startUrl: 'https://{{FAKE_VAR}}/newPath?oldPath={{CUSTOMVAR}}',
       }
       const expectedUrl = 'https://{{FAKE_VAR}}/newPath?oldPath=/newPath'
-      const overriddenConfig = utils.getOverriddenConfig(
+      const overriddenConfig = utils.makeTestPayload(
         fakeTest,
-        publicId,
-        mockReporter,
-        configOverride
+        {id: publicId, testOverrides},
+        publicId
       ) as RemoteTestPayload
 
       expect(overriddenConfig.public_id).toBe(publicId)
@@ -665,7 +279,7 @@ describe('utils', () => {
         public_id: publicId,
         type: 'browser',
       } as Test
-      const configOverride: UserConfigOverride = {
+      const testOverrides: UserConfigOverride = {
         allowInsecureCertificates: true,
         basicAuth: {username: 'user', password: 'password'},
         body: 'body',
@@ -678,7 +292,6 @@ describe('utils', () => {
         followRedirects: true,
         headers: {'header-name': 'value'},
         locations: ['location'],
-        pollingTimeout: 60 * 1000,
         retry: {count: 5, interval: 30},
         startUrl: 'http://127.0.0.1:60/newPath',
         startUrlSubstitutionRegex: '.*',
@@ -687,8 +300,8 @@ describe('utils', () => {
         variables: {VAR_1: 'value'},
       }
 
-      expect(utils.getOverriddenConfig(fakeTest, publicId, mockReporter, configOverride)).toEqual({
-        ...configOverride,
+      expect(utils.makeTestPayload(fakeTest, {id: publicId, testOverrides}, publicId)).toEqual({
+        ...testOverrides,
         public_id: publicId,
       })
     })
@@ -703,72 +316,6 @@ describe('utils', () => {
       expect(utils.getTestOverridesCount({headers: {}})).toBe(1)
 
       expect(utils.getTestOverridesCount({deviceIds: ['a']})).toBe(1)
-      expect(utils.getTestOverridesCount({pollingTimeout: 123})).toBe(1)
-
-      // Should ignore the default value for the pollingTimeout
-      expect(utils.getTestOverridesCount({pollingTimeout: DEFAULT_POLLING_TIMEOUT})).toBe(0)
-    })
-  })
-
-  describe('hasResultPassed (deprecated)', () => {
-    test('complete result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        passed: true,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(true)
-      result.passed = false
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with error', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        failure: {
-          code: 'ERRABORTED',
-          message: 'Connection aborted',
-        },
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(false)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with unhealthy result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        failure: {
-          code: 'ERRABORTED',
-          message: 'Connection aborted',
-        },
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-        unhealthy: true,
-      }
-      expect(utils.hasResultPassed(result, false, false, true)).toBe(true)
-      expect(utils.hasResultPassed(result, false, true, true)).toBe(false)
-    })
-
-    test('result with timeout result', () => {
-      const result: ServerResult = {
-        device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-        duration: 0,
-        passed: false,
-        startUrl: '',
-        stepDetails: [],
-      }
-      expect(utils.hasResultPassed(result, true, true, true)).toBe(false)
-      expect(utils.hasResultPassed(result, true, true, false)).toBe(true)
     })
   })
 
@@ -827,1096 +374,6 @@ describe('utils', () => {
         expect(utils.getResultOutcome(result)).toEqual(expectedOutcome)
       }
     )
-  })
-
-  describe('waitForResults', () => {
-    beforeEach(() => {
-      jest.useFakeTimers({now: 123})
-      jest.spyOn(utils, 'wait').mockImplementation(async () => jest.advanceTimersByTime(5000))
-    })
-
-    afterEach(() => {
-      jest.useRealTimers()
-      jest.restoreAllMocks()
-    })
-
-    const batch: Batch = getBatch()
-    const apiTest = getApiTest('pid')
-    const result: BaseResult & {result: ServerResult} = {
-      duration: 1000,
-      executionRule: ExecutionRule.BLOCKING,
-      initialResultId: undefined,
-      isNonFinal: false,
-      location: mockLocation.display_name,
-      passed: true,
-      result: getBrowserServerResult({passed: true}),
-      resultId: 'rid',
-      retries: 0,
-      maxRetries: 0,
-      selectiveRerun: undefined,
-      test: apiTest,
-      timedOut: false,
-      timestamp: 0,
-    }
-    const pollResult: PollResult & {result: ServerResult} = {
-      check: result.test,
-      result: result.result,
-      resultID: result.resultId,
-      timestamp: result.timestamp,
-    }
-    const trigger = {batch_id: 'bid', locations: [mockLocation]}
-
-    const mockApi = ({
-      getBatchImplementation,
-      pollResultsImplementation,
-    }: {
-      getBatchImplementation?(): Promise<Batch>
-      pollResultsImplementation?(): Promise<PollResult[]>
-    } = {}) => {
-      const getBatchMock = jest
-        .spyOn(api, 'getBatch')
-        .mockImplementation(getBatchImplementation || (async () => deepExtend({}, batch)))
-
-      const pollResultsMock = jest
-        .spyOn(api, 'pollResults')
-        .mockImplementation(pollResultsImplementation || (async () => [deepExtend({}, pollResult)]))
-
-      return {getBatchMock, pollResultsMock}
-    }
-
-    const waiter: {
-      promise: Promise<unknown>
-      start: () => void
-      resolve: (value?: unknown) => void
-    } = {
-      promise: Promise.resolve(),
-      resolve: () => {},
-      start() {
-        this.promise = new Promise((resolve) => (this.resolve = resolve))
-      },
-    }
-
-    test('should poll result ids', async () => {
-      mockApi()
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 120000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toEqual([result])
-    })
-
-    test('should show results as they arrive', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
-
-      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
-
-      // === STEP 1 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getInProgressResultInBatch()},
-            {...getInProgressResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [deepExtend({}, pollResult)],
-      })
-
-      const resultsPromise = utils.waitForResults(
-        api,
-        trigger,
-        tests,
-        {
-          batchTimeout: 120000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: false,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter
-      )
-
-      // Wait for the 2 tests (initial)
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
-
-      await waiter.promise
-
-      // No results received
-      expect(mockReporter.resultReceived).not.toHaveBeenCalled()
-      expect(mockReporter.resultEnd).not.toHaveBeenCalled()
-      // Still waiting for the 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
-        2,
-        [tests[0], tests[1]],
-        MOCK_BASE_URL,
-        trigger.batch_id,
-        0
-      )
-
-      // === STEP 2 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getInProgressResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult),
-          deepExtend({}, pollResult, {resultID: 'rid-2'}),
-          deepExtend({}, pollResult, {resultID: 'rid-3'}),
-        ],
-      })
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
-        ...batch.results[0],
-        status: 'passed',
-        result_id: 'rid-2',
-      })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
-      // Still waiting for 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
-        3,
-        [tests[0], tests[1]],
-        MOCK_BASE_URL,
-        trigger.batch_id,
-        0
-      )
-
-      // === STEP 3 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult),
-          deepExtend({}, pollResult, {resultID: 'rid-2'}),
-          deepExtend({}, pollResult, {resultID: 'rid-3'}),
-        ],
-      })
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
-        ...batch.results[0],
-        status: 'passed',
-      })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL, 'bid')
-      // Now waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
-
-      // === STEP 4 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {
-              ...getInProgressResultInBatch(), // stays in progress
-              duration: 1000,
-              retries: 0, // `retries` is set => first attempt failed, but will be fast retried
-              test_public_id: 'other-public-id',
-              timed_out: false,
-              result_id: 'rid-3',
-            },
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult),
-          deepExtend({}, pollResult, {resultID: 'rid-2'}),
-          deepExtend({}, pollResult, {resultID: 'rid-3'}),
-        ],
-      })
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(3, {
-        ...batch.results[0],
-        duration: 1000,
-        status: 'in_progress',
-        test_public_id: 'other-public-id',
-        result_id: 'rid-3',
-      })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
-        3,
-        {...result, isNonFinal: true, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
-        MOCK_BASE_URL,
-        'bid'
-      )
-      // Now waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
-
-      // === STEP 5 === (batch 'passed')
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'passed',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getPassedResultInBatch(), retries: 1, test_public_id: 'other-public-id', result_id: 'rid-3-final'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult),
-          deepExtend({}, pollResult, {resultID: 'rid-2'}),
-          deepExtend({}, pollResult, {resultID: 'rid-3-final'}),
-        ],
-      })
-
-      expect(await resultsPromise).toEqual([
-        result,
-        {...result, resultId: 'rid-2'},
-        {...result, resultId: 'rid-3-final', retries: 1},
-      ])
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(4, {
-        ...batch.results[0],
-        status: 'passed',
-        test_public_id: 'other-public-id',
-        result_id: 'rid-3-final',
-        retries: 1,
-      })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
-        4,
-        {...result, resultId: 'rid-3-final', retries: 1},
-        MOCK_BASE_URL,
-        'bid'
-      )
-      // Do not report when there are no tests to wait anymore
-      expect(mockReporter.testsWait).toHaveBeenCalledTimes(5)
-    })
-
-    test('skipped results are reported as received', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
-
-      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
-
-      // === STEP 1 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getSkippedResultInBatch()}, // skipped by selective rerun
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2'}],
-      })
-
-      const resultsPromise = utils.waitForResults(
-        api,
-        trigger,
-        tests,
-        {
-          batchTimeout: 120000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: false,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter
-      )
-
-      // Wait for the 2 tests (initial)
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
-
-      await waiter.promise
-
-      // The skipped result is received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
-        ...getSkippedResultInBatch(),
-      })
-      // And marked as passed because it's selective rerun
-      const skippedResult: Result = {
-        executionRule: ExecutionRule.SKIPPED,
-        passed: true,
-        resultId: '123',
-        selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: '123'},
-        test: result.test,
-        timedOut: false,
-      }
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, skippedResult, MOCK_BASE_URL, 'bid')
-      // Now waiting for the remaining test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 1)
-
-      // === STEP 2 === (batch 'passed')
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'passed',
-          results: [
-            // First test
-            {...getSkippedResultInBatch()},
-            // Second test
-            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => [deepExtend({}, pollResult, {resultID: 'rid-2'})],
-      })
-
-      expect(await resultsPromise).toEqual([{...skippedResult}, {...result, resultId: 'rid-2'}])
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
-        ...batch.results[0],
-        status: 'passed',
-        test_public_id: 'other-public-id',
-        result_id: 'rid-2',
-      })
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
-      expect(mockReporter.testsWait).toHaveBeenCalledTimes(2)
-    })
-
-    test('should wait for incomplete results', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
-
-      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
-
-      // === STEP 1 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getInProgressResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          {...pollResult, resultID: 'rid-2', result: getIncompleteServerResult()},
-        ],
-      })
-
-      const resultsPromise = utils.waitForResults(
-        api,
-        trigger,
-        tests,
-        {
-          batchTimeout: 120000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: false,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter
-      )
-
-      // Wait for the 2 tests (initial)
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
-        ...batch.results[0],
-        status: 'passed',
-        result_id: 'rid-2',
-      })
-      // But the data from `/poll_results` data is not available yet, so we should wait more before reporting
-      expect(mockReporter.resultEnd).not.toHaveBeenCalled()
-      // Still waiting for 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
-        2,
-        [tests[0], tests[1]],
-        MOCK_BASE_URL,
-        trigger.batch_id,
-        0
-      )
-
-      // === STEP 2 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          {...pollResult, result: getIncompleteServerResult()}, // not available yet
-          deepExtend({}, pollResult, {resultID: 'rid-2'}), // just became available
-        ],
-      })
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
-        ...batch.results[0],
-        status: 'passed',
-      })
-      // Result 2 just became available, so it should be reported
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
-      // Now waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
-
-      // === STEP 3 === (batch 'failed')
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'failed', // nothing to do with the fact that the result is incomplete
-          results: [
-            // First test
-            {...getFailedResultInBatch()},
-            {...getPassedResultInBatch(), result_id: 'rid-2'},
-            // Second test
-            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-3'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          {...pollResult, result: getIncompleteServerResult()}, // still not available
-          deepExtend({}, pollResult, {resultID: 'rid-2'}),
-          deepExtend({}, pollResult, {resultID: 'rid-3'}),
-        ],
-      })
-
-      expect(await resultsPromise).toEqual([
-        {...result, resultId: 'rid', passed: false, result: undefined},
-        {...result, resultId: 'rid-2'},
-        {...result, resultId: 'rid-3'},
-      ])
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(3, {
-        ...batch.results[0],
-        status: 'passed',
-        test_public_id: 'other-public-id',
-        result_id: 'rid-3',
-      })
-      // Result 3 was available instantly
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-3'}, MOCK_BASE_URL, 'bid')
-
-      // Result 1 never became available (but the batch says it did not pass)
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
-        3,
-        {...result, passed: false, resultId: 'rid', result: undefined},
-        MOCK_BASE_URL,
-        'bid'
-      )
-      expect(mockReporter.error).toHaveBeenCalledWith(
-        'The information for result rid of test pid was incomplete at the end of the batch.\n\n'
-      )
-
-      // Do not report when there are no tests to wait anymore
-      expect(mockReporter.testsWait).toHaveBeenCalledTimes(3)
-    })
-
-    test('should wait for incomplete results caused by 404', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation(async () => waiter.resolve())
-
-      const tests = [result.test, {...result.test, public_id: 'other-public-id'}]
-
-      // === STEP 1 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getInProgressResultInBatch()},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => [],
-      })
-
-      const resultsPromise = utils.waitForResults(
-        api,
-        trigger,
-        tests,
-        {
-          batchTimeout: 120000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: false,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter
-      )
-
-      // Wait for the 2 tests (initial)
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
-
-      await waiter.promise
-
-      // Still waiting for 2 tests
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(
-        2,
-        [tests[0], tests[1]],
-        MOCK_BASE_URL,
-        trigger.batch_id,
-        0
-      )
-
-      // === STEP 2 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => {
-          throw getAxiosError(404, {message: 'Test results not found'})
-        },
-      })
-
-      await waiter.promise
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(1, {
-        ...batch.results[0],
-        status: 'passed',
-      })
-      // But not available
-      expect(mockReporter.resultEnd).not.toHaveBeenCalled()
-      // Now waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
-
-      // === STEP 3 === (batch 'in_progress')
-      waiter.start()
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            // Second test
-            {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult), // became available
-        ],
-      })
-
-      await waiter.promise
-
-      // Result 1 just became available, so it should be reported
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
-      // Still waiting for 1 test
-      expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
-
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'passed',
-          results: [
-            // First test
-            {...getPassedResultInBatch()},
-            // Second test
-            {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
-          ],
-        }),
-        pollResultsImplementation: async () => {
-          throw getAxiosError(404, {message: 'Test results not found'})
-        },
-      })
-
-      expect(await resultsPromise).toEqual([
-        result,
-        {...result, resultId: 'rid-2', result: undefined, timestamp: 123, test: tests[1]},
-      ])
-
-      // One result received
-      expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
-        ...batch.results[0],
-        status: 'passed',
-        test_public_id: 'other-public-id',
-        result_id: 'rid-2',
-      })
-      // Last result is reported without a poll result
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
-        2,
-        {...result, resultId: 'rid-2', result: undefined, test: tests[1], timestamp: 123},
-        MOCK_BASE_URL,
-        'bid'
-      )
-      expect(mockReporter.error).toHaveBeenCalledWith(
-        'The information for result rid-2 of test other-public-id was incomplete at the end of the batch.\n\n'
-      )
-
-      // Do not report when there are no tests to wait anymore
-      expect(mockReporter.testsWait).toHaveBeenCalledTimes(4)
-    })
-
-    test('object in each result should be different even if they share the same public ID (config overrides)', async () => {
-      mockApi({
-        getBatchImplementation: async () => ({
-          results: [getPassedResultInBatch(), {...getPassedResultInBatch(), result_id: '3'}],
-          status: 'passed',
-        }),
-        pollResultsImplementation: async () => [
-          deepExtend({}, pollResult),
-          // The test object from the second result has an overridden start URL
-          deepExtend({}, pollResult, {check: {config: {request: {url: 'https://reddit.com/'}}}, resultID: '3'}),
-        ],
-      })
-
-      const results = await utils.waitForResults(
-        api,
-        trigger,
-        [result.test, result.test],
-        {
-          batchTimeout: 0,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: false,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter
-      )
-
-      expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
-    })
-
-    test('results should be timed out if the backend says so', async () => {
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'failed',
-          results: [{...getPassedResultInBatch()}, {...getFailedResultInBatch(), result_id: '3', timed_out: true}],
-        }),
-        pollResultsImplementation: async () => [
-          {...pollResult, result: {...pollResult.result}},
-          {...pollResult, result: {...pollResult.result}, resultID: '3'},
-        ],
-      })
-
-      const expectedTimeoutResult = {
-        ...result,
-        result: {
-          ...result.result,
-          failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-          passed: false,
-        },
-        resultId: '3',
-        timedOut: true,
-      }
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test, result.test],
-          {
-            batchTimeout: 3000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toEqual([result, expectedTimeoutResult])
-
-      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
-
-      // `resultEnd` should return the same data as `waitForResults`
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedTimeoutResult, MOCK_BASE_URL, 'bid')
-
-      // Failed directly.
-      expect(utils.wait).toHaveBeenCalledTimes(0)
-    })
-
-    test('results should be timed out with a different error if the backend did not say so', async () => {
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'in_progress',
-          results: [
-            {...getPassedResultInBatch()},
-            {...getInProgressResultInBatch(), result_id: '3'}, // `timed_out: null`
-          ],
-        }),
-        pollResultsImplementation: async () => [
-          {...pollResult, result: {...pollResult.result}},
-          {...pollResult, result: {...pollResult.result}, resultID: '3'},
-        ],
-      })
-
-      const expectedDeadlineResult: Result = {
-        ...result,
-        duration: 0,
-        result: {
-          ...result.result,
-          failure: {
-            code: 'BATCH_TIMEOUT_RUNAWAY',
-            message: "The batch didn't timeout after the expected timeout period.",
-          },
-          passed: false,
-        },
-        resultId: '3',
-        timedOut: true,
-      }
-
-      await expect(
-        utils.waitForResults(
-          api,
-          trigger,
-          [result.test, result.test],
-          {
-            batchTimeout: 3000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).rejects.toThrow(new BatchTimeoutRunawayError())
-
-      // Residual results are never 'received': we force-end them.
-      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)
-
-      // `resultEnd` should return the same data as `waitForResults`
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
-      expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
-
-      // Initial wait + 3 polling cycles.
-      expect(utils.wait).toHaveBeenCalledTimes(4)
-    })
-
-    test('results failure should be ignored if timed out', async () => {
-      // The original failure of a result received between timing out in batch poll
-      // and retrieving it should be ignored in favor of timeout.
-      mockApi({
-        getBatchImplementation: async () => ({
-          status: 'failed',
-          results: [{...getFailedResultInBatch(), timed_out: true}],
-        }),
-        pollResultsImplementation: async () => [
-          {
-            ...pollResult,
-            passed: false,
-            result: {
-              ...pollResult.result,
-              failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
-              passed: false,
-            },
-          },
-        ],
-      })
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 0,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toStrictEqual([
-        {
-          ...result,
-          result: {
-            ...result.result,
-            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-            passed: false,
-          },
-          timedOut: true,
-        },
-      ])
-    })
-
-    test('results should be timed out if batch result is timed out', async () => {
-      const batchWithTimeoutResult: Batch = {
-        ...batch,
-        results: [{...getFailedResultInBatch(), timed_out: true}],
-      }
-
-      mockApi({getBatchImplementation: async () => batchWithTimeoutResult})
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 120000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toEqual([
-        {
-          ...result,
-          result: {
-            ...result.result,
-            failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-            passed: false,
-          },
-          timedOut: true,
-        },
-      ])
-    })
-
-    test('wait between batch polling', async () => {
-      const {getBatchMock} = mockApi({
-        getBatchImplementation: async () => {
-          return getBatchMock.mock.calls.length === 3 ? batch : {...batch, status: 'in_progress'}
-        },
-      })
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 120000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toEqual([result])
-
-      expect(getBatchMock).toHaveBeenCalledTimes(3)
-      expect(utils.wait).toHaveBeenCalledTimes(2)
-    })
-
-    test('correct number of passed and timed out results', async () => {
-      const pollTimeoutResult: PollResult = {...deepExtend({}, pollResult), resultID: 'another-id'}
-      const batchWithTimeoutResult: Batch = {
-        ...batch,
-        results: [
-          {...getPassedResultInBatch()},
-          {...getFailedResultInBatch(), timed_out: true, result_id: pollTimeoutResult.resultID},
-        ],
-      }
-
-      mockApi({
-        getBatchImplementation: async () => batchWithTimeoutResult,
-        pollResultsImplementation: async () => [pollResult, pollTimeoutResult],
-      })
-
-      expect(
-        await utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 2000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            failOnCriticalErrors: false,
-            failOnTimeout: false,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).toEqual([
-        {
-          ...result,
-          passed: true,
-          timedOut: false,
-        },
-        {
-          ...result,
-          passed: true, // because `failOnTimeout` is false
-          timedOut: true,
-          resultId: pollTimeoutResult.resultID,
-          result: {
-            ...result.result,
-            failure: {
-              code: 'TIMEOUT',
-              message: 'The batch timed out before receiving the result.',
-            },
-            passed: false,
-          },
-        },
-      ])
-
-      expect(mockReporter.resultReceived).toHaveBeenCalledTimes(2)
-      expect(mockReporter.resultEnd).toHaveBeenCalledTimes(2)
-    })
-
-    test('tunnel failure', async () => {
-      mockApi()
-
-      const mockTunnel = {
-        keepAlive: async () => {
-          throw new Error('keepAlive failed')
-        },
-      } as any
-
-      await utils.waitForResults(
-        api,
-        trigger,
-        [result.test],
-        {
-          batchTimeout: 2000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: true,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter,
-        mockTunnel
-      )
-
-      expect(mockReporter.error).toHaveBeenCalledWith(
-        'The tunnel has stopped working, this may have affected the results.'
-      )
-    })
-
-    test('location when tunnel', async () => {
-      mockApi()
-
-      const mockTunnel = {keepAlive: async () => true} as any
-
-      let results = await utils.waitForResults(
-        api,
-        trigger,
-        [result.test],
-        {
-          batchTimeout: 2000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: true,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter,
-        mockTunnel
-      )
-      expect((results[0] as BaseResult).location).toBe('Tunneled')
-
-      const newTest = {...result.test}
-      newTest.type = 'api'
-      newTest.subtype = 'http'
-      results = await utils.waitForResults(
-        api,
-        trigger,
-        [newTest],
-        {
-          batchTimeout: 2000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: true,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter,
-        mockTunnel
-      )
-      expect((results[0] as BaseResult).location).toBe('Tunneled')
-
-      newTest.type = 'api'
-      newTest.subtype = 'ssl'
-      results = await utils.waitForResults(
-        api,
-        trigger,
-        [newTest],
-        {
-          batchTimeout: 2000,
-          datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-          failOnCriticalErrors: true,
-          subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-        },
-        mockReporter,
-        mockTunnel
-      )
-      expect((results[0] as BaseResult).location).toBe('Frankfurt (AWS)')
-    })
-
-    test('pollResults throws', async () => {
-      const {pollResultsMock} = mockApi({
-        pollResultsImplementation: () => {
-          throw getAxiosError(502, {message: 'Poll results server error'})
-        },
-      })
-
-      await expect(
-        utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 2000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).rejects.toThrow(
-        'Failed to poll results: could not query https://app.datadoghq.com/example\nPoll results server error\n'
-      )
-
-      expect(pollResultsMock).toHaveBeenCalledWith([result.resultId])
-    })
-
-    test('getBatch throws', async () => {
-      const {getBatchMock} = mockApi({
-        getBatchImplementation: () => {
-          throw getAxiosError(502, {message: 'Get batch server error'})
-        },
-      })
-
-      await expect(
-        utils.waitForResults(
-          api,
-          trigger,
-          [result.test],
-          {
-            batchTimeout: 2000,
-            datadogSite: DEFAULT_COMMAND_CONFIG.datadogSite,
-            subdomain: DEFAULT_COMMAND_CONFIG.subdomain,
-          },
-          mockReporter
-        )
-      ).rejects.toThrow(
-        'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
-      )
-
-      expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
-    })
   })
 
   test('getStrictestExecutionRule', () => {
@@ -1980,18 +437,6 @@ describe('utils', () => {
     })
   })
 
-  test('parseVariablesFromCli', () => {
-    const mockLogFunction = (message: string) => undefined
-    expect(utils.parseVariablesFromCli(['TEST=42'], mockLogFunction)).toEqual({TEST: '42'})
-    expect(utils.parseVariablesFromCli(['TEST=42 with some spaces'], mockLogFunction)).toEqual({
-      TEST: '42 with some spaces',
-    })
-    expect(utils.parseVariablesFromCli(['TEST=42=43=44'], mockLogFunction)).toEqual({TEST: '42=43=44'})
-    expect(utils.parseVariablesFromCli(['TEST='], mockLogFunction)).toEqual({TEST: ''})
-    expect(utils.parseVariablesFromCli([''], mockLogFunction)).toBeUndefined()
-    expect(utils.parseVariablesFromCli(undefined, mockLogFunction)).toBeUndefined()
-  })
-
   describe('sortResultsByOutcome', () => {
     const results: Result[] = getResults([
       {executionRule: ExecutionRule.NON_BLOCKING, passed: false},
@@ -2031,7 +476,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: getResults([{timedOut: true}]),
+        results: getResults([{timedOut: true, passed: true}]),
         summary: {...emptySummary},
       },
       {
@@ -2043,7 +488,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: true,
-        results: getResults([{timedOut: true}]),
+        results: getResults([{timedOut: true, passed: false}]),
         summary: {...emptySummary},
       },
       {
@@ -2055,7 +500,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: false,
         failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
+        results: getResults([{unhealthy: true, passed: true}]),
         summary: {...emptySummary},
       },
       {
@@ -2067,7 +512,7 @@ describe('utils', () => {
         },
         failOnCriticalErrors: true,
         failOnTimeout: false,
-        results: getResults([{unhealthy: true}]),
+        results: getResults([{unhealthy: true, passed: false}]),
         summary: {...emptySummary},
       },
       {
@@ -2160,16 +605,11 @@ describe('utils', () => {
     ]
 
     test.each(cases)('$description', async (testCase) => {
-      testCase.results.forEach((result) => {
-        result.passed = utils.hasResultPassed(
-          (result as BaseResult).result,
-          result.timedOut,
-          testCase.failOnCriticalErrors,
-          testCase.failOnTimeout
-        )
-      })
-
-      jest.spyOn(api, 'getSyntheticsOrgSettings').mockResolvedValue({onDemandConcurrencyCap: 1})
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(
+        mockApi({
+          getSyntheticsOrgSettings: jest.fn().mockResolvedValue({onDemandConcurrencyCap: 1}),
+        })
+      )
 
       const config = {
         ...DEFAULT_COMMAND_CONFIG,
@@ -2303,12 +743,15 @@ describe('utils', () => {
     })
 
     test('failing to get org settings is not important enough to throw', async () => {
-      jest.spyOn(api, 'getSyntheticsOrgSettings').mockImplementation(() => {
-        throw getAxiosError(502, {message: 'Server Error'})
-      })
+      jest.spyOn(api, 'getApiHelper').mockReturnValue(
+        mockApi({
+          getSyntheticsOrgSettings: jest.fn().mockImplementation(() => {
+            throw getAxiosError(502, {message: 'Server Error'})
+          }),
+        })
+      )
 
-      const config = (apiConfiguration as unknown) as SyntheticsCIConfig
-      expect(await utils.getOrgSettings(mockReporter, config)).toBeUndefined()
+      expect(await utils.getOrgSettings(mockReporter, {} as SyntheticsCIConfig)).toBeUndefined()
     })
   })
 

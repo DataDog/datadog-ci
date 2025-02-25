@@ -17,7 +17,7 @@ import {
   MobileTestWithOverride,
 } from './interfaces'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
-import {wait} from './utils/public'
+import {wait} from './utils/internal'
 
 const UPLOAD_FILE_MAX_PART_SIZE = 10 * 1024 * 1024 // MiB
 export const APP_UPLOAD_POLLING_INTERVAL = 1000 // 1 second

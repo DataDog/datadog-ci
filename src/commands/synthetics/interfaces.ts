@@ -9,7 +9,7 @@ export interface MainReporter {
   log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void
   testWait(test: Test): void
   testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
   resultReceived(result: ResultInBatch): void
@@ -290,6 +290,7 @@ interface Options {
 // TODO SYNTH-17944 Remove unsupported fields
 
 export interface OptionsWithUnsupportedFields extends Options {
+  bindings?: null | unknown[]
   min_failure_duration?: number
   min_location_failed?: any
   monitor_name?: string
@@ -401,9 +402,6 @@ export interface BaseConfigOverride {
   followRedirects?: boolean
   headers?: {[key: string]: string}
   locations?: string[]
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   resourceUrlSubstitutionRegexes?: string[]
   retry?: RetryConfig
   startUrl?: string
@@ -473,9 +471,6 @@ export interface BasicAuthCredentials {
 }
 
 interface BaseTriggerConfig {
-  // TODO SYNTH-12989: Clean up deprecated `config` in favor of `testOverrides`
-  /** @deprecated This property is deprecated, please use `testOverrides` instead. */
-  config?: UserConfigOverride
   testOverrides?: UserConfigOverride
   suite?: string
 }
@@ -552,26 +547,15 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   failOnMissingTests: boolean
   failOnTimeout: boolean
   files: string[]
-  // TODO SYNTH-12989: Clean up deprecated `global` in favor of `defaultTestOverrides`
-  /** @deprecated This property is deprecated, please use `defaultTestOverrides` instead. */
-  global?: UserConfigOverride
   jUnitReport?: string
-  // TODO SYNTH-12989: Clean up `locations` that should only be part of test overrides
-  /** @deprecated This property should only be used inside of `defaultTestOverrides` or `testOverrides`. */
-  locations?: string[]
   mobileApplicationVersionFilePath?: string
-  // TODO SYNTH-12989: Clean up deprecated `pollingTimeout` in favor of `batchTimeout`
-  /** @deprecated This property is deprecated, please use `batchTimeout` in the global configuration file or `--batchTimeout` instead. */
-  pollingTimeout?: number
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
+  /** Used to create URLs to the Datadog UI. */
   subdomain: string
   testSearchQuery?: string
   tunnel: boolean
-  // TODO SYNTH-12989: Clean up deprecated `variableStrings` in favor of `variables` in `defaultTestOverrides`.
-  /** @deprecated This property is deprecated, please use `variables` inside of `defaultTestOverrides`. */
-  variableStrings: string[]
 }
 
 export type WrapperConfig = Partial<RunTestsCommandConfig>
@@ -662,4 +646,11 @@ export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
   files: string[]
   publicIds: string[]
   testSearchQuery?: string
+}
+
+export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  files: string[]
+  publicIds: string[]
+  subdomain: string
 }

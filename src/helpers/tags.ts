@@ -23,13 +23,9 @@ export const GIT_REPOSITORY_URL = 'git.repository_url'
 export const CI_JOB_URL = 'ci.job.url'
 export const CI_JOB_NAME = 'ci.job.name'
 export const CI_STAGE_NAME = 'ci.stage.name'
-export const CI_LEVEL = '_dd.ci.level'
-// @deprecated TODO: remove this once backend is updated
-export const CI_BUILD_LEVEL = '_dd.ci.build_level'
-
-export const CI_ENV_VARS = '_dd.ci.env_vars'
 export const CI_NODE_NAME = 'ci.node.name'
 export const CI_NODE_LABELS = 'ci.node.labels'
+export const CI_ENV_VARS = '_dd.ci.env_vars'
 
 // Git
 export const GIT_BRANCH = 'git.branch'
@@ -48,7 +44,6 @@ export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sh
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
 
 // General
-export const SPAN_TYPE = 'span.type'
 export const SERVICE = 'service'
 
 const parseNumericTag = (numericTag: string | undefined): number | undefined => {

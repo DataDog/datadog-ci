@@ -4,6 +4,7 @@
 # Commands (grouped by product)
 
 ## CI Visibility (label: ci-visibility)
+src/commands/coverage      @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/deployment    @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/dora          @DataDog/datadog-ci @DataDog/ci-app-libraries
 src/commands/gate          @DataDog/datadog-ci @DataDog/ci-app-libraries

@@ -11,7 +11,7 @@ import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
 import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
-import * as utils from '../utils/public'
+import * as internalUtils from '../utils/internal'
 
 import {
   ciConfig,
@@ -205,7 +205,7 @@ describe('dd-api', () => {
     )
 
     test('should retry when socket hangs up', async () => {
-      jest.spyOn(utils, 'wait').mockImplementation()
+      jest.spyOn(internalUtils, 'wait').mockImplementation()
 
       const requestSpy = jest.fn()
 

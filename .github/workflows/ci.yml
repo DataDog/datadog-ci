@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [14, 16, 18, 20]
+        version: [18, 20, 22]
 
     name: Build and test
     runs-on: ubuntu-latest
@@ -62,7 +62,7 @@ jobs:
   e2e-test:
     strategy:
       matrix:
-        version: [14, 16, 18, 20]
+        version: [18, 20, 22]
 
     name: End-to-end test the package
     runs-on: ubuntu-latest
@@ -105,11 +105,11 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
-      - name: Run junit upload test (metrics), passing glob as literal string
-        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --metrics testmeasure2:60 --report-metrics sessionmeasure2:80
+      - name: Run junit upload test (measures), passing glob as literal string
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
-      - name: Check that test data can be queried (metrics)
+      - name: Check that test data can be queried (measures)
         run: |
           yarn add @datadog/datadog-api-client
           yarn check-junit-upload
@@ -278,7 +278,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@v4
         with:
-          node-version: 14.18.3
+          node-version: 20.11.0
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable

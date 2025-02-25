@@ -3,6 +3,7 @@ import {writeFile} from 'fs/promises'
 import {getApiHelper} from './api'
 import {
   ImportTestsCommandConfig,
+  LocalTestDefinition,
   LocalTriggerConfig,
   MainReporter,
   ServerTest,
@@ -99,7 +100,7 @@ const overwriteTestConfig = (testConfigFromBackend: TestConfig, testConfigFromFi
   return testConfigFromFile
 }
 
-const removeUnsupportedLTDFields = (testConfig: ServerTest): ServerTest => {
+const removeUnsupportedLTDFields = (testConfig: ServerTest): LocalTestDefinition => {
   for (const field of BASE_FIELDS_TRIM) {
     delete testConfig[field]
   }

@@ -30,7 +30,7 @@ export const parseMeasures = (measures: string[]) =>
   }, {})
 
 export class MeasureCommand extends Command {
-  public static paths = [['measure'], ['metric']]
+  public static paths = [['measure']]
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
@@ -50,7 +50,6 @@ export class MeasureCommand extends Command {
   })
 
   private level = Option.String('--level')
-  private metrics = Option.Array('--metrics', {hidden: true})
   private measures = Option.Array('--measures')
   private measuresFile = Option.String('--measures-file')
   private noFail = Option.Boolean('--no-fail')
@@ -67,29 +66,17 @@ export class MeasureCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
-    if (this.path[0] === 'metric') {
-      this.context.stdout.write(
-        chalk.yellow(`[WARN] The "metric" command is deprecated. Please use the "measure" command instead.\n`)
-      )
-    }
-
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
 
       return 1
     }
 
-    const cliMeasures: string[] | undefined = this.measures || this.metrics
+    const cliMeasures: string[] | undefined = this.measures
     if (!cliMeasures && !this.measuresFile) {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} --measures or --measures-file is required\n`)
 
       return 1
-    }
-
-    if (this.metrics) {
-      this.context.stdout.write(
-        `${chalk.yellow.yellow(`[WARN] The "--metrics" flag is deprecated. Please use "--measures" flag instead.\n`)}`
-      )
     }
 
     const [measuresFromFile, valid] = parseMeasuresFile(this.context, this.measuresFile)

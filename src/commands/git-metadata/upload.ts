@@ -37,8 +37,6 @@ export class UploadCommand extends Command {
     details: `
       This command will upload the commit details to Datadog in order to create links to your repositories inside Datadog's UI.\n
       See README for details.
-
-      Option --git-sync is DEPRECATED and will be removed in a future version.
     `,
     examples: [['Upload the current commit details', 'datadog-ci report-commits upload']],
   })
@@ -46,7 +44,6 @@ export class UploadCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private dryRun = Option.Boolean('--dry-run', false)
   private verbose = Option.Boolean('--verbose', false)
-  private gitSync = Option.Boolean('--git-sync', false)
   private noGitSync = Option.Boolean('--no-gitsync', false)
   private directory = Option.String('--directory', '')
 
@@ -92,10 +89,6 @@ export class UploadCommand extends Command {
       )
 
       return 1
-    }
-
-    if (this.gitSync) {
-      this.logger.warn('Option --git-sync is deprecated as it is now the default behavior')
     }
 
     const metricsLogger = getMetricsLogger({

@@ -193,18 +193,6 @@ If you want to confirm that a proxy is being used, you can set the `DEBUG` envir
 DEBUG=proxy-agent yarn datadog-ci synthetics run-tests
 ```
 
-### Deprecated fields
-
-Datadog is streamlining and enhancing the datadog-ci synthetics commands. In this effort, certain fields have been marked as deprecated. While these fields remain backwards compatible for now, they will not be supported with the release of a new major version. We highly advise transitioning away from these deprecated fields.
-
-The following is a list of the changes:
-
-* The `global` field from the global configuration file is deprecated in favor of `defaultTestOverrides`.
-* The `config` field from the test configuration file is deprecated in favor of `testOverrides`.
-* The `pollingTimeout` option and `--pollingTimeout` CLI parameter, that were on the **Global Configuration** level, are deprecated in favor of `batchTimeout` and `--batchTimeout`, respectively.
-* The `pollingTimeout` option, on the **Test Configuration** level, is deprecated in favor of `batchTimeout` in the global configuration file, or the `--batchTimeout` CLI parameter.
-* The env variable `DATADOG_SYNTHETICS_LOCATIONS` has been deprecated in favor of `DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS`
-
 ## Run Tests Command
 
 You can decide to have the CLI auto-discover all your `**/*.synthetics.json` Synthetic tests (see [test files](#test-files)) or specify the tests you want to run using the `-p,--public-id` flag.
@@ -299,7 +287,7 @@ The duration (integer in milliseconds) after which `datadog-ci` stops waiting fo
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
 
 **Configuration options**
 
@@ -632,6 +620,21 @@ Override the application version for a Synthetic mobile application test.
 * ENV variable: Not Available
 * CLI param: `--mobileApplicationVersionFilePath=path/to/application.apk`
 
+#### `resourceUrlSubstitutionRegexes` (Array)
+
+An array of regex patterns to modify resource URLs in the test. This can be useful for dynamically changing resource URLs during test execution.
+
+Each regex pattern should be in the format:
+
+* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
+* **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
+
+**Configuration options**
+
+* Global/Test Config: `"resourceUrlSubstitutionRegexes": ["(https://www.)(.*)|$1staging-$2"]`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES='(https://www.)(.*)|$1staging-$2'`
+* CLI param: `--override resourceUrlSubstitutionRegexes='(https://www.)(.*)|$1staging-$2'`
+
 #### `retry` (Object)
 
 The retry policy for the test. The 2 possible attributes for this object are independent:
@@ -672,9 +675,9 @@ There are two possible formats:
 
 **Configuration options**
 
-* Global/Test Config: `"startUrlSubstitutionRegex": "s/(https://www.)(.*)/$1extra-$2/"`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX="s/(https://www.)(.*)/$1extra-$2/"`
-* CLI param: `--override startUrlSubstitutionRegex="s/(https://www.)(.*)/$1extra-$2/"`
+* Global/Test Config: `"startUrlSubstitutionRegex": "(https://www.)(.*)|$1extra-$2"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX='(https://www.)(.*)|$1extra-$2'`
+* CLI param: `--override startUrlSubstitutionRegex='(https://www.)(.*)|$1extra-$2'`
 
 #### `testTimeout` (Number)
 
@@ -820,7 +823,7 @@ The application key used to query the Datadog API.
 
 #### `configPath`
 
-The global JSON configuration is used when launching tests. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
 
 **Configuration options**
 
@@ -973,18 +976,18 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ### Available hooks
 
-| Hook name        | Parameters                                                                               | Description                                                     |
-| :--------------- | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
-| `log`            | `(log: string)`                                                                          | Called for logging.                                             |
-| `error`          | `(error: string)`                                                                        | Called whenever an error occurs.                                |
-| `initErrors`     | `(errors: string[])`                                                                     | Called whenever an error occurs during the tests parsing phase. |
-| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride)` | Called when a test is triggered.                                |
-| `testWait`       | `(test: Test)`                                                                           | Called when a test is waiting to receive its results.           |
-| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`               | Called when all tests are waiting to receive their results.     |
-| `resultReceived` | `(result: ResultInBatch)`                                                                | Called when a result is received.                               |
-| `resultEnd`      | `(result: Result, baseUrl: string)`                                                      | Called for each result at the end of all results.               |
-| `reportStart`    | `(timings: {startTime: number})`                                                         | Called at the start of the report.                              |
-| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`               | Called at the end of the run.                                   |
+| Hook name        | Parameters                                                                                      | Description                                                     |
+| :--------------- | :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| `log`            | `(log: string)`                                                                                 | Called for logging.                                             |
+| `error`          | `(error: string)`                                                                               | Called whenever an error occurs.                                |
+| `initErrors`     | `(errors: string[])`                                                                            | Called whenever an error occurs during the tests parsing phase. |
+| `testTrigger`    | `(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride)` | Called when a test is triggered.                                |
+| `testWait`       | `(test: Test)`                                                                                  | Called when a test is waiting to receive its results.           |
+| `testsWait`      | `(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number)`                      | Called when all tests are waiting to receive their results.     |
+| `resultReceived` | `(result: ResultInBatch)`                                                                       | Called when a result is received.                               |
+| `resultEnd`      | `(result: Result, baseUrl: string)`                                                             | Called for each result at the end of all results.               |
+| `reportStart`    | `(timings: {startTime: number})`                                                                | Called at the start of the report.                              |
+| `runEnd`         | `(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings)`                      | Called at the end of the run.                                   |
 
 ## View test results
 

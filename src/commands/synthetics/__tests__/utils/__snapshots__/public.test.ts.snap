@@ -1,24 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`utils getTestsToTrigger too many tests to trigger trim and warn if from search 1`] = `
-[MockFunction] {
-  "calls": [
-    [
-      [
-        "[33mThe search query returned 1010 tests, only the first [1m1000[22m will be triggered.[39m
-[33m[39m",
-      ],
-    ],
-  ],
-  "results": [
-    {
-      "type": "return",
-      "value": undefined,
-    },
-  ],
-}
-`;
-
 exports[`utils reportCiError should report AUTHORIZATION_ERROR error 1`] = `
 [MockFunction] {
   "calls": [
