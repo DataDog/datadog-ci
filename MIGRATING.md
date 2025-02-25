@@ -80,5 +80,5 @@ In this major version, there are a few breaking changes in the exported `synthet
 - `getResultDuration()` is removed and has no replacement.
   - The duration is available in `Result.duration` for each result in a batch.
 - `getOverriddenConfig()` is removed.
-  - Use `makeTestPayload()`.
+  - Use `makeTestPayload()` instead.
 - Removed 4 functions that were exported but that needed an instance of `APIHelper` as parameter, which had no exported constructor.
