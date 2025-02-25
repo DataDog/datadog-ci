@@ -57,10 +57,10 @@ describe('upload', () => {
       )
 
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
 
       const getInvalidJsonUnexpectedTokenErrorMessage = () => {
@@ -136,10 +136,10 @@ describe('upload', () => {
         {}
       )
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(thirdFile).toMatchObject({
         reportPath: './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
