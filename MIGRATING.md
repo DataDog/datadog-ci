@@ -33,6 +33,13 @@ This major version cleans up most deprecated CLI parameters, options and environ
 - The `config` field in test configuration files (e.g. `*.synthetics.json`) is removed.
   - Use [`testOverrides`](https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/README.md#test-files) instead.
 
+##### Files
+
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/README.md#files).
+
+- The `files` option in the global configuration file does not support simple strings anymore.
+  - Use an array of strings instead, i.e. `"files": ["{,!(node_modules)/**/}*.synthetics.json"]`.
+
 ##### Polling timeout
 
 More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/README.md#batchtimeout).
