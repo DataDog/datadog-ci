@@ -7,7 +7,7 @@ import {importTests} from '../import-tests-lib'
 import {TriggerConfig} from '../interfaces'
 import * as tests from '../test'
 
-import {getApiTest, getBrowserTest, mockApi, mockReporter} from './fixtures'
+import {getApiLocalTestDefinition, mockApi, mockReporter} from './fixtures'
 
 describe('import-tests', () => {
   beforeEach(() => {
@@ -25,14 +25,12 @@ describe('import-tests', () => {
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789']
 
-      const mockTest = getApiTest(config['publicIds'][0])
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const {message, monitor_id, status, tags, ...mockTestWithoutUnsupportedFields} = mockTest
+      const mockTest = getApiLocalTestDefinition(config['publicIds'][0])
       const mockLTD = {
         tests: [
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
             },
           },
         ],
@@ -41,7 +39,7 @@ describe('import-tests', () => {
       const jsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
-        getTest: jest.fn(() => {
+        getLocalTestDefinition: jest.fn(() => {
           return Promise.resolve(mockTest)
         }),
       })
@@ -50,7 +48,7 @@ describe('import-tests', () => {
 
       await importTests(mockReporter, config)
 
-      expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
+      expect(apiHelper.getLocalTestDefinition).toHaveBeenCalledTimes(1)
       expect(tests.getTestConfigs).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledWith(filePath, jsonData, 'utf8')
@@ -62,20 +60,18 @@ describe('import-tests', () => {
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789', '987-654-321']
 
-      const mockTest = getApiTest(config['publicIds'][0])
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const {message, monitor_id, status, tags, ...mockTestWithoutUnsupportedFields} = mockTest
+      const mockTest = getApiLocalTestDefinition(config['publicIds'][0])
       const mockLTD = {
         tests: [
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
               public_id: config['publicIds'][0],
             },
           },
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
               public_id: config['publicIds'][1],
             },
           },
@@ -85,7 +81,7 @@ describe('import-tests', () => {
       const expectedJsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
-        getTest: jest
+        getLocalTestDefinition: jest
           .fn()
           .mockReturnValueOnce(Promise.resolve(mockTest))
           .mockReturnValueOnce(Promise.resolve({...mockTest, public_id: config['publicIds'][1]})),
@@ -95,7 +91,7 @@ describe('import-tests', () => {
 
       await importTests(mockReporter, config)
 
-      expect(apiHelper.getTest).toHaveBeenCalledTimes(2)
+      expect(apiHelper.getLocalTestDefinition).toHaveBeenCalledTimes(2)
       expect(tests.getTestConfigs).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledWith(filePath, expectedJsonData, 'utf8')
@@ -107,14 +103,18 @@ describe('import-tests', () => {
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789']
 
-      const mockTest = getBrowserTest(config['publicIds'][0])
+      const mockTest = {
+        ...getApiLocalTestDefinition(config['publicIds'][0]),
+        options: {device_ids: ['chrome.laptop_large']},
+        type: 'browser',
+      }
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      const {message, monitor_id, status, tags, ...mockTestWithoutUnsupportedFields} = mockTest
       const mockLTD = {
         tests: [
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
+              name: 'Some browser test',
             },
           },
         ],
@@ -123,20 +123,17 @@ describe('import-tests', () => {
       const jsonData = JSON.stringify(mockLTD, null, 2)
 
       const apiHelper = mockApi({
-        getTest: jest.fn(() => {
-          return Promise.resolve(mockTest)
-        }),
-        getTestWithType: jest.fn(() => {
-          return Promise.resolve(mockTest)
-        }),
+        getLocalTestDefinition: jest
+          .fn()
+          .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some name'}))
+          .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some browser test'})),
       })
       jest.spyOn(api, 'getApiHelper').mockImplementation(() => apiHelper as any)
       jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [])
 
       await importTests(mockReporter, config)
 
-      expect(apiHelper.getTest).toHaveBeenCalledTimes(1)
-      expect(apiHelper.getTestWithType).toHaveBeenCalledTimes(1)
+      expect(apiHelper.getLocalTestDefinition).toHaveBeenCalledTimes(2)
       expect(tests.getTestConfigs).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledWith(filePath, jsonData, 'utf8')
@@ -148,7 +145,7 @@ describe('import-tests', () => {
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789', '987-654-321']
 
-      const mockTest = getApiTest(config['publicIds'][0])
+      const mockTest = getApiLocalTestDefinition(config['publicIds'][0])
 
       const mockTriggerConfig: TriggerConfig[] = [
         {
@@ -165,8 +162,6 @@ describe('import-tests', () => {
         },
       ]
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const {message, monitor_id, status, tags, ...mockTestWithoutUnsupportedFields} = mockTest
       const expectedLTD = {
         tests: [
           {
@@ -177,14 +172,14 @@ describe('import-tests', () => {
           },
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
               public_id: config['publicIds'][0],
               name: 'Some other name',
             },
           },
           {
             localTestDefinition: {
-              ...mockTestWithoutUnsupportedFields,
+              ...mockTest,
               public_id: config['publicIds'][1],
             },
           },
@@ -194,7 +189,7 @@ describe('import-tests', () => {
       const expectedJsonData = JSON.stringify(expectedLTD, null, 2)
 
       const apiHelper = mockApi({
-        getTest: jest
+        getLocalTestDefinition: jest
           .fn()
           .mockReturnValueOnce(Promise.resolve({...mockTest, name: 'Some other name'}))
           .mockReturnValueOnce(Promise.resolve({...mockTest, public_id: config['publicIds'][1]})),
@@ -204,7 +199,7 @@ describe('import-tests', () => {
 
       await importTests(mockReporter, config)
 
-      expect(apiHelper.getTest).toHaveBeenCalledTimes(2)
+      expect(apiHelper.getLocalTestDefinition).toHaveBeenCalledTimes(2)
       expect(tests.getTestConfigs).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledTimes(1)
       expect(fsPromises.writeFile).toHaveBeenCalledWith(filePath, expectedJsonData, 'utf8')

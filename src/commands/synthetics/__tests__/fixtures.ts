@@ -609,7 +609,7 @@ export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
     getBatch: jest.fn(),
     getMobileApplicationPresignedURLs: jest.fn(),
     getTest: jest.fn(),
-    getTestWithType: jest.fn(),
+    getLocalTestDefinition: jest.fn(),
     editTest: jest.fn(),
     getSyntheticsOrgSettings: jest.fn(),
     getTunnelPresignedURL: jest.fn(),
