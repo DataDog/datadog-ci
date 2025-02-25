@@ -61,6 +61,7 @@ describe('cli', () => {
       'dora deployment': ['--started-at', '0', '--dry-run'],
       'dsyms upload': ['.', '--dry-run'],
       'elf-symbols upload': ['non-existing-file', '--dry-run'],
+      'pe-symbols upload': ['non-existing-file', '--dry-run'],
       'gate evaluate': ['--no-wait', '--dry-run'],
       'junit upload': ['.', '--dry-run'],
       'sarif upload': ['.', '--dry-run'],
