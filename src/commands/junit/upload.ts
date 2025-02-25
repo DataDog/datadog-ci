@@ -5,7 +5,7 @@ import path from 'path'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
-import glob from 'glob'
+import {glob} from 'glob'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
@@ -293,7 +293,9 @@ export class UploadJUnitXMLCommand extends Command {
           globPattern = buildPath(basePath, '*.xml')
         }
 
-        const filesToUpload = glob.sync(globPattern).filter((file) => path.extname(file) === '.xml')
+        const filesToUpload = glob
+          .sync(globPattern, {dotRelative: true})
+          .filter((file) => path.extname(file) === '.xml')
 
         return acc.concat(filesToUpload)
       }, [])
