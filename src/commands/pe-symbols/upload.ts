@@ -42,7 +42,7 @@ import {
 } from './renderer'
 
 export class UploadCommand extends Command {
-  public static paths = [['elf-symbols', 'upload']]
+  public static paths = [['pe-symbols', 'upload']]
 
   public static usage = Command.Usage({
     category: 'Profiling',
@@ -194,14 +194,14 @@ export class UploadCommand extends Command {
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
       datadogSite: this.config.datadogSite,
-      defaultTags: [`cli_version:${this.cliVersion}`, 'platform:elf'],
+      defaultTags: [`cli_version:${this.cliVersion}`, 'platform:pe'],
       prefix: 'datadog.ci.pe_symbols.',
     })
 
     return metricsLogger
   }
 
-  private async getElfSymbolFiles(symbolsLocation: string): Promise<PEFileMetadata[]> {
+  private async getPESymbolFiles(symbolsLocation: string): Promise<PEFileMetadata[]> {
     let paths: string[] = []
     let reportFailure: (message: string) => void
 
@@ -234,7 +234,7 @@ export class UploadCommand extends Command {
           reportFailure(`Skipped directory ${p} because it is not readable`)
         })
       } else if (pathStat.isFile()) {
-        // check that path is a file and is an ELF file
+        // check that path is a file and is a PE file
         const metadata = await getPEFileMetadata(p)
 
         // handle all possible failures
@@ -285,7 +285,7 @@ export class UploadCommand extends Command {
     // const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     let peFilesMetadata = (
-      await Promise.all(this.symbolsLocations.map((location) => this.getElfSymbolFiles(location)))
+      await Promise.all(this.symbolsLocations.map((location) => this.getPESymbolFiles(location)))
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
