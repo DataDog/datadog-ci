@@ -65,6 +65,14 @@ export const executeTests = async (
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
+  let hasLTD = false
+  for (const triggerConfig of triggerConfigs) {
+    if (isLocalTriggerConfig(triggerConfig)) {
+      hasLTD = true
+      break
+    }
+  }
+
   if (triggerConfigs.length === 0) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
@@ -151,10 +159,12 @@ export const executeTests = async (
       tunnel
     )
 
-    try {
-      await updateLTDMultiLocators(reporter, config, results)
-    } catch (error) {
-      throw new CriticalError('LTD_MULTILOCATORS_UPDATE_FAILED', error.message)
+    if (hasLTD) {
+      try {
+        await updateLTDMultiLocators(reporter, config, results)
+      } catch (error) {
+        throw new CriticalError('LTD_MULTILOCATORS_UPDATE_FAILED', error.message)
+      }
     }
 
     return {
