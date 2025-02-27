@@ -7,12 +7,26 @@ import addFormats from 'ajv-formats'
 
 import sarifJsonSchema from './json-schema/sarif-schema-2.1.0.json'
 
+const maxSarifFileSize = 5 * 1024 * 1024 // 5MB in bytes
+
 /**
- * Validate the SARIF file against the SARIF schema.
+ * Validate the SARIF file and check if the file is too large or not valid
+ * against the SARIF schema.
  *
  * @param sarifReportPath - the path of the SARIF file
  */
 export const validateSarif = (sarifReportPath: string) => {
+  try {
+    const stats = fs.statSync(sarifReportPath) // Synchronously get file stats
+    const fileSize = stats.size
+
+    if (fileSize > maxSarifFileSize) {
+      return `file size too large (size: ${fileSize}, max size: ${maxSarifFileSize})`
+    }
+  } catch (err) {
+    return err.message
+  }
+
   const ajv = new Ajv({allErrors: true})
   addFormats(ajv)
   const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
