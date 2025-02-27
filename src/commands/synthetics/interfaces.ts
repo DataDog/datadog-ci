@@ -536,12 +536,18 @@ export interface APIHelperConfig {
   proxy: ProxyConfiguration
 }
 
+export interface DatadogCIConfig extends APIHelperConfig {
+  configPath: string
+  /** Used to create URLs to the Datadog UI. */
+  subdomain: string
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface SyntheticsCIConfig extends APIHelperConfig {}
+export interface SyntheticsCIConfig extends DatadogCIConfig {
+}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   batchTimeout?: number
-  configPath: string
   defaultTestOverrides?: UserConfigOverride
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
@@ -552,8 +558,6 @@ export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   publicIds: string[]
   /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
   selectiveRerun?: boolean
-  /** Used to create URLs to the Datadog UI. */
-  subdomain: string
   testSearchQuery?: string
   tunnel: boolean
 }
