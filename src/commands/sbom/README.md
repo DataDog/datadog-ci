@@ -17,6 +17,7 @@ datadog-ci sbom upload <path/to/sbom.json>
 ### Optional arguments
 
 - `--env` is a string that represents the environment in which you want your tests to appear.
+- `--git-repository` (default: `current working directory`): reports git environment context from specified repository.
 
 ### Environment variables
 

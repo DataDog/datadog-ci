@@ -1,4 +1,4 @@
-import type {SpanTags} from '../interfaces'
+import type { SpanTags } from '../interfaces'
 
 import simpleGit from 'simple-git'
 
@@ -14,14 +14,14 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
 } from '../tags'
-import {filterSensitiveInfoFromRepository} from '../utils'
+import { filterSensitiveInfoFromRepository } from '../utils'
 
-import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
+import { gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL } from './get-git-data'
 
-export const getGitMetadata = async (): Promise<SpanTags> => {
+export const getGitMetadata = async (path: string | undefined): Promise<SpanTags> => {
   try {
     const git = simpleGit({
-      baseDir: process.cwd(),
+      baseDir: path || process.cwd(),
       binary: 'git',
       // We are invoking at most 5 git commands at the same time.
       maxConcurrentProcesses: 5,

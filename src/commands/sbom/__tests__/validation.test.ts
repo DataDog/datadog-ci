@@ -149,7 +149,7 @@ describe('validation of sbom file', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [], true)
+    const tags = await getSpanTags(config, [], true, undefined)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
@@ -166,7 +166,7 @@ describe('validation of sbom file', () => {
       env: undefined,
       envVarTags: undefined,
     }
-    const tags = await getSpanTags(config, [], true)
+    const tags = await getSpanTags(config, [], true, undefined)
 
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()

@@ -1,9 +1,12 @@
 import os from 'os'
+import fs from 'fs'
+import simpleGit from 'simple-git';
+import path from 'path';
 
-import {Cli} from 'clipanion/lib/advanced'
+import { Cli } from 'clipanion/lib/advanced'
 
-import {renderInvalidFile} from '../renderer'
-import {UploadSarifReportCommand} from '../upload'
+import { renderInvalidFile } from '../renderer'
+import { UploadSarifReportCommand } from '../upload'
 
 const makeCli = () => {
   const cli = new Cli()
@@ -37,7 +40,7 @@ describe('upload', () => {
       process.env = {}
       const write = jest.fn()
       const command = new UploadSarifReportCommand()
-      command.context = {stdout: {write}} as any
+      command.context = { stdout: { write } } as any
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
@@ -166,16 +169,16 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (paths: string[]) => {
+  const runCLI = async (args: string[]) => {
     const cli = makeCli()
     const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...paths], context)
+    process.env = { DATADOG_API_KEY: 'PLACEHOLDER' }
+    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...args], context)
 
-    return {context, code}
+    return { context, code }
   }
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
+    const { context, code } = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -185,7 +188,7 @@ describe('execute', () => {
     })
   })
   test('multiple paths', async () => {
-    const {context, code} = await runCLI([
+    const { context, code } = await runCLI([
       './src/commands/sarif/__tests__/fixtures/subfolder/',
       './src/commands/sarif/__tests__/fixtures/another_subfolder/',
     ])
@@ -202,18 +205,58 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
       concurrency: 20,
       env: 'ci',
+      spanTags: {
+        "git.repository_url": "git@github.com:DataDog/datadog-ci.git",
+        "env": "ci"
+      }
     })
   })
 
+  test('absolute path when passing git repository', async () => {
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'));
+    try {
+      // Configure local git repository
+      const git = simpleGit(tmpdir);
+      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git');
+      await git.commit('Initial commit', [], { '--allow-empty': null, '--author': '"John Doe <john.doe@example.com>"', });
+
+      const { context, code } = await runCLI([`--git-repository=${tmpdir}`, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+      const output = context.stdout.toString().split(os.EOL)
+      expect(code).toBe(0)
+      checkConsoleOutput(output, {
+        basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
+        concurrency: 20,
+        env: 'ci',
+        spanTags: {
+          "git.repository_url": "git@github.com:TeSt-FaKe-RePo/repo.git",
+          "git.branch": "test-branch",
+          "git.commit.author.email": "john.doe@example.com",
+          "git.commit.author.name": "John Doe",
+          "env": "ci"
+        }
+      })
+    } finally {
+      // Removed temporary git file
+      fs.rmSync(tmpdir, { recursive: true, force: true });
+    }
+  })
+
+  test('absolute path when passing git repository which do not exist', async () => {
+    const nonExistingGitRepository = "/you/cannot/find/me"
+    // Pass a git repository which do not exist, command should fail
+    const { context, code } = await runCLI([`--git-repository=${nonExistingGitRepository}`, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    expect(code).toBe(1)
+  })
+
   test('single file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
+    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
@@ -226,7 +269,7 @@ describe('execute', () => {
   })
 
   test('not found file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
@@ -239,6 +282,7 @@ interface ExpectedOutput {
   basePaths: string[]
   concurrency: number
   env: string
+  spanTags?: Record<string, string>
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
@@ -248,4 +292,10 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[3]).toContain('Only one upload per commit, env and tool')
   expect(output[4]).toContain(`Preparing upload for`)
   expect(output[4]).toContain(`env:${expected.env}`)
+
+  if (expected.spanTags) {
+    Object.keys(expected.spanTags).forEach((k) => {
+      expect(output[5]).toContain(`"${k}":"${expected.spanTags![k]}"`)
+    })
+  }
 }

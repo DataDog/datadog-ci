@@ -2,9 +2,9 @@ import path from 'path'
 
 import chalk from 'chalk'
 
-import {getBaseUrl} from '../junit/utils'
+import { getBaseUrl } from '../junit/utils'
 
-import {Payload} from './interfaces'
+import { Payload } from './interfaces'
 
 const ICONS = {
   FAILED: '❌',
@@ -72,9 +72,10 @@ export const renderSuccessfulCommand = (fileCount: number, duration: number) => 
   return fullStr
 }
 
-export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
+export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUploadWithSpan(payload)}`
 
 export const renderUpload = (payload: Payload): string => `Uploading SARIF report in ${payload.reportPath}\n`
+export const renderUploadWithSpan = (payload: Payload): string => `Uploading SARIF report to ${payload.reportPath} with tags ${JSON.stringify(payload.spanTags)}\n`
 
 export const renderCommandInfo = (
   basePaths: string[],

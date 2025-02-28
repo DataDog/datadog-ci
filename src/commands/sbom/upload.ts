@@ -48,6 +48,7 @@ export class UploadSbomCommand extends Command {
   private serviceFromCli = Option.String('--service')
   private env = Option.String('--env', 'ci')
   private tags = Option.Array('--tags')
+  private gitPath = Option.String('--git-repository')
   private debug = Option.Boolean('--debug')
   private noCiTags = Option.Boolean('--no-ci-tags', false)
 
@@ -114,7 +115,7 @@ export class UploadSbomCommand extends Command {
       this.config.appKey
     )
 
-    const tags = await getSpanTags(this.config, this.tags, !this.noCiTags)
+    const tags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
 
     // Gather any missing mandatory git fields to display to the user
     const missingGitFields = getMissingRequiredGitTags(tags)

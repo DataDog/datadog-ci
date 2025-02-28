@@ -64,6 +64,7 @@ export class UploadSarifReportCommand extends Command {
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private serviceFromCli = Option.String('--service')
   private tags = Option.Array('--tags')
+  private gitPath = Option.String('--git-repository')
   private noVerify = Option.Boolean('--no-verify', false)
   private noCiTags = Option.Boolean('--no-ci-tags', false)
 
@@ -110,7 +111,7 @@ export class UploadSarifReportCommand extends Command {
     // Always using the posix version to avoid \ on Windows.
     this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
 
-    const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags)
+    const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
 
     // Gather any missing mandatory git fields to display to the user
     const missingGitFields = getMissingRequiredGitTags(spanTags)
@@ -121,7 +122,7 @@ export class UploadSarifReportCommand extends Command {
     }
 
     const payloads = await this.getMatchingSarifReports(spanTags)
-
+      
     if (payloads.length === 0) {
       this.context.stdout.write(renderFilesNotFound(this.basePaths))
 
@@ -133,7 +134,7 @@ export class UploadSarifReportCommand extends Command {
     this.context.stdout.write(
       renderCommandInfo(this.basePaths, env, sha, this.maxConcurrency, this.dryRun, this.noVerify)
     )
-    const upload = (p: Payload) => this.uploadSarifReport(api, p)
+    const upload = (payload: Payload) => this.uploadSarifReport(api, payload)
 
     const initialTime = new Date().getTime()
 

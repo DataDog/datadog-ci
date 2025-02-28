@@ -236,10 +236,11 @@ export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
 export const getSpanTags = async (
   config: DatadogCiConfig,
   additionalTags: string[] | undefined,
-  includeCiTags: boolean
+  includeCiTags: boolean,
+  gitPath: string | undefined
 ): Promise<SpanTags> => {
   const ciSpanTags = includeCiTags ? getCISpanTags() : []
-  const gitSpanTags = await getGitMetadata()
+  const gitSpanTags = await getGitMetadata(gitPath)
   const userGitSpanTags = getUserGitSpanTags()
 
   const envVarTags = config.envVarTags ? parseTags(config.envVarTags.split(',')) : {}
