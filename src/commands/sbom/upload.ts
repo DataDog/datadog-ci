@@ -136,7 +136,7 @@ export class UploadSbomCommand extends Command {
 
     if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
       this.context.stdout.write(
-        'SBOM file not fully compliant against CycloneDX 1.4 or 1.5 specifications (use --debug to get validation error)\n'
+        'SBOM file not fully compliant against CycloneDX 1.4, 1.5 or 1.6 specifications (use --debug to get validation error)\n'
       )
     }
     if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {

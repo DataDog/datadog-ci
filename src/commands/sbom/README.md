@@ -7,17 +7,20 @@ This command lets you upload SBOM files to the Datadog intake endpoint.
 
  - CycloneDX 1.4
  - CycloneDX 1.5
+ - CycloneDX 1.6
 
 ## Usage
 
 ```bash
-datadog-ci sbom upload <path/to/sbom.json>
+datadog-ci sbom upload [--env] [--no-ci-tags] [--git-repository] [--debug] <path/to/sbom.json>
 ```
 
 ### Optional arguments
 
-- `--env` is a string that represents the environment in which you want your tests to appear.
+- `--env` (default: `ci`): represents the environment in which you want your sbom to appear.
+- `--no-ci-tags` (default: `false`): ignore continuous integration automatic detection of environment variables.
 - `--git-repository` (default: `current working directory`): reports git environment context from specified repository.
+- `--debug` (default: `false`): output debug logs.
 
 ### Environment variables
 
