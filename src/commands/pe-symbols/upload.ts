@@ -9,8 +9,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-// import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
-import {RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
 // import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {getMetricsLogger} from '../../helpers/metrics'
 // import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -33,13 +32,14 @@ import {
   renderCommandSummary,
   // renderFailedUpload,
   renderGeneralizedError,
-  // renderGitWarning,
+  renderGitWarning,
   renderInvalidSymbolsLocation,
   // renderMissingBinUtils,
   // renderRetriedUpload,
   renderUpload,
   renderWarning,
 } from './renderer'
+import { MachineArchitecture } from './pe-constants'
 
 export class UploadCommand extends Command {
   public static paths = [['pe-symbols', 'upload']]
@@ -58,7 +58,7 @@ export class UploadCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', true)
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  // private repositoryUrl = Option.String('--repository-url')
+  private repositoryUrl = Option.String('--repository-url')
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
@@ -101,9 +101,9 @@ export class UploadCommand extends Command {
       }
     )
 
-    // if (!this.disableGit) {
-    //   this.gitData = await this.getGitMetadata()
-    // }
+    if (!this.disableGit) {
+      this.gitData = await this.getGitMetadata()
+    }
 
     const callResults: UploadStatus[] = []
     try {
@@ -149,41 +149,56 @@ export class UploadCommand extends Command {
   //   }
   // }
 
-  // private async getGitMetadata(): Promise<RepositoryData | undefined> {
-  //   try {
-  //     return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
-  //   } catch (e) {
-  //     this.context.stdout.write(renderGitWarning(e))
-  //   }
+  private async 'getGitMetadata'(): Promise<RepositoryData | undefined> {
+    try {
+      return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
+    } catch (e) {
+      this.context.stdout.write(renderGitWarning(e))
+    }
 
-  //   return undefined
-  // }
+    return undefined
+  }
 
-  // private getElfSymbolSource(elfFileMetadata: ElfFileMetadata): string {
-  //   if (elfFileMetadata.hasDebugInfo) {
-  //     return 'debug_info'
-  //   }
-  //   if (elfFileMetadata.hasSymbolTable) {
-  //     return 'symbol_table'
-  //   }
-  //   if (elfFileMetadata.hasDynamicSymbolTable) {
-  //     return 'dynamic_symbol_table'
-  //   }
+  private getPESymbolSource(peFileMetadata: PEFileMetadata): string {
+    if (peFileMetadata.hasPdbInfo) {
+      return 'debug_info'
+    }
 
-  //   return 'none'
-  // }
+    return 'none'
+  }
+
+  private getArchitecture(architecture: MachineArchitecture): string {
+    if (architecture === MachineArchitecture.x86) {
+      return 'x86'
+    }
+    else
+    if (architecture === MachineArchitecture.x64) {
+      return 'x64'
+    }
+    else
+    if (architecture === MachineArchitecture.Arm32) {
+      return 'arm32'
+    }
+    else
+    if (architecture === MachineArchitecture.Arm64) {
+      return 'arm64'
+    }
+    else {
+      return 'unknown'
+    }
+  }
 
   private getMappingMetadata(peFileMetadata: PEFileMetadata): MappingMetadata {
     return {
       cli_version: this.cliVersion,
       origin_version: this.cliVersion,
       origin: 'datadog-ci',
-      arch: peFileMetadata.arch,
+      arch: this.getArchitecture(peFileMetadata.arch),
       pdbAge: peFileMetadata.pdbAge,
       pdbSig: peFileMetadata?.pdbSig,
-      // git_commit_sha: this.gitData?.hash,
-      // git_repository_url: this.gitData?.remote,
-      // symbol_source: this.getElfSymbolSource(peFileMetadata),
+      git_commit_sha: this.gitData?.hash,
+      git_repository_url: this.gitData?.remote,
+      symbol_source: this.getPESymbolSource(peFileMetadata),
       filename: path.basename(peFileMetadata.filename),
       overwrite: this.replaceExisting,
       type: TYPE_PE_DEBUG_INFOS,

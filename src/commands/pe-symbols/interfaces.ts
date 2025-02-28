@@ -13,7 +13,7 @@ export interface MappingMetadata {
   cli_version: string
   origin_version: string
 
-  arch: MachineArchitecture
+  arch: string
   pdbAge: number
   pdbSig?: string
   origin: string // will contain 'datadog-ci'
@@ -21,15 +21,11 @@ export interface MappingMetadata {
   type: string
   overwrite: boolean
 
-  // arch: string
   // origin: string
-  // git_commit_sha?: string
-  // git_repository_url?: string
+  git_commit_sha?: string
+  git_repository_url?: string
   // gnu_build_id: string
   // go_build_id: string
   // file_hash: string
-  // symbol_source: string
-  // filename: string
-  // type: string
-  // overwrite: boolean
+  symbol_source: string  // will contain 'debug_info'
 }
