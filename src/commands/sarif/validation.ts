@@ -21,7 +21,7 @@ export const validateSarif = (sarifReportPath: string) => {
     const fileSize = stats.size
 
     if (fileSize > maxSarifFileSize) {
-      return `file size too large (size: ${fileSize}, max size: ${maxSarifFileSize})`
+      return `file size too large (size: ${fileSize / 1024 / 1024} MB, max size: ${maxSarifFileSize / 1024 / 1024} MB)`
     }
   } catch (err) {
     return err.message
