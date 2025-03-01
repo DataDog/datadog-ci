@@ -28,7 +28,7 @@ import {
   renderFilesNotFound,
   renderMissingTags,
 } from './renderer'
-import {getBaseIntakeUrl} from './utils'
+import {getBaseIntakeUrl, getServiceFromSarifTool} from './utils'
 import {checkForError, validateSarif} from './validation'
 
 export class UploadSarifReportCommand extends Command {
@@ -193,8 +193,10 @@ export class UploadSarifReportCommand extends Command {
         return true
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.context.stdout.write(renderInvalidFile(sarifReport, [validationErrorMessage]))
 
         return false
@@ -210,9 +212,12 @@ export class UploadSarifReportCommand extends Command {
       return true
     })
 
-    return validUniqueFiles.map((sarifReport) => ({
-      reportPath: sarifReport,
-      spanTags,
-    }))
+    return validUniqueFiles.map((sarifReport) => {
+      return {
+        reportPath: sarifReport,
+        spanTags,
+        service: getServiceFromSarifTool(sarifReport),
+      }
+    })
   }
 }

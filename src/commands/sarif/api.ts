@@ -24,7 +24,7 @@ export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPr
   write(renderUpload(sarifReport))
 
   const metadata: Record<string, any> = {
-    service: 'datadog-ci',
+    service: sarifReport.service,
     ...sarifReport.spanTags,
     event_type: 'static_analysis',
     event_format_name: 'sarif',
