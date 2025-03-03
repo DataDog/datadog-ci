@@ -213,7 +213,7 @@ describe('execute', () => {
       concurrency: 20,
       env: 'ci',
       spanTags: {
-        'git.repository_url': 'git@github.com:DataDog/datadog-ci.git',
+        'git.repository_url': 'DataDog/datadog-ci',
         env: 'ci',
       },
     })
@@ -224,24 +224,29 @@ describe('execute', () => {
     try {
       // Configure local git repository
       const git = simpleGit(tmpdir)
-      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git')
-      await git.commit('Initial commit', [], {'--author': '"John Doe <john.doe@example.com>"'})
-
+      setupLocalGitConfig(tmpdir)
+      await git.init()
+      // eslint-disable-next-line no-null/no-null
+      await git.commit('Initial commit', [], {'--allow-empty': null})
       const {context, code} = await runCLI([
         `--git-repository=${tmpdir}`,
         process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
       ])
       const output = context.stdout.toString().split(os.EOL)
       expect(code).toBe(0)
+
       checkConsoleOutput(output, {
         basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
         concurrency: 20,
         env: 'ci',
         spanTags: {
-          'git.repository_url': 'git@github.com:TeSt-FaKe-RePo/repo.git',
-          'git.branch': 'test-branch',
-          'git.commit.author.email': 'john.doe@example.com',
-          'git.commit.author.name': 'John Doe',
+          'git.repository_url': 'mock-repo.local/fake.git',
+          'git.branch': 'mock-branch',
+          'git.commit.message': 'Initial commit',
+          'git.commit.committer.email': 'mock@fake.local',
+          'git.commit.committer.name': 'MockUser123',
+          'git.commit.author.email': 'mock@fake.local',
+          'git.commit.author.name': 'MockUser123',
           env: 'ci',
         },
       })
@@ -300,8 +305,29 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[4]).toContain(`env:${expected.env}`)
 
   if (expected.spanTags) {
+    const regex = /with tags (\{.*\})/
+    const match = output[5].match(regex)
+    expect(match).not.toBeNull()
+
+    const spanTags = JSON.parse(match![1])
     Object.keys(expected.spanTags).forEach((k) => {
-      expect(output[5]).toContain(`"${k}":"${expected.spanTags![k]}"`)
+      expect(spanTags[k]).not.toBeNull()
+      expect(spanTags[k]).toContain(expected.spanTags![k])
     })
   }
+}
+
+const getFixtures = (file: string) => {
+  return path.join('./src/commands/sarif/__tests__/fixtures', file)
+}
+
+const setupLocalGitConfig = (dir: string) => {
+  const gitDir = path.join(dir, '.git')
+  if (!fs.existsSync(gitDir)) {
+    fs.mkdirSync(gitDir, {recursive: true})
+  }
+
+  const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
+  const configPath = path.join(gitDir, '/config')
+  fs.writeFileSync(configPath, configFixture)
 }

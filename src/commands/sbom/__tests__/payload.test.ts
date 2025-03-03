@@ -353,8 +353,10 @@ describe('generation of payload', () => {
     try {
       // Configure local git repository
       const git = simpleGit(tmpdir)
-      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git')
-      await git.commit('Initial commit', [], {'--author': '"John Doe <john.doe@example.com>"'})
+      setupLocalGitConfig(tmpdir)
+      await git.init()
+      // eslint-disable-next-line no-null/no-null
+      await git.commit('Initial commit', [], {'--allow-empty': null})
 
       const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
       const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
@@ -374,13 +376,12 @@ describe('generation of payload', () => {
 
       // Local git repository should be reported
       expect(payload?.commit.sha).toStrictEqual(expect.any(String))
-      expect(payload?.commit.author_name).toStrictEqual('John Doe')
-      expect(payload?.commit.author_email).toStrictEqual('john.doe@example.com')
-      expect(payload?.commit.committer_name).toStrictEqual(expect.any(String))
-      expect(payload?.commit.committer_email).toStrictEqual(expect.any(String))
-      expect(payload?.commit.branch).toStrictEqual('test-branch')
-      expect(payload?.repository.url).toContain('github.com')
-      expect(payload?.repository.url).toContain('git@github.com:TeSt-FaKe-RePo/repo.git')
+      expect(payload?.commit.author_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.author_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.committer_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.committer_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.branch).toStrictEqual('mock-branch')
+      expect(payload?.repository.url).toContain('https://mock-repo.local/fake.git')
       expect(payload?.dependencies.length).toBe(62)
       expect(payload?.dependencies[0].name).toBe('stack-cors')
       expect(payload?.dependencies[0].version).toBe('1.3.0')
@@ -406,3 +407,18 @@ describe('generation of payload', () => {
     expect(getMissingRequiredGitTags(tags)).toHaveLength(7)
   })
 })
+
+const getFixtures = (file: string) => {
+  return path.join('./src/commands/sbom/__tests__/fixtures', file)
+}
+
+const setupLocalGitConfig = (dir: string) => {
+  const gitDir = path.join(dir, '.git')
+  if (!fs.existsSync(gitDir)) {
+    fs.mkdirSync(gitDir, {recursive: true})
+  }
+
+  const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
+  const configPath = path.join(gitDir, '/config')
+  fs.writeFileSync(configPath, configFixture)
+}
