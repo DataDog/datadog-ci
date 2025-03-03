@@ -193,7 +193,6 @@ export class UploadSarifReportCommand extends Command {
         return true
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
