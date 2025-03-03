@@ -1,13 +1,14 @@
 import fs from 'fs'
-import simpleGit from 'simple-git';
-import os from 'os';
-import path from 'path';
+import os from 'os'
+import path from 'path'
 
-import { DatadogCiConfig } from '../../../helpers/config'
-import { getSpanTags, getMissingRequiredGitTags } from '../../../helpers/tags'
+import simpleGit from 'simple-git'
 
-import { generatePayload } from '../payload'
-import { DependencyLanguage, Location } from '../types'
+import {DatadogCiConfig} from '../../../helpers/config'
+import {getSpanTags, getMissingRequiredGitTags} from '../../../helpers/tags'
+
+import {generatePayload} from '../payload'
+import {DependencyLanguage, Location} from '../types'
 
 describe('generation of payload', () => {
   beforeEach(() => {
@@ -348,12 +349,12 @@ describe('generation of payload', () => {
   })
 
   test('should correctly work with a CycloneDX 1.4 file and passing git repository', async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'));
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
     try {
       // Configure local git repository
-      const git = simpleGit(tmpdir);
-      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git');
-      await git.commit('Initial commit', [], { '--allow-empty': null, '--author': '"John Doe <john.doe@example.com>"', });
+      const git = simpleGit(tmpdir)
+      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git')
+      await git.commit('Initial commit', [], {'--author': '"John Doe <john.doe@example.com>"'})
 
       const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
       const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
@@ -373,11 +374,11 @@ describe('generation of payload', () => {
 
       // Local git repository should be reported
       expect(payload?.commit.sha).toStrictEqual(expect.any(String))
-      expect(payload?.commit.author_name).toStrictEqual("John Doe")
-      expect(payload?.commit.author_email).toStrictEqual("john.doe@example.com")
+      expect(payload?.commit.author_name).toStrictEqual('John Doe')
+      expect(payload?.commit.author_email).toStrictEqual('john.doe@example.com')
       expect(payload?.commit.committer_name).toStrictEqual(expect.any(String))
       expect(payload?.commit.committer_email).toStrictEqual(expect.any(String))
-      expect(payload?.commit.branch).toStrictEqual("test-branch")
+      expect(payload?.commit.branch).toStrictEqual('test-branch')
       expect(payload?.repository.url).toContain('github.com')
       expect(payload?.repository.url).toContain('git@github.com:TeSt-FaKe-RePo/repo.git')
       expect(payload?.dependencies.length).toBe(62)
@@ -387,12 +388,12 @@ describe('generation of payload', () => {
       expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
     } finally {
       // Removed temporary git file
-      fs.rmSync(tmpdir, { recursive: true, force: true });
+      fs.rmSync(tmpdir, {recursive: true, force: true})
     }
   })
 
   test('should fail to read git information', async () => {
-    const nonExistingGitRepository = "/you/cannot/find/me"
+    const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {
       apiKey: undefined,
       env: undefined,
@@ -404,5 +405,4 @@ describe('generation of payload', () => {
     const tags = await getSpanTags(config, [], true, nonExistingGitRepository)
     expect(getMissingRequiredGitTags(tags)).toHaveLength(7)
   })
-
 })

@@ -18,7 +18,7 @@ datadog-ci sbom upload [--env] [--no-ci-tags] [--git-repository] [--debug] <path
 ### Optional arguments
 
 - `--env` (default: `ci`): represents the environment in which you want your sbom to appear.
-- `--no-ci-tags` (default: `false`): ignore continuous integration automatic detection of environment variables.
+- `--no-ci-tags` (default: `false`): ignore automatic detection of continuous integration environment variables.
 - `--git-repository` (default: `current working directory`): reports git environment context from specified repository.
 - `--debug` (default: `false`): output debug logs.
 
@@ -29,6 +29,14 @@ The following environment variables must be defined:
  - `DD_SITE`: the [Datadog site](https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site)
  - `DD_APP_KEY`: the App key to use
  - `DD_API_KEY`: the API key to use
+
+### Git context resolution
+
+The Git context is resolved in the following order of priority:
+1. Current process location
+2. CI environment variables (can be disabled with: `--no-ci-tags` option)
+3. Explicitely provided Git repository (through `--git-repository` option)
+4. Override environment variables (`DD_GIT_*` variables)
 
 ## Development
 

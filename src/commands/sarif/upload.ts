@@ -122,7 +122,7 @@ export class UploadSarifReportCommand extends Command {
     }
 
     const payloads = await this.getMatchingSarifReports(spanTags)
-      
+
     if (payloads.length === 0) {
       this.context.stdout.write(renderFilesNotFound(this.basePaths))
 

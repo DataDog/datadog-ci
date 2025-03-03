@@ -1,12 +1,12 @@
-import os from 'os'
 import fs from 'fs'
-import simpleGit from 'simple-git';
-import path from 'path';
+import os from 'os'
+import path from 'path'
 
-import { Cli } from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion/lib/advanced'
+import simpleGit from 'simple-git'
 
-import { renderInvalidFile } from '../renderer'
-import { UploadSarifReportCommand } from '../upload'
+import {renderInvalidFile} from '../renderer'
+import {UploadSarifReportCommand} from '../upload'
 
 const makeCli = () => {
   const cli = new Cli()
@@ -40,7 +40,7 @@ describe('upload', () => {
       process.env = {}
       const write = jest.fn()
       const command = new UploadSarifReportCommand()
-      command.context = { stdout: { write } } as any
+      command.context = {stdout: {write}} as any
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
@@ -172,13 +172,13 @@ describe('execute', () => {
   const runCLI = async (args: string[]) => {
     const cli = makeCli()
     const context = createMockContext() as any
-    process.env = { DATADOG_API_KEY: 'PLACEHOLDER' }
+    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...args], context)
 
-    return { context, code }
+    return {context, code}
   }
   test('relative path with double dots', async () => {
-    const { context, code } = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
+    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -188,7 +188,7 @@ describe('execute', () => {
     })
   })
   test('multiple paths', async () => {
-    const { context, code } = await runCLI([
+    const {context, code} = await runCLI([
       './src/commands/sarif/__tests__/fixtures/subfolder/',
       './src/commands/sarif/__tests__/fixtures/another_subfolder/',
     ])
@@ -205,7 +205,7 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -213,21 +213,24 @@ describe('execute', () => {
       concurrency: 20,
       env: 'ci',
       spanTags: {
-        "git.repository_url": "git@github.com:DataDog/datadog-ci.git",
-        "env": "ci"
-      }
+        'git.repository_url': 'git@github.com:DataDog/datadog-ci.git',
+        env: 'ci',
+      },
     })
   })
 
   test('absolute path when passing git repository', async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'));
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
     try {
       // Configure local git repository
-      const git = simpleGit(tmpdir);
-      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git');
-      await git.commit('Initial commit', [], { '--allow-empty': null, '--author': '"John Doe <john.doe@example.com>"', });
+      const git = simpleGit(tmpdir)
+      await git.init(['--initial-branch=test-branch']).addRemote('origin', 'https://github.com/TeSt-FaKe-RePo/repo.git')
+      await git.commit('Initial commit', [], {'--author': '"John Doe <john.doe@example.com>"'})
 
-      const { context, code } = await runCLI([`--git-repository=${tmpdir}`, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+      const {context, code} = await runCLI([
+        `--git-repository=${tmpdir}`,
+        process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
+      ])
       const output = context.stdout.toString().split(os.EOL)
       expect(code).toBe(0)
       checkConsoleOutput(output, {
@@ -235,45 +238,48 @@ describe('execute', () => {
         concurrency: 20,
         env: 'ci',
         spanTags: {
-          "git.repository_url": "git@github.com:TeSt-FaKe-RePo/repo.git",
-          "git.branch": "test-branch",
-          "git.commit.author.email": "john.doe@example.com",
-          "git.commit.author.name": "John Doe",
-          "env": "ci"
-        }
+          'git.repository_url': 'git@github.com:TeSt-FaKe-RePo/repo.git',
+          'git.branch': 'test-branch',
+          'git.commit.author.email': 'john.doe@example.com',
+          'git.commit.author.name': 'John Doe',
+          env: 'ci',
+        },
       })
     } finally {
       // Removed temporary git file
-      fs.rmSync(tmpdir, { recursive: true, force: true });
+      fs.rmSync(tmpdir, {recursive: true, force: true})
     }
   })
 
   test('absolute path when passing git repository which do not exist', async () => {
-    const nonExistingGitRepository = "/you/cannot/find/me"
+    const nonExistingGitRepository = '/you/cannot/find/me'
     // Pass a git repository which do not exist, command should fail
-    const { context, code } = await runCLI([`--git-repository=${nonExistingGitRepository}`, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const {code} = await runCLI([
+      `--git-repository=${nonExistingGitRepository}`,
+      process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
+    ])
     expect(code).toBe(1)
   })
 
   test('single file', async () => {
-    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split(os.EOL)
-    const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
+    const path1 = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
-    expect(output[2]).toContain(`Will upload SARIF report file ${path}`)
+    expect(output[2]).toContain(`Will upload SARIF report file ${path1}`)
     expect(output[3]).toContain('Only one upload per commit, env and tool')
     expect(output[4]).toContain(`Preparing upload for`)
     expect(output[4]).toContain(`env:ci`)
   })
 
   test('not found file', async () => {
-    const { context, code } = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split(os.EOL)
-    const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
+    const path2 = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
-    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path}`)
+    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path2}`)
     expect(output[1]).toContain('Check the files exist and are valid.')
   })
 })

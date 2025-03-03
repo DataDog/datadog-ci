@@ -187,6 +187,66 @@ describe('getSpanTags', () => {
       key2: 'value2',
     })
   })
+  test('should prioritized git context corrently', async () => {
+    const config = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+
+    // define github action env variables
+    process.env.GITHUB_ACTIONS = 'true'
+    process.env.GITHUB_REPOSITORY = 'git@github.com:DataDog/datadog-ci'
+    process.env.GITHUB_HEAD_REF = 'prod'
+    process.env.GITHUB_SHA = '12000'
+    process.env.GITHUB_RUN_ID = '17'
+
+    // Mock simpleGit (used to read git context)
+    ;(simpleGit as jest.Mock).mockImplementation(() => ({
+      branch: () => ({current: 'main'}),
+      listRemote: async (git: any): Promise<string> => 'https://www.github.com/datadog/safe-repository',
+      revparse: () => 'commitSHA',
+      show: (input: string[]) => {
+        if (input[1] === '--format=%s') {
+          return 'commit message'
+        }
+
+        return 'authorName,authorEmail,authorDate,committerName,committerEmail,committerDate'
+      },
+    }))
+
+    // By default, the 'git' tags reported are the github action
+    let spanTags: SpanTags = await getSpanTags(config, [], true)
+    expect(spanTags).toMatchObject({
+      'ci.pipeline.id': '17',
+      'git.repository_url': 'undefined/git@github.com:DataDog/datadog-ci.git',
+      'git.branch': 'prod',
+      'git.commit.sha': '12000',
+    })
+
+    // re-query span tags while specifying a git directory
+    // if should prefer the git directory over env variables.
+    spanTags = await getSpanTags(config, [], true, 'path/to/mockedSimpleGit')
+    // git tags are coming from simpleGit
+    expect(spanTags).toMatchObject({
+      'ci.pipeline.id': '17',
+      'git.repository_url': 'https://www.github.com/datadog/safe-repository',
+      'git.branch': 'main',
+      'git.commit.sha': 'commitSHA',
+    })
+
+    process.env.DD_GIT_REPOSITORY_URL = 'https://www.github.com/datadog/not-so-safe-repository'
+    process.env.DD_GIT_BRANCH = 'staging'
+    process.env.DD_GIT_COMMIT_SHA = 'override'
+    spanTags = await getSpanTags(config, [], true, 'path/to/mockedSimpleGit')
+    // git tags are coming from env override
+    expect(spanTags).toMatchObject({
+      'ci.pipeline.id': '17',
+      'git.repository_url': 'https://www.github.com/datadog/not-so-safe-repository',
+      'git.branch': 'staging',
+      'git.commit.sha': 'override',
+    })
+  })
 })
 
 describe('sarif and sbom upload required git tags', () => {
