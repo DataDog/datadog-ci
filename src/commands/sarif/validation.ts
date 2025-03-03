@@ -15,7 +15,7 @@ const maxSarifFileSize = 5 * 1024 * 1024 // 5MB in bytes
  *
  * @param sarifReportPath - the path of the SARIF file
  */
-export const validateSarif = (sarifReportPath: string) => {
+export const validateSarif = (sarifReportPath: string): string | undefined => {
   try {
     const stats = fs.statSync(sarifReportPath) // Synchronously get file stats
     const fileSize = stats.size
