@@ -1,6 +1,7 @@
 import {BaseContext} from 'clipanion'
 import simpleGit from 'simple-git'
 
+import {DatadogCiConfig} from '../config'
 import {SpanTags} from '../interfaces'
 import {
   parseTags,
@@ -188,7 +189,7 @@ describe('getSpanTags', () => {
     })
   })
   test('should prioritized git context corrently', async () => {
-    const config = {
+    const config: DatadogCiConfig = {
       apiKey: undefined,
       env: undefined,
       envVarTags: undefined,

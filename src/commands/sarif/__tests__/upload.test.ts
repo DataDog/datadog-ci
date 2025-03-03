@@ -251,7 +251,7 @@ describe('execute', () => {
     }
   })
 
-  test('absolute path when passing git repository which do not exist', async () => {
+  test('absolute path when passing git repository which does not exist', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     // Pass a git repository which do not exist, command should fail
     const {code} = await runCLI([
