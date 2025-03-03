@@ -18,7 +18,7 @@ import {filterSensitiveInfoFromRepository} from '../utils'
 
 import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
 
-export const getGitMetadata = async (path: string | undefined): Promise<SpanTags> => {
+export const getGitMetadata = async (path?: string): Promise<SpanTags> => {
   try {
     const git = simpleGit({
       baseDir: path || process.cwd(),
