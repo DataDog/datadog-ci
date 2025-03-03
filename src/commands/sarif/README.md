@@ -41,7 +41,7 @@ Additionally, you may configure the `sarif` command with environment variables:
 The Git context is resolved in the following order of priority:
 1. Current process location
 2. CI environment variables (can be disabled with: `--no-ci-tags` option)
-3. Explicitely provided Git repository (through `--git-repository` option)
+3. Explicitly provided Git repository (through `--git-repository` option)
 4. Override environment variables (`DD_GIT_*` variables)
 
 ### End-to-end testing process
