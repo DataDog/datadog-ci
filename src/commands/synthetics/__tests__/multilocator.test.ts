@@ -1,8 +1,10 @@
 jest.mock('fs/promises')
 import * as fsPromises from 'fs/promises'
 
+import * as ci from '../../../helpers/ci'
+import * as prompt from '../../../helpers/prompt'
+
 import {ImportTestsCommandConfig, Result, LocalTestDefinition} from '../interfaces'
-import * as multilocator from '../multilocator'
 import {updateLTDMultiLocators} from '../multilocator'
 import * as tests from '../test'
 
@@ -44,7 +46,8 @@ describe('multilocator', () => {
     }
 
     jest.spyOn(tests, 'getTestConfigs').mockResolvedValue(mockTestConfig.tests)
-    jest.spyOn(multilocator, 'promptUser').mockResolvedValue(true)
+    jest.spyOn(prompt, 'requestConfirmation').mockResolvedValue(true)
+    jest.spyOn(ci, 'isInteractive').mockReturnValue(true)
     jest.spyOn(fsPromises, 'writeFile').mockImplementation(async () => Promise.resolve())
   })
 
@@ -77,7 +80,7 @@ describe('multilocator', () => {
     })
 
     test('should not overwrite file if user declines update prompt', async () => {
-      jest.spyOn(multilocator, 'promptUser').mockResolvedValue(false)
+      jest.spyOn(prompt, 'requestConfirmation').mockResolvedValue(false)
 
       await updateLTDMultiLocators(mockReporter, mockConfig, mockResults)
 
