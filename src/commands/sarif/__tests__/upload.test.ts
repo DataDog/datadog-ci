@@ -225,13 +225,18 @@ describe('execute', () => {
       // Configure local git repository
       const git = simpleGit(tmpdir)
       setupLocalGitConfig(tmpdir)
+
       await git.init()
+
       // eslint-disable-next-line no-null/no-null
       await git.commit('Initial commit', [], {'--allow-empty': null})
+      const repositoryParam = `--git-repository=${tmpdir}`
+
       const {context, code} = await runCLI([
-        `--git-repository=${tmpdir}`,
+        repositoryParam,
         process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
       ])
+
       const output = context.stdout.toString().split(os.EOL)
       expect(code).toBe(0)
 
@@ -258,22 +263,21 @@ describe('execute', () => {
 
   test('absolute path when passing git repository which does not exist', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
-    // Pass a git repository which do not exist, command should fail
-    const {code} = await runCLI([
-      `--git-repository=${nonExistingGitRepository}`,
-      process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
-    ])
+    const repositoryParam = `--git-repository=${nonExistingGitRepository}`
+
+    // Pass a git repository which does not exist, command should fail
+    const {code} = await runCLI([repositoryParam, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     expect(code).toBe(1)
   })
 
   test('single file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split(os.EOL)
-    const path1 = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
+    const location = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
-    expect(output[2]).toContain(`Will upload SARIF report file ${path1}`)
+    expect(output[2]).toContain(`Will upload SARIF report file ${location}`)
     expect(output[3]).toContain('Only one upload per commit, env and tool')
     expect(output[4]).toContain(`Preparing upload for`)
     expect(output[4]).toContain(`env:ci`)
@@ -282,9 +286,9 @@ describe('execute', () => {
   test('not found file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split(os.EOL)
-    const path2 = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
+    const location = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
-    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path2}`)
+    expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${location}`)
     expect(output[1]).toContain('Check the files exist and are valid.')
   })
 })
