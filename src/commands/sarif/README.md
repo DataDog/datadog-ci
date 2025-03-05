@@ -25,8 +25,8 @@ The positional arguments are the directories or file paths in which the SARIF re
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): runs the command without the final upload step. All other checks are performed.
 - `--no-verify` (default: `false`): runs the command without performing report validation on the CLI.
-- `--no-ci-tags` (default: `false`): ignore automatic detection of continuous integration environment variables.
-- `--git-repository` (default: `current working directory`): reports git environment context from specified repository.
+- `--no-ci-tags` (default: `false`): ignore the automatic detection of continuous integration environment variables.
+- `--git-repository` (default: `current working directory`): reports git environment context from the specified repository.
 
 ### Environment variables
 

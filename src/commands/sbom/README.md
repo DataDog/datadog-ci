@@ -18,8 +18,8 @@ datadog-ci sbom upload [--env] [--no-ci-tags] [--git-repository] [--debug] <path
 ### Optional arguments
 
 - `--env` (default: `ci`): represents the environment in which you want your sbom to appear.
-- `--no-ci-tags` (default: `false`): ignore automatic detection of continuous integration environment variables.
-- `--git-repository` (default: `current working directory`): reports git environment context from specified repository.
+- `--no-ci-tags` (default: `false`): ignore the automatic detection of continuous integration environment variables.
+- `--git-repository` (default: `current working directory`): reports git environment context from the specified repository.
 - `--debug` (default: `false`): output debug logs.
 
 ### Environment variables
