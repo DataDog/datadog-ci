@@ -1169,6 +1169,57 @@ describe('lambda', () => {
         expect(output).toMatchSnapshot()
       })
 
+      test('instruments image runtimes properly', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
+              Runtime: 'provided.al2',
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
+              Runtime: 'provided.al2023',
+              Architectures: ['arm64'],
+            },
+          },
+        })
+
+        const cli = makeCli()
+        const context = createMockContext()
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
+            '--dry-run',
+            '-e',
+            '40',
+            '--extra-tags',
+            'layer:api,team:intake',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--no-source-code-integration',
+          ],
+          context
+        )
+
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchSnapshot()
+      })
+
       test('aborts early when a layer version is set for a Custom runtime', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
