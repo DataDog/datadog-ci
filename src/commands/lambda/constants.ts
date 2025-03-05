@@ -71,6 +71,7 @@ export const ARM_LAYERS = [
   'python3.10',
   'python3.11',
   'python3.12',
+  'python3.13',
   'ruby3.2',
   'ruby3.3',
 ]
