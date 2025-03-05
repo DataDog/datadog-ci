@@ -62,6 +62,7 @@ describe('instrument', () => {
     })
 
     test.each([
+      [Runtime.python39, 'Datadog-Python39'],
       [Runtime.python310, 'Datadog-Python310'],
       [Runtime.python311, 'Datadog-Python311'],
       [Runtime.python312, 'Datadog-Python312'],
@@ -104,6 +105,7 @@ describe('instrument', () => {
     })
 
     test.each([
+      [Runtime.python39, 'Datadog-Python39-ARM'],
       [Runtime.python310, 'Datadog-Python310-ARM'],
       [Runtime.python311, 'Datadog-Python311-ARM'],
       [Runtime.python312, 'Datadog-Python312-ARM'],
