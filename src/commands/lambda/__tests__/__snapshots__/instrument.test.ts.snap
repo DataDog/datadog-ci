@@ -307,13 +307,15 @@ exports[`lambda instrument execute instruments Ruby application properly 1`] = `
 [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
 [!] Functions to be updated:
-	- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
-	- arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby32
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby33
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby32arm
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby33arm
 
 [Dry Run] Will apply the following updates:
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby32
 {
-  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby32",
   "Environment": {
     "Variables": {
       "DD_API_KEY": "02**********33bd",
@@ -333,13 +335,39 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2:19"
   ]
 }
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby32
 {
   "dd_sls_ci": "vXXXX"
 }
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby33
 {
-  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2",
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby33",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_SERVERLESS_APPSEC_ENABLED": "false",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
+    }
+  },
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-3:19"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby33
+{
+  "dd_sls_ci": "vXXXX"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby32arm
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby32arm",
   "Environment": {
     "Variables": {
       "DD_API_KEY": "02**********33bd",
@@ -359,7 +387,33 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-2-ARM:19"
   ]
 }
-TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby32arm
+{
+  "dd_sls_ci": "vXXXX"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby33arm
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby33arm",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_SERVERLESS_APPSEC_ENABLED": "false",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
+    }
+  },
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-3-ARM:19"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby33arm
 {
   "dd_sls_ci": "vXXXX"
 }

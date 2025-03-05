@@ -1103,16 +1103,29 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
         mockLambdaConfigurations(lambdaClientMock, {
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
               Runtime: 'ruby3.2',
             },
           },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
               Runtime: 'ruby3.2',
+              Architectures: ['arm64'],
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
+              Runtime: 'ruby3.3',
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
+              Runtime: 'ruby3.3',
               Architectures: ['arm64'],
             },
           },
@@ -1126,9 +1139,13 @@ describe('lambda', () => {
             'lambda',
             'instrument',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
             '--dry-run',
             '-e',
             '40',
