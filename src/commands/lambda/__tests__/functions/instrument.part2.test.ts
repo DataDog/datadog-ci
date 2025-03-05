@@ -65,6 +65,7 @@ describe('instrument', () => {
       [Runtime.python310, 'Datadog-Python310'],
       [Runtime.python311, 'Datadog-Python311'],
       [Runtime.python312, 'Datadog-Python312'],
+      [Runtime.python313, 'Datadog-Python313'],
     ])('calculates an update request for %s', async (runtime: Runtime, layer: string) => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -102,8 +103,12 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with just lambda library layers in arm architecture', async () => {
-      const runtime = Runtime.python39
+    test.each([
+      [Runtime.python310, 'Datadog-Python310-ARM'],
+      [Runtime.python311, 'Datadog-Python311-ARM'],
+      [Runtime.python312, 'Datadog-Python312-ARM'],
+      [Runtime.python313, 'Datadog-Python313-ARM'],
+    ])('calculates an update request with just lambda library layers in arm architecture', async (runtime: Runtime, layer: string) => {
       const config = {
         Architectures: [Architecture.arm64],
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -135,7 +140,7 @@ describe('instrument', () => {
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
           "Layers": [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39-ARM:11",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:${layer}:11",
           ],
         }
       `)
