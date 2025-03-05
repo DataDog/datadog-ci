@@ -32,6 +32,7 @@ export interface TunnelReporter {
   error(message: string): void
   log(message: string): void
   warn(message: string): void
+  debug(message: string): void
 }
 
 export class Tunnel {
@@ -160,7 +161,7 @@ export class Tunnel {
     if (!this.connected) {
       // Limit to one log per tunnel
       this.connected = true
-      this.reporter?.log('Successfully connected')
+      this.reporter?.log('Successfully connected\n')
     }
     ctx.accept()
   }
@@ -209,13 +210,15 @@ export class Tunnel {
         })
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
-            this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+            if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+              this.reporter?.debug(`Error on opened connection (${destIP}): ${error.code}`)
+            }
             src.close()
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
               this.reporter?.warn(`Unable to resolve host (${destIP})`)
             } else {
-              this.reporter?.warn(`Connection error (${destIP}): ${error.code}`)
+              this.reporter?.debug(`Connection error (${destIP}): ${error.code}`)
             }
             reject()
 
@@ -268,16 +271,18 @@ export class Tunnel {
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
     this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
+    duplex.on('error', (error) => {
+      this.reporter?.debug(`Websocket error: ${error.message}`)
+    })
 
     pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on duplex connection close: ${err}`)
+        this.reporter?.debug(`Error on duplex connection close: ${err}`)
       }
     })
     pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
+        this.reporter?.debug(`Error on Multiplexer connection close: ${err}`)
       }
     })
 

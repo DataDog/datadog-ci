@@ -1890,6 +1890,7 @@ __metadata:
     "@smithy/property-provider": ^2.0.12
     "@smithy/util-retry": ^2.0.4
     "@types/async-retry": 1.4.8
+    "@types/cli-progress": ^3.11.6
     "@types/datadog-metrics": 0.6.1
     "@types/deep-extend": 0.4.31
     "@types/glob": 7.1.1
@@ -1914,6 +1915,7 @@ __metadata:
     aws-sdk-client-mock-jest: ^4.1.0
     axios: ^1.7.4
     chalk: 3.0.0
+    cli-progress: ^3.12.0
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
     dd-trace: ^5.38.0
@@ -3458,6 +3460,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/cli-progress@npm:^3.11.6":
+  version: 3.11.6
+  resolution: "@types/cli-progress@npm:3.11.6"
+  dependencies:
+    "@types/node": "*"
+  checksum: 2df9d4788089564c8eb01e6d05b084bd030b7ce3f1a3698c57a998f2b329c5c7a3ea2d20e3756579a385945c70875df3c798b7740f6bf679eb1b1937e91f5eca
+  languageName: node
+  linkType: hard
+
 "@types/datadog-metrics@npm:0.6.1":
   version: 0.6.1
   resolution: "@types/datadog-metrics@npm:0.6.1"
@@ -4736,6 +4747,15 @@ __metadata:
   dependencies:
     restore-cursor: ^3.1.0
   checksum: 2692784c6cd2fd85cfdbd11f53aea73a463a6d64a77c3e098b2b4697a20443f430c220629e1ca3b195ea5ac4a97a74c2ee411f3807abf6df2b66211fec0c0a29
+  languageName: node
+  linkType: hard
+
+"cli-progress@npm:^3.12.0":
+  version: 3.12.0
+  resolution: "cli-progress@npm:3.12.0"
+  dependencies:
+    string-width: ^4.2.3
+  checksum: e8390dc3cdf3c72ecfda0a1e8997bfed63a0d837f97366bbce0ca2ff1b452da386caed007b389f0fe972625037b6c8e7ab087c69d6184cc4dfc8595c4c1d3e6e
   languageName: node
   linkType: hard
 

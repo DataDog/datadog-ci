@@ -1,3 +1,8 @@
+import http from 'node:http'
+
+import chalk from 'chalk'
+import cliProgress from 'cli-progress'
+
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
@@ -19,6 +24,7 @@ import {
 } from './interfaces'
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
+import {DeferredReporter} from './reporters/deferred'
 import {JUnitReporter} from './reporters/junit'
 import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
@@ -51,11 +57,15 @@ export const executeTests = async (
 }> => {
   const api = getApiHelper(config)
   let tunnel: Tunnel | undefined
+  let reportServer: http.Server | undefined
   let triggerConfigs: TriggerConfig[] = []
 
   const stopTunnel = async () => {
     if (tunnel) {
       await tunnel.stop()
+    }
+    if (reportServer) {
+      reportServer.close()
     }
   }
 
@@ -110,7 +120,42 @@ export const executeTests = async (
 
   const publicIdsToTrigger = tests.flatMap(({public_id}) => (public_id ? [public_id] : []))
 
+  const multiBar = new cliProgress.MultiBar(
+    {
+      clearOnComplete: false,
+      hideCursor: true,
+      barCompleteChar: '=',
+      barIncompleteChar: ' ',
+      format: ` • [${chalk.dim(`{publicId}`)}] [${chalk.cyan(`{bar}`)}] - Step {value}/{total}`,
+    },
+    cliProgress.Presets.shades_grey
+  )
+
+  const deferredReporter = new DeferredReporter()
+
   if (config.tunnel) {
+    const bars = new Map<string, cliProgress.Bar>()
+
+    reportServer = http
+      .createServer((req, res) => {
+        let body = ''
+        req.on('data', (chunk) => {
+          body += chunk.toString()
+        })
+        req.on('end', () => {
+          const {stepIndex, stepCount, stepResult, publicId, resultId} = JSON.parse(body)
+          const bar = bars.get(resultId) ?? multiBar.create(0, 0)
+          bars.set(resultId, bar)
+          bar.start(stepCount, stepIndex + 1, {publicId})
+
+          // TODO: use it
+          void stepResult
+
+          res.end()
+        })
+      })
+      .listen(3222)
+
     let presignedURL: string
     try {
       // Get the pre-signed URL to connect to the tunnel service
@@ -139,6 +184,7 @@ export const executeTests = async (
     trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
   } catch (error) {
     await stopTunnel()
+    multiBar.stop()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
@@ -155,9 +201,12 @@ export const executeTests = async (
       trigger,
       tests,
       {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout},
-      reporter,
+      deferredReporter,
       tunnel
     )
+
+    multiBar.stop()
+    deferredReporter.flush()
 
     if (hasLTD) {
       try {
@@ -175,6 +224,9 @@ export const executeTests = async (
       },
     }
   } catch (error) {
+    multiBar.stop()
+    deferredReporter.flush()
+
     if (error instanceof BatchTimeoutRunawayError) {
       throw error
     }

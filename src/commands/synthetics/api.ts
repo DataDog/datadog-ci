@@ -76,6 +76,7 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigge
       headers: {'X-Trigger-App': ciTriggerApp},
       method: 'POST',
       url: '/synthetics/tests/trigger/ci',
+      // url: '/synthetics/tests/trigger/ci?disable_tunnel_override=1',
     },
     request,
     {retryOn429: true}

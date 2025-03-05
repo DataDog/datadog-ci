@@ -64,7 +64,7 @@ const renderStepIcon = (step: Step) => {
   return ICONS.SUCCESS
 }
 
-const renderStep = (step: Step) => {
+export const renderStep = (step: Step) => {
   const duration = renderStepDuration(step.duration)
   const icon = renderStepIcon(step)
 
@@ -472,8 +472,8 @@ export class DefaultReporter implements MainReporter {
       return
     }
 
-    const batchUrl = getBatchUrl(baseUrl, batchId)
-    this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
+    // const batchUrl = getBatchUrl(baseUrl, batchId)
+    // this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
 
     this.testWaitSpinner = ora({
       stream: this.context.stdout,
@@ -481,7 +481,7 @@ export class DefaultReporter implements MainReporter {
       text,
     })
 
-    this.testWaitSpinner.start()
+    // this.testWaitSpinner.start()
   }
 
   public testTrigger(
@@ -527,8 +527,8 @@ export class DefaultReporter implements MainReporter {
   }
 
   private removeSpinner() {
-    this.testWaitSpinner?.stop()
-    delete this.testWaitSpinner
+    // this.testWaitSpinner?.stop()
+    // delete this.testWaitSpinner
   }
 }
 
@@ -536,4 +536,9 @@ export const getTunnelReporter = (reporter: MainReporter): TunnelReporter => ({
   log: (message) => reporter.log(`[${chalk.bold.blue('Tunnel')}] ${message}\n`),
   error: (message) => reporter.error(`[${chalk.bold.yellow('Tunnel')}] ${message}\n`),
   warn: (message) => reporter.error(`[${chalk.bold.red('Tunnel')}] ${message}\n`),
+  debug: (message) => {
+    if (process.env.DEBUG?.includes('tunnel')) {
+      reporter.log(`[${chalk.bold.gray('Tunnel')}] ${message}\n`)
+    }
+  },
 })
