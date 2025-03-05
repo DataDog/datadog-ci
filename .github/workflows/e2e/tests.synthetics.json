@@ -17,6 +17,11 @@
       }
     },
     {
+      "testOverrides": {
+        "headers": {
+          "X-Fake-Header": "fake value"
+        }
+      },
       "localTestDefinition": {
         "public_id": "2r9-q7u-4nn",
         "name": "Local Test Definition (browser)",
