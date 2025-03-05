@@ -15,6 +15,40 @@
           "X-Fake-Header": "fake value"
         }
       }
+    },
+    {
+      "localTestDefinition": {
+        "public_id": "2r9-q7u-4nn",
+        "name": "Local Test Definition (browser)",
+        "type": "browser",
+        "config": {
+          "request": {
+            "method": "GET",
+            "headers": {},
+            "url": "http://{{ HOST }}/headers"
+          },
+          "configVariables": [
+            {
+              "id": "8f38fe28-541c-41bf-8b99-824cd10da416",
+              "name": "HOST",
+              "type": "global"
+            }
+          ]
+        },
+        "options": {
+          "device_ids": ["chrome.laptop_large"]
+        },
+        "locations": ["aws:eu-west-3"],
+        "steps": [
+          {
+            "type": "assertPageContains",
+            "name": "Test text is present on the active page",
+            "params": {
+              "value": "X-Fake-Header: fake value"
+            }
+          }
+        ]
+      }
     }
   ]
 }
