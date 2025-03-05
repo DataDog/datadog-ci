@@ -108,25 +108,27 @@ describe('instrument', () => {
       [Runtime.python311, 'Datadog-Python311-ARM'],
       [Runtime.python312, 'Datadog-Python312-ARM'],
       [Runtime.python313, 'Datadog-Python313-ARM'],
-    ])('calculates an update request with just lambda library layers in arm architecture', async (runtime: Runtime, layer: string) => {
-      const config = {
-        Architectures: [Architecture.arm64],
-        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-        Handler: 'handler.hello',
-        Layers: [],
-        Runtime: runtime,
-      }
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        layerVersion: 11,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'sa-east-1'
+    ])(
+      'calculates an update request with just lambda library layers in arm architecture',
+      async (runtime: Runtime, layer: string) => {
+        const config = {
+          Architectures: [Architecture.arm64],
+          FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Handler: 'handler.hello',
+          Layers: [],
+          Runtime: runtime,
+        }
+        const settings = {
+          flushMetricsToLogs: false,
+          layerAWSAccount: mockAwsAccount,
+          layerVersion: 11,
+          mergeXrayTraces: false,
+          tracingEnabled: false,
+        }
+        const region = 'sa-east-1'
 
-      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
-      expect(updateRequest).toMatchInlineSnapshot(`
+        const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+        expect(updateRequest).toMatchInlineSnapshot(`
         {
           "Environment": {
             "Variables": {
@@ -144,7 +146,8 @@ describe('instrument', () => {
           ],
         }
       `)
-    })
+      }
+    )
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
