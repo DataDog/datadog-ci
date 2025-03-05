@@ -7,7 +7,7 @@ import addFormats from 'ajv-formats'
 
 import sarifJsonSchema from './json-schema/sarif-schema-2.1.0.json'
 
-const maxSarifFileSize = 5 * 1024 * 1024 // 5MB in bytes
+const maxSarifFileSize = 10 * 1024 * 1024 // 10MB in bytes
 
 /**
  * Validate the SARIF file and check if the file is too large or not valid
