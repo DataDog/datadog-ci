@@ -65,12 +65,13 @@ export type PEHeader = {
 }
 
 export type PEFileMetadata = {
-  filename: string
+  filename: string // name of the .dll file
   isPE: boolean
   arch: MachineArchitecture
   hasPdbInfo: boolean
   pdbAge: number
   pdbSig: string | undefined
+  pdbFilename: string // name of the corresponding .pdb file
   error?: Error
 }
 
@@ -225,12 +226,13 @@ const toHex = (value: number, length: number): string => {
 
 export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadata> => {
   const metadata: PEFileMetadata = {
-    filename: '',
+    filename: filename,
     isPE: false,
     arch: MachineArchitecture.unknown,
     hasPdbInfo: false,
     pdbAge: 0,
     pdbSig: undefined,
+    pdbFilename: ''
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -292,7 +294,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
           metadata.pdbAge = pdbInfoBuffer.readUInt32LE(CV_INFO_AGE_OFFSET)
 
           // read the GUID that spans 16 bytes and save it as
-          // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          //     xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
           metadata.pdbSig =
             toHex(pdbInfoBuffer.readUInt32LE(CV_INFO_GUID_OFFSET), 8) +
             '-' +
@@ -317,7 +319,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
             }
             pdbFilename += String.fromCharCode(pdbInfoBuffer[j])
           }
-          metadata.filename = pdbFilename
+          metadata.pdbFilename = pdbFilename
         } else {
           metadata.hasPdbInfo = false
         }

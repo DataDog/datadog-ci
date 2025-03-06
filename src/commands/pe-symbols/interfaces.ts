@@ -14,10 +14,10 @@ export interface MappingMetadata {
   origin_version: string
 
   arch: string
-  pdbAge: number
-  pdbSig?: string
-  origin: string // will contain 'datadog-ci'
+  pdb_age: number
+  pdb_sig?: string
   filename: string
+  origin: string // will contain 'datadog-ci'
   type: string
   overwrite: boolean
 
