@@ -134,8 +134,6 @@ export const executeTests = async (
 
   const deferredReporter = new DeferredReporter()
 
-  let tempResultId = ''
-
   if (config.tunnel) {
     const bars = new Map<string, cliProgress.Bar>()
     const inProgressResults = new Map<string, {startedAt: number; steps: any[]; status: 'in_progress' | 'finished'}>()
@@ -161,9 +159,7 @@ export const executeTests = async (
             const match = req.url?.match(/\/synthetics\/tests\/(?<testId>[^/]+)\/results\/(?<resultId>[^/]+)/)
             // console.log('received req on', req.url)
             if (match?.groups) {
-              // const {resultId} = match.groups
-              // console.log('result id', {tempResultId, g: match.groups})
-              const resultId = tempResultId
+              const {resultId} = match.groups
               const result = inProgressResults.get(resultId) ?? {
                 startedAt: Date.now(),
                 steps: [],
@@ -191,11 +187,8 @@ export const executeTests = async (
               result.status = 'finished'
               bar.update(payload)
             } else {
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands
               bar.start(stepCount, stepIndex + 1, payload)
-
-              tempResultId = resultId
-
-              // console.log('Updating result', {resultId, stepIndex, stepCount})
 
               result.steps[stepIndex] = {
                 ...stepResult,
