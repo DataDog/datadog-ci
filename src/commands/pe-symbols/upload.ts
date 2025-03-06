@@ -18,9 +18,10 @@ import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
+import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
 import {getBuildId, getPEFileMetadata, PEFileMetadata} from './pe'
-import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
+import {MachineArchitecture} from './pe-constants'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
@@ -37,7 +38,6 @@ import {
   renderUpload,
   renderWarning,
 } from './renderer'
-import { MachineArchitecture } from './pe-constants'
 
 export class UploadCommand extends Command {
   public static paths = [['pe-symbols', 'upload']]
@@ -147,7 +147,7 @@ export class UploadCommand extends Command {
     }
   }
 
-  private async 'getGitMetadata'(): Promise<RepositoryData | undefined> {
+  private async getGitMetadata(): Promise<RepositoryData | undefined> {
     try {
       return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
     } catch (e) {
@@ -168,20 +168,13 @@ export class UploadCommand extends Command {
   private getArchitecture(architecture: MachineArchitecture): string {
     if (architecture === MachineArchitecture.x86) {
       return 'x86'
-    }
-    else
-    if (architecture === MachineArchitecture.x64) {
+    } else if (architecture === MachineArchitecture.x64) {
       return 'x64'
-    }
-    else
-    if (architecture === MachineArchitecture.Arm32) {
+    } else if (architecture === MachineArchitecture.Arm32) {
       return 'arm32'
-    }
-    else
-    if (architecture === MachineArchitecture.Arm64) {
+    } else if (architecture === MachineArchitecture.Arm64) {
       return 'arm64'
-    }
-    else {
+    } else {
       return 'unknown'
     }
   }
@@ -294,18 +287,18 @@ export class UploadCommand extends Command {
   }
 
   private getFileInSameFolder(pathname: string, newFilename: string): string {
-    const dirname = path.dirname(pathname);
-    const newPathname = path.join(dirname, path.basename(newFilename));
+    const dirname = path.dirname(pathname)
+    const newPathname = path.join(dirname, path.basename(newFilename))
 
-    return newPathname;
+    return newPathname
   }
 
   private getAssociatedPdbFilename(pathname: string): string {
-    const basename = path.basename(pathname, path.extname(pathname));
-    const dirname = path.dirname(pathname);
-    const newPathname = path.join(dirname, `${basename}.pdb`);
+    const basename = path.basename(pathname, path.extname(pathname))
+    const dirname = path.dirname(pathname)
+    const newPathname = path.join(dirname, `${basename}.pdb`)
 
-    return newPathname;
+    return newPathname
   }
 
   private async performPESymbolsUpload(): Promise<UploadStatus[]> {
@@ -340,20 +333,20 @@ export class UploadCommand extends Command {
         //
         let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
         // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`);
+        this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`)
 
-        if (!fs.existsSync(pdbFilename))
-        {
-          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename);
+        if (!fs.existsSync(pdbFilename)) {
+          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
 
           if (!fs.existsSync(pdbFilename)) {
             this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+
             return UploadStatus.Skipped
           }
         }
 
         // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`);
+        this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`)
 
         const eventValue = JSON.stringify(metadata)
         this.context.stdout.write(renderEventPayload(eventValue))
