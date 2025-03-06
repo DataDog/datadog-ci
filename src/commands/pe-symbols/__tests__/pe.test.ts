@@ -31,7 +31,8 @@ describe('pe', () => {
         arch: 1,
         pdbAge: 1,
         pdbSig: 'E37085B2-4E2C-4BF4-B83F-84F16BC71B74',
-        filename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\Release\\Exports.pdb',
+        pdbFilename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\Release\\Exports.pdb',
+        filename: './src/commands/pe-symbols/__tests__/fixtures/exports_with_pdb_32.dll',
       })
     })
 
@@ -42,7 +43,8 @@ describe('pe', () => {
         arch: 1,
         pdbAge: 0,
         pdbSig: undefined,
-        filename: '',
+        filename: './src/commands/pe-symbols/__tests__/fixtures/exports_without_pdb_32.dll',
+        pdbFilename: '',
       })
     })
 
@@ -53,7 +55,8 @@ describe('pe', () => {
         arch: 2,
         pdbAge: 1,
         pdbSig: '3E3A3E3A-1C05-4E67-B9B7-99D781E5FB5C',
-        filename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\x64\\Release\\Exports.pdb',
+        filename: './src/commands/pe-symbols/__tests__/fixtures/exports_with_pdb_64.dll',
+        pdbFilename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\x64\\Release\\Exports.pdb',
       })
     })
 
@@ -64,7 +67,8 @@ describe('pe', () => {
         arch: 2,
         pdbAge: 0,
         pdbSig: undefined,
-        filename: '',
+        filename: './src/commands/pe-symbols/__tests__/fixtures/exports_without_pdb_64.dll',
+        pdbFilename: '',
       })
     })
   })
