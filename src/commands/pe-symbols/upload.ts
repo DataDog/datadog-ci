@@ -1,8 +1,8 @@
 import fs from 'fs'
-import path from 'path'
 
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -52,8 +52,7 @@ export class UploadCommand extends Command {
   })
 
   private disableGit = Option.Boolean('--disable-git', false)
-  // TODO: in dry run mode by default until we get the backend ready to support the upload
-  private dryRun = Option.Boolean('--dry-run', true)
+  private dryRun = Option.Boolean('--dry-run', false)
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
@@ -190,7 +189,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getPESymbolSource(peFileMetadata),
-      filename: path.basename(peFileMetadata.pdbFilename),
+      filename: upath.basename(peFileMetadata.pdbFilename),
       overwrite: this.replaceExisting,
       type: TYPE_PE_DEBUG_INFOS,
     }
@@ -287,16 +286,16 @@ export class UploadCommand extends Command {
   }
 
   private getFileInSameFolder(pathname: string, newFilename: string): string {
-    const dirname = path.dirname(pathname)
-    const newPathname = path.join(dirname, path.basename(newFilename))
+    const dirname = upath.dirname(pathname)
+    const newPathname = upath.join(dirname, upath.basename(newFilename))
 
     return newPathname
   }
 
   private getAssociatedPdbFilename(pathname: string): string {
-    const basename = path.basename(pathname, path.extname(pathname))
-    const dirname = path.dirname(pathname)
-    const newPathname = path.join(dirname, `${basename}.pdb`)
+    const basename = upath.basename(pathname, upath.extname(pathname))
+    const dirname = upath.dirname(pathname)
+    const newPathname = upath.join(dirname, `${basename}.pdb`)
 
     return newPathname
   }

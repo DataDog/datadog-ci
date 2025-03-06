@@ -102,6 +102,7 @@
     "terminal-link": "2.1.1",
     "tiny-async-pool": "^2.1.0",
     "typanion": "^3.14.0",
+    "upath": "^2.0.1",
     "uuid": "^9.0.0",
     "ws": "^7.5.10",
     "xml2js": "0.5.0",
