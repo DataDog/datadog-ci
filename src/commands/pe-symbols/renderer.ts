@@ -72,8 +72,7 @@ export const renderCommandSummary = (statuses: UploadStatus[], duration: number,
   return output.join('\n') + '\n'
 }
 
-export const renderEventPayload = (payload: string) =>
-  chalk.white(`${ICONS.SUCCESS} Event payload = ${payload}\n`)
+export const renderEventPayload = (payload: string) => chalk.white(`${ICONS.SUCCESS} Event payload = ${payload}\n`)
 
 export const renderMissingPdbFile = (pdbFilename: string, dllPath: string) =>
   chalk.yellow(`${ICONS.WARNING} Error: Missing '${pdbFilename}' file expected for ${dllPath}`)

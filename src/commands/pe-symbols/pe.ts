@@ -226,13 +226,13 @@ const toHex = (value: number, length: number): string => {
 
 export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadata> => {
   const metadata: PEFileMetadata = {
-    filename: filename,
+    filename,
     isPE: false,
     arch: MachineArchitecture.unknown,
     hasPdbInfo: false,
     pdbAge: 0,
     pdbSig: undefined,
-    pdbFilename: ''
+    pdbFilename: '',
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
