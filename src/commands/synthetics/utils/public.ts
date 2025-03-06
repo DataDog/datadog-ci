@@ -6,6 +6,7 @@ import {promisify} from 'util'
 
 import chalk from 'chalk'
 import {glob} from 'glob'
+import parseJsonAst from 'json-to-ast'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 
@@ -38,6 +39,7 @@ import {
   getBasePayload,
   isLocalTriggerConfig,
   wait,
+  convertAstLocationToMetadata,
 } from './internal'
 
 export const PUBLIC_ID_REGEX = /\b[a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3}\b/
@@ -64,13 +66,13 @@ export let ciTriggerApp = process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP || 'npm_
 export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, publicId: string): TestPayload => {
   if (isLocalTriggerConfig(triggerConfig)) {
     return {
-      ...getBasePayload(test, triggerConfig.testOverrides),
+      ...getBasePayload(test, triggerConfig),
       local_test_definition: triggerConfig.localTestDefinition,
     }
   }
 
   return {
-    ...getBasePayload(test, triggerConfig.testOverrides),
+    ...getBasePayload(test, triggerConfig),
     public_id: publicId,
   }
 }
@@ -169,10 +171,18 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
   return Promise.all(
     files.map(async (file) => {
       try {
-        const content = await promisify(fs.readFile)(file, 'utf8')
+        const rawContent = await promisify(fs.readFile)(file, 'utf8')
         const suiteName = await getFilePathRelativeToRepo(file)
 
-        return {name: suiteName, content: JSON.parse(content)}
+        const content = JSON.parse(rawContent) as Suite['content']
+
+        const suite: Suite = {
+          name: suiteName,
+          content,
+          ast: parseJsonAst(rawContent, {source: suiteName}),
+        }
+
+        return suite
       } catch (e) {
         throw new Error(`Unable to read and parse the test file ${file}`)
       }

@@ -22,6 +22,7 @@ import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {
   getPublicIdOrPlaceholder,
+  findLocationInSuite,
   getTriggerConfigPublicId,
   isLocalTriggerConfig,
   isMobileTestWithOverride,
@@ -63,10 +64,11 @@ export const getTestConfigs = async (
 
   const testConfigs = suites
     .map((suite) =>
-      suite.content.tests.map((test) => {
+      suite.content.tests.map<TriggerConfig>((test, i) => {
         return {
           testOverrides: test.testOverrides,
           suite: suite.name,
+          location: suite.ast && findLocationInSuite(suite, i, reporter),
           ...(isLocalTriggerConfig(test)
             ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
             : {id: normalizePublicId(test.id) ?? ''}),
@@ -120,6 +122,8 @@ export const getTestsToTrigger = async (
   }
 
   const initialSummary = createInitialSummary()
+
+  // This transforms `UserConfigOverride` into `ServerConfigOverride`.
   const testsAndConfigsOverride = await Promise.all(
     triggerConfigs.map((triggerConfig) =>
       getTestAndOverrideConfig(api, triggerConfig, reporter, initialSummary, isTunnelEnabled)
