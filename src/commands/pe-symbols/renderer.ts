@@ -72,8 +72,11 @@ export const renderCommandSummary = (statuses: UploadStatus[], duration: number,
   return output.join('\n') + '\n'
 }
 
-export const renderMissingBuildId = (path: string) =>
-  chalk.red(`${ICONS.FAILED} Error: Invalid or missing 'build_id' file. Expected at path ${path}`)
+export const renderEventPayload = (payload: string) =>
+  chalk.white(`${ICONS.SUCCESS} Event payload = ${payload}\n`)
+
+export const renderMissingPdbFile = (pdbFilename: string, dllPath: string) =>
+  chalk.yellow(`${ICONS.WARNING} Error: Missing '${pdbFilename}' file expected for ${dllPath}`)
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
@@ -87,10 +90,6 @@ export const renderArgumentMissingError = (argumentName: string) =>
 
 export const renderInvalidSymbolsLocation = (symbolsDirectory: string) =>
   chalk.red(`${ICONS.FAILED} Failed to get symbols files - ${symbolsDirectory} is not a file, nor a directory.\n`)
-
-// TODO: we should not need this for Windows PE files
-// export const renderMissingBinUtils = () =>
-//   chalk.red(`${ICONS.FAILED} Could not find required 'objcopy' program. Please install binutils.\n`)
 
 export const renderGeneralizedError = (error: any) => {
   let str = chalk.red(`${ICONS.FAILED} Error: ${error}\n`)
@@ -112,6 +111,7 @@ export const renderRetriedUpload = (filePath: string, errorMessage: string, atte
 }
 
 export const renderUpload = (filePath: string, metadata: MappingMetadata): string =>
-  `Uploading debug info for PE file ${filePath} (arch:${metadata.arch} \
-pdbAge:${metadata.pdbAge} \
-pdbSig:${metadata.pdbSig} \n`
+  `Uploading debug info for ${filePath} (arch:${metadata.arch} \
+pdb_age:${metadata.pdb_age} \
+pdb_sig:${metadata.pdb_sig} \
+filename:${metadata.filename})\n`

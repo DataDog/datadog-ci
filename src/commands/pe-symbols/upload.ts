@@ -5,35 +5,33 @@ import {Command, Option} from 'clipanion'
 import glob from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-// import {newApiKeyValidator} from '../../helpers/apikey'
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
-// import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
-import {getMetricsLogger} from '../../helpers/metrics'
-// import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {UploadStatus} from '../../helpers/upload'
+import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
+import {MultipartValue, UploadStatus} from '../../helpers/upload'
 // import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import {buildPath, DEFAULT_CONFIG_PATHS, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
-import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
-
-// import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
-import {MappingMetadata, TYPE_PE_DEBUG_INFOS} from './interfaces'
+import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
 import {getBuildId, getPEFileMetadata, PEFileMetadata} from './pe'
-// import {getElfRequestBuilder, uploadMultipartHelper} from './helpers'
+import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
   renderCommandSummary,
-  // renderFailedUpload,
+  renderFailedUpload,
   renderGeneralizedError,
   renderGitWarning,
   renderInvalidSymbolsLocation,
+  renderMissingPdbFile,
+  renderEventPayload,
+  renderRetriedUpload,
   // renderMissingBinUtils,
   // renderRetriedUpload,
   renderUpload,
@@ -121,33 +119,33 @@ export class UploadCommand extends Command {
     return 0
   }
 
-  // private getApiKeyValidator(metricsLogger: MetricsLogger) {
-  //   return newApiKeyValidator({
-  //     apiKey: this.config.apiKey,
-  //     datadogSite: this.config.datadogSite,
-  //     metricsLogger: metricsLogger.logger,
-  //   })
-  // }
+  private getApiKeyValidator(metricsLogger: MetricsLogger) {
+    return newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
+  }
 
-  // private getGitDataPayload(gitData: RepositoryData): MultipartValue {
-  //   const files = gitData.trackedFilesMatcher.rawTrackedFilesList()
-  //   const repoPayload = {
-  //     data: [
-  //       {
-  //         files,
-  //         hash: gitData.hash,
-  //         repository_url: gitData.remote,
-  //       },
-  //     ],
-  //     version: 1,
-  //   }
+  private getGitDataPayload(gitData: RepositoryData): MultipartValue {
+    const files = gitData.trackedFilesMatcher.rawTrackedFilesList()
+    const repoPayload = {
+      data: [
+        {
+          files,
+          hash: gitData.hash,
+          repository_url: gitData.remote,
+        },
+      ],
+      version: 1,
+    }
 
-  //   return {
-  //     type: 'string',
-  //     options: {filename: 'repository', contentType: 'application/json'},
-  //     value: JSON.stringify(repoPayload),
-  //   }
-  // }
+    return {
+      type: 'string',
+      options: {filename: 'repository', contentType: 'application/json'},
+      value: JSON.stringify(repoPayload),
+    }
+  }
 
   private async 'getGitMetadata'(): Promise<RepositoryData | undefined> {
     try {
@@ -194,12 +192,12 @@ export class UploadCommand extends Command {
       origin_version: this.cliVersion,
       origin: 'datadog-ci',
       arch: this.getArchitecture(peFileMetadata.arch),
-      pdbAge: peFileMetadata.pdbAge,
-      pdbSig: peFileMetadata?.pdbSig,
+      pdb_age: peFileMetadata.pdbAge,
+      pdb_sig: peFileMetadata?.pdbSig,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getPESymbolSource(peFileMetadata),
-      filename: path.basename(peFileMetadata.filename),
+      filename: path.basename(peFileMetadata.pdbFilename),
       overwrite: this.replaceExisting,
       type: TYPE_PE_DEBUG_INFOS,
     }
@@ -295,83 +293,118 @@ export class UploadCommand extends Command {
     return Array.from(buildIds.values()).sort((a, b) => a.filename.localeCompare(b.filename))
   }
 
+  private getFileInSameFolder(pathname: string, newFilename: string): string {
+    const dirname = path.dirname(pathname);
+    const newPathname = path.join(dirname, path.basename(newFilename));
+
+    return newPathname;
+  }
+
+  private getAssociatedPdbFilename(pathname: string): string {
+    const basename = path.basename(pathname, path.extname(pathname));
+    const dirname = path.dirname(pathname);
+    const newPathname = path.join(dirname, `${basename}.pdb`);
+
+    return newPathname;
+  }
+
   private async performPESymbolsUpload(): Promise<UploadStatus[]> {
     const metricsLogger = this.getMetricsLogger()
-    // const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
+    const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
     let peFilesMetadata = (
       await Promise.all(this.symbolsLocations.map((location) => this.getPESymbolFiles(location)))
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
-    // const requestBuilder = getElfRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
-    const tmpDirectory = await createUniqueTmpDirectory()
+    const requestBuilder = getPERequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, peFilesMetadata, async (fileMetadata) => {
         const metadata = this.getMappingMetadata(fileMetadata)
-        // const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
-        // const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        // await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
 
-          return UploadStatus.Success
+          // TODO: uncomment the following when dryRun won't be TRUE by default
+          // return UploadStatus.Success
         }
 
-        return UploadStatus.Success
-        // const payload = {
-        //   content: new Map<string, MultipartValue>([
-        //     [
-        //       'event',
-        //       {
-        //         type: 'string',
-        //         value: JSON.stringify(metadata),
-        //         options: {filename: 'event', contentType: 'application/json'},
-        //       },
-        //     ],
-        //     [
-        //       VALUE_NAME_PE_DEBUG_INFOS,
-        //       {
-        //         type: 'file',
-        //         path: outputFilePath,
-        //         options: {filename: PE_DEBUG_INFOS_FILENAME},
-        //       },
-        //     ],
-        //   ]),
-        // }
+        // get the .pdb filename based on the .dll filename and copy it into a temp folder
+        // --> not sure the ELF-based code makes any sense for PE files...
+        //     instead, we should not need to copy anything:
+        //     1. get the .pdb filename from the .dll file (ex: foo64.dll --> foo.pdb)
+        //     2. look for it in the same folder as the .dll file
+        //     3. if it is not there, look in the same folder for a file with the same name as .dll but with a .pdb extension
+        //     4. if it is there, upload it; if not generate a skip warning
+        //
+        let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
+        // TODO: remove this log after debugging
+        this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`);
 
-        // if (this.gitData !== undefined) {
-        //   payload.content.set('repository', this.getGitDataPayload(this.gitData))
-        // }
+        if (!fs.existsSync(pdbFilename))
+        {
+          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename);
 
-        // return uploadMultipartHelper(requestBuilder, payload, {
-        //   apiKeyValidator,
-        //   onError: (e) => {
-        //     this.context.stdout.write(renderFailedUpload(fileMetadata.filename, e.message))
-        //     metricsLogger.logger.increment('failed', 1)
-        //   },
-        //   onRetry: (e, attempts) => {
-        //     this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, e.message, attempts))
-        //     metricsLogger.logger.increment('retries', 1)
-        //   },
-        //   onUpload: () => {
-        //     this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
-        //   },
-        //   retries: 5,
-        //   useGzip: true,
-        // }).finally(() => {
-        //   // ignore errors when removing the file
-        //   fs.rm(outputFilePath, () => {})
-        // })
+          if (!fs.existsSync(pdbFilename)) {
+            this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+            return UploadStatus.Skipped
+          }
+        }
+
+        // TODO: remove this log after debugging
+        this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`);
+
+        const eventValue = JSON.stringify(metadata)
+        this.context.stdout.write(renderEventPayload(eventValue))
+
+        const payload = {
+          content: new Map<string, MultipartValue>([
+            [
+              'event',
+              {
+                type: 'string',
+                value: eventValue,
+                options: {filename: 'event', contentType: 'application/json'},
+              },
+            ],
+            [
+              VALUE_NAME_PE_DEBUG_INFOS,
+              {
+                type: 'file',
+                path: pdbFilename,
+                options: {filename: PE_DEBUG_INFOS_FILENAME},
+              },
+            ],
+          ]),
+        }
+
+        if (this.gitData !== undefined) {
+          payload.content.set('repository', this.getGitDataPayload(this.gitData))
+        }
+
+        return uploadMultipartHelper(requestBuilder, payload, {
+          apiKeyValidator,
+          onError: (e) => {
+            this.context.stdout.write(renderFailedUpload(fileMetadata.filename, e.message))
+            metricsLogger.logger.increment('failed', 1)
+          },
+          onRetry: (e, attempts) => {
+            this.context.stdout.write(renderRetriedUpload(fileMetadata.filename, e.message, attempts))
+            metricsLogger.logger.increment('retries', 1)
+          },
+          onUpload: () => {
+            this.context.stdout.write(renderUpload(fileMetadata.filename, metadata))
+          },
+          retries: 5,
+          useGzip: true,
+        })
       })
 
       return results
     } catch (error) {
       throw error
     } finally {
-      await deleteDirectory(tmpDirectory)
       try {
         await metricsLogger.flush()
       } catch (err) {
@@ -379,17 +412,6 @@ export class UploadCommand extends Command {
       }
     }
   }
-
-  // TODO: we should not need this tool for Windows PE files
-  // private async checkBinUtils(): Promise<boolean> {
-  //   try {
-  //     await execute('objcopy --version')
-
-  //     return true
-  //   } catch (e) {
-  //     return false
-  //   }
-  // }
 
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
@@ -411,12 +433,6 @@ export class UploadCommand extends Command {
         }
       }
     }
-
-    // TODO: we should not need this tool for Windows PE files
-    // if (!(await this.checkBinUtils())) {
-    //   this.context.stderr.write(renderMissingBinUtils())
-    //   parametersOkay = false
-    // }
 
     return parametersOkay
   }
