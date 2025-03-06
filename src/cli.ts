@@ -5,7 +5,7 @@ import {CommandClass} from 'clipanion/lib/advanced/Command'
 
 import {version} from './helpers/version'
 
-export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols', 'pe-symbols', 'coverage']
+export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols', 'coverage']
 
 const onError = (err: any) => {
   console.log(err)
