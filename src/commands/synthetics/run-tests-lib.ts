@@ -65,6 +65,7 @@ export const executeTests = async (
       await tunnel.stop()
     }
     if (reportServer) {
+      reportServer.closeAllConnections()
       reportServer.close()
     }
   }
@@ -122,19 +123,22 @@ export const executeTests = async (
 
   const multiBar = new cliProgress.MultiBar(
     {
-      clearOnComplete: false,
+      clearOnComplete: true,
       hideCursor: true,
       barCompleteChar: '=',
       barIncompleteChar: ' ',
-      format: ` • [${chalk.dim(`{publicId}`)}] [${chalk.cyan(`{bar}`)}] - Step {value}/{total}`,
+      format: ` ${chalk.green(`{icon}`)} [${chalk.dim(`{publicId}`)}] [${chalk.cyan(`{bar}`)}] - Step {value}/{total}`,
     },
     cliProgress.Presets.shades_grey
   )
 
   const deferredReporter = new DeferredReporter()
 
+  let tempResultId = ''
+
   if (config.tunnel) {
     const bars = new Map<string, cliProgress.Bar>()
+    const inProgressResults = new Map<string, {startedAt: number; steps: any[]; status: 'in_progress' | 'finished'}>()
 
     reportServer = http
       .createServer((req, res) => {
@@ -143,13 +147,64 @@ export const executeTests = async (
           body += chunk.toString()
         })
         req.on('end', () => {
-          const {stepIndex, stepCount, stepResult, publicId, resultId} = JSON.parse(body)
-          const bar = bars.get(resultId) ?? multiBar.create(0, 0)
-          bars.set(resultId, bar)
-          bar.start(stepCount, stepIndex + 1, {publicId})
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Headers', '*')
+          res.statusCode = 200
 
-          // TODO: use it
-          void stepResult
+          if (req.method === 'OPTIONS') {
+            res.end()
+
+            return
+          }
+
+          if (req.method === 'GET' && req.url?.includes('/synthetics')) {
+            const match = req.url?.match(/\/synthetics\/tests\/(?<testId>[^/]+)\/results\/(?<resultId>[^/]+)/)
+            // console.log('received req on', req.url)
+            if (match?.groups) {
+              // const {resultId} = match.groups
+              // console.log('result id', {tempResultId, g: match.groups})
+              const resultId = tempResultId
+              const result = inProgressResults.get(resultId) ?? {
+                startedAt: Date.now(),
+                steps: [],
+                status: 'in_progress',
+              }
+
+              // console.log('Returned result', {status: result.status, resultId})
+
+              res.setHeader('Content-Type', 'application/json')
+              res.write(JSON.stringify(result))
+            } else {
+              res.statusCode = 404
+            }
+          } else {
+            const {startedAt, stepIndex, stepCount, stepResult, publicId, resultId, status} = JSON.parse(body)
+
+            const result = inProgressResults.get(resultId) ?? {startedAt, steps: [], status: 'in_progress'}
+            const payload = {publicId, icon: status === 'finished' ? '✓' : '⏳'}
+
+            const bar = bars.get(resultId) ?? multiBar.create(0, 0)
+            bars.set(resultId, bar)
+
+            if (status === 'finished' && inProgressResults.get(resultId)) {
+              // console.log('Finishing', resultId)
+              result.status = 'finished'
+              bar.update(payload)
+            } else {
+              bar.start(stepCount, stepIndex + 1, payload)
+
+              tempResultId = resultId
+
+              // console.log('Updating result', {resultId, stepIndex, stepCount})
+
+              result.steps[stepIndex] = {
+                ...stepResult,
+                displayIndex: stepIndex,
+              }
+            }
+
+            inProgressResults.set(resultId, result)
+          }
 
           res.end()
         })

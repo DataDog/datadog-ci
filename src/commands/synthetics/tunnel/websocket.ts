@@ -11,7 +11,7 @@ export class WebSocket extends EventEmitter {
 
   constructor(private url: string, private proxyAgent: ProxyAgent | undefined) {
     super()
-    // this.url = this.url.replace(/wss:\/\/tunnel.*\.synthetics\..*\.com\?/, 'ws://127.0.0.1:8080?')
+    this.url = this.url.replace(/wss:\/\/tunnel.*\.synthetics\..*\.com\?/, 'ws://127.0.0.1:8080?')
   }
 
   /**
