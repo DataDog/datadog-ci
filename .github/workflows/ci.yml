@@ -130,7 +130,7 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
 
   e2e-test-windows:
-    name: End-to-end test the package
+    name: End-to-end test the package (Windows)
     runs-on: windows-latest
     needs: build-and-test
     env:
@@ -142,6 +142,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifacts-22
+          path: artifacts/
       - run: yarn install --immutable
       - name: Run sourcemaps upload test
         run: yarn launch sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
