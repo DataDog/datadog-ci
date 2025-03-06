@@ -129,6 +129,26 @@ jobs:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
 
+  e2e-test-windows:
+    name: End-to-end test the package
+    runs-on: windows-latest
+    needs: build-and-test
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: yarn install --immutable
+      - name: Run sourcemaps upload test
+        run: yarn launch sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+
   standalone-binary-test-ubuntu:
     name: Test standalone binary in ubuntu
     runs-on: ubuntu-latest

@@ -183,7 +183,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
+    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map') /* {windowsPathsNoEscape: true} */)
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
