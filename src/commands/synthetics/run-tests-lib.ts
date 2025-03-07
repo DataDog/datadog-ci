@@ -1,7 +1,9 @@
+import {writeFileSync} from 'node:fs'
 import http from 'node:http'
 
 import chalk from 'chalk'
 import cliProgress from 'cli-progress'
+import terminalLink from 'terminal-link'
 
 import {getProxyAgent} from '../../helpers/utils'
 
@@ -121,13 +123,17 @@ export const executeTests = async (
 
   const publicIdsToTrigger = tests.flatMap(({public_id}) => (public_id ? [public_id] : []))
 
+  const fPublicId = chalk.dim(`{publicId}`)
+  const fBar = chalk.cyan(`{bar}`)
+  const fUrl = terminalLink('link', '{url}')
+
   const multiBar = new cliProgress.MultiBar(
     {
       clearOnComplete: true,
       hideCursor: true,
       barCompleteChar: '=',
       barIncompleteChar: ' ',
-      format: ` ${chalk.green(`{icon}`)} [${chalk.dim(`{publicId}`)}] [${chalk.cyan(`{bar}`)}] - Step {value}/{total}`,
+      format: ` {icon} [${fPublicId}] [${fBar}] - Step {value}/{total} (${fUrl})`,
     },
     cliProgress.Presets.shades_grey
   )
@@ -174,10 +180,11 @@ export const executeTests = async (
               res.statusCode = 404
             }
           } else {
-            const {startedAt, stepIndex, stepCount, stepResult, publicId, resultId, status} = JSON.parse(body)
+            const {startedAt, stepIndex, stepCount, stepResult, publicId, resultId, status, retrying} = JSON.parse(body)
 
             const result = inProgressResults.get(resultId) ?? {startedAt, steps: [], status: 'in_progress'}
-            const payload = {publicId, icon: status === 'finished' ? '✓' : '⏳'}
+            const url = `https://dd-cc0f04065bf75f0aff85d7d0e62d9a6f.datad0g.com/synthetics/details/${publicId}/result/${resultId}?batch_id=${trigger.batch_id}&port=3222`
+            const payload = {url, publicId, icon: status === 'finished' ? '•' : '⏳'}
 
             const bar = bars.get(resultId) ?? multiBar.create(0, 0)
             bars.set(resultId, bar)
@@ -187,6 +194,25 @@ export const executeTests = async (
               result.status = 'finished'
               bar.update(payload)
             } else {
+              const error = retrying?.error || stepResult.error
+              if (error?.code === 'ASSERTION_FAILURE') {
+                const retries: number = retrying?.retries || 0
+                const retryText = retrying ? ` (attempt ${retries + 1})` : ''
+
+                writeFileSync(
+                  `/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result-${retryText}.json`,
+                  JSON.stringify(stepResult)
+                )
+
+                multiBar.log(
+                  `${chalk.dim(`[${publicId}]`)} ${chalk.red('[ASSERTION_FAILURE]')} - ${
+                    stepResult.description
+                  }${retryText}\n ${chalk.red('✖')} Expected "${stepResult.assertionResult.expected}" but got "${
+                    stepResult.assertionResult.actual
+                  }"\n\n`
+                )
+              }
+
               // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/restrict-plus-operands
               bar.start(stepCount, stepIndex + 1, payload)
 
@@ -194,6 +220,11 @@ export const executeTests = async (
                 ...stepResult,
                 displayIndex: stepIndex,
               }
+
+              // writeFileSync(
+              //   '/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result.json',
+              //   JSON.stringify(stepResult)
+              // )
             }
 
             inProgressResults.set(resultId, result)
@@ -336,23 +367,7 @@ export const getTriggerConfigs = async (
     } as TriggerConfig
   })
 
-  const localTriggerConfigsWithoutId = testsFromTestConfigs.flatMap((testConfig) => {
-    if (!isLocalTriggerConfig(testConfig)) {
-      return []
-    }
-
-    return [
-      {
-        ...testConfig,
-        testOverrides: {
-          ...defaultTestConfigOverrides,
-          ...testConfig.testOverrides,
-        },
-      },
-    ]
-  })
-
-  return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
+  return triggerConfigsWithId
 }
 
 export const executeWithDetails = async (

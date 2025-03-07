@@ -1,0 +1,1 @@
+{"assertionResult":{"expected":"Wrong value","hasSecureVariables":false,"actual":"Hello World"},"description":"Test div \"Hello World\" content","duration":0,"skipped":true,"stepId":0,"type":"assertElementContent"}
