@@ -199,10 +199,10 @@ export const executeTests = async (
                 const retries: number = retrying?.retries || 0
                 const retryText = retrying ? ` (attempt ${retries + 1})` : ''
 
-                writeFileSync(
-                  `/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result-${retryText}.json`,
-                  JSON.stringify(stepResult)
-                )
+                // writeFileSync(
+                //   `/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result-${retryText}.json`,
+                //   JSON.stringify(stepResult)
+                // )
 
                 multiBar.log(
                   `${chalk.dim(`[${publicId}]`)} ${chalk.red('[ASSERTION_FAILURE]')} - ${
