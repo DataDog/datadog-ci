@@ -1,3 +1,5 @@
+import type jsonToAst from 'json-to-ast'
+
 import {toBoolean, toNumber, StringMap} from '../../../helpers/env'
 import {pick} from '../../../helpers/utils'
 
@@ -9,12 +11,15 @@ import {
   CookiesObject,
   ExecutionRule,
   LocalTriggerConfig,
+  MainReporter,
   MobileTestWithOverride,
   Result,
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
   ServerResult,
+  SourceFileMetadata,
+  Suite,
   Test,
   TestNotFound,
   TestPayload,
@@ -114,6 +119,20 @@ export const LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER = 'local'
 
 export const getPublicIdOrPlaceholder = (test: Test | TestPayload | {public_id?: string}): string =>
   ('public_id' in test && test.public_id) || LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER
+
+export const convertAstLocationToMetadata = (location: jsonToAst.Location): SourceFileMetadata => {
+  if (!location.source) {
+    throw new Error('Source file is missing in the AST location.')
+  }
+
+  return {
+    source: {
+      file: location.source,
+      start: location.start.line,
+      end: location.end.line,
+    },
+  }
+}
 
 export const isResultInBatchSkippedBySelectiveRerun = (
   result: ResultInBatch
@@ -338,8 +357,12 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): BaseTestPayload => {
-  let overriddenConfig: BaseTestPayload = {}
+export const getBasePayload = (test: Test, triggerConfig: TriggerConfig): BaseTestPayload => {
+  const {testOverrides, location} = triggerConfig
+
+  const overriddenConfig: BaseTestPayload = {
+    metadata: location && convertAstLocationToMetadata(location),
+  }
 
   if (!testOverrides || !Object.keys(testOverrides).length) {
     return overriddenConfig
@@ -350,9 +373,9 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
     overriddenConfig.executionRule = executionRule
   }
 
-  overriddenConfig = {
-    ...overriddenConfig,
-    ...pick(testOverrides, [
+  Object.assign(
+    overriddenConfig,
+    pick(testOverrides, [
       'allowInsecureCertificates',
       'basicAuth',
       'body',
@@ -370,12 +393,50 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'testTimeout',
       'tunnel',
       'variables',
-    ]),
-  }
+    ])
+  )
 
   if ((test.type === 'browser' || test.subtype === 'http') && testOverrides.startUrl) {
     overriddenConfig.startUrl = template(testOverrides.startUrl, {...process.env})
   }
 
   return overriddenConfig
+}
+
+export const findLocationInSuite = (
+  suite: Suite,
+  index: number,
+  reporter: MainReporter
+): jsonToAst.Location | undefined => {
+  if (!suite.ast) {
+    return
+  }
+
+  const context = suite.name ? ` [${suite.name}]` : ''
+
+  if (suite.ast.type !== 'Object') {
+    reporter.error('The root of a test file must be an object.')
+
+    return
+  }
+
+  const testsPropertyNode = suite.ast.children.find(
+    (node) => node.type === 'Property' && node.key.type === 'Identifier' && node.key.value === 'tests'
+  )
+
+  if (testsPropertyNode?.value.type !== 'Array') {
+    reporter.error(`Test files must contain a "tests" array.${context}`)
+
+    return
+  }
+
+  const testsArrayNode = testsPropertyNode.value
+  const selectedNode = testsArrayNode.children[index]
+  if (selectedNode.type !== 'Object') {
+    reporter.error(`Item at index ${index} in the "tests" array is not an object.${context}`)
+
+    return
+  }
+
+  return selectedNode.loc
 }

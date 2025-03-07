@@ -1,3 +1,5 @@
+import type jsonToAst from 'json-to-ast'
+
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 
@@ -389,6 +391,14 @@ export interface CookiesObject {
   value: string
 }
 
+export interface SourceFileMetadata {
+  source: {
+    file: string
+    start: number
+    end: number
+  }
+}
+
 export interface BaseConfigOverride {
   allowInsecureCertificates?: boolean
   basicAuth?: BasicAuthCredentials
@@ -419,6 +429,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
   appExtractedMetadata?: MobileAppExtractedMetadata
+  metadata?: SourceFileMetadata
 }
 
 export interface BatchOptions {
@@ -473,6 +484,7 @@ export interface BasicAuthCredentials {
 interface BaseTriggerConfig {
   testOverrides?: UserConfigOverride
   suite?: string
+  location?: jsonToAst.Location
 }
 export interface RemoteTriggerConfig extends BaseTriggerConfig {
   id: string
@@ -493,6 +505,7 @@ export interface Suite {
     tests: TriggerConfig[]
   }
   name?: string
+  ast?: jsonToAst.ValueNode
 }
 
 export interface TestConfig {
