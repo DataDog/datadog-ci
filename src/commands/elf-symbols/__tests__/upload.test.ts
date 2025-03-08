@@ -114,7 +114,6 @@ describe('elf-symbols upload', () => {
         `${fixtureDir}/exec_arm_little`,
         `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
         `${fixtureDir}/go_x86_64_only_go_build_id`,
-        `${fixtureDir}/go_x86_64_only_go_build_id.debug`,
       ])
     })
 
@@ -263,11 +262,11 @@ describe('elf-symbols upload', () => {
         },
         {
           ...commonMetadata,
-          file_hash: '',
+          file_hash: '5ba2907faebb8002de89711d5f0f005c',
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
-          filename: 'dyn_aarch64.debug',
+          filename: 'dyn_aarch64',
           symbol_source: 'debug_info',
         },
         {

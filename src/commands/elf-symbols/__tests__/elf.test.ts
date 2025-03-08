@@ -736,7 +736,7 @@ describe('elf', () => {
         goBuildId: '',
         elfType: 'DYN',
         hasDebugInfo: true,
-        hasDynamicSymbolTable: true,
+        hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: false,
       })
@@ -835,11 +835,15 @@ describe('elf', () => {
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
       // check that elf and debug info metadata are equal except for hasCode and filename
+      // dynamic symbol table is kept only if there is no debug info nor symbol table
+      const hasDynamicSymbolTable =
+        !elfFileMetadata.hasDebugInfo && !elfFileMetadata.hasSymbolTable && elfFileMetadata.hasDynamicSymbolTable
       expect(debugInfoMetadata).toEqual({
         ...elfFileMetadata,
         hasCode: false,
         filename: outputFilename,
         fileHash: debugInfoMetadata.fileHash,
+        hasDynamicSymbolTable,
       })
     }
 
