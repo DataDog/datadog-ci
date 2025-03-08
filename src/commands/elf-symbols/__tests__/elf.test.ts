@@ -831,7 +831,7 @@ describe('elf', () => {
       const filename = path.basename(elfFile)
       const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
-      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, false)
+      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true)
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
       // check that elf and debug info metadata are equal except for hasCode and filename

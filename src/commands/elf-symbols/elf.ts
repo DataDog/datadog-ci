@@ -527,7 +527,21 @@ export const computeFileHash = async (filename: string): Promise<string> => {
   }
 }
 
-const getSupportedBfdTargetsInternal = async (): Promise<string[]> => {
+const hasZstdSupport = async (): Promise<boolean> => {
+  const {stdout} = await execute('objcopy --help')
+
+  return /--compress-debug-sections.*zstd/.test(stdout.toString())
+}
+
+const memoize = <T>(fn: () => Promise<T>): (() => Promise<T>) => {
+  let promise: Promise<T> | undefined
+
+  return () => (promise = promise || fn())
+}
+
+const hasZstdSupportCached = memoize(hasZstdSupport)
+
+const getSupportedBfdTargets = async (): Promise<string[]> => {
   const {stdout} = await execute('objcopy --help')
 
   const groups = /supported targets: (?<targets>.*)$/m.exec(stdout.toString())?.groups
@@ -538,18 +552,7 @@ const getSupportedBfdTargetsInternal = async (): Promise<string[]> => {
   return []
 }
 
-const getSupportedBfdTargets = (() => {
-  let promise: Promise<string[]> | undefined
-
-  return () =>
-    (promise =
-      promise ||
-      (async () => {
-        const targets = await getSupportedBfdTargetsInternal()
-
-        return targets
-      })())
-})()
+const getSupportedBfdTargetsCached = memoize(getSupportedBfdTargets)
 
 const replaceElfHeader = async (targetFilename: string, sourceFilename: string): Promise<void> => {
   const sourceElfHeader = await getElfHeaderStart(sourceFilename)
@@ -564,7 +567,7 @@ export const copyElfDebugInfo = async (
   elfFileMetadata: ElfFileMetadata,
   compressDebugSections: boolean
 ): Promise<void> => {
-  const supportedTargets = await getSupportedBfdTargets()
+  const supportedTargets = await getSupportedBfdTargetsCached()
 
   let bfdTargetOption = ''
   const bfdTarget = getBFDTargetForArch(elfFileMetadata.arch, elfFileMetadata.littleEndian, elfFileMetadata.elfClass)
@@ -578,7 +581,14 @@ export const copyElfDebugInfo = async (
     bfdTargetOption = `-I ${genericBfdTarget}`
   }
 
-  const compressDebugSectionsOption = compressDebugSections ? '--compress-debug-sections' : ''
+  let compressDebugSectionsOption = ''
+  if (compressDebugSections) {
+    compressDebugSectionsOption = '--compress-debug-sections'
+    if (await hasZstdSupportCached()) {
+      compressDebugSectionsOption += '=zstd'
+    }
+  }
+
   const keepDynamicSymbolTable =
     elfFileMetadata.hasDynamicSymbolTable && !elfFileMetadata.hasSymbolTable && !elfFileMetadata.hasDebugInfo
 
