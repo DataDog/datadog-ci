@@ -579,14 +579,30 @@ export const copyElfDebugInfo = async (
   }
 
   const compressDebugSectionsOption = compressDebugSections ? '--compress-debug-sections' : ''
+  const keepDynamicSymbolTable =
+    elfFileMetadata.hasDynamicSymbolTable && !elfFileMetadata.hasSymbolTable && !elfFileMetadata.hasDebugInfo
 
   // Remove .gdb_index section as it is not needed and can be quite big
-  await execute(
-    `objcopy ${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index ${filename} ${outputFile}`
-  )
+  let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
+
+  if (keepDynamicSymbolTable) {
+    // If the file has only a dynamic symbol table, preserve it
+    // `objcopy --only-keep-debug` would remove it, so we need to dump it separately with `objcopy --dump-section` and then merge it back with `objcopy --add-section`
+    await execute(
+      `objcopy ${bfdTargetOption} --dump-section .dynsym=${outputFile}.dynsym --dump-section .dynstr=${outputFile}.dynstr ${filename} ${outputFile}`
+    )
+    options = `--remove-section .dynsym --remove-section .dynstr ${options} --add-section .dynsym=${outputFile}.dynsym --add-section .dynstr=${outputFile}.dynstr`
+  }
+
+  await execute(`objcopy ${options} ${filename} ${outputFile}`).finally(() => {
+    if (keepDynamicSymbolTable) {
+      fs.unlinkSync(`${outputFile}.dynsym`)
+      fs.unlinkSync(`${outputFile}.dynstr`)
+    }
+  })
 
   if (bfdTargetOption) {
-    // Replace the ELF header in the extracted debug info file with the one from the initial file
+    // Replace the ELF header in the extracted debug info file with the one from the initial file to keep the original architecture
     await replaceElfHeader(outputFile, filename)
   }
 }
