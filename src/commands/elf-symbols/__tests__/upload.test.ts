@@ -130,12 +130,17 @@ describe('elf-symbols upload', () => {
     test('should not throw an error when a directory (except top-level) is not readable', async () => {
       const command = createCommand(UploadCommand)
       let tmpDir
+      let tmpSubDir
       try {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elf-tests-'))
-        const tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
+        tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
         fs.chmodSync(tmpSubDir, 0o200)
         await expect(command['getElfSymbolFiles'](tmpDir)).resolves.toEqual([])
       } finally {
+        if (tmpSubDir) {
+          // node 23 fails to remove the directory if it's not readable
+          fs.chmodSync(tmpSubDir, 0o700)
+        }
         if (tmpDir) {
           fs.rmSync(tmpDir, {recursive: true})
         }
