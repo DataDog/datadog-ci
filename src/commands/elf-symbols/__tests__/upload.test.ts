@@ -276,8 +276,8 @@ describe('elf-symbols upload', () => {
         },
         {
           ...commonMetadata,
-          file_hash: 'e8a12b7f5702d7a4f92da4983d75e9af',
-          gnu_build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
+          file_hash: '40a0f8378cf61c89c325a397edaa0dd2',
+          gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'x86_64',
           filename: 'dyn_x86_64',
@@ -321,7 +321,7 @@ describe('elf-symbols upload', () => {
 
         return JSON.parse((payload.content.get('event') as MultipartStringValue).value)
       })
-      const getId = (m: any) => m.gnu_build_id || m.go_build_id || m.file_hash
+      const getId = (m: any) => ((m.gnu_build_id || m.go_build_id || m.file_hash) as string) + '-' + (m.arch as string)
       metadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expectedMetadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expect(metadata).toEqual(expectedMetadata)

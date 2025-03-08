@@ -622,6 +622,6 @@ export const getOutputFilenameFromBuildId = (buildId: string): string => {
   return buildId.replace(/\//g, '-')
 }
 
-export const getBuildId = (fileMetadata: ElfFileMetadata): string => {
-  return fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
+export const getBuildIdWithArch = (fileMetadata: ElfFileMetadata): string => {
+  return (fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash) + '-' + fileMetadata.arch
 }
