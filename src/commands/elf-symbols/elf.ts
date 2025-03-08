@@ -428,7 +428,7 @@ export const hasNonEmptySection = (sectionHeaders: SectionHeader[], name: string
 export const getSectionInfo = (
   sections: SectionHeader[]
 ): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
-  const hasDebugInfo = hasNonEmptySection(sections, '.debug_info')
+  const hasDebugInfo = hasNonEmptySection(sections, '.debug_info') || hasNonEmptySection(sections, '.zdebug_info')
   const hasSymbolTable = hasNonEmptySection(sections, '.symtab')
   const hasDynamicSymbolTable = hasNonEmptySection(sections, '.dynsym')
   const hasCode = sections.some(
