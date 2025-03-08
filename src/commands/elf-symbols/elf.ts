@@ -528,7 +528,7 @@ const getSupportedBfdTargetsInternal = async (): Promise<string[]> => {
 
   const groups = /supported targets: (?<targets>.*)$/m.exec(stdout.toString())?.groups
   if (groups) {
-    return groups.targets.split(/\s*/)
+    return groups.targets.split(/\s+/)
   }
 
   return []
