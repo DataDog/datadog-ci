@@ -23,7 +23,7 @@ import {
   ElfFileMetadata,
   getElfFileMetadata,
   isSupportedElfType,
-  getBuildId,
+  getBuildIdWithArch,
   getOutputFilenameFromBuildId,
   copyElfDebugInfo,
   isSupportedArch,
@@ -282,7 +282,7 @@ export class UploadCommand extends Command {
   private removeBuildIdDuplicates(filesMetadata: ElfFileMetadata[]): ElfFileMetadata[] {
     const buildIds = new Map<string, ElfFileMetadata>()
     for (const metadata of filesMetadata) {
-      const buildId = getBuildId(metadata)
+      const buildId = getBuildIdWithArch(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
         if (
@@ -328,9 +328,9 @@ export class UploadCommand extends Command {
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, elfFilesMetadata, async (fileMetadata) => {
         const metadata = this.getMappingMetadata(fileMetadata)
-        const outputFilename = getOutputFilenameFromBuildId(getBuildId(fileMetadata))
+        const outputFilename = getOutputFilenameFromBuildId(getBuildIdWithArch(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, false)
+        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
