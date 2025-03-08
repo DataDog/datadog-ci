@@ -421,12 +421,16 @@ export const isSupportedElfType = (type: string): boolean => {
   return SUPPORTED_ELF_TYPES.includes(type)
 }
 
+export const hasNonEmptySection = (sectionHeaders: SectionHeader[], name: string): boolean => {
+  return sectionHeaders.some((section) => section.name === name && section.sh_type !== SectionHeaderType.SHT_NOBITS)
+}
+
 export const getSectionInfo = (
   sections: SectionHeader[]
 ): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
-  const hasDebugInfo = sections.some((section) => section.name === '.debug_info')
-  const hasSymbolTable = sections.some((section) => section.name === '.symtab')
-  const hasDynamicSymbolTable = sections.some((section) => section.name === '.dynsym')
+  const hasDebugInfo = hasNonEmptySection(sections, '.debug_info')
+  const hasSymbolTable = hasNonEmptySection(sections, '.symtab')
+  const hasDynamicSymbolTable = hasNonEmptySection(sections, '.dynsym')
   const hasCode = sections.some(
     (section) => section.name === '.text' && section.sh_type === SectionHeaderType.SHT_PROGBITS
   )
