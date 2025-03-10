@@ -78,7 +78,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
-      - run: yarn test **/__tests__/**/*.platform-specific.test.ts
+      - run: yarn test '**/__tests__/**/*.platform-specific.test.ts'
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
