@@ -16,12 +16,12 @@ export type Provider = typeof SUPPORTED_PROVIDERS[number]
 export interface Payload {
   ci_provider: string
   span_id: string
-  command: string | undefined
+  command: string
   name: string
   start_time: string
   end_time: string
-  error_message: string | undefined
-  exit_code: number | undefined
+  error_message: string
+  exit_code: number
   tags: Partial<Record<string, string>>
   measures: Partial<Record<string, number>>
 }

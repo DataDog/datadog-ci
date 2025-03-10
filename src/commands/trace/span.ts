@@ -46,6 +46,12 @@ export class SpanCommand extends Command {
   private durationInMs: number | undefined = Option.String('--duration', {
     validator: validation.isInteger(),
   })
+  private startTimeInMs: number | undefined = Option.String('--start-time', {
+    validator: validation.isInteger(),
+  })
+  private endTimeInMs: number | undefined = Option.String('--end-time', {
+    validator: validation.isInteger(),
+  })
   private dryRun = Option.Boolean('--dry-run')
   private tags = Option.Array('--tags')
 
@@ -65,17 +71,35 @@ export class SpanCommand extends Command {
     // TODO
     // enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
+    if (this.startTimeInMs && !this.endTimeInMs || !this.startTimeInMs && this.endTimeInMs || this.durationInMs && (this.startTimeInMs || this.endTimeInMs)) {
+      this.context.stdout.write(
+        `Either duration or start and end time must be provided.\n`
+      )
+      return 1;
+    }
+
+    if (this.startTimeInMs && this.endTimeInMs) {
+      this.durationInMs = this.endTimeInMs - this.startTimeInMs;
+    }
+
     if (!this.durationInMs) {
       this.context.stdout.write(
-        `The span duration must be provided.\n`
+        `The span duration must be provided or start-time and end-time.\n`
+      )
+      return 1;
+    }
+
+    if (this.durationInMs < 0) {
+      this.context.stdout.write(
+        `The span duration must be positive / end time must be after start time.\n`
       )
       return 1;
     }
 
     const id = crypto.randomBytes(5).toString('hex')
-    const now = new Date()
-    const endTime = now.toISOString()
-    const startTime = new Date(now.getTime() - this.durationInMs).toISOString()
+    const endTimeDate = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
+    const endTime = endTimeDate.toISOString()
+    const startTime = new Date(endTimeDate.getTime() - this.durationInMs).toISOString()
     console.log(`Creating custom span '${this.name}': ${startTime} -> ${endTime}`)
     const provider = getCIProvider()
     if (!SUPPORTED_PROVIDERS.includes(provider)) {
@@ -101,7 +125,6 @@ export class SpanCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
-    console.log('ok');
     await this.reportCustomSpan({
       ci_provider: provider,
       span_id: id,
