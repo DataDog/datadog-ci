@@ -147,6 +147,8 @@ jobs:
         with:
           name: binary
           path: datadog-ci_linux-x64
+      - name: Help
+        run: ./datadog-ci_linux-x64 --help
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
