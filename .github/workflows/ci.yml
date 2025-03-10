@@ -59,6 +59,35 @@ jobs:
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
 
+  unit-tests-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [18, 20, 22]
+
+    name: Platform-specific unit tests (Windows)
+    runs-on: windows-latest
+    needs: build-and-test
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
+      - run: yarn test **/__tests__/**/*.platform-specific.test.ts
+        env:
+          CI: true
+          DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
+
   e2e-test:
     strategy:
       matrix:
@@ -128,30 +157,6 @@ jobs:
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
-
-  e2e-test-windows:
-    name: End-to-end test the package (Windows)
-    runs-on: windows-latest
-    needs: build-and-test
-    env:
-      FORCE_COLOR: 1
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: actions/download-artifact@v4
-        with:
-          name: artifacts-22
-          path: artifacts/
-      - run: yarn install --immutable
-      - name: Run sourcemaps upload test
-        run: yarn launch sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
-        env:
-          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
-          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
 
   standalone-binary-test-ubuntu:
     name: Test standalone binary in ubuntu
