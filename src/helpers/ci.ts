@@ -868,3 +868,7 @@ const filterEnv = (values: string[]): Record<string, string> => {
 
   return ciEnvs
 }
+
+export const isInteractive = ({stream = process.stdout}: {stream?: NodeJS.WriteStream} = {}) => {
+  return Boolean(!('CI' in process.env) && process.env.TERM !== 'dumb' && stream && stream.isTTY)
+}
