@@ -2,23 +2,40 @@ stages:
   - build
   - release
 
-build-docker-image:
+test:
   stage: build
   allow_failure: false
   tags: ['arch:amd64']
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-gbi-focal
   script:
-    - cd container
-    - docker buildx build
-      --platform linux/amd64,linux/arm64/v8
-      --build-arg "VERSION=${CI_COMMIT_TAG}"
-      --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
-      --load
-      .
-    - |
-      echo 'Testing image'
-      docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --version
-      docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --help
+    - apt-get update
+    - apt-get install -y npm nodejs
+    - npm --version
+    - node --version
+    - npm install -g yarn
+    - yarn install --immutable
+    - yarn build
+    - yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
+    - ./datadog-ci_linux-x64 --version
+
+
+# build-docker-image:
+#   stage: build
+#   allow_failure: false
+#   tags: ['arch:amd64']
+#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-gbi-focal
+#   script:
+#     - cd container
+#     - docker buildx build
+#       --platform linux/amd64,linux/arm64/v8
+#       --build-arg "VERSION=${CI_COMMIT_TAG}"
+#       --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
+#       --push
+#       .
+#     - |
+#       echo 'Testing image'
+#       docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --version
+#       docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --help
 
 # publish-docker-image:
 #   stage: release
