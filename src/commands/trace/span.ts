@@ -101,15 +101,17 @@ export class SpanCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
+    console.log('ok');
     await this.reportCustomSpan({
       ci_provider: provider,
       span_id: id,
       name: this.name ?? 'Custom Span',
       start_time: startTime,
       end_time: endTime,
-      error_message: undefined,
-      exit_code: undefined,
-      command: undefined,
+      // TODO A: Omit this
+      error_message: '',
+      exit_code: 0,
+      command: 'custom-span',
       tags: {...gitSpanTags, ...ciSpanTags, ...userGitSpanTags, ...cliTags, ...envVarTags},
       measures,
     })
