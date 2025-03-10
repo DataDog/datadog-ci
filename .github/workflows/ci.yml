@@ -177,9 +177,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: binary
-          path: datadog-ci_linux-x64
+          path: datadog-ci_linux-arm64
       - name: Help
-        run: ./datadog-ci_linux-x64 --help
+        run: ./datadog-ci_linux-arm64 --help
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
