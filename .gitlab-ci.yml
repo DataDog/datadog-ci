@@ -13,7 +13,12 @@ build-docker-image:
       --platform linux/amd64,linux/arm64/v8
       --build-arg "VERSION=${CI_COMMIT_TAG}"
       --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
+      --load
       .
+    - |
+      echo 'Testing image'
+      docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --version
+      docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --help
 
 # publish-docker-image:
 #   stage: release
