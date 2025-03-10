@@ -176,7 +176,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: binary
+          name: binary-arm64
           path: datadog-ci_linux-arm64
       - name: Help
         run: ./datadog-ci_linux-arm64 --help
