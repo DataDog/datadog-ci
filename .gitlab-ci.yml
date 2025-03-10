@@ -10,11 +10,9 @@ release-pkg-artifact:
     paths:
       - datadog-ci_linux-x64
   script:
-    - docker buildx build -t datadog-ci -f buildenv/Dockerfile .
-    - docker create --name datadog-ci-container datadog-ci
-    - docker cp datadog-ci-container:/w/datadog-ci_linux-x64 .
-    - docker rm datadog-ci-container
-    - echo 'Done!'
+    - docker buildx build -t datadog-ci -f buildenv/Dockerfile --output=type=local,dest=./datadog-ci-build .
+    - ls datadog-ci-build
+    - cp datadog-ci-build/w/datadog-ci_linux-x64 datadog-ci_linux-x64
 
 # build-docker-image:
 #   stage: build
