@@ -2,22 +2,19 @@ stages:
   - build
   - release
 
-test:
+release-pkg-artifact:
   stage: build
-  allow_failure: false
   tags: ['arch:amd64']
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-gbi-focal
+  artifacts:
+    paths:
+      - datadog-ci_linux-x64
   script:
-    - apt-get update
-    - apt-get install -y npm nodejs
-    - npm --version
-    - node --version
-    - npm install -g yarn
-    - yarn install --immutable
-    - yarn build
-    - yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
-    - ./datadog-ci_linux-x64 --version
-
+    - docker build -t datadog-ci -f buildenv/Dockerfile .
+    - docker create --name datadog-ci-container datadog-ci
+    - docker cp datadog-ci-container:/w/datadog-ci_linux-x64 .
+    - docker rm datadog-ci-container
+    - echo 'Done!'
 
 # build-docker-image:
 #   stage: build
