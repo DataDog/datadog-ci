@@ -30,9 +30,9 @@ export const requestConfirmation = async (message: string, defaultValue = true) 
 export const requestFilePath = async () => {
   try {
     const question: inquirer.InputQuestion<{filePath: string}> = {
-      type: 'input',
-      name: 'filePath',
       message: 'Please enter a file path, or press Enter to finish:',
+      name: 'filePath',
+      type: 'input',
     }
     const filePathAnswer = await inquirer.prompt([question])
 

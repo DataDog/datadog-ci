@@ -122,5 +122,18 @@ describe('multilocator', () => {
 
       expect(fsPromises.writeFile).not.toHaveBeenCalled()
     })
+
+    test('should exit early if not in interactive mode', async () => {
+      jest.spyOn(ci, 'isInteractive').mockReturnValue(false)
+
+      await updateLTDMultiLocators(mockReporter, mockConfig, mockResults)
+
+      expect(prompt.requestConfirmation).not.toHaveBeenCalled()
+      expect(tests.getTestConfigs).not.toHaveBeenCalled()
+      expect(fsPromises.writeFile).not.toHaveBeenCalled()
+      expect(mockReporter.log).toHaveBeenCalledWith(
+        expect.stringContaining('MultiLocator updates found, but cannot apply them in non-interactive mode.')
+      )
+    })
   })
 })

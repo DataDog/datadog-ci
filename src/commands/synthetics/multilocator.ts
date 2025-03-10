@@ -26,7 +26,7 @@ export const updateLTDMultiLocators = async (
   }
 
   if (!isInteractive()) {
-    return reporter.log('Cannot apply MultiLocator updates in non-interactive mode.\n')
+    return reporter.log('MultiLocator updates found, but cannot apply them in non-interactive mode.\n')
   }
 
   const userConfirmed = await requestConfirmation(
