@@ -5,9 +5,9 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import {glob} from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
+import {globAsync} from '../../../helpers/fs'
 
 import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'
@@ -156,10 +156,10 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
   return ResultOutcome.Failed
 }
 
-export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
-  reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
+export const getSuites = async (pattern: string, reporter: MainReporter): Promise<Suite[]> => {
+  reporter.log(`Finding files matching ${path.resolve(process.cwd(), pattern)}\n`)
 
-  const files: string[] = await glob(GLOB)
+  const files: string[] = await globAsync(pattern)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {

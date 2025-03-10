@@ -3,13 +3,13 @@ import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_SHA, getSpanTags, getMissingRequiredGitTags} from '../../helpers/tags'
@@ -185,7 +185,7 @@ export class UploadSarifReportCommand extends Command {
         return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
       }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.sarif'), {dotRelative: true}))
+      return acc.concat(globSync(buildPath(basePath, '*.sarif'), {dotRelative: true}))
     }, [])
 
     const validUniqueFiles = [...new Set(sarifReports)].filter((sarifReport) => {

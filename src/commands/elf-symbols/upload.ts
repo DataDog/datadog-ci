@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globAsync} from '../../helpers/fs'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -211,7 +211,7 @@ export class UploadCommand extends Command {
 
     const stat = await fs.promises.stat(symbolsLocation)
     if (stat.isDirectory()) {
-      paths = await glob(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
+      paths = await globAsync(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable

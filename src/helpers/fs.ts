@@ -6,7 +6,27 @@
 import fs from 'fs'
 import path from 'path'
 
+import * as globModule from 'glob'
 import JSZip from 'jszip'
+
+const GLOB_DEFAULT_OPTIONS: globModule.GlobOptionsWithFileTypesFalse = {
+  // For backwards compatibility, use POSIX style paths even on Windows.
+  posix: true,
+}
+
+/**
+ * Synchronous form of `glob`, with default options.
+ */
+export const globSync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
+  return globModule.sync(pattern, {...GLOB_DEFAULT_OPTIONS, ...opts})
+}
+
+/**
+ * Asynchronous form of `glob`, with default options.
+ */
+export const globAsync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
+  return globModule.glob(pattern, {...GLOB_DEFAULT_OPTIONS, ...opts})
+}
 
 /**
  * Delete a folder and all its contents

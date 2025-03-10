@@ -2,13 +2,13 @@ import fs from 'fs'
 import path, {basename} from 'path'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -240,7 +240,7 @@ export class UploadCommand extends Command {
     const metricsLogger = this.getMetricsLogger(['platform:unity'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
-    const soFiles = glob.sync(buildPath(this.symbolsLocation!, '**/*.so'))
+    const soFiles = globSync(buildPath(this.symbolsLocation!, '**/*.so'))
     this.context.stdout.write(`${soFiles}`)
 
     const tmpDirectory = await createUniqueTmpDirectory()

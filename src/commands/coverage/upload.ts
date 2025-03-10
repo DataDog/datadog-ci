@@ -4,13 +4,14 @@ import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import {hasMagic} from 'glob'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import id from '../../helpers/id'
 import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
@@ -241,7 +242,7 @@ export class UploadCodeCoverageReportCommand extends Command {
         }
         let globPattern
         // It's either a folder or a glob pattern
-        if (glob.hasMagic(basePath)) {
+        if (hasMagic(basePath)) {
           // It's a glob pattern so we just use it as is
           globPattern = basePath
         } else {
@@ -249,9 +250,7 @@ export class UploadCodeCoverageReportCommand extends Command {
           globPattern = buildPath(basePath, '*.xml')
         }
 
-        const filesToUpload = glob
-          .sync(globPattern, {dotRelative: true})
-          .filter((file) => path.extname(file) === '.xml')
+        const filesToUpload = globSync(globPattern, {dotRelative: true}).filter((file) => path.extname(file) === '.xml')
 
         return acc.concat(filesToUpload)
       }, [])
