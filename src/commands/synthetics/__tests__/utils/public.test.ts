@@ -44,7 +44,7 @@ import process from 'process'
 
 import type * as path from 'path'
 
-import {glob} from 'glob'
+import glob from 'glob'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
 
@@ -83,7 +83,7 @@ describe('utils', () => {
       file2: '{"tests":"file2"}',
     }
 
-    jest.spyOn(glob, 'glob').mockResolvedValue(FILES)
+    jest.spyOn(glob, 'sync').mockReturnValueOnce(FILES)
     ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
       callback(undefined, FILES_CONTENT[path])
     )

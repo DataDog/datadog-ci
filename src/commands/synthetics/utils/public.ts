@@ -5,7 +5,7 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import {glob} from 'glob'
+import glob from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 
