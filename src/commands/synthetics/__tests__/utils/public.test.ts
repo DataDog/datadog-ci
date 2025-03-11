@@ -1,4 +1,3 @@
-jest.mock('glob')
 jest.mock('fs')
 jest.mock('child_process')
 jest.unmock('chalk')
