@@ -1,15 +1,14 @@
-import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
+import {findFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import id from '../../helpers/id'
@@ -18,7 +17,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
 import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
@@ -38,13 +37,34 @@ import {
   renderSuccessfulUploadCommand,
   renderUpload,
 } from './renderer'
-import {detectFormat, isFile, validateCoverageReport} from './utils'
+import {detectFormat, validateCoverageReport} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 10
+
+const IS_COVERAGE_REPORT = (file: string): boolean => {
+  if (path.extname(file) !== '.xml') {
+    return false
+  }
+
+  const filename = path.basename(file)
+
+  return (
+    filename.startsWith('jacoco') || filename.includes('Jacoco') // jacoco*.xml, *Jacoco*.xml
+  )
+}
+
+const VALIDATE_COVERAGE_REPORT = (explicitFormat: string | undefined, file: string): string | undefined => {
+  const format = explicitFormat || detectFormat(file)
+  if (format === undefined) {
+    return `Could not detect format of ${file}, please specify the format manually using the --format option`
+  }
+
+  return validateCoverageReport(file, format)
+}
 
 export class UploadCodeCoverageReportCommand extends Command {
   public static paths = [['coverage', 'upload']]
@@ -58,6 +78,10 @@ export class UploadCodeCoverageReportCommand extends Command {
     `,
     examples: [
       ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload .'],
+      [
+        'Upload all code coverage report files in current directory ignoring ./src/ignored-module-a and ./src/ignored-module-b',
+        'datadog-ci coverage upload --ignored-paths ./src/ignored-module-a --ignored-paths ./src/ignored-module-b .',
+      ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
         'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
@@ -87,10 +111,16 @@ export class UploadCodeCoverageReportCommand extends Command {
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
-  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'false', {
+  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {
     validator: t.isBoolean(),
     tolerateBoolean: true,
   })
+
+  private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
+    validator: t.isBoolean(),
+    tolerateBoolean: true,
+  })
+  private ignoredPaths = Option.Array('--ignored-paths')
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -234,55 +264,24 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
-    const codeCoverageReportFiles = this.basePaths
-      .reduce((acc: string[], basePath: string) => {
-        if (isFile(basePath)) {
-          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-        }
-        let globPattern
-        // It's either a folder or a glob pattern
-        if (glob.hasMagic(basePath)) {
-          // It's a glob pattern so we just use it as is
-          globPattern = basePath
-        } else {
-          // It's a folder
-          globPattern = buildPath(basePath, '*.xml')
-        }
+    const validUniqueFiles = findFiles(
+      this.basePaths || ['.'],
+      this.automaticReportsDiscovery,
+      this.ignoredPaths || [],
+      IS_COVERAGE_REPORT,
+      (filePath: string) => VALIDATE_COVERAGE_REPORT(this.format, filePath),
+      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+    )
 
-        const filesToUpload = glob
-          .sync(globPattern, {dotRelative: true})
-          .filter((file) => path.extname(file) === '.xml')
-
-        return acc.concat(filesToUpload)
-      }, [])
-      .filter(isFile)
-
-    const uniqueFiles = [...new Set(codeCoverageReportFiles)]
     const pathsByFormat: {[key: string]: string[]} = {}
-
-    for (const codeCoverageReportPath of uniqueFiles) {
-      const format = this.format || detectFormat(codeCoverageReportPath)
+    for (const file of validUniqueFiles) {
+      const format = this.format || detectFormat(file)
       if (format === undefined) {
-        this.context.stdout.write(
-          renderInvalidFile(
-            codeCoverageReportPath,
-            `Could not detect format of ${codeCoverageReportPath}, please specify the format manually using the --format option`
-          )
-        )
+        // should not be possible, such files will fail validation
         continue
       }
-
-      const validationErrorMessage = validateCoverageReport(codeCoverageReportPath, format)
-      if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(codeCoverageReportPath, validationErrorMessage))
-      } else {
-        const paths = pathsByFormat[format]
-        if (!paths) {
-          pathsByFormat[format] = [codeCoverageReportPath]
-        } else {
-          pathsByFormat[format].push(codeCoverageReportPath)
-        }
-      }
+      pathsByFormat[format] = pathsByFormat[format] || []
+      pathsByFormat[format].push(file)
     }
 
     return pathsByFormat

@@ -5,13 +5,13 @@ import path from 'path'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
-import {glob} from 'glob'
 import * as t from 'typanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
+import {findFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import id from '../../helpers/id'
@@ -20,12 +20,12 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
+import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
-import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -41,11 +41,24 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
-import {isFile} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
+
+const IS_JUNIT_XML_REPORT = (file: string): boolean => {
+  if (path.extname(file) !== '.xml') {
+    return false
+  }
+
+  const filename = path.basename(file)
+
+  return (
+    filename.includes('junit') || // *junit*.xml
+    filename.includes('test') || // *test*.xml
+    filename.includes('TEST-') // *TEST-*.xml
+  )
+}
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
@@ -76,6 +89,14 @@ export class UploadJUnitXMLCommand extends Command {
     `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
+      [
+        'Discover and upload all jUnit XML test report files doing recursive search in current directory',
+        'datadog-ci junit upload --service my-service --auto-discovery .',
+      ],
+      [
+        'Discover and upload all jUnit XML test report files doing recursive search in current directory, ignoring ./src/ignored-module-a and ./src/ignored-module-b',
+        'datadog-ci junit upload --service my-service --ignored-paths ./src/ignored-module-a --ignored-paths ./src/ignored-module-b --auto-discovery .',
+      ],
       [
         'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
         'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
@@ -135,6 +156,12 @@ export class UploadJUnitXMLCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  private automaticReportsDiscovery = Option.String('--auto-discovery', 'false', {
+    validator: t.isBoolean(),
+    tolerateBoolean: true,
+  })
+  private ignoredPaths = Option.Array('--ignored-paths')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -278,39 +305,29 @@ export class UploadJUnitXMLCommand extends Command {
     reportTags: Record<string, string>,
     reportMeasures: Record<string, number>
   ): Promise<Payload[]> {
-    const jUnitXMLFiles = (this.basePaths || [])
-      .reduce((acc: string[], basePath: string) => {
-        if (isFile(basePath)) {
-          return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-        }
-        let globPattern
-        // It's either a folder (possibly including .xml extension) or a glob pattern
-        if (glob.hasMagic(basePath)) {
-          // It's a glob pattern so we just use it as is
-          globPattern = basePath
-        } else {
-          // It's a folder
-          globPattern = buildPath(basePath, '*.xml')
-        }
 
-        const filesToUpload = glob
-          .sync(globPattern, {dotRelative: true})
-          .filter((file) => path.extname(file) === '.xml')
+    let basePaths
+    let searchFoldersRecursively
+    let filterFile: (file: string) => boolean
+    if (this.automaticReportsDiscovery) {
+      basePaths = this.basePaths || ['.']
+      searchFoldersRecursively = true
+      filterFile = IS_JUNIT_XML_REPORT
+    } else {
+      // maintaining legacy matching logic for backward compatibility
+      basePaths = this.basePaths || []
+      searchFoldersRecursively = false
+      filterFile = (file) => path.extname(file) === '.xml'
+    }
 
-        return acc.concat(filesToUpload)
-      }, [])
-      .filter(isFile)
-
-    const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
-      const validationErrorMessage = validateXml(jUnitXMLFilePath)
-      if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(jUnitXMLFilePath, validationErrorMessage))
-
-        return false
-      }
-
-      return true
-    })
+    const validUniqueFiles = findFiles(
+      basePaths,
+      searchFoldersRecursively,
+      this.ignoredPaths || [],
+      filterFile,
+      validateXml,
+      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+    )
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
       hostname: os.hostname(),

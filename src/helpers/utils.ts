@@ -1,5 +1,5 @@
 import {exec} from 'child_process'
-import fs, {existsSync, readFileSync} from 'fs'
+import fs, {existsSync, lstatSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
@@ -408,4 +408,12 @@ export const getGitHubEventPayload = () => {
   }
 
   return JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
+}
+
+export const isFile = (path: string) => {
+  try {
+    return lstatSync(path).isFile()
+  } catch (e) {
+    return false
+  }
 }
