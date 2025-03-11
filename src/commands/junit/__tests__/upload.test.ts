@@ -160,10 +160,7 @@ describe('upload', () => {
       const command = new UploadJUnitXMLCommand()
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: [
-            'src/commands/junit/__tests__/fixtures',
-            'src/commands/junit/__tests__/fixtures/go-report.xml',
-          ],
+          basePaths: ['src/commands/junit/__tests__/fixtures', 'src/commands/junit/__tests__/fixtures/go-report.xml'],
           config: {},
           context,
           service: 'service',
