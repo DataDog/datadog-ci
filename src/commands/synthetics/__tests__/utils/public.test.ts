@@ -1,6 +1,4 @@
-jest.mock('glob', () => ({
-  sync: jest.fn(),
-}))
+jest.mock('glob')
 jest.mock('fs')
 jest.mock('child_process')
 jest.unmock('chalk')
@@ -46,7 +44,7 @@ import process from 'process'
 
 import type * as path from 'path'
 
-import glob from 'glob'
+import * as glob from 'glob'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
 
@@ -89,7 +87,7 @@ describe('utils', () => {
       file2: '{"tests":"file2"}',
     }
 
-    jest.spyOn(glob, 'sync').mockReturnValue(FILES)
+    jest.spyOn(glob, 'globSync').mockReturnValue(FILES)
     ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
       callback(undefined, FILES_CONTENT[path])
     )
