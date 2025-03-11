@@ -1,3 +1,6 @@
+jest.mock('glob', () => ({
+  sync: jest.fn(),
+}))
 jest.mock('fs')
 jest.mock('child_process')
 jest.unmock('chalk')
