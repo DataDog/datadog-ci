@@ -65,7 +65,7 @@ jobs:
       matrix:
         version: [18, 20, 22]
 
-    name: Platform-specific unit tests (Windows)
+    name: Unit tests (Windows)
     runs-on: windows-latest
     needs: build-and-test
     env:
@@ -78,7 +78,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
-      - run: yarn test '**/__tests__/**/*.platform-specific.test.ts'
+      - run: yarn test
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests

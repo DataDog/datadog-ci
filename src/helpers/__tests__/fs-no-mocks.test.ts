@@ -1,6 +1,6 @@
 import {globAsync, globSync} from '../fs'
 
-describe('Platform specific tests for FS module', () => {
+describe('fs', () => {
   describe('globSync', () => {
     it('uses default options', () => {
       expect(globSync('src/helpers/__tests__/*.platform-specific.test.ts')).toStrictEqual([
