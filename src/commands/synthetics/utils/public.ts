@@ -161,6 +161,7 @@ export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<S
 
   console.log('GLOB', GLOB)
   const files: string[] = glob.sync(GLOB)
+  console.log('FILES', files)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
