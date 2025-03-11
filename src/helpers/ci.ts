@@ -95,6 +95,38 @@ export const getCISpanTags = (): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
 
+  if (env.DRONE) {
+    const {
+      DRONE_BUILD_NUMBER,
+      DRONE_BUILD_LINK,
+      DRONE_STEP_NAME,
+      DRONE_STAGE_NAME,
+      DRONE_WORKSPACE,
+      DRONE_GIT_HTTP_URL,
+      DRONE_COMMIT_SHA,
+      DRONE_BRANCH,
+      DRONE_TAG,
+      DRONE_COMMIT_AUTHOR_NAME,
+      DRONE_COMMIT_AUTHOR_EMAIL,
+      DRONE_COMMIT_MESSAGE,
+    } = env
+    tags = {
+      [CI_PROVIDER_NAME]: 'drone',
+      [CI_PIPELINE_NUMBER]: DRONE_BUILD_NUMBER,
+      [CI_PIPELINE_URL]: DRONE_BUILD_LINK,
+      [CI_JOB_NAME]: DRONE_STEP_NAME,
+      [CI_STAGE_NAME]: DRONE_STAGE_NAME,
+      [CI_WORKSPACE_PATH]: DRONE_WORKSPACE,
+      [GIT_REPOSITORY_URL]: DRONE_GIT_HTTP_URL,
+      [GIT_SHA]: DRONE_COMMIT_SHA,
+      [GIT_BRANCH]: DRONE_BRANCH,
+      [GIT_TAG]: DRONE_TAG,
+      [GIT_COMMIT_AUTHOR_NAME]: DRONE_COMMIT_AUTHOR_NAME,
+      [GIT_COMMIT_AUTHOR_EMAIL]: DRONE_COMMIT_AUTHOR_EMAIL,
+      [GIT_COMMIT_MESSAGE]: DRONE_COMMIT_MESSAGE,
+    }
+  }
+
   if (env.CIRCLECI) {
     const {
       CIRCLE_BUILD_NUM,
