@@ -55,6 +55,7 @@ export const getTestConfigs = async (
     files.push(DEFAULT_TEST_CONFIG_FILES_GLOB)
   }
 
+  console.log('files:', files)
   const suitesFromFiles = (await Promise.all(files.map((glob: string) => getSuites(glob, reporter))))
     .reduce((acc, val) => acc.concat(val), [])
     .filter((suite) => !!suite.content.tests)
