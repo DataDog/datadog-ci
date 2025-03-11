@@ -75,10 +75,6 @@ import {
 } from '../fixtures'
 
 describe('utils', () => {
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
-
   describe('getSuites', () => {
     const GLOB = 'testGlob'
     const FILES = ['file1', 'file2']

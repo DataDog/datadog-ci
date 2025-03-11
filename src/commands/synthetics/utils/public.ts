@@ -159,9 +159,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
-  console.log('GLOB', GLOB)
   const files: string[] = globSync(GLOB)
-  console.log('FILES', files)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {

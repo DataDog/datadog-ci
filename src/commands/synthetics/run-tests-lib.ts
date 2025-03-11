@@ -62,7 +62,6 @@ export const executeTests = async (
   try {
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
   } catch (error) {
-    console.log('error', error)
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
   }
 
