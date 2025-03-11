@@ -36,10 +36,10 @@ describe('upload', () => {
       })
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/another-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder/nested-Jacoco-report.xml')
+      expect(fileNames.length).toEqual(3)
 
       const output = context.stdout.toString()
       expect(output).toContain(
