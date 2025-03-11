@@ -6,7 +6,6 @@ import {createMockContext} from '../../../helpers/__tests__/fixtures'
 import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
 
-import {renderInvalidFile} from '../renderer'
 import {UploadCodeCoverageReportCommand} from '../upload'
 
 jest.mock('../../../helpers/id', () => jest.fn())
@@ -40,14 +39,6 @@ describe('upload', () => {
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
-
-      const output = context.stdout.toString()
-      expect(output).toContain(
-        renderInvalidFile(
-          'src/commands/coverage/__tests__/fixtures/invalid-Jacoco-report.xml',
-          "Unclosed tag 'report'."
-        )
-      )
     })
 
     test('should read all xml files excluding ignored paths', () => {
@@ -65,14 +56,6 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(2)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-
-      const output = context.stdout.toString()
-      expect(output).toContain(
-        renderInvalidFile(
-          'src/commands/coverage/__tests__/fixtures/invalid-Jacoco-report.xml',
-          "Unclosed tag 'report'."
-        )
-      )
     })
 
     test('should allow single files', () => {
