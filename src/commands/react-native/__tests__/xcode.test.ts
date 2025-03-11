@@ -165,8 +165,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -185,8 +184,7 @@ describe('xcode', () => {
       }
       const {context, code} = await runCLI()
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -214,8 +212,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -247,8 +244,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -276,8 +272,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -304,8 +299,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -331,8 +325,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -351,8 +344,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -371,8 +363,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -392,8 +383,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -412,8 +402,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -434,8 +423,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -458,8 +446,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -482,8 +469,7 @@ describe('xcode', () => {
           './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
         )
         // Uncomment these lines for debugging failing script
-        console.log(context.stdout.toString())
-        console.log(context.stderr.toString())
+        expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
         expect(code).toBe(1)
         const output = context.stderr.toString()
@@ -503,8 +489,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const output = context.stderr.toString()
@@ -523,8 +508,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const output = context.stderr.toString()
@@ -543,8 +527,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -567,8 +550,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -585,8 +567,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/non_existent.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const output = context.stderr.toString()
@@ -606,8 +587,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/failing_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const output = context.stdout.toString()
@@ -629,8 +609,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const errorOutput = context.stderr.toString()
@@ -648,8 +627,7 @@ describe('xcode', () => {
         './src/commands/react-native/__tests__/fixtures/bundle-script/successful_script.sh'
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(1)
       const errorOutput = context.stderr.toString()
@@ -670,8 +648,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
@@ -695,8 +672,7 @@ describe('xcode', () => {
         }
       )
       // Uncomment these lines for debugging failing script
-      console.log(context.stdout.toString())
-      console.log(context.stderr.toString())
+      expect(context.stdout.toString()).toStrictEqual(context.stderr.toString())
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
