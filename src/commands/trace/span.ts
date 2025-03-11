@@ -18,11 +18,9 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {apiConstructor} from './api'
 import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
 import * as validation from '../../helpers/validation'
+import { CustomSpanCommand } from './helper'
 
-// We use 127 as exit code for invalid commands since that is what *sh terminals return
-const BAD_COMMAND_EXIT_CODE = 127
-
-export class SpanCommand extends Command {
+export class SpanCommand extends CustomSpanCommand {
   public static paths = [['span']]
 
   public static usage = Command.Usage({
@@ -40,8 +38,6 @@ export class SpanCommand extends Command {
     ],
   })
 
-  // TODO: See measures / tags...
-  private measures = Option.Array('--measures')
   private name = Option.String('--name')
   private durationInMs: number | undefined = Option.String('--duration', {
     validator: validation.isInteger(),
@@ -52,24 +48,14 @@ export class SpanCommand extends Command {
   private endTimeInMs: number | undefined = Option.String('--end-time', {
     validator: validation.isInteger(),
   })
-  private dryRun = Option.Boolean('--dry-run')
-  private tags = Option.Array('--tags')
-
-  // TODO A
-  // private fips = Option.Boolean('--fips', false)
-  // private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-
-  private config = {
-    apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    envVarTags: process.env.DD_TAGS,
-    // TODO A
-    // fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    // fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
 
   public async execute() {
-    // TODO
-    // enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+    if (!this.name) {
+      this.context.stdout.write(
+        `The span name must be provided.\n`
+      )
+      return 1;
+    }
 
     if (this.startTimeInMs && !this.endTimeInMs || !this.startTimeInMs && this.endTimeInMs || this.durationInMs && (this.startTimeInMs || this.endTimeInMs)) {
       this.context.stdout.write(
@@ -96,103 +82,15 @@ export class SpanCommand extends Command {
       return 1;
     }
 
-    const id = crypto.randomBytes(5).toString('hex')
-    const endTimeDate = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
-    const endTime = endTimeDate.toISOString()
-    const startTime = new Date(endTimeDate.getTime() - this.durationInMs).toISOString()
-    console.log(`Creating custom span '${this.name}': ${startTime} -> ${endTime}`)
-    const provider = getCIProvider()
-    if (!SUPPORTED_PROVIDERS.includes(provider)) {
-      this.context.stdout.write(
-        `Unsupported CI provider "${provider}". Supported providers are: ${SUPPORTED_PROVIDERS.join(', ')}\n`
-      )
+    const endTime = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
+    const startTime = new Date(endTime.getTime() - this.durationInMs)
 
-      return 1
-    }
-    const ciSpanTags = getCISpanTags()
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-    const cliMeasures = this.measures ? parseTags(this.measures) : {}
-    const measures = Object.entries(cliMeasures).reduce((acc, [key, value]) => {
-      const parsedValue = parseFloat(value)
-      if (!isNaN(parsedValue)) {
-        return {...acc, [key]: parsedValue}
-      }
-
-      return acc
-    }, {})
-
-    const gitSpanTags = await getGitMetadata()
-    const userGitSpanTags = getUserGitSpanTags()
-
-    await this.reportCustomSpan({
-      ci_provider: provider,
-      span_id: id,
-      name: this.name ?? 'Custom Span',
-      start_time: startTime,
-      end_time: endTime,
-      // TODO A: Omit this
+    return await this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, {
+      name: this.name,
       error_message: '',
       exit_code: 0,
       command: 'custom-span',
-      tags: {...gitSpanTags, ...ciSpanTags, ...userGitSpanTags, ...cliTags, ...envVarTags},
-      measures,
     })
-
-    return 0
-  }
-
-  private getApiHelper(): APIHelper {
-    if (!this.config.apiKey) {
-      this.context.stdout.write(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.\n`
-      )
-      throw new Error('API key is missing')
-    }
-
-    return apiConstructor(this.getBaseIntakeUrl(), this.config.apiKey)
-  }
-
-  private getBaseIntakeUrl() {
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-
-    return `https://api.${site}`
-  }
-
-  private async reportCustomSpan(payload: Payload) {
-    if (this.dryRun) {
-      this.context.stdout.write(`${chalk.green.bold('[DRY-RUN]')} Reporting custom span: ${JSON.stringify(payload)}\n`)
-
-      return
-    }
-    const api = this.getApiHelper()
-    try {
-      await retryRequest(() => api.reportCustomSpan(payload), {
-        onRetry: (e, attempt) => {
-          this.context.stderr.write(
-            chalk.yellow(`[attempt ${attempt}] Could not report custom span. Retrying...: ${e.message}\n`)
-          )
-        },
-        retries: 5,
-      })
-    } catch (error) {
-      this.handleError(error as AxiosError)
-    }
-  }
-
-  private signalToNumber(signal: NodeJS.Signals | null): number | undefined {
-    if (!signal) {
-      return undefined
-    }
-
-    return os.constants.signals[signal] + 128
-  }
-
-  private handleError(error: AxiosError) {
-    this.context.stderr.write(
-      `${chalk.red.bold('[ERROR]')} Failed to report custom span: ` +
-        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
-    )
   }
 }
 
