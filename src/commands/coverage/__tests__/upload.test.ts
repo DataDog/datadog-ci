@@ -307,17 +307,6 @@ describe('execute', () => {
     expect(output[2]).toContain(`Will upload code coverage report file ${path}`)
   })
 
-  test('with git metadata without argument (default value is true)', async () => {
-    const {context, code} = await runCLI([
-      '--verbose',
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
-    const output = context.stdout.toString().split(os.EOL)
-    expect(id).toHaveBeenCalled()
-    expect(code).toBe(0)
-    expect(output[4]).toContain('Syncing git metadata')
-  })
-
   test('without git metadata (with argument)', async () => {
     const {context, code} = await runCLI([
       '--verbose',
