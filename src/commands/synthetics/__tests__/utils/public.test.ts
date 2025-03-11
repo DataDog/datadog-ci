@@ -44,7 +44,7 @@ import process from 'process'
 
 import type * as path from 'path'
 
-import glob from 'glob'
+import * as glob from 'glob'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
 
@@ -75,6 +75,10 @@ import {
 } from '../fixtures'
 
 describe('utils', () => {
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
+
   describe('getSuites', () => {
     const GLOB = 'testGlob'
     const FILES = ['file1', 'file2']
