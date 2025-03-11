@@ -67,7 +67,7 @@ jobs:
 
     name: Unit tests (Windows)
     runs-on: windows-latest
-    needs: build-and-test
+    # needs: build-and-test
     env:
       FORCE_COLOR: 1
 
