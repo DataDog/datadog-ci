@@ -866,7 +866,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -951,7 +951,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -1052,7 +1052,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -1149,7 +1149,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
