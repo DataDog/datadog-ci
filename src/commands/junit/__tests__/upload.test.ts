@@ -49,7 +49,7 @@ describe('upload', () => {
       )
 
       expect(files.length).toBe(2)
-      const filePaths = files.map(file => file.xmlPath)
+      const filePaths = files.map((file) => file.xmlPath)
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/go-report.xml')
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/java-report.xml')
 
@@ -127,7 +127,7 @@ describe('upload', () => {
       )
 
       // Check that all expected files are present, regardless of order
-      const filePaths = files.map(file => file.xmlPath)
+      const filePaths = files.map((file) => file.xmlPath)
       expect(filePaths.length).toEqual(3)
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/go-report.xml')
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/java-report.xml')
@@ -151,7 +151,7 @@ describe('upload', () => {
       )
 
       expect(files.length).toBe(2)
-      const filePaths = files.map(file => file.xmlPath)
+      const filePaths = files.map((file) => file.xmlPath)
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml')
       expect(filePaths).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml')
     })
@@ -195,7 +195,7 @@ describe('upload', () => {
       )
 
       expect(files.length).toBe(2)
-      files.forEach(file => {
+      files.forEach((file) => {
         expect(file.hostname).toEqual(os.hostname())
       })
     })
@@ -219,7 +219,7 @@ describe('upload', () => {
       )
 
       expect(files.length).toBe(2)
-      files.forEach(file => {
+      files.forEach((file) => {
         expect(file.logsEnabled).toBe(true)
       })
     })

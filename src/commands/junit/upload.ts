@@ -305,7 +305,6 @@ export class UploadJUnitXMLCommand extends Command {
     reportTags: Record<string, string>,
     reportMeasures: Record<string, number>
   ): Promise<Payload[]> {
-
     let basePaths
     let searchFoldersRecursively
     let filterFile: (file: string) => boolean
