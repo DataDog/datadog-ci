@@ -20,7 +20,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import { getRequestBuilder, parsePathsList, timedExecAsync } from "../../helpers/utils";
+import {getRequestBuilder, parsePathsList, timedExecAsync} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
 import {isGitRepo} from '../git-metadata'

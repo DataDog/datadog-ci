@@ -17,7 +17,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import { getRequestBuilder, parsePathsList, timedExecAsync } from "../../helpers/utils";
+import {getRequestBuilder, parsePathsList, timedExecAsync} from '../../helpers/utils'
 
 import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
