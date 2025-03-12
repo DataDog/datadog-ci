@@ -18,7 +18,6 @@ import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
 
 export abstract class CustomSpanCommand extends Command {
   private measures = Option.Array('--measures')
-  private noFail = Option.Boolean('--no-fail')
   private dryRun = Option.Boolean('--dry-run')
   private tags = Option.Array('--tags')
 
@@ -41,13 +40,6 @@ export abstract class CustomSpanCommand extends Command {
 
     const provider = getCIProvider()
     if (!SUPPORTED_PROVIDERS.includes(provider)) {
-      if (this.noFail) {
-        this.context.stdout.write(
-          `Unsupported CI provider "${provider}". Not failing since the --no-fail option was used.\n`
-        )
-
-        return 1
-      }
       this.context.stdout.write(
         `Unsupported CI provider "${provider}". Supported providers are: ${SUPPORTED_PROVIDERS.join(', ')}\n`
       )

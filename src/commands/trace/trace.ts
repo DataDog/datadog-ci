@@ -36,6 +36,7 @@ export class TraceCommand extends CustomSpanCommand {
 
   private command = Option.Rest({required: 1})
   private name = Option.String('--name')
+  private noFail = Option.Boolean('--no-fail')
 
   public async execute() {
     if (!this.command || !this.command.length) {
@@ -81,6 +82,11 @@ export class TraceCommand extends CustomSpanCommand {
     })
 
     if (res !== 0) {
+      if (this.noFail) {
+        console.log('note: Not failing since --no-fail provided')
+        return 0
+      }
+
       return res
     }
 
