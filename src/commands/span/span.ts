@@ -38,6 +38,8 @@ export class SpanCommand extends CustomSpanCommand {
   })
 
   public async execute() {
+    this.tryEnableFips()
+
     if (!this.name) {
       this.context.stdout.write(`The span name must be provided.\n`)
 

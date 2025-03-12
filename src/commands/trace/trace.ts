@@ -39,6 +39,8 @@ export class TraceCommand extends CustomSpanCommand {
   private noFail = Option.Boolean('--no-fail')
 
   public async execute() {
+    this.tryEnableFips()
+
     if (!this.command || !this.command.length) {
       this.context.stderr.write('Missing command to run\n')
 
