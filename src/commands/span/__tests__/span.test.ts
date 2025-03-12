@@ -34,12 +34,42 @@ describe('span', () => {
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"name":"mytestname"')
     })
+    test('no-name', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--duration', '10000'], env)
+      expect(code).toBe(1)
+    })
+    test('no-time-info', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--name', 'mytestname'], env)
+      expect(code).toBe(1)
+    })
     test('time', async () => {
       const env = {GITLAB_CI: '1'}
       const {context, code} = await runCLI(['--name', 'mytestname', '--start-time', '42', '--end-time', '618'], env)
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"start_time":"1970-01-01T00:00:00.042Z"')
       expect(context.stdout.toString()).toContain('"end_time":"1970-01-01T00:00:00.618Z"')
+    })
+    test('time-only-start', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--name', 'mytestname', '--start-time', '42'], env)
+      expect(code).toBe(1)
+    })
+    test('time-only-end', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--name', 'mytestname', '--end-time', '618'], env)
+      expect(code).toBe(1)
+    })
+    test('time-and-duration', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--name', 'mytestname', '--start-time', '42', '--end-time', '618', '--duration', '1618'], env)
+      expect(code).toBe(1)
+    })
+    test('time-reverse', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--name', 'mytestname', '--start-time', '618', '--end-time', '42'], env)
+      expect(code).toBe(1)
     })
     test('tags', async () => {
       const env = {GITLAB_CI: '1'}
