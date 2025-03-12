@@ -47,7 +47,7 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['src/commands/coverage/__tests__/fixtures'],
         automaticReportsDiscovery: true,
-        ignoredPaths: ['src/commands/coverage/__tests__/fixtures/subfolder'],
+        ignoredPaths: 'src/commands/coverage/__tests__/fixtures/subfolder',
         config: {},
         context,
       })

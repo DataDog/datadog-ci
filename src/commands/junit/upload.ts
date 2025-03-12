@@ -20,7 +20,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import { getRequestBuilder, parsePathsList, timedExecAsync } from "../../helpers/utils";
 import * as validation from '../../helpers/validation'
 
 import {isGitRepo} from '../git-metadata'
@@ -95,7 +95,7 @@ export class UploadJUnitXMLCommand extends Command {
       ],
       [
         'Discover and upload all jUnit XML test report files doing recursive search in current directory, ignoring ./src/ignored-module-a and ./src/ignored-module-b',
-        'datadog-ci junit upload --service my-service --ignored-paths ./src/ignored-module-a --ignored-paths ./src/ignored-module-b --auto-discovery .',
+        'datadog-ci junit upload --service my-service --ignored-paths ./src/ignored-module-a,./src/ignored-module-b --auto-discovery .',
       ],
       [
         'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
@@ -161,7 +161,7 @@ export class UploadJUnitXMLCommand extends Command {
     validator: t.isBoolean(),
     tolerateBoolean: true,
   })
-  private ignoredPaths = Option.Array('--ignored-paths')
+  private ignoredPaths = Option.String('--ignored-paths')
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -317,7 +317,7 @@ export class UploadJUnitXMLCommand extends Command {
     const validUniqueFiles = findFiles(
       basePaths,
       searchFoldersRecursively,
-      this.ignoredPaths || [],
+      parsePathsList(this.ignoredPaths),
       filterFile,
       validateXml,
       (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))

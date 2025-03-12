@@ -17,7 +17,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import { getRequestBuilder, parsePathsList, timedExecAsync } from "../../helpers/utils";
 
 import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
@@ -80,7 +80,7 @@ export class UploadCodeCoverageReportCommand extends Command {
       ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload .'],
       [
         'Upload all code coverage report files in current directory ignoring ./src/ignored-module-a and ./src/ignored-module-b',
-        'datadog-ci coverage upload --ignored-paths ./src/ignored-module-a --ignored-paths ./src/ignored-module-b .',
+        'datadog-ci coverage upload --ignored-paths ./src/ignored-module-a,./src/ignored-module-b .',
       ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
@@ -120,7 +120,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     validator: t.isBoolean(),
     tolerateBoolean: true,
   })
-  private ignoredPaths = Option.Array('--ignored-paths')
+  private ignoredPaths = Option.String('--ignored-paths')
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -267,7 +267,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     const validUniqueFiles = findFiles(
       this.basePaths || ['.'],
       this.automaticReportsDiscovery,
-      this.ignoredPaths || [],
+      parsePathsList(this.ignoredPaths),
       IS_COVERAGE_REPORT,
       (filePath: string) => VALIDATE_COVERAGE_REPORT(this.format, filePath),
       (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))

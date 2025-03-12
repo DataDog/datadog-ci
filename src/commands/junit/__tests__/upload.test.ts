@@ -334,7 +334,7 @@ describe('upload', () => {
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/autodiscovery'],
           automaticReportsDiscovery: true,
-          ignoredPaths: ['src/commands/junit/__tests__/fixtures/autodiscovery/nested'],
+          ignoredPaths: 'src/commands/junit/__tests__/fixtures/autodiscovery/nested',
           config: {},
           context,
           service: 'service',

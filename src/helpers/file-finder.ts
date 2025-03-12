@@ -63,8 +63,6 @@ export const findFiles = (
   validateFile: (filePath: string) => string | undefined,
   renderInvalidFile: (filePath: string, errorMessage: string) => void
 ): string[] => {
-  ignoredPaths = ignoredPaths.map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
-
   const files = basePaths.flatMap((basePath) => {
     if (isFile(basePath)) {
       // regular file
