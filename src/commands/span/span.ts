@@ -15,10 +15,10 @@ import {retryRequest} from '../../helpers/retry'
 import {parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
-import {apiConstructor} from './api'
-import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
+import {apiConstructor} from '../trace/api'
+import {APIHelper, Payload, SUPPORTED_PROVIDERS} from '../trace/interfaces'
 import * as validation from '../../helpers/validation'
-import { CustomSpanCommand } from './helper'
+import { CustomSpanCommand } from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
   public static paths = [['span']]
