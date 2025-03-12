@@ -5,7 +5,7 @@ Report a custom span to Datadog with name, start / end time or duration, tags an
 ## Usage
 
 ```bash
-datadog-ci span [--name <name>] [--start-time <ms>] [--end-time <ms>] [--duration] [--tags] [--measures] [--dry-run]
+datadog-ci span [--name <name>] [--start-time <ms>] [--end-time <ms>] [--duration <ms>] [--tags] [--measures] [--dry-run]
 ```
 
 For example:
