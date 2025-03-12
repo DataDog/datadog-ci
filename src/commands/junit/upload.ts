@@ -182,11 +182,6 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
-    if (!this.service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
 
