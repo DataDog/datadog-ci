@@ -5,7 +5,7 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import {glob} from 'glob'
+import {globSync} from 'glob'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 
@@ -159,7 +159,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 export const getSuites = async (GLOB: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${path.resolve(process.cwd(), GLOB)}\n`)
 
-  const files: string[] = await glob(GLOB)
+  const files: string[] = globSync(GLOB)
   if (files.length) {
     reporter.log(`\nGot test files:\n${files.map((file) => `  - ${file}\n`).join('')}\n`)
   } else {
