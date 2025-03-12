@@ -22,7 +22,7 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 
 - The positional arguments are the directories or file paths in which the code coverage reports are located. If you pass a folder, the CLI will do a recursive search looking for supported coverage reports.
 - `--auto-discovery` (default: `true`) do a recursive search and automatic coverage reports discovery in the folders provided in positional arguments.
-- `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set)
+- `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
 - `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
