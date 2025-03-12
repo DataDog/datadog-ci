@@ -5,7 +5,7 @@
       "DRONE": "true",
       "DRONE_BRANCH": "master",
       "DRONE_BUILD_LINK": "https://drone.company.com/octocat/hello-world/42",
-      "DRONE_BUILD_NUMBER": "42",
+      "DRONE_BUILD_NUMBER": "build-number",
       "DRONE_COMMIT_AUTHOR_EMAIL": "octocat@github.com",
       "DRONE_COMMIT_AUTHOR_NAME": "The Octocat",
       "DRONE_COMMIT_MESSAGE": "Updated README.md",
@@ -18,7 +18,7 @@
     },
     {
       "ci.job.name": "build_backend",
-      "ci.pipeline.number": "42",
+      "ci.pipeline.number": "build-number",
       "ci.pipeline.url": "https://drone.company.com/octocat/hello-world/42",
       "ci.provider.name": "drone",
       "ci.stage.name": "build",
