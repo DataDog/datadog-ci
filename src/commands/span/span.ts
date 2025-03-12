@@ -1,22 +1,5 @@
-import {spawn} from 'child_process'
-import crypto from 'crypto'
-import os from 'os'
-
-import {AxiosError} from 'axios'
-import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCIProvider, getCISpanTags} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
-import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-
-import {apiConstructor} from '../trace/api'
-import {APIHelper, Payload, SUPPORTED_PROVIDERS} from '../trace/interfaces'
 import * as validation from '../../helpers/validation'
 import { CustomSpanCommand } from '../trace/helper'
 
@@ -25,7 +8,7 @@ export class SpanCommand extends CustomSpanCommand {
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Create a custom span and report it to Datadog.',
+    description: 'Report a custom span to Datadog with name, start / end time or duration, tags and measures.',
     details: `
       This command reports a span with custom name and custom duration to Datadog.\n
       See README for details.
