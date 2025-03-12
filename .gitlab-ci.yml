@@ -2,45 +2,31 @@ stages:
   - build
   - release
 
-release-pkg-artifact:
+build-docker-image:
   stage: build
+  only: ['tags']
+  when: manual
+  allow_failure: false
   tags: ['arch:amd64']
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-gbi-focal
-  artifacts:
-    paths:
-      - datadog-ci_linux-x64
   script:
-    - docker buildx build -t datadog-ci -f buildenv/Dockerfile --output=type=local,dest=./datadog-ci-build .
-    - ls datadog-ci-build
-    - cp datadog-ci-build/w/datadog-ci_linux-x64 datadog-ci_linux-x64
+    - cd container
+    - docker buildx build
+      --platform linux/amd64,linux/arm64/v8
+      --build-arg "VERSION=${CI_COMMIT_TAG}"
+      --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
+      --push
+      .
 
-# build-docker-image:
-#   stage: build
-#   allow_failure: false
-#   tags: ['arch:amd64']
-#   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:24.0.4-gbi-focal
-#   script:
-#     - cd container
-#     - docker buildx build
-#       --platform linux/amd64,linux/arm64/v8
-#       --build-arg "VERSION=${CI_COMMIT_TAG}"
-#       --tag "registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}"
-#       --push
-#       .
-#     - |
-#       echo 'Testing image'
-#       docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --version
-#       docker run --rm registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA} --help
-
-# publish-docker-image:
-#   stage: release
-#   only: ['tags']
-#   needs: ['build-docker-image']
-#   trigger:
-#     project: DataDog/public-images
-#     branch: main
-#     strategy: depend
-#   variables:
-#     IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
-#     IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
-#     IMG_SIGNING: 'false'
+publish-docker-image:
+  stage: release
+  only: ['tags']
+  needs: ['build-docker-image']
+  trigger:
+    project: DataDog/public-images
+    branch: main
+    strategy: depend
+  variables:
+    IMG_SOURCES: registry.ddbuild.io/ci/datadog-ci:v${CI_PIPELINE_ID}-${CI_COMMIT_SHORT_SHA}
+    IMG_DESTINATIONS: ci:${CI_COMMIT_TAG},ci:latest
+    IMG_SIGNING: 'false'
