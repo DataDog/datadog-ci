@@ -36,9 +36,9 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 Additionally, you might configure the `coverage` command with environment variables:
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_TAGS`: set global tags applied to all test spans. The format must be `key1:value1,key2:value2`.
+- `DD_TAGS`: set global tags applied to all coverage report spans. The format must be `key1:value1,key2:value2`.
   - The resulting dictionary will be merged with whatever is in the `--tags` parameter. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
-- `DD_MEASURES`: set global numerical tags applied to all test spans. The format must be `key1:123,key2:321`.
+- `DD_MEASURES`: set global numerical tags applied to all coverage report spans. The format must be `key1:123,key2:321`.
   - The resulting dictionary will be merged with whatever is in the `--measures` parameter. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 - `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
