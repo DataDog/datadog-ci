@@ -35,7 +35,12 @@ export abstract class CustomSpanCommand extends Command {
     return crypto.randomBytes(5).toString('hex')
   }
 
-  public async executeReportCustomSpan(id: string, startTime: Date, endTime: Date, extraTags: Record<string, any>): Promise<number> {
+  protected async executeReportCustomSpan(
+    id: string,
+    startTime: Date,
+    endTime: Date,
+    extraTags: Record<string, any>
+  ): Promise<number> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
     const provider = getCIProvider()
@@ -123,4 +128,3 @@ export abstract class CustomSpanCommand extends Command {
     )
   }
 }
-

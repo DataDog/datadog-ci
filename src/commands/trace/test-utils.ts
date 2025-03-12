@@ -1,5 +1,9 @@
-export function makeCIProviderTests(runCLI: any, runCLIArgs: string[]): any {
-  return () => describe('execute', () => {
+// Only the function is exported, not the test such that there is no test duplication
+
+/* eslint-disable jest/no-export */
+
+export const makeCIProviderTests = (runCLI: any, runCLIArgs: string[]) => {
+  describe('execute', () => {
     test('should fail if no CI is detected', async () => {
       process.env = {}
       const {context, code} = await runCLI(runCLIArgs)

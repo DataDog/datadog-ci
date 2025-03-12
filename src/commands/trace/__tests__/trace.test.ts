@@ -5,8 +5,8 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
 
+import {makeCIProviderTests} from '../test-utils'
 import {TraceCommand} from '../trace'
-import {makeCIProviderTests} from './utils'
 
 describe('trace', () => {
   const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
@@ -40,5 +40,5 @@ describe('trace', () => {
     })
   })
 
-  makeCIProviderTests(runCLI, [])();
+  makeCIProviderTests(runCLI, [])
 })

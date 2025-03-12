@@ -1,7 +1,8 @@
 import {Command, Option} from 'clipanion'
 
 import * as validation from '../../helpers/validation'
-import { CustomSpanCommand } from '../trace/helper'
+
+import {CustomSpanCommand} from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
   public static paths = [['span']]
@@ -38,41 +39,41 @@ export class SpanCommand extends CustomSpanCommand {
 
   public async execute() {
     if (!this.name) {
-      this.context.stdout.write(
-        `The span name must be provided.\n`
-      )
-      return 1;
+      this.context.stdout.write(`The span name must be provided.\n`)
+
+      return 1
     }
 
-    if (this.startTimeInMs && !this.endTimeInMs || !this.startTimeInMs && this.endTimeInMs || this.durationInMs && (this.startTimeInMs || this.endTimeInMs)) {
-      this.context.stdout.write(
-        `Either duration or start and end time must be provided.\n`
-      )
-      return 1;
+    if (
+      (this.startTimeInMs && !this.endTimeInMs) ||
+      (!this.startTimeInMs && this.endTimeInMs) ||
+      (this.durationInMs && (this.startTimeInMs || this.endTimeInMs))
+    ) {
+      this.context.stdout.write(`Either duration or start and end time must be provided.\n`)
+
+      return 1
     }
 
     if (this.startTimeInMs && this.endTimeInMs) {
-      this.durationInMs = this.endTimeInMs - this.startTimeInMs;
+      this.durationInMs = this.endTimeInMs - this.startTimeInMs
     }
 
     if (!this.durationInMs) {
-      this.context.stdout.write(
-        `The span duration must be provided or start-time and end-time.\n`
-      )
-      return 1;
+      this.context.stdout.write(`The span duration must be provided or start-time and end-time.\n`)
+
+      return 1
     }
 
     if (this.durationInMs < 0) {
-      this.context.stdout.write(
-        `The span duration must be positive / end time must be after start time.\n`
-      )
-      return 1;
+      this.context.stdout.write(`The span duration must be positive / end time must be after start time.\n`)
+
+      return 1
     }
 
     const endTime = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
     const startTime = new Date(endTime.getTime() - this.durationInMs)
 
-    return await this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, {
+    return this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, {
       name: this.name,
       error_message: '',
       exit_code: 0,
@@ -80,4 +81,3 @@ export class SpanCommand extends CustomSpanCommand {
     })
   }
 }
-

@@ -5,8 +5,9 @@ import {Cli} from 'clipanion/lib/advanced'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
 
+import {makeCIProviderTests} from '../../trace/test-utils'
+
 import {SpanCommand} from '../span'
-import {makeCIProviderTests} from '../../trace/__tests__/utils'
 
 describe('span', () => {
   const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
@@ -63,7 +64,10 @@ describe('span', () => {
     })
     test('time-and-duration', async () => {
       const env = {GITLAB_CI: '1'}
-      const {code} = await runCLI(['--name', 'mytestname', '--start-time', '42', '--end-time', '618', '--duration', '1618'], env)
+      const {code} = await runCLI(
+        ['--name', 'mytestname', '--start-time', '42', '--end-time', '618', '--duration', '1618'],
+        env
+      )
       expect(code).toBe(1)
     })
     test('time-reverse', async () => {
@@ -73,31 +77,43 @@ describe('span', () => {
     })
     test('tags', async () => {
       const env = {GITLAB_CI: '1'}
-      const {context, code} = await runCLI(['--name', 'mytestname', '--tags', 'hello:world', '--duration', '10000'], env)
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--tags', 'hello:world', '--duration', '10000'],
+        env
+      )
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"hello":"world"')
     })
     test('tags-multiple', async () => {
       const env = {GITLAB_CI: '1'}
-      const {context, code} = await runCLI(['--name', 'mytestname', '--tags', 'hello:world', '--tags', 'super:mario', '--duration', '10000'], env)
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--tags', 'hello:world', '--tags', 'super:mario', '--duration', '10000'],
+        env
+      )
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"hello":"world"')
       expect(context.stdout.toString()).toContain('"super":"mario"')
     })
     test('measures', async () => {
       const env = {GITLAB_CI: '1'}
-      const {context, code} = await runCLI(['--name', 'mytestname', '--measures', 'life:42', '--duration', '10000'], env)
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--measures', 'life:42', '--duration', '10000'],
+        env
+      )
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"life":42')
     })
     test('measures-multiple', async () => {
       const env = {GITLAB_CI: '1'}
-      const {context, code} = await runCLI(['--name', 'mytestname', '--measures', 'life:42', '--measures', 'golden:1.618', '--duration', '10000'], env)
+      const {context, code} = await runCLI(
+        ['--name', 'mytestname', '--measures', 'life:42', '--measures', 'golden:1.618', '--duration', '10000'],
+        env
+      )
       expect(code).toBe(0)
       expect(context.stdout.toString()).toContain('"life":42')
       expect(context.stdout.toString()).toContain('"golden":1.618')
     })
   })
 
-  makeCIProviderTests(runCLI, ['--name', 'mytestname', '--duration', '10000'])()
+  makeCIProviderTests(runCLI, ['--name', 'mytestname', '--duration', '10000'])
 })

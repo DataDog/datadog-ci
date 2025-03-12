@@ -3,7 +3,7 @@ import os from 'os'
 
 import {Command, Option} from 'clipanion'
 
-import { CustomSpanCommand } from './helper'
+import {CustomSpanCommand} from './helper'
 
 // We use 127 as exit code for invalid commands since that is what *sh terminals return
 const BAD_COMMAND_EXIT_CODE = 127
@@ -84,6 +84,7 @@ export class TraceCommand extends CustomSpanCommand {
     if (res !== 0) {
       if (this.noFail) {
         console.log('note: Not failing since --no-fail provided')
+
         return 0
       }
 
