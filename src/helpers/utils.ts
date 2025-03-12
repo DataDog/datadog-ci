@@ -8,8 +8,8 @@ import type {AxiosRequestConfig} from 'axios'
 import axios from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
+import * as glob from 'glob'
 import {ProxyAgent} from 'proxy-agent'
-import { sortResultsByOutcome } from "../commands/synthetics/utils/public";
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -424,5 +424,8 @@ export const parsePathsList = (paths: string | undefined): string[] => {
     return []
   }
 
-  return paths.split(',').map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
+  return paths
+    .split(',')
+    .flatMap((path) => (glob.hasMagic(path) ? glob.sync(path, {dotRelative: true}) : [path]))
+    .map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
 }
