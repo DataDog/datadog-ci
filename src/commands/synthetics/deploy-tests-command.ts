@@ -1,7 +1,7 @@
 import {Command, Option} from 'clipanion'
 import terminalLink from 'terminal-link'
 
-import {BaseCommand, getDefaultDatadogCiConfig} from './base-command'
+import {BaseCommand, getDefaultDatadogCiConfig, RecursivePartial} from './base-command'
 import {deployTests} from './deploy-tests-lib'
 import {DeployTestsCommandConfig} from './interfaces'
 
@@ -71,7 +71,7 @@ export class DeployTestsCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromEnv(): Partial<DeployTestsCommandConfig> {
+  protected resolveConfigFromEnv(): RecursivePartial<DeployTestsCommandConfig> {
     return {
       ...super.resolveConfigFromEnv(),
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
@@ -80,7 +80,7 @@ export class DeployTestsCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromCli(): Partial<DeployTestsCommandConfig> {
+  protected resolveConfigFromCli(): RecursivePartial<DeployTestsCommandConfig> {
     return {
       ...super.resolveConfigFromCli(),
       files: this.files,

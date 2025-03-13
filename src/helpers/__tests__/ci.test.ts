@@ -74,22 +74,22 @@ describe('getCIMetadata', () => {
     process.env = {GITLAB_CI: 'gitlab'}
 
     process.env.CI_PIPELINE_IID = '0'
-    expect(getCIMetadata()?.ci.pipeline.number).toBe(0)
+    expect(getCIMetadata()?.ci.pipeline?.number).toBe(0)
     process.env.CI_PIPELINE_IID = ' \n\r 12345 \n\n '
-    expect(getCIMetadata()?.ci.pipeline.number).toBe(12345)
+    expect(getCIMetadata()?.ci.pipeline?.number).toBe(12345)
     process.env.CI_PIPELINE_IID = '123.45'
-    expect(getCIMetadata()?.ci.pipeline.number).toBe(123)
+    expect(getCIMetadata()?.ci.pipeline?.number).toBe(123)
     process.env.CI_PIPELINE_IID = '999b'
-    expect(getCIMetadata()?.ci.pipeline.number).toBe(999)
+    expect(getCIMetadata()?.ci.pipeline?.number).toBe(999)
     process.env.CI_PIPELINE_IID = '-1'
-    expect(getCIMetadata()?.ci.pipeline.number).toBe(-1)
+    expect(getCIMetadata()?.ci.pipeline?.number).toBe(-1)
 
     process.env.CI_PIPELINE_IID = ''
-    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+    expect(getCIMetadata()?.ci.pipeline?.number).toBeUndefined()
     process.env.CI_PIPELINE_IID = 'not a number'
-    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+    expect(getCIMetadata()?.ci.pipeline?.number).toBeUndefined()
     process.env.CI_PIPELINE_IID = '$1'
-    expect(getCIMetadata()?.ci.pipeline.number).toBeUndefined()
+    expect(getCIMetadata()?.ci.pipeline?.number).toBeUndefined()
   })
 
   test('tags are properly truncated when required', () => {
@@ -98,13 +98,13 @@ describe('getCIMetadata', () => {
 
     process.env.CI_COMMIT_MESSAGE = bigString
     process.env.CI_COMMIT_TAG = bigString
-    expect(getCIMetadata()?.git.commit.message).toBe(bigString)
+    expect(getCIMetadata()?.git.commit?.message).toBe(bigString)
     expect(getCIMetadata()?.git.tag).toBe(bigString)
 
     const tagSizeLimits = {
       'git.commit.message': 500,
     }
-    expect(getCIMetadata(tagSizeLimits)?.git.commit.message).toBe(bigString.substring(0, 500))
+    expect(getCIMetadata(tagSizeLimits)?.git.commit?.message).toBe(bigString.substring(0, 500))
     expect(getCIMetadata(tagSizeLimits)?.git.tag).toBe(bigString)
   })
 

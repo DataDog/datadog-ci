@@ -12,6 +12,10 @@ import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {getReporter} from './utils/public'
 
+export type RecursivePartial<T> = {
+  [P in keyof T]?: RecursivePartial<T[P]>
+}
+
 const DEFAULT_DATADOG_CI_COMMAND_CONFIG: DatadogCIConfig = {
   apiKey: '',
   appKey: '',
@@ -57,8 +61,10 @@ export abstract class BaseCommand extends Command {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     await this.resolveConfig()
+    this.normalizeConfig()
+    this.validateConfig()
 
-    const reporters: Reporter[] = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this), ...this.getReporters()]
     this.reporter = getReporter(reporters)
   }
 
@@ -67,7 +73,7 @@ export abstract class BaseCommand extends Command {
     return getDefaultDatadogCiConfig()
   }
 
-  protected resolveConfigFromEnv(): Partial<DatadogCIConfig> {
+  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
     return {
       apiKey: process.env.DATADOG_API_KEY,
       appKey: process.env.DATADOG_APP_KEY,
@@ -76,7 +82,7 @@ export abstract class BaseCommand extends Command {
     }
   }
 
-  protected resolveConfigFromCli(): Partial<DatadogCIConfig> {
+  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
     return {
       apiKey: this.apiKey,
       appKey: this.appKey,
@@ -107,5 +113,17 @@ export abstract class BaseCommand extends Command {
 
     // Override with CLI parameters
     this.config = deepExtend(this.config, removeUndefinedValues(this.resolveConfigFromCli()))
+  }
+
+  protected normalizeConfig() {
+    // Normalize the config here
+  }
+
+  protected validateConfig() {
+    // Validate the config here
+  }
+
+  protected getReporters(): Reporter[] {
+    return []
   }
 }

@@ -34,33 +34,33 @@ import {
 
 export interface Metadata {
   ci: {
-    job: {
+    job?: {
       name?: string
       url?: string
     }
-    pipeline: {
+    pipeline?: {
       id?: string
       name?: string
       number?: number
       url?: string
     }
-    provider: {
+    provider?: {
       name?: string
     }
-    stage: {
+    stage?: {
       name?: string
     }
     workspace_path?: string
   }
   git: {
     branch?: string
-    commit: {
-      author: {
+    commit?: {
+      author?: {
         date?: string
         email?: string
         name?: string
       }
-      committer: {
+      committer?: {
         date?: string
         email?: string
         name?: string

@@ -75,7 +75,7 @@ export const resolveConfigFromFileAndEnvironment = async <
     defaultConfigPaths?: string[]
     configFromFileCallback?: (configFromFile: any) => void
   }
-): Promise<T & U> => {
+): Promise<T & StrictPartial<U>> => {
   const configFromFile = await resolveConfigFromFile(baseConfig, params)
 
   if (params.configFromFileCallback) {
@@ -261,7 +261,9 @@ export const removeEmptyValues = (tags: SpanTags) =>
     }
   }, {})
 
-export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object: T): T => {
+export type StrictPartial<T> = Partial<{[P in keyof T]: Exclude<T[P], undefined>}>
+
+export const removeUndefinedValues = <T extends Record<string, unknown>>(object: T): StrictPartial<T> => {
   const newObject = {...object}
   for (const [key, value] of Object.entries(newObject)) {
     if (value === undefined) {
@@ -269,7 +271,7 @@ export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object
     }
   }
 
-  return newObject
+  return newObject as Partial<{[P in keyof T]: Exclude<T[P], undefined>}>
 }
 
 export const normalizeRef = (ref: string | undefined) => {

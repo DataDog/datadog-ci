@@ -240,7 +240,7 @@ describe('run-tests', () => {
       }
 
       const command = createCommand(RunTestsCommand)
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
