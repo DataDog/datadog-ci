@@ -11,41 +11,32 @@ import {toBoolean} from '../../helpers/env'
 import {findFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import id from '../../helpers/id'
-import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
+import {SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {getRequestBuilder, parsePathsList, timedExecAsync} from '../../helpers/utils'
+import {parsePathsList} from '../../helpers/utils'
 
-import {isGitRepo} from '../git-metadata'
-import {newSimpleGit} from '../git-metadata/git'
-import {uploadToGitDB} from '../git-metadata/gitdb'
-
-import {apiConstructor, apiUrl, intakeUrl} from './api'
+import {apiConstructor, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
-  renderFailedGitDBSync,
   renderFailedUpload,
   renderInvalidFile,
   renderRetriedUpload,
-  renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
 } from './renderer'
 import {detectFormat, validateCoverageReport} from './utils'
 
-const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
-const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 10
 
-const IS_COVERAGE_REPORT = (file: string): boolean => {
+const isCoverageReport = (file: string): boolean => {
   if (path.extname(file) !== '.xml') {
     return false
   }
@@ -57,7 +48,7 @@ const IS_COVERAGE_REPORT = (file: string): boolean => {
   )
 }
 
-const VALIDATE_COVERAGE_REPORT = (explicitFormat: string | undefined, file: string): string | undefined => {
+const validateReport = (explicitFormat: string | undefined, file: string): string | undefined => {
   const format = explicitFormat || detectFormat(file)
   if (format === undefined) {
     return `Could not detect format of ${file}, please specify the format manually using the --format option`
@@ -77,10 +68,10 @@ export class UploadCodeCoverageReportCommand extends Command {
       See README for details.
     `,
     examples: [
-      ['Upload all code coverage report files in current directory', 'datadog-ci coverage upload .'],
+      ['Upload all code coverage report files in current directory and its subfolders', 'datadog-ci coverage upload .'],
       [
-        'Upload all code coverage report files in current directory ignoring ./src/ignored-module-a and ./src/ignored-module-b',
-        'datadog-ci coverage upload --ignored-paths ./src/ignored-module-a,./src/ignored-module-b .',
+        'Upload all code coverage report files in current directory and its subfolders, ignoring src/ignored-module-a and src/ignored-module-b',
+        'datadog-ci coverage upload --ignored-paths src/ignored-module-a,src/ignored-module-b .',
       ],
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
@@ -111,10 +102,6 @@ export class UploadCodeCoverageReportCommand extends Command {
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
-  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'true', {
-    validator: t.isBoolean(),
-    tolerateBoolean: true,
-  })
 
   private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
     validator: t.isBoolean(),
@@ -149,12 +136,6 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
 
     await this.uploadCodeCoverageReports()
-
-    if (!this.skipGitMetadataUpload) {
-      await this.uploadGitMetadata()
-    } else {
-      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
-    }
 
     if (!this.dryRun) {
       this.context.stdout.write(renderSuccessfulUploadCommand())
@@ -268,8 +249,8 @@ export class UploadCodeCoverageReportCommand extends Command {
       this.basePaths || ['.'],
       this.automaticReportsDiscovery,
       parsePathsList(this.ignoredPaths),
-      IS_COVERAGE_REPORT,
-      (filePath: string) => VALIDATE_COVERAGE_REPORT(this.format, filePath),
+      isCoverageReport,
+      (filePath: string) => validateReport(this.format, filePath),
       (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
     )
 
@@ -312,37 +293,6 @@ export class UploadCodeCoverageReportCommand extends Command {
         }
       }
       throw error
-    }
-  }
-
-  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await newSimpleGit(), this.dryRun)
-  }
-
-  private async uploadGitMetadata() {
-    if (await isGitRepo()) {
-      const traceId = id()
-
-      const requestBuilder = getRequestBuilder({
-        baseUrl: apiUrl,
-        apiKey: this.config.apiKey!,
-        headers: new Map([
-          [TRACE_ID_HTTP_HEADER, traceId],
-          [PARENT_ID_HTTP_HEADER, traceId],
-        ]),
-      })
-      try {
-        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
-        let elapsed = 0
-        if (!this.dryRun) {
-          elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
-        }
-        this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
-      } catch (err) {
-        this.logger.info(renderFailedGitDBSync(err))
-      }
-    } else {
-      this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
     }
   }
 }

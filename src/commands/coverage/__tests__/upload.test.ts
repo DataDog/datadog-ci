@@ -3,7 +3,6 @@ import os from 'os'
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
-import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
 
 import {UploadCodeCoverageReportCommand} from '../upload'
@@ -38,7 +37,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
     })
 
     test('should read all xml files excluding ignored paths', () => {
@@ -47,7 +46,7 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: ['src/commands/coverage/__tests__/fixtures'],
         automaticReportsDiscovery: true,
-        ignoredPaths: 'src/commands/coverage/__tests__/fixtures/subfolder',
+        ignoredPaths: 'src/commands/coverage/__tests__/fixtures/subfolder.xml',
         config: {},
         context,
       })
@@ -93,7 +92,7 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: [
           'src/commands/coverage/__tests__/fixtures',
-          'src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml',
+          'src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml',
         ],
         config: {},
         context,
@@ -103,7 +102,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
     })
 
     test('should not have repeated files', () => {
@@ -124,10 +123,10 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
     })
 
-    test('should fetch nested folders', () => {
+    test('should fetch nested folders when using glob patterns', () => {
       const context = createMockContext()
       const command = new UploadCodeCoverageReportCommand()
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
@@ -140,7 +139,9 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain(
+        './src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml'
+      )
     })
 
     test('should fetch nested folders and ignore non xml files', () => {
@@ -156,7 +157,9 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain(
+        './src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml'
+      )
     })
   })
 
@@ -306,48 +309,6 @@ describe('execute', () => {
     expect(output[1]).toContain('Starting upload')
     expect(output[2]).toContain(`Will upload code coverage report file ${path}`)
   })
-
-  test('without git metadata (with argument)', async () => {
-    const {context, code} = await runCLI([
-      '--verbose',
-      '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
-    const output = context.stdout.toString().split(os.EOL)
-    expect(id).not.toHaveBeenCalled()
-    expect(code).toBe(0)
-    expect(output[4]).toContain('Not syncing git metadata (skip git upload flag detected)')
-  })
-
-  test('without git metadata (with argument set to 1)', async () => {
-    const {context, code} = await runCLI([
-      '--verbose',
-      '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
-    const output = context.stdout.toString().split(os.EOL)
-    expect(id).not.toHaveBeenCalled()
-    expect(code).toBe(0)
-    expect(output[4]).toContain('Not syncing git metadata (skip git upload flag detected)')
-  })
-
-  test('with git metadata (with argument set to 0)', async () => {
-    const {context, code} = await runCLI([
-      '--skip-git-metadata-upload=0',
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
-    const output = context.stdout.toString().split(os.EOL)
-    expect(code).toBe(0)
-    expect(output[4]).toContain('Syncing git metadata')
-  })
-
-  test('id headers are added when git metadata is uploaded', async () => {
-    await runCLI([
-      '--skip-git-metadata-upload=0',
-      process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml',
-    ])
-    expect(id).toHaveBeenCalled()
-  }, 10000)
 })
 
 interface ExpectedOutput {

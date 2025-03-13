@@ -46,7 +46,7 @@ const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const IS_JUNIT_XML_REPORT = (file: string): boolean => {
+const isJunitXmlReport = (file: string): boolean => {
   if (path.extname(file) !== '.xml') {
     return false
   }
@@ -94,8 +94,8 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service --auto-discovery .',
       ],
       [
-        'Discover and upload all jUnit XML test report files doing recursive search in current directory, ignoring ./src/ignored-module-a and ./src/ignored-module-b',
-        'datadog-ci junit upload --service my-service --ignored-paths ./src/ignored-module-a,./src/ignored-module-b --auto-discovery .',
+        'Discover and upload all jUnit XML test report files doing recursive search in current directory, ignoring src/ignored-module-a and src/ignored-module-b',
+        'datadog-ci junit upload --service my-service --ignored-paths src/ignored-module-a,src/ignored-module-b --auto-discovery .',
       ],
       [
         'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
@@ -306,7 +306,7 @@ export class UploadJUnitXMLCommand extends Command {
     if (this.automaticReportsDiscovery) {
       basePaths = this.basePaths || ['.']
       searchFoldersRecursively = true
-      filterFile = IS_JUNIT_XML_REPORT
+      filterFile = isJunitXmlReport
     } else {
       // maintaining legacy matching logic for backward compatibility
       basePaths = this.basePaths || []

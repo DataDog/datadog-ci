@@ -28,7 +28,6 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 - `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
-- `--skip-git-metadata-upload` (default: `true`): if you want to upload git metadata, you may pass `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false`.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 
 #### Environment variables
@@ -42,10 +41,6 @@ Additionally, you might configure the `coverage` command with environment variab
   - The resulting dictionary will be merged with whatever is in the `--measures` parameter. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
 - `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
-
-### Optional dependencies
-
-- [`git`](https://git-scm.com/downloads) is used for extracting repository metadata.
 
 ### End-to-end testing process
 
