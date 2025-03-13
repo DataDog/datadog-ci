@@ -145,7 +145,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: datadog-ci_linux-x64
+          path: datadog-ci_linux-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
