@@ -37,7 +37,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
     test('should read all xml files excluding ignored paths', () => {
@@ -92,7 +92,7 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat'].call({
         basePaths: [
           'src/commands/coverage/__tests__/fixtures',
-          'src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml',
+          'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
         ],
         config: {},
         context,
@@ -102,7 +102,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
     test('should not have repeated files', () => {
@@ -123,7 +123,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
     test('should fetch nested folders when using glob patterns', () => {
@@ -140,7 +140,7 @@ describe('upload', () => {
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain(
-        './src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml'
+        './src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml'
       )
     })
 
@@ -158,7 +158,7 @@ describe('upload', () => {
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain(
-        './src/commands/coverage/__tests__/fixtures/subfolder.xml/subfolder-Jacoco-report.xml'
+        './src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml'
       )
     })
   })
