@@ -139,9 +139,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain(
-        './src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml'
-      )
+      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
     test('should fetch nested folders and ignore non xml files', () => {
@@ -157,9 +155,7 @@ describe('upload', () => {
       expect(fileNames.length).toEqual(3)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
-      expect(fileNames).toContain(
-        './src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml'
-      )
+      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
   })
 
