@@ -1,8 +1,18 @@
 import {Command, Option} from 'clipanion'
 
+import fs from 'fs'
 import * as validation from '../../helpers/validation'
 
 import {CustomSpanCommand} from '../trace/helper'
+
+interface SpanArgs {
+  name: string | undefined
+  durationInMs: number | undefined
+  startTimeInMs: number | undefined
+  endTimeInMs: number | undefined
+  tags: string[] | undefined
+  measures: string[] | undefined
+}
 
 export class SpanCommand extends CustomSpanCommand {
   public static paths = [['span']]
@@ -36,47 +46,91 @@ export class SpanCommand extends CustomSpanCommand {
   private endTimeInMs: number | undefined = Option.String('--end-time', {
     validator: validation.isInteger(),
   })
+  private payloadFile = Option.String('--payload-file')
 
   public async execute() {
     this.tryEnableFips()
 
-    if (!this.name) {
+    if (this.payloadFile) {
+      // Read json
+      const content = fs.readFileSync(this.payloadFile, 'utf-8')?.toString();
+      if (!content) {
+        this.context.stdout.write(`Error reading payload file ${this.payloadFile}\n`)
+        return 1
+      }
+
+      const payload = JSON.parse(content)
+      if (!payload) {
+        this.context.stdout.write(`Error parsing payload file ${this.payloadFile}\n`)
+        return 1
+      }
+
+      if (!Array.isArray(payload)) {
+        this.context.stdout.write(`Payload file ${this.payloadFile} must contain an array of span args\n`)
+        return 1
+      }
+
+      let exitCode = 0
+      for (const spanArgs of payload) {
+        const code = await this.reportSpan(spanArgs)
+        if (code !== 0) {
+          exitCode = code
+          this.context.stdout.write(`Error reporting span: ${JSON.stringify(spanArgs)}\n`)
+        }
+      }
+
+      return exitCode
+    } else {
+      return this.reportSpan({
+        name: this.name,
+        durationInMs: this.durationInMs,
+        startTimeInMs: this.startTimeInMs,
+        endTimeInMs: this.endTimeInMs,
+        tags: this.tags,
+        measures: this.measures,
+      })
+    }
+  }
+
+  private async reportSpan(args: SpanArgs) {
+    if (!args.name) {
       this.context.stdout.write(`The span name must be provided.\n`)
 
       return 1
     }
 
     if (
-      (this.startTimeInMs && !this.endTimeInMs) ||
-      (!this.startTimeInMs && this.endTimeInMs) ||
-      (this.durationInMs && (this.startTimeInMs || this.endTimeInMs))
+      (args.startTimeInMs && !args.endTimeInMs) ||
+      (!args.startTimeInMs && args.endTimeInMs) ||
+      (args.durationInMs && (args.startTimeInMs || args.endTimeInMs))
     ) {
       this.context.stdout.write(`Either duration or start and end time must be provided.\n`)
 
       return 1
     }
 
-    if (this.startTimeInMs && this.endTimeInMs) {
-      this.durationInMs = this.endTimeInMs - this.startTimeInMs
+    let durationInMs = args.durationInMs
+    if (args.startTimeInMs && args.endTimeInMs) {
+      durationInMs = args.endTimeInMs - args.startTimeInMs
     }
 
-    if (!this.durationInMs) {
+    if (!durationInMs) {
       this.context.stdout.write(`The span duration must be provided or start-time and end-time.\n`)
 
       return 1
     }
 
-    if (this.durationInMs < 0) {
+    if (durationInMs < 0) {
       this.context.stdout.write(`The span duration must be positive / end time must be after start time.\n`)
 
       return 1
     }
 
-    const endTime = this.endTimeInMs ? new Date(this.endTimeInMs) : new Date()
-    const startTime = new Date(endTime.getTime() - this.durationInMs)
+    const endTime = args.endTimeInMs ? new Date(args.endTimeInMs) : new Date()
+    const startTime = new Date(endTime.getTime() - durationInMs)
 
-    return this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, {
-      name: this.name,
+    return this.executeReportCustomSpan(this.generateSpanId(), startTime, endTime, args.tags, args.measures, {
+      name: args.name,
       error_message: '',
       exit_code: 0,
       command: 'custom-span',

@@ -17,9 +17,9 @@ import {apiConstructor} from './api'
 import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
 
 export abstract class CustomSpanCommand extends Command {
-  private measures = Option.Array('--measures')
+  protected measures = Option.Array('--measures')
   private dryRun = Option.Boolean('--dry-run')
-  private tags = Option.Array('--tags')
+  protected tags = Option.Array('--tags')
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -43,6 +43,8 @@ export abstract class CustomSpanCommand extends Command {
     id: string,
     startTime: Date,
     endTime: Date,
+    tags: string[] | undefined,
+    measures: string[] | undefined,
     extraTags: Record<string, any>
   ): Promise<number> {
     const provider = getCIProvider()
@@ -55,9 +57,9 @@ export abstract class CustomSpanCommand extends Command {
     }
     const ciSpanTags = getCISpanTags()
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-    const cliMeasures = this.measures ? parseTags(this.measures) : {}
-    const measures = Object.entries(cliMeasures).reduce((acc, [key, value]) => {
+    const cliTags = tags ? parseTags(tags) : {}
+    const cliMeasures = measures ? parseTags(measures) : {}
+    const measuresObjects = Object.entries(cliMeasures).reduce((acc, [key, value]) => {
       const parsedValue = parseFloat(value)
       if (!isNaN(parsedValue)) {
         return {...acc, [key]: parsedValue}
@@ -75,7 +77,7 @@ export abstract class CustomSpanCommand extends Command {
       ci_provider: provider,
       span_id: id,
       tags: {...gitSpanTags, ...ciSpanTags, ...userGitSpanTags, ...cliTags, ...envVarTags},
-      measures,
+      measures: measuresObjects,
       command: extraTags.command,
       name: extraTags.name,
       error_message: extraTags.error_message,

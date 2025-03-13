@@ -113,6 +113,17 @@ describe('span', () => {
       expect(context.stdout.toString()).toContain('"life":42')
       expect(context.stdout.toString()).toContain('"golden":1.618')
     })
+    test('measures-multiple', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {context, code} = await runCLI(
+        ['--payload-file', './src/commands/span/__tests__/data/payload.json'],
+        env
+      )
+      expect(code).toBe(0)
+      expect(context.stdout.toString().match(/RUN/g).length).toEqual(2)
+      expect(context.stdout.toString()).toContain('"name":"hello"')
+      expect(context.stdout.toString()).toContain('"name":"hello2"')
+    })
   })
 
   makeCIProviderTests(runCLI, ['--name', 'mytestname', '--duration', '10000'])
