@@ -361,7 +361,7 @@ export const getBasePayload = (test: Test, triggerConfig: TriggerConfig): BaseTe
   const {testOverrides, location} = triggerConfig
 
   const overriddenConfig: BaseTestPayload = {
-    metadata: location && convertAstLocationToMetadata(location),
+    // metadata: location && convertAstLocationToMetadata(location),
   }
 
   if (!testOverrides || !Object.keys(testOverrides).length) {
@@ -403,11 +403,11 @@ export const getBasePayload = (test: Test, triggerConfig: TriggerConfig): BaseTe
   return overriddenConfig
 }
 
-export const findLocationInSuite = (
+export const findTriggerConfigNodeInSuite = (
   suite: Suite,
   index: number,
   reporter: MainReporter
-): jsonToAst.Location | undefined => {
+): jsonToAst.ObjectNode | undefined => {
   if (!suite.ast) {
     return
   }
@@ -438,5 +438,51 @@ export const findLocationInSuite = (
     return
   }
 
-  return selectedNode.loc
+  return selectedNode
+}
+
+export const findStepLocationsInLocalTriggerConfigNode = (
+  localTriggerConfigNode: jsonToAst.ObjectNode,
+  reporter: MainReporter
+): jsonToAst.Location[] => {
+  const localTestDefinitionPropertyNode = localTriggerConfigNode.children.find(
+    (node) => node.type === 'Property' && node.key.type === 'Identifier' && node.key.value === 'localTestDefinition'
+  )
+
+  if (!localTestDefinitionPropertyNode) {
+    reporter.error('The "localTestDefinition" property is missing.')
+
+    return []
+  }
+
+  if (localTestDefinitionPropertyNode.value.type !== 'Object') {
+    reporter.error('The "localTestDefinition" property must be an object.')
+
+    return []
+  }
+
+  const localTestDefinitionNode = localTestDefinitionPropertyNode.value
+  const stepsPropertyNode = localTestDefinitionNode.children.find(
+    (node) => node.type === 'Property' && node.key.type === 'Identifier' && node.key.value === 'steps'
+  )
+
+  if (!stepsPropertyNode) {
+    reporter.error('The "steps" property is missing.')
+
+    return []
+  }
+
+  if (stepsPropertyNode.value.type !== 'Array') {
+    reporter.error('The "steps" property must be an array.')
+
+    return []
+  }
+
+  return stepsPropertyNode.value.children.map((stepNode) => {
+    if (!stepNode.loc) {
+      throw new Error('Location is missing in the AST node.')
+    }
+
+    return stepNode.loc
+  })
 }

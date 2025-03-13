@@ -1,4 +1,3 @@
-import {writeFileSync} from 'node:fs'
 import http from 'node:http'
 
 import chalk from 'chalk'
@@ -144,6 +143,8 @@ export const executeTests = async (
     const bars = new Map<string, cliProgress.Bar>()
     const inProgressResults = new Map<string, {startedAt: number; steps: any[]; status: 'in_progress' | 'finished'}>()
 
+    let tempResultId = ''
+
     reportServer = http
       .createServer((req, res) => {
         let body = ''
@@ -166,7 +167,7 @@ export const executeTests = async (
             // console.log('received req on', req.url)
             if (match?.groups) {
               const {resultId} = match.groups
-              const result = inProgressResults.get(resultId) ?? {
+              const result = inProgressResults.get(tempResultId || resultId) ?? {
                 startedAt: Date.now(),
                 steps: [],
                 status: 'in_progress',
@@ -181,13 +182,18 @@ export const executeTests = async (
             }
           } else {
             const {startedAt, stepIndex, stepCount, stepResult, publicId, resultId, status, retrying} = JSON.parse(body)
+            const retries: number = retrying?.retries || 0
 
-            const result = inProgressResults.get(resultId) ?? {startedAt, steps: [], status: 'in_progress'}
+            tempResultId = resultId
+
+            const result = inProgressResults.get(resultId) ?? {startedAt, steps: [] as any[], status: 'in_progress'}
             const url = `https://dd-cc0f04065bf75f0aff85d7d0e62d9a6f.datad0g.com/synthetics/details/${publicId}/result/${resultId}?batch_id=${trigger.batch_id}&port=3222`
             const payload = {url, publicId, icon: status === 'finished' ? '•' : '⏳'}
 
             const bar = bars.get(resultId) ?? multiBar.create(0, 0)
             bars.set(resultId, bar)
+
+            // multiBar.log(`Location: ${triggerConfigs.length}\n`)
 
             if (status === 'finished' && inProgressResults.get(resultId)) {
               // console.log('Finishing', resultId)
@@ -196,20 +202,39 @@ export const executeTests = async (
             } else {
               const error = retrying?.error || stepResult.error
               if (error?.code === 'ASSERTION_FAILURE') {
-                const retries: number = retrying?.retries || 0
                 const retryText = retrying ? ` (attempt ${retries + 1})` : ''
+
+                // TODO: ast for steps too
 
                 // writeFileSync(
                 //   `/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result-${retryText}.json`,
                 //   JSON.stringify(stepResult)
                 // )
 
+                let findFailingStepText = ''
+
+                const localTriggerConfig = triggerConfigs.flatMap((t) =>
+                  isLocalTriggerConfig(t) && t.localTestDefinition.public_id === publicId ? [t] : []
+                )[0]
+                if (localTriggerConfig && localTriggerConfig.stepLocations) {
+                  const localStepIndex = stepIndex - 1 // the initial navigation step is not in steps (XXX: only for browser)
+                  const location =
+                    localStepIndex === -1
+                      ? localTriggerConfig.location
+                      : localTriggerConfig.stepLocations[localStepIndex]
+
+                  if (location) {
+                    const path = `${location.source}:${location.start.line}`
+                    findFailingStepText += ` ⎋ Find the ${chalk.red('failing step')} here: ${chalk.cyan(path)}`
+                  }
+                }
+
                 multiBar.log(
                   `${chalk.dim(`[${publicId}]`)} ${chalk.red('[ASSERTION_FAILURE]')} - ${
                     stepResult.description
                   }${retryText}\n ${chalk.red('✖')} Expected "${stepResult.assertionResult.expected}" but got "${
                     stepResult.assertionResult.actual
-                  }"\n\n`
+                  }"\n${findFailingStepText}\n\n`
                 )
               }
 
@@ -220,6 +245,10 @@ export const executeTests = async (
                 ...stepResult,
                 displayIndex: stepIndex,
               }
+              // Fill the rest with placeholder steps
+              result.steps = result.steps.concat(
+                Array.from({length: stepCount - result.steps.length}).fill({status: 'in_progress'})
+              )
 
               // writeFileSync(
               //   '/Users/corentin.girard/go/src/github.com/DataDog/datadog-ci.git/tests-as-code/step-result.json',

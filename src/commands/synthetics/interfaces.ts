@@ -429,7 +429,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
   appExtractedMetadata?: MobileAppExtractedMetadata
-  metadata?: SourceFileMetadata
+  // metadata?: SourceFileMetadata
 }
 
 export interface BatchOptions {
@@ -491,6 +491,7 @@ export interface RemoteTriggerConfig extends BaseTriggerConfig {
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
   localTestDefinition: LocalTestDefinition
+  stepLocations?: jsonToAst.Location[]
 }
 export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig
 

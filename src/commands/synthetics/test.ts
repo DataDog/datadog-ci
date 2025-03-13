@@ -22,10 +22,11 @@ import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
 import {DEFAULT_TEST_CONFIG_FILES_GLOB, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {
   getPublicIdOrPlaceholder,
-  findLocationInSuite,
+  findTriggerConfigNodeInSuite,
   getTriggerConfigPublicId,
   isLocalTriggerConfig,
   isMobileTestWithOverride,
+  findStepLocationsInLocalTriggerConfigNode,
 } from './utils/internal'
 import {
   InitialSummary,
@@ -65,12 +66,20 @@ export const getTestConfigs = async (
   const testConfigs = suites
     .map((suite) =>
       suite.content.tests.map<TriggerConfig>((test, i) => {
+        const triggerConfigNode = suite.ast && findTriggerConfigNodeInSuite(suite, i, reporter)
+
         return {
           testOverrides: test.testOverrides,
           suite: suite.name,
-          location: suite.ast && findLocationInSuite(suite, i, reporter),
+          location: triggerConfigNode?.loc,
           ...(isLocalTriggerConfig(test)
-            ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
+            ? {
+                localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition),
+                stepLocations:
+                  triggerConfigNode &&
+                  test.localTestDefinition.steps &&
+                  findStepLocationsInLocalTriggerConfigNode(triggerConfigNode, reporter),
+              }
             : {id: normalizePublicId(test.id) ?? ''}),
         }
       })
