@@ -1,17 +1,11 @@
-import fs, {lstatSync} from 'fs'
+import fs from 'fs'
 import path from 'path'
 
 import {XMLValidator} from 'fast-xml-parser'
 
 import {renderFileReadError} from './renderer'
 
-export const isFile = (filePath: string) => {
-  try {
-    return lstatSync(filePath).isFile()
-  } catch (e) {
-    return false
-  }
-}
+const ROOT_TAG_REGEX = /<([^?!\s/>]+)/
 
 export const validateCoverageReport = (filePath: string, format: string) => {
   if (format === 'jacoco') {
@@ -21,7 +15,14 @@ export const validateCoverageReport = (filePath: string, format: string) => {
       return validationOutput.err.msg
     }
 
-    // TODO add Jacoco-specific validation to ensure this is a well-formed Jacoco report
+    // Check that the root element is 'report' and that the report contains sourcefile tags
+    const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
+    if (!rootTagMatch || rootTagMatch[1] !== 'report') {
+      return 'Invalid Jacoco report: root element must be <report>'
+    }
+    if (!xmlFileContentString.includes('<sourcefile')) {
+      return 'Invalid Jacoco report: missing <sourcefile> tags'
+    }
   }
 
   return undefined

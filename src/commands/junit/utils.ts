@@ -1,5 +1,3 @@
-import {lstatSync} from 'fs'
-
 import {getCommonAppBaseURL} from '../../helpers/app'
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
@@ -42,12 +40,4 @@ export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, e
   }
 
   return url
-}
-
-export const isFile = (path: string) => {
-  try {
-    return lstatSync(path).isFile()
-  } catch (e) {
-    return false
-  }
 }

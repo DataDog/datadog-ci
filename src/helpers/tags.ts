@@ -5,13 +5,12 @@ import path from 'path'
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
 
-import {isFile} from '../commands/junit/utils'
-
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
 import {SpanTag, SpanTags} from './interfaces'
 import {getUserGitSpanTags} from './user-provided-git'
+import {isFile} from './utils'
 
 export const CI_PIPELINE_URL = 'ci.pipeline.url'
 export const CI_PROVIDER_NAME = 'ci.provider.name'

@@ -1,23 +1,6 @@
-import {detectFormat, isFile, validateCoverageReport} from '../utils'
+import {detectFormat, validateCoverageReport} from '../utils'
 
 describe('utils', () => {
-  describe('isFile', () => {
-    test('Returns true for a valid file path', () => {
-      const filePath = './src/commands/coverage/__tests__/fixtures/random-file.xml'
-      expect(isFile(filePath)).toBeTruthy()
-    })
-
-    test('Returns false for a non-existent file path', () => {
-      const filePath = './src/commands/coverage/__tests__/fixtures/non-existent-file.xml'
-      expect(isFile(filePath)).toBeFalsy()
-    })
-
-    test('Returns false for a directory path', () => {
-      const dirPath = './src/commands/coverage/__tests__/fixtures'
-      expect(isFile(dirPath)).toBeFalsy()
-    })
-  })
-
   describe('validateCoverageReport', () => {
     test('Returns undefined for a valid Jacoco report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report.xml'
@@ -31,6 +14,11 @@ describe('utils', () => {
 
     test('Returns error message for an invalid Jacoco report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/invalid-jacoco-report.xml'
+      expect(validateCoverageReport(filePath, 'jacoco')).toMatch(/.+/)
+    })
+
+    test('Returns error message for a Jacoco report with invalid root tag', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/jacoco-report-incorrect-root-tag.xml'
       expect(validateCoverageReport(filePath, 'jacoco')).toMatch(/.+/)
     })
   })
