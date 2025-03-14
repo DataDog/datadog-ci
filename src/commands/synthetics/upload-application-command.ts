@@ -1,36 +1,15 @@
 import {Command, Option} from 'clipanion'
-import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {LogLevel, Logger} from '../../helpers/logger'
-import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {EndpointError} from './api'
+import {BaseCommand} from './base-command'
 import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
 
-export const DEFAULT_UPLOAD_COMMAND_CONFIG: UploadApplicationCommandConfig = {
-  apiKey: '',
-  appKey: '',
-  configPath: 'datadog-ci.json',
-  datadogSite: 'datadoghq.com',
-  proxy: {protocol: 'http'},
-  mobileApplicationVersionFilePath: '',
-  mobileApplicationId: '',
-  versionName: '',
-  latest: false,
-}
-
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
-
-const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
-
-export class UploadApplicationCommand extends Command {
+export class UploadApplicationCommand extends BaseCommand {
   public static paths = [['synthetics', 'upload-application']]
 
   public static usage = Command.Usage({
@@ -48,10 +27,8 @@ export class UploadApplicationCommand extends Command {
     ],
   })
 
-  private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
-  private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
-  private configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
-  private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  protected config: UploadApplicationCommandConfig = UploadApplicationCommand.getDefaultConfig()
+
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: 'Override the application version for all Synthetic mobile application tests.',
   })
@@ -64,29 +41,18 @@ export class UploadApplicationCommand extends Command {
       'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
   })
 
-  private config: UploadApplicationCommandConfig = JSON.parse(JSON.stringify(DEFAULT_UPLOAD_COMMAND_CONFIG)) // Deep copy to avoid mutation
-
-  private logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  public static getDefaultConfig(): UploadApplicationCommandConfig {
+    return {
+      ...super.getDefaultConfig(),
+      mobileApplicationVersionFilePath: '',
+      mobileApplicationId: '',
+      versionName: '',
+      latest: false,
+    }
   }
 
   public async execute() {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-
-    try {
-      await this.resolveConfig()
-    } catch (error) {
-      this.logger.error(`Error: invalid config`)
-
-      return 1
-    }
+    await this.setup()
 
     const appUploadReporter = new AppUploadReporter(this.context)
     try {
@@ -100,47 +66,22 @@ export class UploadApplicationCommand extends Command {
     }
   }
 
-  private async resolveConfig() {
-    // Defaults < file < ENV < CLI
-    try {
-      // Override Config Path with ENV variables
-      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
-      this.config = await resolveConfigFromFile(this.config, {
-        configPath: overrideConfigPath,
-        defaultConfigPaths: [this.config.configPath],
-      })
-    } catch (error) {
-      if (this.configPath) {
-        throw error
-      }
+  protected resolveConfigFromEnv(): Partial<UploadApplicationCommandConfig> {
+    return {
+      ...super.resolveConfigFromEnv(),
+      mobileApplicationId: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID,
+      versionName: process.env.DATADOG_SYNTHETICS_VERSION_NAME,
+      latest: toBoolean(process.env.DATADOG_SYNTHETICS_LATEST),
     }
+  }
 
-    this.config = deepExtend(
-      this.config,
-      removeUndefinedValues({
-        apiKey: process.env.DATADOG_API_KEY,
-        appKey: process.env.DATADOG_APP_KEY,
-        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
-        datadogSite: process.env.DATADOG_SITE,
-        mobileApplicationId: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID,
-        versionName: process.env.DATADOG_SYNTHETICS_VERSION_NAME,
-        latest: toBoolean(process.env.DATADOG_SYNTHETICS_LATEST),
-      })
-    )
-
-    // Override with CLI parameters
-    this.config = deepExtend(
-      this.config,
-      removeUndefinedValues({
-        apiKey: this.apiKey,
-        appKey: this.appKey,
-        configPath: this.configPath,
-        datadogSite: this.datadogSite,
-        mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
-        mobileApplicationId: this.mobileApplicationId,
-        versionName: this.versionName,
-        latest: this.latest,
-      })
-    )
+  protected resolveConfigFromCli(): Partial<UploadApplicationCommandConfig> {
+    return {
+      ...super.resolveConfigFromCli(),
+      mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,
+      mobileApplicationId: this.mobileApplicationId,
+      versionName: this.versionName,
+      latest: this.latest,
+    }
   }
 }

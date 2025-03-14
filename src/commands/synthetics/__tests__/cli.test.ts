@@ -5,8 +5,8 @@ import {toBoolean, toNumber, toStringMap} from '../../../helpers/env'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG, DeployTestsCommand} from '../deploy-tests-command'
-import {DEFAULT_IMPORT_TESTS_COMMAND_CONFIG, ImportTestsCommand} from '../import-tests-command'
+import {DeployTestsCommand} from '../deploy-tests-command'
+import {ImportTestsCommand} from '../import-tests-command'
 import {
   CookiesObject,
   DeployTestsCommandConfig,
@@ -19,7 +19,7 @@ import {
 } from '../interfaces'
 import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
 import * as testUtils from '../test'
-import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
+import {UploadApplicationCommand} from '../upload-application-command'
 import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
@@ -1295,7 +1295,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1349,7 +1349,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1384,7 +1384,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
@@ -1424,7 +1424,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1476,7 +1476,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1505,7 +1505,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
@@ -1541,7 +1541,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1593,7 +1593,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1622,7 +1622,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',

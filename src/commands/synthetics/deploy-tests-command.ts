@@ -1,16 +1,9 @@
 import {Command, Option} from 'clipanion'
 import terminalLink from 'terminal-link'
 
-import {BaseCommand, getDefaultDatadogCiConfig} from './base-command'
+import {BaseCommand} from './base-command'
 import {deployTests} from './deploy-tests-lib'
 import {DeployTestsCommandConfig} from './interfaces'
-
-export const DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG: DeployTestsCommandConfig = {
-  ...getDefaultDatadogCiConfig(),
-  files: [],
-  publicIds: [],
-  subdomain: 'app',
-}
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
@@ -42,12 +35,21 @@ export class DeployTestsCommand extends BaseCommand {
       'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
   })
 
-  protected config: DeployTestsCommandConfig = this.getDefaultConfig()
+  protected config: DeployTestsCommandConfig = DeployTestsCommand.getDefaultConfig()
 
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+
+  public static getDefaultConfig(): DeployTestsCommandConfig {
+    return {
+      ...super.getDefaultConfig(),
+      files: [],
+      publicIds: [],
+      subdomain: 'app',
+    }
+  }
 
   public async execute() {
     // populate the config
@@ -62,13 +64,6 @@ export class DeployTestsCommand extends BaseCommand {
     }
 
     return 0
-  }
-
-  protected getDefaultConfig(): DeployTestsCommandConfig {
-    return {
-      ...super.getDefaultConfig(),
-      ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
-    }
   }
 
   protected resolveConfigFromEnv(): Partial<DeployTestsCommandConfig> {

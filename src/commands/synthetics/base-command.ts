@@ -12,25 +12,12 @@ import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {getReporter} from './utils/public'
 
-const DEFAULT_DATADOG_CI_COMMAND_CONFIG: DatadogCIConfig = {
-  apiKey: '',
-  appKey: '',
-  configPath: 'datadog-ci.json',
-  datadogSite: 'datadoghq.com',
-  proxy: {protocol: 'http'},
-}
-
-export const getDefaultDatadogCiConfig = () => {
-  // Deep copy to avoid mutation
-  return JSON.parse(JSON.stringify(DEFAULT_DATADOG_CI_COMMAND_CONFIG)) as DatadogCIConfig
-}
-
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
 const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
 
 export abstract class BaseCommand extends Command {
-  protected config: DatadogCIConfig = this.getDefaultConfig()
+  protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
   protected configPath = Option.String('--config', {
@@ -53,20 +40,18 @@ export abstract class BaseCommand extends Command {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
 
-  protected async setup() {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-
-    await this.resolveConfig()
-
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
+  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
+  public static getDefaultConfig(): DatadogCIConfig {
+    return {
+      apiKey: '',
+      appKey: '',
+      configPath: 'datadog-ci.json',
+      datadogSite: 'datadoghq.com',
+      proxy: {protocol: 'http'},
+    }
   }
 
-  // These methods should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected getDefaultConfig(): DatadogCIConfig {
-    return getDefaultDatadogCiConfig()
-  }
-
+  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
   protected resolveConfigFromEnv(): Partial<DatadogCIConfig> {
     return {
       apiKey: process.env.DATADOG_API_KEY,
@@ -76,6 +61,7 @@ export abstract class BaseCommand extends Command {
     }
   }
 
+  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
   protected resolveConfigFromCli(): Partial<DatadogCIConfig> {
     return {
       apiKey: this.apiKey,
@@ -107,5 +93,14 @@ export abstract class BaseCommand extends Command {
 
     // Override with CLI parameters
     this.config = deepExtend(this.config, removeUndefinedValues(this.resolveConfigFromCli()))
+  }
+
+  protected async setup() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
+    await this.resolveConfig()
+
+    const reporters: Reporter[] = [new DefaultReporter(this)]
+    this.reporter = getReporter(reporters)
   }
 }
