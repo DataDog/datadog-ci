@@ -545,6 +545,7 @@ export interface SyntheticsCIConfig extends DatadogCIConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   batchTimeout?: number
+  buildCommand?: string
   defaultTestOverrides?: UserConfigOverride
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean

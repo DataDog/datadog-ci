@@ -24,6 +24,8 @@ import {
   toExitCode,
   reportExitLogs,
 } from './utils/public'
+import {spawn} from 'child_process'
+import { once } from 'events'
 
 export const MAX_TESTS_TO_TRIGGER = 1000
 
@@ -35,6 +37,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   batchTimeout: DEFAULT_BATCH_TIMEOUT,
+  buildCommand: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   defaultTestOverrides: {},
@@ -57,7 +60,7 @@ const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files
 const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
 
 export class RunTestsCommand extends Command {
-  public static paths = [['synthetics', 'run-tests']]
+  public static paths = [['synthetics', 'run-tests'], ['synthetics', 'build-and-test']]
 
   public static usage = Command.Usage({
     category: 'Synthetics',
@@ -139,6 +142,14 @@ export class RunTestsCommand extends Command {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
 
+  private buildCommand = Option.String('--buildCommand', {
+    description: 'The build command to generate the assets to run the tests against.',
+  })
+
+  private buildPluginPort = Option.String('--buildPluginPort', {
+    description: 'The port on which to listen for the build plugin.',
+  })
+
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
@@ -184,6 +195,42 @@ export class RunTestsCommand extends Command {
 
     let results: Result[]
     let summary: Summary
+
+    const watchBuildPluginServerReadiness = async (buildPluginServerUrl: string) => {
+      return new Promise<void>((resolve, reject) => {
+        const interval = setTimeout(async (): Promise<void> => {
+          try {
+            const response = await fetch(buildPluginServerUrl)
+
+            if (response.status === 200) {
+              clearInterval(interval)
+              resolve()
+            }
+          } catch (error) {
+            // Log the error but continue polling
+            this.reporter.error(`Error while checking build plugin status: ${error.message}`)
+            clearInterval(interval)
+            reject()
+          }
+        }, 1000) // Poll every second
+      })
+    }
+
+    const [_, command] = this.path
+    if (command === 'build-and-test') {
+      const buildPluginServer = spawn(this.config.buildCommand)
+
+      const buildPluginReadiness = await Promise.race([
+        once(buildPluginServer, 'close', () => 'buildPluginExited'),
+        watchBuildPluginServerReadiness('http://localhost:' + this.config.buildPluginPort + '/status'),
+      ])
+
+      if (buildPluginReadiness !== 'buildPluginExited') {
+        this.reporter.error(`Build command exited before the build plugin could be started. Is the build plugin configured?`)
+        return 1
+      }
+
+    }
 
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
@@ -243,6 +290,7 @@ export class RunTestsCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+        buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,
         configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
@@ -320,6 +368,7 @@ export class RunTestsCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         batchTimeout: this.batchTimeout,
+        buildCommand: this.buildCommand,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
