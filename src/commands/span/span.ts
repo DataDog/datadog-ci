@@ -114,7 +114,7 @@ export class SpanCommand extends CustomSpanCommand {
       durationInMs = args.endTimeInMs - args.startTimeInMs
     }
 
-    if (!durationInMs) {
+    if (durationInMs === undefined) {
       this.context.stdout.write(`The span duration must be provided or start-time and end-time.\n`)
 
       return 1
@@ -124,6 +124,9 @@ export class SpanCommand extends CustomSpanCommand {
       this.context.stdout.write(`The span duration must be positive / end time must be after start time.\n`)
 
       return 1
+    } else if (durationInMs === 0) {
+      // At least 1ms duration
+      durationInMs = 1;
     }
 
     const endTime = args.endTimeInMs ? new Date(args.endTimeInMs) : new Date()
