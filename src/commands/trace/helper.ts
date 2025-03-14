@@ -17,10 +17,10 @@ import {apiConstructor} from './api'
 import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
 
 export abstract class CustomSpanCommand extends Command {
-  protected measures = Option.Array('--measures')
-  private dryRun = Option.Boolean('--dry-run')
   protected tags = Option.Array('--tags')
+  protected measures = Option.Array('--measures')
 
+  private dryRun = Option.Boolean('--dry-run')
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 

@@ -113,16 +113,23 @@ describe('span', () => {
       expect(context.stdout.toString()).toContain('"life":42')
       expect(context.stdout.toString()).toContain('"golden":1.618')
     })
-    test('measures-multiple', async () => {
+    test('payload', async () => {
       const env = {GITLAB_CI: '1'}
-      const {context, code} = await runCLI(
-        ['--payload-file', './src/commands/span/__tests__/data/payload.json'],
-        env
-      )
+      const {context, code} = await runCLI(['--payload-file', './src/commands/span/__tests__/data/payload.json'], env)
       expect(code).toBe(0)
       expect(context.stdout.toString().match(/RUN/g).length).toEqual(2)
       expect(context.stdout.toString()).toContain('"name":"hello"')
       expect(context.stdout.toString()).toContain('"name":"hello2"')
+    })
+    test('invalid-payload', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--payload-file', './src/commands/span/__tests__/data/invalid_payload.json'], env)
+      expect(code).toBe(1)
+    })
+    test('invalid-payload2', async () => {
+      const env = {GITLAB_CI: '1'}
+      const {code} = await runCLI(['--payload-file', './src/commands/span/__tests__/data/invalid_payload2.json'], env)
+      expect(code).toBe(1)
     })
   })
 

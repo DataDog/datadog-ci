@@ -1,6 +1,7 @@
+import fs from 'fs'
+
 import {Command, Option} from 'clipanion'
 
-import fs from 'fs'
 import * as validation from '../../helpers/validation'
 
 import {CustomSpanCommand} from '../trace/helper'
@@ -53,20 +54,23 @@ export class SpanCommand extends CustomSpanCommand {
 
     if (this.payloadFile) {
       // Read json
-      const content = fs.readFileSync(this.payloadFile, 'utf-8')?.toString();
+      const content = fs.readFileSync(this.payloadFile, 'utf-8')?.toString()
       if (!content) {
         this.context.stdout.write(`Error reading payload file ${this.payloadFile}\n`)
+
         return 1
       }
 
       const payload = JSON.parse(content)
       if (!payload) {
         this.context.stdout.write(`Error parsing payload file ${this.payloadFile}\n`)
+
         return 1
       }
 
       if (!Array.isArray(payload)) {
         this.context.stdout.write(`Payload file ${this.payloadFile} must contain an array of span args\n`)
+
         return 1
       }
 
@@ -126,7 +130,7 @@ export class SpanCommand extends CustomSpanCommand {
       return 1
     } else if (durationInMs === 0) {
       // At least 1ms duration
-      durationInMs = 1;
+      durationInMs = 1
     }
 
     const endTime = args.endTimeInMs ? new Date(args.endTimeInMs) : new Date()
