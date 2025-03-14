@@ -1,0 +1,14 @@
+[
+    {
+        "name": "hello",
+        "tags": ["hello:world", "super:mario"],
+        "measures": ["life:42", "hey:618", "ho:1618"]
+    },
+    {
+        "name": "hello2",
+        "startTimeInMs": 43,
+        "endTimeInMs": 619,
+        "tags": ["bonjour:monde", "super:luigi"],
+        "measures": ["life:43", "hey:619", "ho:1619"]
+    }
+]

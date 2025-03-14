@@ -142,6 +142,10 @@ jobs:
       - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          path: datadog-ci_linux-x64
       - name: Remove dist and src folder to check that binary can stand alone
         run: |
           rm -rf dist
