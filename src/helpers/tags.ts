@@ -235,18 +235,19 @@ export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
 export const getSpanTags = async (
   config: DatadogCiConfig,
   additionalTags: string[] | undefined,
-  includeCiTags: boolean
+  includeCiTags: boolean,
+  gitPath?: string
 ): Promise<SpanTags> => {
   const ciSpanTags = includeCiTags ? getCISpanTags() : []
-  const gitSpanTags = await getGitMetadata()
+  const gitSpanTags = await getGitMetadata(gitPath)
   const userGitSpanTags = getUserGitSpanTags()
 
   const envVarTags = config.envVarTags ? parseTags(config.envVarTags.split(',')) : {}
   const cliTags = additionalTags ? parseTags(additionalTags) : {}
 
   return {
-    ...gitSpanTags,
-    ...ciSpanTags,
+    // if users specify a git path to read from, we prefer git env variables over the CI context one
+    ...(gitPath ? {...ciSpanTags, ...gitSpanTags} : {...gitSpanTags, ...ciSpanTags}),
     ...userGitSpanTags, // User-provided git tags have precedence over the ones we get from the git command
     ...cliTags,
     ...envVarTags,

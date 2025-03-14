@@ -18,10 +18,10 @@ import {filterSensitiveInfoFromRepository} from '../utils'
 
 import {gitAuthorAndCommitter, gitBranch, gitHash, gitMessage, gitRepositoryURL} from './get-git-data'
 
-export const getGitMetadata = async (): Promise<SpanTags> => {
+export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags> => {
   try {
     const git = simpleGit({
-      baseDir: process.cwd(),
+      baseDir: repositoryPath || process.cwd(),
       binary: 'git',
       // We are invoking at most 5 git commands at the same time.
       maxConcurrentProcesses: 5,
