@@ -132,7 +132,7 @@
     "@typescript-eslint/parser": "^5.62.0",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
-    "dd-trace": "^5.38.0",
+    "dd-trace": "^5.42.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-import-resolver-typescript": "2.7.0",
