@@ -12,7 +12,6 @@ For example:
 
 ```bash
 datadog-ci span --name "Say Hello" --duration 800 --tags responded-hello-too:true
-
 ```
 
 - `--name` is a human-friendly name for the reported span.
