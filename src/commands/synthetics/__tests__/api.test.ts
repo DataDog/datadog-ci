@@ -9,7 +9,7 @@ import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
-import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {ServerResult, ExecutionRule, PollResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
 import * as internalUtils from '../utils/internal'
 

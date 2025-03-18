@@ -390,7 +390,6 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
 
   try {
     const pollResults = await api.pollResults(resultIds)
-
     pollResults.forEach((r) => {
       // Server results are initialized to `{"eventType": "created"}` in the backend, and they may take
       // some time to be updated. In that case, we keep the `PollResult` information (e.g. `timestamp`)
@@ -399,8 +398,9 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
         incompleteResultIds.add(r.resultID)
         delete r.result
       }
-      pollResultMap.set(r.resultID, r)
-      backupPollResultMap.set(r.resultID, r)
+      const pollResult = {...r, result: r.result ? r.result : undefined}
+      pollResultMap.set(r.resultID, pollResult)
+      backupPollResultMap.set(r.resultID, pollResult)
     })
 
     return {pollResultMap, incompleteResultIds}

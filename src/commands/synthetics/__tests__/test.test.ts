@@ -44,6 +44,7 @@ describe('getTestsToTrigger', () => {
     baseIntakeUrl: 'baseintake',
     baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
+    baseV2Url: 'baseV2',
     proxyOpts: {protocol: 'http'} as ProxyConfiguration,
   }
   const api = apiConstructor(apiConfiguration)
@@ -176,6 +177,7 @@ describe('getTestAndOverrideConfig', () => {
     baseIntakeUrl: 'baseintake',
     baseUnstableUrl: 'baseUnstable',
     baseUrl: 'base',
+    baseV2Url: 'baseV2',
     proxyOpts: {protocol: 'http'} as ProxyConfiguration,
   }
   const api = apiConstructor(apiConfiguration)

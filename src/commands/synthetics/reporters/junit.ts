@@ -256,7 +256,6 @@ export class JUnitReporter implements Reporter {
       const {errors} = this.getApiTestErrors(result)
       errorOrFailure.push(...errors)
     }
-
     if (result.timedOut) {
       // Timeout errors are manually reported by the CLI at the test level.
       errorOrFailure.push({

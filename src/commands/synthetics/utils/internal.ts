@@ -372,7 +372,6 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'variables',
     ]),
   }
-
   if ((test.type === 'browser' || test.subtype === 'http') && testOverrides.startUrl) {
     overriddenConfig.startUrl = template(testOverrides.startUrl, {...process.env})
   }

@@ -144,7 +144,7 @@ export const getStep = (): Step => ({
 
 export const getMultiStep = (): MultiStep => ({
   allowFailure: false,
-  assertionResults: [],
+  assertions: [],
   name: 'name',
   passed: true,
   skipped: false,
@@ -287,7 +287,7 @@ export const getFailedBrowserResult = (): Result => ({
 })
 
 export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServerResult => ({
-  assertionResults: [
+  assertions: [
     {
       actual: 'actual',
       valid: true,
@@ -597,6 +597,7 @@ export const getMockApiConfiguration = (): APIConfiguration => ({
   baseIntakeUrl: 'http://baseIntake',
   baseUnstableUrl: 'http://baseUnstable',
   baseUrl: 'http://base',
+  baseV2Url: 'http://baseV2',
   proxyOpts: {protocol: 'http'} as ProxyConfiguration,
 })
 

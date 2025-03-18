@@ -35,6 +35,7 @@ const apiConfiguration = {
   baseIntakeUrl: 'baseintake',
   baseUnstableUrl: 'baseUnstable',
   baseUrl: 'base',
+  baseV2Url: 'baseV2',
   proxyOpts: {protocol: 'http'} as ProxyConfiguration,
 }
 const api = apiConstructor(apiConfiguration)
@@ -164,7 +165,8 @@ describe('waitForResults', () => {
     timedOut: false,
     timestamp: 0,
   }
-  const pollResult: PollResult & {result: ServerResult} = {
+
+  const pollResult: PollResult = {
     check: result.test,
     result: result.result,
     resultID: result.resultId,
@@ -802,10 +804,7 @@ describe('waitForResults', () => {
         status: 'failed',
         results: [{...getPassedResultInBatch()}, {...getFailedResultInBatch(), result_id: '3', timed_out: true}],
       }),
-      pollResultsImplementation: async () => [
-        {...pollResult, result: {...pollResult.result}},
-        {...pollResult, result: {...pollResult.result}, resultID: '3'},
-      ],
+      pollResultsImplementation: async () => [{...pollResult}, {...pollResult, resultID: '3'}],
     })
 
     const expectedTimeoutResult = {
@@ -853,10 +852,7 @@ describe('waitForResults', () => {
           {...getInProgressResultInBatch(), result_id: '3'}, // `timed_out: null`
         ],
       }),
-      pollResultsImplementation: async () => [
-        {...pollResult, result: {...pollResult.result}},
-        {...pollResult, result: {...pollResult.result}, resultID: '3'},
-      ],
+      pollResultsImplementation: async () => [{...pollResult}, {...pollResult, resultID: '3'}],
     })
 
     const expectedDeadlineResult: Result = {
@@ -911,11 +907,11 @@ describe('waitForResults', () => {
       pollResultsImplementation: async () => [
         {
           ...pollResult,
-          passed: false,
           result: {
-            ...pollResult.result,
-            failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
-            passed: false,
+            ...getBrowserServerResult({
+              passed: false,
+              failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
+            }),
           },
         },
       ],

@@ -195,7 +195,10 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
     {retryOn404: true, retryOn429: true}
   )
 
-  return resp.data.results
+  return resp.data.results.map((pollResult) => ({
+    ...pollResult,
+    ...pollResult.result,
+  })) as PollResult[]
 }
 
 const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
@@ -396,7 +399,9 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     editTest: editTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
-    pollResults: pollResults(request),
+    // pollResultsV1: pollResults(request), // to remove
+    pollResults: pollResults(requestUnstable), // use v2
+
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
@@ -420,6 +425,7 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
     baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
+    baseV2Url: getDatadogHost({useIntake: false, apiVersion: 'v2', config}),
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })

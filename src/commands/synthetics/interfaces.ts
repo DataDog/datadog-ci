@@ -27,6 +27,7 @@ export interface BaseServerResult {
   }
   passed: boolean
   unhealthy?: boolean
+  result?: ServerResult
 }
 
 export interface Device {
@@ -46,10 +47,12 @@ interface AssertionResult {
   actual: any
   expected?: any
   valid: boolean
+  operator?: string
+  type?: string
 }
 
 export interface ApiServerResult extends BaseServerResult {
-  assertionResults: AssertionResult[]
+  assertions: AssertionResult[]
   timings: {
     total: number
   }
@@ -57,7 +60,7 @@ export interface ApiServerResult extends BaseServerResult {
 
 export interface MultiStep {
   allowFailure: boolean
-  assertionResults: AssertionResult[]
+  assertions: AssertionResult[]
   failure?: {
     code: string
     message: string
@@ -525,6 +528,7 @@ export interface APIConfiguration {
   appKey: string
   baseIntakeUrl: string
   baseUnstableUrl: string
+  baseV2Url: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }
