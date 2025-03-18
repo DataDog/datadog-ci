@@ -382,10 +382,11 @@ const retryRequest = <T>(
   )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
+  const {baseUrl, baseIntakeUrl, baseUnstableUrl, baseV2Url, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
   const request = getRequestBuilder({...baseOptions, baseUrl})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
+  const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
@@ -396,7 +397,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     editTest: editTest(request),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
-    pollResults: pollResults(request),
+    pollResults: pollResults(requestV2),
     searchTests: searchTests(request),
     triggerTests: triggerTests(requestIntake),
     uploadMobileApplicationPart: uploadMobileApplicationPart(request),
@@ -420,6 +421,7 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
     baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
+    baseV2Url: getDatadogHost({useIntake: false, apiVersion: 'v2', config}),
     baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
     proxyOpts: config.proxy,
   })

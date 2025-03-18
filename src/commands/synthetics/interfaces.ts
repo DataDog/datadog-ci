@@ -525,6 +525,7 @@ export interface APIConfiguration {
   appKey: string
   baseIntakeUrl: string
   baseUnstableUrl: string
+  baseV2Url: string
   baseUrl: string
   proxyOpts: ProxyConfiguration
 }

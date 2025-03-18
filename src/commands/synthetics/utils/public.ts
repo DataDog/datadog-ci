@@ -488,13 +488,25 @@ export const toExitCode = (reason: ExitReason) => {
 }
 
 export const getDatadogHost = (hostConfig: {
-  apiVersion: 'v1' | 'unstable'
+  apiVersion: 'v1' | 'unstable' | 'v2'
   config: APIHelperConfig
   useIntake: boolean
 }) => {
   const {useIntake, apiVersion, config} = hostConfig
 
-  const apiPath = apiVersion === 'v1' ? 'api/v1' : 'api/unstable'
+  const apiPath = (() => {
+    switch (apiVersion) {
+      case 'v1':
+        return 'api/v1'
+      case 'v2':
+        return 'api/v2'
+      case 'unstable':
+        return 'api/unstable'
+      default:
+        return 'api/unstable' // Default to unstable like before
+    }
+  })()
+
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 
