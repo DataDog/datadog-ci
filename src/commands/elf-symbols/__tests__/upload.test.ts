@@ -328,6 +328,7 @@ describe('elf-symbols upload', () => {
       expect(exitCode).toBe(0)
     })
 
+
     test('skips upload on dry run', async () => {
       const {exitCode} = await runCommand((cmd) => {
         cmd['symbolsLocations'] = [fixtureDir]
