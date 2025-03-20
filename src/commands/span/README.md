@@ -17,7 +17,7 @@ datadog-ci span --name "Say Hello" --duration 800 --tags responded-hello-too:tru
 - `--name` is a human-readable name for the reported span.
 - `--start-time` the span start time in milliseconds.
 - `--end-time` the span end time in milliseconds.
-- `--duration` is the duration of the span in milliseconds. If duration is provided instead of `--start-time` and `--end-time`, the end time will be the current time when executing the command (note that this method is less precise than using start / end times since launching the datadog-ci process takes some overhead).
+- `--duration` is the duration of the span in milliseconds. If duration is provided instead of `--start-time` and `--end-time`, the span end time is the current time when executing this command. This method is less precise than using start and end times since launching the datadog-ci process requires some time.
 - `--tags` is an array of key-value pairs with the format `key:value`. These tags are added to the custom span.
     The resulting dictionary is merged with the contents of the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
 - `--measures` is an array of key-value pairs with the format `key:value`. These measures are added to the custom span.
