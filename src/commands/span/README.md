@@ -1,6 +1,6 @@
-# span command
+# Span command
 
-Report a custom span to Datadog with name, start / end time or duration, tags and measures.
+Report a custom span to Datadog with name, start and end time (or duration), tags, and measures.
 
 ## Usage
 
@@ -14,31 +14,31 @@ For example:
 datadog-ci span --name "Say Hello" --duration 800 --tags responded-hello-too:true
 ```
 
-- `--name` is a human-friendly name for the reported span.
+- `--name` is a human-readable name for the reported span.
 - `--start-time` the span start time in milliseconds.
 - `--end-time` the span end time in milliseconds.
 - `--duration` is the duration of the span in milliseconds. If duration is provided instead of `--start-time` and `--end-time`, the end time will be the current time when executing the command (note that this method is less precise than using start / end times since launching the datadog-ci process takes some overhead).
 - `--tags` is an array of key-value pairs with the format `key:value`. These tags are added to the custom span.
-    The resulting dictionary is merged with what is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
+    The resulting dictionary is merged with the contents of the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
 - `--measures` is an array of key-value pairs with the format `key:value`. These measures are added to the custom span.
     The `value` must be a number.
 - `--dry-run` (default: `false`) runs the command without sending the custom span. All other checks are performed.
 
 #### Environment variables
 
-Additionally you might configure the `span` command with environment variables:
+You can also configure the `span` command with environment variables:
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
-- `DD_TAGS`: set global tags applied to all spans. The format must be `key1:value1,key2:value2`.
-- `DD_SITE`: choose your Datadog site, e.g. datadoghq.com or datadoghq.eu.
+- `DD_TAGS`: Global tags applied to all spans. The format must be `key1:value1,key2:value2`.
+- `DD_SITE`: Your [Datadog site][2]'s `site parameter` value, for example, datadoghq.com or datadoghq.eu.
 
 ### Optional dependencies
 
-- [`git`](https://git-scm.com/downloads) is used for extracting repository metadata.
+- [`git`][3] is used for extracting repository metadata.
 
 ### End-to-end testing process
 
-To verify this command works as expected, you can launch the command with a dry run and validate the command returns 0:
+To verify this command works as expected, run it with the `dry-run` option enabled, and validate that it returns 0:
 
 ```bash
 export DD_API_KEY='<API key>'
@@ -54,3 +54,5 @@ Additional helpful documentation, links, and articles:
 - [Learn about Adding Custom Commands to Pipeline Traces][1]
 
 [1]: https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/
+[2]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
+[3]: https://git-scm.com/downloads
