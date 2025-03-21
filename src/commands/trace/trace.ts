@@ -76,7 +76,7 @@ export class TraceCommand extends CustomSpanCommand {
     const exitCode: number = status ?? this.signalToNumber(signal) ?? BAD_COMMAND_EXIT_CODE
     const commandStr = this.command.join(' ')
 
-    const res = await this.executeReportCustomSpan(id, startTime, endTime, {
+    const res = await this.executeReportCustomSpan(id, startTime, endTime, this.tags, this.measures, {
       command: commandStr,
       name: this.name ?? commandStr,
       error_message: stderr,
