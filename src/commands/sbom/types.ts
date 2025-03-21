@@ -132,3 +132,8 @@ export interface ScaRequest {
   env: string
   tags: Record<string, string>
 }
+
+export interface GenerationTool {
+  name: string
+  version: string
+}
