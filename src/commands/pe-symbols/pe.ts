@@ -1,8 +1,7 @@
 import fs from 'fs'
 
-import type {Reader} from './filereader'
+import {FileReader, type Reader} from '../../helpers/filereader'
 
-import {FileReader} from './filereader'
 import {
   CV_INFO_AGE_OFFSET,
   CV_INFO_GUID_OFFSET,

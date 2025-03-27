@@ -4,7 +4,6 @@ import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,
-  createReaderFromFile,
   getElfFileMetadata,
   getOutputFilenameFromBuildId,
   readElfHeader,
@@ -16,6 +15,7 @@ import {
   computeFileHash,
 } from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'
+import {createReaderFromFile} from '../../../helpers/filereader'
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
 
