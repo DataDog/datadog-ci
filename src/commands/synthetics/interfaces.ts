@@ -542,6 +542,8 @@ export interface SyntheticsCIConfig extends APIHelperConfig {}
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   batchTimeout?: number
   configPath: string
+  buildCommand?: string
+  buildPluginPort?: number
   defaultTestOverrides?: UserConfigOverride
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean
