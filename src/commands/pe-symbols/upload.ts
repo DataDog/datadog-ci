@@ -1,8 +1,7 @@
 import fs from 'fs'
-import path from 'path'
-
 import {Command, Option} from 'clipanion'
 import glob from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -18,9 +17,10 @@ import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
+import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
 import {getBuildId, getPEFileMetadata, PEFileMetadata} from './pe'
-import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
+import {MachineArchitecture} from './pe-constants'
 import {
   renderArgumentMissingError,
   renderCommandInfo,
@@ -32,12 +32,9 @@ import {
   renderMissingPdbFile,
   renderEventPayload,
   renderRetriedUpload,
-  // renderMissingBinUtils,
-  // renderRetriedUpload,
   renderUpload,
   renderWarning,
 } from './renderer'
-import { MachineArchitecture } from './pe-constants'
 
 export class UploadCommand extends Command {
   public static paths = [['pe-symbols', 'upload']]
@@ -52,8 +49,7 @@ export class UploadCommand extends Command {
   })
 
   private disableGit = Option.Boolean('--disable-git', false)
-  // TODO: in dry run mode by default until we get the backend ready to support the upload
-  private dryRun = Option.Boolean('--dry-run', true)
+  private dryRun = Option.Boolean('--dry-run', false)
   private configPath = Option.String('--config')
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private repositoryUrl = Option.String('--repository-url')
@@ -147,7 +143,7 @@ export class UploadCommand extends Command {
     }
   }
 
-  private async 'getGitMetadata'(): Promise<RepositoryData | undefined> {
+  private async getGitMetadata(): Promise<RepositoryData | undefined> {
     try {
       return await getRepositoryData(await newSimpleGit(), this.repositoryUrl)
     } catch (e) {
@@ -197,7 +193,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getPESymbolSource(peFileMetadata),
-      filename: path.basename(peFileMetadata.pdbFilename),
+      filename: upath.basename(peFileMetadata.pdbFilename),
       overwrite: this.replaceExisting,
       type: TYPE_PE_DEBUG_INFOS,
     }
@@ -294,18 +290,18 @@ export class UploadCommand extends Command {
   }
 
   private getFileInSameFolder(pathname: string, newFilename: string): string {
-    const dirname = path.dirname(pathname);
-    const newPathname = path.join(dirname, path.basename(newFilename));
+    const dirname = upath.dirname(pathname)
+    const newPathname = upath.join(dirname, upath.basename(newFilename))
 
-    return newPathname;
+    return newPathname
   }
 
   private getAssociatedPdbFilename(pathname: string): string {
-    const basename = path.basename(pathname, path.extname(pathname));
-    const dirname = path.dirname(pathname);
-    const newPathname = path.join(dirname, `${basename}.pdb`);
+    const basename = upath.basename(pathname, upath.extname(pathname))
+    const dirname = upath.dirname(pathname)
+    const newPathname = upath.join(dirname, `${basename}.pdb`)
 
-    return newPathname;
+    return newPathname
   }
 
   private async performPESymbolsUpload(): Promise<UploadStatus[]> {
@@ -326,8 +322,7 @@ export class UploadCommand extends Command {
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
 
-          // TODO: uncomment the following when dryRun won't be TRUE by default
-          // return UploadStatus.Success
+          return UploadStatus.Success
         }
 
         // get the .pdb filename based on the .dll filename and copy it into a temp folder
@@ -340,20 +335,20 @@ export class UploadCommand extends Command {
         //
         let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
         // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`);
+        // this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`)
 
-        if (!fs.existsSync(pdbFilename))
-        {
-          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename);
+        if (!fs.existsSync(pdbFilename)) {
+          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
 
           if (!fs.existsSync(pdbFilename)) {
             this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+
             return UploadStatus.Skipped
           }
         }
 
         // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`);
+        // this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`)
 
         const eventValue = JSON.stringify(metadata)
         this.context.stdout.write(renderEventPayload(eventValue))
