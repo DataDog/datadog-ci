@@ -7,6 +7,17 @@ import {mockReporter} from './fixtures'
 const NODE_COMMAND = process.execPath
 
 describe('build-and-test - spawnBuildPluginDevServer', () => {
+  test('alert when the build-plugin is not configured', async () => {
+    // Given a build command without the build plugin configured
+    const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
+
+    // When calling spawnBuildPluginDevServer
+    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
+
+    // Then it should throw when the command exits.
+    await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
+  })
+
   test('wait for the dev server and return expected readiness and status', async () => {
     // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
     // The implementation of this server is written as a function, and stringified into a single line,
@@ -33,16 +44,5 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Stop the command at the end of the test.
     await command.stop()
-  })
-
-  test('alert when the build-plugin is not configured', async () => {
-    // Given a build command without the build plugin configured
-    const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
-
-    // When calling spawnBuildPluginDevServer
-    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
-
-    // Then it should throw when the command exits.
-    await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
   })
 })
