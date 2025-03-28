@@ -2,6 +2,7 @@
   "apiKey": "fake_api_key",
   "appKey": "fake_app_key",
   "batchTimeout": 1,
+  "buildCommand": "build-command",
   "configPath": "fake-datadog-ci.json",
   "datadogSite": "datadoghq.eu",
   "failOnCriticalErrors": true,

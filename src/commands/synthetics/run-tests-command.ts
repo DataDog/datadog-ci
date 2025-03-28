@@ -9,6 +9,7 @@ import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {spawnBuildPluginDevServer} from './build-and-test'
 import {CiError} from './errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {DefaultReporter} from './reporters/default'
@@ -35,6 +36,7 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
   batchTimeout: DEFAULT_BATCH_TIMEOUT,
+  buildCommand: '',
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   defaultTestOverrides: {},
@@ -57,7 +59,10 @@ const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files
 const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
 
 export class RunTestsCommand extends Command {
-  public static paths = [['synthetics', 'run-tests']]
+  public static paths = [
+    ['synthetics', 'run-tests'],
+    ['synthetics', 'build-and-test'],
+  ]
 
   public static usage = Command.Usage({
     category: 'Synthetics',
@@ -139,6 +144,10 @@ export class RunTestsCommand extends Command {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
 
+  private buildCommand = Option.String('--buildCommand', {
+    description: 'The build command to generate the assets to run the tests against.',
+  })
+
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
@@ -148,6 +157,8 @@ export class RunTestsCommand extends Command {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
+
+  private tearDowns: (() => Promise<void>)[] = []
 
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
@@ -185,12 +196,36 @@ export class RunTestsCommand extends Command {
     let results: Result[]
     let summary: Summary
 
+    const [_, command] = this.path ?? []
+    if (command === 'build-and-test') {
+      if (!this.config.buildCommand) {
+        this.reporter.error('The `buildCommand` option is required for the `build-and-test` command.')
+
+        return 1
+      }
+
+      const {devServerUrl, publicPrefix, stop} = await spawnBuildPluginDevServer(
+        this.config.buildCommand,
+        this.reporter
+      )
+      this.tearDowns.push(stop)
+
+      this.config = deepExtend(this.config, {
+        tunnel: true,
+        defaultTestOverrides: {
+          resourceUrlSubstitutionRegexes: [`.*${publicPrefix}|${devServerUrl}`],
+        },
+      })
+    }
+
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
       reportExitLogs(this.reporter, this.config, {error})
 
       return toExitCode(getExitReason(this.config, {error}))
+    } finally {
+      await this.tearDown()
     }
 
     const orgSettings = await getOrgSettings(this.reporter, this.config)
@@ -243,6 +278,7 @@ export class RunTestsCommand extends Command {
         apiKey: process.env.DATADOG_API_KEY,
         appKey: process.env.DATADOG_APP_KEY,
         batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+        buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,
         configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
@@ -320,6 +356,7 @@ export class RunTestsCommand extends Command {
         apiKey: this.apiKey,
         appKey: this.appKey,
         batchTimeout: this.batchTimeout,
+        buildCommand: this.buildCommand,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
@@ -417,6 +454,12 @@ export class RunTestsCommand extends Command {
       !this.config.defaultTestOverrides.setCookies.value
     ) {
       throw new CiError('INVALID_CONFIG', 'SetCookies value cannot be empty.')
+    }
+  }
+
+  private tearDown = async () => {
+    for (const tearDown of this.tearDowns) {
+      await tearDown()
     }
   }
 }
