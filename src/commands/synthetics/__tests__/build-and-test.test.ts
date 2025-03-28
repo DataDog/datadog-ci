@@ -1,7 +1,7 @@
 import {once} from 'events'
 import * as http from 'http'
 
-import {spawnBuildPluginDevServer} from '../build-and-test'
+import {UnconfiguredBuildPluginError, spawnBuildPluginDevServer} from '../build-and-test'
 
 import {mockReporter} from './fixtures'
 
@@ -48,8 +48,6 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
     const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, 4000, mockReporter)
 
     // Then it should throw when the command exits.
-    await expect(commandPromise).rejects.toThrow(
-      'Build command exited before the build plugin could be started. Is the build plugin configured?'
-    )
+    await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
   })
 })

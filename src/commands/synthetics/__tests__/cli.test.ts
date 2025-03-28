@@ -70,7 +70,6 @@ describe('run-tests', () => {
         DATADOG_SUBDOMAIN: 'custom',
         DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
         DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
-        DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT: '3000',
         DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
         DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
         DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
@@ -117,7 +116,6 @@ describe('run-tests', () => {
         appKey: overrideEnv.DATADOG_APP_KEY,
         batchTimeout: 1,
         buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
-        buildPluginPort: toNumber(overrideEnv.DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT),
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
@@ -196,7 +194,6 @@ describe('run-tests', () => {
         appKey: 'fake_app_key',
         batchTimeout: 1,
         buildCommand: 'build-command',
-        buildPluginPort: 3000,
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         defaultTestOverrides: {
@@ -422,7 +419,6 @@ describe('run-tests', () => {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
         buildCommand: 'build-command',
-        buildPluginPort: 3000,
         datadogSite: 'us3.datadoghq.com',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
@@ -476,7 +472,6 @@ describe('run-tests', () => {
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
           DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
           DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
-          DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT: '3000',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
@@ -519,7 +514,6 @@ describe('run-tests', () => {
           appKey: overrideEnv.DATADOG_APP_KEY,
           batchTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
           buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
-          buildPluginPort: toNumber(overrideEnv.DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT),
           configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
           datadogSite: overrideEnv.DATADOG_SITE,
           defaultTestOverrides: {
@@ -593,7 +587,6 @@ describe('run-tests', () => {
           appKey: 'cli_app_key',
           batchTimeout: 1,
           buildCommand: 'build-command',
-          buildPluginPort: 3000,
           configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file-from-cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: true,
@@ -651,7 +644,6 @@ describe('run-tests', () => {
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
         command['buildCommand'] = overrideCLI.buildCommand
-        command['buildPluginPort'] = overrideCLI.buildPluginPort
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
@@ -718,7 +710,6 @@ describe('run-tests', () => {
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
           DATADOG_SYNTHETICS_BUILD_COMMAND: 'default-build-command',
-          DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT: '4000',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
@@ -760,7 +751,6 @@ describe('run-tests', () => {
           appKey: 'cli_app_key',
           batchTimeout: 1,
           buildCommand: 'build-command',
-          buildPluginPort: 3000,
           configPath: 'path/to/config_from_cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: false,
@@ -820,7 +810,6 @@ describe('run-tests', () => {
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
         command['buildCommand'] = overrideCLI.buildCommand
-        command['buildPluginPort'] = overrideCLI.buildPluginPort
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors

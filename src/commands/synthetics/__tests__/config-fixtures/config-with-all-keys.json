@@ -3,7 +3,6 @@
   "appKey": "fake_app_key",
   "batchTimeout": 1,
   "buildCommand": "build-command",
-  "buildPluginPort": 3000,
   "configPath": "fake-datadog-ci.json",
   "datadogSite": "datadoghq.eu",
   "failOnCriticalErrors": true,

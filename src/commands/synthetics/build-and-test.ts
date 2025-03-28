@@ -20,6 +20,13 @@ type BuildCommandReturnValue =
       readiness: 'buildCommandExited'
     }
 
+export const DEFAULT_BUILD_PLUGIN_PORT = 4000
+
+export const UnconfiguredBuildPluginError = new Error(`
+We couldn't detect the Datadog Build plugins within your build. Did you add it?
+If not, you can learn more about it here: https://github.com/DataDog/build-plugins#readme
+`)
+
 const watchBuildPluginServerReadiness = async (buildPluginServerUrl: string, abortSignal: AbortSignal) => {
   return poll(async () => {
     try {
@@ -48,13 +55,14 @@ const watchBuildCommandExit = async (buildCommand: ChildProcess) => {
 
 export const spawnBuildPluginDevServer = async (
   buildCommand: string,
-  buildPluginPort: number,
   reporter: MainReporter
 ): Promise<{
   devServerUrl: string
   publicPrefix: string
   stop: () => Promise<void>
 }> => {
+  const buildPluginPort = DEFAULT_BUILD_PLUGIN_PORT
+
   // Spawn the build command process with the BUILD_PLUGINS_S8S_PORT environment variable.
   const buildCommandProcess = spawn(buildCommand, [], {
     env: {BUILD_PLUGINS_S8S_PORT: String(buildPluginPort)},
@@ -79,9 +87,8 @@ export const spawnBuildPluginDevServer = async (
   }
 
   if (buildCommandReturnValue.readiness === 'buildCommandExited') {
-    const errorMessage = `Build command exited before the build plugin could be started. Is the build plugin configured?`
-    reporter.error(errorMessage)
-    throw new Error(errorMessage)
+    reporter.error(UnconfiguredBuildPluginError.message)
+    throw UnconfiguredBuildPluginError
   }
 
   const {publicPrefix = ''} = buildCommandReturnValue

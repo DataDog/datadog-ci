@@ -37,7 +37,6 @@ export const DEFAULT_COMMAND_CONFIG: RunTestsCommandConfig = {
   appKey: '',
   batchTimeout: DEFAULT_BATCH_TIMEOUT,
   buildCommand: '',
-  buildPluginPort: 4000,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   defaultTestOverrides: {},
@@ -149,11 +148,6 @@ export class RunTestsCommand extends Command {
     description: 'The build command to generate the assets to run the tests against.',
   })
 
-  private buildPluginPort = Option.String('--buildPluginPort', {
-    description: 'The port on which to listen for the build plugin. Default is 4000',
-    validator: validation.isInteger(),
-  })
-
   private reporter!: MainReporter
   private config: RunTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_COMMAND_CONFIG)) // Deep copy to avoid mutation
 
@@ -209,15 +203,9 @@ export class RunTestsCommand extends Command {
 
         return 1
       }
-      if (!this.config.buildPluginPort) {
-        this.reporter.error('The `buildPluginPort` option is required for the `build-and-test` command.')
-
-        return 1
-      }
 
       const {devServerUrl, publicPrefix, stop} = await spawnBuildPluginDevServer(
         this.config.buildCommand,
-        this.config.buildPluginPort,
         this.reporter
       )
       this.tearDowns.push(stop)
@@ -291,7 +279,6 @@ export class RunTestsCommand extends Command {
         appKey: process.env.DATADOG_APP_KEY,
         batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
         buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,
-        buildPluginPort: toNumber(process.env.DATADOG_SYNTHETICS_BUILD_PLUGIN_PORT),
         configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
         datadogSite: process.env.DATADOG_SITE,
         failOnCriticalErrors: toBoolean(process.env.DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS),
@@ -370,7 +357,6 @@ export class RunTestsCommand extends Command {
         appKey: this.appKey,
         batchTimeout: this.batchTimeout,
         buildCommand: this.buildCommand,
-        buildPluginPort: this.buildPluginPort,
         configPath: this.configPath,
         datadogSite: this.datadogSite,
         failOnCriticalErrors: this.failOnCriticalErrors,
