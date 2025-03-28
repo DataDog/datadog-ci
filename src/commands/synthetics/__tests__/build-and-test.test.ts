@@ -1,51 +1,45 @@
-import {once} from 'events'
 import * as http from 'http'
 
 import {UnconfiguredBuildPluginError, spawnBuildPluginDevServer} from '../build-and-test'
 
 import {mockReporter} from './fixtures'
 
-// if BUILD_PLUGINS_S8S_PORT is defined, this command does nothing forever, otherwise, it exits immediately
-const MOCKED_BUILD_COMMAND = (port: number) => `[ "$BUILD_PLUGINS_S8S_PORT" = "${port}" ] && tail -f /dev/null`
-// this command simulates a build command without the build plugin configured
-const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = 'echo "build successful"'
-
 describe('build-and-test - spawnBuildPluginDevServer', () => {
   test('wait for the dev server and return expected readiness and status', async () => {
-    // Given a dev server which listen on port 4000
-    const port = 4000
-    const requests: string[] = []
-    const server = http
-      .createServer((req, res) => {
-        requests.push(String(req.url))
-        res.writeHead(200, {'Content-Type': 'application/json'})
-        res.end(
-          JSON.stringify({
-            status: 'success',
-            publicPrefix: 'prefix/',
-          })
+    // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
+    // The implementation of this server is written as a function, and stringified into a single line,
+    // to be used in a node -e command.
+    const httpDevServer = () => {
+      http
+        .createServer((_, res) =>
+          res
+            .writeHead(200, {'Content-Type': 'application/json'})
+            .end(JSON.stringify({status: 'success', publicPrefix: 'prefix/'}))
         )
-      })
-      .listen(port)
+        .listen(process.env.BUILD_PLUGINS_S8S_PORT)
+    }
+    const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
+    const NODE_COMMAND = process.execPath
+    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
 
     // When calling spawnBuildPluginDevServer
-    const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND(port), port, mockReporter)
+    const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
 
     // Then it should send requests to the dev server until it's ready to serve,
     // and return the devServerUrl and the path prefix.
     expect(command.devServerUrl).toBe('http://localhost:4000')
     expect(command.publicPrefix).toBe('prefix/')
-    expect(requests.pop()).toBe('/_datadog-ci_/build-status')
 
-    // Close the server and the command at the end of the test.
-    server.close()
-    await Promise.all([command.stop(), once(server, 'close')])
+    // Stop the command at the end of the test.
+    await command.stop()
   })
 
   test('alert when the build-plugin is not configured', async () => {
     // Given a build command without the build plugin configured
+    const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = 'echo "build successful"'
+
     // When calling spawnBuildPluginDevServer
-    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, 4000, mockReporter)
+    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
 
     // Then it should throw when the command exits.
     await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
