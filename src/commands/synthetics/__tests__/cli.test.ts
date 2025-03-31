@@ -69,6 +69,7 @@ describe('run-tests', () => {
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
         DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
+        DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
         DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
         DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
         DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
@@ -114,6 +115,7 @@ describe('run-tests', () => {
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         batchTimeout: 1,
+        buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
@@ -191,6 +193,7 @@ describe('run-tests', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
+        buildCommand: 'build-command',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         defaultTestOverrides: {
@@ -415,6 +418,7 @@ describe('run-tests', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
+        buildCommand: 'build-command',
         datadogSite: 'us3.datadoghq.com',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
@@ -467,6 +471,7 @@ describe('run-tests', () => {
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
           DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
+          DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
@@ -508,6 +513,7 @@ describe('run-tests', () => {
           apiKey: overrideEnv.DATADOG_API_KEY,
           appKey: overrideEnv.DATADOG_APP_KEY,
           batchTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+          buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
           configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
           datadogSite: overrideEnv.DATADOG_SITE,
           defaultTestOverrides: {
@@ -580,6 +586,7 @@ describe('run-tests', () => {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
+          buildCommand: 'build-command',
           configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file-from-cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: true,
@@ -636,6 +643,7 @@ describe('run-tests', () => {
         command['apiKey'] = overrideCLI.apiKey
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
+        command['buildCommand'] = overrideCLI.buildCommand
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
@@ -701,6 +709,7 @@ describe('run-tests', () => {
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
+          DATADOG_SYNTHETICS_BUILD_COMMAND: 'default-build-command',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
@@ -741,6 +750,7 @@ describe('run-tests', () => {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
+          buildCommand: 'build-command',
           configPath: 'path/to/config_from_cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: false,
@@ -799,6 +809,7 @@ describe('run-tests', () => {
         command['apiKey'] = overrideCLI.apiKey
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
+        command['buildCommand'] = overrideCLI.buildCommand
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
