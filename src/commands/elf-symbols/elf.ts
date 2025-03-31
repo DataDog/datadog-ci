@@ -3,6 +3,8 @@ import fs from 'fs'
 
 import {execute} from '../../helpers/utils'
 
+import {createReadFunctions, FileReader} from '../../helpers/filereader'
+
 import {
   MACHINE_TYPES_DESCRIPTION,
   ELF_TYPES_DESCRIPTION,
@@ -84,57 +86,6 @@ export interface Reader {
   close(): Promise<void>
 }
 
-export class FileReader implements Reader {
-  private fd: fs.promises.FileHandle
-  private buffer?: Buffer
-
-  constructor(fd: fs.promises.FileHandle) {
-    this.fd = fd
-  }
-
-  public async read(length: number, position = 0): Promise<Buffer> {
-    if (!this.buffer || this.buffer.length < length) {
-      this.buffer = Buffer.alloc(length)
-    }
-    const {buffer, bytesRead} = await this.fd.read(this.buffer, 0, length, position)
-
-    return buffer.subarray(0, bytesRead)
-  }
-
-  public async close(): Promise<void> {
-    await this.fd.close()
-  }
-}
-
-export const createReaderFromFile = async (filename: string): Promise<FileReader> => {
-  const fd = await fs.promises.open(filename, 'r')
-
-  return new FileReader(fd)
-}
-
-const createReadFunctions = (buffer: Buffer, littleEndian: boolean, elfClass: ElfClass) => {
-  let position = 0
-
-  const readAndIncrementPos = <T>(inc: number, read: (offset: number) => T) => {
-    const value = read(position)
-    position += inc
-
-    return value
-  }
-
-  const bufferReadUInt16 = (littleEndian ? buffer.readUInt16LE : buffer.readUInt16BE).bind(buffer)
-  const bufferReadUInt32 = (littleEndian ? buffer.readUInt32LE : buffer.readUInt32BE).bind(buffer)
-  const bufferReadBigUInt64 = (littleEndian ? buffer.readBigUInt64LE : buffer.readBigUInt64BE).bind(buffer)
-
-  const readUInt16 = () => readAndIncrementPos(2, bufferReadUInt16)
-  const readUInt32 = () => readAndIncrementPos(4, bufferReadUInt32)
-  const readBigUInt64 = () => readAndIncrementPos(8, bufferReadBigUInt64)
-
-  const readBigUInt32Or64 = elfClass === ElfClass.ELFCLASS32 ? () => BigInt(readUInt32()) : readBigUInt64
-
-  return {readUInt16, readUInt32, readBigUInt32Or64}
-}
-
 export interface StringTable {
   [index: number]: string
 }
@@ -212,7 +163,7 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
     const headerSizeLeft = headerSize - IDENT_SIZE
     const headerBuffer = await reader.read(headerSizeLeft, IDENT_SIZE)
 
-    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(headerBuffer, littleEndian, elfClass)
+    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(headerBuffer, littleEndian, elfClass === ElfClass.ELFCLASS32)
 
     const type = readUInt16()
     const machine = readUInt16()
@@ -274,7 +225,7 @@ export const readElfSectionHeader = async (
 ): Promise<SectionHeader> => {
   const buf = await reader.read(elfHeader.e_shentsize, Number(elfHeader.e_shoff) + index * elfHeader.e_shentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
 
   return {
     name: '',
@@ -327,7 +278,7 @@ export const readElfProgramHeader = async (
 ): Promise<ProgramHeader> => {
   const buf = await reader.read(elfHeader.e_phentsize, Number(elfHeader.e_phoff) + index * elfHeader.e_phentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
 
   if (elfHeader.elfClass === ElfClass.ELFCLASS32) {
     return {
@@ -370,7 +321,7 @@ export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHe
 const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
   const buf = await reader.read(Number(sectionHeader.sh_size), Number(sectionHeader.sh_offset))
   // read elf note header
-  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
   const namesz = readUInt32()
   const descsz = readUInt32()
   const type = readUInt32()

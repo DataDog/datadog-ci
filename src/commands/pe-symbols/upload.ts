@@ -213,7 +213,7 @@ export class UploadCommand extends Command {
     const stat = await fs.promises.stat(symbolsLocation)
     if (stat.isDirectory()) {
       // strict: false is needed to avoid throwing an error if a directory is not readable
-      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, strict: false, silent: true})
+      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable
