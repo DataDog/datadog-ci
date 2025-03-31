@@ -1,8 +1,8 @@
+import {createCommand} from '../../../../helpers/__tests__/fixtures'
 import * as ciUtils from '../../../../helpers/utils'
 
-import {ExecutionRule} from '../../interfaces'
-import {DEFAULT_POLLING_TIMEOUT, RunTestsCommand} from '../../run-tests-command'
-import * as utils from '../../utils'
+import {RunTestsCommand} from '../../run-tests-command'
+import * as utils from '../../utils/public'
 
 import {getSyntheticsProxy} from '../fixtures'
 
@@ -41,8 +41,7 @@ describe('Proxy configuration', () => {
         tunnel: true,
       }))
 
-      const command = new RunTestsCommand()
-      command.context = {stdout: {write: jest.fn()}} as any
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
       jest.spyOn(utils, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
@@ -54,8 +53,6 @@ describe('Proxy configuration', () => {
         expect.objectContaining({
           tests: [
             {
-              executionRule: ExecutionRule.BLOCKING,
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
             },
@@ -72,9 +69,8 @@ describe('Proxy configuration', () => {
     process.env.HTTP_PROXY = `http://127.0.0.1:${proxyOpts.port}`
 
     try {
-      const command = new RunTestsCommand()
+      const command = createCommand(RunTestsCommand, {stdout: {write: jest.fn()}} as any)
       command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-tunnel-no-proxy.json'
-      command.context = {stdout: {write: jest.fn()}} as any
       jest.spyOn(utils, 'getDatadogHost').mockImplementation(() => 'http://datadoghq.com/')
 
       await command.execute()
@@ -86,8 +82,6 @@ describe('Proxy configuration', () => {
         expect.objectContaining({
           tests: [
             {
-              executionRule: ExecutionRule.BLOCKING,
-              pollingTimeout: DEFAULT_POLLING_TIMEOUT,
               public_id: '123-456-789',
               tunnel: expect.objectContaining({host: 'host', id: 'tunnel-id', privateKey: expect.any(String)}),
             },

@@ -18,6 +18,7 @@ export class CommitInfo {
         [
           'repository',
           {
+            type: 'string',
             options: {
               contentType: 'application/json',
               filename: 'repository',
@@ -31,6 +32,7 @@ export class CommitInfo {
 
   private getMetadataPayload(cliVersion: string): MultipartValue {
     return {
+      type: 'string',
       options: {
         contentType: 'application/json',
         filename: 'event',

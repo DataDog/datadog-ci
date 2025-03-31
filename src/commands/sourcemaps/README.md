@@ -1,6 +1,6 @@
 # Sourcemaps command
 
-Upload JS sourcemaps to Datadog to un-minify your errors.
+Upload JavaScript sourcemaps to Datadog to un-minify your errors.
 
 ## Setup
 
@@ -19,7 +19,7 @@ It is also possible to override the full URL for the intake endpoint by defining
 
 ### `upload`
 
-This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.
+This command will upload all JavaScript sourcemaps and their corresponding JavaScript bundles to Datadog in order to un-minify front-end stack traces received by Datadog.
 
 To upload the sourcemaps in the build folder, this command should be run:
 
@@ -42,6 +42,7 @@ In addition, some optional parameters are available:
 
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
 * `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository related data to Datadog (hash, remote URL and the paths within the repository of the sources referenced in the sourcemap).
+* `--quiet` (default: false): suppresses individual line output for each upload. Success and error logs are never suppressed.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths. See details in the [dedicated section](#setting-the-project-path).
 * `--repository-url` (default: empty): overrides the repository remote with a custom URL. For example: https://github.com/my-company/my-project
@@ -81,11 +82,11 @@ For example, if your repository contains a file at `src/foo/example.js`, then:
 
 The only repository URLs supported are the ones whose host contains: `github`, `gitlab`, `bitbucket`, or `dev.azure`. This allows Datadog to create proper URLs such as:
 
-| Provider  | URL |
-| --- | --- |
-| GitHub / GitLab  | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\> |
-| Bitbucket | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>  |
-| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
+| Provider        | URL                                                                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub / GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>                                                                     |
+| Bitbucket       | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>                                                                 |
+| Azure DevOps    | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ## End-to-end testing process
 
@@ -98,7 +99,7 @@ export DATADOG_APP_KEY='<application key>'
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js
 echo '{"version":3,"file":"out.js","sourceRoot":"","sources":["fake.js"],"names":["src"],"mappings":"AAgBC"}' > $TEMP_DIR/fake.js.map
-yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https//fake.website
+yarn launch sourcemaps upload $TEMP_DIR/ --service test_datadog-ci --release-version 0.0.1 --minified-path-prefix https://fake.website
 rm -rf $TEMP_DIR
 ```
 
@@ -107,8 +108,16 @@ Successful output should look like this:
 ```bash
 Starting upload with concurrency 20.
 Will look for sourcemaps in /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/
-Will match JS files for errors on files starting with https//fake.website
+Will match JS files for errors on files starting with https://fake.website
 version: 0.0.1 service: test_datadog-ci project path:
-Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https//fake.website/fake.js
+Uploading sourcemap /var/folders/s_/ds1hc9g54k7ct8x7p3kwsq1h0000gn/T/tmp.fqWhNgGdn6/fake.js.map for JS file available at https://fake.website/fake.js
 ✅ Uploaded 1 files in 0.68 seconds.
 ```
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about Uploading JavaScript Source Maps][1]
+
+[1]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/

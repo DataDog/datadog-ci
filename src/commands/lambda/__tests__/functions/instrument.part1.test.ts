@@ -5,19 +5,18 @@ import {
   LambdaClient,
   FunctionConfiguration as LFunctionConfiguration,
   ListFunctionsCommand,
+  Runtime,
 } from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
 
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../../constants'
+
 import {
-  ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../../constants'
 import {
   getInstrumentedFunctionConfig,
@@ -50,7 +49,7 @@ describe('instrument', () => {
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: 'index.handler',
-        Runtime: 'nodejs12.x',
+        Runtime: 'nodejs20.x',
       }
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
@@ -82,7 +81,7 @@ describe('instrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-            Runtime: 'go',
+            Runtime: Runtime.go1x,
           },
         },
       })
@@ -109,10 +108,10 @@ describe('instrument', () => {
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Layers: [
-          {Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'},
+          {Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'},
           {Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10'},
         ],
-        Runtime: 'nodejs12.x',
+        Runtime: 'nodejs20.x',
       }
 
       mockLambdaConfigurations(lambdaClientMock, {
@@ -136,11 +135,11 @@ describe('instrument', () => {
         settings
       )
       expect(result.updateFunctionConfigurationCommandInput?.Layers).toMatchInlineSnapshot(`
-                      Array [
-                        "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
-                        "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:23",
-                      ]
-                `)
+        [
+          "arn:aws:lambda:us-east-1:464622532012:layer:AnotherLayer:10",
+          "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:23",
+        ]
+      `)
     })
 
     test('returns configurations without updateRequest when no changes need to be made', async () => {
@@ -157,8 +156,8 @@ describe('instrument', () => {
         },
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-        Layers: [{Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'}],
-        Runtime: 'nodejs12.x',
+        Layers: [{Arn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'}],
+        Runtime: 'nodejs20.x',
       }
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
@@ -187,7 +186,7 @@ describe('instrument', () => {
     test('uses the GovCloud lambda layer when a GovCloud region is detected', async () => {
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument',
-        Runtime: 'nodejs12.x',
+        Runtime: 'nodejs20.x',
       }
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws-us-gov:lambda:us-gov-east-1:000000000000:function:autoinstrument': {
@@ -210,10 +209,10 @@ describe('instrument', () => {
         settings
       )
       expect(result.updateFunctionConfigurationCommandInput?.Layers).toMatchInlineSnapshot(`
-                      Array [
-                        "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node12-x:30",
-                      ]
-                `)
+        [
+          "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Node20-x:30",
+        ]
+      `)
     })
 
     test('requests log group configuration when forwarderARN is set', async () => {
@@ -222,7 +221,7 @@ describe('instrument', () => {
       const functionConfiguration: LFunctionConfiguration = {
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: 'index.handler',
-        Runtime: 'nodejs12.x',
+        Runtime: 'nodejs20.x',
       }
 
       mockLambdaConfigurations(lambdaClientMock, {
@@ -248,10 +247,10 @@ describe('instrument', () => {
       )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
-                Object {
-                  "logGroupName": "/aws/lambda/group",
-                }
-            `)
+        {
+          "logGroupName": "/aws/lambda/group",
+        }
+      `)
     })
   })
   describe('getInstrumentedFunctionConfigs', () => {
@@ -273,7 +272,7 @@ describe('instrument', () => {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -297,9 +296,9 @@ describe('instrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_ENV": "staging",
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
@@ -313,8 +312,8 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          "Layers": [
+            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22",
           ],
         }
       `)
@@ -325,7 +324,7 @@ describe('instrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument': {
@@ -344,7 +343,7 @@ describe('instrument', () => {
               },
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -390,7 +389,7 @@ describe('instrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby',
             FunctionName: 'autoinstrument-scooby',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.': {
@@ -398,7 +397,7 @@ describe('instrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.',
             FunctionName: 'autoinstrument-scr.',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -419,9 +418,9 @@ describe('instrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_LOG_LEVEL": "debug",
@@ -432,8 +431,8 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scr.",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22",
+          "Layers": [
+            "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22",
           ],
         }
       `)
@@ -457,7 +456,7 @@ describe('instrument', () => {
         settings
       )
 
-      await expect(instrumentedConfig).rejects.toThrow('Max retry count exceeded. Error: ListFunctionsError')
+      await expect(instrumentedConfig).rejects.toThrow('ListFunctionsError')
     })
   })
 })

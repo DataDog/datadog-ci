@@ -2,6 +2,8 @@ import {URL} from 'url'
 
 import * as simpleGit from 'simple-git'
 
+import {gitRemote} from '../../helpers/git/get-git-data'
+
 import {CommitInfo} from './interfaces'
 
 // Returns a configured SimpleGit.
@@ -13,29 +15,11 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
   }
   // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
   // returns the tracked files paths relative to the root of the repository.
-  const git = simpleGit.gitP(options)
+  const git = simpleGit.simpleGit(options)
   const root = await git.revparse('--show-toplevel')
   options.baseDir = root
 
-  return simpleGit.gitP(options)
-}
-
-// Returns the remote of the current repository.
-export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
-  const remotes = await git.getRemotes(true)
-  if (remotes.length === 0) {
-    throw new Error('No git remotes available')
-  }
-
-  for (const remote of remotes) {
-    // We're trying to pick the remote called with the default git name 'origin'.
-    if (remote.name === 'origin') {
-      return stripCredentials(remote.refs.push)
-    }
-  }
-
-  // Falling back to picking the first remote in the list if 'origin' is not found.
-  return stripCredentials(remotes[0].refs.push)
+  return simpleGit.simpleGit(options)
 }
 
 // StripCredentials removes credentials from a remote HTTP url.

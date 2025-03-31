@@ -1,5 +1,3 @@
-import fs from 'fs'
-
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class Sourcemap {
@@ -36,11 +34,12 @@ export class Sourcemap {
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['event', this.getMetadataPayload(cliVersion, service, version, projectPath)],
-      ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
-      ['minified_file', {value: fs.createReadStream(this.minifiedFilePath), options: {filename: 'minified_file'}}],
+      ['source_map', {type: 'file', path: this.sourcemapPath, options: {filename: 'source_map'}}],
+      ['minified_file', {type: 'file', path: this.minifiedFilePath, options: {filename: 'minified_file'}}],
     ])
     if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
+        type: 'string',
         options: {
           contentType: 'application/json',
           filename: 'repository',
@@ -74,6 +73,7 @@ export class Sourcemap {
     }
 
     return {
+      type: 'string',
       options: {
         contentType: 'application/json',
         filename: 'event',

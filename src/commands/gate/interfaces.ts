@@ -1,12 +1,21 @@
-import {Writable} from 'stream'
+import type {AxiosPromise} from 'axios'
+import type {Writable} from 'stream'
 
-import {AxiosPromise} from 'axios'
-
-import {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
+  requestId: string
+  startTimeMs: number
   spanTags: SpanTags
   userScope: Record<string, string[]>
+  options: PayloadOptions
+}
+
+export interface PayloadOptions {
+  dryRun: boolean
+  noWait: boolean
+  isLastRetry?: boolean
+  pull_request_sha?: string
 }
 
 export interface EvaluationResponsePayload {
@@ -18,6 +27,9 @@ export interface EvaluationResponsePayload {
 export interface EvaluationResponse {
   status: string
   rule_evaluations: RuleEvaluation[]
+  metadata?: {
+    wait_time_ms: number
+  }
 }
 
 export interface RuleEvaluation {
@@ -26,6 +38,7 @@ export interface RuleEvaluation {
   status: string
   is_blocking: boolean
   failure_reason: string
+  details_url: string
 }
 
 export interface APIHelper {

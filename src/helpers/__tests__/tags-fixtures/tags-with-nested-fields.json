@@ -1,0 +1,7 @@
+{
+  "foo": {
+    "baz": "world",
+    "metric": 123
+  },
+  "bar": "world"
+}

@@ -1,0 +1,10 @@
+{
+  "apiKey": "fake_api_key",
+  "appKey": "fake_app_key",
+  "configPath": "fake-datadog-ci.json",
+  "datadogSite": "datadoghq.eu",
+  "mobileApplicationVersionFilePath": "fake_path/fake_app.apk",
+  "mobileApplicationId": "fake-abc",
+  "versionName": "new",
+  "latest": true
+}

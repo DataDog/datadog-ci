@@ -1,0 +1,14 @@
+{
+  // Prevents displaying warnings for formatting errors,
+  // since the Prettier extension already takes care of the formatting.
+  "eslint.rules.customizations": [
+    {
+      "rule": "prettier/prettier",
+      "severity": "off"
+    }
+  ],
+  "[markdown]": {
+    // Easier to read tables without word wrapping.
+    "editor.wordWrap": "off"
+  }
+}

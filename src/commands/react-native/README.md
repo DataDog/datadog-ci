@@ -96,11 +96,11 @@ The supported repository URLs are ones whose host contains `github`, `gitlab`, `
 
 This allows Datadog to create proper URLs such as:
 
-| Provider         | URL                                                                                 |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| GitHub or GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>     |
-| Bitbucket        | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\> |
-| Azure DevOps | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
+| Provider         | URL                                                                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub or GitLab | https://\<repository-url\>/blob/\<commit-hash\>/\<tracked-file-path\>#L\<line\>                                                                     |
+| Bitbucket        | https://\<repository-url\>/src/\<commit-hash\>/\<tracked-file-path\>#lines-\<line\>                                                                 |
+| Azure DevOps     | https://\<repository-url\>?version=GC\<commit-hash\>&path=\<tracked-file-path\>&line=\<line\>&lineEnd=\<line + 1>&lineStartColumn=1&lineEndColumn=1 |
 
 ### `codepush`
 
@@ -140,7 +140,15 @@ This command can be called from an XCode build phase to execute the `react-nativ
 
 The upload only happens when your target has a "Release" build configuration; that prevents overwriting existing source maps when running a build with another configuration such as "Debug".
 
-You can use the same environment variables as the `upload` command: `DATADOG_API_KEY` (required), `DATADOG_SITE`, and `DATADOG_SOURCEMAP_INTAKE_URL`.
+You can use the same environment variables as the `upload` command: 
+
+| Environment Variable           | Description                                                                                                                                                     |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DATADOG_API_KEY`              | Your Datadog API key. (REQUIRED)
+| `DATADOG_SITE`                 | Optional Datadog site (datadoghq.com, [us3, us5].datadoghq.com, datadoghq.eu, ddog-gov.com, ap1.datadoghq.com). By default, the requests are sent to Datadog US.
+| `DATADOG_SOURCEMAP_INTAKE_URL` | Optional variable to override the full URL for the intake endpoint.
+| `DATADOG_RELEASE_VERSION`      | Optional variable to override the version name for sourcemaps upload
+
 
 #### For React Native >= 0.69:
 
@@ -255,3 +263,12 @@ cp /path/to/datadog-ci/dist/cli.js /path/to/project/node_modules/.bin/datadog-ci
 ```
 
 Then, follow the usual installation steps.
+
+
+## Further reading
+
+Additional helpful documentation, links, and articles:
+
+- [Learn about React Native Crash Reporting and Error Tracking][1]
+
+[1]: https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/

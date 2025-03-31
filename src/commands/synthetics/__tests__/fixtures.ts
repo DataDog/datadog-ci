@@ -2,49 +2,45 @@ import * as http from 'http'
 import * as net from 'net'
 import {URL} from 'url'
 
-import {AxiosError, AxiosResponse} from 'axios'
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
 import {ProxyConfiguration} from '../../../helpers/utils'
 
-import {apiConstructor} from '../api'
+import {APIHelper, apiConstructor} from '../api'
 import {
   ApiServerResult,
+  BaseResult,
   Batch,
   BrowserServerResult,
   ExecutionRule,
   Location,
   MainReporter,
-  MobileApplicationVersion,
   MultiStep,
   MultiStepsServerResult,
-  PresignedUrlResponse,
+  MobileApplicationUploadPart,
+  MultipartPresignedUrlsResponse,
   Result,
   RunTestsCommandConfig,
+  SelectiveRerunDecision,
   Step,
   Suite,
   Summary,
-  Test,
   TestPayload,
   Trigger,
   UploadApplicationCommandConfig,
-  User,
+  MobileAppUploadResult,
+  MobileApplicationUploadPartResponse,
+  TriggerConfig,
+  MobileTestWithOverride,
+  BaseResultInBatch,
+  ResultInBatchSkippedBySelectiveRerun,
+  ServerResult,
+  APIConfiguration,
+  ServerTest,
+  LocalTestDefinition,
 } from '../interfaces'
-import {createInitialSummary} from '../utils'
-
-const mockUser: User = {
-  email: '',
-  handle: '',
-  id: 42,
-  name: '',
-}
-
-export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
-
-export const MOBILE_PRESIGNED_URL_PAYLOAD: PresignedUrlResponse = {
-  file_name: 'fileNameUuid',
-  presigned_url_params: {url: 'https://www.presigned.url', fields: {}},
-}
+import {AppUploadReporter} from '../reporters/mobile/app-upload'
+import {createInitialSummary} from '../utils/public'
 
 export type MockedReporter = {
   [K in keyof MainReporter]: jest.Mock<void, Parameters<MainReporter[K]>>
@@ -66,31 +62,26 @@ export const mockReporter: MainReporter = {
 export const ciConfig: RunTestsCommandConfig = {
   apiKey: '',
   appKey: '',
+  batchTimeout: 2 * 60 * 1000,
   configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   failOnCriticalErrors: false,
   failOnMissingTests: false,
   failOnTimeout: true,
-  files: ['{,!(node_modules)/**/}*.synthetics.json'],
-  global: {},
-  locations: [],
-  pollingTimeout: 2 * 60 * 1000,
+  files: [],
+  jUnitReport: '',
+  defaultTestOverrides: {},
   proxy: {protocol: 'http'},
   publicIds: [],
   subdomain: 'app',
+  testSearchQuery: '',
   tunnel: false,
-  variableStrings: [],
 }
 
-export const getAxiosHttpError = (status: number, {errors, message}: {errors?: string[]; message?: string}) => {
-  const serverError = new Error(message) as AxiosError
-  serverError.config = {baseURL: MOCK_BASE_URL, url: 'example'}
-  serverError.response = {data: {errors}, status} as AxiosResponse
-
-  return serverError
-}
-
-export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): Test => ({
+export const getApiLocalTestDefinition = (
+  publicId = 'abc-def-ghi',
+  opts: Partial<LocalTestDefinition> = {}
+): LocalTestDefinition & {public_id: string} => ({
   config: {
     assertions: [],
     request: {
@@ -101,38 +92,32 @@ export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<Test> = {}): 
     },
     variables: [],
   },
-  created_at: '',
-  created_by: mockUser,
   locations: [],
-  message: '',
-  modified_at: '',
-  modified_by: mockUser,
-  monitor_id: 0,
   name: 'Test name',
   options: {
     device_ids: [],
-    min_failure_duration: 0,
-    min_location_failed: 0,
-    tick_every: 3600,
   },
-  overall_state: 0,
-  overall_state_modified: '',
   public_id: publicId,
-  status: '',
-  stepCount: 0,
   subtype: 'http',
-  tags: [],
   type: 'api',
   ...opts,
+})
+
+export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<LocalTestDefinition> = {}): ServerTest => ({
+  ...getApiLocalTestDefinition(publicId, opts),
+  message: '',
+  monitor_id: 0,
+  status: 'live',
+  tags: [],
 })
 
 export const getBrowserTest = (
   publicId = 'abc-def-ghi',
   deviceIds = ['chrome.laptop_large'],
-  opts: Partial<Test> = {}
-): Test => ({
+  opts: Partial<ServerTest> = {}
+): ServerTest => ({
   ...getApiTest(publicId),
-  options: {device_ids: deviceIds, min_failure_duration: 0, min_location_failed: 1, tick_every: 300},
+  options: {device_ids: deviceIds},
   type: 'browser',
   ...opts,
 })
@@ -169,7 +154,7 @@ export const getMultiStep = (): MultiStep => ({
   },
 })
 
-export const getTestSuite = (): Suite => ({content: {tests: [{config: {}, id: '123-456-789'}]}, name: 'Suite 1'})
+export const getTestSuite = (): Suite => ({content: {tests: [{testOverrides: {}, id: '123-456-789'}]}, name: 'Suite 1'})
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
@@ -177,11 +162,14 @@ export const getSummary = (): Summary => ({
   batchId: BATCH_ID,
 })
 
-const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => ({
+const getBaseResult = (resultId: string, test: ServerTest): Omit<BaseResult, 'result'> => ({
+  duration: 1000,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Frankfurt (AWS)',
   passed: true,
   resultId,
+  retries: 0,
+  maxRetries: 0,
   test,
   timedOut: false,
   timestamp: 1,
@@ -189,21 +177,29 @@ const getBaseResult = (resultId: string, test: Test): Omit<Result, 'result'> => 
 
 export const getBrowserResult = (
   resultId: string,
-  test: Test,
+  test: ServerTest,
   resultOpts: Partial<BrowserServerResult> = {}
-): Result => ({
+): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
   result: getBrowserServerResult(resultOpts),
 })
 
-export const getApiResult = (resultId: string, test: Test, resultOpts: Partial<ApiServerResult> = {}): Result => ({
+export const getApiResult = (
+  resultId: string,
+  test: ServerTest,
+  resultOpts: Partial<ApiServerResult> = {}
+): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
   result: getApiServerResult(resultOpts),
 })
 
+export const getIncompleteServerResult = (): ServerResult => {
+  return ({eventType: 'created'} as unknown) as ServerResult
+}
+
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
   device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-  duration: 0,
+  duration: 1000,
   passed: true,
   startUrl: '',
   stepDetails: [],
@@ -211,28 +207,32 @@ export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}):
 })
 
 export const getTimedOutBrowserResult = (): Result => ({
+  duration: 0,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Location name',
   passed: false,
   result: {
     duration: 0,
-    failure: {code: 'TIMEOUT', message: 'Result timed out'},
+    failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
     passed: false,
     steps: [],
   },
   resultId: '1',
+  retries: 0,
+  maxRetries: 0,
   test: getBrowserTest(),
   timedOut: true,
   timestamp: 1,
 })
 
 export const getFailedBrowserResult = (): Result => ({
+  duration: 22000,
   executionRule: ExecutionRule.BLOCKING,
   location: 'Location name',
   passed: false,
   result: {
     device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-    duration: 20000,
+    duration: 22000,
     failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
     passed: false,
     startUrl: 'https://example.org/',
@@ -252,7 +252,7 @@ export const getFailedBrowserResult = (): Result => ({
       {
         ...getStep(),
         allowFailure: true,
-        description: 'Navigate',
+        description: 'Navigate again',
         duration: 1000,
         error: 'Navigation failure',
         skipped: true,
@@ -265,10 +265,9 @@ export const getFailedBrowserResult = (): Result => ({
       {
         ...getStep(),
         description: 'Assert',
-        duration: 1000,
-        error: 'Step failure',
+        duration: 20000,
+        error: 'Step timeout',
         publicId: 'abc-def-hij',
-        skipped: true,
         stepId: 3,
         type: 'assertElementContent',
         url: 'https://example.org/',
@@ -280,6 +279,8 @@ export const getFailedBrowserResult = (): Result => ({
     ],
   },
   resultId: '1',
+  retries: 0,
+  maxRetries: 0,
   test: getBrowserTest(),
   timedOut: false,
   timestamp: 1,
@@ -294,15 +295,31 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
   ],
   passed: true,
   timings: {
-    total: 123,
+    total: 1000,
   },
   ...opts,
 })
 
 export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
-  duration: 123,
+  duration: 1000,
   passed: true,
   steps: [],
+})
+
+export const getFailedMultiStepsTestLevelServerResult = (): MultiStepsServerResult => ({
+  duration: 2000,
+  failure: {code: 'TEST_TIMEOUT', message: 'Error: Maximum test execution time reached: 2 seconds.'},
+  passed: false,
+  steps: [
+    {
+      ...getMultiStep(),
+      passed: true,
+    },
+    {
+      ...getMultiStep(),
+      skipped: true,
+    },
+  ],
 })
 
 export const getFailedMultiStepsServerResult = (): MultiStepsServerResult => ({
@@ -370,7 +387,7 @@ export const getSyntheticsProxy = () => {
 
   // eslint-disable-next-line prefer-const
   let port: number
-  const server = http.createServer({}, (request, response) => {
+  const proxyServer = http.createServer({}, (request, response) => {
     const mockResponse = (call: jest.Mock, responseData: any) => {
       let body = ''
       request.on('data', (data) => (body += data.toString()))
@@ -408,15 +425,15 @@ export const getSyntheticsProxy = () => {
     response.end()
   })
 
-  server.on('upgrade', (request, socket, head) => {
+  proxyServer.on('upgrade', (request, socket, head) => {
     wss.handleUpgrade(request, socket as net.Socket, head, (ws: WebSocket) => {
       calls.tunnel()
       ws.send(JSON.stringify(mockTunnelConnectionFirstMessage))
     })
   })
 
-  server.listen()
-  const address = server.address()
+  proxyServer.listen()
+  const address = proxyServer.address()
   if (!address) {
     throw new Error('Cannot get proxy server address')
   }
@@ -424,9 +441,9 @@ export const getSyntheticsProxy = () => {
   port = typeof address === 'string' ? Number(new URL(address).port) : address.port
   const config: ProxyConfiguration = {host: '127.0.0.1', port, protocol: 'http'}
 
-  const close = () => Promise.all([new Promise((res) => server.close(res)), new Promise((res) => wss.close(res))])
+  const close = () => Promise.all([new Promise((res) => proxyServer.close(res)), new Promise((res) => wss.close(res))])
 
-  return {calls, close, config, server}
+  return {calls, close, config, server: proxyServer}
 }
 
 export interface RenderResultsTestCase {
@@ -444,6 +461,7 @@ export interface RenderResultsTestCase {
 interface ResultFixtures {
   executionRule?: ExecutionRule
   passed?: boolean
+  selectiveRerun?: SelectiveRerunDecision
   testExecutionRule?: ExecutionRule
   timedOut?: boolean
   unhealthy?: boolean
@@ -453,7 +471,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
   const results: Result[] = []
 
   for (const [index, resultFixtures] of resultsFixtures.entries()) {
-    const {executionRule, passed, testExecutionRule, timedOut, unhealthy} = resultFixtures
+    const {executionRule, passed, selectiveRerun, testExecutionRule, timedOut, unhealthy} = resultFixtures
     const test = getApiTest()
     if (testExecutionRule) {
       test.options.ci = {executionRule: testExecutionRule}
@@ -466,7 +484,11 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
 
     if (timedOut) {
       result.timedOut = true
-      result.result.failure = {code: 'TIMEOUT', message: 'Result timed out'}
+      result.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
+    }
+
+    if (selectiveRerun) {
+      result.selectiveRerun = selectiveRerun
     }
 
     results.push(result)
@@ -475,21 +497,71 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
   return results
 }
 
-export const getBatch = (): Batch => ({
-  results: [
-    {
-      execution_rule: ExecutionRule.BLOCKING,
-      location: mockLocation.name,
-      result_id: 'rid',
-      status: 'passed',
-      test_public_id: 'pid',
-      timed_out: false,
+export const getInProgressResultInBatch = (): BaseResultInBatch => {
+  return {
+    duration: 0,
+    execution_rule: ExecutionRule.BLOCKING,
+    location: mockLocation.name,
+    result_id: 'rid',
+    // eslint-disable-next-line no-null/no-null
+    retries: null,
+    // eslint-disable-next-line no-null/no-null
+    max_retries: null,
+    status: 'in_progress',
+    test_public_id: 'pid',
+    // eslint-disable-next-line no-null/no-null
+    timed_out: null,
+  }
+}
+
+export const getSkippedResultInBatch = (): ResultInBatchSkippedBySelectiveRerun => {
+  return {
+    test_public_id: 'pid',
+    execution_rule: ExecutionRule.SKIPPED,
+    // eslint-disable-next-line no-null/no-null
+    retries: null,
+    // eslint-disable-next-line no-null/no-null
+    max_retries: null,
+    status: 'skipped',
+    selective_rerun: {
+      decision: 'skip',
+      reason: 'passed',
+      linked_result_id: '123',
     },
-  ],
+    // eslint-disable-next-line no-null/no-null
+    timed_out: null,
+  }
+}
+
+export const getPassedResultInBatch = (): BaseResultInBatch => {
+  return {
+    ...getInProgressResultInBatch(),
+    duration: 1000,
+    retries: 0,
+    status: 'passed',
+    timed_out: false,
+  }
+}
+
+export const getFailedResultInBatch = (): BaseResultInBatch => {
+  return {
+    ...getInProgressResultInBatch(),
+    duration: 1000,
+    retries: 0,
+    status: 'failed',
+    timed_out: false,
+  }
+}
+
+export const getBatch = (): Batch => ({
+  results: [getPassedResultInBatch()],
   status: 'passed',
 })
 
-export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
+export const getMobileTest = (
+  publicId = 'abc-def-ghi',
+  appId = 'mobileAppUuid'
+): MobileTestWithOverride['test'] & {public_id: string} => ({
   config: {
     assertions: [],
     request: {
@@ -500,72 +572,134 @@ export const getMobileTest = (publicId = 'abc-def-ghi'): Test => ({
     },
     variables: [],
   },
-  created_at: '',
-  created_by: mockUser,
   locations: [],
   message: '',
-  modified_at: '',
-  modified_by: mockUser,
   monitor_id: 0,
   name: 'Mobile Test',
   options: {
     device_ids: [],
-    min_failure_duration: 0,
-    min_location_failed: 0,
     mobileApplication: {
-      applicationId: 'mobileAppUuid',
+      applicationId: appId,
       referenceId: 'versionId',
       referenceType: 'version',
     },
-    tick_every: 3600,
   },
-  overall_state: 0,
-  overall_state_modified: '',
   public_id: publicId,
-  status: '',
-  stepCount: 0,
+  status: 'live',
   subtype: '',
   tags: [],
   type: 'mobile',
 })
 
-export const getApiHelper = () => {
-  const apiConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
+export const getMockApiConfiguration = (): APIConfiguration => ({
+  apiKey: '123',
+  appKey: '123',
+  baseIntakeUrl: 'http://baseIntake',
+  baseUnstableUrl: 'http://baseUnstable',
+  baseUrl: 'http://base',
+  proxyOpts: {protocol: 'http'} as ProxyConfiguration,
+})
 
-  return apiConstructor(apiConfiguration)
+export const getApiHelper = () => {
+  return apiConstructor(getMockApiConfiguration())
 }
 
-export const getTestPayload = (override?: Partial<TestPayload>) => ({
+export const mockApi = (override?: Partial<APIHelper>): APIHelper => {
+  return {
+    getBatch: jest.fn(),
+    getMobileApplicationPresignedURLs: jest.fn(),
+    getTest: jest.fn(),
+    getLocalTestDefinition: jest.fn(),
+    editTest: jest.fn(),
+    getSyntheticsOrgSettings: jest.fn(),
+    getTunnelPresignedURL: jest.fn(),
+    pollResults: jest.fn(),
+    searchTests: jest.fn(),
+    triggerTests: jest.fn(),
+    uploadMobileApplicationPart: jest.fn(),
+    completeMultipartMobileApplicationUpload: jest.fn(),
+    pollMobileApplicationUploadResponse: jest.fn(),
+    ...override,
+  }
+}
+
+export const getTestPayload = (override?: Partial<TestPayload>): TestPayload => ({
   executionRule: ExecutionRule.BLOCKING,
   public_id: 'aaa-aaa-aaa',
   ...override,
 })
 
-export const getMobileVersion = (override?: Partial<MobileApplicationVersion>) => ({
-  id: '123-abc-456',
-  application_id: '789-dfg-987',
-  file_name: 'bla.',
-  original_file_name: 'test.apk',
-  is_latest: true,
-  version_name: 'test version',
-  created_at: '22-09-2022',
-  ...override,
-})
+export const getMobileTestWithOverride = (appId: string): MobileTestWithOverride => {
+  return {
+    test: getMobileTest('abc-def-ghi', appId),
+    overriddenConfig: getTestPayload(),
+  }
+}
+
+export const getMobileTriggerConfig = (appPath?: string, appVersion?: string): TriggerConfig => {
+  const testOverrides = appPath ? {mobileApplicationVersionFilePath: appPath} : {mobileApplicationVersion: appVersion}
+
+  return {id: 'abc', testOverrides}
+}
 
 export const uploadCommandConfig: UploadApplicationCommandConfig = {
   apiKey: 'foo',
   appKey: 'bar',
+  configPath: 'datadog-ci.json',
   datadogSite: 'datadoghq.com',
   proxy: {protocol: 'http'},
   mobileApplicationVersionFilePath: 'test.apk',
   mobileApplicationId: 'abc-123-def',
   versionName: 'new version',
   latest: true,
+}
+
+export const MOBILE_PRESIGNED_URLS_PAYLOAD: MultipartPresignedUrlsResponse = {
+  file_name: 'fileNameUuid',
+  multipart_presigned_urls_params: {
+    urls: {
+      1: 'https://www.1.presigned.url',
+      2: 'https://www.2.presigned.url',
+    },
+    key: 'fakeKey',
+    upload_id: 'fakeUploadId',
+  },
+}
+
+export const MOBILE_PRESIGNED_UPLOAD_PARTS: MobileApplicationUploadPart[] = [
+  {partNumber: 1, md5: 'md5', blob: Buffer.from('content1')},
+  {partNumber: 2, md5: 'md5', blob: Buffer.from('content2')},
+]
+
+export const APP_UPLOAD_POLL_RESULTS: MobileAppUploadResult = {
+  status: 'complete',
+  is_valid: true,
+  valid_app_result: {
+    app_version_uuid: 'appVersionUuid',
+    extracted_metadata: {
+      metadataKey: 'metadataValue',
+    },
+  },
+}
+
+export const APP_UPLOAD_SIZE_AND_PARTS = {
+  appSize: 1000,
+  parts: MOBILE_PRESIGNED_UPLOAD_PARTS,
+}
+
+export const APP_UPLOAD_PART_RESPONSES: MobileApplicationUploadPartResponse[] = MOBILE_PRESIGNED_UPLOAD_PARTS.map(
+  (partNumber) => ({
+    PartNumber: Number(partNumber),
+    ETag: 'etag',
+  })
+)
+
+export const getMockAppUploadReporter = (): AppUploadReporter => {
+  const reporter: AppUploadReporter = new AppUploadReporter({} as any)
+  reporter.start = jest.fn()
+  reporter.renderProgress = jest.fn()
+  reporter.reportSuccess = jest.fn()
+  reporter.reportFailure = jest.fn()
+
+  return reporter
 }

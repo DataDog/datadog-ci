@@ -1,9 +1,11 @@
 import fs from 'fs'
 
-import {Cli} from 'clipanion'
+import {Builtins, Cli} from 'clipanion'
 import {CommandClass} from 'clipanion/lib/advanced/Command'
 
-const BETA_COMMANDS = ['gate']
+import {version} from './helpers/version'
+
+export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols', 'coverage']
 
 const onError = (err: any) => {
   console.log(err)
@@ -16,8 +18,11 @@ process.on('unhandledRejection', onError)
 const cli = new Cli({
   binaryLabel: 'Datadog CI',
   binaryName: 'datadog-ci',
-  binaryVersion: require('../package.json').version,
+  binaryVersion: version,
 })
+
+cli.register(Builtins.HelpCommand)
+cli.register(Builtins.VersionCommand)
 
 const commandsPath = `${__dirname}/commands`
 for (const commandFolder of fs.readdirSync(commandsPath)) {
@@ -28,7 +33,8 @@ for (const commandFolder of fs.readdirSync(commandsPath)) {
   }
   const commandPath = `${commandsPath}/${commandFolder}`
   if (fs.statSync(commandPath).isDirectory()) {
-    require(`${commandPath}/cli`).forEach((command: CommandClass) => cli.register(command))
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ;(require(`${commandPath}/cli`) as CommandClass[]).forEach((command) => cli.register(command))
   }
 }
 
@@ -39,3 +45,5 @@ if (require.main === module) {
     stdout: process.stdout,
   })
 }
+
+export {cli}

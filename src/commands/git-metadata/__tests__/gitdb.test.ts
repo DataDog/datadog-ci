@@ -5,6 +5,7 @@ import os from 'os'
 import path from 'path'
 
 import {default as axios} from 'axios'
+import * as simpleGit from 'simple-git'
 
 import {Logger, LogLevel} from '../../../helpers/logger'
 import {getRequestBuilder} from '../../../helpers/utils'
@@ -47,17 +48,66 @@ describe('gitdb', () => {
   })
   const testError = new Error('call failed')
 
+  // This is a bit hacky but the documentation of simpleGit asks you to depend on
+  // a behavior of VersionResult which is not defined in its typings: it has an
+  // override on toString. Here I am replicating this toString behavior so that
+  // the tests pass. See https://github.com/steveukx/git-js/blob/d184c13273abca4b6572c260f9625c19f944d4f7/simple-git/src/lib/tasks/version.ts#L15-L39
+  const newGitVersion: simpleGit.VersionResult = Object.defineProperty(
+    {
+      major: 2,
+      minor: 41,
+      patch: 0,
+      agent: '',
+      installed: true,
+    },
+    'toString',
+    {
+      value() {
+        return `${this.major}.${this.minor}.${this.patch}`
+      },
+      configurable: false,
+      enumerable: false,
+    }
+  )
+  const oldGitVersion: simpleGit.VersionResult = Object.defineProperty(
+    {
+      major: 2,
+      minor: 20,
+      patch: 3,
+      agent: '',
+      installed: true,
+    },
+    'toString',
+    {
+      value() {
+        return `${this.major}.${this.minor}.${this.patch}`
+      },
+      configurable: false,
+      enumerable: false,
+    }
+  )
+
+  const defaultRemoteNameNotConfigured = {
+    key: 'clone.defaultRemoteName',
+    paths: [],
+    scopes: new Map<string, string[]>(),
+    // eslint-disable-next-line no-null/no-null
+    value: null,
+    values: [],
+  }
+
   type MockParam<I, O> = {
     input: I | undefined
     output: O | Error
   }
   interface MockParams {
-    addConfig: MockParam<[string, string], string>[]
+    getConfig: MockParam<string, simpleGit.ConfigGetResult>[]
     fetch: MockParam<string[], any>[]
     getRemotes: MockParam<void, any>[]
     log: MockParam<string[], any>[]
     raw: MockParam<string[], string>[]
     revparse: MockParam<string, any>[]
+    version: MockParam<void, simpleGit.VersionResult>[]
     execSync: MockParam<string, Buffer>[]
     axios: MockParam<
       {
@@ -70,22 +120,24 @@ describe('gitdb', () => {
 
   class MockAll {
     public simpleGit: {
-      addConfig: jest.Mock
+      getConfig: jest.Mock
       fetch: jest.Mock
       getRemotes: jest.Mock
       log: jest.Mock
       raw: jest.Mock
       revparse: jest.Mock
+      version: jest.Mock
     }
     public execSync: jest.Mock
     public axios: jest.Mock
 
-    private addConfigMetExpectations: () => void
+    private getConfigMetExpectations: () => void
     private fetchMetExpectations: () => void
     private getRemotesMetExpectations: () => void
     private logMetExpectations: () => void
     private rawMetExpectations: () => void
     private revparseMetExpectations: () => void
+    private versionMetExpectations: () => void
     private execSyncMetExpectations: () => void
     private axiosMetExpectations: () => void
 
@@ -96,19 +148,20 @@ describe('gitdb', () => {
 
     constructor(mockParams: MockParams) {
       this.simpleGit = {
-        addConfig: jest.fn(),
+        getConfig: jest.fn(),
         fetch: jest.fn(),
         getRemotes: jest.fn(),
         log: jest.fn(),
         raw: jest.fn(),
         revparse: jest.fn(),
+        version: jest.fn(),
       }
       // call spyOn on these two mocks to make sure the underlying implementation is never called
       // as the default behavior of spyOn is to actually call the initial implem if not overridden
       this.execSync = jest.spyOn(child_process, 'execSync').mockImplementation(() => '') as jest.Mock
       this.axios = jest.spyOn(axios, 'create').mockImplementation(() => ((_: any) => {}) as any) as jest.Mock
 
-      const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean) => {
+      const initMockWithParams = <I, O>(mock: jest.Mock, params: MockParam<I, O>[], promise: boolean, name = '') => {
         params.forEach((param) => {
           if (param.output instanceof Error) {
             mock = mock.mockImplementationOnce((..._: any) => {
@@ -124,46 +177,40 @@ describe('gitdb', () => {
         })
 
         return () => {
-          expect(mock.mock.calls).toHaveLength(params.length)
-          params.forEach((param, i) => {
-            if (param.input !== undefined) {
-              expect(mock.mock.calls[i][0]).toStrictEqual(param.input)
-            }
-          })
-        }
-      }
-
-      // use dedicated function to initialize addConfig mock as I don't know how to use initMockWithParams
-      // with a multi-args mock function
-      const initAddConfigWithParams = (mock: jest.Mock, params: MockParam<[string, string], string>[]) => {
-        params.forEach((param) => {
-          if (param.output instanceof Error) {
-            mock = mock.mockImplementationOnce((..._: any) => {
-              throw param.output
+          try {
+            expect(mock.mock.calls).toHaveLength(params.length)
+            params.forEach((param, i) => {
+              if (param.input !== undefined) {
+                expect(mock.mock.calls[i][0]).toStrictEqual(param.input)
+              }
             })
-          } else {
-            mock = mock.mockResolvedValueOnce(param.output)
+          } catch (e) {
+            // To make it easier to debug the tests
+            // eslint-disable-next-line
+            console.log('Error in', name, 'mock')
+            throw e
           }
-        })
-
-        return () => {
-          expect(mock.mock.calls).toHaveLength(params.length)
-          params.forEach((param, i) => {
-            if (param.input !== undefined) {
-              expect(mock.mock.calls[i][0]).toStrictEqual(param.input[0])
-              expect(mock.mock.calls[i][1]).toStrictEqual(param.input[1])
-            }
-          })
         }
       }
 
-      this.addConfigMetExpectations = initAddConfigWithParams(this.simpleGit.addConfig, mockParams.addConfig)
-      this.fetchMetExpectations = initMockWithParams(this.simpleGit.fetch, mockParams.fetch, true)
-      this.getRemotesMetExpectations = initMockWithParams(this.simpleGit.getRemotes, mockParams.getRemotes, true)
-      this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true)
-      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true)
-      this.revparseMetExpectations = initMockWithParams(this.simpleGit.revparse, mockParams.revparse, true)
-      this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false)
+      this.getConfigMetExpectations = initMockWithParams(
+        this.simpleGit.getConfig,
+        mockParams.getConfig,
+        true,
+        'getConfig'
+      )
+      this.fetchMetExpectations = initMockWithParams(this.simpleGit.fetch, mockParams.fetch, true, 'fetch')
+      this.getRemotesMetExpectations = initMockWithParams(
+        this.simpleGit.getRemotes,
+        mockParams.getRemotes,
+        true,
+        'getRemotes'
+      )
+      this.logMetExpectations = initMockWithParams(this.simpleGit.log, mockParams.log, true, 'log')
+      this.rawMetExpectations = initMockWithParams(this.simpleGit.raw, mockParams.raw, true, 'raw')
+      this.revparseMetExpectations = initMockWithParams(this.simpleGit.revparse, mockParams.revparse, true, 'revparse')
+      this.versionMetExpectations = initMockWithParams(this.simpleGit.version, mockParams.version, true, 'version')
+      this.execSyncMetExpectations = initMockWithParams(this.execSync, mockParams.execSync, false, 'execSync')
 
       this.axiosCalls = []
 
@@ -193,12 +240,13 @@ describe('gitdb', () => {
     }
 
     public expectCalls() {
-      this.addConfigMetExpectations()
+      this.getConfigMetExpectations()
       this.fetchMetExpectations()
       this.getRemotesMetExpectations()
       this.logMetExpectations()
       this.rawMetExpectations()
       this.revparseMetExpectations()
+      this.versionMetExpectations()
       this.execSyncMetExpectations()
       this.axiosMetExpectations()
     }
@@ -206,12 +254,13 @@ describe('gitdb', () => {
 
   test('should not work when remote is not present', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [],
       fetch: [],
       getRemotes: [{input: undefined, output: testError}],
       log: [],
       raw: [],
       revparse: [],
+      version: [],
       execSync: [],
       axios: [],
     })
@@ -220,23 +269,549 @@ describe('gitdb', () => {
     mocks.expectCalls()
   })
 
-  test('should unshallow repository', async () => {
+  test('should unshallow repository if git version is recent and backend does not have all commits already', async () => {
     const mocks = new MockAll({
-      addConfig: [{input: ['remote.origin.partialclonefilter', 'blob:none'], output: ''}],
-      fetch: [{input: ['--shallow-since="1 month ago"', '--update-shallow', '--refetch'], output: ''}],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'COMMIT',
+          ],
+          output: '',
+        },
+      ],
       getRemotes: [
         {
           input: undefined,
           output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
         },
       ],
-      // throw an exception after the update shallow to shortcut the rest of the test as we only
-      // care about updating the shallow clone, not about the rest of the process for this test
-      log: [{input: undefined, output: testError}],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+        // throw an exception after the update shallow to shortcut the rest of the test as we only
+        // care about updating the shallow clone, not about the rest of the process for this test
+        {input: undefined, output: testError},
+      ],
       raw: [],
-      revparse: [{input: '--is-shallow-repository', output: 'true'}],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'COMMIT'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
       execSync: [],
-      axios: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test('should unshallow repository with custom origin value', async () => {
+    // MockParam<string, simpleGit.ConfigGetResult>[]
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'myorigin',
+            values: [],
+          },
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'myorigin',
+            values: [],
+          },
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'myorigin',
+            'COMMIT',
+          ],
+          output: '',
+        },
+      ],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+        // throw an exception after the update shallow to shortcut the rest of the test as we only
+        // care about updating the shallow clone, not about the rest of the process for this test
+        {input: undefined, output: testError},
+      ],
+      raw: [],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'COMMIT'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test('should not unshallow repository if git version is old', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
+      fetch: [],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      // throw an exception after the failed unshallow to shortcut the rest of the test
+      raw: [{input: undefined, output: testError}],
+      revparse: [],
+      version: [{input: undefined, output: oldGitVersion}],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test('should not unshallow repository if backend has all commits already', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
+      fetch: [],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+      ],
+      raw: [],
+      revparse: [],
+      version: [],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {
+            data: {
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).resolves.toBe(undefined)
+    mocks.expectCalls()
+  })
+
+  test('should unshallow repository if the local HEAD is a commit not pushed to the remote', async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'commit',
+          ],
+          output: new Error('commit not found'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'origin/branch',
+          ],
+          output: '',
+        },
+      ],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+        // we short circuit the test after the unshallow
+        {input: undefined, output: testError},
+      ],
+      raw: [],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'commit'},
+        {input: '--abbrev-ref --symbolic-full-name @{upstream}', output: 'origin/branch'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+      ],
+    })
+    const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
+    await expect(upload).rejects.toThrow(testError)
+    mocks.expectCalls()
+  })
+
+  test("should unshallow repository if the CI is working on a detached HEAD or branch tracking hasn't been set up", async () => {
+    const mocks = new MockAll({
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+        {
+          input: 'clone.defaultRemoteName',
+          output: {
+            key: 'clone.defaultRemoteName',
+            paths: [],
+            scopes: new Map<string, string[]>(),
+            value: 'origin',
+            values: [],
+          },
+        },
+      ],
+      fetch: [
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'commit',
+          ],
+          output: new Error('commit not found'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+            'origin/branch',
+          ],
+          output: new Error('working in detached mode'),
+        },
+        {
+          input: [
+            '--shallow-since="1 month ago"',
+            '--update-shallow',
+            '--filter=blob:none',
+            '--recurse-submodules=no',
+            'origin',
+          ],
+          output: '',
+        },
+      ],
+      getRemotes: [
+        {
+          input: undefined,
+          output: [{name: 'origin', refs: {push: 'https://github.com/DataDog/datadog-ci'}}],
+        },
+      ],
+      log: [
+        {
+          input: ['-n 1000', '--since="1 month ago"'],
+          output: {
+            all: [
+              {
+                hash: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+              },
+              {
+                hash: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+              },
+            ],
+          },
+        },
+        // we short circuit the test after the unshallow
+        {input: undefined, output: testError},
+      ],
+      raw: [],
+      revparse: [
+        {input: '--is-shallow-repository', output: 'true'},
+        {input: 'HEAD', output: 'commit'},
+        {input: '--abbrev-ref --symbolic-full-name @{upstream}', output: 'origin/branch'},
+      ],
+      version: [{input: undefined, output: newGitVersion}],
+      execSync: [],
+      axios: [
+        {
+          input: {
+            url: '/api/v2/git/repository/search_commits',
+            data: {
+              meta: {
+                repository_url: 'https://github.com/DataDog/datadog-ci',
+              },
+              data: [
+                {
+                  id: '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+                  type: 'commit',
+                },
+                {
+                  id: 'cc424c261da5e261b76d982d5d361a023556e2aa',
+                  type: 'commit',
+                },
+              ],
+            },
+          },
+          output: {data: {data: []}},
+        },
+      ],
     })
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow(testError)
@@ -245,7 +820,12 @@ describe('gitdb', () => {
 
   test('should send packfiles', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -270,11 +850,20 @@ describe('gitdb', () => {
       ],
       raw: [
         {
-          input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'],
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            'cc424c261da5e261b76d982d5d361a023556e2aa',
+          ],
           output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -326,7 +915,7 @@ describe('gitdb', () => {
 
   test('should override repository URL when specified', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [],
       fetch: [],
       getRemotes: [],
       log: [
@@ -346,11 +935,20 @@ describe('gitdb', () => {
       ],
       raw: [
         {
-          input: ['rev-list', '--objects', '--no-object-names', '--filter=blob:none', '--since="1 month ago"', 'HEAD'],
+          input: [
+            'rev-list',
+            '--objects',
+            '--no-object-names',
+            '--filter=blob:none',
+            '--since="1 month ago"',
+            '87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            'cc424c261da5e261b76d982d5d361a023556e2aa',
+          ],
           output: '87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -408,7 +1006,12 @@ describe('gitdb', () => {
 
   test('should omit known commits', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -439,13 +1042,14 @@ describe('gitdb', () => {
             '--no-object-names',
             '--filter=blob:none',
             '--since="1 month ago"',
-            'HEAD',
             '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            'cc424c261da5e261b76d982d5d361a023556e2aa',
           ],
           output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -499,7 +1103,12 @@ describe('gitdb', () => {
 
   test('retries http requests', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -530,13 +1139,14 @@ describe('gitdb', () => {
             '--no-object-names',
             '--filter=blob:none',
             '--since="1 month ago"',
-            'HEAD',
             '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
+            'cc424c261da5e261b76d982d5d361a023556e2aa',
           ],
           output: 'cc424c261da5e261b76d982d5d361a023556e2aa\n',
         },
       ],
       revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
           input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
@@ -611,7 +1221,12 @@ describe('gitdb', () => {
 
   test('fails after 3 http requests', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -635,7 +1250,8 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
-      revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      revparse: [],
+      version: [],
       execSync: [],
       axios: [
         {
@@ -710,7 +1326,12 @@ describe('gitdb', () => {
 
   test('fail immediately if returned format is incorrect', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -734,7 +1355,8 @@ describe('gitdb', () => {
         },
       ],
       raw: [],
-      revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      revparse: [],
+      version: [],
       execSync: [],
       axios: [
         {
@@ -778,7 +1400,12 @@ describe('gitdb', () => {
 
   test('all commits are known, no packfile upload', async () => {
     const mocks = new MockAll({
-      addConfig: [],
+      getConfig: [
+        {
+          input: 'clone.defaultRemoteName',
+          output: defaultRemoteNameNotConfigured,
+        },
+      ],
       fetch: [],
       getRemotes: [
         {
@@ -801,22 +1428,9 @@ describe('gitdb', () => {
           },
         },
       ],
-      raw: [
-        {
-          input: [
-            'rev-list',
-            '--objects',
-            '--no-object-names',
-            '--filter=blob:none',
-            '--since="1 month ago"',
-            'HEAD',
-            '^87ce64f636853fbebc05edfcefe9cccc28a7968b',
-            '^cc424c261da5e261b76d982d5d361a023556e2aa',
-          ],
-          output: '\n',
-        },
-      ],
-      revparse: [{input: '--is-shallow-repository', output: 'false'}],
+      raw: [],
+      revparse: [],
+      version: [],
       execSync: [],
       axios: [
         {

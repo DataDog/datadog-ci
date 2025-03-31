@@ -6,16 +6,16 @@ import {TunnelInfo} from './tunnel'
 export type SupportedReporter = 'junit' | 'default'
 
 export interface MainReporter {
+  log(log: string): void
   error(error: string): void
   initErrors(errors: string[]): void
-  log(log: string): void
-  reportStart(timings: {startTime: number}): void
-  resultEnd(result: Result, baseUrl: string): void
-  resultReceived(result: Batch['results'][0]): void
-  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
-  testsWait(tests: Test[]): void
-  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, config: UserConfigOverride): void
+  testTrigger(test: Test, testId: string, executionRule: ExecutionRule, testOverrides: UserConfigOverride): void
   testWait(test: Test): void
+  testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number): void
+  resultReceived(result: ResultInBatch): void
+  resultEnd(result: Result, baseUrl: string, batchId: string): void
+  reportStart(timings: {startTime: number}): void
+  runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
 }
 
 export type Reporter = Partial<MainReporter>
@@ -80,50 +80,123 @@ export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsSer
 
 export interface PollResult {
   check: Pick<Test, 'config' | 'subtype' | 'type'>
-  result: ServerResult
+  result?: ServerResult
   resultID: string
   timestamp: number
 }
 
-export interface Result {
+/**
+ * Information required to convert a `PollResult` to a `Result`.
+ */
+export type ResultDisplayInfo = {
+  getLocation: (datacenterId: string, test: Test) => string
+  options: {
+    batchTimeout: number
+    datadogSite: string
+    failOnCriticalErrors?: boolean
+    failOnTimeout?: boolean
+    subdomain: string
+  }
+  tests: Test[]
+}
+
+export type SelectiveRerunDecision =
+  | {
+      decision: 'run'
+      reason: 'in_progress'
+    }
+  | {
+      decision: 'run'
+      reason: 'failed'
+      linked_result_id: string
+    }
+  | {
+      decision: 'run'
+      reason: 'edited'
+    }
+  | {
+      decision: 'run'
+      reason: 'new'
+    }
+  | {
+      decision: 'skip'
+      reason: 'passed'
+      linked_result_id: string
+    }
+
+export interface BaseResult {
+  /** Duration of the result in milliseconds. */
+  duration: number
   executionRule: ExecutionRule
+  initialResultId?: string
+  /** Whether the result is an intermediary result that is expected to be retried. */
+  isNonFinal?: boolean
   location: string
-  // `.passed` here combines `result.passed` and `failOnCriticalErrors` and `failOnTimeout`
+  /** Whether the result is passed or not, according to `failOnCriticalErrors` and `failOnTimeout`. */
   passed: boolean
-  result: ServerResult
+  result?: ServerResult
   resultId: string
-  // Original test for this result, including overrides if any.
+  /** Number of retries, including this result. */
+  retries: number
+  maxRetries: number
+  selectiveRerun?: SelectiveRerunDecision
+  /** Original test for this result, including overrides if any. */
   test: Test
   timedOut: boolean
   timestamp: number
 }
 
-type Status = 'passed' | 'failed' | 'in_progress'
+// Inside this type, `.resultId` is a linked result ID from a previous batch.
+export type ResultSkippedBySelectiveRerun = Omit<
+  BaseResult,
+  'duration' | 'location' | 'result' | 'retries' | 'maxRetries' | 'timestamp'
+> & {
+  executionRule: ExecutionRule.SKIPPED
+  selectiveRerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
+}
 
-export interface ResultInBatch {
+export type Result = BaseResult | ResultSkippedBySelectiveRerun
+
+type Status = 'passed' | 'failed' | 'in_progress' | 'skipped'
+type BatchStatus = 'passed' | 'failed' | 'in_progress'
+
+export interface BaseResultInBatch {
+  duration: number
   execution_rule: ExecutionRule
+  initial_result_id?: string
   location: string
   result_id: string
+  retries: number | null
+  max_retries: number | null
+  selective_rerun?: SelectiveRerunDecision
   status: Status
   test_public_id: string
-  timed_out?: boolean
+  timed_out: boolean | null
 }
+
+type SkippedResultInBatch = Omit<BaseResultInBatch, 'duration' | 'location' | 'result_id'> & {
+  execution_rule: ExecutionRule.SKIPPED
+  status: 'skipped'
+}
+
+export type ResultInBatchSkippedBySelectiveRerun = SkippedResultInBatch & {
+  selective_rerun: Extract<SelectiveRerunDecision, {decision: 'skip'}>
+}
+
+export type ResultInBatch = BaseResultInBatch | ResultInBatchSkippedBySelectiveRerun
 
 export interface Batch {
   results: ResultInBatch[]
-  status: Status
+  status: BatchStatus
 }
 
-interface SkippedResultInBatch extends Omit<ResultInBatch, 'result_id' | 'status'> {
-  status: 'skipped'
-}
-type ServerResultInBatch = SkippedResultInBatch | ResultInBatch
+type ServerResultInBatch = BaseResultInBatch | SkippedResultInBatch
 
 export interface ServerBatch {
   // The batch from the server contains skipped results, which we're going to remove since we don't
-  // care about skipped results internally.
+  // care about skipped results internally (except when they are skipped by a selective rerun).
   results: ServerResultInBatch[]
-  status: Status
+  status: BatchStatus
 }
 
 export interface Vitals {
@@ -147,6 +220,9 @@ export interface Step {
   publicId?: string
   skipped: boolean
   stepId: number
+  stepElementUpdates?: {
+    multiLocator?: MultiLocator
+  }
   subTestPublicId?: string
   subTestStepDetails?: Step[]
   type: string
@@ -159,7 +235,23 @@ export interface Step {
   }[]
 }
 
-export interface ServerTest {
+export interface MultiLocator {
+  [key: string]: unknown
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+
+export interface TestStepWithUnsupportedFields {
+  public_id?: string
+  params: {
+    element?: {
+      multiLocator?: MultiLocator
+      userLocator?: unknown
+    }
+  }
+}
+
+export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
     request: {
@@ -171,38 +263,68 @@ export interface ServerTest {
       timeout: number
       url: string
     }
-    steps?: {subtype: string}[]
+    steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
-  created_at: string
-  created_by: User
   locations: string[]
-  message: string
-  modified_at: string
-  modified_by: User
-  monitor_id: number
   name: string
-  options: {
-    ci?: {
-      executionRule: ExecutionRule
-    }
-    device_ids?: string[]
-    min_failure_duration: number
-    min_location_failed: number
-    mobileApplication?: MobileApplication
-    tick_every: number
-  }
-  overall_state: number
-  overall_state_modified: string
-  public_id: string
-  status: string
-  stepCount: number
-  subtype: string
-  tags: string[]
+  options: OptionsWithUnsupportedFields
+  /** Can be used to link to an existing remote test. */
+  public_id?: string
+  subtype: string // This is optional in the browser and api schemas
+  steps?: TestStepWithUnsupportedFields[] // From browser schema
   type: string
 }
 
-export interface Test extends ServerTest {
+interface Options {
+  ci?: {
+    executionRule: ExecutionRule
+  }
+  device_ids?: string[]
+  mobileApplication?: MobileApplication
+  retry?: {
+    count?: number
+  }
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+
+export interface OptionsWithUnsupportedFields extends Options {
+  bindings?: null | unknown[]
+  min_failure_duration?: number
+  min_location_failed?: any
+  monitor_name?: string
+  monitor_options?: any
+  monitor_priority?: number
+  tick_every?: number
+}
+
+// TODO SYNTH-17944 Remove unsupported fields
+// I think a bunch of these are front-end specific fields
+interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
+  created_at?: any
+  created_by?: any
+  creator?: any
+  creation_source?: string
+  message?: string
+  modified_at?: any
+  modified_by?: any
+  monitor_id?: number
+  overall_state?: any
+  overall_state_modified?: any
+  status?: string
+  stepCount?: any
+  tags?: string[]
+  version?: any
+  version_uuid?: any
+}
+export interface ServerTest extends LocalTestDefinitionWithUnsupportedFields {
+  monitor_id: number
+  status: 'live' | 'paused'
+  public_id: string
+}
+
+export type Test = (ServerTest | LocalTestDefinitionWithUnsupportedFields) & {
   suite?: string
 }
 
@@ -233,13 +355,6 @@ export enum Operator {
   validatesXPath = 'validatesXPath',
 }
 
-export interface User {
-  email: string
-  handle: string
-  id: number
-  name: string
-}
-
 export interface Location {
   display_name: string
   id: number
@@ -255,6 +370,7 @@ export interface LocationsMapping {
 export interface Trigger {
   batch_id: string
   locations: Location[]
+  selective_rerun_rate_limited?: boolean
 }
 
 export interface RetryConfig {
@@ -268,6 +384,11 @@ export interface MobileApplication {
   applicationId: string
   referenceId: string
   referenceType: 'latest' | 'version' | 'temporary'
+}
+
+export interface CookiesObject {
+  append?: boolean
+  value: string
 }
 
 export interface BaseConfigOverride {
@@ -284,7 +405,11 @@ export interface BaseConfigOverride {
    * - If this is a string (e.g. `name1=value1;name2=value2;`), it is used to replace the original cookies.
    * - If this is an object, it is used to either add to or replace the original cookies, depending on `append`.
    */
-  cookies?: string | CookieSettings
+  cookies?: string | CookiesObject
+  /**
+   * TODO
+   */
+  setCookies?: string | CookiesObject
   /** The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts. */
   defaultStepTimeout?: number
   /** A list of devices to run the browser test on. */
@@ -303,13 +428,14 @@ export interface BaseConfigOverride {
   /** A list of locations to run the test from. */
   locations?: string[]
   /** The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed. */
-  pollingTimeout?: number
+  resourceUrlSubstitutionRegexes?: string[]
   /** The retry policy for the test. */
   retry?: RetryConfig
   /** The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced. */
   startUrl?: string
   /** The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`. */
   startUrlSubstitutionRegex?: string
+  testTimeout?: number
   /** The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace. */
   variables?: {[key: string]: string}
 }
@@ -323,30 +449,72 @@ export interface UserConfigOverride extends BaseConfigOverride {
 
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
+  appExtractedMetadata?: MobileAppExtractedMetadata
+}
+
+export interface BatchOptions {
+  batch_timeout?: number
+  selective_rerun?: boolean
 }
 
 export interface Payload {
   metadata?: Metadata
   tests: TestPayload[]
+  options?: BatchOptions
 }
 
-export interface TestPayload extends ServerConfigOverride {
-  executionRule: ExecutionRule
+export interface BaseTestPayload extends ServerConfigOverride {
+  executionRule?: ExecutionRule
+}
+export interface LocalTestPayload extends BaseTestPayload {
+  local_test_definition: LocalTestDefinition
+}
+export interface RemoteTestPayload extends BaseTestPayload {
   public_id: string
+}
+export type TestPayload = LocalTestPayload | RemoteTestPayload
+
+export interface TestNotFound {
+  errorMessage: string
+}
+
+export interface TestSkipped {
+  overriddenConfig: TestPayload
+}
+
+export interface TestWithOverride {
+  test: Test
+  overriddenConfig: TestPayload
+}
+
+export interface MobileTestWithOverride extends TestWithOverride {
+  test: Test & {
+    type: 'mobile'
+    options: {
+      mobileApplication: MobileApplication
+    }
+  }
 }
 
 export interface BasicAuthCredentials {
   password: string
   username: string
 }
-export interface TriggerConfig {
+
+interface BaseTriggerConfig {
   /** Overrides for this Synthetic test only. This takes precedence over all other overrides. */
-  config: UserConfigOverride
-  /** Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`). */
-  id: string
+  testOverrides?: UserConfigOverride
   /** Name of a test suite (for JUnit reports). */
   suite?: string
 }
+export interface RemoteTriggerConfig extends BaseTriggerConfig {
+  /** Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`). */
+  id: string
+}
+export interface LocalTriggerConfig extends BaseTriggerConfig {
+  localTestDefinition: LocalTestDefinition
+}
+export type TriggerConfig = RemoteTriggerConfig | LocalTriggerConfig
 
 export enum ExecutionRule {
   BLOCKING = 'blocking',
@@ -363,13 +531,20 @@ export interface Suite {
   name?: string
 }
 
+export interface TestConfig {
+  tests: TriggerConfig[]
+}
+
 export interface Summary {
   // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
   batchId: string
   criticalErrors: number
+  // Number of results expected by datadog-ci, prior to any selective rerun.
+  expected: number
   failed: number
   failedNonBlocking: number
   passed: number
+  previouslyPassed: number
   skipped: number
   testsNotFound: Set<string>
   timedOut: number
@@ -396,39 +571,105 @@ export interface SyntheticsCIConfig {
   appKey: string
   /** The Datadog instance to which request is sent. */
   datadogSite: string
-  files: string[]
-  /** Overrides for Synthetic tests applied to all tests. */
-  global: UserConfigOverride
-  /** The duration (in milliseconds) after which polling for test results is stopped. */
-  pollingTimeout: number
   proxy: ProxyConfiguration
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface SyntheticsCIConfig extends APIHelperConfig {}
+
+export interface RunTestsCommandConfig extends SyntheticsCIConfig {
+  batchTimeout?: number
+  configPath: string
+  /** Overrides for Synthetic tests applied to all tests. */
+  defaultTestOverrides?: UserConfigOverride
+  failOnCriticalErrors: boolean
+  failOnMissingTests: boolean
+  failOnTimeout: boolean
+  files: string[]
+  jUnitReport?: string
+  mobileApplicationVersionFilePath?: string
   publicIds: string[]
+  /** Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used. */
+  selectiveRerun?: boolean
+  /** Used to create URLs to the Datadog UI. */
   subdomain: string
   /** Search query to select which Synthetic tests to run. */
   testSearchQuery?: string
   /** Use the Continuous Testing Tunnel to execute your test batch. */
   tunnel: boolean
-  variableStrings: string[]
 }
 
-export interface CommandConfig extends SyntheticsCIConfig {
-  failOnCriticalErrors: boolean
-  failOnMissingTests: boolean
-  failOnTimeout: boolean
+export type WrapperConfig = Partial<RunTestsCommandConfig>
+
+export interface UploadApplicationCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  mobileApplicationVersionFilePath?: string
+  mobileApplicationId?: string
+  versionName?: string
+  latest?: boolean
 }
-export interface PresignedUrlResponse {
+
+export interface MobileApplicationUploadPart {
+  partNumber: number
+  md5: string
+  blob: Buffer
+}
+
+export interface MobileApplicationUploadPartResponse {
+  PartNumber: number
+  ETag: string
+}
+
+export interface MultipartPresignedUrlsResponse {
   file_name: string
-  presigned_url_params: {
-    fields: {
+  multipart_presigned_urls_params: {
+    key: string
+    upload_id: string
+    urls: {
       [key: string]: string
     }
-    url: string
   }
 }
 
-// not the entire response, but only the slice needed
+export type MobileApplicationNewVersionParams = {
+  originalFileName: string
+  versionName: string
+  isLatest: boolean
+}
+
+export type AppUploadDetails = {appId: string; appPath: string; versionName?: string}
+
+type MobileAppValidationStatus = 'pending' | 'complete' | 'error' | 'user_error'
+
+type MobileInvalidAppResult = {
+  invalid_reason: string
+  invalid_message: string
+}
+
+export type MobileAppExtractedMetadata = Record<string, unknown>
+
+type MobileValidAppResult = {
+  extracted_metadata: MobileAppExtractedMetadata
+  app_version_uuid: string
+}
+
+type MobileUserErrorResult = {
+  user_error_reason: string
+  user_error_message: string
+}
+
+export type MobileAppUploadResult = {
+  status: MobileAppValidationStatus
+  is_valid?: boolean
+  org_uuid?: string
+  invalid_app_result?: MobileInvalidAppResult
+  valid_app_result?: MobileValidAppResult
+  user_error_result?: MobileUserErrorResult
+}
+
+// Not the entire response, but only what's needed.
 export interface SyntheticsOrgSettings {
-  orgMaxConcurrencyCap: number
+  onDemandConcurrencyCap: number
 }
 
 export interface MobileApplicationVersion {
@@ -439,4 +680,18 @@ export interface MobileApplicationVersion {
   is_latest: boolean
   version_name: string
   created_at?: string
+}
+
+export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  files: string[]
+  publicIds: string[]
+  testSearchQuery?: string
+}
+
+export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
+  configPath: string
+  files: string[]
+  publicIds: string[]
+  subdomain: string
 }

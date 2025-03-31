@@ -1,12 +1,15 @@
 import fs from 'fs'
 
-import {Command} from 'clipanion'
-import glob from 'glob'
+import {Command, Option} from 'clipanion'
+import {glob} from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
-import asyncPool from 'tiny-async-pool'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -16,7 +19,9 @@ import {
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
 } from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -54,8 +59,11 @@ import {
 } from './renderer'
 
 export class UploadCommand extends Command {
+  public static paths = [['flutter-symbols', 'upload']]
+
   public static usage = Command.Usage({
-    description: 'Upload symbol files for Flutter.',
+    category: 'RUM',
+    description: 'Upload Flutter symbol files to Datadog.',
     details: `
             This command will upload all symbol files for Flutter applications in order to symbolicate errors and
             crash reports received by Datadog. This includes uploading iOS dSYMs, Proguard mapping files, and Dart
@@ -69,35 +77,40 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private androidMapping = false
-  private androidMappingLocation?: string
-  private webSourceMaps = false
-  private webSourceMapsLocation?: string
-  private minifiedPathPrefix?: string
-  private cliVersion: string
+  private androidMapping = Option.Boolean('--android-mapping', false)
+  private androidMappingLocation = Option.String('--android-mapping-location')
+  private webSourceMaps = Option.Boolean('--web-sourcemaps', false)
+  private webSourceMapsLocation = Option.String('--web-sourcemaps-location')
+  private minifiedPathPrefix = Option.String('--minified-path-prefix')
+  private configPath = Option.String('--config')
+  private dartSymbolsLocation = Option.String('--dart-symbols-location')
+  private disableGit = Option.Boolean('--disable-git', false)
+  private dryRun = Option.Boolean('--dry-run', false)
+  private flavor = Option.String('--flavor', 'release')
+  private iosDsyms = Option.Boolean('--ios-dsyms', false)
+  private iosDsymsLocation = Option.String('--ios-dsyms-location')
+  private maxConcurrency = Option.String('--max-concurrency', '5', {validator: validation.isInteger()})
+  private pubspecLocation = Option.String('--pubspec', './pubspec.yaml')
+  private repositoryUrl = Option.String('--repository-url')
+  private serviceName = Option.String('--service-name')
+  private version = Option.String('--version')
+
+  private cliVersion = version
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private dartSymbolsLocation?: string
-  private disableGit = false
-  private dryRun = false
-  private flavor = 'release'
   private gitData?: RepositoryData
-  private iosDsyms = false
-  private iosDsymsLocation?: string
-  private maxConcurrency = 5
-  private pubspecLocation = './pubspec.yaml'
-  private repositoryUrl?: string
-  private serviceName!: string
-  private version?: string
 
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     if (!(await this.verifyParameters())) {
       return 1
     }
@@ -132,7 +145,7 @@ export class UploadCommand extends Command {
       })
     }
 
-    this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName, this.flavor, uploadInfo))
+    this.context.stdout.write(renderCommandInfo(this.dryRun, this.version!, this.serviceName!, this.flavor, uploadInfo))
 
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
@@ -198,7 +211,7 @@ export class UploadCommand extends Command {
   }
 
   private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
-    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'))
+    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'), {dotRelative: true})
 
     return symbolPaths
   }
@@ -217,6 +230,7 @@ export class UploadCommand extends Command {
     }
 
     return {
+      type: 'string',
       options: {filename: 'repository', contentType: 'application/json'},
       value: JSON.stringify(repoPayload),
     }
@@ -239,7 +253,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       platform,
-      service: this.serviceName,
+      service: this.serviceName!,
       type,
       variant: this.flavor,
       version: this.getSanitizedVersion(),
@@ -317,10 +331,17 @@ export class UploadCommand extends Command {
 
     const payload = {
       content: new Map<string, MultipartValue>([
-        ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+        [
+          'event',
+          {
+            type: 'string',
+            value: JSON.stringify(metadata),
+            options: {filename: 'event', contentType: 'application/json'},
+          },
+        ],
         [
           VALUE_NAME_JVM_MAPPING,
-          {value: fs.createReadStream(this.androidMappingLocation!), options: {filename: JVM_MAPPING_FILE_NAME}},
+          {type: 'file', path: this.androidMappingLocation!, options: {filename: JVM_MAPPING_FILE_NAME}},
         ],
       ]),
     }
@@ -328,7 +349,7 @@ export class UploadCommand extends Command {
       payload.content.set('repository', this.getGitDataPayload(this.gitData))
     }
 
-    const result = await uploadMultipartHelper(requestBuilder, payload, {
+    const status = await uploadMultipartHelper(requestBuilder, payload, {
       apiKeyValidator,
       onError: (e) => {
         this.context.stdout.write(renderFailedUpload(this.androidMappingLocation!, e.message))
@@ -344,9 +365,14 @@ export class UploadCommand extends Command {
       retries: 5,
       useGzip: true,
     })
-    this.context.stdout.write(`Mapping upload finished: ${result}\n`)
 
-    return result
+    if (status === UploadStatus.Success) {
+      this.context.stdout.write('Mapping upload finished\n')
+    } else {
+      this.context.stdout.write(`Mapping upload failed\n`)
+    }
+
+    return status
   }
 
   private async performDartSymbolsUpload(): Promise<UploadStatus[]> {
@@ -359,7 +385,7 @@ export class UploadCommand extends Command {
 
     const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
     try {
-      const results = await asyncPool(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
+      const results = await doWithMaxConcurrency(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
           renderFailedUpload(
             fileMetadata.filename,
@@ -378,10 +404,21 @@ export class UploadCommand extends Command {
         const metadata = this.getFlutterMetadata(fileMetadata.platform, fileMetadata.arch)
         const payload = {
           content: new Map<string, MultipartValue>([
-            ['event', {value: JSON.stringify(metadata), options: {filename: 'event', contentType: 'application/json'}}],
+            [
+              'event',
+              {
+                type: 'string',
+                value: JSON.stringify(metadata),
+                options: {filename: 'event', contentType: 'application/json'},
+              },
+            ],
             [
               VALUE_NAME_DART_MAPPING,
-              {value: fs.createReadStream(fileMetadata.filename), options: {filename: DART_SYMBOL_FILE_NAME}},
+              {
+                type: 'file',
+                path: fileMetadata.filename,
+                options: {filename: DART_SYMBOL_FILE_NAME},
+              },
             ],
           ]),
         }
@@ -508,21 +545,3 @@ export class UploadCommand extends Command {
     return parametersOkay
   }
 }
-
-UploadCommand.addPath('flutter-symbols', 'upload')
-UploadCommand.addOption('flavor', Command.String('--flavor'))
-UploadCommand.addOption('dartSymbolsLocation', Command.String('--dart-symbols-location'))
-UploadCommand.addOption('iosDsyms', Command.Boolean('--ios-dsyms'))
-UploadCommand.addOption('iosDsymsLocation', Command.String('--ios-dsyms-location'))
-UploadCommand.addOption('androidMapping', Command.Boolean('--android-mapping'))
-UploadCommand.addOption('androidMappingLocation', Command.String('--android-mapping-location'))
-UploadCommand.addOption('webSourceMaps', Command.Boolean('--web-sourcemaps'))
-UploadCommand.addOption('webSourceMapsLocation', Command.String('--web-sourcemaps-location'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('pubspecLocation', Command.String('--pubspec'))
-UploadCommand.addOption('serviceName', Command.String('--service-name'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('version', Command.String('--version'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))

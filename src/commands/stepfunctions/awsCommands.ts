@@ -21,6 +21,7 @@ import {
   DescribeStateMachineCommandOutput,
   ListTagsForResourceCommand,
   ListTagsForResourceCommandOutput,
+  LogLevel,
   Tag,
   TagResourceCommand,
   TagResourceCommandOutput,
@@ -32,7 +33,7 @@ import {
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
 import {BaseContext} from 'clipanion'
 
-import {buildLogAccessPolicyName, displayChanges} from './helpers'
+import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
 
 export const describeStateMachine = async (
   stepFunctionsClient: SFNClient,
@@ -82,7 +83,7 @@ export const putSubscriptionFilter = async (
     // Even if the same filter name is created before, the response is still 200.
     // there are no way to tell
     context.stdout.write(
-      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\nt`
+      `Subscription filter ${filterName} is created or the original filter ${filterName} is overwritten.\n\n`
     )
 
     return data
@@ -204,7 +205,14 @@ export const attachPolicyToStateMachineIamRole = async (
   context: BaseContext,
   dryRun: boolean
 ): Promise<AttachRolePolicyCommandOutput | undefined> => {
-  const roleName = describeStateMachineCommandOutput?.roleArn?.split('/')[1]
+  const splitRoleArnList = describeStateMachineCommandOutput?.roleArn?.split('/')
+  if (splitRoleArnList === undefined) {
+    throw Error(
+      `Unexpected roleArn ${describeStateMachineCommandOutput?.roleArn} for the describeStateMachineCommandOutput ${describeStateMachineCommandOutput}`
+    )
+  }
+  // `arn:aws:iam::<accountId>:role/<name>` or `arn:aws:iam::<accountId>:role/service-role/<name>`
+  const roleName = splitRoleArnList[splitRoleArnList.length - 1]
   const policyArn = `arn:aws:iam::${accountId}:policy/${buildLogAccessPolicyName(describeStateMachineCommandOutput)}`
 
   const input = {
@@ -235,7 +243,7 @@ export const enableStepFunctionLogs = async (
     stateMachineArn: stepFunction.stateMachineArn,
     loggingConfiguration: {
       destinations: [{cloudWatchLogsLogGroup: {logGroupArn}}],
-      level: 'ALL',
+      level: LogLevel.ALL,
       includeExecutionData: true,
     },
   }
@@ -253,6 +261,43 @@ export const enableStepFunctionLogs = async (
     printSuccessfulMessage(commandName, context)
 
     return data
+  }
+}
+
+export const updateStateMachineDefinition = async (
+  stepFunctionsClient: SFNClient,
+  stepFunction: DescribeStateMachineCommandOutput,
+  definitionObj: StateMachineDefinitionType,
+  context: BaseContext,
+  dryRun: boolean
+): Promise<UpdateStateMachineCommandOutput | undefined> => {
+  if (stepFunction === undefined) {
+    return
+  }
+  const input = {
+    stateMachineArn: stepFunction.stateMachineArn,
+    definition: JSON.stringify(definitionObj),
+  }
+
+  const command = new UpdateStateMachineCommand(input)
+  context.stdout.write(
+    `Going to inject Step Function context into lambda payload in steps of ${stepFunction.stateMachineArn}.\n\n`
+  )
+  if (!dryRun) {
+    try {
+      const data = await stepFunctionsClient.send(command)
+      context.stdout.write(
+        `Step Function context is injected into lambda payload in steps of ${stepFunction.stateMachineArn}\n\n`
+      )
+
+      return data
+    } catch (err) {
+      if (err instanceof Error) {
+        context.stdout.write(
+          `\n[Error] ${err.message}. Failed to inject context into lambda functions' payload of ${stepFunction.stateMachineArn} \n`
+        )
+      }
+    }
   }
 }
 

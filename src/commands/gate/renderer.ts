@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {GIT_BRANCH, GIT_REPOSITORY_URL} from '../../helpers/tags'
 
 import {EvaluationResponse, Payload, RuleEvaluation} from './interfaces'
-import {getStatus, is5xxError, isBadRequestError} from './utils'
+import {getStatus, is5xxError, isBadRequestError, isTimeout, getBaseUrl} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -15,6 +15,9 @@ const ICONS = {
 export const renderEvaluationResponse = (evaluationResponse: EvaluationResponse) => {
   if (evaluationResponse.status.toLowerCase() === 'empty') {
     return renderEmptyEvaluation()
+  }
+  if (evaluationResponse.status.toLowerCase() === 'dry_run') {
+    return renderDryRunEvaluation(evaluationResponse)
   }
 
   let fullStr = ''
@@ -43,29 +46,49 @@ export const renderStatus = (result: string): string => {
       return chalk.red(`Failed ${ICONS.FAILED} `)
     case 'no_data':
       return chalk.yellow(`No Data ${ICONS.WARNING} `)
+    case 'dry_run':
+      return chalk.yellow(`Dry Run ${ICONS.INFO}`)
   }
 
   return result.toLowerCase()
 }
 
+export const renderRuleUrl = (ruleId: string): string => {
+  return `${getBaseUrl()}ci/quality-gates/rule/${ruleId}`
+}
+
 export const renderRuleEvaluation = (ruleEvaluation: RuleEvaluation): string => {
-  // TODO add URL here once we have it
   let fullStr = ''
-  fullStr += `Rule ID: ${ruleEvaluation.rule_id}\n`
   fullStr += `Rule Name: ${ruleEvaluation.rule_name}\n`
+  fullStr += `Rule URL: ${renderRuleUrl(ruleEvaluation.rule_id)}\n`
   fullStr += `Status: ${renderStatus(ruleEvaluation.status)}\n`
   if (ruleEvaluation.status.toLowerCase() === 'failed') {
     fullStr += `${chalk.red.bold('Failure reason')}: ${ruleEvaluation.failure_reason}\n`
   }
 
   fullStr += `${chalk.yellow('Blocking')}: ${ruleEvaluation.is_blocking}\n`
+  if (ruleEvaluation.details_url) {
+    fullStr += `Details: ${ruleEvaluation.details_url}\n`
+  }
+
   fullStr += '\n'
 
   return fullStr
 }
 
-export const renderDryRunEvaluation = (): string => {
-  return chalk.yellow('Dry run mode is enabled. Not evaluating the rules.')
+export const renderDryRunEvaluation = (evaluationResponse: EvaluationResponse): string => {
+  let fullStr = ''
+  fullStr += chalk.green('Successfully completed a dry run request\n')
+  fullStr += `Overall result: ${renderStatus(evaluationResponse.status)}\n`
+  fullStr += `Number of matching rules: ${chalk.bold(evaluationResponse.rule_evaluations.length)}\n`
+
+  if (evaluationResponse.rule_evaluations.length > 0) {
+    fullStr += '\n'
+    fullStr += chalk.yellow('####### Matching rules #######\n')
+    evaluationResponse.rule_evaluations.forEach((ruleEvaluation) => (fullStr += renderRuleEvaluation(ruleEvaluation)))
+  }
+
+  return fullStr
 }
 
 export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
@@ -85,15 +108,19 @@ export const renderGateEvaluationInput = (evaluateRequest: Payload): string => {
 
 export const renderGateEvaluationError = (error: any, failIfUnavailable: boolean): string => {
   let errorStr = 'ERROR: Could not evaluate the rules.'
-  if (!error.response) {
-    return chalk.red(`${errorStr}\n`)
+
+  if (error.message === 'wait') {
+    errorStr += ` The command timed out.\n`
   }
 
-  errorStr += ` Status code: ${error.response.status}.\n`
+  if (error.response) {
+    errorStr += ` Status code: ${error.response.status}.\n`
+  }
+
   if (isBadRequestError(error)) {
     const errorMessage = error.response.data.errors[0].detail
     errorStr += `Error is "${errorMessage}".\n`
-  } else if (is5xxError(error) && !failIfUnavailable) {
+  } else if ((is5xxError(error) || isTimeout(error)) && !failIfUnavailable) {
     errorStr += "Use the '--fail-if-unavailable' option to fail the command in this situation.\n"
   }
 

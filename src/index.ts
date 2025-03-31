@@ -1,5 +1,4 @@
-import * as gitMetadata from './commands/git-metadata'
-import * as synthetics from './commands/synthetics'
-import * as utils from './helpers/utils'
-
-export {utils, synthetics, gitMetadata}
+export * as gitMetadata from './commands/git-metadata'
+export * as synthetics from './commands/synthetics'
+export * as utils from './helpers/utils'
+export {version} from './helpers/version'

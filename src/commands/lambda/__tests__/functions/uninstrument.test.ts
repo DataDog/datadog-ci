@@ -1,30 +1,33 @@
 jest.mock('../../loggroup')
-jest.mock('../../renderer')
+jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
+import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
 import {mockClient} from 'aws-sdk-client-mock'
-import 'aws-sdk-client-mock-jest'
 
+import 'aws-sdk-client-mock-jest'
 import {
   API_KEY_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../../constants'
+
+import {
   API_KEY_SECRET_ARN_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   SUBSCRIPTION_FILTER_NAME,
   TRACE_ENABLED_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../../constants'
 import {getLambdaFunctionConfig} from '../../functions/commons'
 import {
@@ -86,9 +89,9 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "USER_VARIABLE": "shouldnt be deleted by uninstrumentation",
             },
           },
@@ -119,9 +122,9 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "lambda_function.lambda_handler",
@@ -164,13 +167,13 @@ describe('uninstrument', () => {
       )
       const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "lambda_function.lambda_handler",
-          "Layers": Array [],
+          "Layers": [],
         }
       `)
     })
@@ -194,14 +197,14 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet',
-          Runtime: 'dotnetcore3.1',
+          Runtime: Runtime.dotnet6,
         }
 
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
+          {
+            "Environment": {
+              "Variables": {},
             },
             "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:dotnet",
           }
@@ -216,13 +219,13 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:java',
-          Runtime: 'java11',
+          Runtime: Runtime.java11,
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
+          {
+            "Environment": {
+              "Variables": {},
             },
             "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:java",
           }
@@ -238,13 +241,13 @@ describe('uninstrument', () => {
             },
           },
           FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:dotnet-custom',
-          Runtime: 'dotnet6',
+          Runtime: Runtime.dotnet6,
         }
         const updateRequest = calculateUpdateRequest(config, config.Runtime as any)
         expect(updateRequest).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {
+          {
+            "Environment": {
+              "Variables": {
                 "AWS_LAMBDA_EXEC_WRAPPER": "my-custom-wrapper",
               },
             },
@@ -300,9 +303,9 @@ describe('uninstrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "USER_VARIABLE": "shouldnt be deleted by uninstrumentation",
             },
           },
@@ -317,7 +320,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:another-func': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:another-func',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
@@ -337,7 +340,7 @@ describe('uninstrument', () => {
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -355,9 +358,9 @@ describe('uninstrument', () => {
       expect(result.length).toEqual(2)
       expect(result[0].updateFunctionConfigurationCommandInput).toBeUndefined()
       expect(result[1].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
           "Handler": "index.handler",
@@ -386,7 +389,7 @@ describe('uninstrument', () => {
               },
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: 'dotnetcore3.1',
+            Runtime: 'dotnet6',
           },
         },
       })
@@ -399,13 +402,13 @@ describe('uninstrument', () => {
       )
 
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-          Object {
-            "Environment": Object {
-              "Variables": Object {},
-            },
-            "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
-          }
-        `)
+        {
+          "Environment": {
+            "Variables": {},
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:uninstrument",
+        }
+      `)
     })
   })
 
@@ -426,7 +429,7 @@ describe('uninstrument', () => {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
-            Runtime: 'go',
+            Runtime: Runtime.go1x,
           },
         },
       })
@@ -448,7 +451,7 @@ describe('uninstrument', () => {
             },
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -479,7 +482,7 @@ describe('uninstrument', () => {
           config: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -495,7 +498,7 @@ describe('uninstrument', () => {
       )
       expect(result).toBeDefined()
       expect(result.logGroupConfiguration).toMatchInlineSnapshot(`
-        Object {
+        {
           "filterName": "${SUBSCRIPTION_FILTER_NAME}",
           "logGroupName": "${logGroupName}",
         }
@@ -536,7 +539,7 @@ describe('uninstrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby',
             FunctionName: 'autoinstrument-scooby',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy': {
@@ -554,7 +557,7 @@ describe('uninstrument', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy',
             FunctionName: 'autoinstrument-scrapy',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: 'nodejs20.x',
           },
         },
       })
@@ -566,9 +569,9 @@ describe('uninstrument', () => {
       )
       expect(result.length).toEqual(1)
       expect(result[0].updateFunctionConfigurationCommandInput).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {},
+        {
+          "Environment": {
+            "Variables": {},
           },
           "FunctionName": "arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scrapy",
           "Handler": "index.handler",
@@ -585,7 +588,7 @@ describe('uninstrument', () => {
         undefined
       )
 
-      await expect(uninstrumentedConfig).rejects.toThrow('Max retry count exceeded. Error: ListFunctionsError')
+      await expect(uninstrumentedConfig).rejects.toThrow('ListFunctionsError')
     })
   })
 })

@@ -46,10 +46,6 @@ jest.mock('child_process', () => ({
   }),
 }))
 
-beforeEach(() => {
-  jest.restoreAllMocks()
-})
-
 const makeCli = () => {
   const cli = new Cli()
   cli.register(CodepushCommand)

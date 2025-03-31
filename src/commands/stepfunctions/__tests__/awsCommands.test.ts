@@ -13,8 +13,11 @@ import {
   UpdateStateMachineCommand,
   SFNClient,
   DescribeStateMachineCommandOutput,
+  LogLevel,
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
+
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
 
 import {
   createLogGroup,
@@ -27,10 +30,9 @@ import {
   untagResource,
   createLogsAccessPolicy,
   attachPolicyToStateMachineIamRole,
+  updateStateMachineDefinition,
 } from '../awsCommands'
-import {buildLogAccessPolicyName} from '../helpers'
-
-import {createMockContext} from './fixtures/aws-resources'
+import {buildLogAccessPolicyName, StateMachineDefinitionType} from '../helpers'
 
 describe('awsCommands test', () => {
   const expectedResp = {fakeKey: 'fakeValue'} as any
@@ -220,12 +222,41 @@ describe('awsCommands test', () => {
     expect(actual).toEqual(expectedResp)
   })
 
+  test('attachPolicyToStateMachineIamRole test two slashes role arn', async () => {
+    describeStateMachineCommandOutput = {
+      $metadata: {},
+      creationDate: undefined,
+      definition: undefined,
+      roleArn: `arn:aws:iam::${fakeAccountId}:role/service-role/unit-test-fake-role-name`, // two slashes in the role ARN for standard SF
+      type: undefined,
+      stateMachineArn: fakeStepFunctionArn,
+      name: fakeStateMachineName,
+    }
+
+    const input = {
+      PolicyArn: `arn:aws:iam::${fakeAccountId}:policy/LogsDeliveryAccessPolicy-${fakeStateMachineName}`,
+      RoleName: 'unit-test-fake-role-name',
+    }
+
+    mockedIamClient.on(AttachRolePolicyCommand, input).resolves(expectedResp)
+
+    const actual = await attachPolicyToStateMachineIamRole(
+      new IAMClient({}),
+      describeStateMachineCommandOutput,
+      fakeAccountId,
+      fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+    expect(actual).toEqual(expectedResp)
+  })
+
   test('enableStepFunctionLogs test', async () => {
     const input = {
       stateMachineArn: fakeStepFunctionArn,
       loggingConfiguration: {
         destinations: [{cloudWatchLogsLogGroup: {logGroupArn: fakeLogGroupArn}}],
-        level: 'ALL',
+        level: LogLevel.ALL,
         includeExecutionData: true,
       },
     }
@@ -237,6 +268,29 @@ describe('awsCommands test', () => {
       describeStateMachineCommandOutput,
       fakeLogGroupArn,
       fakeStepFunctionArn,
+      mockedContext,
+      false
+    )
+
+    expect(actual).toEqual(expectedResp)
+  })
+
+  test('updateStateMachineDefinition test', async () => {
+    const definitionObj: StateMachineDefinitionType = {
+      Comment: 'no comment',
+      States: {},
+    }
+    const input = {
+      stateMachineArn: fakeStepFunctionArn,
+      definition: JSON.stringify(definitionObj),
+    }
+
+    mockedStepFunctionsClient.on(UpdateStateMachineCommand, input).resolves(expectedResp)
+
+    const actual = await updateStateMachineDefinition(
+      new SFNClient({}),
+      describeStateMachineCommandOutput,
+      definitionObj,
       mockedContext,
       false
     )

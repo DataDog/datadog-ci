@@ -2,12 +2,14 @@ import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
 
+import {createMockContext} from '../../../helpers/__tests__/fixtures'
+
 import {UploadCommand} from '../upload'
 
 describe('execute', () => {
   const runCLI = async (apiKey: string) => {
     const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     if (apiKey !== '') {
       process.env = {DATADOG_API_KEY: apiKey}
     } else {
@@ -40,17 +42,4 @@ const makeCli = () => {
   cli.register(UploadCommand)
 
   return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
 }

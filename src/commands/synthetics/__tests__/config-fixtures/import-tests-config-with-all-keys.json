@@ -1,0 +1,13 @@
+{
+  "apiKey": "fake_api_key",
+  "appKey": "fake_app_key",
+  "configPath": "fake-datadog-ci.json",
+  "datadogSite": "datadoghq.eu",
+  "files": [
+    "my-new-file"
+  ],
+  "publicIds": [
+    "ran-dom-id1"
+  ],
+  "testSearchQuery": "a-search-query"
+}

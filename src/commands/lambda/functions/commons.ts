@@ -11,12 +11,17 @@ import {
   GetFunctionCommand,
   UpdateFunctionConfigurationCommand,
   UpdateFunctionConfigurationCommandInput,
+  Runtime,
 } from '@aws-sdk/client-lambda'
-import {FromIniInit, fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
-import {CredentialsProviderError} from '@aws-sdk/property-provider'
+import {FromIniInit} from '@aws-sdk/credential-provider-ini'
+import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
+import {CredentialsProviderError} from '@smithy/property-provider'
 import inquirer from 'inquirer'
 
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
+import * as helpersRenderer from '../../../helpers/renderer'
+import {maskString} from '../../../helpers/utils'
 import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
@@ -24,22 +29,20 @@ import {
   ARM_LAYERS,
   ARM_LAYER_SUFFIX,
   AWS_SHARED_CREDENTIALS_FILE_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LayerKey,
   LAYER_LOOKUP,
-  LIST_FUNCTIONS_MAX_RETRY_COUNT,
-  Runtime,
+  EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
   RUNTIME_LOOKUP,
+  SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
-import * as renderer from '../renderer'
+import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 import {applyTagConfig} from '../tags'
 
 /**
@@ -51,7 +54,11 @@ import {applyTagConfig} from '../tags'
  * @param layerARNs an array of layer ARNs.
  * @returns an array of layer ARNs.
  */
-export const addLayerArn = (fullLayerArn: string | undefined, previousLayerName: string, layerARNs: string[]) => {
+export const addLayerArn = (
+  fullLayerArn: string | undefined,
+  previousLayerName: string,
+  layerARNs: string[]
+): string[] => {
   if (fullLayerArn) {
     if (!layerARNs.includes(fullLayerArn)) {
       // Remove any other versions of the layer
@@ -134,7 +141,7 @@ export const collectFunctionsByRegion = (
  * @param region the region where the layer is stored.
  * @returns the latest version of the layer to find.
  */
-export const findLatestLayerVersion = async (layer: LayerKey, region: string) => {
+export const findLatestLayerVersion = async (layer: LayerKey, region: string): Promise<number> => {
   let latestVersion = 0
 
   let searchStep = latestVersion > 0 ? 1 : 100
@@ -142,7 +149,7 @@ export const findLatestLayerVersion = async (layer: LayerKey, region: string) =>
   const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
   const layerName = LAYER_LOOKUP[layer]
   let foundLatestVersion = false
-  const lambdaClient = new LambdaClient({region})
+  const lambdaClient = new LambdaClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
   while (!foundLatestVersion) {
     try {
       // Search next version
@@ -215,7 +222,7 @@ export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
  * @param {string} profile the AWS Credentials profile
  * @returns {AwsCredentialIdentity} credentials object.
  */
-export const getAWSProfileCredentials = async (profile: string) => {
+export const getAWSProfileCredentials = async (profile: string): Promise<AwsCredentialIdentity | undefined> => {
   const init = getAWSFileCredentialsParams(profile)
 
   try {
@@ -230,7 +237,7 @@ export const getAWSProfileCredentials = async (profile: string) => {
   }
 }
 
-export const getAWSCredentials = async () => {
+export const getAWSCredentials = async (): Promise<AwsCredentialIdentity | undefined> => {
   const provider = fromNodeProviderChain()
 
   try {
@@ -247,26 +254,25 @@ export const getAWSCredentials = async () => {
   }
 }
 
-export const isMissingAnyDatadogApiKeyEnvVar = () =>
+export const isMissingAnyDatadogApiKeyEnvVar = (): boolean =>
   !(
     process.env[CI_API_KEY_ENV_VAR] ||
+    process.env[API_KEY_ENV_VAR] ||
     process.env[CI_KMS_API_KEY_ENV_VAR] ||
     process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
   )
-export const isMissingDatadogEnvVars = () =>
+export const isMissingDatadogEnvVars = (): boolean =>
   !isValidDatadogSite(process.env[CI_SITE_ENV_VAR]) || isMissingAnyDatadogApiKeyEnvVar()
 
-export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient) =>
+export const getAllLambdaFunctionConfigs = async (lambdaClient: LambdaClient): Promise<LFunctionConfiguration[]> =>
   getLambdaFunctionConfigsFromRegex(lambdaClient, '.')
 
 // Returns false if not all runtimes are of the same RuntimeType across multiple functions
-export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]) =>
+export const checkRuntimeTypesAreUniform = (configList: FunctionConfiguration[]): boolean =>
   configList
     .map((item) => item.lambdaConfig.Runtime)
-    .every(
-      (runtime) =>
-        RUNTIME_LOOKUP[runtime! as Runtime] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime! as Runtime]
-    )
+    .every((runtime) => RUNTIME_LOOKUP[runtime!] === RUNTIME_LOOKUP[configList[0].lambdaConfig.Runtime!])
+
 /**
  * Given a Lambda instance and a regular expression,
  * returns all the Function Configurations that match.
@@ -281,25 +287,16 @@ export const getLambdaFunctionConfigsFromRegex = async (
 ): Promise<LFunctionConfiguration[]> => {
   const regEx = new RegExp(pattern)
   const matchedFunctions: LFunctionConfiguration[] = []
-  let retryCount = 0
   let response: ListFunctionsCommandOutput
   let nextMarker: string | undefined
 
   while (true) {
-    try {
-      const command = new ListFunctionsCommand({Marker: nextMarker})
-      response = await lambdaClient.send(command)
-      response.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
-      nextMarker = response.NextMarker
-      if (!nextMarker) {
-        break
-      }
-      retryCount = 0
-    } catch (e) {
-      retryCount++
-      if (retryCount > LIST_FUNCTIONS_MAX_RETRY_COUNT) {
-        throw Error(`Max retry count exceeded. ${e}`)
-      }
+    const command = new ListFunctionsCommand({Marker: nextMarker})
+    response = await lambdaClient.send(command)
+    response.Functions?.map((fn) => fn.FunctionName?.match(regEx) && matchedFunctions.push(fn))
+    nextMarker = response.NextMarker
+    if (!nextMarker) {
+      break
     }
   }
 
@@ -329,6 +326,7 @@ export const getLambdaFunctionConfigs = (
  * and settings (optional).
  *
  * @param config a Lambda FunctionConfiguration.
+ * @param layer a Lambda layer.
  * @param region a region where the layer is hosted.
  * @param settings instrumentation settings, mainly used to change the AWS account that contains the Layer.
  * @returns the ARN of a **Specific Runtime Layer** with the correct region, account, architecture, and name.
@@ -338,7 +336,7 @@ export const getLayerArn = (
   layer: LayerKey,
   region: string,
   settings?: InstrumentationSettings
-) => {
+): string => {
   let layerName = LAYER_LOOKUP[layer]
   if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
@@ -358,7 +356,7 @@ export const getLayerNameWithVersion = (layerArn: string): string | undefined =>
   return name && version ? `${name}:${version}` : undefined
 }
 
-export const getLayers = (config: LFunctionConfiguration) => (config.Layers ?? []).map((layer) => layer.Arn!)
+export const getLayers = (config: LFunctionConfiguration): string[] => (config.Layers ?? []).map((layer) => layer.Arn!)
 
 /**
  * Call the aws-sdk Lambda api to get a Function given
@@ -386,7 +384,7 @@ export const getLambdaFunctionConfig = async (
 
 /**
  * Given a Function ARN, return its region by splitting the string,
- * can return undefined if it is doesn't exist.
+ * can return undefined if it doesn't exist.
  *
  * @param functionARN a string, can be Function ARN, Partial ARN, or a Function Name.
  * @returns the region of an ARN.
@@ -414,7 +412,7 @@ export const updateLambdaFunctionConfig = async (
   lambdaClient: LambdaClient,
   cloudWatchLogsClient: CloudWatchLogsClient,
   config: FunctionConfiguration
-) => {
+): Promise<void> => {
   if (config.updateFunctionConfigurationCommandInput !== undefined) {
     await updateFunctionConfiguration(lambdaClient, config.updateFunctionConfigurationCommandInput)
   }
@@ -429,16 +427,19 @@ export const updateLambdaFunctionConfig = async (
 export const updateFunctionConfiguration = async (
   client: LambdaClient,
   input: UpdateFunctionConfigurationCommandInput
-) => {
+): Promise<void> => {
   const command = new UpdateFunctionConfigurationCommand(input)
   await client.send(command)
 }
 
-export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConfigurationGroup[], stdout: Writable) => {
+export const handleLambdaFunctionUpdates = async (
+  configGroups: InstrumentedConfigurationGroup[],
+  stdout: Writable
+): Promise<void> => {
   let totalFunctions = 0
   let totalFailedUpdates = 0
   for (const group of configGroups) {
-    const spinner = renderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
+    const spinner = instrumentRenderer.updatingFunctionsConfigFromRegionSpinner(group.region, group.configs.length)
     spinner.start()
     const failedUpdates = []
     for (const config of group.configs) {
@@ -452,38 +453,45 @@ export const handleLambdaFunctionUpdates = async (configGroups: InstrumentedConf
     }
 
     if (failedUpdates.length === group.configs.length) {
-      spinner.fail(renderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
+      spinner.fail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunctionFromRegion(group.region))
     } else if (failedUpdates.length > 0) {
       spinner.warn(
-        renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length - failedUpdates.length)
+        instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(
+          group.region,
+          group.configs.length - failedUpdates.length
+        )
       )
     }
 
     for (const failedUpdate of failedUpdates) {
-      stdout.write(renderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
+      stdout.write(instrumentRenderer.renderFailedUpdatingLambdaFunction(failedUpdate.functionARN, failedUpdate.error))
     }
 
     if (failedUpdates.length === 0) {
-      spinner.succeed(renderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
+      spinner.succeed(instrumentRenderer.renderUpdatedLambdaFunctionsFromRegion(group.region, group.configs.length))
     }
   }
 
   if (totalFunctions === totalFailedUpdates) {
-    stdout.write(renderer.renderFail(renderer.renderFailedUpdatingEveryLambdaFunction()))
+    stdout.write(instrumentRenderer.renderFail(instrumentRenderer.renderFailedUpdatingEveryLambdaFunction()))
 
     throw Error()
   }
 
   if (totalFailedUpdates > 0) {
-    stdout.write(renderer.renderSoftWarning(renderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)))
+    stdout.write(
+      helpersRenderer.renderSoftWarning(
+        instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions - totalFailedUpdates)
+      )
+    )
   }
 
   if (!totalFailedUpdates) {
-    stdout.write(renderer.renderSuccess(renderer.renderUpdatedLambdaFunctions(totalFunctions)))
+    stdout.write(instrumentRenderer.renderSuccess(instrumentRenderer.renderUpdatedLambdaFunctions(totalFunctions)))
   }
 }
 
-export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
+export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]): boolean => {
   let willUpdate = false
   for (const config of configs) {
     if (
@@ -500,4 +508,27 @@ export const willUpdateFunctionConfigs = (configs: FunctionConfiguration[]) => {
   }
 
   return willUpdate
+}
+
+/**
+ * Masks environment variables in a Lambda function configuration.
+ * Makes a copy as to not modify the config in place.
+ * @param config
+ * @returns masked config
+ */
+export const maskConfig = (config: any): any => {
+  // We stringify and parse again to make a deep copy
+  const configCopy = JSON.parse(JSON.stringify(config))
+  const vars = configCopy.Environment?.Variables
+  if (!vars) {
+    return configCopy
+  }
+
+  for (const key in vars) {
+    if (!SKIP_MASKING_LAMBDA_ENV_VARS.has(key)) {
+      vars[key] = maskString(vars[key])
+    }
+  }
+
+  return configCopy
 }

@@ -2,17 +2,22 @@ import {promises} from 'fs'
 import path from 'path'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
+import {Command, Option} from 'clipanion'
+import {glob} from 'glob'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {
@@ -38,7 +43,10 @@ import {
 } from './utils'
 
 export class UploadCommand extends Command {
+  public static paths = [['dsyms', 'upload']]
+
   public static usage = Command.Usage({
+    category: 'RUM',
     description: 'Upload dSYM files to Datadog.',
     details: `
       This command will upload all dSYM files to Datadog in order to symbolicate crash reports received by Datadog.\n
@@ -53,21 +61,27 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private basePath!: string
-  private cliVersion: string
+  private basePath = Option.String({required: true})
+  private configPath = Option.String('--config')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+
+  private cliVersion = version
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  } as const
+
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private dryRun = false
-  private maxConcurrency = 20
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
-  }
 
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     // Normalizing the basePath to resolve .. and .
     this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
@@ -123,7 +137,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, compressedDSYMs, uploadDSYM)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, compressedDSYMs, uploadDSYM)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
@@ -183,6 +197,10 @@ export class UploadCommand extends Command {
     return getRequestBuilder({
       apiKey: this.config.apiKey,
       baseUrl: getBaseIntakeUrl(this.config.datadogSite),
+      headers: new Map([
+        ['DD-EVP-ORIGIN', 'datadog-ci_dsyms'],
+        ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
+      ]),
       overrideUrl: 'api/v2/srcmap',
     })
   }
@@ -303,9 +321,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('dsyms', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('configPath', Command.String('--config'))

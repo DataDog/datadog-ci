@@ -1,0 +1,200 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 1`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 2`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+[36m⠋[39m Uploading 2 application(s)…"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 3`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+[36m⠋[39m Uploading 1 application(s)…"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 4`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+
+[1m[31m✖[39m[22m Failed to upload application:
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 1`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 2`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 3`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+- Uploading 1 application(s)…
+"
+`;
+
+exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 4`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+- Uploading 1 application(s)…
+
+[1m[31m✖[39m[22m Failed to upload application:
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter endRendering Ends rendering (in CI: false) 1`] = `""`;
+
+exports[`AppUploadReporter endRendering Ends rendering (in CI: true) 1`] = `
+"- Uploading 1 application(s)…
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: false) 1`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: false) 2`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+[36m⠋[39m Uploading 2 application(s)…"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: false) 3`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+[36m⠋[39m Uploading 1 application(s)…"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: false) 4`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+
+[1m[32m✓[39m[22m Successfully uploaded in 0 seconds
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: true) 1`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: true) 2`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: true) 3`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+- Uploading 1 application(s)…
+"
+`;
+
+exports[`AppUploadReporter integrationTests Outputs a series of successful uploads correctly (in CI: true) 4`] = `
+"2 mobile application(s) to upload:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+- Uploading 2 application(s)…
+- Uploading 1 application(s)…
+
+[1m[32m✓[39m[22m Successfully uploaded in 0 seconds
+"
+`;
+
+exports[`AppUploadReporter renderProgress Outputs progress (in CI: false) 1`] = `"[36m⠋[39m Uploading 2 application(s)…"`;
+
+exports[`AppUploadReporter renderProgress Outputs progress (in CI: false) 2`] = `"[36m⠋[39m Uploading 1 application(s)…"`;
+
+exports[`AppUploadReporter renderProgress Outputs progress (in CI: true) 1`] = `
+"- Uploading 2 application(s)…
+"
+`;
+
+exports[`AppUploadReporter renderProgress Outputs progress (in CI: true) 2`] = `
+"- Uploading 2 application(s)…
+- Uploading 1 application(s)…
+"
+`;
+
+exports[`AppUploadReporter reportFailure Outputs failure message (in CI: false) 1`] = `
+"
+[1m[31m✖[39m[22m Failed to upload application:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter reportFailure Outputs failure message (in CI: true) 1`] = `
+"- Uploading 1 application(s)…
+
+[1m[31m✖[39m[22m Failed to upload application:
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter reportSuccess Outputs success message (in CI: false) 1`] = `
+"
+[1m[32m✓[39m[22m Successfully uploaded in 0 seconds
+"
+`;
+
+exports[`AppUploadReporter reportSuccess Outputs success message (in CI: true) 1`] = `
+"- Uploading 1 application(s)…
+
+[1m[32m✓[39m[22m Successfully uploaded in 0 seconds
+"
+`;
+
+exports[`AppUploadReporter start outputs apps to upload 1`] = `
+"2 mobile application(s) to upload:
+
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;
+
+exports[`AppUploadReporter start outputs apps to upload 2`] = `
+"
+2 mobile application(s) to upload:
+
+    Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
+    Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
+"
+`;

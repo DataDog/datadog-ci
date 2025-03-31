@@ -1,0 +1,401 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:0bb318ea-ff2b-4f84-be1a-53020d06b459",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2023-10-30T00:31:44+00:00",
+    "tools": [
+      {
+        "vendor": "aquasecurity",
+        "name": "trivy",
+        "version": "0.46.0"
+      }
+    ],
+    "component": {
+      "bom-ref": "1b5cf507-a04a-48f0-9a74-1937ff023292",
+      "type": "application",
+      "name": ".",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:SchemaVersion",
+          "value": "2"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "5993a3e8-b262-4c8f-90e2-3b4c28f694d3",
+      "type": "application",
+      "name": "requirements.txt",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:Class",
+          "value": "lang-pkgs"
+        },
+        {
+          "name": "aquasecurity:trivy:Type",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/cryptography@40.0.1",
+      "type": "library",
+      "name": "cryptography",
+      "version": "40.0.1",
+      "purl": "pkg:pypi/cryptography@40.0.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/datadog@0.45.0",
+      "type": "library",
+      "name": "datadog",
+      "version": "0.45.0",
+      "purl": "pkg:pypi/datadog@0.45.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/freezegun@0.3.15",
+      "type": "library",
+      "name": "freezegun",
+      "version": "0.3.15",
+      "purl": "pkg:pypi/freezegun@0.3.15",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/gemfileparser@0.8.0",
+      "type": "library",
+      "name": "gemfileparser",
+      "version": "0.8.0",
+      "purl": "pkg:pypi/gemfileparser@0.8.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/mock@4.0.2",
+      "type": "library",
+      "name": "mock",
+      "version": "4.0.2",
+      "purl": "pkg:pypi/mock@4.0.2",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/mysql-connector-python@8.0.26",
+      "type": "library",
+      "name": "mysql-connector-python",
+      "version": "8.0.26",
+      "purl": "pkg:pypi/mysql-connector-python@8.0.26",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pycryptodome@3.11.0",
+      "type": "library",
+      "name": "pycryptodome",
+      "version": "3.11.0",
+      "purl": "pkg:pypi/pycryptodome@3.11.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pygithub@1.56",
+      "type": "library",
+      "name": "PyGithub",
+      "version": "1.56",
+      "purl": "pkg:pypi/pygithub@1.56",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pyjwt@2.5.0",
+      "type": "library",
+      "name": "PyJWT",
+      "version": "2.5.0",
+      "purl": "pkg:pypi/pyjwt@2.5.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pylint@2.5.3",
+      "type": "library",
+      "name": "pylint",
+      "version": "2.5.3",
+      "purl": "pkg:pypi/pylint@2.5.3",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pypi-simple@0.6.0",
+      "type": "library",
+      "name": "pypi-simple",
+      "version": "0.6.0",
+      "purl": "pkg:pypi/pypi-simple@0.6.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/python-dateutil@2.8.1",
+      "type": "library",
+      "name": "python-dateutil",
+      "version": "2.8.1",
+      "purl": "pkg:pypi/python-dateutil@2.8.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/python-gitlab@2.5.0",
+      "type": "library",
+      "name": "python-gitlab",
+      "version": "2.5.0",
+      "purl": "pkg:pypi/python-gitlab@2.5.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/pyyaml@6.0",
+      "type": "library",
+      "name": "pyyaml",
+      "version": "6.0",
+      "purl": "pkg:pypi/pyyaml@6.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/requests@2.24.0",
+      "type": "library",
+      "name": "requests",
+      "version": "2.24.0",
+      "purl": "pkg:pypi/requests@2.24.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/requirements-parser@0.2.0",
+      "type": "library",
+      "name": "requirements-parser",
+      "version": "0.2.0",
+      "purl": "pkg:pypi/requirements-parser@0.2.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/unidiff@0.7.4",
+      "type": "library",
+      "name": "unidiff",
+      "version": "0.7.4",
+      "purl": "pkg:pypi/unidiff@0.7.4",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/whatthepatch@1.0.1",
+      "type": "library",
+      "name": "whatthepatch",
+      "version": "1.0.1",
+      "purl": "pkg:pypi/whatthepatch@1.0.1",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:pypi/xmltodict@0.12.0",
+      "type": "library",
+      "name": "xmltodict",
+      "version": "0.12.0",
+      "purl": "pkg:pypi/xmltodict@0.12.0",
+      "properties": [
+        {
+          "name": "aquasecurity:trivy:PkgType",
+          "value": "pip"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "1b5cf507-a04a-48f0-9a74-1937ff023292",
+      "dependsOn": [
+        "5993a3e8-b262-4c8f-90e2-3b4c28f694d3"
+      ]
+    },
+    {
+      "ref": "5993a3e8-b262-4c8f-90e2-3b4c28f694d3",
+      "dependsOn": [
+        "pkg:pypi/cryptography@40.0.1",
+        "pkg:pypi/datadog@0.45.0",
+        "pkg:pypi/freezegun@0.3.15",
+        "pkg:pypi/gemfileparser@0.8.0",
+        "pkg:pypi/mock@4.0.2",
+        "pkg:pypi/mysql-connector-python@8.0.26",
+        "pkg:pypi/pycryptodome@3.11.0",
+        "pkg:pypi/pygithub@1.56",
+        "pkg:pypi/pyjwt@2.5.0",
+        "pkg:pypi/pylint@2.5.3",
+        "pkg:pypi/pypi-simple@0.6.0",
+        "pkg:pypi/python-dateutil@2.8.1",
+        "pkg:pypi/python-gitlab@2.5.0",
+        "pkg:pypi/pyyaml@6.0",
+        "pkg:pypi/requests@2.24.0",
+        "pkg:pypi/requirements-parser@0.2.0",
+        "pkg:pypi/unidiff@0.7.4",
+        "pkg:pypi/whatthepatch@1.0.1",
+        "pkg:pypi/xmltodict@0.12.0"
+      ]
+    },
+    {
+      "ref": "pkg:pypi/cryptography@40.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/datadog@0.45.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/freezegun@0.3.15",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/gemfileparser@0.8.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/mock@4.0.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/mysql-connector-python@8.0.26",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pycryptodome@3.11.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pygithub@1.56",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pyjwt@2.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pylint@2.5.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pypi-simple@0.6.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/python-dateutil@2.8.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/python-gitlab@2.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/pyyaml@6.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/requests@2.24.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/requirements-parser@0.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/unidiff@0.7.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/whatthepatch@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pkg:pypi/xmltodict@0.12.0",
+      "dependsOn": []
+    }
+  ],
+  "vulnerabilities": []
+}

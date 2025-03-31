@@ -1,14 +1,13 @@
-import {Writable} from 'stream'
-
 import type {TunnelReporter} from '../tunnel/tunnel'
+import type {Writable} from 'stream'
 
 import chalk from 'chalk'
-import {BaseContext} from 'clipanion'
 import ora from 'ora'
+
+import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   Assertion,
-  Batch,
   ExecutionRule,
   MainReporter,
   Result,
@@ -18,17 +17,23 @@ import {
   Summary,
   Test,
   UserConfigOverride,
+  ResultInBatch,
 } from '../interfaces'
+import {isBaseResult, isTimedOutRetry, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
   getBatchUrl,
-  getResultDuration,
   getResultOutcome,
   getResultUrl,
+  getTestOverridesCount,
   isDeviceIdSet,
+  isResultSkippedBySelectiveRerun,
+  PASSED_RESULT_OUTCOMES,
   pluralize,
   readableOperation,
   ResultOutcome,
-} from '../utils'
+} from '../utils/public'
+
+import {ICONS} from './constants'
 
 // Step rendering
 
@@ -46,13 +51,6 @@ const renderStepDuration = (duration: number) => {
   const color = getColor()
 
   return `${color(duration.toString())}ms`
-}
-
-const ICONS = {
-  FAILED: chalk.bold.red('✖'),
-  FAILED_NON_BLOCKING: chalk.bold.yellow('✖'),
-  SKIPPED: chalk.bold.yellow('⇢'),
-  SUCCESS: chalk.bold.green('✓'),
 }
 
 const renderStepIcon = (step: Step) => {
@@ -112,12 +110,12 @@ const renderApiError = (errorCode: string, errorMessage: string, color: chalk.Ch
 
 // Test execution rendering
 const renderResultOutcome = (
-  result: ServerResult,
+  result: ServerResult | undefined,
   test: Test,
   icon: string,
   color: chalk.Chalk
 ): string | undefined => {
-  if (result.unhealthy) {
+  if (result?.unhealthy) {
     const error =
       result.failure && result.failure.message !== 'Unknown error' ? result.failure.message : 'General Error'
 
@@ -130,7 +128,7 @@ const renderResultOutcome = (
   if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
-    if (result.failure) {
+    if (result?.failure) {
       return [
         `  ${icon} ${color(requestDescription)}`,
         renderApiError(result.failure.code, result.failure.message, color),
@@ -141,24 +139,24 @@ const renderResultOutcome = (
   }
 
   if (test.type === 'browser') {
+    const lines: string[] = []
+
+    if (result?.failure) {
+      lines.push(chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`))
+    }
+
     // We render the step only if the test hasn't passed to avoid cluttering the output.
-    if (!result.passed && 'stepDetails' in result) {
+    if (result && !result.passed && 'stepDetails' in result) {
       const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
-      const stepsDisplay = result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep)
+      lines.push(...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep))
 
       const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
       if (skippedStepDisplay) {
-        stepsDisplay.push(skippedStepDisplay)
+        lines.push(skippedStepDisplay)
       }
-
-      return stepsDisplay.join('\n')
     }
 
-    if (result.failure) {
-      return chalk.red(`    [${chalk.bold(result.failure.code)}] - ${chalk.dim(result.failure.message)}`)
-    }
-
-    return ''
+    return lines.join('\n')
   }
 }
 
@@ -200,45 +198,117 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   return `${chalk.bold(subType)} test`
 }
 
-const renderExecutionResult = (test: Test, execution: Result, baseUrl: string) => {
-  const {executionRule, test: overriddenTest, resultId, result, timedOut} = execution
+const renderExecutionResult = (test: Test, execution: Result, baseUrl: string, batchId: string) => {
+  const {executionRule, test: overriddenTest, resultId} = execution
   const resultOutcome = getResultOutcome(execution)
   const [icon, setColor] = getResultIconAndColor(resultOutcome)
 
-  const executionRuleText = [ResultOutcome.Passed, ResultOutcome.PassedNonBlocking].includes(resultOutcome)
+  const editedText =
+    execution.selectiveRerun?.decision === 'run' && execution.selectiveRerun.reason === 'edited'
+      ? chalk.dim('(edited) ')
+      : ''
+
+  const executionRuleText = PASSED_RESULT_OUTCOMES.includes(resultOutcome)
     ? ''
     : `[${setColor(executionRule === ExecutionRule.BLOCKING ? 'blocking' : 'non-blocking')}] `
 
-  const testLabel = `${executionRuleText}[${chalk.bold.dim(test.public_id)}] ${chalk.bold(test.name)}`
+  const publicId = getPublicIdOrPlaceholder(test)
+  const testLabel = `${editedText}${executionRuleText}[${chalk.bold.dim(publicId)}] ${chalk.bold(test.name)}`
 
-  const location = setColor(`location: ${chalk.bold(execution.location)}`)
-  const device = isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
-  const resultIdentification = `${icon} ${testLabel} - ${location}${device}`
+  const resultIdentificationSuffix = getResultIdentificationSuffix(execution, setColor)
+  const resultIdentification = `${icon} ${testLabel}${resultIdentificationSuffix}`
 
   const outputLines = [resultIdentification]
 
   // Unhealthy test results don't have a duration or result URL
-  if (!result.unhealthy) {
-    const duration = getResultDuration(result)
-    const durationText = duration ? ` Total duration: ${duration} ms -` : ''
+  if (isBaseResult(execution) && !execution.result?.unhealthy) {
+    const durationText = execution.duration ? ` Total duration: ${execution.duration} ms -` : ''
 
-    const resultUrl = getResultUrl(baseUrl, test, resultId)
-    const resultUrlStatus = timedOut ? '(not yet received)' : ''
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
+    const resultUrlStatus = getResultUrlSuffix(execution)
 
-    const resultInfo = `  ⎋${durationText} View test run details: ${chalk.dim.cyan(resultUrl)} ${resultUrlStatus}`
-    outputLines.push(resultInfo)
+    outputLines.push(`  •${durationText} View test run details:`)
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}${resultUrlStatus}`)
   }
 
-  const resultOutcomeText = renderResultOutcome(result, overriddenTest || test, icon, setColor)
-  if (resultOutcomeText) {
-    outputLines.push(resultOutcomeText)
+  if (isResultSkippedBySelectiveRerun(execution)) {
+    const resultUrl = getResultUrl(baseUrl, test, resultId, batchId)
+
+    outputLines.push(chalk.dim(`  ${setColor('◀')} Successful result from a ${setColor('previous')} CI batch:`))
+    outputLines.push(`    ⎋ ${chalk.dim.cyan(resultUrl)}`)
+  } else {
+    const resultOutcomeText = renderResultOutcome(execution.result, overriddenTest || test, icon, setColor)
+
+    if (resultOutcomeText) {
+      outputLines.push(resultOutcomeText)
+    }
   }
 
   return outputLines.join('\n')
 }
 
+const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk) => {
+  if (isBaseResult(execution)) {
+    const {result, passed, retries, maxRetries, timedOut} = execution
+    const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
+    const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+    const attempt = getAttemptSuffix(passed, retries, maxRetries, timedOut)
+
+    return ` - ${location}${device}${attempt}`
+  }
+
+  return ''
+}
+
+export const getResultUrlSuffix = (execution: Result) => {
+  if (isBaseResult(execution)) {
+    const {retries, maxRetries, timedOut} = execution
+    const timedOutRetry = isTimedOutRetry(retries, maxRetries, timedOut)
+
+    if (timedOutRetry) {
+      return ' (previous attempt)'
+    }
+
+    if (timedOut) {
+      return ' (not yet received)'
+    }
+  }
+
+  return ''
+}
+
+const getAttemptSuffix = (passed: boolean, retries: number, maxRetries: number, timedOut: boolean) => {
+  const currentAttempt = retries + 1
+  const maxAttempts = maxRetries + 1
+
+  if (maxAttempts === 1) {
+    // No need to talk about "attempts" if retries aren't configured.
+    return ''
+  }
+
+  if (passed && retries === 0) {
+    // No need to display anything if the test passed on the first attempt.
+    return ''
+  }
+
+  const attempt = (current: number, max: number) => {
+    if (!passed && current < max) {
+      return chalk.dim(`attempt ${current} of ${max}, retrying…`)
+    }
+
+    return chalk.dim(`attempt ${current}, done`)
+  }
+
+  if (isTimedOutRetry(retries, maxRetries, timedOut)) {
+    // Current attempt is still that of the last received result, so we increment it to refer to the expected retry.
+    return ` (${attempt(currentAttempt + 1, maxAttempts)})`
+  }
+
+  return ` (${attempt(currentAttempt, maxAttempts)})`
+}
+
 const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Chalk] => {
-  if (resultOutcome === ResultOutcome.Passed || resultOutcome === ResultOutcome.PassedNonBlocking) {
+  if (PASSED_RESULT_OUTCOMES.includes(resultOutcome)) {
     return [ICONS.SUCCESS, chalk.bold.green]
   }
 
@@ -250,45 +320,47 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
-  private context: BaseContext
+  private context: CommandContext
   private testWaitSpinner?: ora.Ora
   private write: Writable['write']
   private totalDuration?: number
 
-  constructor({context}: {context: BaseContext}) {
+  constructor({context}: {context: CommandContext}) {
     this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }
 
   public error(error: string) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(error)
   }
 
   public initErrors(errors: string[]) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(errors.join('\n') + '\n\n')
   }
 
   public log(log: string) {
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(log)
   }
 
   public reportStart(timings: {startTime: number}) {
     this.totalDuration = Date.now() - timings.startTime
 
-    this.stopSpinner()
+    this.removeSpinner()
     this.write(
       ['', chalk.bold.cyan('=== REPORT ==='), `Took ${chalk.bold(this.totalDuration).toString()}ms`, '\n'].join('\n')
     )
   }
 
-  public resultEnd(result: Result, baseUrl: string) {
-    this.write(renderExecutionResult(result.test, result, baseUrl) + '\n\n')
+  public resultEnd(result: Result, baseUrl: string, batchId: string) {
+    // Stop the spinner so it doesn't show multiple times in a burst of received results.
+    this.testWaitSpinner?.stop()
+    this.write(renderExecutionResult(result.test, result, baseUrl, batchId) + '\n\n')
   }
 
-  public resultReceived(result: Batch['results'][0]): void {
+  public resultReceived(result: ResultInBatch): void {
     return
   }
 
@@ -297,7 +369,15 @@ export class DefaultReporter implements MainReporter {
 
     const lines: string[] = []
 
-    const runSummary = [green(`${b(summary.passed)} passed`), red(`${b(summary.failed)} failed`)]
+    const runSummary = []
+
+    if (summary.previouslyPassed) {
+      runSummary.push(green(`${b(summary.passed)} passed (${b(summary.previouslyPassed)} in a previous CI batch)`))
+    } else {
+      runSummary.push(green(`${b(summary.passed)} passed`))
+    }
+
+    runSummary.push(red(`${b(summary.failed)} failed`))
 
     if (summary.failedNonBlocking) {
       runSummary.push(yellow(`${b(summary.failedNonBlocking)} failed (non-blocking)`))
@@ -330,13 +410,19 @@ export class DefaultReporter implements MainReporter {
       lines.push('View full summary in Datadog: ' + chalk.dim.cyan(batchUrl))
     }
     lines.push(`\n${b('Continuous Testing Summary:')}`)
-    lines.push(`Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
+    lines.push(`• Test Results: ${runSummary.join(', ')}${extraInfoStr}`)
 
-    if (orgSettings && orgSettings.orgMaxConcurrencyCap > 0) {
+    if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `Max parallelization configured: ${orgSettings.orgMaxConcurrencyCap} test${
-          orgSettings.orgMaxConcurrencyCap > 1 ? 's' : ''
+        `• Max parallelization configured: ${orgSettings.onDemandConcurrencyCap} test${
+          orgSettings.onDemandConcurrencyCap > 1 ? 's' : ''
         } running at the same time`
+      )
+    }
+
+    if (summary.previouslyPassed) {
+      lines.push(
+        `• Selective rerun: ran ${summary.expected - summary.previouslyPassed} out of ${summary.expected} tests`
       )
     }
 
@@ -344,51 +430,72 @@ export class DefaultReporter implements MainReporter {
       const min = Math.floor(this.totalDuration / (60 * 1000))
       const sec = Math.round((this.totalDuration % (60 * 1000)) / 1000)
       lines.push(
-        `Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
+        `• Total Duration:${min > 0 ? ' ' + min.toString() + 'm' : ''}${sec > 0 ? ' ' + sec.toString() + 's' : ''}`
       )
     }
 
-    if (
-      orgSettings &&
-      typeof orgSettings.orgMaxConcurrencyCap !== 'undefined' &&
-      orgSettings.orgMaxConcurrencyCap > 0
-    ) {
+    if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `\nIncrease your parallelization to reduce your total duration: ${chalk.dim.cyan(
+        `\nIncrease your parallelization to reduce the test batch duration: ${chalk.dim.cyan(
           baseUrl + 'synthetics/settings/continuous-testing'
         )}\n`
       )
     }
 
-    this.write(lines.join('\n'))
+    this.write(lines.join('\n') + '\n')
   }
 
-  public testsWait(tests: Test[]) {
-    const testsList = tests.map((t) => t.public_id)
+  public testsWait(tests: Test[], baseUrl: string, batchId: string, skippedCount?: number) {
+    const testsList = tests.map((t) => getPublicIdOrPlaceholder(t))
     if (testsList.length > 10) {
       testsList.splice(10)
       testsList.push('…')
     }
+
     const testsDisplay = chalk.gray(`(${testsList.join(', ')})`)
+    const testCountText = pluralize('test', tests.length)
+    const skippingCountText = skippedCount ? ` (skipping ${chalk.bold.cyan(skippedCount)} already successful)` : ''
+
+    const text =
+      tests.length > 0
+        ? `Waiting for ${chalk.bold.cyan(tests.length)} ${testCountText}${skippingCountText} ${testsDisplay}…\n`
+        : 'Waiting for the batch to end…\n'
+
+    if (this.testWaitSpinner) {
+      // Only refresh the spinner when the text changes.
+      // The refreshed text will be persisted in the CI logs.
+      if (this.testWaitSpinner.text !== text) {
+        this.testWaitSpinner.text = text
+        this.testWaitSpinner.start()
+      }
+
+      return
+    }
+
+    const batchUrl = getBatchUrl(baseUrl, batchId)
+    this.write(`View pending summary in Datadog: ${chalk.dim.cyan(batchUrl)}\n\n`)
 
     this.testWaitSpinner = ora({
       stream: this.context.stdout,
-      text: `Waiting for ${chalk.bold.cyan(tests.length)} test ${pluralize('result', tests.length)} ${testsDisplay}…\n`,
-    }).start()
+      prefixText: '\n',
+      text,
+    })
+
+    this.testWaitSpinner.start()
   }
 
   public testTrigger(
     test: Pick<Test, 'name'>,
     testId: string,
     executionRule: ExecutionRule,
-    config: UserConfigOverride
+    testOverrides: UserConfigOverride
   ) {
     const idDisplay = `[${chalk.bold.dim(testId)}]`
 
     const getMessage = () => {
       if (executionRule === ExecutionRule.SKIPPED) {
         // Test is either skipped from datadog-ci config or from test config
-        const isSkippedByCIConfig = config.executionRule === ExecutionRule.SKIPPED
+        const isSkippedByCIConfig = testOverrides.executionRule === ExecutionRule.SKIPPED
         if (isSkippedByCIConfig) {
           return `Skipped test "${chalk.yellow.dim(test.name)}"`
         } else {
@@ -403,24 +510,24 @@ export class DefaultReporter implements MainReporter {
       return `Found test "${chalk.green.bold(test.name)}"`
     }
 
-    const getConfigOverridesPart = () => {
-      const nbConfigsOverridden = Object.keys(config).length
+    const getTestOverridesPart = () => {
+      const nbConfigsOverridden = getTestOverridesCount(testOverrides)
       if (nbConfigsOverridden === 0 || executionRule === ExecutionRule.SKIPPED) {
         return ''
       }
 
-      return ' ' + chalk.gray(`(${nbConfigsOverridden} config ${pluralize('override', nbConfigsOverridden)})`)
+      return ' ' + chalk.gray(`(${nbConfigsOverridden} test ${pluralize('override', nbConfigsOverridden)})`)
     }
 
-    this.write(`${idDisplay} ${getMessage()}${getConfigOverridesPart()}\n`)
+    this.write(`${idDisplay} ${getMessage()}${getTestOverridesPart()}\n`)
   }
 
   public testWait(test: Test) {
     return
   }
 
-  private stopSpinner() {
-    this.testWaitSpinner?.stopAndPersist()
+  private removeSpinner() {
+    this.testWaitSpinner?.stop()
     delete this.testWaitSpinner
   }
 }

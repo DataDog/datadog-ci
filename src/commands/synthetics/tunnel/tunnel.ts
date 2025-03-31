@@ -2,7 +2,7 @@ import {timingSafeEqual} from 'crypto'
 import {Socket} from 'net'
 import {Duplex, pipeline} from 'stream'
 
-import type ProxyAgent from 'proxy-agent'
+import type {ProxyAgent} from 'proxy-agent'
 
 import {
   AuthContext,
@@ -49,7 +49,7 @@ export class Tunnel {
   constructor(
     private url: string,
     private testIDs: string[],
-    proxyAgent?: ReturnType<typeof ProxyAgent>,
+    proxyAgent?: ProxyAgent,
     private reporter?: TunnelReporter
   ) {
     // Setup SSH
@@ -270,12 +270,12 @@ export class Tunnel {
     this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
     duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
 
-    pipeline([duplex, this.multiplexer], (err) => {
+    pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
         this.reporter?.warn(`Error on duplex connection close: ${err}`)
       }
     })
-    pipeline([this.multiplexer, duplex], (err) => {
+    pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
         this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
       }

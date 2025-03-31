@@ -1,22 +1,24 @@
+import {LogLevel} from '@aws-sdk/client-sfn'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {InstrumentStepFunctionsCommand} from '../instrument'
 
 import {describeStateMachineFixture, stepFunctionTagListFixture} from './fixtures/aws-resources'
-import {contextFixture, testContext} from './fixtures/cli'
+import {contextFixture, ContextFixture} from './fixtures/cli'
 
 jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
 
 describe('stepfunctions instrument test', () => {
   let aws: any
   let cli: Cli
-  let context: testContext
+  let context: ContextFixture
   let helpers: any
 
   beforeAll(() => {
     aws = require('../awsCommands')
     helpers = require('../helpers')
     helpers.applyChanges = jest.fn().mockImplementation(() => false)
+    helpers.injectContextIntoTasks = jest.fn().mockImplementation()
     cli = new Cli()
     cli.register(InstrumentStepFunctionsCommand)
   })
@@ -30,6 +32,7 @@ describe('stepfunctions instrument test', () => {
     aws.listTagsForResource = jest.fn().mockImplementation(() => ({tags: stepFunctionTagList}))
 
     aws.tagResource = jest.fn().mockImplementation(() => ({}))
+    aws.createLogGroup = jest.fn().mockImplementation(() => ({}))
     aws.putSubscriptionFilter = jest.fn().mockImplementation(() => ({}))
     aws.createLogsAccessPolicy = jest.fn().mockImplementation(() => ({}))
     aws.attachPolicyToStateMachineIamRole = jest.fn().mockImplementation(() => ({}))
@@ -102,7 +105,7 @@ describe('stepfunctions instrument test', () => {
   describe('stepfunctions command overall test', () => {
     test('all aws commands are called when log level is OFF', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
@@ -125,6 +128,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(1)
       expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(1)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(1)
@@ -136,7 +140,7 @@ describe('stepfunctions instrument test', () => {
 
     test('all aws commands are called the same times when as log-level-off state machines', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const describeStateMachineCommandOutput = describeStateMachineFixture({loggingConfiguration})
@@ -161,6 +165,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(2)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(2)
       expect(aws.tagResource).toHaveBeenCalledTimes(2)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(2)
       expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(2)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(2)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(2)
@@ -281,7 +286,7 @@ describe('stepfunctions instrument test', () => {
   describe('step function logging disabled', () => {
     test('creates step function log group, subscribes it to forwarder, and adds it to step function logging config', async () => {
       const loggingConfiguration = {
-        level: 'OFF',
+        level: LogLevel.OFF,
         includeExecutionData: false,
       }
       const stepFunction = describeStateMachineFixture({loggingConfiguration})
@@ -302,6 +307,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(1)
       expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(1)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(1)
@@ -328,6 +334,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(0)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
       expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(0) // already has logging properly set
@@ -337,7 +344,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is not ALL, should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'DEBUG',
+        level: LogLevel.FATAL,
         includeExecutionData: true,
         destinations: [
           {
@@ -366,6 +373,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(0)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
       expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
@@ -375,7 +383,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'ALL',
+        level: LogLevel.ALL,
         includeExecutionData: false,
         destinations: [
           {
@@ -404,6 +412,7 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(0)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
       expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
@@ -413,7 +422,7 @@ describe('stepfunctions instrument test', () => {
 
     test('log level is not ALL but includeExecutionData is false. Should call enableStepFunctionLogs', async () => {
       const loggingConfiguration = {
-        level: 'FATAL',
+        level: LogLevel.FATAL,
         includeExecutionData: false,
         destinations: [
           {
@@ -442,10 +451,46 @@ describe('stepfunctions instrument test', () => {
       expect(aws.describeStateMachine).toHaveBeenCalledTimes(1)
       expect(aws.listTagsForResource).toHaveBeenCalledTimes(1)
       expect(aws.tagResource).toHaveBeenCalledTimes(1)
+      expect(aws.createLogGroup).toHaveBeenCalledTimes(0)
       expect(aws.createLogsAccessPolicy).toHaveBeenCalledTimes(0)
       expect(aws.attachPolicyToStateMachineIamRole).toHaveBeenCalledTimes(0)
       expect(aws.enableStepFunctionLogs).toHaveBeenCalledTimes(1)
       expect(aws.putSubscriptionFilter).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+  })
+
+  describe('mergeStepFunctionAndLambdaTraces enabled', () => {
+    test('mergeStepFunctionAndLambdaTraces flag is set (to true)', async () => {
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+          '--merge-lambda-traces',
+        ],
+        context
+      )
+      expect(helpers.injectContextIntoTasks).toHaveBeenCalledTimes(1)
+      expect(exitCode).toBe(0)
+    })
+
+    test('mergeStepFunctionAndLambdaTraces flag is not set (default to false)', async () => {
+      const exitCode = await cli.run(
+        [
+          'stepfunctions',
+          'instrument',
+          '--forwarder',
+          'arn:aws:lambda:us-east-1:000000000000:function:DatadogForwarder',
+          '--step-function',
+          'arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
+        ],
+        context
+      )
+      expect(helpers.injectContextIntoTasks).toHaveBeenCalledTimes(0)
       expect(exitCode).toBe(0)
     })
   })

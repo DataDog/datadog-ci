@@ -1,31 +1,32 @@
-import {AxiosError, AxiosResponse, default as axios} from 'axios'
+import {createServer} from 'http'
+import {AddressInfo} from 'net'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
+import type {AxiosResponse} from 'axios'
+
+import axios, {AxiosError} from 'axios'
+
+import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'
-import {APIConfiguration, ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../run-tests-command'
+import * as internalUtils from '../utils/internal'
 
 import {
   ciConfig,
   getApiTest,
-  getAxiosHttpError,
   getSyntheticsProxy,
-  MOBILE_PRESIGNED_URL_PAYLOAD,
+  MOBILE_PRESIGNED_URLS_PAYLOAD,
+  MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
   mockTestTriggerResponse,
+  APP_UPLOAD_POLL_RESULTS,
+  getMockApiConfiguration,
 } from './fixtures'
 
 describe('dd-api', () => {
-  const apiConfiguration: APIConfiguration = {
-    apiKey: '123',
-    appKey: '123',
-    baseIntakeUrl: 'baseintake',
-    baseUnstableUrl: 'baseUnstable',
-    baseUrl: 'base',
-    proxyOpts: {protocol: 'http'} as ProxyConfiguration,
-  }
+  const apiConfiguration = getMockApiConfiguration()
   const LOCATION = {
     display_name: 'fake location',
     id: 42,
@@ -71,43 +72,73 @@ describe('dd-api', () => {
   })
 
   describe('Retry policy', () => {
+    beforeEach(() => {
+      jest.useFakeTimers({doNotFake: ['nextTick']})
+      jest.restoreAllMocks()
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    const MIN_ATTEMPTS = 1
+    const MAX_ATTEMPTS = 4 // `MAX_RETRIES` + 1
+
+    const fastForwardRetries = async () => {
+      for (let i = 1; i <= MAX_ATTEMPTS - 1; i++) {
+        // Skip the `setTimeout` in `await wait(waiter)`.
+        jest.runOnlyPendingTimers()
+        // Wait for the retry to happen, and for the next `setTimeout`.
+        // This is used to flush promises, and requires `nextTick` not to be faked.
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        await new Promise(process.nextTick)
+      }
+    }
+
     const api = apiConstructor(apiConfiguration)
 
-    const testCases = [
+    const cases = [
       {
         makeApiRequest: () => api.getBatch('batch-id'),
         name: 'get batch' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
-        makeApiRequest: () => api.getMobileApplicationPresignedURL('applicationId', 1025, 'md5'),
+        makeApiRequest: () =>
+          api.getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTunnelPresignedURL(['test-id']),
         name: 'get presigned url' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getTest('public-id'),
         name: 'get test' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.pollResults(['result-id']),
         name: 'poll results' as const,
         shouldBeRetriedOn404: true,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.searchTests('search query'),
         name: 'search tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
       {
@@ -115,50 +146,100 @@ describe('dd-api', () => {
           api.triggerTests({tests: [{public_id: '123-456-789', executionRule: ExecutionRule.NON_BLOCKING}]}),
         name: 'trigger tests' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: true,
         shouldBeRetriedOn5xx: true,
       },
       {
         makeApiRequest: () => api.getSyntheticsOrgSettings(),
         name: 'get settings' as const,
         shouldBeRetriedOn404: false,
+        shouldBeRetriedOn429: false,
         shouldBeRetriedOn5xx: true,
       },
     ]
 
-    test.each(testCases)(
-      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 5xx: $shouldBeRetriedOn5xx)',
-      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn5xx}) => {
-        const serverError = new Error('Server Error') as AxiosError
+    test.each(cases)(
+      'should retry "$name" request (HTTP 404: $shouldBeRetriedOn404, HTTP 429: $shouldBeRetriedOn429, HTTP 5xx: $shouldBeRetriedOn5xx)',
+      async ({makeApiRequest, shouldBeRetriedOn404, shouldBeRetriedOn429, shouldBeRetriedOn5xx}) => {
+        const serverError = new AxiosError('Server Error')
 
-        const requestMock = jest.fn()
-        requestMock.mockImplementation(() => {
+        const requestMock = jest.fn().mockImplementation(() => {
           throw serverError
         })
         jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
-        serverError.response = {status: 404} as AxiosResponse
+        {
+          serverError.response = {status: 404} as AxiosResponse
 
-        await expect(makeApiRequest()).rejects.toThrow()
-        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? 4 : 1)
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow('Server Error')
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn404 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
 
         requestMock.mockClear()
 
-        serverError.response = {status: 502} as AxiosResponse
+        {
+          serverError.response = {status: 429} as AxiosResponse
 
-        await expect(makeApiRequest()).rejects.toThrow()
-        expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? 4 : 1)
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow('Server Error')
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn429 ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
+
+        requestMock.mockClear()
+
+        {
+          serverError.response = {status: 502} as AxiosResponse
+
+          const requestPromise = makeApiRequest()
+          await fastForwardRetries()
+          await expect(requestPromise).rejects.toThrow('Server Error')
+
+          expect(requestMock).toHaveBeenCalledTimes(shouldBeRetriedOn5xx ? MAX_ATTEMPTS : MIN_ATTEMPTS)
+        }
       }
     )
+
+    test('should retry when socket hangs up', async () => {
+      jest.spyOn(internalUtils, 'wait').mockImplementation()
+
+      const requestSpy = jest.fn()
+
+      const server = createServer((_, res) => {
+        // ECONNRESET: socket hang up
+        res.socket?.destroy()
+        requestSpy()
+      })
+
+      server.listen()
+
+      const {port} = server.address() as AddressInfo
+
+      const localApi = apiConstructor({
+        ...apiConfiguration,
+        baseUrl: `http://127.0.0.1:${port}`,
+      })
+
+      await expect(localApi.getSyntheticsOrgSettings).rejects.toThrow('socket hang up')
+
+      expect(requestSpy).toHaveBeenCalledTimes(MAX_ATTEMPTS)
+
+      server.close()
+    })
   })
 
   test('should get a mobile application presigned URL from api', async () => {
     const spy = jest
       .spyOn(axios, 'create')
-      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URL_PAYLOAD})) as any)
+      .mockImplementation((() => () => ({data: MOBILE_PRESIGNED_URLS_PAYLOAD})) as any)
     const api = apiConstructor(apiConfiguration)
-    const {getMobileApplicationPresignedURL} = api
-    const result = await getMobileApplicationPresignedURL('applicationId', 1025, 'md5')
-    expect(result).toEqual(MOBILE_PRESIGNED_URL_PAYLOAD)
+    const {getMobileApplicationPresignedURLs} = api
+    const result = await getMobileApplicationPresignedURLs('applicationId', 1025, MOBILE_PRESIGNED_UPLOAD_PARTS)
+    expect(result).toEqual(MOBILE_PRESIGNED_URLS_PAYLOAD)
     spy.mockRestore()
   })
 
@@ -173,13 +254,90 @@ describe('dd-api', () => {
 
   test('should upload a mobile application with a presigned URL', async () => {
     const mockRequest = jest.fn()
+    mockRequest.mockReturnValue({status: 200, headers: {etag: '"123"'}})
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
     const api = apiConstructor(apiConfiguration)
-    const {uploadMobileApplication} = api
-    await uploadMobileApplication(Buffer.from('Mobile'), MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params)
+    const {uploadMobileApplicationPart} = api
+    const result = await uploadMobileApplicationPart(
+      MOBILE_PRESIGNED_UPLOAD_PARTS,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params
+    )
+
+    expect(result).toEqual([
+      {ETag: '123', PartNumber: 1},
+      {ETag: '123', PartNumber: 2},
+    ])
 
     const callArg = mockRequest.mock.calls[0][0]
-    expect(callArg.url).toBe(MOBILE_PRESIGNED_URL_PAYLOAD.presigned_url_params.url)
+    expect(callArg.url).toBe(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls[1])
+    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+    spy.mockRestore()
+  })
+
+  test('should return empty ETag when doing azure part upload', async () => {
+    const mockRequest = jest.fn()
+    mockRequest.mockReturnValue({status: 200, headers: {}})
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => mockRequest) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {uploadMobileApplicationPart} = api
+
+    const urls = {
+      1: 'https://myaccount.blob.core.windows.net/mycontainer/myblob1',
+      2: 'https://myaccount.blob.core.windows.net/mycontainer/myblob2',
+    }
+
+    const result = await uploadMobileApplicationPart(MOBILE_PRESIGNED_UPLOAD_PARTS, {
+      ...MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params,
+      // override fixture with azure urls
+      urls,
+    })
+
+    expect(result).toEqual([
+      {ETag: '', PartNumber: 1},
+      {ETag: '', PartNumber: 2},
+    ])
+
+    const callArg = mockRequest.mock.calls[0][0]
+    expect(callArg.url).toBe(urls[1])
+    expect(mockRequest).toHaveBeenCalledTimes(MOBILE_PRESIGNED_UPLOAD_PARTS.length)
+    spy.mockRestore()
+  })
+
+  test('should complete presigned mobile application upload', async () => {
+    const jobId = 'fake_job_id'
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: {job_id: jobId}})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {completeMultipartMobileApplicationUpload} = api
+
+    const appId = 'appId123'
+    const partUploadResponses = Object.keys(MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.urls).map(
+      (partNumber) => ({
+        PartNumber: Number(partNumber),
+        ETag: 'etag',
+      })
+    )
+
+    const result = await completeMultipartMobileApplicationUpload(
+      appId,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.upload_id,
+      MOBILE_PRESIGNED_URLS_PAYLOAD.multipart_presigned_urls_params.key,
+      partUploadResponses
+    )
+
+    expect(result).toBe(jobId)
+    spy.mockRestore()
+  })
+
+  test('should poll for app upload validation', async () => {
+    const spy = jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: APP_UPLOAD_POLL_RESULTS})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const {pollMobileApplicationUploadResponse} = api
+
+    const jobId = 'jobId'
+
+    const appUploadResult = await pollMobileApplicationUploadResponse(jobId)
+
+    expect(appUploadResult).toEqual(APP_UPLOAD_POLL_RESULTS)
     spy.mockRestore()
   })
 
@@ -202,7 +360,7 @@ describe('dd-api', () => {
   })
 
   test('should receive settings', async () => {
-    const settings = {orgMaxConcurrencyCap: 100}
+    const settings = {onDemandConcurrencyCap: 10}
     const requestMock = jest.fn(() => ({status: 200, data: settings}))
     const spy = jest.spyOn(axios, 'create').mockImplementation((() => requestMock) as any)
 
@@ -311,34 +469,43 @@ describe('getApiHelper', () => {
   test('should throw an error if API or Application key are undefined', async () => {
     process.env = {}
 
-    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY'))
+    expect(() => getApiHelper(ciConfig)).toThrow(new CriticalError('MISSING_APP_KEY', 'App key is required'))
 
-    expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(new CriticalError('MISSING_API_KEY'))
+    expect(() => getApiHelper({...ciConfig, appKey: 'fakeappkey'})).toThrow(
+      new CriticalError('MISSING_API_KEY', 'API key is required')
+    )
   })
 })
 
 describe('formatBackendErrors', () => {
   test('backend error - no error', () => {
-    const backendError = getAxiosHttpError(500, {errors: []})
+    const backendError = getAxiosError(500, {errors: []})
     expect(formatBackendErrors(backendError)).toBe('error querying https://app.datadoghq.com/example')
   })
 
   test('backend error - single error', () => {
-    const backendError = getAxiosHttpError(500, {errors: ['single error']})
+    const backendError = getAxiosError(500, {errors: ['single error']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned: "single error"'
     )
   })
 
   test('backend error - multiple errors', () => {
-    const backendError = getAxiosHttpError(500, {errors: ['error 1', 'error 2']})
+    const backendError = getAxiosError(500, {errors: ['error 1', 'error 2']})
     expect(formatBackendErrors(backendError)).toBe(
       'query on https://app.datadoghq.com/example returned:\n  - error 1\n  - error 2'
     )
   })
 
   test('not a backend error', () => {
-    const requestError = getAxiosHttpError(403, {message: 'Forbidden'})
+    const requestError = getAxiosError(403, {message: 'Forbidden'})
     expect(formatBackendErrors(requestError)).toBe('could not query https://app.datadoghq.com/example\nForbidden')
+  })
+
+  test('missing scope error', () => {
+    const requestError = getAxiosError(403, {errors: ['Forbidden', 'Failed permission authorization checks']})
+    expect(formatBackendErrors(requestError, 'synthetics_default_settings_read')).toBe(
+      'query on https://app.datadoghq.com/example returned:\n  - Forbidden\n  - Failed permission authorization checks\nIs the App key granted the synthetics_default_settings_read scope?'
+    )
   })
 })

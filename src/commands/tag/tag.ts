@@ -1,13 +1,20 @@
+import {AxiosError} from 'axios'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
-import {getCIEnv, PROVIDER_TO_DISPLAY_NAME} from '../../helpers/ci'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {getCIEnv} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
-import {parseTags} from '../../helpers/tags'
+import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export class TagCommand extends Command {
+  public static paths = [['tag']]
+
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Add tags to a CI Pipeline trace pipeline or job span in Datadog.',
     details: `
             This command when run from a supported CI provider sends an arbitrary set of key:value
@@ -16,32 +23,81 @@ export class TagCommand extends Command {
     examples: [
       ['Add a team tag to the current pipeline', 'datadog-ci tag --level pipeline --tags team:backend'],
       ['Tag the current CI job with the go version', 'datadog-ci tag --level job --tags "go.version:`go version`"'],
+      ['Add tags in bulk using a JSON file', 'datadog-ci tag --level job --tags-file my_tags.json'],
     ],
   })
+
+  private level = Option.String('--level')
+  private noFail = Option.Boolean('--no-fail')
+  private silent = Option.Boolean('--silent')
+  private tags = Option.Array('--tags')
+  private tagsFile = Option.String('--tags-file')
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
-  private level?: string
-  private noFail?: boolean
-  private tags?: string[]
+  public setLevel(level: string) {
+    this.level = level
+  }
+
+  public setTags(tags: string[]) {
+    this.tags = tags
+
+    // When this command is used by another command (e.g. `deployment mark`), the command options are not resolved
+    // and are still Clipanion option constructors: `this.tagsFile` is not a valid path.
+    delete this.tagsFile
+  }
+
+  public setNoFail(noFail: boolean) {
+    this.noFail = noFail
+  }
+
+  public setSilent(silent: boolean) {
+    this.silent = silent
+  }
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (this.level !== 'pipeline' && this.level !== 'job') {
       this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Level must be one of [pipeline, job]\n`)
 
       return 1
     }
 
+    if (this.silent) {
+      this.context.stdout.write = () => {
+        return true
+      }
+      this.context.stderr.write = () => {
+        return true
+      }
+    }
+
+    const [tagsFromFile, valid] = parseTagsFile(this.context, this.tagsFile)
+    if (!valid) {
+      // we should fail if attempted to read tags from a file and failed
+      return 1
+    }
+
     const tags = {
       ...(this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}),
       ...(this.tags ? parseTags(this.tags) : {}),
+      ...tagsFromFile,
     }
 
     if (Object.keys(tags).length === 0) {
       this.context.stderr.write(
-        `${chalk.red.bold('[ERROR]')} DD_TAGS environment variable or --tags command line argument is required\n`
+        `${chalk.red.bold(
+          '[ERROR]'
+        )} DD_TAGS environment variable, --tags or --tags-file command line argument is required\n`
       )
 
       return 1
@@ -49,15 +105,6 @@ export class TagCommand extends Command {
 
     try {
       const {provider, ciEnv} = getCIEnv()
-      // For GitHub and Buddy only the pipeline level is supported as there is no way to identify the job from the runner.
-      if ((provider === 'github' || provider === 'buddy') && this.level === 'job') {
-        this.context.stderr.write(
-          `${chalk.red.bold('[ERROR]')} Cannot use level "job" for ${PROVIDER_TO_DISPLAY_NAME[provider]}.`
-        )
-
-        return 1
-      }
-
       const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)
       if (exitStatus !== 0 && this.noFail) {
         this.context.stderr.write(
@@ -123,16 +170,18 @@ export class TagCommand extends Command {
         retries: 5,
       })
     } catch (error) {
-      this.context.stderr.write(`${chalk.red.bold('[ERROR]')} Could not send tags: ${error.message}\n`)
+      this.handleError(error as AxiosError)
 
       return 1
     }
 
     return 0
   }
-}
 
-TagCommand.addPath('tag')
-TagCommand.addOption('noFail', Command.Boolean('--no-fail'))
-TagCommand.addOption('tags', Command.Array('--tags'))
-TagCommand.addOption('level', Command.String('--level'))
+  private handleError(error: AxiosError) {
+    this.context.stderr.write(
+      `${chalk.red.bold('[ERROR]')} Could not send tags: ` +
+        `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
+    )
+  }
+}

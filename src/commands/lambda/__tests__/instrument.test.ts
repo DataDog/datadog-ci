@@ -4,7 +4,8 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromIni: jest.fn(),
 }))
 jest.mock('../prompt')
-jest.mock('../renderer', () => require('../__mocks__/renderer'))
+jest.mock('../renderers/instrument-uninstrument-renderer')
+jest.mock('../../../helpers/prompt')
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'
@@ -16,35 +17,36 @@ import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion/lib/advanced'
 
 import {
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../../constants'
+import {createCommand, createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+import {requestConfirmation} from '../../../helpers/prompt'
+
+import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
   AWS_SECRET_ACCESS_KEY_ENV_VAR,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
-  ENVIRONMENT_ENV_VAR,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
 } from '../constants'
 import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {
   requestAWSCredentials,
-  requestChangesConfirmation,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from '../prompt'
 
 import {
-  createCommand,
-  createMockContext,
   makeCli,
   mockAwsAccessKeyId,
   mockAwsCredentials,
   mockAwsSecretAccessKey,
-  mockDatadogApiKey,
   mockDatadogEnv,
   mockDatadogService,
   mockDatadogVersion,
@@ -78,13 +80,13 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           [
@@ -92,7 +94,7 @@ describe('lambda', () => {
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '--layerVersion',
             '10',
             '--logLevel',
@@ -121,21 +123,21 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '--service',
             'middletier',
             '--env',
@@ -170,21 +172,21 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '--extensionVersion',
             '6',
             '--service',
@@ -210,21 +212,21 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'dotnetcore3.1',
+              Runtime: 'dotnet8',
             },
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '-v',
             '129',
             '--extra-tags',
@@ -251,13 +253,13 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         await cli.run(
           [
             'lambda',
@@ -287,12 +289,12 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
-        process.env.DATADOG_API_KEY = '1234'
-        const context = createMockContext() as any
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -332,12 +334,12 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
-        process.env.DATADOG_API_KEY = '1234'
-        const context = createMockContext() as any
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -384,12 +386,12 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
-        process.env.DATADOG_API_KEY = '1234'
-        const context = createMockContext() as any
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -436,12 +438,12 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
-        process.env.DATADOG_API_KEY = '1234'
-        const context = createMockContext() as any
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -481,12 +483,12 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         await cli.run(
           [
             'lambda',
@@ -509,13 +511,13 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
-        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext()
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         await cli.run(
           [
             'lambda',
@@ -535,7 +537,7 @@ describe('lambda', () => {
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -554,10 +556,11 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[Error] No functions specified to instrument.
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+          [Error] No functions specified to instrument.
+          "
+        `)
       })
 
       test('aborts early when no functions are specified while using config file', async () => {
@@ -574,16 +577,17 @@ describe('lambda', () => {
         await command['execute']()
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[Error] No functions specified to instrument.
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+          [Error] No functions specified to instrument.
+          "
+        `)
       })
 
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -612,7 +616,7 @@ describe('lambda', () => {
       test('aborts early when extensionVersion and forwarder are set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -637,10 +641,11 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[Error] \\"extensionVersion\\" and \\"forwarder\\" should not be used at the same time.
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+          [Error] "extensionVersion" and "forwarder" should not be used at the same time.
+          "
+        `)
       })
 
       test('check if functions are not empty while using config file', async () => {
@@ -695,7 +700,7 @@ describe('lambda', () => {
         command['sourceCodeIntegration'] = false
         await command['execute']()
         const output = command.context.stdout.toString()
-        expect(output).toMatch('[Error] No default region specified. Use `-r`, `--region`.\n')
+        expect(output).toMatch('[Error] No default region specified. [-r,--region]\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -714,10 +719,10 @@ describe('lambda', () => {
 
       test('instrument multiple functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
+        const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
-        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -726,7 +731,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -734,7 +739,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
               FunctionName: 'lambda-hello-world-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3': {
@@ -742,33 +747,33 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
               FunctionName: 'lambda-hello-world-3',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs20.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4': {
             config: {
-              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4',
               FunctionName: 'lambda-hello-world-4',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         mockLambdaLayers(lambdaClientMock, {
-          [`${node14LibraryLayer}:1`]: {
-            LayerName: `${node14LibraryLayer}`,
-            VersionNumber: 1,
-          },
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
-            VersionNumber: 1,
-          },
           [`${node16LibraryLayer}:1`]: {
             LayerName: `${node16LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${node18LibraryLayer}:1`]: {
             LayerName: `${node18LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node20LibraryLayer}:1`]: {
+            LayerName: `${node20LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node22LibraryLayer}:1`]: {
+            LayerName: `${node22LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -783,16 +788,16 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -801,9 +806,10 @@ describe('lambda', () => {
 
       test('instrument multiple specified functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const node14LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
+        const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
+        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -812,7 +818,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2': {
@@ -820,7 +826,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
               FunctionName: 'lambda-hello-world-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs18.x',
             },
           },
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3': {
@@ -828,21 +834,33 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-3',
               FunctionName: 'lambda-hello-world-3',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs20.x',
+            },
+          },
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-4',
+              FunctionName: 'lambda-hello-world-4',
+              Handler: 'index.handler',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         mockLambdaLayers(lambdaClientMock, {
-          [`${node14LibraryLayer}:1`]: {
-            LayerName: `${node14LibraryLayer}`,
-            VersionNumber: 1,
-          },
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
-            VersionNumber: 1,
-          },
           [`${node16LibraryLayer}:1`]: {
             LayerName: `${node16LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node18LibraryLayer}:1`]: {
+            LayerName: `${node18LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node20LibraryLayer}:1`]: {
+            LayerName: `${node20LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node22LibraryLayer}:1`]: {
+            LayerName: `${node22LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -858,12 +876,12 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -886,16 +904,17 @@ describe('lambda', () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-[Error] Unexpected error
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+          [!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
+          [Error] Unexpected error
+          "
+        `)
       })
 
       test('aborts if a problem occurs while setting the Datadog Environment Variables interactively', async () => {
@@ -907,22 +926,25 @@ describe('lambda', () => {
         }
         ;(requestDatadogEnvVars as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-\n[!] Configure AWS region.
-\n[!] Configure Datadog settings.
-[Error] Unexpected error
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+
+          [!] Configure AWS region.
+
+          [!] Configure Datadog settings.
+          [Error] Unexpected error
+          "
+        `)
       })
 
       test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -931,14 +953,14 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
 
         mockLambdaLayers(lambdaClientMock, {
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
+          [`${node22LibraryLayer}:1`]: {
+            LayerName: `${node22LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -953,12 +975,12 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
         ;(requestEnvServiceVersion as any).mockImplementation(() => {
           process.env[ENVIRONMENT_ENV_VAR] = mockDatadogEnv
           process.env[SERVICE_ENV_VAR] = mockDatadogService
@@ -966,7 +988,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -975,7 +997,7 @@ describe('lambda', () => {
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const node12LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node12-x`
+        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -984,13 +1006,13 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
         mockLambdaLayers(lambdaClientMock, {
-          [`${node12LibraryLayer}:1`]: {
-            LayerName: `${node12LibraryLayer}`,
+          [`${node22LibraryLayer}:1`]: {
+            LayerName: `${node22LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -1005,12 +1027,12 @@ describe('lambda', () => {
         })
         ;(requestDatadogEnvVars as any).mockImplementation(() => {
           process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
-          process.env[CI_API_KEY_ENV_VAR] = mockDatadogApiKey
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
         })
         ;(requestFunctionSelection as any).mockImplementation(() => [
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         ])
-        ;(requestChangesConfirmation as any).mockImplementation(() => true)
+        ;(requestConfirmation as any).mockImplementation(() => true)
         ;(requestEnvServiceVersion as any).mockImplementation(() => {
           process.env[ENVIRONMENT_ENV_VAR] = undefined
           process.env[SERVICE_ENV_VAR] = undefined
@@ -1018,7 +1040,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
         const output = context.stdout.toString()
         expect(code).toBe(0)
@@ -1032,20 +1054,22 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
           [CI_SITE_ENV_VAR]: 'datadoghq.com',
-          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+          [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-\n[!] Configure AWS region.
-[Error] Couldn't find any Lambda functions in the specified region.
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+
+          [!] Configure AWS region.
+          [Error] Couldn't find any Lambda functions in the specified region.
+          "
+        `)
       })
 
       test('aborts early when the aws-sdk throws an error while instrumenting interactively', async () => {
@@ -1055,76 +1079,129 @@ describe('lambda', () => {
           [AWS_SECRET_ACCESS_KEY_ENV_VAR]: mockAwsSecretAccessKey,
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
           [CI_SITE_ENV_VAR]: 'datadoghq.com',
-          [CI_API_KEY_ENV_VAR]: mockDatadogApiKey,
+          [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         }
 
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(['lambda', 'instrument', '-i'], context)
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-\n[!] Configure AWS region.
-[Error] Couldn't fetch Lambda functions. Error: Max retry count exceeded. Error: ListFunctionsError
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+
+          [!] Configure AWS region.
+          [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
+          "
+        `)
       })
 
       test('instruments Ruby application properly', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
         mockLambdaConfigurations(lambdaClientMock, {
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'ruby2.7',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
+              Runtime: 'ruby3.2',
             },
           },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
-              Runtime: 'ruby2.7',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
+              Runtime: 'ruby3.2',
               Architectures: ['arm64'],
             },
           },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
-              Runtime: 'ruby3.2',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
+              Runtime: 'ruby3.3',
             },
           },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4': {
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm': {
             config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
-              Runtime: 'ruby3.2',
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
+              Runtime: 'ruby3.3',
               Architectures: ['arm64'],
             },
           },
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
-        process.env.DATADOG_API_KEY = '1234'
+        const context = createMockContext()
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-2',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-3',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
             '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world-4',
-            '--dry',
+            'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
+            '--dry-run',
             '-e',
             '40',
             '-v',
             '19',
+            '--extra-tags',
+            'layer:api,team:intake',
+            '--service',
+            'middletier',
+            '--env',
+            'staging',
+            '--version',
+            '0.2',
+            '--no-source-code-integration',
+          ],
+          context
+        )
+
+        const output = context.stdout.toString()
+        expect(code).toBe(0)
+        expect(output).toMatchSnapshot()
+      })
+
+      test('instruments image runtimes properly', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
+              Runtime: 'provided.al2',
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
+              Runtime: 'provided.al2023',
+              Architectures: ['arm64'],
+            },
+          },
+        })
+
+        const cli = makeCli()
+        const context = createMockContext()
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const code = await cli.run(
+          [
+            'lambda',
+            'instrument',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
+            '-f',
+            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
+            '--dry-run',
+            '-e',
+            '40',
             '--extra-tags',
             'layer:api,team:intake',
             '--service',
@@ -1154,16 +1231,16 @@ describe('lambda', () => {
           },
         })
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '-v',
             '6',
             '--extra-tags',
@@ -1181,10 +1258,11 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
-"
-`)
+          "
+          [Dry Run] 🐶 Instrumenting Lambda function
+          [Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
+          "
+        `)
       })
 
       test('aborts early when .NET is using ARM64 architecture', async () => {
@@ -1194,22 +1272,22 @@ describe('lambda', () => {
             config: {
               Architectures: ['arm64'],
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-              Runtime: 'dotnetcore3.1',
+              Runtime: 'dotnet6',
             },
           },
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        process.env.DATADOG_API_KEY = '1234'
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const code = await cli.run(
           [
             'lambda',
             'instrument',
             '-f',
             functionARN,
-            '--dry',
+            '--dry-run',
             '-v',
             '6',
             '--extra-tags',
@@ -1227,10 +1305,11 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n[Dry Run] 🐶 Instrumenting Lambda function
-[Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
-"
-`)
+          "
+          [Dry Run] 🐶 Instrumenting Lambda function
+          [Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
+          "
+        `)
       })
 
       test('instruments correctly with profile when provided', async () => {
@@ -1242,13 +1321,13 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs22.x',
             },
           },
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE', '--no-source-code-integration'],
@@ -1263,7 +1342,7 @@ describe('lambda', () => {
         })
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         const code = await cli.run(
           ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
@@ -1272,10 +1351,11 @@ describe('lambda', () => {
         const output = context.stdout.toString()
         expect(code).toBe(1)
         expect(output).toMatchInlineSnapshot(`
-"\n🐶 Instrumenting Lambda function
-[Error] Error: Couldn't set AWS profile credentials. Update failed!
-"
-`)
+          "
+          🐶 Instrumenting Lambda function
+          [Error] Error: Couldn't set AWS profile credentials. Update failed!
+          "
+        `)
       })
 
       test('prints which functions failed to instrument without aborting when at least one function was instrumented correctly', async () => {
@@ -1291,7 +1371,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
@@ -1299,7 +1379,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
               FunctionName: 'lambda-2-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
@@ -1307,7 +1387,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
               FunctionName: 'lambda-3-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -1315,21 +1395,13 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
               FunctionName: 'lambda-2-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
-              FunctionName: 'lambda-3-us-east-2',
               Handler: 'index.handler',
               Runtime: 'nodejs18.x',
             },
@@ -1343,7 +1415,7 @@ describe('lambda', () => {
         }
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -1358,8 +1430,6 @@ describe('lambda', () => {
             'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
             '-f',
             'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
           ],
           context
         )
@@ -1376,7 +1446,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -1384,7 +1454,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs18.x',
             },
           },
         })
@@ -1392,7 +1462,7 @@ describe('lambda', () => {
         lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects('Unexpected error updating request')
 
         const cli = makeCli()
-        const context = createMockContext() as any
+        const context = createMockContext()
         const code = await cli.run(
           [
             'lambda',
@@ -1428,6 +1498,7 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'debug'
 
         expect(command['getSettings']()).toEqual({
+          appsecEnabled: false,
           apmFlushDeadline: undefined,
           captureLambdaPayload: false,
           environment: undefined,
@@ -1467,6 +1538,7 @@ describe('lambda', () => {
         command['config']['apmFlushDeadline'] = '50'
 
         expect(command['getSettings']()).toEqual({
+          appsecEnabled: false,
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
           flushMetricsToLogs: false,
@@ -1508,6 +1580,7 @@ describe('lambda', () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
+          appsecEnabled: false,
           captureLambdaPayload: true,
           extensionVersion: undefined,
           flushMetricsToLogs: false,
@@ -1552,7 +1625,7 @@ describe('lambda', () => {
 
       test('aborts early if converting string boolean has an invalid value', () => {
         process.env = {}
-        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive'>)[] = [
+        const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appsecEnabled'>)[] = [
           'flushMetricsToLogs',
           'mergeXrayTraces',
           'tracing',
@@ -1645,24 +1718,27 @@ describe('lambda', () => {
         ])
         const output = command.context.stdout.toString()
         expect(output).toMatchInlineSnapshot(`
-"\n[Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
-\n[!] Functions to be updated:
-\t- my-func\n
-Will apply the following updates:
-CreateLogGroup -> my-log-group
-{
-  \\"logGroupName\\": \\"my-log-group\\"
-}
-DeleteSubscriptionFilter -> my-log-group
-{
-  \\"filterName\\": \\"my-filter\\"
-}
-PutSubscriptionFilter -> my-log-group
-{
-  \\"filterName\\": \\"my-filter\\"
-}
-"
-`)
+          "
+          [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
+
+          [!] Functions to be updated:
+          	- my-func
+
+          Will apply the following updates:
+          CreateLogGroup -> my-log-group
+          {
+            "logGroupName": "my-log-group"
+          }
+          DeleteSubscriptionFilter -> my-log-group
+          {
+            "filterName": "my-filter"
+          }
+          PutSubscriptionFilter -> my-log-group
+          {
+            "filterName": "my-filter"
+          }
+          "
+        `)
       })
     })
   })

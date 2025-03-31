@@ -9,16 +9,24 @@ export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   if (remotes.length === 0) {
     throw new Error('No git remotes available')
   }
+  const defaultRemote = await getDefaultRemoteName(git)
 
   for (const remote of remotes) {
-    // We're trying to pick the remote called with the default git name 'origin'.
-    if (remote.name === 'origin') {
+    if (remote.name === defaultRemote) {
       return stripCredentials(remote.refs.push)
     }
   }
 
-  // Falling back to picking the first remote in the list if 'origin' is not found.
+  // Falling back to picking the first remote in the list if the default remote is not found.
   return stripCredentials(remotes[0].refs.push)
+}
+
+export const getDefaultRemoteName = async (git: simpleGit.SimpleGit): Promise<string> => {
+  try {
+    return (await git.getConfig('clone.defaultRemoteName'))?.value ?? 'origin'
+  } catch (e) {
+    return 'origin'
+  }
 }
 
 // StripCredentials removes credentials from a remote HTTP url.
@@ -46,9 +54,22 @@ export const gitTrackedFiles = async (git: simpleGit.SimpleGit): Promise<string[
 
 export const gitBranch = async (git: simpleGit.SimpleGit): Promise<BranchSummary> => git.branch()
 
+export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string> => {
+  const branch = await git.raw(['branch', '--show-current'])
+
+  return branch.trim()
+}
+
 export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
 
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.show(['-s', '--format=%an,%ae,%aI,%cn,%ce,%cI'])
 
-export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> => git.listRemote(['--get-url'])
+export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
+  git.listRemote(['--get-url']).then((url) => url.trim())
+
+export const gitLocalCommitShas = async (git: simpleGit.SimpleGit, branchName: string): Promise<string[]> => {
+  const gitShas = await git.raw(['log', branchName, '--not', '--remotes', '--format=%H', '-n', '10'])
+
+  return gitShas.split(/\r\n|\r|\n/).filter(Boolean) // split by new line and discarding empty lines
+}

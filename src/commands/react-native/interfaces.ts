@@ -26,10 +26,11 @@ export class RNSourcemap {
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
       ['event', this.getMetadataPayload(cliVersion, service, version, projectPath, platform, build)],
-      ['source_map', {value: fs.createReadStream(this.sourcemapPath), options: {filename: 'source_map'}}],
+      ['source_map', {type: 'file', path: this.sourcemapPath, options: {filename: 'source_map'}}],
     ])
     if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
+        type: 'string',
         options: {
           contentType: 'application/json',
           filename: 'repository',
@@ -77,6 +78,7 @@ export class RNSourcemap {
     }
 
     return {
+      type: 'string',
       options: {
         contentType: 'application/json',
         filename: 'event',

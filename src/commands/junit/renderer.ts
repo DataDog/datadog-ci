@@ -43,7 +43,7 @@ export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
   return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.`)
 }
 
-export const renderSuccessfulCommand = (spanTags: SpanTags, service: string, env?: string) => {
+export const renderSuccessfulCommand = (spanTags: SpanTags, service?: string, env?: string) => {
   let fullStr = ''
   fullStr += chalk.green(
     '=================================================================================================\n'
@@ -72,7 +72,12 @@ export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${rend
 
 export const renderUpload = (payload: Payload): string => `Uploading jUnit XML test report file in ${payload.xmlPath}`
 
-export const renderCommandInfo = (basePaths: string[], service: string, concurrency: number, dryRun: boolean) => {
+export const renderCommandInfo = (
+  basePaths: string[],
+  service: string | undefined,
+  concurrency: number,
+  dryRun: boolean
+) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML\n`)
@@ -83,7 +88,9 @@ export const renderCommandInfo = (basePaths: string[], service: string, concurre
   } else {
     fullStr += chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)
   }
-  fullStr += chalk.green(`service: ${service}`)
+  if (service) {
+    fullStr += chalk.green(`service: ${service}`)
+  }
 
   return fullStr
 }

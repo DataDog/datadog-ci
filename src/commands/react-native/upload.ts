@@ -1,16 +1,21 @@
 import chalk from 'chalk'
-import {Command} from 'clipanion'
-import asyncPool from 'tiny-async-pool'
+import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -30,10 +35,13 @@ import {getBundleName} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
+  public static paths = [['react-native', 'upload']]
+
   public static usage = Command.Usage({
+    category: 'RUM',
     description: 'Upload React Native sourcemaps to Datadog.',
     details: `
-      This command will upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      This command will upload React Native sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
     `,
     examples: [
@@ -48,30 +56,34 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private buildVersion?: string
-  private bundle?: string
-  private cliVersion: string
+  private buildVersion = Option.String('--build-version')
+  private bundle = Option.String('--bundle')
+  private configPath = Option.String('--config')
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private platform?: RNPlatform = Option.String('--platform')
+  private projectPath = Option.String('--project-path', process.cwd() || '')
+  private releaseVersion = Option.String('--release-version')
+  private removeSourcesContent = Option.Boolean('--remove-sources-content', false)
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
+  private sourcemap = Option.String('--sourcemap')
+
+  private cliVersion = version
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }
-  private configPath?: string
-  private disableGit?: boolean
-  private dryRun = false
-  private maxConcurrency = 20
-  private platform?: RNPlatform
-  private projectPath: string = process.cwd() || ''
-  private releaseVersion?: string
-  private removeSourcesContent = false
-  private repositoryURL?: string
-  private service?: string
-  private sourcemap?: string
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
 
@@ -167,7 +179,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
@@ -264,7 +276,7 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci react-native'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_react-native'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
@@ -338,18 +350,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('react-native', 'upload')
-UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
-UploadCommand.addOption('buildVersion', Command.String('--build-version'))
-UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('bundle', Command.String('--bundle'))
-UploadCommand.addOption('sourcemap', Command.String('--sourcemap'))
-UploadCommand.addOption('platform', Command.String('--platform'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('configPath', Command.String('--config'))
-UploadCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))

@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8"?><testsuites duration="50.5"><testsuite failures="0" name="Test Results Auto Discovery" package="tests/autodiscovery" tests="1" time="0.256"><testcase classname="tests/autodiscovery" name="Should be discovered by test pattern" time="0.103"/></testsuite></testsuites>

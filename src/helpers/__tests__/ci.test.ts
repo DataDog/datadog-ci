@@ -1,9 +1,15 @@
 import fs from 'fs'
 import path from 'path'
 
-import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
+import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
-import {CI_NODE_LABELS, CI_ENV_VARS} from '../tags'
+import {
+  CI_NODE_LABELS,
+  CI_ENV_VARS,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_HEAD_SHA,
+} from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
@@ -169,9 +175,73 @@ describe('ci spec', () => {
   })
 
   CI_PROVIDERS.forEach((ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider))
+    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+      {[key: string]: string},
+      {[key: string]: string}
+    ][]
 
-    assertions.forEach(([env, expectedSpanTags]: [{[key: string]: string}, {[key: string]: string}], index: number) => {
+    if (ciProvider === 'github.json') {
+      describe('github actions pull request events', () => {
+        afterEach(() => {
+          delete process.env.GITHUB_BASE_REF
+          delete process.env.GITHUB_EVENT_PATH
+        })
+        // We grab the first assertion because we only need to test one
+        const [env] = assertions[0]
+        it('can read pull request data from GitHub Actions', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'ci-fixtures', 'github_event_payload.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect({
+            pullRequestBaseBranch,
+            pullRequestBaseBranchSha,
+            headCommitSha,
+          }).toEqual({
+            pullRequestBaseBranch: 'datadog:main',
+            pullRequestBaseBranchSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
+            headCommitSha: 'df289512a51123083a8e6931dd6f57bb3883d4c4',
+          })
+        })
+
+        it('does not crash if GITHUB_EVENT_PATH is not a valid JSON file', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'github_event_payload_malformed.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect(pullRequestBaseBranch).toEqual('datadog:main')
+          expect(pullRequestBaseBranchSha).toBeUndefined()
+          expect(headCommitSha).toBeUndefined()
+        })
+
+        it('does not crash if GITHUB_EVENT_PATH is not a file', () => {
+          process.env = env
+          process.env.GITHUB_BASE_REF = 'datadog:main'
+          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'does_not_exist.json')
+          const {
+            [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
+            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_HEAD_SHA]: headCommitSha,
+          } = getCISpanTags() as SpanTags
+
+          expect(pullRequestBaseBranch).toEqual('datadog:main')
+          expect(pullRequestBaseBranchSha).toBeUndefined()
+          expect(headCommitSha).toBeUndefined()
+        })
+      })
+    }
+
+    assertions.forEach(([env, expectedSpanTags], index) => {
       test(`reads env info for spec ${index} from ${ciProvider}`, () => {
         process.env = env
         const tags = {
@@ -189,10 +259,12 @@ describe('ci spec', () => {
 
         // `CI_ENV_VARS` key contains a dictionary, so we JSON parse it
         if (envVars && expectedEnvVars) {
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(envVars)).toEqual(JSON.parse(expectedEnvVars))
         }
         // `CI_NODE_LABELS` key contains an array, so we JSON parse it
         if (nodeLabels && expectedNodeLabels) {
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(JSON.parse(nodeLabels)).toEqual(expect.arrayContaining(JSON.parse(expectedNodeLabels)))
         }
       })
@@ -205,9 +277,7 @@ describe('getCIEnv', () => {
     process.env = {APPVEYOR: 'true'}
     expect(() => {
       getCIEnv()
-    }).toThrow(
-      'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
-    )
+    }).toThrow('Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported')
   })
 
   test('buildkite', () => {
@@ -291,5 +361,71 @@ describe('getCIEnv', () => {
       ciEnv: {SYSTEM_TEAMPROJECTID: 'project-id', BUILD_BUILDID: '55', SYSTEM_JOBID: 'job-id'},
       provider: 'azurepipelines',
     })
+  })
+})
+
+describe('isInteractive', () => {
+  let originalEnv: NodeJS.ProcessEnv
+  let mockStream: Partial<NodeJS.WriteStream>
+
+  beforeEach(() => {
+    originalEnv = {...process.env}
+    mockStream = {isTTY: true}
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
+  test('returns true when not in CI, TERM is not "dumb", and stream isTTY is true', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(true)
+  })
+
+  test('returns false when in CI', () => {
+    process.env.CI = 'true'
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when TERM is "dumb"', () => {
+    delete process.env.CI
+    process.env.TERM = 'dumb'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when stream is not a TTY', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    mockStream.isTTY = false
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when stream is undefined', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: undefined})).toBe(false)
+  })
+
+  test('uses default process.stdout when no stream is provided', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    process.stdout.isTTY = true
+
+    expect(isInteractive()).toBe(true)
+  })
+
+  test('returns false when process.stdout is not a TTY and no stream is provided', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    process.stdout.isTTY = false
+
+    expect(isInteractive()).toBe(false)
   })
 })

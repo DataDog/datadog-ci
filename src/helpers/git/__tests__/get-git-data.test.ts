@@ -2,24 +2,46 @@ import {gitRemote, stripCredentials} from '../get-git-data'
 
 describe('git', () => {
   describe('gitRemote', () => {
-    const createMockSimpleGit = (remotes: any[]) => ({
+    const createMockSimpleGit = (remotes: any[], defaultOrigin: string | undefined) => ({
       getRemotes: (arg: boolean) => remotes,
+      getConfig: (arg: string) => ({
+        // eslint-disable-next-line no-null/no-null
+        value: defaultOrigin ?? null,
+      }),
     })
 
-    test('should choose the remote named origin', async () => {
-      const mock = createMockSimpleGit([
-        {name: 'first', refs: {push: 'remote1'}},
-        {name: 'origin', refs: {push: 'remote2'}},
-      ]) as any
+    test('should choose the remote named origin if no default is specified', async () => {
+      const mock = createMockSimpleGit(
+        [
+          {name: 'first', refs: {push: 'remote1'}},
+          {name: 'origin', refs: {push: 'remote2'}},
+        ],
+        undefined
+      ) as any
       const remote = await gitRemote(mock)
 
       expect(remote).toBe('remote2')
     })
+    test('should choose the remote named first if that is the default origin', async () => {
+      const mock = createMockSimpleGit(
+        [
+          {name: 'first', refs: {push: 'remote1'}},
+          {name: 'origin', refs: {push: 'remote2'}},
+        ],
+        'first'
+      ) as any
+      const remote = await gitRemote(mock)
+
+      expect(remote).toBe('remote1')
+    })
     test('should choose the first remote', async () => {
-      const mock = createMockSimpleGit([
-        {name: 'first', refs: {push: 'remote1'}},
-        {name: 'second', refs: {push: 'remote2'}},
-      ]) as any
+      const mock = createMockSimpleGit(
+        [
+          {name: 'first', refs: {push: 'remote1'}},
+          {name: 'second', refs: {push: 'remote2'}},
+        ],
+        undefined
+      ) as any
       const remote = await gitRemote(mock)
 
       expect(remote).toBe('remote1')

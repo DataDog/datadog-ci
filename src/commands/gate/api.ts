@@ -1,6 +1,6 @@
 import {Writable} from 'stream'
 
-import {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {getRequestBuilder} from '../../helpers/utils'
 
@@ -11,10 +11,18 @@ export const evaluateGateRules = (
 ) => async (evaluateRequest: Payload, write: Writable['write']) => {
   const payload = JSON.stringify({
     data: {
+      id: evaluateRequest.requestId,
       type: 'gate_evaluation',
       attributes: {
         tags: evaluateRequest.spanTags,
         user_scope: evaluateRequest.userScope,
+        start_time_ms: evaluateRequest.startTimeMs,
+        options: {
+          no_wait: evaluateRequest.options.noWait,
+          dry_run: evaluateRequest.options.dryRun,
+          is_last_retry: evaluateRequest.options.isLastRetry,
+          pull_request_sha: evaluateRequest.options.pull_request_sha,
+        },
       },
     },
   })

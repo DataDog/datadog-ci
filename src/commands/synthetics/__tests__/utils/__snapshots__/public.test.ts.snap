@@ -1,0 +1,255 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`utils reportCiError should report AUTHORIZATION_ERROR error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: authorization error [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report INVALID_CONFIG error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: invalid config [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report MISSING_API_KEY error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "Missing [31m[1mDATADOG_API_KEY[22m[39m in your environment.
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report MISSING_APP_KEY error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "Missing [31m[1mDATADOG_APP_KEY[22m[39m in your environment.
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report MISSING_TESTS error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: some tests are missing [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report NO_TESTS_TO_RUN error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: No tests to run [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report POLL_RESULTS_FAILED error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: unable to poll test results [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report TOO_MANY_TESTS_TO_TRIGGER error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: too many tests to trigger [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report TRIGGER_TESTS_FAILED error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: unable to trigger tests [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report TUNNEL_START_FAILED error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: unable to start tunnel [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report UNAVAILABLE_TEST_CONFIG error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: unable to obtain test configurations with search query [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report UNAVAILABLE_TUNNEL_CONFIG error 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR: unable to get tunnel configuration [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;
+
+exports[`utils reportCiError should report default Error if no CiError was matched 1`] = `
+[MockFunction] {
+  "calls": [
+    [
+      "
+[41m[1m ERROR [22m[49m
+
+
+",
+    ],
+  ],
+  "results": [
+    {
+      "type": "return",
+      "value": undefined,
+    },
+  ],
+}
+`;

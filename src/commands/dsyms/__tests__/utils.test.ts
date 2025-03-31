@@ -1,6 +1,6 @@
 import fs, {promises} from 'fs'
 
-import glob from 'glob'
+import {glob} from 'glob'
 
 import {buildPath} from '../../../helpers/utils'
 

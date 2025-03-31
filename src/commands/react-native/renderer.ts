@@ -147,7 +147,16 @@ export const renderCommandInfo = (
   const serviceVersionProjectPathStr = chalk.green(
     `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
   )
+
   fullStr += serviceVersionProjectPathStr
+
+  fullStr += chalk.green(
+    `Please ensure you use the same values during SDK initialization to guarantee the success of the unminify process.\n`
+  )
+
+  fullStr += chalk.green(
+    `After upload is successful sourcemap files will be processed and ready to use within the next 5 minutes. \n`
+  )
 
   return fullStr
 }

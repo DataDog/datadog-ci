@@ -1,12 +1,15 @@
-import fs, {existsSync} from 'fs'
+import {exec} from 'child_process'
+import fs, {existsSync, lstatSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
+import type {AxiosRequestConfig} from 'axios'
 
-import {AxiosRequestConfig, default as axios} from 'axios'
+import axios from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
-import ProxyAgent from 'proxy-agent'
+import * as glob from 'glob'
+import {ProxyAgent} from 'proxy-agent'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
@@ -96,28 +99,6 @@ export const resolveConfigFromFile = async <T>(
   return deepExtend(baseConfig, parsedConfig)
 }
 
-/**
- * @deprecated Use resolveConfigFromFile instead for better error management
- */
-export const parseConfigFile = async <T>(baseConfig: T, configPath?: string): Promise<T> => {
-  try {
-    const resolvedConfigPath = configPath ?? 'datadog-ci.json'
-    const parsedConfig = await getConfig(resolvedConfigPath)
-
-    return deepExtend(baseConfig, parsedConfig)
-  } catch (e) {
-    if (e.code === 'ENOENT' && configPath) {
-      throw new Error('Config file not found')
-    }
-
-    if (e instanceof SyntaxError) {
-      throw new Error('Config file is not correct JSON')
-    }
-  }
-
-  return baseConfig
-}
-
 type ProxyType =
   | 'http'
   | 'https'
@@ -176,7 +157,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
         'DD-API-KEY': apiKey,
         ...(appKey ? {'DD-APPLICATION-KEY': appKey} : {}),
         ...args.headers,
-      },
+      } as NonNullable<typeof args.headers>,
     }
 
     if (overrideUrl !== undefined) {
@@ -208,10 +189,36 @@ export const getRequestBuilder = (options: RequestOptions) => {
   return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
 }
 
-export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ReturnType<typeof ProxyAgent> => {
+const proxyAgentCache = new Map<string, ProxyAgent>()
+
+export const getProxyAgent = (proxyOpts?: ProxyConfiguration): ProxyAgent => {
   const proxyUrlFromConfiguration = getProxyUrl(proxyOpts)
 
-  return new ProxyAgent(proxyUrlFromConfiguration)
+  let proxyAgent = proxyAgentCache.get(proxyUrlFromConfiguration)
+  if (!proxyAgent) {
+    proxyAgent = createProxyAgentForUrl(proxyUrlFromConfiguration)
+    proxyAgentCache.set(proxyUrlFromConfiguration, proxyAgent)
+  }
+
+  return proxyAgent
+}
+
+const createProxyAgentForUrl = (proxyUrl: string) => {
+  if (!proxyUrl) {
+    // Let the default proxy agent discover environment variables.
+    return new ProxyAgent()
+  }
+
+  return new ProxyAgent({
+    getProxyForUrl: (url) => {
+      // Do not proxy the WebSocket connections.
+      if (url?.match(/^wss?:/)) {
+        return ''
+      }
+
+      return proxyUrl
+    },
+  })
 }
 
 export const getApiHostForSite = (site: string) => {
@@ -297,12 +304,18 @@ export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefi
     if (repositoryUrl.startsWith('git@')) {
       return repositoryUrl
     }
-    const {protocol, hostname, pathname} = new URL(repositoryUrl)
-    if (!protocol || !hostname) {
+    // Remove the username from ssh URLs
+    if (repositoryUrl.startsWith('ssh://')) {
+      const sshRegex = /^(ssh:\/\/)[^@/]*@/
+
+      return repositoryUrl.replace(sshRegex, '$1')
+    }
+    const {protocol, host, pathname} = new URL(repositoryUrl)
+    if (!protocol || !host) {
       return repositoryUrl
     }
 
-    return `${protocol}//${hostname}${pathname}`
+    return `${protocol}//${host}${pathname === '/' ? '' : pathname}`
   } catch (e) {
     return repositoryUrl
   }
@@ -325,4 +338,94 @@ export const timedExecAsync = async <I, O>(f: (input: I) => Promise<O>, input: I
   await f(input)
 
   return (Date.now() - initialTime) / 1000
+}
+
+/**
+ * Convert bytes to a formatted string in KB, MB, GB, etc.
+ * Note: Lambda documentation uses MB (instead of Mib) to refer to 1024 KB, so we follow that style here
+ * @param bytes
+ * @param decimals
+ */
+export const formatBytes = (bytes: number, decimals = 2) => {
+  if (!bytes) {
+    return '0 Bytes'
+  }
+
+  if (bytes < 0) {
+    throw Error("'bytes' can't be negative.")
+  }
+
+  const bytesPerKB = 1024
+  const numDecimals = decimals < 0 ? 0 : decimals
+  const units = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const i = Math.floor(Math.log(bytes) / Math.log(bytesPerKB))
+  const formattedBytes = parseFloat((bytes / Math.pow(bytesPerKB, i)).toFixed(numDecimals))
+
+  return `${formattedBytes} ${units[i]}`
+}
+
+// Mask a string to hide sensitive values
+export const maskString = (value: string) => {
+  // Don't mask booleans
+  if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+    return value
+  }
+
+  // Dont mask numbers
+  if (!isNaN(Number(value))) {
+    return value
+  }
+
+  // Mask entire string if it's short
+  if (value.length < 12) {
+    return '*'.repeat(16)
+  }
+
+  // Keep first two and last four characters if it's long
+  return value.slice(0, 2) + '*'.repeat(10) + value.slice(-4)
+}
+
+const execProc = promisify(exec)
+export const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
+  execProc(cmd, {
+    cwd,
+    maxBuffer: 5 * 1024 * 5000,
+  })
+
+type GitHubWebhookPayload = {
+  pull_request?: {
+    head?: {
+      sha: string
+    }
+    base?: {
+      sha: string
+    }
+  }
+}
+
+export const getGitHubEventPayload = () => {
+  if (!process.env.GITHUB_EVENT_PATH) {
+    return
+  }
+
+  return JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
+}
+
+export const isFile = (path: string) => {
+  try {
+    return lstatSync(path).isFile()
+  } catch (e) {
+    return false
+  }
+}
+
+export const parsePathsList = (paths: string | undefined): string[] => {
+  if (!paths) {
+    return []
+  }
+
+  return paths
+    .split(',')
+    .flatMap((path) => (glob.hasMagic(path) ? glob.sync(path, {dotRelative: true}) : [path]))
+    .map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
 }

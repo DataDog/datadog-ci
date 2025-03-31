@@ -1,19 +1,6 @@
 import {SubscriptionFilter} from '@aws-sdk/client-cloudwatch-logs/dist-types/models/models_0'
-import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
+import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
 import {Tag} from '@aws-sdk/client-sfn/dist-types/ts3.4/models/models_0'
-
-export const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 export const describeStateMachineFixture = (
   props: Partial<DescribeStateMachineCommandOutput> = {}
@@ -24,7 +11,7 @@ export const describeStateMachineFixture = (
     name: 'ExampleStepFunction',
     definition: '',
     loggingConfiguration: {
-      level: 'ALL',
+      level: LogLevel.ALL,
       includeExecutionData: true,
       destinations: [
         {

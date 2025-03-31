@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?><!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"
+        "report.dtd">
+<jacoco name="module-a">
+    <sessioninfo id="COMP-QG19F24WGY-c9528a3d" start="1730108644010" dump="1730108649465"/>
+    <sessioninfo id="COMP-QG19F24WGY-250a784" start="1731948593153" dump="1731948596192"/>
+    <sessioninfo id="COMP-QG19F24WGY-c6883e55" start="1731948622885" dump="1731948625942"/>
+    <sessioninfo id="COMP-QG19F24WGY-c6447142" start="1731948645773" dump="1731948648790"/>
+    <package name="com/datadog/ci/test">
+        <class name="com/datadog/ci/test/Person" sourcefilename="Person.java">
+            <method name="&lt;init&gt;" desc="(Ljava/lang/String;)V" line="5">
+                <counter type="INSTRUCTION" missed="0" covered="6"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="getName" desc="()Ljava/lang/String;" line="7">
+                <counter type="INSTRUCTION" missed="0" covered="3"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="equals" desc="(Ljava/lang/Object;)Z" line="5">
+                <counter type="INSTRUCTION" missed="32" covered="0"/>
+                <counter type="BRANCH" missed="10" covered="0"/>
+                <counter type="LINE" missed="1" covered="0"/>
+                <counter type="COMPLEXITY" missed="6" covered="0"/>
+                <counter type="METHOD" missed="1" covered="0"/>
+            </method>
+            <method name="hashCode" desc="()I" line="5">
+                <counter type="INSTRUCTION" missed="20" covered="0"/>
+                <counter type="BRANCH" missed="2" covered="0"/>
+                <counter type="LINE" missed="1" covered="0"/>
+                <counter type="COMPLEXITY" missed="2" covered="0"/>
+                <counter type="METHOD" missed="1" covered="0"/>
+            </method>
+            <method name="toString" desc="()Ljava/lang/String;" line="5">
+                <counter type="INSTRUCTION" missed="12" covered="0"/>
+                <counter type="LINE" missed="1" covered="0"/>
+                <counter type="COMPLEXITY" missed="1" covered="0"/>
+                <counter type="METHOD" missed="1" covered="0"/>
+            </method>
+            <counter type="INSTRUCTION" missed="64" covered="9"/>
+            <counter type="BRANCH" missed="12" covered="0"/>
+            <counter type="LINE" missed="0" covered="2"/>
+            <counter type="COMPLEXITY" missed="9" covered="2"/>
+            <counter type="METHOD" missed="3" covered="2"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </class>
+        <class name="com/datadog/ci/test/Calculator" sourcefilename="Calculator.java">
+            <method name="&lt;init&gt;" desc="()V" line="3">
+                <counter type="INSTRUCTION" missed="0" covered="3"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="add" desc="(II)I" line="6">
+                <counter type="INSTRUCTION" missed="0" covered="4"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="multiply" desc="(II)I" line="10">
+                <counter type="INSTRUCTION" missed="0" covered="4"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="divide" desc="(II)I" line="14">
+                <counter type="INSTRUCTION" missed="0" covered="4"/>
+                <counter type="LINE" missed="0" covered="1"/>
+                <counter type="COMPLEXITY" missed="0" covered="1"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <counter type="INSTRUCTION" missed="0" covered="15"/>
+            <counter type="LINE" missed="0" covered="4"/>
+            <counter type="COMPLEXITY" missed="0" covered="4"/>
+            <counter type="METHOD" missed="0" covered="4"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </class>
+        <sourcefile name="Person.java">
+            <line nr="5" mi="64" ci="6" mb="12" cb="0"/>
+            <line nr="7" mi="3" ci="0" mb="0" cb="0"/>
+            <counter type="INSTRUCTION" missed="64" covered="9"/>
+            <counter type="BRANCH" missed="12" covered="0"/>
+            <counter type="LINE" missed="0" covered="2"/>
+            <counter type="COMPLEXITY" missed="9" covered="2"/>
+            <counter type="METHOD" missed="3" covered="2"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </sourcefile>
+        <sourcefile name="Calculator.java">
+            <line nr="3" mi="0" ci="3" mb="0" cb="0"/>
+            <line nr="6" mi="0" ci="4" mb="0" cb="0"/>
+            <line nr="10" mi="0" ci="4" mb="0" cb="0"/>
+            <line nr="14" mi="0" ci="4" mb="0" cb="0"/>
+            <counter type="INSTRUCTION" missed="0" covered="15"/>
+            <counter type="LINE" missed="0" covered="4"/>
+            <counter type="COMPLEXITY" missed="0" covered="4"/>
+            <counter type="METHOD" missed="0" covered="4"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </sourcefile>
+        <counter type="INSTRUCTION" missed="64" covered="24"/>
+        <counter type="BRANCH" missed="12" covered="0"/>
+        <counter type="LINE" missed="0" covered="6"/>
+        <counter type="COMPLEXITY" missed="9" covered="6"/>
+        <counter type="METHOD" missed="3" covered="6"/>
+        <counter type="CLASS" missed="0" covered="2"/>
+    </package>
+    <counter type="INSTRUCTION" missed="64" covered="24"/>
+    <counter type="BRANCH" missed="12" covered="0"/>
+    <counter type="LINE" missed="0" covered="6"/>
+    <counter type="COMPLEXITY" missed="9" covered="6"/>
+    <counter type="METHOD" missed="3" covered="6"/>
+    <counter type="CLASS" missed="0" covered="2"/>

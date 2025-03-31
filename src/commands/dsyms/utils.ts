@@ -1,16 +1,12 @@
-import {exec} from 'child_process'
-import {promises} from 'fs'
+import fs from 'fs/promises'
 import {tmpdir} from 'os'
 import path from 'path'
-import {promisify} from 'util'
 
-import rimraf from 'rimraf'
-
-import {buildPath} from '../../helpers/utils'
+import {buildPath, execute} from '../../helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
   try {
-    const stats = await promises.stat(filepath)
+    const stats = await fs.stat(filepath)
 
     return stats.size !== 0 && path.extname(filepath) === '.zip'
   } catch (error) {
@@ -22,13 +18,14 @@ export const isZipFile = async (filepath: string) => {
 export const createUniqueTmpDirectory = async (): Promise<string> => {
   const uniqueValue = Math.random() * Number.MAX_SAFE_INTEGER
   const directoryPath = buildPath(tmpdir(), uniqueValue.toString())
-  await promises.mkdir(directoryPath, {recursive: true})
+  await fs.mkdir(directoryPath, {recursive: true})
 
   return directoryPath
 }
 
-export const deleteDirectory = async (directoryPath: string): Promise<void> =>
-  new Promise((resolve, reject) => rimraf(directoryPath, () => resolve()))
+export const deleteDirectory = async (directoryPath: string): Promise<void> => {
+  await fs.rm(directoryPath, {recursive: true})
+}
 
 export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
   const cwd = path.dirname(directoryPath)
@@ -37,7 +34,7 @@ export const zipDirectoryToArchive = async (directoryPath: string, archivePath: 
 }
 
 export const unzipArchiveToDirectory = async (archivePath: string, directoryPath: string) => {
-  await promises.mkdir(directoryPath, {recursive: true})
+  await fs.mkdir(directoryPath, {recursive: true})
   await execute(`unzip -o '${archivePath}' -d '${directoryPath}'`)
 }
 
@@ -49,13 +46,6 @@ export const executeLipo = async (
   arch: string,
   newObjectPath: string
 ): Promise<{stderr: string; stdout: string}> => execute(`lipo '${objectPath}' -thin ${arch} -output '${newObjectPath}'`)
-
-const execProc = promisify(exec)
-const execute = (cmd: string, cwd?: string): Promise<{stderr: string; stdout: string}> =>
-  execProc(cmd, {
-    cwd,
-    maxBuffer: 5 * 1024 * 5000,
-  })
 
 export const getBaseIntakeUrl = (datadogSite?: string) => {
   if (process.env.DATADOG_DSYM_INTAKE_URL) {

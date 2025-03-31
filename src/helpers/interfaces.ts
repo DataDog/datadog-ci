@@ -1,4 +1,5 @@
-import {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {Writable} from 'stream'
 
 import {
   CI_ENV_VARS,
@@ -24,6 +25,11 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  GIT_HEAD_SHA,
+  SERVICE,
+  GIT_BASE_REF,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
 } from './tags'
 
 export interface Metadata {
@@ -91,7 +97,17 @@ export type SpanTag =
   | typeof CI_ENV_VARS
   | typeof CI_NODE_NAME
   | typeof CI_NODE_LABELS
+  | typeof SERVICE
+  | typeof GIT_HEAD_SHA
+  | typeof GIT_BASE_REF
+  | typeof GIT_PULL_REQUEST_BASE_BRANCH
+  | typeof GIT_PULL_REQUEST_BASE_BRANCH_SHA
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
 export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
+
+export type CommandContext = {
+  stdout: Writable
+  stderr: Writable
+}

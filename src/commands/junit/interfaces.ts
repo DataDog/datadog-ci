@@ -1,12 +1,15 @@
-import {AxiosPromise, AxiosResponse} from 'axios'
+import type {AxiosPromise, AxiosResponse} from 'axios'
 
 import {SpanTags} from '../../helpers/interfaces'
 
 export interface Payload {
   hostname: string
   logsEnabled: boolean
-  service: string
   spanTags: SpanTags
+  customTags: Record<string, string>
+  customMeasures: Record<string, number>
+  reportTags: Record<string, string>
+  reportMeasures: Record<string, number>
   xmlPath: string
   xpathTags?: Record<string, string>
 }

@@ -68,6 +68,7 @@ describe('git', () => {
 
   describe('GetRepositoryData', () => {
     const createMockSimpleGit = () => ({
+      getConfig: (arg: string) => ({value: 'origin'}),
       getRemotes: (arg: boolean) => [{refs: {push: 'git@github.com:user/repository.git'}}],
       raw: (arg: string) => 'src/commands/sourcemaps/__tests__/git.test.ts',
       revparse: (arg: string) => '25da22df90210a40b919debe3f7ebfb0c1811898',
@@ -75,9 +76,7 @@ describe('git', () => {
 
     test('integration', async () => {
       const data = await getRepositoryData(createMockSimpleGit() as any, '')
-      if (!data) {
-        fail('data should not be undefined')
-      }
+      expect(data).not.toBeUndefined()
 
       const files = data.trackedFilesMatcher.matchSourcemap(
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
@@ -90,9 +89,8 @@ describe('git', () => {
 
     test('integration: remote override', async () => {
       const data = await getRepositoryData(createMockSimpleGit() as any, 'git@github.com:user/other.git')
-      if (!data) {
-        fail('data should not be undefined')
-      }
+      expect(data).not.toBeUndefined()
+
       const files = data.trackedFilesMatcher.matchSourcemap(
         'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map',
         () => undefined

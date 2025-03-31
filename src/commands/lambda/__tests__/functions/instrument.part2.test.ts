@@ -1,10 +1,16 @@
 jest.mock('../../loggroup')
 
-import {CI_API_KEY_ENV_VAR, CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR} from '../../constants'
+import {Architecture, LambdaClient, Runtime} from '@aws-sdk/client-lambda'
+import {mockClient} from 'aws-sdk-client-mock'
+
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../../constants'
+import {MOCK_DATADOG_API_KEY} from '../../../../helpers/__tests__/fixtures'
+
+import {CI_API_KEY_SECRET_ARN_ENV_VAR, CI_KMS_API_KEY_ENV_VAR, DEFAULT_LAYER_AWS_ACCOUNT} from '../../constants'
 import {calculateUpdateRequest} from '../../functions/instrument'
 import {InstrumentationSettings} from '../../interfaces'
 
-import {mockAwsAccount} from '../fixtures'
+import {mockAwsAccount, mockLambdaClientCommands, mockLambdaLayers} from '../fixtures'
 
 describe('instrument', () => {
   describe('calculateUpdateRequest', () => {
@@ -18,7 +24,7 @@ describe('instrument', () => {
     })
 
     test('calculates an update request with just lambda library layers', async () => {
-      const runtime = 'nodejs12.x'
+      const runtime = Runtime.nodejs20x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -36,9 +42,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -48,15 +54,20 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
           ],
         }
       `)
     })
 
-    test('calculates an update request with python 3.10', async () => {
-      const runtime = 'python3.10'
+    test.each([
+      [Runtime.python39, 'Datadog-Python39'],
+      [Runtime.python310, 'Datadog-Python310'],
+      [Runtime.python311, 'Datadog-Python311'],
+      [Runtime.python312, 'Datadog-Python312'],
+      [Runtime.python313, 'Datadog-Python313'],
+    ])('calculates an update request for %s', async (runtime: Runtime, layer: string) => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -74,9 +85,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -86,36 +97,43 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python310:71",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:${layer}:71",
           ],
         }
       `)
     })
 
-    test('calculates an update request with just lambda library layers in arm architecture', async () => {
-      const runtime = 'python3.9'
-      const config = {
-        Architectures: ['arm64'],
-        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-        Handler: 'handler.hello',
-        Layers: [],
-        Runtime: runtime,
-      }
-      const settings = {
-        flushMetricsToLogs: false,
-        layerAWSAccount: mockAwsAccount,
-        layerVersion: 11,
-        mergeXrayTraces: false,
-        tracingEnabled: false,
-      }
-      const region = 'sa-east-1'
+    test.each([
+      [Runtime.python39, 'Datadog-Python39-ARM'],
+      [Runtime.python310, 'Datadog-Python310-ARM'],
+      [Runtime.python311, 'Datadog-Python311-ARM'],
+      [Runtime.python312, 'Datadog-Python312-ARM'],
+      [Runtime.python313, 'Datadog-Python313-ARM'],
+    ])(
+      'calculates an update request with just lambda library layers in arm architecture',
+      async (runtime: Runtime, layer: string) => {
+        const config = {
+          Architectures: [Architecture.arm64],
+          FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          Handler: 'handler.hello',
+          Layers: [],
+          Runtime: runtime,
+        }
+        const settings = {
+          flushMetricsToLogs: false,
+          layerAWSAccount: mockAwsAccount,
+          layerVersion: 11,
+          mergeXrayTraces: false,
+          tracingEnabled: false,
+        }
+        const region = 'sa-east-1'
 
-      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
-      expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+        expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "handler.hello",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -125,16 +143,17 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39-ARM:11",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:${layer}:11",
           ],
         }
       `)
-    })
+      }
+    )
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY', async () => {
-      process.env[CI_API_KEY_ENV_VAR] = '1234'
-      const runtime = 'nodejs12.x'
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      const runtime = Runtime.nodejs20x
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -153,10 +172,10 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
-              "DD_API_KEY": "1234",
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
@@ -165,9 +184,50 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node12-x:5",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
+          ],
+        }
+      `)
+    })
+
+    test('calculates an update request with a lambda library, extension, and DD_API_KEY', async () => {
+      process.env[API_KEY_ENV_VAR] = 'SOME-DD-API-KEY'
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 5,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "SOME-DD-API-KEY",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Node20-x:5",
           ],
         }
       `)
@@ -175,7 +235,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_API_KEY_SECRET_ARN', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -193,9 +253,9 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_API_KEY_SECRET_ARN": "some-secret:arn:from:aws",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -205,7 +265,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:11",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:49",
           ],
@@ -215,7 +275,7 @@ describe('instrument', () => {
 
     test('calculates an update request with a lambda library, extension, and DATADOG_KMS_API_KEY', async () => {
       process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -234,9 +294,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_KMS_API_KEY": "5678",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -246,7 +306,7 @@ describe('instrument', () => {
           },
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
             "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python39:5",
           ],
@@ -256,7 +316,7 @@ describe('instrument', () => {
 
     test('prioritizes the KMS API KEY when all of them are exported', async () => {
       process.env = {
-        [CI_API_KEY_ENV_VAR]: '1234',
+        [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         [CI_API_KEY_SECRET_ARN_ENV_VAR]: '5678',
         [CI_KMS_API_KEY_ENV_VAR]: 'should-be-selected',
       }
@@ -270,9 +330,9 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const updateRequest = await calculateUpdateRequest(config, {} as any, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_KMS_API_KEY": "should-be-selected",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_SITE": "datadoghq.com",
@@ -284,7 +344,7 @@ describe('instrument', () => {
     })
 
     test("doesn't set DD_FLUSH_TO_LOGS when extension is being used", async () => {
-      process.env[CI_API_KEY_ENV_VAR] = '1234'
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
 
       const config = {
         FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
@@ -301,10 +361,10 @@ describe('instrument', () => {
       }
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
-              "DD_API_KEY": "1234",
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
@@ -312,7 +372,7 @@ describe('instrument', () => {
             },
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
-          "Layers": Array [
+          "Layers": [
             "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:13",
           ],
         }
@@ -320,7 +380,7 @@ describe('instrument', () => {
     })
 
     test('by default calculates an update request with DATADOG_SITE being set to datadoghq.com', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
@@ -337,9 +397,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -370,9 +430,9 @@ describe('instrument', () => {
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
-        Object {
-          "Environment": Object {
-            "Variables": Object {
+        {
+          "Environment": {
+            "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
               "DD_MERGE_XRAY_TRACES": "false",
@@ -446,7 +506,7 @@ describe('instrument', () => {
 
     test('throws error when trying to add `DD_API_KEY_SECRET_ARN` while using sync metrics in a node runtime', async () => {
       process.env[CI_API_KEY_SECRET_ARN_ENV_VAR] = 'some-secret:arn:from:aws'
-      const runtime = 'nodejs14.x'
+      const runtime = Runtime.nodejs20x
       const region = 'us-east-1'
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -489,12 +549,12 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
       }
-      const dotnetRuntime = 'dotnet6'
-      const javaRuntime = 'java11'
+      const dotnetRuntime = Runtime.dotnet6
+      const javaRuntime = Runtime.java11
 
       describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
-        const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: ['arm64']}
+        const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: [Architecture.arm64]}
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}
@@ -660,6 +720,77 @@ describe('instrument', () => {
             expect(updateRequest).toEqual(outputResult)
           }
         )
+      })
+    })
+
+    describe('sets handlers correctly', () => {
+      const lambdaClientMock = mockClient(LambdaClient)
+
+      describe('interactive mode', () => {
+        const extensionLayer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
+
+        beforeAll(() => {
+          lambdaClientMock.reset()
+          process.env = {}
+
+          mockLambdaClientCommands(lambdaClientMock)
+        })
+
+        afterAll(() => {
+          process.env = OLD_ENV
+        })
+
+        it.each([
+          [
+            'python',
+            {
+              runtime: Runtime.python311,
+              layer: 'Datadog-Python311',
+            },
+            'datadog_lambda.handler.handler',
+          ],
+          [
+            'node',
+            {
+              runtime: Runtime.nodejs16x,
+              layer: 'Datadog-Node16-x',
+            },
+            '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
+          ],
+        ])('%s', async (_, test, expected) => {
+          process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+          const libraryLayer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:${test.layer}`
+
+          // Mock Layers for interactive mode.
+          mockLambdaLayers(lambdaClientMock, {
+            [`${libraryLayer}:1`]: {
+              LayerName: `${libraryLayer}`,
+              VersionNumber: 1,
+            },
+            [`${extensionLayer}:1`]: {
+              LayerName: `${extensionLayer}`,
+              VersionNumber: 1,
+            },
+          })
+
+          const config = {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+            Handler: 'index.handler',
+            Layers: [],
+            Runtime: test.runtime,
+          }
+
+          const settings = {
+            flushMetricsToLogs: false,
+            interactive: true, // Interactive mode
+            mergeXrayTraces: false,
+            tracingEnabled: false,
+          }
+
+          const updateRequest = await calculateUpdateRequest(config, settings, 'us-east-1', test.runtime as any)
+
+          expect(updateRequest?.Handler).toBe(expected)
+        })
       })
     })
   })

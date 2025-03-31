@@ -3,8 +3,11 @@ import {spawn} from 'child_process'
 import {existsSync, readFileSync} from 'fs'
 import {sep} from 'path'
 
-import {Cli, Command} from 'clipanion'
+import {Cli, Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {parsePlist} from '../../helpers/plist'
 
 import {UploadCommand} from './upload'
@@ -15,7 +18,7 @@ import {getReactNativeVersion} from './utils'
  * be unit tested. If you make any change to it, make sure to test
  * it with a real project.
  */
-const reactNativePath = (() => {
+const getReactNativePath = () => {
   try {
     const reactNativeIndexFile = require.resolve('react-native')
 
@@ -27,16 +30,28 @@ const reactNativePath = (() => {
       return '../node_modules/react-native'
     }
 
+    // Used for internal testing purposes only
+    if (process.env.DATADOG_CI_REACT_NATIVE_PATH) {
+      return process.env.DATADOG_CI_REACT_NATIVE_PATH
+    }
+
     // When the command is ran from XCode with yarn react-native xcode` (legacy)
     return 'node_modules/react-native'
   }
-})()
+}
+
+const reactNativePath = getReactNativePath()
+
+const getDefaultScriptPath = () => `${getReactNativePath()}/scripts/react-native-xcode.sh`
 
 export class XCodeCommand extends Command {
+  public static paths = [['react-native', 'xcode']]
+
   public static usage = Command.Usage({
+    category: 'RUM',
     description: 'Bundle React Native code and images in XCode and send sourcemaps to Datadog.',
     details: `
-      This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding javascript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      This command will bundle the react native code and images and then upload React Native sourcemaps and their corresponding JavaScript bundle to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
     `,
     examples: [
@@ -51,26 +66,37 @@ export class XCodeCommand extends Command {
     ],
   })
 
-  private composeSourcemapsPath = `${reactNativePath}/scripts/compose-source-maps.js`
-  private configPath?: string
-  private disableGit?: boolean
-  private dryRun = false
-  private force = false
-  private infoPlistPath =
-    process.env.PROJECT_DIR && process.env.INFOPLIST_FILE
-      ? `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
-      : null
-  private removeSourcesContent?: boolean
-  private repositoryURL?: string
-  private scriptPath = `${reactNativePath}/scripts/react-native-xcode.sh`
-  private service?: string = process.env.PRODUCT_BUNDLE_IDENTIFIER
+  private composeSourcemapsPath = Option.String(
+    '--compose-sourcemaps-path',
+    `${reactNativePath}/scripts/compose-source-maps.js`
+  )
+  private configPath = Option.String('--config')
+  private disableGit = Option.Boolean('--disable-git')
+  private dryRun = Option.Boolean('--dry-run', false)
+  private force = Option.Boolean('--force', false)
+  private infoPlistPath = Option.String('--info-plist-path')
+  private removeSourcesContent = Option.Boolean('--remove-sources-content')
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
 
-  constructor() {
-    super()
+  private scriptPath = Option.String({required: false}) // Positional
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
-    this.service = process.env.SERVICE_NAME_IOS || this.service
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
+    this.service = process.env.SERVICE_NAME_IOS || this.service || process.env.PRODUCT_BUNDLE_IDENTIFIER
+
+    if (!this.infoPlistPath && process.env.PROJECT_DIR && process.env.INFOPLIST_FILE) {
+      this.infoPlistPath = `${process.env.PROJECT_DIR}/${process.env.INFOPLIST_FILE}`
+    }
+
     if (!this.service) {
       this.context.stderr.write(
         'Environment variable PRODUCT_BUNDLE_IDENTIFIER is missing for Datadog sourcemaps upload.\n'
@@ -122,17 +148,23 @@ export class XCodeCommand extends Command {
       return 1
     }
 
-    if (!this.shouldUploadSourcemaps()) {
-      this.context.stdout.write(
-        `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload`
-      )
-
-      return 0
-    }
-
     // Run bundle script
     try {
+      if (!this.shouldBundleRNCode()) {
+        this.context.stdout.write(`Skipping bundling and sourcemaps upload.`)
+
+        return 0
+      }
+
       await this.bundleReactNativeCodeAndImages()
+
+      if (!this.shouldUploadSourcemaps()) {
+        this.context.stdout.write(
+          `Build configuration ${process.env.CONFIGURATION} is not Release, skipping sourcemaps upload.`
+        )
+
+        return 0
+      }
 
       /**
        * Because of a bug in React Native (https://github.com/facebook/react-native/issues/34212), the composition
@@ -193,7 +225,7 @@ export class XCodeCommand extends Command {
   }
 
   private bundleReactNativeCodeAndImages = async () => {
-    const bundleJSChildProcess = spawn(this.scriptPath, [], {
+    const bundleJSChildProcess = spawn(this.scriptPath || getDefaultScriptPath(), [], {
       env: this.getBundleReactNativeCodeAndImagesEnvironment(),
       stdio: ['inherit', 'pipe', 'pipe'],
     })
@@ -327,6 +359,10 @@ export class XCodeCommand extends Command {
   }
 
   private getReleaseVersion = (): string | null => {
+    if (process.env.DATADOG_RELEASE_VERSION) {
+      return process.env.DATADOG_RELEASE_VERSION
+    }
+
     try {
       const releaseVersion = this.getPlistValue('CFBundleShortVersionString')
 
@@ -395,7 +431,7 @@ export class XCodeCommand extends Command {
      * Since RN 0.70, Hermes is enabled even if it is empty.
      */
     if (process.env.USE_HERMES) {
-      return true
+      return process.env.USE_HERMES.toLowerCase() !== 'false'
     }
 
     /**
@@ -423,17 +459,37 @@ export class XCodeCommand extends Command {
     return !!podfileLockContent.match('hermes-engine')
   }
 
-  private shouldUploadSourcemaps = (): boolean => process.env.CONFIGURATION === 'Release' || this.force
-}
+  private shouldUploadSourcemaps = (): boolean => {
+    // If we did not bundle the RN code, we won't have anything to upload.
+    if (!this.shouldBundleRNCode()) {
+      return false
+    }
 
-XCodeCommand.addPath('react-native', 'xcode')
-XCodeCommand.addOption('scriptPath', Command.String({required: false}))
-XCodeCommand.addOption('service', Command.String('--service'))
-XCodeCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-XCodeCommand.addOption('force', Command.Boolean('--force'))
-XCodeCommand.addOption('composeSourcemapsPath', Command.String('--compose-sourcemaps-path'))
-XCodeCommand.addOption('repositoryURL', Command.String('--repository-url'))
-XCodeCommand.addOption('disableGit', Command.Boolean('--disable-git'))
-XCodeCommand.addOption('configPath', Command.String('--config'))
-XCodeCommand.addOption('removeSourcesContent', Command.Boolean('--remove-sources-content'))
-XCodeCommand.addOption('infoPlistPath', Command.String('--info-plist-path'))
+    if (this.force) {
+      return true
+    }
+
+    // We don't upload sourcemaps if the configuration is "Debug"
+    return !process.env.CONFIGURATION?.includes('Debug')
+  }
+
+  private shouldBundleRNCode = (): boolean => {
+    if (this.force) {
+      return true
+    }
+
+    // We keep the same logic and order than react-native-xcode.sh script from RN.
+    if (!!process.env.SKIP_BUNDLING) {
+      return false
+    }
+    if (process.env.CONFIGURATION?.includes('Debug')) {
+      // We don't build for simulators in debug mode but we do for real devices.
+      // See https://github.com/DataDog/expo-datadog/issues/31
+      if (process.env.PLATFORM_NAME?.includes('simulator')) {
+        return !!process.env.FORCE_BUNDLING
+      }
+    }
+
+    return true
+  }
+}

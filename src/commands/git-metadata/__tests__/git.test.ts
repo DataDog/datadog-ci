@@ -1,6 +1,6 @@
 import * as simpleGit from 'simple-git'
 
-import {getCommitInfo, gitRemote, newSimpleGit, stripCredentials} from '../git'
+import {getCommitInfo, newSimpleGit, stripCredentials} from '../git'
 
 interface MockConfig {
   hash?: string
@@ -9,6 +9,8 @@ interface MockConfig {
 }
 
 const createMockSimpleGit = (conf: MockConfig) => ({
+  // eslint-disable-next-line no-null/no-null
+  getConfig: (_: string) => ({value: null}),
   getRemotes: async (_: boolean) => {
     if (conf.remotes === undefined) {
       throw Error('Unexpected call to getRemotes')
@@ -32,31 +34,6 @@ const createMockSimpleGit = (conf: MockConfig) => ({
 })
 
 describe('git', () => {
-  describe('gitRemote', () => {
-    test('should choose the remote named origin', async () => {
-      const mock = createMockSimpleGit({
-        remotes: [
-          {name: 'first', refs: {push: 'remote1'}},
-          {name: 'origin', refs: {push: 'remote2'}},
-        ],
-      }) as any
-      const remote = await gitRemote(mock)
-
-      expect(remote).toBe('remote2')
-    })
-    test('should choose the first remote', async () => {
-      const mock = createMockSimpleGit({
-        remotes: [
-          {name: 'first', refs: {push: 'remote1'}},
-          {name: 'second', refs: {push: 'remote2'}},
-        ],
-      }) as any
-      const remote = await gitRemote(mock)
-
-      expect(remote).toBe('remote1')
-    })
-  })
-
   describe('stripCredentials: git protocol', () => {
     test('should return the same value', () => {
       const input = 'git@github.com:user/project.git'
@@ -115,7 +92,7 @@ describe('git', () => {
 
   describe('newSimpleGit', () => {
     test('should throw an error if git is not installed', async () => {
-      jest.spyOn(simpleGit, 'gitP').mockImplementation(() => {
+      jest.spyOn(simpleGit, 'simpleGit').mockImplementation(() => {
         throw Error('gitp error')
       })
       await expect(newSimpleGit()).rejects.toThrow('gitp error')
@@ -123,7 +100,7 @@ describe('git', () => {
 
     test('should throw an error if revparse throws an error', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'gitP').mockReturnValue(mock)
+      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockImplementation(async () => {
         throw Error('revparse error')
       })
@@ -133,7 +110,7 @@ describe('git', () => {
 
     test('should not throw any errors', async () => {
       const mock = createMockSimpleGit({}) as any
-      jest.spyOn(simpleGit, 'gitP').mockReturnValue(mock)
+      jest.spyOn(simpleGit, 'simpleGit').mockReturnValue(mock)
       jest.spyOn(mock, 'revparse').mockResolvedValue('1234')
 
       await expect(newSimpleGit()).resolves.not.toThrow()

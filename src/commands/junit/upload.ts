@@ -3,24 +3,29 @@ import os from 'os'
 import path from 'path'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
+import * as t from 'typanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
+import {findFiles} from '../../helpers/file-finder'
+import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {SpanTags} from '../../helpers/interfaces'
-import {RequestBuilder} from '../../helpers/interfaces'
+import id from '../../helpers/id'
+import {SpanTags, RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseMetrics} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {buildPath, getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+import {getRequestBuilder, parsePathsList, timedExecAsync} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
 
+import {isGitRepo} from '../git-metadata'
 import {newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
-import {isGitRepo} from '../git-metadata/library'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -36,9 +41,24 @@ import {
   renderSuccessfulUpload,
   renderUpload,
 } from './renderer'
-import {isFalse} from './utils'
 
+const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
+const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
+
+const isJunitXmlReport = (file: string): boolean => {
+  if (path.extname(file) !== '.xml') {
+    return false
+  }
+
+  const filename = path.basename(file)
+
+  return (
+    filename.includes('junit') || // *junit*.xml
+    filename.includes('test') || // *test*.xml
+    filename.includes('TEST-') // *TEST-*.xml
+  )
+}
 
 const validateXml = (xmlFilePath: string) => {
   const xmlFileContentString = String(fs.readFileSync(xmlFilePath))
@@ -48,15 +68,20 @@ const validateXml = (xmlFilePath: string) => {
   }
   const xmlParser = new XMLParser()
   const xmlFileJSON = xmlParser.parse(String(xmlFileContentString))
-  if (!xmlFileJSON.testsuites && !xmlFileJSON.testsuite) {
+  if (!('testsuites' in xmlFileJSON) && !('testsuite' in xmlFileJSON)) {
     return 'Neither <testsuites> nor <testsuite> are the root tag.'
+  } else if (!xmlFileJSON.testsuite && !xmlFileJSON.testsuites) {
+    return 'The junit report file is empty, there are no <testcase> elements.'
   }
 
   return undefined
 }
 
 export class UploadJUnitXMLCommand extends Command {
+  public static paths = [['junit', 'upload']]
+
   public static usage = Command.Usage({
+    category: 'CI Visibility',
     description: 'Upload jUnit XML test reports files to Datadog.',
     details: `
       This command will upload to jUnit XML test reports files to Datadog.\n
@@ -64,6 +89,14 @@ export class UploadJUnitXMLCommand extends Command {
     `,
     examples: [
       ['Upload all jUnit XML test report files in current directory', 'datadog-ci junit upload --service my-service .'],
+      [
+        'Discover and upload all jUnit XML test report files doing recursive search in current directory',
+        'datadog-ci junit upload --service my-service --auto-discovery .',
+      ],
+      [
+        'Discover and upload all jUnit XML test report files doing recursive search in current directory, ignoring src/ignored-module-a and src/ignored-module-b',
+        'datadog-ci junit upload --service my-service --ignored-paths src/ignored-module-a,src/ignored-module-b --auto-discovery .',
+      ],
       [
         'Upload all jUnit XML test report files in src/unit-test-reports and src/acceptance-test-reports',
         'datadog-ci junit upload --service my-service src/unit-test-reports src/acceptance-test-reports',
@@ -73,12 +106,12 @@ export class UploadJUnitXMLCommand extends Command {
         'datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:value2 .',
       ],
       [
-        'Upload all jUnit XML test report files in current directory and add extra metrics globally',
-        'datadog-ci junit upload --service my-service --metrics key1:123 --metrics key2:321 .',
+        'Upload all jUnit XML test report files in current directory and add extra measures globally',
+        'datadog-ci junit upload --service my-service --measures key1:123 --measures key2:321 .',
       ],
       [
         'Upload all jUnit XML test report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
+        'DD_SITE=datadoghq.eu datadog-ci junit upload --service my-service .',
       ],
       [
         'Upload all jUnit XML test report files in current directory while also collecting logs',
@@ -99,45 +132,56 @@ export class UploadJUnitXMLCommand extends Command {
     ],
   })
 
-  private basePaths?: string[]
+  private basePaths = Option.Rest({required: 1})
+  private verbose = Option.Boolean('--verbose', false)
+  private dryRun = Option.Boolean('--dry-run', false)
+  private env = Option.String('--env')
+  private logs = Option.String('--logs', 'false', {
+    env: 'DD_CIVISIBILITY_LOGS_ENABLED',
+    tolerateBoolean: true,
+    validator: t.isBoolean(),
+  })
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private measures = Option.Array('--measures')
+  private service = Option.String('--service', {env: 'DD_SERVICE'})
+  private tags = Option.Array('--tags')
+  private reportTags = Option.Array('--report-tags')
+  private reportMeasures = Option.Array('--report-measures')
+  private rawXPathTags = Option.Array('--xpath-tag')
+  private gitRepositoryURL = Option.String('--git-repository-url')
+  private skipGitMetadataUpload = Option.String('--skip-git-metadata-upload', 'false', {
+    validator: t.isBoolean(),
+    tolerateBoolean: true,
+  })
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  private automaticReportsDiscovery = Option.String('--auto-discovery', 'false', {
+    validator: t.isBoolean(),
+    tolerateBoolean: true,
+  })
+  private ignoredPaths = Option.String('--ignored-paths')
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
     envVarMetrics: process.env.DD_METRICS,
+    envVarMeasures: process.env.DD_MEASURES,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
-  private verbose = false
-  private dryRun = false
-  private env?: string
-  private logs = false
-  private maxConcurrency = 20
-  private metrics?: string[]
-  private service?: string
-  private tags?: string[]
-  private rawXPathTags?: string[]
+
   private xpathTags?: Record<string, string>
-  private gitRepositoryURL?: string
-  private skipGitMetadataUpload = true
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
-    if (!this.service) {
-      this.service = process.env.DD_SERVICE
-    }
-    // Unless the user explicitly passes '0' or 'false'
-    // by `--skip-git-metadata-upload=0` or `--skip-git-metadata-upload=false` respectively,
-    // this will be true, so git metadata won't be uploaded
-    if (this.skipGitMetadataUpload) {
-      this.skipGitMetadataUpload = !isFalse(this.skipGitMetadataUpload)
-    }
 
-    if (!this.service) {
-      this.context.stderr.write('Missing service\n')
-
-      return 1
-    }
     if (!this.basePaths || !this.basePaths.length) {
       this.context.stderr.write('Missing basePath\n')
 
@@ -146,14 +190,6 @@ export class UploadJUnitXMLCommand extends Command {
 
     if (!this.config.env) {
       this.config.env = this.env
-    }
-
-    if (
-      !this.logs &&
-      process.env.DD_CIVISIBILITY_LOGS_ENABLED &&
-      !['false', '0'].includes(process.env.DD_CIVISIBILITY_LOGS_ENABLED.toLowerCase())
-    ) {
-      this.logs = true
     }
 
     if (this.rawXPathTags) {
@@ -171,19 +207,38 @@ export class UploadJUnitXMLCommand extends Command {
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
-    const payloads = await this.getMatchingJUnitXMLFiles(spanTags)
+    const customTags = this.getCustomTags()
+    const customMeasures = this.getCustomMeasures()
+    const reportTags = this.getReportTags()
+    const reportMeasures = this.getReportMeasures()
+    const payloads = await this.getMatchingJUnitXMLFiles(
+      spanTags,
+      customTags,
+      customMeasures,
+      reportTags,
+      reportMeasures
+    )
     const upload = (p: Payload) => this.uploadJUnitXML(api, p)
 
     const initialTime = new Date().getTime()
 
-    await asyncPool(this.maxConcurrency, payloads, upload)
+    await doWithMaxConcurrency(this.maxConcurrency, payloads, upload)
 
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
     this.logger.info(renderSuccessfulUpload(this.dryRun, payloads.length, totalTimeSeconds))
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
-        const requestBuilder = getRequestBuilder({baseUrl: apiUrl, apiKey: this.config.apiKey!})
+        const traceId = id()
+
+        const requestBuilder = getRequestBuilder({
+          baseUrl: apiUrl,
+          apiKey: this.config.apiKey!,
+          headers: new Map([
+            [TRACE_ID_HTTP_HEADER, traceId],
+            [PARENT_ID_HTTP_HEADER, traceId],
+          ]),
+        })
         try {
           this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
           let elapsed = 0
@@ -238,33 +293,45 @@ export class UploadJUnitXMLCommand extends Command {
     }, {})
   }
 
-  private async getMatchingJUnitXMLFiles(spanTags: SpanTags): Promise<Payload[]> {
-    const jUnitXMLFiles = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
-      const isFile = !!path.extname(basePath)
-      if (isFile) {
-        return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
-      }
+  private async getMatchingJUnitXMLFiles(
+    spanTags: SpanTags,
+    customTags: Record<string, string>,
+    customMeasures: Record<string, number>,
+    reportTags: Record<string, string>,
+    reportMeasures: Record<string, number>
+  ): Promise<Payload[]> {
+    let basePaths
+    let searchFoldersRecursively
+    let filterFile: (file: string) => boolean
+    if (this.automaticReportsDiscovery) {
+      basePaths = this.basePaths || ['.']
+      searchFoldersRecursively = true
+      filterFile = isJunitXmlReport
+    } else {
+      // maintaining legacy matching logic for backward compatibility
+      basePaths = this.basePaths || []
+      searchFoldersRecursively = false
+      filterFile = (file) => path.extname(file) === '.xml'
+    }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.xml')))
-    }, [])
-
-    const validUniqueFiles = [...new Set(jUnitXMLFiles)].filter((jUnitXMLFilePath) => {
-      const validationErrorMessage = validateXml(jUnitXMLFilePath)
-      if (validationErrorMessage) {
-        this.context.stdout.write(renderInvalidFile(jUnitXMLFilePath, validationErrorMessage))
-
-        return false
-      }
-
-      return true
-    })
+    const validUniqueFiles = findFiles(
+      basePaths,
+      searchFoldersRecursively,
+      parsePathsList(this.ignoredPaths),
+      filterFile,
+      validateXml,
+      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+    )
 
     return validUniqueFiles.map((jUnitXMLFilePath) => ({
       hostname: os.hostname(),
       logsEnabled: this.logs,
       xpathTags: this.xpathTags,
-      service: this.service!,
       spanTags,
+      customTags,
+      customMeasures,
+      reportTags,
+      reportMeasures,
       xmlPath: jUnitXMLFilePath,
     }))
   }
@@ -274,20 +341,46 @@ export class UploadJUnitXMLCommand extends Command {
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
 
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-    const cliMetrics = this.metrics ? parseMetrics(this.metrics) : {}
-
     return {
       ...gitSpanTags,
       ...ciSpanTags,
       ...userGitSpanTags,
+      ...(this.config.env ? {env: this.config.env} : {}),
+      service: this.service!,
+    }
+  }
+
+  private getCustomTags(): Record<string, string> {
+    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
+    const cliTags = this.tags ? parseTags(this.tags) : {}
+
+    return {
       ...cliTags,
       ...envVarTags,
-      ...cliMetrics,
+    }
+  }
+
+  private getCustomMeasures(): Record<string, number> {
+    const envVarMetrics = this.config.envVarMetrics ? parseMetrics(this.config.envVarMetrics.split(',')) : {}
+    const envVarMeasures = this.config.envVarMeasures ? parseMetrics(this.config.envVarMeasures.split(',')) : {}
+    const cliMeasures = this.measures ? parseMetrics(this.measures) : {}
+
+    return {
+      ...cliMeasures,
       ...envVarMetrics,
-      ...(this.config.env ? {env: this.config.env} : {}),
+      ...envVarMeasures,
+    }
+  }
+
+  private getReportTags(): Record<string, string> {
+    return this.reportTags ? parseTags(this.reportTags) : {}
+  }
+
+  private getReportMeasures(): Record<string, number> {
+    const cliMeasures = this.reportMeasures ? parseMetrics(this.reportMeasures) : {}
+
+    return {
+      ...cliMeasures,
     }
   }
 
@@ -319,16 +412,3 @@ export class UploadJUnitXMLCommand extends Command {
     }
   }
 }
-UploadJUnitXMLCommand.addPath('junit', 'upload')
-UploadJUnitXMLCommand.addOption('service', Command.String('--service'))
-UploadJUnitXMLCommand.addOption('env', Command.String('--env'))
-UploadJUnitXMLCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadJUnitXMLCommand.addOption('tags', Command.Array('--tags'))
-UploadJUnitXMLCommand.addOption('metrics', Command.Array('--metrics'))
-UploadJUnitXMLCommand.addOption('basePaths', Command.Rest({required: 1}))
-UploadJUnitXMLCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadJUnitXMLCommand.addOption('logs', Command.Boolean('--logs'))
-UploadJUnitXMLCommand.addOption('rawXPathTags', Command.Array('--xpath-tag'))
-UploadJUnitXMLCommand.addOption('skipGitMetadataUpload', Command.Boolean('--skip-git-metadata-upload'))
-UploadJUnitXMLCommand.addOption('gitRepositoryURL', Command.String('--git-repository-url'))
-UploadJUnitXMLCommand.addOption('verbose', Command.Boolean('--verbose'))

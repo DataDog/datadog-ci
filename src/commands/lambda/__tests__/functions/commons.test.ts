@@ -1,20 +1,21 @@
 jest.mock('fs')
-jest.mock('../../renderer', () => require('../../__mocks__/renderer'))
 jest.mock('@aws-sdk/credential-providers')
+jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import * as fs from 'fs'
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
-import {LambdaClient, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
+import {Architecture, LambdaClient, Runtime, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
+
 import 'aws-sdk-client-mock-jest'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {createCommand} from '../../../../helpers/__tests__/fixtures'
 
 import {
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
@@ -24,7 +25,6 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
-  Runtime,
   TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
@@ -42,12 +42,13 @@ import {
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
+  maskConfig,
 } from '../../functions/commons'
 import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
 import {
-  createCommand,
+  MOCK_LAMBDA_CONFIG,
   mockAwsAccessKeyId,
   mockAwsAccount,
   mockAwsSecretAccessKey,
@@ -88,9 +89,9 @@ describe('commons', () => {
     })
 
     test('swaps layers if architecture is arm64', () => {
-      const runtime: Runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       let layerARNs = [
@@ -251,8 +252,8 @@ describe('commons', () => {
       expect(latestVersionFound).toBe(expectedLatestVersion)
     })
 
-    test('finds latests version for Node14', async () => {
-      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node14-x`
+    test('finds latests version for Node20', async () => {
+      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
       mockLambdaLayers(lambdaClientMock, {
         [`${layer}:1`]: {
           LayerName: layer,
@@ -283,7 +284,7 @@ describe('commons', () => {
           VersionNumber: 41,
         },
       })
-      const runtime: Runtime = 'nodejs14.x'
+      const runtime: Runtime = 'nodejs20.x'
       const region = 'us-east-1'
       const expectedLatestVersion = 41
       const latestVersionFound = await findLatestLayerVersion(runtime, region)
@@ -291,7 +292,7 @@ describe('commons', () => {
     })
 
     test('returns 0 when no layer can be found', async () => {
-      const runtime: Runtime = 'python3.7'
+      const runtime: Runtime = 'python3.12'
       const region = 'us-east-1'
       const expectedLatestVersion = 0
       const latestVersionFound = await findLatestLayerVersion(runtime, region)
@@ -362,6 +363,10 @@ describe('commons', () => {
       expect(isMissingDatadogEnvVars()).toBe(true)
 
       process.env = {}
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingDatadogEnvVars()).toBe(true)
+
+      process.env = {}
       process.env[CI_KMS_API_KEY_ENV_VAR] = 'SOME-AWS-KMS-API-KEY-CONTAINING-DATADOG-API-KEY'
       expect(isMissingDatadogEnvVars()).toBe(true)
 
@@ -372,6 +377,12 @@ describe('commons', () => {
 
     test('returns false when Datadog Env Vars are set with DATADOG_API_KEY', () => {
       process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
+      expect(isMissingDatadogEnvVars()).toBe(false)
+    })
+
+    test('returns false when Datadog Env Vars are set with DD_API_KEY', () => {
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
       process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       expect(isMissingDatadogEnvVars()).toBe(false)
     })
@@ -405,6 +416,11 @@ describe('commons', () => {
 
     test('returns false when DATADOG_API_KEY is set', () => {
       process.env[CI_API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
+      expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
+    })
+
+    test('returns false when DD_API_KEY is set', () => {
+      process.env[API_KEY_ENV_VAR] = 'SOME-DATADOG-API-KEY'
       expect(isMissingAnyDatadogApiKeyEnvVar()).toBe(false)
     })
 
@@ -443,7 +459,7 @@ describe('commons', () => {
 
     test('gets sa-east-1 arm64 Lambda Extension layer ARN', async () => {
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -470,7 +486,7 @@ describe('commons', () => {
 
     test('gets us-gov-1 gov cloud arm64 Lambda Extension layer ARN', async () => {
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -485,8 +501,8 @@ describe('commons', () => {
       )
     })
 
-    test('gets sa-east-1 Node12 Lambda Library layer ARN', async () => {
-      const runtime = 'nodejs12.x'
+    test('gets sa-east-1 Node20 Lambda Library layer ARN', async () => {
+      const runtime = Runtime.nodejs20x
       const config = {
         Runtime: runtime,
       }
@@ -498,13 +514,13 @@ describe('commons', () => {
       }
       const region = 'sa-east-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
-      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node12-x`)
+      expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Node20-x`)
     })
 
     test('gets sa-east-1 Python39 arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       const settings = {
@@ -517,8 +533,8 @@ describe('commons', () => {
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
-    test('gets us-gov-1 Python37 gov cloud Lambda Library layer ARN', async () => {
-      const runtime = 'python3.7'
+    test('gets us-gov-1 Python312 gov cloud Lambda Library layer ARN', async () => {
+      const runtime = Runtime.python312
       const config = {
         Runtime: runtime,
       }
@@ -530,12 +546,12 @@ describe('commons', () => {
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
-      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python37`)
+      expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python312`)
     })
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'python3.9'
+      const runtime = Runtime.python39
       const config = {
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
         Runtime: runtime,
       }
       const settings = {
@@ -551,10 +567,10 @@ describe('commons', () => {
       )
     })
     test('gets dotnet6 arm64 Lambda Library layer ARN', async () => {
-      const runtime = 'dotnet6'
+      const runtime = Runtime.dotnet6
       const config = {
         Runtime: runtime,
-        Architectures: ['arm64'],
+        Architectures: [Architecture.arm64],
       }
       const settings = {
         flushMetricsToLogs: false,
@@ -656,9 +672,9 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
+            Runtime: Runtime.nodejs20x,
           },
-          lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+          lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
           updateFunctionConfigurationCommandInput: {
             Environment: {
               Variables: {
@@ -669,7 +685,7 @@ describe('commons', () => {
             },
             FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
             Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+            Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'],
           },
         },
       ]
@@ -689,7 +705,7 @@ describe('commons', () => {
         },
         FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
         Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:22'],
+        Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:22'],
       })
     })
   })
@@ -717,9 +733,9 @@ describe('commons', () => {
             lambdaConfig: {
               FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
               Handler: 'index.handler',
-              Runtime: 'nodejs12.x',
+              Runtime: 'nodejs20.x',
             },
-            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x',
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
             updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
@@ -730,7 +746,7 @@ describe('commons', () => {
               },
               FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
               Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node12-x:XX'],
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:XX'],
             },
           },
         ],
@@ -745,9 +761,9 @@ describe('commons', () => {
             lambdaConfig: {
               FunctionArn: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
               Handler: 'index.handler',
-              Runtime: 'nodejs14.x',
+              Runtime: 'nodejs20.x',
             },
-            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x',
+            lambdaLibraryLayerArn: 'arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x',
             updateFunctionConfigurationCommandInput: {
               Environment: {
                 Variables: {
@@ -758,7 +774,7 @@ describe('commons', () => {
               },
               FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
               Handler: '/opt/nodejs/node_modules/datadog-lambda-js/handler.handler',
-              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node14-x:XX'],
+              Layers: ['arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node20-x:XX'],
             },
           },
         ],
@@ -789,25 +805,10 @@ describe('commons', () => {
       expect(result).toBe(undefined)
     })
   })
+
   describe('handles multiple runtimes', () => {
     test('returns true if all runtimes are uniform', async () => {
       const configs: FunctionConfiguration[] = [
-        {
-          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
-          lambdaConfig: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
-            Handler: 'index.handler',
-            Runtime: 'nodejs14.x',
-          },
-        },
-        {
-          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
-          lambdaConfig: {
-            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func2',
-            Handler: 'index.handler',
-            Runtime: 'nodejs12.x',
-          },
-        },
         {
           functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func3',
           lambdaConfig: {
@@ -824,6 +825,14 @@ describe('commons', () => {
             Runtime: 'nodejs18.x',
           },
         },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func5',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func5',
+            Handler: 'index.handler',
+            Runtime: 'nodejs20.x',
+          },
+        },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(true)
     })
@@ -835,7 +844,7 @@ describe('commons', () => {
           lambdaConfig: {
             FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func1',
             Handler: 'index.handler',
-            Runtime: 'nodejs14.x',
+            Runtime: 'nodejs20.x',
           },
         },
         {
@@ -848,6 +857,20 @@ describe('commons', () => {
         },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(false)
+    })
+  })
+
+  describe('maskConfig', () => {
+    it('should mask a Lambda config correctly', () => {
+      const maskedConfig = maskConfig(MOCK_LAMBDA_CONFIG)
+      expect(maskedConfig).toMatchSnapshot()
+    })
+
+    it('should not modify config if env vars are missing', () => {
+      const lambdaConfigCopy = JSON.parse(JSON.stringify(MOCK_LAMBDA_CONFIG))
+      delete lambdaConfigCopy.Environment.Variables
+      const maskedConfig = maskConfig(lambdaConfigCopy)
+      expect(maskedConfig).toMatchSnapshot()
     })
   })
 })

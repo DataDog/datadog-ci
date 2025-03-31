@@ -1,7 +1,12 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
+
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import {version} from '../../helpers/version'
 
 import {
   createLogGroup,
@@ -13,7 +18,7 @@ import {
   attachPolicyToStateMachineIamRole,
   createLogsAccessPolicy,
 } from './awsCommands'
-import {TAG_VERSION_NAME} from './constants'
+import {DD_TRACE_ENABLED, TAG_VERSION_NAME} from './constants'
 import {
   buildLogGroupName,
   buildArn,
@@ -21,13 +26,17 @@ import {
   isValidArn,
   parseArn,
   getStepFunctionLogGroupArn,
+  injectContextIntoTasks,
 } from './helpers'
 
-const cliVersion = require('../../../package.json').version
+const cliVersion = version
 
 export class InstrumentStepFunctionsCommand extends Command {
+  public static paths = [['stepfunctions', 'instrument']]
+
   public static usage = Command.Usage({
-    description: 'Subscribe Step Function Log Groups to a Datadog Forwarder',
+    category: 'Serverless',
+    description: 'Subscribe Step Function log groups to a Datadog Forwarder.',
     details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
     examples: [
       [
@@ -45,13 +54,27 @@ export class InstrumentStepFunctionsCommand extends Command {
     ],
   })
 
-  private dryRun = false
-  private environment?: string
-  private forwarderArn!: string
-  private service?: string
-  private stepFunctionArns: string[] = []
+  private dryRun = Option.Boolean('-d,--dry-run', false)
+  private environment = Option.String('-e,--env')
+  private forwarderArn = Option.String('--forwarder')
+  private service = Option.String('--service')
+  private stepFunctionArns = Option.Array('-s,--step-function')
+  private mergeStepFunctionAndLambdaTraces = Option.Boolean(
+    '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
+    false
+  )
+  private propagateUpstreamTrace = Option.Boolean('--propagate-upstream-trace', false)
 
-  public async execute() {
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
+  public async execute(): Promise<0 | 1> {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     let validationError = false
     if (typeof this.forwarderArn !== 'string') {
       this.context.stdout.write('[Error] `--forwarder` is required\n')
@@ -88,6 +111,9 @@ export class InstrumentStepFunctionsCommand extends Command {
 
     // loop over step functions passed as parameters and generate a list of requests to make to AWS for each step function
     for (const stepFunctionArn of stepFunctionArns) {
+      this.context.stdout.write(
+        `\n======= ${this.dryRun ? '[Dry Run] Planning for' : 'For'} ${stepFunctionArn} =========\n`
+      )
       // use region from the step function arn to make requests to AWS
       const arnObject = parseArn(stepFunctionArn)
       const region = arnObject.region
@@ -135,7 +161,7 @@ export class InstrumentStepFunctionsCommand extends Command {
       }
 
       if (
-        !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service') &&
+        !listStepFunctionTagsResponse?.tags?.some((tag) => tag.key === 'service' && tag.value === this.service) &&
         typeof this.service === 'string'
       ) {
         stepFunctionTagsToAdd.push({key: 'service', value: this.service})
@@ -148,6 +174,14 @@ export class InstrumentStepFunctionsCommand extends Command {
         )
       ) {
         stepFunctionTagsToAdd.push({key: TAG_VERSION_NAME, value: `v${cliVersion}`})
+      }
+
+      if (
+        !listStepFunctionTagsResponse?.tags?.some(
+          (tag) => tag.key === DD_TRACE_ENABLED && tag.value?.toLowerCase() === 'true'
+        )
+      ) {
+        stepFunctionTagsToAdd.push({key: DD_TRACE_ENABLED, value: 'true'})
       }
 
       if (stepFunctionTagsToAdd.length > 0) {
@@ -187,7 +221,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         try {
           await putSubscriptionFilter(
             cloudWatchLogsClient,
-            this.forwarderArn,
+            this.forwarderArn!,
             subscriptionFilterName,
             logGroupName,
             stepFunctionArn,
@@ -310,7 +344,7 @@ export class InstrumentStepFunctionsCommand extends Command {
         try {
           await putSubscriptionFilter(
             cloudWatchLogsClient,
-            this.forwarderArn,
+            this.forwarderArn!,
             subscriptionFilterName,
             logGroupName,
             stepFunctionArn,
@@ -328,6 +362,12 @@ export class InstrumentStepFunctionsCommand extends Command {
         }
         hasChanges = true
       }
+
+      if (this.mergeStepFunctionAndLambdaTraces || this.propagateUpstreamTrace) {
+        // Not putting the update operation into the business logic of logs subscription. This will
+        // add additional API call, but it would also allow easier testing and cleaner code.
+        await injectContextIntoTasks(describeStateMachineCommandOutput, stepFunctionsClient, this.context, this.dryRun)
+      }
     }
     if (!hasChanges) {
       this.context.stdout.write(`\nNo change is applied.\n `)
@@ -336,11 +376,3 @@ export class InstrumentStepFunctionsCommand extends Command {
     return 0
   }
 }
-
-InstrumentStepFunctionsCommand.addPath('stepfunctions', 'instrument')
-
-InstrumentStepFunctionsCommand.addOption('dryRun', Command.Boolean('-d,--dry-run'))
-InstrumentStepFunctionsCommand.addOption('environment', Command.String('-e,--env'))
-InstrumentStepFunctionsCommand.addOption('forwarderArn', Command.String('--forwarder'))
-InstrumentStepFunctionsCommand.addOption('service', Command.String('--service'))
-InstrumentStepFunctionsCommand.addOption('stepFunctionArns', Command.Array('-s,--step-function'))

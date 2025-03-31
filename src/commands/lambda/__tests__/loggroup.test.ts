@@ -29,12 +29,12 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result).toMatchInlineSnapshot(`
-        Object {
-          "createLogGroupCommandInput": Object {
+        {
+          "createLogGroupCommandInput": {
             "logGroupName": "/aws/lambda/my-func",
           },
           "logGroupName": "/aws/lambda/my-func",
-          "putSubscriptionFilterCommandInput": Object {
+          "putSubscriptionFilterCommandInput": {
             "destinationArn": "my-forwarder",
             "filterName": "datadog-ci-filter",
             "filterPattern": "",
@@ -59,12 +59,12 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result).toMatchInlineSnapshot(`
-        Object {
-          "createLogGroupCommandInput": Object {
+        {
+          "createLogGroupCommandInput": {
             "logGroupName": "/aws/lambda/my-func",
           },
           "logGroupName": "/aws/lambda/my-func",
-          "putSubscriptionFilterCommandInput": Object {
+          "putSubscriptionFilterCommandInput": {
             "destinationArn": "my-forwarder",
             "filterName": "datadog-ci-filter",
             "filterPattern": "",
@@ -97,9 +97,9 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result).toMatchInlineSnapshot(`
-        Object {
+        {
           "logGroupName": "/aws/lambda/my-func",
-          "putSubscriptionFilterCommandInput": Object {
+          "putSubscriptionFilterCommandInput": {
             "destinationArn": "my-forwarder",
             "filterName": "datadog-ci-filter",
             "filterPattern": "",
@@ -259,7 +259,7 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result.deleteSubscriptionFilterCommandInput).toMatchInlineSnapshot(`
-        Object {
+        {
           "filterName": "datadog-ci-filter",
           "logGroupName": "/aws/lambda/my-func",
         }
@@ -288,7 +288,7 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result.deleteSubscriptionFilterCommandInput).toMatchInlineSnapshot(`
-        Object {
+        {
           "filterName": "datadog-ci-filter",
           "logGroupName": "/aws/lambda/my-func",
         }
@@ -322,7 +322,7 @@ describe('loggroup', () => {
         'my-forwarder'
       )
       expect(result).toMatchInlineSnapshot(`
-        Object {
+        {
           "logGroupName": "/aws/lambda/my-func",
         }
       `)

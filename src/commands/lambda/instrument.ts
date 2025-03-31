@@ -1,21 +1,26 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import {bold} from 'chalk'
-import {Cli, Command} from 'clipanion'
+import chalk from 'chalk'
+import {Cli, Command, Option} from 'clipanion'
 
+import {
+  ENVIRONMENT_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
-import {
-  AWS_DEFAULT_REGION_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_REG_EXP,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
-} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -27,6 +32,7 @@ import {
   isMissingDatadogEnvVars,
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
+  maskConfig,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
 import {
@@ -38,46 +44,64 @@ import {
 import {
   requestAWSCredentials,
   requestAWSRegion,
-  requestChangesConfirmation,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
 } from './prompt'
-import * as renderer from './renderer'
+import * as commonRenderer from './renderers/common-renderer'
+import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
 
 export class InstrumentCommand extends Command {
-  private apmFlushDeadline?: string
-  private captureLambdaPayload?: string
+  public static paths = [['lambda', 'instrument']]
+
+  public static usage = Command.Usage({
+    category: 'Serverless',
+    description: 'Apply Datadog instrumentation to a Lambda.',
+  })
+
+  private apmFlushDeadline = Option.String('--apm-flush-deadline')
+  private appsecEnabled = Option.Boolean('--appsec', false)
+  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
+  private configPath = Option.String('--config')
+  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
+  private environment = Option.String('--env')
+  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
+  private extraTags = Option.String('--extra-tags,--extraTags')
+  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs')
+  private forwarder = Option.String('--forwarder')
+  private functions = Option.Array('-f,--function', [])
+  private interactive = Option.Boolean('-i,--interactive', false)
+  private layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
+  private layerVersion = Option.String('-v,--layer-version,--layerVersion')
+  private logLevel = Option.String('--log-level,--logLevel')
+  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
+  private profile = Option.String('--profile')
+  private regExPattern = Option.String('--functions-regex,--functionsRegex')
+  private region = Option.String('-r,--region')
+  private service = Option.String('--service')
+  private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true)
+  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
+  private tracing = Option.String('--tracing')
+  private version = Option.String('--version')
+
   private config: LambdaConfigOptions = {
     functions: [],
     tracing: 'true',
   }
-  private configPath?: string
-  private dryRun = false
-  private environment?: string
-  private extensionVersion?: string
-  private extraTags?: string
-  private flushMetricsToLogs?: string
-  private forwarder?: string
-  private functions: string[] = []
-  private interactive = false
-  private layerAWSAccount?: string
-  private layerVersion?: string
-  private logLevel?: string
-  private mergeXrayTraces?: string
-  private profile?: string
-  private regExPattern?: string
-  private region?: string
-  private service?: string
-  private sourceCodeIntegration = true
-  private uploadGitMetadata = true
-  private tracing?: string
-  private version?: string
 
   private credentials?: AwsCredentialIdentity
 
-  public async execute() {
-    this.context.stdout.write(renderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
+  public async execute(): Promise<0 | 1> {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
+    this.context.stdout.write(instrumentRenderer.renderLambdaHeader(Object.getPrototypeOf(this), this.dryRun))
 
     const lambdaConfig = {lambda: this.config}
     this.config = (
@@ -89,7 +113,7 @@ export class InstrumentCommand extends Command {
       try {
         this.credentials = await getAWSProfileCredentials(profile)
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -100,7 +124,7 @@ export class InstrumentCommand extends Command {
       try {
         const credentials = await getAWSCredentials()
         if (credentials === undefined) {
-          this.context.stdout.write(renderer.renderNoAWSCredentialsFound())
+          this.context.stdout.write(commonRenderer.renderNoAWSCredentialsFound())
           await requestAWSCredentials()
         } else {
           this.credentials = credentials
@@ -110,16 +134,16 @@ export class InstrumentCommand extends Command {
         // not want to use the default, nonetheless,
         // we do not ask if `-r|--region` is provided.
         if (this.region === undefined && this.config.region === undefined) {
-          this.context.stdout.write(renderer.renderConfigureAWSRegion())
+          this.context.stdout.write(instrumentRenderer.renderConfigureAWSRegion())
           await requestAWSRegion(process.env[AWS_DEFAULT_REGION_ENV_VAR])
         }
 
         if (isMissingDatadogEnvVars()) {
-          this.context.stdout.write(renderer.renderConfigureDatadog())
+          this.context.stdout.write(instrumentRenderer.renderConfigureDatadog())
           await requestDatadogEnvVars()
         }
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(err))
+        this.context.stdout.write(helperRenderer.renderError(err))
 
         return 1
       }
@@ -131,11 +155,12 @@ export class InstrumentCommand extends Command {
       // to select from all of the functions from the
       // requested region.
       if (!hasSpecifiedFunctions) {
-        const spinner = renderer.fetchingFunctionsSpinner()
+        const spinner = instrumentRenderer.fetchingFunctionsSpinner()
         try {
           const lambdaClientConfig: LambdaClientConfig = {
             region,
             credentials: this.credentials,
+            retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
           }
 
           const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -143,17 +168,17 @@ export class InstrumentCommand extends Command {
           const functionNames =
             (await getAllLambdaFunctionConfigs(lambdaClient)).map((config) => config.FunctionName!).sort() ?? []
           if (functionNames.length === 0) {
-            this.context.stdout.write(renderer.renderCouldntFindLambdaFunctionsInRegionError())
+            this.context.stdout.write(instrumentRenderer.renderCouldntFindLambdaFunctionsInRegionError())
 
             return 1
           }
-          spinner.succeed(renderer.renderFetchedLambdaFunctions(functionNames.length))
+          spinner.succeed(instrumentRenderer.renderFetchedLambdaFunctions(functionNames.length))
 
           const functions = await requestFunctionSelection(functionNames)
           this.functions = functions
         } catch (err) {
-          spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
-          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(instrumentRenderer.renderFailedFetchingLambdaFunctions())
+          this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -162,7 +187,9 @@ export class InstrumentCommand extends Command {
       try {
         await requestEnvServiceVersion()
       } catch (err) {
-        this.context.stdout.write(renderer.renderError(`Grabbing env, service, and version values from user. ${err}`))
+        this.context.stdout.write(
+          helperRenderer.renderError(`Grabbing env, service, and version values from user. ${err}`)
+        )
 
         return 1
       }
@@ -178,12 +205,12 @@ export class InstrumentCommand extends Command {
     hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
-      this.context.stdout.write(renderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
+      this.context.stdout.write(instrumentRenderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
 
       return 1
     }
     if (settings.extensionVersion && settings.forwarderARN) {
-      this.context.stdout.write(renderer.renderExtensionAndForwarderOptionsBothSetError())
+      this.context.stdout.write(instrumentRenderer.renderExtensionAndForwarderOptionsBothSetError())
 
       return 1
     }
@@ -204,7 +231,7 @@ export class InstrumentCommand extends Command {
           settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
         }
       } catch (err) {
-        this.context.stdout.write(renderer.renderSourceCodeIntegrationWarning(err))
+        this.context.stdout.write(instrumentRenderer.renderSourceCodeIntegrationWarning(err))
       }
     }
 
@@ -213,31 +240,35 @@ export class InstrumentCommand extends Command {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         this.context.stdout.write(
-          renderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+          instrumentRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(renderer.renderRegexSetWithARNError())
+        this.context.stdout.write(instrumentRenderer.renderRegexSetWithARNError())
 
         return 1
       }
 
       const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
       if (!region) {
-        this.context.stdout.write(renderer.renderNoDefaultRegionSpecifiedError())
+        this.context.stdout.write(commonRenderer.renderNoDefaultRegionSpecifiedError())
 
         return 1
       }
 
-      const spinner = renderer.fetchingFunctionsSpinner()
+      const spinner = instrumentRenderer.fetchingFunctionsSpinner()
       try {
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
 
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
@@ -249,12 +280,12 @@ export class InstrumentCommand extends Command {
           this.regExPattern!,
           settings
         )
-        spinner.succeed(renderer.renderFetchedLambdaFunctions(configs.length))
+        spinner.succeed(instrumentRenderer.renderFetchedLambdaFunctions(configs.length))
 
         configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
       } catch (err) {
-        spinner.fail(renderer.renderFailedFetchingLambdaFunctions())
-        this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+        spinner.fail(instrumentRenderer.renderFailedFetchingLambdaFunctions())
+        this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
         return 1
       }
@@ -267,21 +298,25 @@ export class InstrumentCommand extends Command {
           region
         )
       } catch (err) {
-        this.context.stdout.write(renderer.renderCouldntGroupFunctionsError(err))
+        this.context.stdout.write(instrumentRenderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }
 
       for (const [region, functionList] of Object.entries(functionGroups)) {
-        const spinner = renderer.fetchingFunctionsConfigSpinner(region)
+        const spinner = instrumentRenderer.fetchingFunctionsConfigSpinner(region)
         spinner.start()
         const lambdaClientConfig: LambdaClientConfig = {
           region,
           credentials: this.credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
         }
 
         const lambdaClient = new LambdaClient(lambdaClientConfig)
-        const cloudWatchLogsClient = new CloudWatchLogsClient({region})
+        const cloudWatchLogsClient = new CloudWatchLogsClient({
+          region,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
         try {
           const configs = await getInstrumentedFunctionConfigs(
             lambdaClient,
@@ -291,10 +326,10 @@ export class InstrumentCommand extends Command {
             settings
           )
           configGroups.push({configs, lambdaClient, cloudWatchLogsClient, region})
-          spinner.succeed(renderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
+          spinner.succeed(instrumentRenderer.renderFetchedLambdaConfigurationsFromRegion(region, configs.length))
         } catch (err) {
-          spinner.fail(renderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
-          this.context.stdout.write(renderer.renderCouldntFetchLambdaFunctionsError(err))
+          spinner.fail(instrumentRenderer.renderFailedFetchingLambdaConfigurationsFromRegion(region))
+          this.context.stdout.write(instrumentRenderer.renderCouldntFetchLambdaFunctionsError(err))
 
           return 1
         }
@@ -316,12 +351,12 @@ export class InstrumentCommand extends Command {
 
     const willUpdate = willUpdateFunctionConfigs(configList)
     if (this.interactive && willUpdate) {
-      this.context.stdout.write(renderer.renderConfirmationNeededSoftWarning())
-      const isConfirmed = await requestChangesConfirmation('Do you want to apply the changes?')
+      this.context.stdout.write(instrumentRenderer.renderConfirmationNeededSoftWarning())
+      const isConfirmed = await requestConfirmation('Do you want to apply the changes?')
       if (!isConfirmed) {
         return 0
       }
-      this.context.stdout.write(renderer.renderInstrumentingFunctionsSoftWarning())
+      this.context.stdout.write(instrumentRenderer.renderInstrumentingFunctionsSoftWarning())
     }
 
     if (willUpdate) {
@@ -374,7 +409,7 @@ export class InstrumentCommand extends Command {
     return {commitSha: currentStatus.hash, gitRemote}
   }
 
-  private async uploadGitData() {
+  private async uploadGitData(): Promise<void> {
     const cli = new Cli()
     cli.register(UploadCommand)
     if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
@@ -395,7 +430,7 @@ export class InstrumentCommand extends Command {
       layerVersion = parseInt(layerVersionStr, 10)
     }
     if (Number.isNaN(layerVersion)) {
-      this.context.stdout.write(renderer.renderInvalidLayerVersionError(layerVersion?.toString()))
+      this.context.stdout.write(instrumentRenderer.renderInvalidLayerVersionError(layerVersion?.toString()))
 
       return
     }
@@ -406,7 +441,7 @@ export class InstrumentCommand extends Command {
     }
 
     if (Number.isNaN(extensionVersion)) {
-      this.context.stdout.write(renderer.renderInvalidExtensionVersionError(extensionVersion?.toString()))
+      this.context.stdout.write(instrumentRenderer.renderInvalidExtensionVersionError(extensionVersion?.toString()))
 
       return
     }
@@ -420,7 +455,7 @@ export class InstrumentCommand extends Command {
 
     for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
       if (!['true', 'false', undefined].includes(value?.toString().toLowerCase())) {
-        this.context.stdout.write(renderer.renderInvalidStringBooleanSpecifiedError(stringBoolean))
+        this.context.stdout.write(instrumentRenderer.renderInvalidStringBooleanSpecifiedError(stringBoolean))
 
         return
       }
@@ -433,6 +468,7 @@ export class InstrumentCommand extends Command {
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
     const logLevel = this.logLevel ?? this.config.logLevel
     const apmFlushDeadline = this.apmFlushDeadline ?? this.config.apmFlushDeadline
+    const appsecEnabled = this.appsecEnabled ?? this.config.appsecEnabled
 
     const service = this.service ?? this.config.service
     const environment = this.environment ?? this.config.environment
@@ -450,18 +486,19 @@ export class InstrumentCommand extends Command {
       }
     }
     if (tagsMissing.length > 0) {
-      this.context.stdout.write(renderer.renderTagsNotConfiguredWarning(tagsMissing))
+      this.context.stdout.write(instrumentRenderer.renderTagsNotConfiguredWarning(tagsMissing))
     }
 
     const extraTags = this.extraTags?.toLowerCase() ?? this.config.extraTags?.toLowerCase()
     if (extraTags && !sentenceMatchesRegEx(extraTags, EXTRA_TAGS_REG_EXP)) {
-      this.context.stdout.write(renderer.renderExtraTagsDontComplyError())
+      this.context.stdout.write(instrumentRenderer.renderExtraTagsDontComplyError())
 
       return
     }
 
     return {
       apmFlushDeadline,
+      appsecEnabled,
       captureLambdaPayload,
       environment,
       extensionVersion,
@@ -479,36 +516,33 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private printPlannedActions(configs: FunctionConfiguration[]) {
+  private printPlannedActions(configs: FunctionConfiguration[]): void {
     const willUpdate = willUpdateFunctionConfigs(configs)
     if (!willUpdate) {
-      this.context.stdout.write(renderer.renderNoUpdatesApplied(this.dryRun))
+      this.context.stdout.write(instrumentRenderer.renderNoUpdatesApplied(this.dryRun))
 
       return
     }
-    this.context.stdout.write(renderer.renderInstrumentInStagingFirst())
+    this.context.stdout.write(instrumentRenderer.renderInstrumentInStagingFirst())
 
-    this.context.stdout.write(renderer.renderFunctionsToBeUpdated())
+    this.context.stdout.write(instrumentRenderer.renderFunctionsToBeUpdated())
     for (const config of configs) {
-      this.context.stdout.write(`\t- ${bold(config.functionARN)}\n`)
+      this.context.stdout.write(`\t- ${chalk.bold(config.functionARN)}\n`)
 
       // Later, we should inform which layer is the latest.
       if (this.interactive) {
         if (!this.extensionVersion || !this.extensionVersion) {
-          this.context.stdout.write(renderer.renderEnsureToLockLayerVersionsWarning())
+          this.context.stdout.write(instrumentRenderer.renderEnsureToLockLayerVersionsWarning())
         }
       }
     }
 
-    this.context.stdout.write(renderer.renderWillApplyUpdates(this.dryRun))
+    this.context.stdout.write(instrumentRenderer.renderWillApplyUpdates(this.dryRun))
     for (const config of configs) {
       if (config.updateFunctionConfigurationCommandInput) {
+        const maskedConfig = maskConfig(config.updateFunctionConfigurationCommandInput)
         this.context.stdout.write(
-          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(
-            config.updateFunctionConfigurationCommandInput,
-            undefined,
-            2
-          )}\n`
+          `UpdateFunctionConfiguration -> ${config.functionARN}\n${JSON.stringify(maskedConfig, undefined, 2)}\n`
         )
       }
       const {logGroupConfiguration, tagConfiguration} = config
@@ -551,38 +585,9 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private setEnvServiceVersion() {
+  private setEnvServiceVersion(): void {
     this.environment = process.env[ENVIRONMENT_ENV_VAR] || undefined
     this.service = process.env[SERVICE_ENV_VAR] || undefined
     this.version = process.env[VERSION_ENV_VAR] || undefined
   }
 }
-
-InstrumentCommand.addPath('lambda', 'instrument')
-InstrumentCommand.addOption('functions', Command.Array('-f,--function'))
-InstrumentCommand.addOption('regExPattern', Command.String('--functions-regex,--functionsRegex'))
-InstrumentCommand.addOption('region', Command.String('-r,--region'))
-InstrumentCommand.addOption('extensionVersion', Command.String('-e,--extension-version,--extensionVersion'))
-InstrumentCommand.addOption('layerVersion', Command.String('-v,--layer-version,--layerVersion'))
-InstrumentCommand.addOption('layerAWSAccount', Command.String('-a,--layer-account,--layerAccount', {hidden: true}))
-InstrumentCommand.addOption('tracing', Command.String('--tracing'))
-InstrumentCommand.addOption('mergeXrayTraces', Command.String('--merge-xray-traces,--mergeXrayTraces'))
-InstrumentCommand.addOption('flushMetricsToLogs', Command.String('--flush-metrics-to-logs,--flushMetricsToLogs'))
-InstrumentCommand.addOption('dryRun', Command.Boolean('-d,--dry'))
-InstrumentCommand.addOption('configPath', Command.String('--config'))
-InstrumentCommand.addOption('forwarder', Command.String('--forwarder'))
-InstrumentCommand.addOption('logLevel', Command.String('--log-level,--logLevel'))
-InstrumentCommand.addOption('apmFlushDeadline', Command.String('--apm-flush-deadline'))
-
-InstrumentCommand.addOption('service', Command.String('--service'))
-InstrumentCommand.addOption('environment', Command.String('--env'))
-InstrumentCommand.addOption('version', Command.String('--version'))
-InstrumentCommand.addOption('extraTags', Command.String('--extra-tags,--extraTags'))
-InstrumentCommand.addOption(
-  'sourceCodeIntegration',
-  Command.Boolean('-s,--source-code-integration,--sourceCodeIntegration')
-)
-InstrumentCommand.addOption('uploadGitMetadata', Command.Boolean('-u,--upload-git-metadata,--uploadGitMetadata'))
-InstrumentCommand.addOption('interactive', Command.Boolean('-i,--interactive'))
-InstrumentCommand.addOption('captureLambdaPayload', Command.String('--capture-lambda-payload,--captureLambdaPayload'))
-InstrumentCommand.addOption('profile', Command.String('--profile'))

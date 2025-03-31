@@ -1,0 +1,8 @@
+export const CD_VIS_PREFIX = 'datadog_cd_visibility.'
+export const IS_DEPLOYMENT_TAG = CD_VIS_PREFIX + 'is_deployment:true'
+export const ENV_TAG = CD_VIS_PREFIX + 'env:'
+export const REVISION_TAG = CD_VIS_PREFIX + 'revision:'
+export const SERVICE_TAG = CD_VIS_PREFIX + 'service:'
+export const IS_ROLLBACK_TAG = CD_VIS_PREFIX + 'is_rollback:true'
+export const CUSTOM_TAGS_TAG = CD_VIS_PREFIX + 'custom_tags:'
+export const CONTAINS_DEPLOYMENT_TAG = 'ci.pipeline.contains_deployment:true'

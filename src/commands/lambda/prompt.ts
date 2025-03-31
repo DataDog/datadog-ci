@@ -1,8 +1,15 @@
-import {blueBright, bold, dim} from 'chalk'
+import chalk from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
 
-import {DATADOG_SITES} from '../../constants'
+import {
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  DATADOG_SITES,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../constants'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
@@ -13,14 +20,9 @@ import {
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
-  CI_API_KEY_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
-  CI_SITE_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
-  ENVIRONMENT_ENV_VAR,
-  SERVICE_ENV_VAR,
-  VERSION_ENV_VAR,
 } from './constants'
 import {isMissingAnyDatadogApiKeyEnvVar, sentenceMatchesRegEx} from './functions/commons'
 
@@ -88,7 +90,7 @@ const awsRegionQuestion = (defaultRegion?: string): inquirer.InputQuestion => ({
 export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQuestion => ({
   choices: [
     {
-      name: `Plain text ${bold('API Key')} (Recommended for trial users) `,
+      name: `Plain text ${chalk.bold('API Key')} (Recommended for trial users) `,
       value: {
         envVar: CI_API_KEY_ENV_VAR,
         message: 'API Key:',
@@ -96,21 +98,21 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
     },
     new inquirer.Separator(),
     {
-      name: `API key encrypted with AWS Key Management Service ${bold('(KMS) API Key')}`,
+      name: `API key encrypted with AWS Key Management Service ${chalk.bold('(KMS) API Key')}`,
       value: {
         envVar: CI_KMS_API_KEY_ENV_VAR,
         message: 'KMS Encrypted API Key:',
       },
     },
     {
-      name: `AWS Secrets Manager ${bold('API Key Secret ARN')}`,
+      name: `AWS Secrets Manager ${chalk.bold('API Key Secret ARN')}`,
       value: {
         envVar: CI_API_KEY_SECRET_ARN_ENV_VAR,
         message: 'API Key Secret ARN:',
       },
     },
   ],
-  message: `Which type of Datadog API Key you want to set? \nLearn more at ${blueBright(
+  message: `Which type of Datadog API Key you want to set? \nLearn more at ${chalk.blueBright(
     `https://app.${datadogSite}/organization-settings/api-keys`
   )}`,
   name: 'type',
@@ -120,7 +122,7 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
 const datadogSiteQuestion: inquirer.ListQuestion = {
   // DATADOG SITE
   choices: DATADOG_SITES,
-  message: `Select the Datadog site to send data. \nLearn more at ${blueBright(
+  message: `Select the Datadog site to send data. \nLearn more at ${chalk.blueBright(
     'https://docs.datadoghq.com/getting_started/site/'
   )}`,
   name: CI_SITE_ENV_VAR,
@@ -130,7 +132,7 @@ const datadogSiteQuestion: inquirer.ListQuestion = {
 const envQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_ENV',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: ENVIRONMENT_ENV_VAR,
   type: 'input',
 }
@@ -138,7 +140,7 @@ const envQuestion: inquirer.InputQuestion = {
 const serviceQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_SERVICE',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: SERVICE_ENV_VAR,
   type: 'input',
 }
@@ -146,7 +148,7 @@ const serviceQuestion: inquirer.InputQuestion = {
 const versionQuestion: inquirer.InputQuestion = {
   default: undefined,
   message: 'Enter a value for the environment variable DD_VERSION',
-  suffix: dim(' (recommended)'),
+  suffix: chalk.dim(' (recommended)'),
   name: VERSION_ENV_VAR,
   type: 'input',
 }
@@ -179,12 +181,6 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
   },
 })
 
-export const confirmationQuestion = (message: string): inquirer.ConfirmQuestion => ({
-  message,
-  name: 'confirmation',
-  type: 'confirm',
-})
-
 export const functionSelectionQuestion = (functionNames: string[]): typeof checkboxPlusPrompt => ({
   choices: functionNames,
   highlight: true,
@@ -212,7 +208,7 @@ export const functionSelectionQuestion = (functionNames: string[]): typeof check
   },
 })
 
-export const requestAWSCredentials = async () => {
+export const requestAWSCredentials = async (): Promise<void> => {
   try {
     const awsCredentialsAnswers = await inquirer.prompt(awsCredentialsQuestions)
     process.env[AWS_ACCESS_KEY_ID_ENV_VAR] = awsCredentialsAnswers[AWS_ACCESS_KEY_ID_ENV_VAR]
@@ -227,7 +223,7 @@ export const requestAWSCredentials = async () => {
   }
 }
 
-export const requestAWSRegion = async (defaultRegion?: string) => {
+export const requestAWSRegion = async (defaultRegion?: string): Promise<void> => {
   try {
     const awsRegionAnswer = await inquirer.prompt(awsRegionQuestion(defaultRegion))
     process.env[AWS_DEFAULT_REGION_ENV_VAR] = awsRegionAnswer[AWS_DEFAULT_REGION_ENV_VAR]
@@ -238,7 +234,7 @@ export const requestAWSRegion = async (defaultRegion?: string) => {
   }
 }
 
-export const requestDatadogEnvVars = async () => {
+export const requestDatadogEnvVars = async (): Promise<void> => {
   try {
     const envSite = process.env[CI_SITE_ENV_VAR]
     let selectedDatadogSite = envSite
@@ -262,7 +258,7 @@ export const requestDatadogEnvVars = async () => {
   }
 }
 
-export const requestEnvServiceVersion = async () => {
+export const requestEnvServiceVersion = async (): Promise<void> => {
   try {
     const envQuestionAnswer = await inquirer.prompt(envQuestion)
     const inputedEnvQuestionAnswer = envQuestionAnswer[ENVIRONMENT_ENV_VAR]
@@ -282,19 +278,7 @@ export const requestEnvServiceVersion = async () => {
   }
 }
 
-export const requestChangesConfirmation = async (message: string) => {
-  try {
-    const confirmationAnswer = await inquirer.prompt(confirmationQuestion(message))
-
-    return confirmationAnswer.confirmation
-  } catch (e) {
-    if (e instanceof Error) {
-      throw Error(`Couldn't receive confirmation. ${e.message}`)
-    }
-  }
-}
-
-export const requestFunctionSelection = async (functionNames: string[]) => {
+export const requestFunctionSelection = async (functionNames: string[]): Promise<any> => {
   try {
     const selectedFunctionsAnswer: any = await inquirer.prompt(functionSelectionQuestion(functionNames))
 

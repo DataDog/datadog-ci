@@ -23,12 +23,23 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  GIT_HEAD_SHA,
+  GIT_BASE_REF,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
-import {normalizeRef, removeEmptyValues, removeUndefinedValues, filterSensitiveInfoFromRepository} from './utils'
+import {
+  normalizeRef,
+  removeEmptyValues,
+  removeUndefinedValues,
+  filterSensitiveInfoFromRepository,
+  getGitHubEventPayload,
+} from './utils'
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
+  AWSCODEPIPELINE: 'awscodepipeline',
   AZURE: 'azurepipelines',
   BITBUCKET: 'bitbucket',
   BITRISE: 'bitrise',
@@ -45,8 +56,11 @@ export const CI_ENGINES = {
 
 export const PROVIDER_TO_DISPLAY_NAME = {
   github: 'GitHub Actions',
-  buddy: 'Buddy',
 }
+
+// DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
+// to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
+const envAllowedToBeMissing = ['DD_GITHUB_JOB_NAME']
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
@@ -80,6 +94,38 @@ const resolveTilde = (filePath: string | undefined) => {
 export const getCISpanTags = (): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
+
+  if (env.DRONE) {
+    const {
+      DRONE_BUILD_NUMBER,
+      DRONE_BUILD_LINK,
+      DRONE_STEP_NAME,
+      DRONE_STAGE_NAME,
+      DRONE_WORKSPACE,
+      DRONE_GIT_HTTP_URL,
+      DRONE_COMMIT_SHA,
+      DRONE_BRANCH,
+      DRONE_TAG,
+      DRONE_COMMIT_AUTHOR_NAME,
+      DRONE_COMMIT_AUTHOR_EMAIL,
+      DRONE_COMMIT_MESSAGE,
+    } = env
+    tags = {
+      [CI_PROVIDER_NAME]: 'drone',
+      [CI_PIPELINE_NUMBER]: DRONE_BUILD_NUMBER,
+      [CI_PIPELINE_URL]: DRONE_BUILD_LINK,
+      [CI_JOB_NAME]: DRONE_STEP_NAME,
+      [CI_STAGE_NAME]: DRONE_STAGE_NAME,
+      [CI_WORKSPACE_PATH]: DRONE_WORKSPACE,
+      [GIT_REPOSITORY_URL]: DRONE_GIT_HTTP_URL,
+      [GIT_SHA]: DRONE_COMMIT_SHA,
+      [GIT_BRANCH]: DRONE_BRANCH,
+      [GIT_TAG]: DRONE_TAG,
+      [GIT_COMMIT_AUTHOR_NAME]: DRONE_COMMIT_AUTHOR_NAME,
+      [GIT_COMMIT_AUTHOR_EMAIL]: DRONE_COMMIT_AUTHOR_EMAIL,
+      [GIT_COMMIT_MESSAGE]: DRONE_COMMIT_MESSAGE,
+    }
+  }
 
   if (env.CIRCLECI) {
     const {
@@ -214,6 +260,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GITHUB_REPOSITORY,
       GITHUB_SERVER_URL,
       GITHUB_RUN_ATTEMPT,
+      DD_GITHUB_JOB_NAME,
+      GITHUB_BASE_REF,
     } = env
     const repositoryUrl = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git`
     let pipelineURL = `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
@@ -225,23 +273,39 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_JOB_NAME]: GITHUB_JOB,
-      [CI_JOB_URL]: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`,
+      [CI_JOB_URL]: filterSensitiveInfoFromRepository(
+        `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
+      ),
       [CI_PIPELINE_ID]: GITHUB_RUN_ID,
       [CI_PIPELINE_NAME]: GITHUB_WORKFLOW,
       [CI_PIPELINE_NUMBER]: GITHUB_RUN_NUMBER,
-      [CI_PIPELINE_URL]: pipelineURL,
+      [CI_PIPELINE_URL]: filterSensitiveInfoFromRepository(pipelineURL),
       [CI_PROVIDER_NAME]: CI_ENGINES.GITHUB,
       [CI_WORKSPACE_PATH]: GITHUB_WORKSPACE,
       [GIT_SHA]: GITHUB_SHA,
       [GIT_REPOSITORY_URL]: repositoryUrl,
       [GIT_BRANCH]: GITHUB_HEAD_REF || GITHUB_REF || '',
       [CI_ENV_VARS]: JSON.stringify({
-        GITHUB_SERVER_URL,
+        GITHUB_SERVER_URL: filterSensitiveInfoFromRepository(GITHUB_SERVER_URL),
         // Snapshots are generated automatically and are sort sensitive
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
+        DD_GITHUB_JOB_NAME,
       }),
+    }
+
+    if (GITHUB_BASE_REF) {
+      // GITHUB_BASE_REF is defined if it's a pull_request or pull_request_target trigger
+      tags[GIT_BASE_REF] = GITHUB_BASE_REF
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = GITHUB_BASE_REF
+      try {
+        const eventPayload = getGitHubEventPayload()
+        tags[GIT_HEAD_SHA] = eventPayload?.pull_request?.head?.sha
+        tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = eventPayload?.pull_request?.base?.sha
+      } catch (e) {
+        // ignore malformed event content
+      }
     }
   }
 
@@ -257,12 +321,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_URL,
       GIT_URL_1,
       DD_CUSTOM_TRACE_ID,
+      DD_CUSTOM_PARENT_ID,
       NODE_NAME,
       NODE_LABELS,
     } = env
 
     tags = {
-      [CI_ENV_VARS]: JSON.stringify({DD_CUSTOM_TRACE_ID}),
       [CI_PIPELINE_ID]: BUILD_TAG,
       [CI_PIPELINE_NUMBER]: BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILD_URL,
@@ -272,6 +336,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: GIT_URL || GIT_URL_1,
       [GIT_BRANCH]: JENKINS_GIT_BRANCH,
       [CI_NODE_NAME]: NODE_NAME,
+      [CI_ENV_VARS]: JSON.stringify({
+        DD_CUSTOM_TRACE_ID,
+        DD_CUSTOM_PARENT_ID,
+      }),
     }
 
     if (NODE_LABELS) {
@@ -388,6 +456,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BITBUCKET_BRANCH,
       BITBUCKET_COMMIT,
       BITBUCKET_GIT_SSH_ORIGIN,
+      BITBUCKET_GIT_HTTP_ORIGIN,
       BITBUCKET_TAG,
       BITBUCKET_PIPELINE_UUID,
       BITBUCKET_CLONE_DIR,
@@ -404,7 +473,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PIPELINE_URL]: url,
       [GIT_BRANCH]: BITBUCKET_BRANCH,
       [GIT_TAG]: BITBUCKET_TAG,
-      [GIT_REPOSITORY_URL]: BITBUCKET_GIT_SSH_ORIGIN,
+      [GIT_REPOSITORY_URL]: BITBUCKET_GIT_SSH_ORIGIN || BITBUCKET_GIT_HTTP_ORIGIN,
       [CI_WORKSPACE_PATH]: BITBUCKET_CLONE_DIR,
       [CI_PIPELINE_ID]: BITBUCKET_PIPELINE_UUID && BITBUCKET_PIPELINE_UUID.replace(/{|}/gm, ''),
     }
@@ -583,6 +652,15 @@ export const getCISpanTags = (): SpanTags | undefined => {
     tags[refKey] = ref
   }
 
+  if (env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
+    const {CODEBUILD_BUILD_ARN, DD_ACTION_EXECUTION_ID, DD_PIPELINE_EXECUTION_ID} = env
+    tags = {
+      [CI_PROVIDER_NAME]: CI_ENGINES.AWSCODEPIPELINE,
+      [CI_PIPELINE_ID]: DD_PIPELINE_EXECUTION_ID,
+      [CI_ENV_VARS]: JSON.stringify({CODEBUILD_BUILD_ARN, DD_PIPELINE_EXECUTION_ID, DD_ACTION_EXECUTION_ID}),
+    }
+  }
+
   if (tags[CI_WORKSPACE_PATH]) {
     tags[CI_WORKSPACE_PATH] = resolveTilde(tags[CI_WORKSPACE_PATH])
   }
@@ -701,7 +779,14 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
 
   if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
     return {
-      ciEnv: filterEnv(['GITHUB_SERVER_URL', 'GITHUB_REPOSITORY', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT']),
+      ciEnv: filterEnv([
+        'GITHUB_SERVER_URL',
+        'GITHUB_REPOSITORY',
+        'GITHUB_RUN_ID',
+        'GITHUB_RUN_ATTEMPT',
+        'GITHUB_JOB',
+        'DD_GITHUB_JOB_NAME',
+      ]),
       provider: 'github',
     }
   }
@@ -710,13 +795,6 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
     return {
       ciEnv: filterEnv(['BUILDKITE_BUILD_ID', 'BUILDKITE_JOB_ID']),
       provider: 'buildkite',
-    }
-  }
-
-  if (process.env.BUDDY) {
-    return {
-      ciEnv: filterEnv(['BUDDY_PIPELINE_ID', 'BUDDY_EXECUTION_ID', 'BUDDY_EXECUTION_START_DATE']),
-      provider: 'buddy',
     }
   }
 
@@ -742,27 +820,87 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
   }
 
   throw new Error(
-    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Buddy, Jenkins, TeamCity, AzurePipelines] are supported'
+    'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
   )
+}
+
+export const getCIProvider = (): string => {
+  if (process.env.CIRCLECI) {
+    return CI_ENGINES.CIRCLECI
+  }
+
+  if (process.env.GITLAB_CI) {
+    return CI_ENGINES.GITLAB
+  }
+
+  if (process.env.GITHUB_ACTIONS || process.env.GITHUB_ACTION) {
+    return CI_ENGINES.GITHUB
+  }
+
+  if (process.env.BUILDKITE) {
+    return CI_ENGINES.BUILDKITE
+  }
+
+  if (process.env.BUDDY) {
+    return CI_ENGINES.BUDDY
+  }
+
+  if (process.env.TEAMCITY_VERSION) {
+    return CI_ENGINES.TEAMCITY
+  }
+
+  if (process.env.JENKINS_URL) {
+    return CI_ENGINES.JENKINS
+  }
+
+  if (process.env.TF_BUILD) {
+    return CI_ENGINES.AZURE
+  }
+
+  if (process.env.CF_BUILD_ID) {
+    return CI_ENGINES.CODEFRESH
+  }
+
+  if (process.env.APPVEYOR) {
+    return CI_ENGINES.APPVEYOR
+  }
+
+  if (process.env.BITBUCKET_COMMIT) {
+    return CI_ENGINES.BITBUCKET
+  }
+
+  if (process.env.BITRISE_BUILD_SLUG) {
+    return CI_ENGINES.BITRISE
+  }
+
+  if (process.env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
+    return CI_ENGINES.AWSCODEPIPELINE
+  }
+
+  return 'unknown'
 }
 
 const filterEnv = (values: string[]): Record<string, string> => {
   const ciEnvs: Record<string, string> = {}
-  const missing: string[] = []
+  const requiredMissing: string[] = []
 
   values.forEach((envKey) => {
     const envValue = process.env[envKey]
     if (envValue) {
       ciEnvs[envKey] = envValue
-    } else {
-      missing.push(envKey)
+    } else if (!envAllowedToBeMissing.includes(envKey)) {
+      requiredMissing.push(envKey)
     }
   })
 
-  if (missing.length > 0) {
+  if (requiredMissing.length > 0) {
     // Get the missing values for better error
-    throw new Error(`Missing environment variables [${missing.toString()}]`)
+    throw new Error(`Missing environment variables [${requiredMissing.toString()}]`)
   }
 
   return ciEnvs
+}
+
+export const isInteractive = ({stream = process.stdout}: {stream?: NodeJS.WriteStream} = {}) => {
+  return Boolean(!('CI' in process.env) && process.env.TERM !== 'dumb' && stream && stream.isTTY)
 }

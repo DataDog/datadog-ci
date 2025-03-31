@@ -1,7 +1,8 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {CiError, CriticalError} from './errors'
+import {runTests, waitForResults} from './batch'
+import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
   Reporter,
@@ -14,26 +15,31 @@ import {
   TestPayload,
   Trigger,
   TriggerConfig,
-  UserConfigOverride,
   WrapperConfig,
 } from './interfaces'
+import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_COMMAND_CONFIG, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
+import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
+import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
-  getSuites,
-  getTestsToTrigger,
   InitialSummary,
   renderResults,
-  runTests,
-  waitForResults,
   getExitReason,
   toExitCode,
   reportExitLogs,
-} from './utils'
+} from './utils/public'
+
+type ExecuteOptions = {
+  jUnitReport?: string
+  reporters?: (SupportedReporter | Reporter)[]
+  runId?: string
+  suites?: Suite[]
+}
 
 export const executeTests = async (
   reporter: MainReporter,
@@ -44,16 +50,8 @@ export const executeTests = async (
   summary: Summary
 }> => {
   const api = getApiHelper(config)
-
-  const publicIdsFromCli = config.publicIds.map((id) => ({
-    config: {
-      ...config.global,
-      ...(config.locations?.length ? {locations: config.locations} : {}),
-    },
-    id,
-  }))
-  let testsToTrigger: TriggerConfig[]
   let tunnel: Tunnel | undefined
+  let triggerConfigs: TriggerConfig[] = []
 
   const stopTunnel = async () => {
     if (tunnel) {
@@ -61,20 +59,21 @@ export const executeTests = async (
     }
   }
 
-  if (publicIdsFromCli.length) {
-    testsToTrigger = publicIdsFromCli
-  } else {
-    try {
-      testsToTrigger = await getTestsList(api, config, reporter, suites)
-    } catch (error) {
-      throw new CriticalError(
-        isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG',
-        error.message
-      )
+  try {
+    triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
+  } catch (error) {
+    throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
+  }
+
+  let hasLTD = false
+  for (const triggerConfig of triggerConfigs) {
+    if (isLocalTriggerConfig(triggerConfig)) {
+      hasLTD = true
+      break
     }
   }
 
-  if (!testsToTrigger.length) {
+  if (triggerConfigs.length === 0) {
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
@@ -88,7 +87,7 @@ export const executeTests = async (
     const triggerFromSearch = !!config.testSearchQuery
     testsToTriggerResult = await getTestsToTrigger(
       api,
-      testsToTrigger,
+      triggerConfigs,
       reporter,
       triggerFromSearch,
       config.failOnMissingTests,
@@ -109,7 +108,7 @@ export const executeTests = async (
     throw new CiError('NO_TESTS_TO_RUN')
   }
 
-  const publicIdsToTrigger = tests.map(({public_id}) => public_id)
+  const publicIdsToTrigger = tests.flatMap(({public_id}) => (public_id ? [public_id] : []))
 
   if (config.tunnel) {
     let presignedURL: string
@@ -137,26 +136,36 @@ export const executeTests = async (
 
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger)
+    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
+  if (trigger.selective_rerun_rate_limited) {
+    reporter.error('The selective rerun feature was rate-limited. All tests will be re-run.\n\n')
+  }
+
   try {
-    const maxPollingTimeout = Math.max(...testsToTrigger.map((t) => t.config.pollingTimeout || config.pollingTimeout))
+    const {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain} = config
+    const batchTimeout = config.batchTimeout || DEFAULT_BATCH_TIMEOUT
+
     const results = await waitForResults(
       api,
       trigger,
       tests,
-      {
-        failOnCriticalErrors: config.failOnCriticalErrors,
-        failOnTimeout: config.failOnTimeout,
-        maxPollingTimeout,
-      },
+      {datadogSite, failOnCriticalErrors, failOnTimeout, subdomain, batchTimeout},
       reporter,
       tunnel
     )
+
+    if (hasLTD) {
+      try {
+        await updateLTDMultiLocators(reporter, config, results)
+      } catch (error) {
+        throw new CriticalError('LTD_MULTILOCATORS_UPDATE_FAILED', error.message)
+      }
+    }
 
     return {
       results,
@@ -166,97 +175,98 @@ export const executeTests = async (
       },
     }
   } catch (error) {
+    if (error instanceof BatchTimeoutRunawayError) {
+      throw error
+    }
+
+    if (error instanceof CriticalError && error.code === 'LTD_MULTILOCATORS_UPDATE_FAILED') {
+      throw error
+    }
+
     throw new CriticalError('POLL_RESULTS_FAILED', error.message)
   } finally {
     await stopTunnel()
   }
 }
 
-const getTestListBySearchQuery = async (
-  api: APIHelper,
-  globalConfigOverride: UserConfigOverride,
-  testSearchQuery: string
-) => {
-  const testSearchResults = await api.searchTests(testSearchQuery)
-
-  return testSearchResults.tests.map((test) => ({
-    config: globalConfigOverride,
-    id: test.public_id,
-    suite: `Query: ${testSearchQuery}`,
-  }))
-}
-
-export const getTestsList = async (
+export const getTriggerConfigs = async (
   api: APIHelper,
   config: RunTestsCommandConfig,
   reporter: MainReporter,
-  suites: Suite[] = []
-) => {
-  // If "testSearchQuery" is provided, always default to running it.
-  if (config.testSearchQuery) {
-    const testsToTriggerBySearchQuery = await getTestListBySearchQuery(api, config.global, config.testSearchQuery)
+  suites?: Suite[]
+): Promise<TriggerConfig[]> => {
+  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
+  const defaultTestConfigOverrides = config.defaultTestOverrides
+  const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-    if (testsToTriggerBySearchQuery.length > MAX_TESTS_TO_TRIGGER) {
-      reporter.error(
-        `More than ${MAX_TESTS_TO_TRIGGER} tests returned by search query, only the first ${MAX_TESTS_TO_TRIGGER} will be fetched.\n`
-      )
+  // Grab the tests returned by the search query (or `[]` if not given).
+  const testsFromSearchQuery = await getTestsFromSearchQuery(api, config)
+
+  // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
+  const testIdsFromCli = config.publicIds
+  const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
+  const testIdsFromTestConfigs = testsFromTestConfigs.map(getTriggerConfigPublicId).filter((p): p is string => !!p)
+
+  // Take the list of tests from the first source that defines it, by order of precedence
+  const testIdsToTrigger =
+    [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
+
+  // Create the overrides required for the list of tests to trigger
+  const triggerConfigsWithId = testIdsToTrigger.map((id) => {
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => t.id === id)
+    let testFromSearchQuery
+    if (testIndexFromSearchQuery >= 0) {
+      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
     }
 
-    return testsToTriggerBySearchQuery
-  }
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => getTriggerConfigPublicId(t) === id)
+    let testFromTestConfigs
+    if (testIndexFromTestConfigs >= 0) {
+      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
+    }
 
-  const suitesFromFiles = (await Promise.all(config.files.map((glob: string) => getSuites(glob, reporter))))
-    .reduce((acc, val) => acc.concat(val), [])
-    .filter((suite) => !!suite.content.tests)
+    return {
+      ...(isLocalTriggerConfig(testFromTestConfigs) ? {} : {id}),
+      ...testFromSearchQuery,
+      ...testFromTestConfigs,
+      testOverrides: {
+        ...defaultTestConfigOverrides,
+        ...testFromTestConfigs?.testOverrides,
+      },
+    } as TriggerConfig
+  })
 
-  suites.push(...suitesFromFiles)
+  const localTriggerConfigsWithoutId = testsFromTestConfigs.flatMap((testConfig) => {
+    if (!isLocalTriggerConfig(testConfig)) {
+      return []
+    }
 
-  const configFromEnvironment = config.locations?.length ? {locations: config.locations} : {}
+    return [
+      {
+        ...testConfig,
+        testOverrides: {
+          ...defaultTestConfigOverrides,
+          ...testConfig.testOverrides,
+        },
+      },
+    ]
+  })
 
-  const overrideTestConfig = (test: TriggerConfig): UserConfigOverride =>
-    // {} < global < ENV < test file
-    ({
-      ...config.global,
-      ...configFromEnvironment,
-      ...test.config,
-    })
-
-  const testsToTrigger = suites
-    .map((suite) =>
-      suite.content.tests.map((test) => ({
-        config: overrideTestConfig(test),
-        id: test.id,
-        suite: suite.name,
-      }))
-    )
-    .reduce((acc, suiteTests) => acc.concat(suiteTests), [])
-
-  return testsToTrigger
+  return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
 }
 
-export const execute = async (
+export const executeWithDetails = async (
   runConfig: WrapperConfig,
-  {
-    jUnitReport,
-    reporters,
-    runId,
-    suites,
-  }: {
-    jUnitReport?: string
-    reporters?: (SupportedReporter | Reporter)[]
-    runId?: string
-    suites?: Suite[]
-  }
-): Promise<0 | 1> => {
+  {jUnitReport, reporters, runId, suites}: ExecuteOptions
+): Promise<{
+  results: Result[]
+  summary: Summary
+  exitCode: 0 | 1
+}> => {
   const startTime = Date.now()
   const localConfig = {
     ...DEFAULT_COMMAND_CONFIG,
     ...runConfig,
-  }
-
-  // We don't want to have default globs in case suites are given.
-  if (!runConfig.files && suites?.length) {
-    localConfig.files = []
   }
 
   // Handle reporters for the run.
@@ -302,5 +312,17 @@ export const execute = async (
 
   reportExitLogs(mainReporter, localConfig, {results})
 
-  return toExitCode(getExitReason(localConfig, {results}))
+  const exitCode = toExitCode(getExitReason(localConfig, {results}))
+
+  return {
+    results,
+    summary,
+    exitCode,
+  }
+}
+
+export const execute = async (runConfig: WrapperConfig, executeOptions: ExecuteOptions): Promise<0 | 1> => {
+  const {exitCode} = await executeWithDetails(runConfig, executeOptions)
+
+  return exitCode
 }

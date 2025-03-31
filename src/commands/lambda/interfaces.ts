@@ -18,6 +18,7 @@ import {
  */
 export interface LambdaConfigOptions {
   apmFlushDeadline?: string
+  appsecEnabled?: boolean
   captureLambdaPayload?: string
   environment?: string
   extensionVersion?: string
@@ -63,6 +64,7 @@ export interface InstrumentedConfigurationGroup {
  */
 export interface InstrumentationSettings extends InstrumentationTags {
   apmFlushDeadline?: string
+  appsecEnabled?: boolean
   captureLambdaPayload?: boolean
   extensionVersion?: number
   flushMetricsToLogs: boolean

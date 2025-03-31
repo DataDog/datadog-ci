@@ -2,18 +2,23 @@ import path from 'path'
 import {URL} from 'url'
 
 import chalk from 'chalk'
-import {Command} from 'clipanion'
-import glob from 'glob'
-import asyncPool from 'tiny-async-pool'
+import {Command, Option} from 'clipanion'
+import {glob} from 'glob'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
+import * as validation from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
 import {Sourcemap} from './interfaces'
 import {
@@ -32,10 +37,13 @@ import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
+  public static paths = [['sourcemaps', 'upload']]
+
   public static usage = Command.Usage({
-    description: 'Upload javascript sourcemaps to Datadog.',
+    category: 'RUM',
+    description: 'Upload JavaScript sourcemaps to Datadog.',
     details: `
-      This command will upload all javascript sourcemaps and their corresponding javascript file to Datadog in order to un-minify front-end stack traces received by Datadog.\n
+      This command will upload all JavaScript sourcemaps and their corresponding JavaScript file to Datadog in order to un-minify front-end stack traces received by Datadog.\n
       See README for details.
     `,
     examples: [
@@ -50,27 +58,32 @@ export class UploadCommand extends Command {
     ],
   })
 
-  private basePath?: string
-  private cliVersion: string
+  private basePath = Option.String({required: true})
+  private disableGit = Option.Boolean('--disable-git')
+  private quiet = Option.Boolean('--quiet', false)
+  private dryRun = Option.Boolean('--dry-run', false)
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private minifiedPathPrefix = Option.String('--minified-path-prefix')
+  private projectPath = Option.String('--project-path', '')
+  private releaseVersion = Option.String('--release-version')
+  private repositoryURL = Option.String('--repository-url')
+  private service = Option.String('--service')
+
+  private cliVersion = version
+
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private config = {
     apiKey: process.env.DATADOG_API_KEY,
     datadogSite: process.env.DATADOG_SITE || 'datadoghq.com',
-  }
-  private disableGit?: boolean
-  private dryRun = false
-  private maxConcurrency = 20
-  private minifiedPathPrefix?: string
-  private projectPath = ''
-  private releaseVersion?: string
-  private repositoryURL?: string
-  private service?: string
-
-  constructor() {
-    super()
-    this.cliVersion = require('../../../package.json').version
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     if (!this.releaseVersion) {
       this.context.stderr.write('Missing release version\n')
 
@@ -97,7 +110,7 @@ export class UploadCommand extends Command {
 
     // Normalizing the basePath to resolve .. and .
     // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath!)
+    this.basePath = path.posix.normalize(this.basePath)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath,
@@ -125,7 +138,7 @@ export class UploadCommand extends Command {
     const requestBuilder = this.getRequestBuilder()
     const uploadMultipart = this.upload(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await asyncPool(this.maxConcurrency, payloads, uploadMultipart)
+      const results = await doWithMaxConcurrency(this.maxConcurrency, payloads, uploadMultipart)
       const totalTime = (Date.now() - initialTime) / 1000
       this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
       metricsLogger.logger.gauge('duration', totalTime)
@@ -170,7 +183,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath!, '**/*js.map'))
+    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
@@ -183,7 +196,7 @@ export class UploadCommand extends Command {
   }
 
   private getMinifiedURLAndRelativePath(minifiedFilePath: string): [string, string] {
-    const relativePath = minifiedFilePath.replace(this.basePath!, '')
+    const relativePath = minifiedFilePath.replace(this.basePath, '')
 
     return [buildPath(this.minifiedPathPrefix!, relativePath), relativePath]
   }
@@ -240,7 +253,7 @@ export class UploadCommand extends Command {
       apiKey: this.config.apiKey,
       baseUrl: getBaseSourcemapIntakeUrl(this.config.datadogSite),
       headers: new Map([
-        ['DD-EVP-ORIGIN', 'datadog-ci sourcemaps'],
+        ['DD-EVP-ORIGIN', 'datadog-ci_sourcemaps'],
         ['DD-EVP-ORIGIN-VERSION', this.cliVersion],
       ]),
       overrideUrl: 'api/v2/srcmap',
@@ -311,6 +324,9 @@ export class UploadCommand extends Command {
           metricsLogger.logger.increment('retries', 1)
         },
         onUpload: () => {
+          if (this.quiet) {
+            return
+          }
           this.context.stdout.write(renderUpload(sourcemap))
         },
         retries: 5,
@@ -319,14 +335,3 @@ export class UploadCommand extends Command {
     }
   }
 }
-
-UploadCommand.addPath('sourcemaps', 'upload')
-UploadCommand.addOption('basePath', Command.String({required: true}))
-UploadCommand.addOption('releaseVersion', Command.String('--release-version'))
-UploadCommand.addOption('service', Command.String('--service'))
-UploadCommand.addOption('minifiedPathPrefix', Command.String('--minified-path-prefix'))
-UploadCommand.addOption('projectPath', Command.String('--project-path'))
-UploadCommand.addOption('maxConcurrency', Command.String('--max-concurrency'))
-UploadCommand.addOption('dryRun', Command.Boolean('--dry-run'))
-UploadCommand.addOption('repositoryURL', Command.String('--repository-url'))
-UploadCommand.addOption('disableGit', Command.Boolean('--disable-git'))
