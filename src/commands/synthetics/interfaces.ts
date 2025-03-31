@@ -520,12 +520,8 @@ export enum ExecutionRule {
   SKIPPED = 'skipped',
 }
 
-export interface TestFile {
-  tests: TriggerConfig[]
-}
-
 export interface Suite {
-  content: TestFile
+  content: TestConfig
   name?: string
 }
 

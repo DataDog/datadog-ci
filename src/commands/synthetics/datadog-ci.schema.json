@@ -12,6 +12,17 @@
             },
             "type": "object"
         },
+        "CookiesObject": {
+            "properties": {
+                "append": {
+                    "type": "boolean"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
         "ProxyConfiguration": {
             "properties": {
                 "auth": {
@@ -88,17 +99,7 @@
                 "cookies": {
                     "anyOf": [
                         {
-                            "properties": {
-                                "append": {
-                                    "description": "Whether to append or replace the original cookies.",
-                                    "type": "boolean"
-                                },
-                                "value": {
-                                    "description": "Cookie header to add or replace (e.g. `name1=value1;name2=value2;`).",
-                                    "type": "string"
-                                }
-                            },
-                            "type": "object"
+                            "$ref": "#/definitions/CookiesObject"
                         },
                         {
                             "type": "string"
@@ -152,13 +153,27 @@
                     "description": "Upload an application as a temporary version for a Synthetic mobile application test.",
                     "type": "string"
                 },
-                "pollingTimeout": {
+                "resourceUrlSubstitutionRegexes": {
                     "description": "The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed.",
-                    "type": "number"
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
                 },
                 "retry": {
                     "$ref": "#/definitions/RetryConfig",
                     "description": "The retry policy for the test."
+                },
+                "setCookies": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/CookiesObject"
+                        },
+                        {
+                            "type": "string"
+                        }
+                    ],
+                    "description": "TODO"
                 },
                 "startUrl": {
                     "description": "The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.",
@@ -167,6 +182,9 @@
                 "startUrlSubstitutionRegex": {
                     "description": "The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`.",
                     "type": "string"
+                },
+                "testTimeout": {
+                    "type": "number"
                 },
                 "variables": {
                     "additionalProperties": {
@@ -179,53 +197,62 @@
             "type": "object"
         }
     },
-    "description": "This defines what can be put in a global configuration file (e.g. `datadog-ci.json`) for `datadog-ci synthetics` commands.",
     "properties": {
         "apiKey": {
-            "description": "The API key used to query the Datadog API.",
             "type": "string"
         },
         "appKey": {
-            "description": "The application key used to query the Datadog API.",
+            "type": "string"
+        },
+        "batchTimeout": {
+            "type": "number"
+        },
+        "configPath": {
             "type": "string"
         },
         "datadogSite": {
-            "description": "The Datadog instance to which request is sent.",
             "type": "string"
         },
+        "defaultTestOverrides": {
+            "$ref": "#/definitions/UserConfigOverride",
+            "description": "Overrides for Synthetic tests applied to all tests."
+        },
         "failOnCriticalErrors": {
-            "description": "A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.",
             "type": "boolean"
         },
         "failOnMissingTests": {
-            "description": "A boolean flag that fails the CI job if at least one specified test with a public ID is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).",
             "type": "boolean"
         },
         "failOnTimeout": {
-            "description": "A boolean flag that fails the CI job if at least one test exceeds the default test timeout.",
             "type": "boolean"
         },
         "files": {
-            "description": "Glob patterns to detect Synthetic test configuration files (their well-known name is `*.synthetics.json`).",
             "items": {
                 "type": "string"
             },
             "type": "array"
         },
-        "global": {
-            "$ref": "#/definitions/UserConfigOverride",
-            "description": "Overrides for Synthetic tests applied to all tests."
+        "jUnitReport": {
+            "type": "string"
         },
-        "pollingTimeout": {
-            "description": "The duration (in milliseconds) after which polling for test results is stopped.",
-            "type": "number"
+        "mobileApplicationVersionFilePath": {
+            "type": "string"
         },
         "proxy": {
-            "$ref": "#/definitions/ProxyConfiguration",
-            "description": "The proxy to be used for outgoing connections to Datadog."
+            "$ref": "#/definitions/ProxyConfiguration"
+        },
+        "publicIds": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
+        },
+        "selectiveRerun": {
+            "description": "Whether to only run the tests which failed in the previous test batches. By default, the organization default setting is used.",
+            "type": "boolean"
         },
         "subdomain": {
-            "description": "The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.",
+            "description": "Used to create URLs to the Datadog UI.",
             "type": "string"
         },
         "testSearchQuery": {
