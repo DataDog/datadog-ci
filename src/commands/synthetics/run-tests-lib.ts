@@ -1,7 +1,8 @@
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {runTests, waitForResults} from './batch'
+import {BaseCommand} from './base-command'
+import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
   MainReporter,
@@ -20,7 +21,6 @@ import {
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
-import {DEFAULT_BATCH_TIMEOUT, DEFAULT_COMMAND_CONFIG} from './run-tests-command'
 import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
 import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
@@ -39,6 +39,23 @@ type ExecuteOptions = {
   reporters?: (SupportedReporter | Reporter)[]
   runId?: string
   suites?: Suite[]
+}
+
+export const getDefaultConfig = (): RunTestsCommandConfig => {
+  return {
+    ...BaseCommand.getDefaultConfig(),
+    batchTimeout: DEFAULT_BATCH_TIMEOUT,
+    defaultTestOverrides: {},
+    failOnCriticalErrors: false,
+    failOnMissingTests: false,
+    failOnTimeout: true,
+    files: [],
+    jUnitReport: '',
+    publicIds: [],
+    subdomain: 'app',
+    testSearchQuery: '',
+    tunnel: false,
+  }
 }
 
 export const executeTests = async (
@@ -265,7 +282,7 @@ export const executeWithDetails = async (
 }> => {
   const startTime = Date.now()
   const localConfig = {
-    ...DEFAULT_COMMAND_CONFIG,
+    ...getDefaultConfig(),
     ...runConfig,
   }
 

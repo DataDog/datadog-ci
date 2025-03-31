@@ -3,7 +3,7 @@ import {Command, Option} from 'clipanion'
 import {toBoolean} from '../../helpers/env'
 
 import {EndpointError} from './api'
-import {BaseCommand} from './base-command'
+import {BaseCommand, RecursivePartial} from './base-command'
 import {CiError, CriticalError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
@@ -66,7 +66,7 @@ export class UploadApplicationCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromEnv(): Partial<UploadApplicationCommandConfig> {
+  protected resolveConfigFromEnv(): RecursivePartial<UploadApplicationCommandConfig> {
     return {
       ...super.resolveConfigFromEnv(),
       mobileApplicationId: process.env.DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID,
@@ -75,7 +75,7 @@ export class UploadApplicationCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromCli(): Partial<UploadApplicationCommandConfig> {
+  protected resolveConfigFromCli(): RecursivePartial<UploadApplicationCommandConfig> {
     return {
       ...super.resolveConfigFromCli(),
       mobileApplicationVersionFilePath: this.mobileApplicationVersionFilePath,

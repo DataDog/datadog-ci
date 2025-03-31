@@ -17,7 +17,7 @@ import {
   UploadApplicationCommandConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
+import {RunTestsCommand} from '../run-tests-command'
 import * as testUtils from '../test'
 import {UploadApplicationCommand} from '../upload-application-command'
 import {toExecutionRule} from '../utils/internal'
@@ -110,7 +110,7 @@ describe('run-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
+        ...RunTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         batchTimeout: 1,
@@ -240,7 +240,7 @@ describe('run-tests', () => {
       }
 
       const command = createCommand(RunTestsCommand)
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -344,7 +344,7 @@ describe('run-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
+        ...RunTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
@@ -530,7 +530,10 @@ describe('run-tests', () => {
             deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
             executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
             followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-            headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+            headers: {
+              ...configFile.defaultTestOverrides.headers,
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+            },
             locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
             mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
             resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -543,7 +546,10 @@ describe('run-tests', () => {
             startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
             startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
             testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
-            variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+            variables: {
+              ...configFile.defaultTestOverrides.variables,
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+            },
 
             // XXX: Added to make the test pass as we don't have an ENV variable for `mobileApplicationVersionFilePath`.
             mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
@@ -664,7 +670,7 @@ describe('run-tests', () => {
           `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
           `executionRule=${defaultTestOverrides.executionRule}`,
           `followRedirects=${defaultTestOverrides.followRedirects}`,
-          `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+          `headers.Content-Type=${defaultTestOverrides.headers?.['Content-Type']}`,
           `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
           `locations=${defaultTestOverrides.locations?.join(';')}`,
           `retry.count=${defaultTestOverrides.retry?.count}`,
@@ -684,7 +690,15 @@ describe('run-tests', () => {
           ...filteredOverrideCLI,
           defaultTestOverrides: {
             ...defaultTestOverrides,
+            headers: {
+              ...configFile.defaultTestOverrides.headers,
+              ...defaultTestOverrides.headers,
+            },
             mobileApplicationVersionFilePath,
+            variables: {
+              ...configFile.defaultTestOverrides.variables,
+              ...defaultTestOverrides.variables,
+            },
           },
           proxy: configFile.proxy,
         }
@@ -847,7 +861,15 @@ describe('run-tests', () => {
           ...filteredOverrideCLI,
           defaultTestOverrides: {
             ...defaultTestOverrides,
+            headers: {
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+              ...defaultTestOverrides.headers,
+            },
             mobileApplicationVersionFilePath,
+            variables: {
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+              ...defaultTestOverrides.variables,
+            },
           },
           proxy: {protocol: 'http'},
         }

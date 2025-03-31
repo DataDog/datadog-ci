@@ -1,7 +1,7 @@
 import {Command, Option} from 'clipanion'
 import terminalLink from 'terminal-link'
 
-import {BaseCommand} from './base-command'
+import {BaseCommand, RecursivePartial} from './base-command'
 import {importTests} from './import-tests-lib'
 import {ImportTestsCommandConfig} from './interfaces'
 
@@ -59,7 +59,7 @@ export class ImportTestsCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromEnv(): Partial<ImportTestsCommandConfig> {
+  protected resolveConfigFromEnv(): RecursivePartial<ImportTestsCommandConfig> {
     return {
       ...super.resolveConfigFromEnv(),
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
@@ -68,7 +68,7 @@ export class ImportTestsCommand extends BaseCommand {
     }
   }
 
-  protected resolveConfigFromCli(): Partial<ImportTestsCommandConfig> {
+  protected resolveConfigFromCli(): RecursivePartial<ImportTestsCommandConfig> {
     return {
       ...super.resolveConfigFromCli(),
       files: this.files,

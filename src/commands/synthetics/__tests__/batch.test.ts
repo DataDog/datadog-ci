@@ -12,7 +12,7 @@ import {apiConstructor} from '../api'
 import {getResultsToReport, reportReceivedResults, runTests, waitForResults} from '../batch'
 import {BatchTimeoutRunawayError} from '../errors'
 import {BaseResult, Batch, ExecutionRule, PollResult, Result, ResultInBatch, ServerResult, Trigger} from '../interfaces'
-import {DEFAULT_COMMAND_CONFIG} from '../run-tests-command'
+import {getDefaultConfig} from '../run-tests-lib'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
 
@@ -38,6 +38,8 @@ const apiConfiguration = {
   proxyOpts: {protocol: 'http'} as ProxyConfiguration,
 }
 const api = apiConstructor(apiConfiguration)
+
+const DEFAULT_COMMAND_CONFIG = getDefaultConfig()
 
 describe('runTests', () => {
   beforeEach(() => {

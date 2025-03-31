@@ -19,7 +19,6 @@ import {
   TestPayload,
   Trigger,
 } from './interfaces'
-import {DEFAULT_BATCH_TIMEOUT} from './run-tests-command'
 import {Tunnel} from './tunnel'
 import {
   isResultInBatchSkippedBySelectiveRerun,
@@ -31,6 +30,8 @@ import {
   wait,
 } from './utils/internal'
 import {getAppBaseURL, isTestSupportedByTunnel} from './utils/public'
+
+export const DEFAULT_BATCH_TIMEOUT = 30 * 60 * 1000
 
 const POLLING_INTERVAL = 5000 // In ms
 

@@ -6,11 +6,16 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
+import {CiError} from './errors'
 import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
 import {DefaultReporter} from './reporters/default'
 import {getReporter} from './utils/public'
+
+export type RecursivePartial<T> = {
+  [P in keyof T]?: RecursivePartial<T[P]>
+}
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
@@ -52,7 +57,7 @@ export abstract class BaseCommand extends Command {
   }
 
   // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromEnv(): Partial<DatadogCIConfig> {
+  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
     return {
       apiKey: process.env.DATADOG_API_KEY,
       appKey: process.env.DATADOG_APP_KEY,
@@ -62,7 +67,7 @@ export abstract class BaseCommand extends Command {
   }
 
   // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromCli(): Partial<DatadogCIConfig> {
+  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
     return {
       apiKey: this.apiKey,
       appKey: this.appKey,
@@ -84,23 +89,37 @@ export abstract class BaseCommand extends Command {
       })
     } catch (error) {
       if (this.configPath) {
-        throw error
+        throw new CiError('INVALID_CONFIG', error.message)
       }
     }
 
     // Override with ENV variables
-    this.config = deepExtend(this.config, removeUndefinedValues(this.resolveConfigFromEnv()))
+    this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromEnv()))
 
     // Override with CLI parameters
-    this.config = deepExtend(this.config, removeUndefinedValues(this.resolveConfigFromCli()))
+    this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromCli()))
   }
 
   protected async setup() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    await this.resolveConfig()
-
-    const reporters: Reporter[] = [new DefaultReporter(this)]
+    const reporters: Reporter[] = [new DefaultReporter(this), ...this.getReporters()]
     this.reporter = getReporter(reporters)
+
+    await this.resolveConfig()
+    this.normalizeConfig()
+    this.validateConfig()
+  }
+
+  protected normalizeConfig() {
+    // Normalize the config here
+  }
+
+  protected validateConfig() {
+    // Validate the config here
+  }
+
+  protected getReporters(): Reporter[] {
+    return []
   }
 }
