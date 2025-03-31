@@ -450,6 +450,7 @@ export interface UserConfigOverride extends BaseConfigOverride {
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
   appExtractedMetadata?: MobileAppExtractedMetadata
+  tunnel?: TunnelInfo
 }
 
 export interface BatchOptions {
@@ -463,13 +464,10 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface BaseTestPayload extends ServerConfigOverride {
-  executionRule?: ExecutionRule
-}
-export interface LocalTestPayload extends BaseTestPayload {
+export interface LocalTestPayload extends ServerConfigOverride {
   local_test_definition: LocalTestDefinition
 }
-export interface RemoteTestPayload extends BaseTestPayload {
+export interface RemoteTestPayload extends ServerConfigOverride {
   public_id: string
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
@@ -565,11 +563,9 @@ export interface APIConfiguration {
   proxyOpts: ProxyConfiguration
 }
 
-export interface SyntheticsCIConfig {
+export interface APIHelperConfig {
   apiKey: string
-  /** The application key used to query the Datadog API. */
   appKey: string
-  /** The Datadog instance to which request is sent. */
   datadogSite: string
   proxy: ProxyConfiguration
 }

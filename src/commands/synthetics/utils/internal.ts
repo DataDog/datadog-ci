@@ -3,7 +3,6 @@ import {pick} from '../../../helpers/utils'
 
 import {
   BaseResult,
-  BaseTestPayload,
   BasicAuthCredentials,
   BrowserServerResult,
   CookiesObject,
@@ -14,6 +13,7 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  ServerConfigOverride,
   ServerResult,
   Test,
   TestNotFound,
@@ -338,8 +338,8 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): BaseTestPayload => {
-  let overriddenConfig: BaseTestPayload = {}
+export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): ServerConfigOverride => {
+  let overriddenConfig: ServerConfigOverride = {}
 
   if (!testOverrides || !Object.keys(testOverrides).length) {
     return overriddenConfig
@@ -368,7 +368,6 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'retry',
       'startUrlSubstitutionRegex',
       'testTimeout',
-      'tunnel',
       'variables',
     ]),
   }
