@@ -83,6 +83,7 @@ export class InstrumentCommand extends Command {
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
+  private llmobs = Option.String('--llmobs')
 
   private config: LambdaConfigOptions = {
     functions: [],
@@ -474,6 +475,8 @@ export class InstrumentCommand extends Command {
     const environment = this.environment ?? this.config.environment
     const version = this.version ?? this.config.version
 
+    const llmobsMlApp = this.llmobs
+
     const tagsMap: {[key: string]: string | undefined} = {
       environment,
       service,
@@ -513,6 +516,7 @@ export class InstrumentCommand extends Command {
       service,
       tracingEnabled,
       version,
+      llmobsMlApp,
     }
   }
 
