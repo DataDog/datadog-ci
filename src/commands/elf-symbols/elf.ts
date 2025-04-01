@@ -332,11 +332,7 @@ export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHe
 const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
   const buf = await reader.read(Number(sectionHeader.sh_size), Number(sectionHeader.sh_offset))
   // read elf note header
-  const {readUInt32} = createReadFunctions(
-    buf,
-    elfHeader.littleEndian,
-    elfHeader.elfClass === ElfClass.ELFCLASS32
-  )
+  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
   const namesz = readUInt32()
   const descsz = readUInt32()
   const type = readUInt32()
