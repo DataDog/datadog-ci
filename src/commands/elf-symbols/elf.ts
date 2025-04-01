@@ -1,9 +1,8 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
-import {execute} from '../../helpers/utils'
-
 import {createReadFunctions, FileReader} from '../../helpers/filereader'
+import {execute} from '../../helpers/utils'
 
 import {
   MACHINE_TYPES_DESCRIPTION,
@@ -163,7 +162,11 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
     const headerSizeLeft = headerSize - IDENT_SIZE
     const headerBuffer = await reader.read(headerSizeLeft, IDENT_SIZE)
 
-    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(headerBuffer, littleEndian, elfClass === ElfClass.ELFCLASS32)
+    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(
+      headerBuffer,
+      littleEndian,
+      elfClass === ElfClass.ELFCLASS32
+    )
 
     const type = readUInt16()
     const machine = readUInt16()
@@ -225,7 +228,11 @@ export const readElfSectionHeader = async (
 ): Promise<SectionHeader> => {
   const buf = await reader.read(elfHeader.e_shentsize, Number(elfHeader.e_shoff) + index * elfHeader.e_shentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(
+    buf,
+    elfHeader.littleEndian,
+    elfHeader.elfClass === ElfClass.ELFCLASS32
+  )
 
   return {
     name: '',
@@ -278,7 +285,11 @@ export const readElfProgramHeader = async (
 ): Promise<ProgramHeader> => {
   const buf = await reader.read(elfHeader.e_phentsize, Number(elfHeader.e_phoff) + index * elfHeader.e_phentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(
+    buf,
+    elfHeader.littleEndian,
+    elfHeader.elfClass === ElfClass.ELFCLASS32
+  )
 
   if (elfHeader.elfClass === ElfClass.ELFCLASS32) {
     return {
@@ -321,7 +332,11 @@ export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHe
 const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
   const buf = await reader.read(Number(sectionHeader.sh_size), Number(sectionHeader.sh_offset))
   // read elf note header
-  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
+  const {readUInt32} = createReadFunctions(
+    buf,
+    elfHeader.littleEndian,
+    elfHeader.elfClass === ElfClass.ELFCLASS32
+  )
   const namesz = readUInt32()
   const descsz = readUInt32()
   const type = readUInt32()

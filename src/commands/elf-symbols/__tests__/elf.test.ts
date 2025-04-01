@@ -1,8 +1,8 @@
 import path from 'path'
 
-import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
-
 import {createReaderFromFile} from '../../../helpers/filereader'
+
+import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,
