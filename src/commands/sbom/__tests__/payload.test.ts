@@ -5,13 +5,9 @@ import path from 'path'
 import simpleGit from 'simple-git'
 
 import {DatadogCiConfig} from '../../../helpers/config'
-import {
-  getSpanTags,
-  getMissingRequiredGitTags,
-  TOOL_GENERATOR_NAME,
-  TOOL_GENERATOR_VERSION,
-} from '../../../helpers/tags'
+import {getSpanTags, getMissingRequiredGitTags} from '../../../helpers/tags'
 
+import {TOOL_GENERATOR_NAME, TOOL_GENERATOR_VERSION} from '../constants'
 import {generatePayload} from '../payload'
 import {DependencyLanguage, Location} from '../types'
 

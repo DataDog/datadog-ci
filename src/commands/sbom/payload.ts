@@ -10,8 +10,6 @@ import {
   GIT_COMMIT_COMMITTER_NAME,
   GIT_REPOSITORY_URL,
   GIT_SHA,
-  TOOL_GENERATOR_NAME,
-  TOOL_GENERATOR_VERSION,
 } from '../../helpers/tags'
 
 import {
@@ -19,6 +17,8 @@ import {
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
+  TOOL_GENERATOR_NAME,
+  TOOL_GENERATOR_VERSION,
 } from './constants'
 import {getLanguageFromComponent} from './language'
 import {Relations, Dependency, File, Location, LocationFromFile, Locations, ScaRequest, GenerationTool} from './types'
