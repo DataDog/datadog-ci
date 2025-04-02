@@ -5,7 +5,6 @@
 module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
-  snapshotResolver: './etc/snapshot-resolver.windows.js',
   testMatch: ['**/__tests__/**/*.test.ts'],
   testPathIgnorePatterns: ['react-native', 'dsyms'],
   transform: {
