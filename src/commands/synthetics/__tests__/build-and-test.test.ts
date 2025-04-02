@@ -7,12 +7,8 @@ import {mockReporter} from './fixtures'
 const NODE_COMMAND = process.execPath
 
 describe('build-and-test - spawnBuildPluginDevServer', () => {
-  afterEach(async () => {
-    // wait for the http server to be closed
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-  })
-
   test('alert when the build-plugin is not configured', async () => {
+    console.log('running test: alert when the build-plugin is not configured')
     // Given a build command without the build plugin configured
     const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
 
@@ -21,9 +17,11 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Then it should throw when the command exits.
     await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
+    console.log('test passed')
   })
 
   test('wait for the dev server and return expected readiness and status', async () => {
+    console.log('running test: wait for the dev server and return expected readiness and status')
     // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
     // The implementation of this server is written as a function, and stringified into a single line,
     // to be used in a node -e command.
@@ -49,9 +47,11 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Stop the command at the end of the test.
     await command.stop()
+    console.log('test passed')
   })
 
   test('should handle delayed server startup', async () => {
+    console.log('running test: should handle delayed server startup')
     // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
     // The implementation of this server is written as a function, and stringified into a single line,
     // to be used in a node -e command.
@@ -87,9 +87,11 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Stop the command at the end of the test.
     await command.stop()
+    console.log('test passed')
   })
 
   test('should wait for dev server even if the build fails', async () => {
+    console.log('running test: should wait for dev server even if the build fails')
     // Given a dev server that initially reports a failed build, then succeeds
     const httpDevServer = () => {
       let requestCount = 0
@@ -114,9 +116,11 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Stop the command at the end of the test.
     await command.stop()
+    console.log('test passed')
   })
 
   test('should handle non-OK status code from dev server', async () => {
+    console.log('running test: should handle non-OK status code from dev server')
     // Given a dev server that returns a non-OK status code different from ECONNREFUSED
     const httpDevServer = () => {
       http
@@ -133,5 +137,6 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Then it should throw with the server error
     await expect(commandPromise).rejects.toThrow('Dev server returned error: 500 Internal Server Error')
+    console.log('test passed')
   })
 })
