@@ -1,7 +1,11 @@
 import fs from 'fs'
+import os from 'os'
+import path from 'path'
+
+import simpleGit from 'simple-git'
 
 import {DatadogCiConfig} from '../../../helpers/config'
-import {getSpanTags} from '../../../helpers/tags'
+import {getSpanTags, getMissingRequiredGitTags} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
 import {DependencyLanguage, Location} from '../types'
@@ -343,4 +347,78 @@ describe('generation of payload', () => {
     expect(dependencies[1].name).toEqual('jinja2')
     expect(dependencies[1].version).toEqual('3.1.5')
   })
+
+  test('should correctly work with a CycloneDX 1.4 file and passing git repository', async () => {
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
+    try {
+      // Configure local git repository
+      const git = simpleGit(tmpdir)
+      setupLocalGitConfig(tmpdir)
+      await git.init()
+      // eslint-disable-next-line no-null/no-null
+      await git.commit('Initial commit', [], {'--allow-empty': null})
+
+      const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+      const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+      const config: DatadogCiConfig = {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      }
+
+      // Pass git directory to load git context
+      const tags = await getSpanTags(config, [], true, tmpdir)
+      expect(getMissingRequiredGitTags(tags)).toHaveLength(0)
+
+      const payload = generatePayload(sbomContent, tags, 'service', 'env')
+      expect(payload).not.toBeNull()
+      expect(payload?.id).toStrictEqual(expect.any(String))
+
+      // Local git repository should be reported
+      expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+      expect(payload?.commit.author_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.author_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.committer_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.committer_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.branch).toStrictEqual('mock-branch')
+      expect(payload?.repository.url).toContain('https://mock-repo.local/fake.git')
+      expect(payload?.dependencies.length).toBe(62)
+      expect(payload?.dependencies[0].name).toBe('stack-cors')
+      expect(payload?.dependencies[0].version).toBe('1.3.0')
+      expect(payload?.dependencies[0].licenses.length).toBe(0)
+      expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
+    } finally {
+      // Removed temporary git file
+      fs.rmSync(tmpdir, {recursive: true, force: true})
+    }
+  })
+
+  test('should fail to read git information', async () => {
+    const nonExistingGitRepository = '/you/cannot/find/me'
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+
+    // Pass non existing git directory to load git context
+    // It is missing all git tags.
+    const tags = await getSpanTags(config, [], true, nonExistingGitRepository)
+    expect(getMissingRequiredGitTags(tags).length).toBeGreaterThanOrEqual(1)
+  })
 })
+
+const getFixtures = (file: string) => {
+  return path.join('./src/commands/sbom/__tests__/fixtures', file)
+}
+
+const setupLocalGitConfig = (dir: string) => {
+  const gitDir = path.join(dir, '.git')
+  if (!fs.existsSync(gitDir)) {
+    fs.mkdirSync(gitDir, {recursive: true})
+  }
+
+  const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
+  const configPath = path.join(gitDir, '/config')
+  fs.writeFileSync(configPath, configFixture)
+}

@@ -36,7 +36,7 @@ src/commands/git-metadata  @DataDog/datadog-ci @DataDog/source-code-integration
 src/commands/synthetics  @DataDog/datadog-ci @DataDog/synthetics-ct
 
 ## Profiling (label: profiling)
-src/commands/elf-symbols  @DataDog/datadog-ci @DataDog/profiling-native
+src/commands/elf-symbols  @DataDog/datadog-ci @DataDog/profiling-full-host
 
 # Shared utilities
 

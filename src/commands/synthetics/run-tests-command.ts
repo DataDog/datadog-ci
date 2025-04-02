@@ -8,6 +8,7 @@ import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {BaseCommand, RecursivePartial} from './base-command'
+import {spawnBuildPluginDevServer} from './build-and-test'
 import {CiError} from './errors'
 import {Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {JUnitReporter} from './reporters/junit'
@@ -21,7 +22,10 @@ const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files
 const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
 
 export class RunTestsCommand extends BaseCommand {
-  public static paths = [['synthetics', 'run-tests']]
+  public static paths = [
+    ['synthetics', 'run-tests'],
+    ['synthetics', 'build-and-test'],
+  ]
 
   public static usage = Command.Usage({
     category: 'Synthetics',
@@ -100,6 +104,12 @@ export class RunTestsCommand extends BaseCommand {
     description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
   })
 
+  private buildCommand = Option.String('--buildCommand', {
+    description: 'The build command to generate the assets to run the tests against.',
+  })
+
+  private tearDowns: (() => Promise<void>)[] = []
+
   public async execute() {
     try {
       await this.setup()
@@ -119,12 +129,36 @@ export class RunTestsCommand extends BaseCommand {
     let results: Result[]
     let summary: Summary
 
+    const [_, command] = this.path ?? []
+    if (command === 'build-and-test') {
+      if (!this.config.buildCommand) {
+        this.reporter.error('The `buildCommand` option is required for the `build-and-test` command.')
+
+        return 1
+      }
+
+      const {devServerUrl, publicPrefix, stop} = await spawnBuildPluginDevServer(
+        this.config.buildCommand,
+        this.reporter
+      )
+      this.tearDowns.push(stop)
+
+      this.config = deepExtend(this.config, {
+        tunnel: true,
+        defaultTestOverrides: {
+          resourceUrlSubstitutionRegexes: [`.*${publicPrefix}|${devServerUrl}`],
+        },
+      })
+    }
+
     try {
       ;({results, summary} = await executeTests(this.reporter, this.config))
     } catch (error) {
       reportExitLogs(this.reporter, this.config, {error})
 
       return toExitCode(getExitReason(this.config, {error}))
+    } finally {
+      await this.tearDown()
     }
 
     const orgSettings = await getOrgSettings(this.reporter, this.config)
@@ -171,6 +205,7 @@ export class RunTestsCommand extends BaseCommand {
     return {
       ...super.resolveConfigFromEnv(),
       batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+      buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,
       defaultTestOverrides: {
         allowInsecureCertificates: toBoolean(process.env.DATADOG_SYNTHETICS_OVERRIDE_ALLOW_INSECURE_CERTIFICATES),
         basicAuth: Object.keys(envOverrideBasicAuth).length > 0 ? envOverrideBasicAuth : undefined,
@@ -241,6 +276,7 @@ export class RunTestsCommand extends BaseCommand {
     return {
       ...super.resolveConfigFromCli(),
       batchTimeout: this.batchTimeout,
+      buildCommand: this.buildCommand,
       defaultTestOverrides: {
         allowInsecureCertificates: validatedOverrides.allowInsecureCertificates,
         basicAuth: Object.keys(cliOverrideBasicAuth).length > 0 ? cliOverrideBasicAuth : undefined,
@@ -325,5 +361,11 @@ export class RunTestsCommand extends BaseCommand {
     }
 
     return []
+  }
+
+  private tearDown = async () => {
+    for (const tearDown of this.tearDowns) {
+      await tearDown()
+    }
   }
 }

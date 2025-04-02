@@ -1912,11 +1912,11 @@ __metadata:
     async-retry: 1.3.1
     aws-sdk-client-mock: ^4.1.0
     aws-sdk-client-mock-jest: ^4.1.0
-    axios: ^1.7.4
+    axios: ^1.8.4
     chalk: 3.0.0
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
-    dd-trace: ^5.38.0
+    dd-trace: ^5.42.0
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^7.32.0
@@ -1965,20 +1965,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/libdatadog@npm:^0.4.0":
-  version: 0.4.0
-  resolution: "@datadog/libdatadog@npm:0.4.0"
-  checksum: c4076a7472c608bb314ae24b94f17c97be1ea0535581f7515cacc9232875d273128113fb791cb4b64386ce5d48bb85c4c665316b61d83f97d9c6793c8c23c4a7
+"@datadog/libdatadog@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "@datadog/libdatadog@npm:0.5.0"
+  checksum: e5113291d7e762b40dcdf8760b427cd61bd26e97eec3aefbe087ce60436a6d920dc80e5105ea5aa48b88402067724c4e3f7ac2cb066c3725d3e73a269c9e4c17
   languageName: node
   linkType: hard
 
-"@datadog/native-appsec@npm:8.4.0":
-  version: 8.4.0
-  resolution: "@datadog/native-appsec@npm:8.4.0"
+"@datadog/native-appsec@npm:8.5.0":
+  version: 8.5.0
+  resolution: "@datadog/native-appsec@npm:8.5.0"
   dependencies:
     node-gyp: latest
     node-gyp-build: ^3.9.0
-  checksum: 4b6387a293a0d2521df53eca0b5d4067ee7d493ef797d30c46489d9ed2c66c078d7b399bb5eea98accaba5e9c8456162ed46d6f61158a428027ea3e3a2b1a166
+  checksum: e1cf9ba9838d59370563afd9bac8377ea3f8b3ef05f00148f43a1d525dc226c65c99f6dfaf528cae67230243775ad4546b933e1ac7023ee7ce66ffc26f4d31b6
   languageName: node
   linkType: hard
 
@@ -3949,7 +3949,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"acorn@npm:^8.8.2, acorn@npm:^8.9.0":
+"acorn@npm:^8.14.0":
+  version: 8.14.1
+  resolution: "acorn@npm:8.14.1"
+  bin:
+    acorn: bin/acorn
+  checksum: 260d9bb6017a1b6e42d31364687f0258f78eb20210b36ef2baad38fd619d78d4e95ff7dde9b3dbe0d81f137f79a8d651a845363a26e6985997f7b71145dc5e94
+  languageName: node
+  linkType: hard
+
+"acorn@npm:^8.9.0":
   version: 8.12.1
   resolution: "acorn@npm:8.12.1"
   bin:
@@ -4322,14 +4331,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.7.4":
-  version: 1.7.4
-  resolution: "axios@npm:1.7.4"
+"axios@npm:^1.8.4":
+  version: 1.8.4
+  resolution: "axios@npm:1.8.4"
   dependencies:
     follow-redirects: ^1.15.6
     form-data: ^4.0.0
     proxy-from-env: ^1.1.0
-  checksum: 0c17039a9acfe6a566fca8431ba5c1b455c83d30ea6157fec68a6722878fcd30f3bd32d172f6bee0c51fe75ca98e6414ddcd968a87b5606b573731629440bfaf
+  checksum: e901dc1730bdcd769839b3d93ae6d6457a53d79b19a0eb623ebfea333441259ab51e63ca118baa47a5156567401466ac739f31087b4ee5e6770ab2e227484538
   languageName: node
   linkType: hard
 
@@ -4997,12 +5006,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:^5.38.0":
-  version: 5.38.0
-  resolution: "dd-trace@npm:5.38.0"
+"dd-trace@npm:^5.42.0":
+  version: 5.42.0
+  resolution: "dd-trace@npm:5.42.0"
   dependencies:
-    "@datadog/libdatadog": ^0.4.0
-    "@datadog/native-appsec": 8.4.0
+    "@datadog/libdatadog": ^0.5.0
+    "@datadog/native-appsec": 8.5.0
     "@datadog/native-iast-rewriter": 2.8.0
     "@datadog/native-iast-taint-tracking": 3.3.0
     "@datadog/native-metrics": ^3.1.0
@@ -5014,7 +5023,7 @@ __metadata:
     crypto-randomuuid: ^1.0.0
     dc-polyfill: ^0.1.4
     ignore: ^5.2.4
-    import-in-the-middle: 1.11.2
+    import-in-the-middle: 1.13.1
     istanbul-lib-coverage: 3.2.0
     jest-docblock: ^29.7.0
     koalas: ^1.0.2
@@ -5033,7 +5042,7 @@ __metadata:
     source-map: ^0.7.4
     tlhunter-sorted-set: ^0.1.0
     ttl-set: ^1.0.0
-  checksum: 20d5cf681f8d95ece26fec6876b2a8e3220169264378c3d7e7c637bd2c2d6baf785cff2c2d588a11dfbdcdf0d70e162cb69e4e3bca13753e750a81fee5a8ac69
+  checksum: f551c3cbb8e0c1ee8727c62b7276e6eafc25615afa6b39880a28fa464681a91e60124330ff318ace79e4f0f0810008e9070b7ccd1847311399ad1f28521cfaae
   languageName: node
   linkType: hard
 
@@ -6782,15 +6791,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"import-in-the-middle@npm:1.11.2":
-  version: 1.11.2
-  resolution: "import-in-the-middle@npm:1.11.2"
+"import-in-the-middle@npm:1.13.1":
+  version: 1.13.1
+  resolution: "import-in-the-middle@npm:1.13.1"
   dependencies:
-    acorn: ^8.8.2
+    acorn: ^8.14.0
     acorn-import-attributes: ^1.9.5
     cjs-module-lexer: ^1.2.2
     module-details-from-path: ^1.0.3
-  checksum: 06fb73100a918e00778779713119236cc8d3d4656aae9076a18159cfcd28eb0cc26e0a5040d11da309c5f8f8915c143b8d74e73c0734d3f5549b1813d1008bb9
+  checksum: 9cff1da9fc6ec6e2224ac9f60f7818baa7b238ba3350da7f4f213220e40893f254f3674a2b517fc663de1672215aff5c6cce1ef6c8cff91281772393fb50b0fa
   languageName: node
   linkType: hard
 
@@ -10104,14 +10113,14 @@ jschardet@latest:
   linkType: hard
 
 "tar-fs@npm:^2.0.0, tar-fs@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "tar-fs@npm:2.1.1"
+  version: 2.1.2
+  resolution: "tar-fs@npm:2.1.2"
   dependencies:
     chownr: ^1.1.1
     mkdirp-classic: ^0.5.2
     pump: ^3.0.0
     tar-stream: ^2.1.4
-  checksum: f5b9a70059f5b2969e65f037b4e4da2daf0fa762d3d232ffd96e819e3f94665dbbbe62f76f084f1acb4dbdcce16c6e4dac08d12ffc6d24b8d76720f4d9cf032d
+  checksum: 6b4fcd38a644b5cd3325f687b9f1f48cd19809b63cbc8376fe794f68361849a17120d036833b3a97de6acb1df588844476309b8c2d0bcaf53f19da2d56ac07de
   languageName: node
   linkType: hard
 

@@ -1,0 +1,26 @@
+[core]
+    repositoryformatversion = 1 
+    filemode = false
+    bare = false
+    logallrefupdates = false
+    ignorecase = true
+
+[init]
+  defaultBranch = mock-branch
+
+[user]
+    name = MockUser123
+    email = mock@fake.local
+
+[remote "mock-origin"]
+    url = https://mock-repo.local/fake.git
+    fetch = +refs/mocks/*:refs/remotes/mock-origin/*
+
+[branch "mock-branch"]
+    remote = mock-origin
+    merge = refs/heads/mock-branch
+    rebase = never  # Unusual setting
+
+[hooks]
+    pre-commit = echo 'Mock pre-commit hook executed'
+    pre-push = echo 'Mock pre-push hook executed'

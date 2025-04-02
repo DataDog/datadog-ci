@@ -114,7 +114,6 @@ describe('elf-symbols upload', () => {
         `${fixtureDir}/exec_arm_little`,
         `${fixtureDir}/go_x86_64_both_gnu_and_go_build_id`,
         `${fixtureDir}/go_x86_64_only_go_build_id`,
-        `${fixtureDir}/go_x86_64_only_go_build_id.debug`,
       ])
     })
 
@@ -131,12 +130,17 @@ describe('elf-symbols upload', () => {
     test('should not throw an error when a directory (except top-level) is not readable', async () => {
       const command = createCommand(UploadCommand)
       let tmpDir
+      let tmpSubDir
       try {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elf-tests-'))
-        const tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
+        tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
         fs.chmodSync(tmpSubDir, 0o200)
         await expect(command['getElfSymbolFiles'](tmpDir)).resolves.toEqual([])
       } finally {
+        if (tmpSubDir) {
+          // node 23 fails to remove the directory if it's not readable
+          fs.chmodSync(tmpSubDir, 0o700)
+        }
         if (tmpDir) {
           fs.rmSync(tmpDir, {recursive: true})
         }
@@ -263,17 +267,17 @@ describe('elf-symbols upload', () => {
         },
         {
           ...commonMetadata,
-          file_hash: '',
+          file_hash: '5ba2907faebb8002de89711d5f0f005c',
           gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'aarch64',
-          filename: 'dyn_aarch64.debug',
+          filename: 'dyn_aarch64',
           symbol_source: 'debug_info',
         },
         {
           ...commonMetadata,
-          file_hash: 'e8a12b7f5702d7a4f92da4983d75e9af',
-          gnu_build_id: 'a8ac08faa0d114aa65f1ee0730af38903ac506de',
+          file_hash: '40a0f8378cf61c89c325a397edaa0dd2',
+          gnu_build_id: '90aef8b4a3cd45d758501e49d1d9844736c872cd',
           go_build_id: '',
           arch: 'x86_64',
           filename: 'dyn_x86_64',
@@ -317,7 +321,7 @@ describe('elf-symbols upload', () => {
 
         return JSON.parse((payload.content.get('event') as MultipartStringValue).value)
       })
-      const getId = (m: any) => m.gnu_build_id || m.go_build_id || m.file_hash
+      const getId = (m: any) => ((m.gnu_build_id || m.go_build_id || m.file_hash) as string) + '-' + (m.arch as string)
       metadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expectedMetadata.sort((a, b) => getId(a).localeCompare(getId(b)))
       expect(metadata).toEqual(expectedMetadata)
