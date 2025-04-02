@@ -106,7 +106,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--upload-git-metadata`        | `-u`      | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed.                                                                                                                                                           | `true`  |
 | `--no-upload-git-metadata`     |           | Disables Git metadata uploading, as a part of source code integration. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary.                                                                                                                                                  |         |
 | `--apm-flush-deadline`         |           | Used to determine when to submit spans before a timeout occurs, in milliseconds. When the remaining time in an AWS Lambda invocation is less than the value set, the tracer attempts to submit the current active spans and all finished spans. Supported for NodeJS and Python. Defaults to `100` milliseconds.   
-| `--llmobs`                     |           | If specified, enables LLM Observability for the instrumented function(s). The value is the name of the LLM Observability application, defaulting to the function name(s) or service(s) if specified.
+| `--llmobs`                     |           | If specified, enables LLM Observability for the instrumented function(s) with the provided ML application name.
 <br />
 
 #### `uninstrument`
