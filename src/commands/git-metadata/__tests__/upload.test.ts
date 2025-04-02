@@ -22,6 +22,8 @@ describe('execute', () => {
 
   test('runCLI', async () => {
     const {code, context} = await runCLI('PLACEHOLDER')
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     output.reverse()
     expect(output[1]).toContain('[DRYRUN] Handled')
@@ -30,6 +32,8 @@ describe('execute', () => {
 
   test('runCLI without api key', async () => {
     const {code, context} = await runCLI('')
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     output.reverse()
     expect(output[1]).toContain('Missing DATADOG_API_KEY in your environment')

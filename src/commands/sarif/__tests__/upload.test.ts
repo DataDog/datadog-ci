@@ -214,6 +214,8 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
@@ -227,6 +229,8 @@ describe('execute', () => {
 
   test('not found file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
