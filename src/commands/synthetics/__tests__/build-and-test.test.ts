@@ -1,5 +1,7 @@
 import * as http from 'http'
 
+import axios from 'axios'
+
 import {UnconfiguredBuildPluginError, spawnBuildPluginDevServer} from '../build-and-test'
 
 import {mockReporter} from './fixtures'
@@ -7,8 +9,12 @@ import {mockReporter} from './fixtures'
 const NODE_COMMAND = process.execPath
 
 describe('build-and-test - spawnBuildPluginDevServer', () => {
+  beforeEach(() => {
+    jest.resetAllMocks()
+    jest.restoreAllMocks()
+  })
+
   test('alert when the build-plugin is not configured', async () => {
-    console.log('running test: alert when the build-plugin is not configured')
     // Given a build command without the build plugin configured
     const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
 
@@ -17,41 +23,9 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Then it should throw when the command exits.
     await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
-    console.log('test passed')
   })
 
-  test('wait for the dev server and return expected readiness and status', async () => {
-    console.log('running test: wait for the dev server and return expected readiness and status')
-    // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
-    // The implementation of this server is written as a function, and stringified into a single line,
-    // to be used in a node -e command.
-    const httpDevServer = () => {
-      http
-        .createServer((_, res) =>
-          res
-            .writeHead(200, {'Content-Type': 'application/json'})
-            .end(JSON.stringify({status: 'success', publicPrefix: 'prefix1/'}))
-        )
-        .listen(process.env.BUILD_PLUGINS_S8S_PORT)
-    }
-    const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
-
-    // When calling spawnBuildPluginDevServer
-    const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
-
-    // Then it should send requests to the dev server until it's ready to serve,
-    // and return the devServerUrl and the path prefix.
-    expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix1/')
-
-    // Stop the command at the end of the test.
-    await command.stop()
-    console.log('test passed')
-  })
-
-  test('should handle delayed server startup', async () => {
-    console.log('running test: should handle delayed server startup')
+  test('wait for the dev server and return expected readiness and status even with delayed server startup', async () => {
     // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
     // The implementation of this server is written as a function, and stringified into a single line,
     // to be used in a node -e command.
@@ -59,15 +33,19 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
       setTimeout(() => {
         http
           .createServer((_, res) =>
-            res.writeHead(200, {'Content-Type': 'application/json'}).end(
-              JSON.stringify({
-                status: 'success',
-                publicPrefix: 'prefix2/',
+            res
+              .writeHead(200, {
+                'Content-Type': 'application/json',
               })
-            )
+              .end(
+                JSON.stringify({
+                  status: 'success',
+                  publicPrefix: 'prefix2/',
+                })
+              )
           )
           .listen(process.env.BUILD_PLUGINS_S8S_PORT)
-      }, 1000)
+      }, 500)
     }
     const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
     const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
@@ -83,60 +61,63 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
     expect(command.publicPrefix).toBe('prefix2/')
 
     // The server should resolve the promise at maximum 1 second after the server is ready
-    expect(end - start).toBeLessThanOrEqual(1000 + 1000)
+    expect(end - start).toBeLessThanOrEqual(500 + 1000)
 
     // Stop the command at the end of the test.
     await command.stop()
-    console.log('test passed')
   })
 
   test('should wait for dev server even if the build fails', async () => {
-    console.log('running test: should wait for dev server even if the build fails')
-    // Given a dev server that initially reports a failed build, then succeeds
-    const httpDevServer = () => {
-      let requestCount = 0
-      http
-        .createServer((_, res) => {
-          requestCount++
-          res
-            .writeHead(200, {'Content-Type': 'application/json'})
-            .end(JSON.stringify(requestCount === 1 ? {status: 'fail'} : {status: 'success', publicPrefix: 'prefix3/'}))
-        })
-        .listen(process.env.BUILD_PLUGINS_S8S_PORT)
-    }
-    const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
+    // Set up axios response sequence
+    jest
+      .spyOn(axios, 'get')
+      .mockRejectedValueOnce({code: 'ECONNREFUSED'}) // First attempt: connection refused
+      .mockResolvedValueOnce({data: {status: 'fail'}}) // Second attempt: build failed
+      .mockResolvedValueOnce({data: {status: 'success', publicPrefix: 'prefix3/'}}) // Third attempt: success
 
-    // When calling spawnBuildPluginDevServer
+    // Setup isAxiosError for ECONNREFUSED error
+    jest.spyOn(axios, 'isAxiosError').mockImplementation((error) => {
+      return error && error.code === 'ECONNREFUSED'
+    })
+
+    // When calling spawnBuildPluginDevServer with any command
+    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "setTimeout(() => {}, 100000)"`
     const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
 
     // Then it should wait until the build succeeds
     expect(command.devServerUrl).toBe('http://localhost:4000')
     expect(command.publicPrefix).toBe('prefix3/')
 
+    // Verify the axios GET was called multiple times
+    expect(axios.get).toHaveBeenCalledTimes(3)
+
     // Stop the command at the end of the test.
     await command.stop()
-    console.log('test passed')
   })
 
   test('should handle non-OK status code from dev server', async () => {
-    console.log('running test: should handle non-OK status code from dev server')
-    // Given a dev server that returns a non-OK status code different from ECONNREFUSED
-    const httpDevServer = () => {
-      http
-        .createServer((_, res) => {
-          res.writeHead(500, {'Content-Type': 'application/json'}).end(JSON.stringify({error: 'Internal Server Error'}))
-        })
-        .listen(process.env.BUILD_PLUGINS_S8S_PORT)
+    // Set up axios error response
+    const axiosError = {
+      isAxiosError: true,
+      code: 'ERR_BAD_RESPONSE',
+      response: {
+        status: 500,
+        statusText: 'Internal Server Error',
+      },
     }
-    const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
 
-    // When calling spawnBuildPluginDevServer
+    jest.spyOn(axios, 'get').mockRejectedValueOnce(axiosError)
+
+    // Setup isAxiosError for the specific error
+    jest.spyOn(axios, 'isAxiosError').mockImplementation((error) => {
+      return error === axiosError
+    })
+
+    // When calling spawnBuildPluginDevServer with any command
+    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "setTimeout(() => {}, 100000)"`
     const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
 
     // Then it should throw with the server error
     await expect(commandPromise).rejects.toThrow('Dev server returned error: 500 Internal Server Error')
-    console.log('test passed')
   })
 })
