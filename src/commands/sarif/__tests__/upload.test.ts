@@ -168,15 +168,17 @@ describe('upload', () => {
 describe('execute', () => {
   const runCLI = async (paths: string[]) => {
     const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...paths], context)
+    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...paths], context as any)
 
     return {context, code}
   }
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
@@ -189,6 +191,8 @@ describe('execute', () => {
       './src/commands/sarif/__tests__/fixtures/subfolder/',
       './src/commands/sarif/__tests__/fixtures/another_subfolder/',
     ])
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -203,6 +207,8 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
+
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {

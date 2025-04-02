@@ -448,11 +448,11 @@ describe('upload', () => {
 describe('execute', () => {
   const runCLI = async (extraArgs: string[]) => {
     const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     process.env = {DD_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(
       ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...extraArgs],
-      context
+      context as any
     )
 
     return {context, code}

@@ -1,5 +1,3 @@
-import os from 'os'
-
 import {Cli} from 'clipanion/lib/advanced'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
@@ -24,7 +22,7 @@ describe('execute', () => {
     const {code, context} = await runCLI('PLACEHOLDER')
     console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
 
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     output.reverse()
     expect(output[1]).toContain('[DRYRUN] Handled')
     expect(code).toBe(0)
@@ -34,7 +32,7 @@ describe('execute', () => {
     const {code, context} = await runCLI('')
     console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
 
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     output.reverse()
     expect(output[1]).toContain('Missing DATADOG_API_KEY in your environment')
     expect(code).toBe(1)

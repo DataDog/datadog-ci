@@ -151,7 +151,7 @@ describe('upload', () => {
 describe('execute', () => {
   const runCLI = async (path: string) => {
     const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
     const code = await cli.run(
       [
@@ -166,7 +166,7 @@ describe('execute', () => {
         'https://static.com/js',
         '--dry-run',
       ],
-      context
+      context as any
     )
 
     return {context, code}
