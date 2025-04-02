@@ -3,6 +3,7 @@ jest.unmock('chalk')
 import {BaseContext} from 'clipanion/lib/advanced'
 
 import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
+import {testSkipWindows} from '../../../../helpers/__tests__/skip-tests'
 
 import {
   ExecutionRule,
@@ -150,87 +151,91 @@ describe('Default reporter', () => {
       expect(output).toMatchSnapshot()
     })
 
-    /* eslint-disable jest/no-conditional-expect */
-    test.each([false, true])('the spinner text is updated and cleared at the end (in CI: %s)', async (inCI) => {
-      let simulatedTerminalOutput = ''
+    // XXX: Skipped on Windows because the spinner is `-` instead of `⠋` even when `CI=false`.
+    /* eslint-disable jest/no-conditional-expect,jest/no-standalone-expect */
+    testSkipWindows.each([false, true])(
+      'the spinner text is updated and cleared at the end (in CI: %s)',
+      async (inCI) => {
+        let simulatedTerminalOutput = ''
 
-      const write = jest.fn().mockImplementation((text: string) => {
-        // Ignore show/hide cursor ANSI codes.
-        if (text.match(/\u001b\[\?25(l|h)/)) {
-          return
+        const write = jest.fn().mockImplementation((text: string) => {
+          // Ignore show/hide cursor ANSI codes.
+          if (text.match(/\u001b\[\?25(l|h)/)) {
+            return
+          }
+
+          simulatedTerminalOutput += text
+        })
+
+        const clearLine = jest.fn().mockImplementation(() => {
+          simulatedTerminalOutput = simulatedTerminalOutput.split('\n').slice(0, -1).join('\n')
+        })
+
+        if (inCI) {
+          process.env.CI = 'true'
+        } else {
+          delete process.env.CI
         }
 
-        simulatedTerminalOutput += text
-      })
-
-      const clearLine = jest.fn().mockImplementation(() => {
-        simulatedTerminalOutput = simulatedTerminalOutput.split('\n').slice(0, -1).join('\n')
-      })
-
-      if (inCI) {
-        process.env.CI = 'true'
-      } else {
-        delete process.env.CI
-      }
-
-      const ttyContext = {
-        context: {
-          stdout: {
-            isTTY: true,
-            write,
-            clearLine,
-            cursorTo: jest.fn(),
-            moveCursor: jest.fn(),
+        const ttyContext = {
+          context: {
+            stdout: {
+              isTTY: true,
+              write,
+              clearLine,
+              cursorTo: jest.fn(),
+              moveCursor: jest.fn(),
+            },
           },
-        },
-      }
+        }
 
-      const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: BaseContext})
+        const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: BaseContext})
 
-      clearLine.mockClear()
-      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
-      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
-      // The same text is the same, so the spinner is not updated.
-      expect(clearLine).not.toHaveBeenCalled()
-      expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      clearLine.mockClear()
-      ttyReporter.resultEnd(getApiResult('rid', getApiTest('aaa-aaa-aaa')), MOCK_BASE_URL, '123')
-      if (inCI) {
-        // In CI the spinner does not spin, so `resultEnd()` has no spinner text to clear.
+        clearLine.mockClear()
+        ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
+        ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')
+        // The same text is the same, so the spinner is not updated.
         expect(clearLine).not.toHaveBeenCalled()
-      } else {
-        expect(clearLine).toHaveBeenCalled()
-      }
-      expect(simulatedTerminalOutput).toMatchSnapshot()
+        expect(simulatedTerminalOutput).toMatchSnapshot()
 
-      clearLine.mockClear()
-      ttyReporter.testsWait([getApiTest('aaa-aaa-aaa')], MOCK_BASE_URL, '123')
-      ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
-      if (inCI) {
-        // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
-        expect(clearLine).not.toHaveBeenCalled()
-      } else {
-        expect(clearLine).toHaveBeenCalled()
-      }
-      expect(simulatedTerminalOutput).toMatchSnapshot()
+        clearLine.mockClear()
+        ttyReporter.resultEnd(getApiResult('rid', getApiTest('aaa-aaa-aaa')), MOCK_BASE_URL, '123')
+        if (inCI) {
+          // In CI the spinner does not spin, so `resultEnd()` has no spinner text to clear.
+          expect(clearLine).not.toHaveBeenCalled()
+        } else {
+          expect(clearLine).toHaveBeenCalled()
+        }
+        expect(simulatedTerminalOutput).toMatchSnapshot()
 
-      clearLine.mockClear()
-      ttyReporter.testsWait([], MOCK_BASE_URL, '123')
-      ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
-      if (inCI) {
-        // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
-        expect(clearLine).not.toHaveBeenCalled()
-      } else {
-        expect(clearLine).toHaveBeenCalled()
-      }
-      expect(simulatedTerminalOutput).toMatchSnapshot()
+        clearLine.mockClear()
+        ttyReporter.testsWait([getApiTest('aaa-aaa-aaa')], MOCK_BASE_URL, '123')
+        ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
+        if (inCI) {
+          // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
+          expect(clearLine).not.toHaveBeenCalled()
+        } else {
+          expect(clearLine).toHaveBeenCalled()
+        }
+        expect(simulatedTerminalOutput).toMatchSnapshot()
 
-      // Clean up
-      ttyReporter['removeSpinner']()
-    })
+        clearLine.mockClear()
+        ttyReporter.testsWait([], MOCK_BASE_URL, '123')
+        ttyReporter['testWaitSpinner']?.render() // Simulate the next frame for the spinner.
+        if (inCI) {
+          // In CI, the old text from the spinner is not cleared, so that it's persisted in the CI logs.
+          expect(clearLine).not.toHaveBeenCalled()
+        } else {
+          expect(clearLine).toHaveBeenCalled()
+        }
+        expect(simulatedTerminalOutput).toMatchSnapshot()
+
+        // Clean up
+        ttyReporter['removeSpinner']()
+      }
+    )
   })
-  /* eslint-enable jest/no-conditional-expect */
+  /* eslint-enable jest/no-conditional-expect,jest/no-standalone-expect */
 
   describe('resultEnd', () => {
     const createFakeResult = (
