@@ -7,6 +7,11 @@ import {mockReporter} from './fixtures'
 const NODE_COMMAND = process.execPath
 
 describe('build-and-test - spawnBuildPluginDevServer', () => {
+  afterEach(async () => {
+    // wait for the http server to be closed
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  })
+
   test('alert when the build-plugin is not configured', async () => {
     // Given a build command without the build plugin configured
     const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
@@ -27,7 +32,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
         .createServer((_, res) =>
           res
             .writeHead(200, {'Content-Type': 'application/json'})
-            .end(JSON.stringify({status: 'success', publicPrefix: 'prefix/'}))
+            .end(JSON.stringify({status: 'success', publicPrefix: 'prefix1/'}))
         )
         .listen(process.env.BUILD_PLUGINS_S8S_PORT)
     }
@@ -40,7 +45,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
     // Then it should send requests to the dev server until it's ready to serve,
     // and return the devServerUrl and the path prefix.
     expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix/')
+    expect(command.publicPrefix).toBe('prefix1/')
 
     // Stop the command at the end of the test.
     await command.stop()
@@ -57,7 +62,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
             res.writeHead(200, {'Content-Type': 'application/json'}).end(
               JSON.stringify({
                 status: 'success',
-                publicPrefix: 'prefix/',
+                publicPrefix: 'prefix2/',
               })
             )
           )
@@ -75,7 +80,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
     // Then it should send requests to the dev server until it's ready to serve,
     // and return the devServerUrl and the path prefix.
     expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix/')
+    expect(command.publicPrefix).toBe('prefix2/')
 
     // The server should resolve the promise at maximum 1 second after the server is ready
     expect(end - start).toBeLessThanOrEqual(1000 + 1000)
@@ -91,15 +96,9 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
       http
         .createServer((_, res) => {
           requestCount++
-          if (requestCount === 1) {
-            res
-              .writeHead(200, {'Content-Type': 'application/json'})
-              .end(JSON.stringify({status: 'fail', publicPrefix: 'prefix/'}))
-          } else {
-            res
-              .writeHead(200, {'Content-Type': 'application/json'})
-              .end(JSON.stringify({status: 'success', publicPrefix: 'prefix/'}))
-          }
+          res
+            .writeHead(200, {'Content-Type': 'application/json'})
+            .end(JSON.stringify(requestCount === 1 ? {status: 'fail'} : {status: 'success', publicPrefix: 'prefix3/'}))
         })
         .listen(process.env.BUILD_PLUGINS_S8S_PORT)
     }
@@ -111,7 +110,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Then it should wait until the build succeeds
     expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix/')
+    expect(command.publicPrefix).toBe('prefix3/')
 
     // Stop the command at the end of the test.
     await command.stop()
