@@ -37,6 +37,7 @@ describe('instrument', () => {
         layerVersion: 5,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        llmobsMlApp: 'my-ml-app',
       }
       const region = 'sa-east-1'
 
@@ -47,6 +48,8 @@ describe('instrument', () => {
             "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_LLMOBS_ENABLED": "true",
+              "DD_LLMOBS_ML_APP": "my-ml-app",
               "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
               "DD_TRACE_ENABLED": "false",
