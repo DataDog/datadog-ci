@@ -73,7 +73,8 @@ export const sendToDatadog = async (
           break
         case 400:
         case 403:
-          message += 'Is your Datadog API key correct?\n'
+          message += `Is your Datadog API key correct? Please follow this doc to set your API key: 
+https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-variables\n`
           break
       }
 
