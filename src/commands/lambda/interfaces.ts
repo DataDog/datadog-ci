@@ -36,6 +36,7 @@ export interface LambdaConfigOptions {
   service?: string
   tracing?: string
   version?: string
+  llmobs?: string
 }
 
 /**

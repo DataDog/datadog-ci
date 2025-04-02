@@ -296,7 +296,7 @@ export const calculateUpdateRequest = async (
   // Enable LLMObs
   if (settings['llmobsMlApp'] !== undefined) {
     newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
-    newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = settings['llmobsMlApp'] || config.FunctionName || newEnvVars[SERVICE_ENV_VAR]
+    newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = settings['llmobsMlApp']
   }
 
   let layerARNs = getLayers(config)

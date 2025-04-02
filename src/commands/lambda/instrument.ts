@@ -475,7 +475,7 @@ export class InstrumentCommand extends Command {
     const environment = this.environment ?? this.config.environment
     const version = this.version ?? this.config.version
 
-    const llmobsMlApp = this.llmobs
+    const llmobsMlApp = this.llmobs ?? this.config.llmobs
 
     const tagsMap: {[key: string]: string | undefined} = {
       environment,
