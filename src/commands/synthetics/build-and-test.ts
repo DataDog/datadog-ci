@@ -19,6 +19,10 @@ type BuildCommandReturnValue =
   | {
       readiness: 'buildCommandExited'
     }
+  | {
+      readiness: 'buildCommandErrored'
+      error: Error
+    }
 
 export const DEFAULT_BUILD_PLUGIN_PORT = 4000
 
@@ -40,7 +44,15 @@ const watchBuildPluginServerReadiness = async (buildPluginServerUrl: string, abo
         } as const
       }
     } catch (error) {
-      // ignore errors and continue polling in case the dev server is still starting
+      // If we got an http error with a response, return buildCommandErrored
+      if (axios.isAxiosError(error) && error.code !== 'ECONNREFUSED' && error.response) {
+        return {
+          readiness: 'buildCommandErrored',
+          error: new Error(`Dev server returned error: ${error.response.status} ${error.response.statusText}`),
+        } as const
+      }
+
+      // Otherwise ignore errors and continue polling in case the dev server is still starting
     }
   }, abortSignal)
 }
@@ -83,12 +95,20 @@ export const spawnBuildPluginDevServer = async (
   controller.abort()
 
   if (buildCommandReturnValue === undefined) {
+    await killBuildCommand(buildCommandProcess, buildCommandExited)
     throw new Error('Unexpected state: buildCommandReturnValue is undefined')
   }
 
   if (buildCommandReturnValue.readiness === 'buildCommandExited') {
     reporter.error(UnconfiguredBuildPluginError.message)
+    await killBuildCommand(buildCommandProcess, buildCommandExited)
     throw UnconfiguredBuildPluginError
+  }
+
+  if (buildCommandReturnValue.readiness === 'buildCommandErrored') {
+    reporter.error(buildCommandReturnValue.error.message)
+    await killBuildCommand(buildCommandProcess, buildCommandExited)
+    throw buildCommandReturnValue.error
   }
 
   const {publicPrefix = ''} = buildCommandReturnValue
@@ -97,12 +117,14 @@ export const spawnBuildPluginDevServer = async (
   return {
     devServerUrl: 'http://localhost:' + String(buildPluginPort),
     publicPrefix,
-    stop: async () => {
-      buildCommandProcess.kill()
-      buildCommandProcess.stdin?.destroy()
-      buildCommandProcess.stdout?.destroy()
-      buildCommandProcess.stderr?.destroy()
-      await buildCommandExited
-    },
+    stop: async () => killBuildCommand(buildCommandProcess, buildCommandExited),
   }
+}
+
+const killBuildCommand = async (buildCommandProcess: ChildProcess, buildCommandExited: Promise<unknown>) => {
+  buildCommandProcess.kill()
+  buildCommandProcess.stdin?.destroy()
+  buildCommandProcess.stdout?.destroy()
+  buildCommandProcess.stderr?.destroy()
+  await buildCommandExited
 }
