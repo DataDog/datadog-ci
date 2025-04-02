@@ -439,7 +439,7 @@ describe('upload', () => {
         },
         ['test.suite=/testcase/@classname', 'invalid']
       )
-      const errOutput = context.stderr.toString().split(os.EOL)
+      const errOutput = context.stderr.toString().split('\n')
       expect(errOutput[0]).toContain('Invalid xpath')
     })
   })
@@ -459,7 +459,7 @@ describe('execute', () => {
   }
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/junit/__tests__/doesnotexist/../fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -469,7 +469,7 @@ describe('execute', () => {
   })
   test('multiple paths', async () => {
     const {context, code} = await runCLI(['./src/commands/junit/first/', './src/commands/junit/second/'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/junit/first/', 'src/commands/junit/second/'],
@@ -480,7 +480,7 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/junit/__tests__/fixtures`],
@@ -491,7 +491,7 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${process.cwd()}/src/commands/junit/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML')
@@ -505,7 +505,7 @@ describe('execute', () => {
       '--verbose',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(id).toHaveBeenCalled()
     expect(code).toBe(0)
     expect(output[5]).toContain('Syncing git metadata')
@@ -517,7 +517,7 @@ describe('execute', () => {
       '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
     expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
@@ -529,7 +529,7 @@ describe('execute', () => {
       '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
     expect(code).toBe(0)
     expect(output[5]).toContain('Not syncing git metadata (skip git upload flag detected)')
@@ -540,7 +540,7 @@ describe('execute', () => {
       '--skip-git-metadata-upload=0',
       process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     expect(output[5]).toContain('Syncing git metadata')
   })

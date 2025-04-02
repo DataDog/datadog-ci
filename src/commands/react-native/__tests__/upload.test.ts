@@ -1,5 +1,3 @@
-import os from 'os'
-
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
 
@@ -103,7 +101,7 @@ describe('execute', () => {
 
   test('relative path', async () => {
     const {context, code} = await runCLI('./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
@@ -123,7 +121,7 @@ describe('execute', () => {
     const {context, code} = await runCLI(
       process.cwd() + '/src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'
     )
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
@@ -145,7 +143,7 @@ describe('execute', () => {
       configPath: './src/commands/react-native/__tests__/fixtures/config/config-with-api-key.json',
     })
 
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       build: '1023040',
@@ -176,7 +174,7 @@ describe('execute', () => {
       },
     })
 
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     expect(apiKeyValidatorSpy).toHaveBeenCalledWith({
       apiKey: 'env_API_key',
@@ -193,7 +191,7 @@ describe('execute', () => {
       uploadBundle: false,
     })
 
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     expect(output[2]).toContain(
       '⚠️ --bundle option was not provided. A default bundle name will be used. Please update @datadog/mobile-react-native or pass a --bundle option.'

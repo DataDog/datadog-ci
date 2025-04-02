@@ -1,5 +1,3 @@
-import os from 'os'
-
 import {createCommand} from '../../../helpers/__tests__/fixtures'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
@@ -78,7 +76,7 @@ describe('flutter-symbol upload', () => {
 
         process.env.DATADOG_API_KEY = 'fake_api_key'
       })
-      const output = context.stdout.toString().split(os.EOL)
+      const output = context.stdout.toString().split('\n')
 
       expect(exitCode).toBe(0)
 

@@ -1,5 +1,3 @@
-import os from 'os'
-
 import {Cli} from 'clipanion/lib/advanced'
 
 import {renderInvalidFile} from '../renderer'
@@ -176,9 +174,7 @@ describe('execute', () => {
   }
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
-    const output = context.stdout.toString().split(os.EOL)
-    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
-
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
@@ -191,9 +187,7 @@ describe('execute', () => {
       './src/commands/sarif/__tests__/fixtures/subfolder/',
       './src/commands/sarif/__tests__/fixtures/another_subfolder/',
     ])
-    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
-
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [
@@ -207,9 +201,7 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
-    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
-
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
@@ -220,9 +212,7 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
-    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
-
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
@@ -235,9 +225,7 @@ describe('execute', () => {
 
   test('not found file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
-    console.debug({stdout: context.stdout.toString(), stderr: context.stderr.toString()})
-
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
     expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path}`)
