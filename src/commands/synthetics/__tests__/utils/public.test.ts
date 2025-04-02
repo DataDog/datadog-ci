@@ -59,7 +59,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../../interfaces'
-import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
+import {getDefaultConfig} from '../../run-tests-lib'
 import * as utils from '../../utils/public'
 
 import {
@@ -73,6 +73,8 @@ import {
   mockReporter,
   RenderResultsTestCase,
 } from '../fixtures'
+
+const DEFAULT_COMMAND_CONFIG = getDefaultConfig()
 
 describe('utils', () => {
   describe('getSuites', () => {

@@ -1,35 +1,15 @@
 import {Command, Option} from 'clipanion'
-import deepExtend from 'deep-extend'
 import terminalLink from 'terminal-link'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {LogLevel, Logger} from '../../helpers/logger'
-import {removeUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
-
+import {BaseCommand, RecursivePartial} from './base-command'
 import {importTests} from './import-tests-lib'
-import {ImportTestsCommandConfig, MainReporter, Reporter} from './interfaces'
-import {DefaultReporter} from './reporters/default'
-import {getReporter} from './utils/public'
-
-export const DEFAULT_IMPORT_TESTS_COMMAND_CONFIG: ImportTestsCommandConfig = {
-  apiKey: '',
-  appKey: '',
-  configPath: 'datadog-ci.json',
-  datadogSite: 'datadoghq.com',
-  files: [],
-  proxy: {protocol: 'http'},
-  publicIds: [],
-  testSearchQuery: '',
-}
+import {ImportTestsCommandConfig} from './interfaces'
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
 const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
 
-export class ImportTestsCommand extends Command {
+export class ImportTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'import-tests']]
 
   public static usage = Command.Usage({
@@ -47,10 +27,8 @@ export class ImportTestsCommand extends Command {
     ],
   })
 
-  private apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
-  private appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
-  private configPath = Option.String('--config', {description: `Pass a path to a ${$1('global configuration file')}.`})
-  private datadogSite = Option.String('--datadogSite', {description: 'The Datadog instance to which request is sent.'})
+  protected config: ImportTestsCommandConfig = ImportTestsCommand.getDefaultConfig()
+
   private files = Option.Array('-f,--files', {
     description: `Glob pattern to detect Synthetic test files ${$2('configuration files')}} and write to this file.`,
   })
@@ -59,32 +37,18 @@ export class ImportTestsCommand extends Command {
     description: 'Pass a query to select which Synthetic tests to run.',
   })
 
-  private reporter!: MainReporter
-  private config: ImportTestsCommandConfig = JSON.parse(JSON.stringify(DEFAULT_IMPORT_TESTS_COMMAND_CONFIG)) // Deep copy to avoid mutation
-
-  private logger: Logger = new Logger((s: string) => {
-    this.context.stdout.write(s)
-  }, LogLevel.INFO)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  public static getDefaultConfig(): ImportTestsCommandConfig {
+    return {
+      ...super.getDefaultConfig(),
+      files: [],
+      publicIds: [],
+      testSearchQuery: '',
+    }
   }
 
   public async execute() {
-    const reporters: Reporter[] = [new DefaultReporter(this)]
-    this.reporter = getReporter(reporters)
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-
-    try {
-      await this.resolveConfig()
-    } catch (error) {
-      this.logger.error(`Error: invalid config`)
-
-      return 1
-    }
+    // populate the config
+    await this.setup()
 
     try {
       await importTests(this.reporter, this.config)
@@ -95,46 +59,21 @@ export class ImportTestsCommand extends Command {
     }
   }
 
-  private async resolveConfig() {
-    // Defaults < file < ENV < CLI
-    try {
-      // Override Config Path with ENV variables
-      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
-      this.config = await resolveConfigFromFile(this.config, {
-        configPath: overrideConfigPath,
-        defaultConfigPaths: [this.config.configPath],
-      })
-    } catch (error) {
-      if (this.configPath) {
-        throw error
-      }
+  protected resolveConfigFromEnv(): RecursivePartial<ImportTestsCommandConfig> {
+    return {
+      ...super.resolveConfigFromEnv(),
+      files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
+      publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
+      testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
     }
+  }
 
-    this.config = deepExtend(
-      this.config,
-      removeUndefinedValues({
-        apiKey: process.env.DATADOG_API_KEY,
-        appKey: process.env.DATADOG_APP_KEY,
-        configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH,
-        datadogSite: process.env.DATADOG_SITE,
-        files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
-        publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
-        testSearchQuery: process.env.DATADOG_SYNTHETICS_TEST_SEARCH_QUERY,
-      })
-    )
-
-    // Override with CLI parameters
-    this.config = deepExtend(
-      this.config,
-      removeUndefinedValues({
-        apiKey: this.apiKey,
-        appKey: this.appKey,
-        configPath: this.configPath,
-        datadogSite: this.datadogSite,
-        files: this.files,
-        publicIds: this.publicIds,
-        testSearchQuery: this.testSearchQuery,
-      })
-    )
+  protected resolveConfigFromCli(): RecursivePartial<ImportTestsCommandConfig> {
+    return {
+      ...super.resolveConfigFromCli(),
+      files: this.files,
+      publicIds: this.publicIds,
+      testSearchQuery: this.testSearchQuery,
+    }
   }
 }

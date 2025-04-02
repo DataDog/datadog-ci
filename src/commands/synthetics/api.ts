@@ -25,7 +25,7 @@ import {
   MobileApplicationNewVersionParams,
   LocalTestDefinition,
 } from './interfaces'
-import {MAX_TESTS_TO_TRIGGER} from './run-tests-command'
+import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
 
 const MAX_RETRIES = 3

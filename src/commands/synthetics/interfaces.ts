@@ -536,13 +536,16 @@ export interface APIHelperConfig {
   proxy: ProxyConfiguration
 }
 
+export interface DatadogCIConfig extends APIHelperConfig {
+  configPath: string
+}
+
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface SyntheticsCIConfig extends APIHelperConfig {}
+export interface SyntheticsCIConfig extends DatadogCIConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {
   batchTimeout?: number
   buildCommand?: string
-  configPath: string
   defaultTestOverrides?: UserConfigOverride
   failOnCriticalErrors: boolean
   failOnMissingTests: boolean

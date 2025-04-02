@@ -273,6 +273,19 @@ export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object
   return newObject
 }
 
+export const recursivelyRemoveUndefinedValues = <T extends Record<string, unknown>>(object: T): Partial<T> => {
+  const newObject: Partial<T> = {}
+  for (const [key, value] of Object.entries(object) as [keyof T, T[keyof T]][]) {
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      newObject[key] = recursivelyRemoveUndefinedValues(value as any) as T[keyof T]
+    } else if (value !== undefined) {
+      newObject[key] = value
+    }
+  }
+
+  return newObject
+}
+
 export const normalizeRef = (ref: string | undefined) => {
   if (!ref) {
     return ref
