@@ -2,6 +2,8 @@ jest.unmock('chalk')
 
 import {CommandContext} from 'src/helpers/interfaces'
 
+import {testSkipWindows} from '../../../../../helpers/__tests__/skip-tests'
+
 import {AppUploadReporter} from '../../../reporters/mobile/app-upload'
 
 /* eslint-disable jest/no-conditional-expect */
@@ -170,38 +172,44 @@ describe('AppUploadReporter', () => {
   })
 
   describe('integrationTests', () => {
-    test.each([false, true])('Outputs a series of successful uploads correctly (in CI: %s)', async (inCI) => {
-      if (inCI) {
-        process.env.CI = 'true'
-      } else {
-        delete process.env.CI
+    // XXX: Skipped on Windows because the spinner is `-` instead of `⠋` even when `CI=false`.
+    /* eslint-disable jest/no-standalone-expect */
+    testSkipWindows.each([false, true])(
+      'Outputs a series of successful uploads correctly (in CI: %s)',
+      async (inCI) => {
+        if (inCI) {
+          process.env.CI = 'true'
+        } else {
+          delete process.env.CI
+        }
+        ttyReporter.start([
+          {
+            versionName: '1.0.0',
+            appId: '123',
+            appPath: '/path/to/app',
+          },
+          {
+            versionName: '2.0.0',
+            appId: '456',
+            appPath: '/path/to/another/app',
+          },
+        ])
+        expect(simulatedTerminalOutput).toMatchSnapshot()
+
+        ttyReporter.renderProgress(2)
+        expect(simulatedTerminalOutput).toMatchSnapshot()
+
+        ttyReporter.renderProgress(1)
+        expect(simulatedTerminalOutput).toMatchSnapshot()
+
+        ttyReporter.reportSuccess()
+        expect(simulatedTerminalOutput).toMatchSnapshot()
       }
-      ttyReporter.start([
-        {
-          versionName: '1.0.0',
-          appId: '123',
-          appPath: '/path/to/app',
-        },
-        {
-          versionName: '2.0.0',
-          appId: '456',
-          appPath: '/path/to/another/app',
-        },
-      ])
-      expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      ttyReporter.renderProgress(2)
-      expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      ttyReporter.renderProgress(1)
-      expect(simulatedTerminalOutput).toMatchSnapshot()
-
-      ttyReporter.reportSuccess()
-      expect(simulatedTerminalOutput).toMatchSnapshot()
-    })
+    )
+    /* eslint-enable jest/no-standalone-expect */
   })
 
-  test.each([false, true])('Outputs a failure durings uploads correctly (in CI: %s)', async (inCI) => {
+  test.each([false, true])('Outputs a failure during uploads correctly (in CI: %s)', async (inCI) => {
     if (inCI) {
       process.env.CI = 'true'
     } else {
