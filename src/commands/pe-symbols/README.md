@@ -39,7 +39,7 @@ Run the following command to upload all the necessary files:
 DD_BETA_COMMANDS_ENABLED=1 datadog-ci pe-symbols upload ~/your/build/bin/
 ```
 
-If location is a directory, command will scan it recursively looking for PE files, and for each PE file, it will upload the corresponding .PDB file to Datadog.
+If the location is a directory, the command scans it recursively looking for PE files. For each PE file, it uploads the corresponding .PDB file to Datadog.
 If location is a file, command will upload the corresponding .PDB file to Datadog.
 
 | Parameter | Condition | Description |
