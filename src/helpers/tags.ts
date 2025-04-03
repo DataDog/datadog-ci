@@ -43,8 +43,8 @@ export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sh
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
 
 // Sbom
-export const TOOL_GENERATOR_NAME = 'tool.generator.name'
-export const TOOL_GENERATOR_VERSION = 'tool.generator.version'
+export const SBOM_TOOL_GENERATOR_NAME = 'tool.generator.name'
+export const SBOM_TOOL_GENERATOR_VERSION = 'tool.generator.version'
 
 // General
 export const SERVICE = 'service'
