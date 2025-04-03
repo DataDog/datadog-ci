@@ -4,7 +4,3 @@ export const PACKAGE_MANAGER_PROPERTY_KEY = 'osv-scanner:package-manager'
 export const IS_DEPENDENCY_DIRECT_PROPERTY_KEY = 'osv-scanner:is-direct'
 export const IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY = 'osv-scanner:is-dev'
 export const FILE_PACKAGE_PROPERTY_KEY = 'osv-scanner:package'
-
-// Tags
-export const TOOL_GENERATOR_NAME = 'tool.generator.name'
-export const TOOL_GENERATOR_VERSION = 'tool.generator.version'

@@ -5,9 +5,13 @@ import path from 'path'
 import simpleGit from 'simple-git'
 
 import {DatadogCiConfig} from '../../../helpers/config'
-import {getSpanTags, getMissingRequiredGitTags} from '../../../helpers/tags'
+import {
+  getSpanTags,
+  getMissingRequiredGitTags,
+  SBOM_TOOL_GENERATOR_NAME,
+  SBOM_TOOL_GENERATOR_VERSION,
+} from '../../../helpers/tags'
 
-import {TOOL_GENERATOR_NAME, TOOL_GENERATOR_VERSION} from '../constants'
 import {generatePayload} from '../payload'
 import {DependencyLanguage, Location} from '../types'
 
@@ -44,8 +48,8 @@ describe('generation of payload', () => {
     expect(payload?.dependencies[0].version).toBe('1.3.0')
     expect(payload?.dependencies[0].licenses.length).toBe(0)
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('in-dev')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('in-dev')
   })
 
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
@@ -73,8 +77,8 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(147)
     expect(payload?.files.length).toBe(2)
     expect(payload?.relations.length).toBe(154)
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('trivy')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('0.44.1')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('trivy')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.44.1')
 
     const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
     expect(dependenciesWithoutLicense?.length).toBe(147)
@@ -111,8 +115,8 @@ describe('generation of payload', () => {
     expect(payload?.dependencies.length).toBe(147)
     expect(payload?.files.length).toBe(2)
     expect(payload?.relations.length).toBe(154)
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('grype')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('0.87.0')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('grype')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.87.0')
   })
 
   test('should correctly work with a CycloneDX 1.6 file', async () => {
@@ -146,8 +150,8 @@ describe('generation of payload', () => {
     expect(payload?.dependencies[1].version).toBe('2.31.0')
     expect(payload?.dependencies[1].licenses).toHaveLength(0)
     expect(payload?.dependencies[1].language).toBe(DependencyLanguage.PYTHON)
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('cdxgen')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('11.0.7')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cdxgen')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('11.0.7')
   })
 
   test('SBOM for rust with multiple licenses', async () => {
@@ -436,15 +440,15 @@ describe('generation of payload', () => {
     let payload = generatePayload(sbomContent, tagsWithoutTool, 'service', 'env')
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('in-dev')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('in-dev')
 
     const tagsWithTool = await getSpanTags(config, ['tool.generator.name:foo', 'tool.generator.version:1.1.1.1'], true)
     payload = generatePayload(sbomContent, tagsWithTool, 'service', 'env')
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBe('foo')
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBe('1.1.1.1')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('foo')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('1.1.1.1')
   })
 
   test('should not read tool.generator when missing from SBOM', async () => {
@@ -460,8 +464,8 @@ describe('generation of payload', () => {
     const payload = generatePayload(sbomContent, tags, 'service', 'env')
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
-    expect(payload?.tags[TOOL_GENERATOR_NAME]).toBeUndefined()
-    expect(payload?.tags[TOOL_GENERATOR_VERSION]).toBeUndefined()
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBeUndefined()
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBeUndefined()
   })
 
   test('should fail to read git information', async () => {

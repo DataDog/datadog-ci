@@ -1,8 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 import type {Writable} from 'stream'
 
-import {TOOL_GENERATOR_NAME, TOOL_GENERATOR_VERSION} from 'src/commands/sbom/constants'
-
 import {
   CI_ENV_VARS,
   CI_JOB_NAME,
@@ -32,6 +30,8 @@ import {
   GIT_BASE_REF,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  SBOM_TOOL_GENERATOR_NAME,
+  SBOM_TOOL_GENERATOR_VERSION,
 } from './tags'
 
 export interface Metadata {
@@ -104,8 +104,8 @@ export type SpanTag =
   | typeof GIT_BASE_REF
   | typeof GIT_PULL_REQUEST_BASE_BRANCH
   | typeof GIT_PULL_REQUEST_BASE_BRANCH_SHA
-  | typeof TOOL_GENERATOR_NAME
-  | typeof TOOL_GENERATOR_VERSION
+  | typeof SBOM_TOOL_GENERATOR_NAME
+  | typeof SBOM_TOOL_GENERATOR_VERSION
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 

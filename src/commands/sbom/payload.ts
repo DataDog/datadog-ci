@@ -10,6 +10,8 @@ import {
   GIT_COMMIT_COMMITTER_NAME,
   GIT_REPOSITORY_URL,
   GIT_SHA,
+  SBOM_TOOL_GENERATOR_NAME,
+  SBOM_TOOL_GENERATOR_VERSION,
 } from '../../helpers/tags'
 
 import {
@@ -17,8 +19,6 @@ import {
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
-  TOOL_GENERATOR_NAME,
-  TOOL_GENERATOR_VERSION,
 } from './constants'
 import {getLanguageFromComponent} from './language'
 import {Relations, Dependency, File, Location, LocationFromFile, Locations, ScaRequest, GenerationTool} from './types'
@@ -106,12 +106,12 @@ export const generatePayload = (
   if (jsonContent) {
     // If the tool generator for SBOM creation is not already defined by the user,
     // attempt to determine it from the metadata attribute.
-    if (!tags[TOOL_GENERATOR_NAME]) {
+    if (!tags[SBOM_TOOL_GENERATOR_NAME]) {
       const generationTool = getGenerationTool(jsonContent)
 
       if (generationTool) {
-        tags[TOOL_GENERATOR_NAME] = generationTool.name
-        tags[TOOL_GENERATOR_VERSION] = generationTool.version
+        tags[SBOM_TOOL_GENERATOR_NAME] = generationTool.name
+        tags[SBOM_TOOL_GENERATOR_VERSION] = generationTool.version
       }
     }
     if (jsonContent['components']) {
