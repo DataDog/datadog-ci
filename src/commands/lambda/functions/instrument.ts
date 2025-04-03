@@ -52,6 +52,7 @@ import {
   APPSEC_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -297,6 +298,11 @@ export const calculateUpdateRequest = async (
   if (settings['llmobsMlApp'] !== undefined) {
     newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
     newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = settings['llmobsMlApp']
+
+    // For LLM Observability to use the agent from the extension layer as a proxy.
+    // LLM Observability setup documentation will point to the `-e` extension layer option to
+    // always use the extension layer.
+    newEnvVars[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
   }
 
   let layerARNs = getLayers(config)

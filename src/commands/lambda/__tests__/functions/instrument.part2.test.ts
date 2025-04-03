@@ -48,6 +48,7 @@ describe('instrument', () => {
             "Variables": {
               "DD_FLUSH_TO_LOG": "false",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_LLMOBS_AGENTLESS_ENABLED": "false",
               "DD_LLMOBS_ENABLED": "true",
               "DD_LLMOBS_ML_APP": "my-ml-app",
               "DD_MERGE_XRAY_TRACES": "false",

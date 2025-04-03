@@ -637,7 +637,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_LLMOBS_ML_APP": "****************",
       "DD_FLUSH_TO_LOG": "true",
       "DD_LOG_LEVEL": "debug",
-      "DD_LLMOBS_ENABLED": "true"
+      "DD_LLMOBS_ENABLED": "true",
+      "DD_LLMOBS_AGENTLESS_ENABLED": "false"
     }
   },
   "Layers": [
