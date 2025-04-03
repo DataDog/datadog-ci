@@ -6,6 +6,7 @@ import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
 import {DeployTestsCommand} from '../deploy-tests-command'
+import {CriticalError} from '../errors'
 import {ImportTestsCommand} from '../import-tests-command'
 import {
   CookiesObject,
@@ -17,6 +18,7 @@ import {
   UploadApplicationCommandConfig,
   UserConfigOverride,
 } from '../interfaces'
+import * as mobile from '../mobile'
 import {RunTestsCommand} from '../run-tests-command'
 import * as testUtils from '../test'
 import {UploadApplicationCommand} from '../upload-application-command'
@@ -1426,6 +1428,34 @@ describe('upload-application', () => {
         versionName: 'new',
         latest: true,
       })
+    })
+  })
+
+  describe('any kind of error is reported', () => {
+    test.each([
+      [
+        'CI error',
+        new CriticalError('INVALID_MOBILE_APP', 'some message'),
+        'A CI error occurred: [INVALID_MOBILE_APP] some message',
+      ],
+      ['Endpoint error', new api.EndpointError('some message', 404), 'A backend error occurred: some message (404)'],
+      [
+        'Axios error',
+        getAxiosError(400, {message: 'Bad Request'}),
+        'An unexpected error occurred: AxiosError: Bad Request\n    at getAxiosError',
+      ],
+      ['Unknown error', new Error('Unknown error'), 'An unexpected error occurred: Error: Unknown error\n    at '],
+    ])('%s', async (_, error, expectedMessage) => {
+      const writeMock = jest.fn()
+      const command = createCommand(UploadApplicationCommand, {stdout: {write: writeMock}})
+
+      jest.spyOn(mobile, 'uploadMobileApplicationVersion').mockImplementation(() => {
+        throw error
+      })
+
+      expect(await command['execute']()).toBe(1)
+
+      expect(writeMock).toHaveBeenCalledWith(expect.stringContaining(expectedMessage))
     })
   })
 })

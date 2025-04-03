@@ -4,7 +4,7 @@ import {toBoolean} from '../../helpers/env'
 
 import {EndpointError} from './api'
 import {BaseCommand, RecursivePartial} from './base-command'
-import {CiError, CriticalError} from './errors'
+import {CiError} from './errors'
 import {UploadApplicationCommandConfig} from './interfaces'
 import {uploadMobileApplicationVersion} from './mobile'
 import {AppUploadReporter} from './reporters/mobile/app-upload'
@@ -58,8 +58,13 @@ export class UploadApplicationCommand extends BaseCommand {
     try {
       await uploadMobileApplicationVersion(this.config, appUploadReporter)
     } catch (error) {
-      if (error instanceof CiError || error instanceof EndpointError || error instanceof CriticalError) {
-        this.logger.error(`Error: ${error.message}`)
+      if (error instanceof CiError) {
+        this.logger.error(`A CI error occurred: [${error.code}] ${error.message}`)
+      } else if (error instanceof EndpointError) {
+        this.logger.error(`A backend error occurred: ${error.message} (${error.status})`)
+      } else {
+        const e = error as Error
+        this.logger.error(`An unexpected error occurred: ${e.stack || e.message}`)
       }
 
       return 1
