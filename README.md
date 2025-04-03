@@ -115,6 +115,9 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 #### `elf-symbols`
 - `upload`: Upload [Elf debug info files](src/commands/elf-symbols) for Profiling (requires binutils). [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
 
+#### `pe-symbols`
+- `upload`: Upload [Windows PE debug info files](src/commands/pe-symbols) for Profiling. [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
+
 #### `gate`
 - `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 

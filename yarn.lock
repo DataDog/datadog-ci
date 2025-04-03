@@ -1956,6 +1956,7 @@ __metadata:
     ts-node: 8.8.1
     typanion: ^3.14.0
     typescript: 5.1.6
+    upath: ^2.0.1
     uuid: ^9.0.0
     ws: ^7.5.10
     xml2js: 0.5.0
@@ -10569,6 +10570,13 @@ jschardet@latest:
   version: 2.0.1
   resolution: "universalify@npm:2.0.1"
   checksum: ecd8469fe0db28e7de9e5289d32bd1b6ba8f7183db34f3bfc4ca53c49891c2d6aa05f3fb3936a81285a905cc509fb641a0c3fc131ec786167eff41236ae32e60
+  languageName: node
+  linkType: hard
+
+"upath@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "upath@npm:2.0.1"
+  checksum: 2db04f24a03ef72204c7b969d6991abec9e2cb06fb4c13a1fd1c59bc33b46526b16c3325e55930a11ff86a77a8cbbcda8f6399bf914087028c5beae21ecdb33c
   languageName: node
   linkType: hard
 

@@ -1,10 +1,11 @@
 import path from 'path'
 
+import {createReaderFromFile} from '../../../helpers/filereader'
+
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,
-  createReaderFromFile,
   getElfFileMetadata,
   getOutputFilenameFromBuildId,
   readElfHeader,
