@@ -6,6 +6,7 @@ export interface DeploymentEvent {
   startedAt: Date
   finishedAt: Date
   git?: GitInfo
+  version?: string
 }
 
 export interface GitInfo {
