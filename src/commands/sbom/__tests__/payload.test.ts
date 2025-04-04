@@ -468,6 +468,46 @@ describe('generation of payload', () => {
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBeUndefined()
   })
 
+  test('should correctly add reachability information with a CycloneDX 1.5 file', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-with-reachability.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(3)
+    const dependencies = payload!.dependencies
+
+    // Check that we can have multiple locations
+    expect(dependencies[0].name).toEqual('junit:junit')
+    expect(dependencies[0].version).toEqual('3.8.1')
+    expect(dependencies[0].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[1].name).toEqual('org.springframework:spring-context')
+    expect(dependencies[1].version).toEqual('5.3.30')
+    expect(dependencies[1].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[2].name).toEqual('org.springframework:spring-web')
+    expect(dependencies[2].version).toEqual('5.3.30')
+    expect(dependencies[2].reachable_symbol_properties).toHaveLength(1)
+    expect(dependencies[2].reachable_symbol_properties![0].name).toEqual(
+      'datadog-sbom-generator:reachable-symbol-location:GHSA-4wrc-f8pq-fpqp'
+    )
+    expect(dependencies[2].reachable_symbol_properties![0].value).toEqual(
+      '[{"file_name":"src/main/java/com/example/InsecureDeserializationExample.java","line_start":41,"line_end":41,"column_start":58,"column_end":88,"symbol":"CodebaseAwareObjectInputStream"}]'
+    )
+
+    expect(payload?.vulnerabilities.length).toStrictEqual(1)
+    const vulnerabilities = payload!.vulnerabilities
+    expect(vulnerabilities[0].id).toEqual('GHSA-4wrc-f8pq-fpqp')
+    expect(vulnerabilities[0].bom_ref).toEqual('GHSA-4wrc-f8pq-fpqp')
+    expect(vulnerabilities[0].affects).toHaveLength(1)
+    expect(vulnerabilities[0].affects[0].ref).toEqual('pkg:maven/org.springframework/spring-web@5.3.30')
+  })
+
   test('should fail to read git information', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {
