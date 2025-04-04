@@ -30,3 +30,7 @@ export const getBundleName = (bundlePath: string | undefined, platform: RNPlatfo
 
   return DEFAULT_ANDROID_BUNDLE_NAME
 }
+
+export const sanitizeReleaseVersion = (version: string) => {
+  return version.replace(/^(>=|<=|==|=|<|>|\^|~)/, '').trim()
+}

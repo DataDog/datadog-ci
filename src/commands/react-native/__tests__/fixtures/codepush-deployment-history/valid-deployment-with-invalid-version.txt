@@ -1,0 +1,18 @@
+[
+  [
+    "v1",
+    "Sep 05, 02:19 PM",
+    "1.0",
+    "No",
+    null,
+    "\u001b[35mNo installs recorded\u001b[39m"
+  ],
+  [
+    "v2",
+    "Sep 05, 02:27 PM",
+    "#??0.0.1",
+    "No",
+    null,
+    "\u001b[35mNo installs recorded\u001b[39m"
+  ]
+]

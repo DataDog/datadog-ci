@@ -16,6 +16,14 @@ jest.mock('child_process', () => ({
       stdout = readFileSync(
         './src/commands/react-native/__tests__/fixtures/codepush-deployment-history/valid-deployment.txt'
       )
+    } else if (appName === 'FakeOrg/FakeAppSemver') {
+      stdout = readFileSync(
+        './src/commands/react-native/__tests__/fixtures/codepush-deployment-history/valid-deployment-with-prefix-symbols.txt'
+      )
+    } else if (appName === 'FakeOrg/FakeAppInvalidVersion') {
+      stdout = readFileSync(
+        './src/commands/react-native/__tests__/fixtures/codepush-deployment-history/valid-deployment-with-invalid-version.txt'
+      )
     } else if (appName === 'FakeOrg/NoNetwork') {
       error = `Error: Command failed: ${command}`
       stderr = readFileSync('./src/commands/react-native/__tests__/fixtures/codepush-deployment-history/no-network.txt')
@@ -131,6 +139,45 @@ describe('codepush', () => {
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
       )
       expect(output).toContain('version: 1.0-codepush.v7 build: 1 service: com.myapp')
+    })
+
+    it('calls the upload command with a correct sanitized version number from the codepush history', async () => {
+      const {context, code} = await runCLI('FakeOrg/FakeAppSemver')
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 2.0-codepush.v7 build: 1 service: com.myapp')
+    })
+
+    it('calls the upload command with a correct sanitized version number from the codepush history without bundle', async () => {
+      const {context, code} = await runCLI('FakeOrg/FakeAppSemver', {uploadBundle: false})
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 2.0-codepush.v7 build: 1 service: com.myapp')
+    })
+
+    it('shows a meaningful error message when the version cannot be sanitized', async () => {
+      const {context, code} = await runCLI('FakeOrg/FakeAppInvalidVersion', {uploadBundle: false})
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(1)
+      const output = context.stdout.toString()
+      expect(output).toContain("Error parsing codepush history: invalid version string '#??0.0.1'")
     })
 
     it('shows a meaningful error message when no release has been made yet', async () => {

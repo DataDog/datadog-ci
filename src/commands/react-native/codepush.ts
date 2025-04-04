@@ -9,6 +9,7 @@ import {enableFips} from '../../helpers/fips'
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {UploadCommand} from './upload'
+import {sanitizeReleaseVersion} from './utils'
 
 export class CodepushCommand extends Command {
   public static paths = [['react-native', 'codepush']]
@@ -170,15 +171,23 @@ export class CodepushCommand extends Command {
           return
         }
         try {
-          const history = JSON.parse(stdout)
+          const history = JSON.parse(stdout) as any[]
           if (history.length === 0) {
             reject(new NoCodepushReleaseError(appCenterAppName, appCenterDeployment))
           }
-          const lastDeployment = history[history.length - 1]
+          const lastDeployment = history[history.length - 1] as [string, string, string]
           const [lastCodePushLabel, _, lastVersion] = lastDeployment
-          resolve(`${lastVersion}-codepush.${lastCodePushLabel}`)
+
+          const version = sanitizeReleaseVersion(lastVersion)
+          if (/^[^\d]/.test(version)) {
+            reject(
+              new CodepushHistoryParseError(`Error parsing codepush history: invalid version string '${lastVersion}'`)
+            )
+          }
+
+          resolve(`${version}-codepush.${lastCodePushLabel}`)
         } catch (parseError) {
-          reject(new CodepushHistoryParseError(`Error parsing codepush history: \n${parseError}\n${stdout}`))
+          reject(new CodepushHistoryParseError(`Error parsing codepush history: \n${String(parseError)}\n${stdout}`))
         }
       })
     })
