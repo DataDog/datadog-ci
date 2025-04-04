@@ -119,7 +119,8 @@ describe('flare', () => {
 
       const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
       await expect(fn).rejects.toThrow(
-        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct?\n`
+        `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct? Please follow this doc to set your API key: 
+https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-variables\n`
       )
     })
   })
