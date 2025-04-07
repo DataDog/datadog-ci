@@ -79,9 +79,15 @@ export const spawnBuildPluginDevServer = async (
 
   // Spawn the build command process with the BUILD_PLUGINS_S8S_PORT environment variable.
   const buildCommandProcess = spawn(buildCommand, [], {
-    env: {BUILD_PLUGINS_S8S_PORT: String(buildPluginPort)},
+    env: {
+      BUILD_PLUGINS_S8S_PORT: String(buildPluginPort),
+      ...process.env,
+    },
     shell,
   })
+
+  buildCommandProcess.stdout?.pipe(process.stdout)
+  buildCommandProcess.stderr?.pipe(process.stderr)
 
   // Wait for the build command to either exit, or provide a dev server serving the built assets.
   const controller = new AbortController() // used to abort the watcher and its http requests
