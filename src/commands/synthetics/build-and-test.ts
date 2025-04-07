@@ -8,13 +8,13 @@ import {poll} from './utils/internal'
 
 interface BuildStatus {
   status: 'running' | 'fail' | 'success'
-  publicPrefix?: string
+  publicPath?: string
 }
 
 type BuildCommandReturnValue =
   | {
       readiness: 'buildCommandReady'
-      publicPrefix?: string
+      publicPath?: string
     }
   | {
       readiness: 'buildCommandExited'
@@ -35,12 +35,12 @@ const watchBuildPluginServerReadiness = async (buildPluginServerUrl: string, abo
   return poll(async () => {
     try {
       const response = await axios.get<BuildStatus>(buildPluginServerUrl, {signal: abortSignal})
-      const {status, publicPrefix = ''} = response.data
+      const {status, publicPath = ''} = response.data
 
       if (status === 'success') {
         return {
           readiness: 'buildCommandReady',
-          publicPrefix,
+          publicPath,
         } as const
       }
     } catch (error) {
@@ -70,15 +70,17 @@ export const spawnBuildPluginDevServer = async (
   reporter: MainReporter
 ): Promise<{
   devServerUrl: string
-  publicPrefix: string
+  publicPath: string
   stop: () => Promise<void>
 }> => {
   const buildPluginPort = DEFAULT_BUILD_PLUGIN_PORT
 
+  const shell = process.env.SHELL ?? process.env.ComSpec ?? true
+
   // Spawn the build command process with the BUILD_PLUGINS_S8S_PORT environment variable.
   const buildCommandProcess = spawn(buildCommand, [], {
     env: {BUILD_PLUGINS_S8S_PORT: String(buildPluginPort)},
-    shell: true,
+    shell,
   })
 
   // Wait for the build command to either exit, or provide a dev server serving the built assets.
@@ -111,12 +113,12 @@ export const spawnBuildPluginDevServer = async (
     throw buildCommandReturnValue.error
   }
 
-  const {publicPrefix = ''} = buildCommandReturnValue
+  const {publicPath = ''} = buildCommandReturnValue
 
   // Once the build server is ready, return its URL with the advertised public prefix to run the tests against it.
   return {
     devServerUrl: 'http://localhost:' + String(buildPluginPort),
-    publicPrefix,
+    publicPath,
     stop: async () => killBuildCommand(buildCommandProcess, buildCommandExited),
   }
 }

@@ -58,7 +58,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
     // Then it should send requests to the dev server until it's ready to serve,
     // and return the devServerUrl and the path prefix.
     expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix2/')
+    expect(command.publicPath).toBe('prefix2/')
 
     // The server should resolve the promise at maximum 1 second after the server is ready
     expect(end - start).toBeLessThanOrEqual(500 + 1000)
@@ -86,7 +86,7 @@ describe('build-and-test - spawnBuildPluginDevServer', () => {
 
     // Then it should wait until the build succeeds
     expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix3/')
+    expect(command.publicPath).toBe('prefix3/')
 
     // Verify the axios GET was called multiple times
     expect(axios.get).toHaveBeenCalledTimes(3)

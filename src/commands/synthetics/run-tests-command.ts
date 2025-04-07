@@ -137,16 +137,13 @@ export class RunTestsCommand extends BaseCommand {
         return 1
       }
 
-      const {devServerUrl, publicPrefix, stop} = await spawnBuildPluginDevServer(
-        this.config.buildCommand,
-        this.reporter
-      )
+      const {devServerUrl, publicPath, stop} = await spawnBuildPluginDevServer(this.config.buildCommand, this.reporter)
       this.tearDowns.push(stop)
 
       this.config = deepExtend(this.config, {
         tunnel: true,
         defaultTestOverrides: {
-          resourceUrlSubstitutionRegexes: [`.*${publicPrefix}|${devServerUrl}`],
+          resourceUrlSubstitutionRegexes: [`.*${publicPath}|${devServerUrl}`],
         },
       })
     }
