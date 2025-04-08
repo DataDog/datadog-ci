@@ -181,11 +181,11 @@ datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id> --w
 
 **Permissions**
 
-To run this command, you need to have these IAM permissions:
+To run this command, you must have the following IAM permissions:
 - `lambda:GetFunction`
 - `lambda:ListTags`
-- `logs:DescribeLogStreams`, if `--with-logs` is set
-- `logs:GetLogEvents`, if `--with-logs` is set
+- `logs:DescribeLogStreams` (required if `--with-logs` is set)
+- `logs:GetLogEvents` (required if `--with-logs` is set)
 
 ## Community
 
