@@ -179,6 +179,13 @@ datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id> --w
 | `--start` and `--end` |           | Only gather logs within the time range (`--with-logs` must be included.) Both arguments are numbers in milliseconds since Unix Epoch. |         |
 | `--dry-run`           | `-d`      | Preview collected data which would be sent to Datadog support.                                                                        | `false` |
 
+**Permissions**
+
+To run this command, you must have the following IAM permissions:
+- `lambda:GetFunction`
+- `lambda:ListTags`
+- `logs:DescribeLogStreams` (required if `--with-logs` is set)
+- `logs:GetLogEvents` (required if `--with-logs` is set)
 
 ## Community
 
