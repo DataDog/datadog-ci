@@ -50,6 +50,9 @@ import {
   TRACE_ENABLED_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -254,6 +257,7 @@ export const calculateUpdateRequest = async (
     ['service', SERVICE_ENV_VAR],
     ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
     ['version', VERSION_ENV_VAR],
+    ['llmobsMlApp', DD_LLMOBS_ML_APP_ENV_VAR],
   ]
 
   for (const [key, environmentVar] of environmentVarsTupleArray) {
@@ -288,6 +292,17 @@ export const calculateUpdateRequest = async (
   // Enable ASM
   if (settings['appsecEnabled'] === true) {
     newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+  }
+
+  // Enable LLMObs
+  if (settings['llmobsMlApp'] !== undefined) {
+    newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
+    newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = settings['llmobsMlApp']
+
+    // For LLM Observability to use the agent from the extension layer as a proxy.
+    // LLM Observability setup documentation will point to the `-e` extension layer option to
+    // always use the extension layer.
+    newEnvVars[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
   }
 
   let layerARNs = getLayers(config)

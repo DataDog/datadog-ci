@@ -108,6 +108,8 @@ describe('lambda', () => {
             '--extra-tags',
             'layer:api,team:intake',
             '--no-source-code-integration',
+            '--llmobs',
+            'my-ml-app',
           ],
           context
         )
@@ -1496,6 +1498,7 @@ describe('lambda', () => {
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'false'
         command['config']['logLevel'] = 'debug'
+        command['config']['llmobs'] = 'my-ml-app'
 
         expect(command['getSettings']()).toEqual({
           appsecEnabled: false,
@@ -1514,6 +1517,7 @@ describe('lambda', () => {
           service: undefined,
           tracingEnabled: false,
           version: undefined,
+          llmobsMlApp: 'my-ml-app',
         })
       })
 
@@ -1536,6 +1540,8 @@ describe('lambda', () => {
         command['config']['logLevel'] = 'info'
         command['apmFlushDeadline'] = '20'
         command['config']['apmFlushDeadline'] = '50'
+        command['llmobs'] = 'my-ml-app'
+        command['config']['llmobs'] = 'another-ml-app'
 
         expect(command['getSettings']()).toEqual({
           appsecEnabled: false,
@@ -1549,6 +1555,7 @@ describe('lambda', () => {
           logLevel: 'debug',
           mergeXrayTraces: true,
           tracingEnabled: true,
+          llmobsMlApp: 'my-ml-app',
         })
       })
 
