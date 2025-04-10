@@ -87,7 +87,7 @@ export class TraceCommand extends CustomSpanCommand {
       if (this.noFail) {
         console.log('note: Not failing since --no-fail provided')
 
-        return 0
+        return exitCode
       }
 
       return res
