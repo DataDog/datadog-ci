@@ -17,7 +17,7 @@ describe('span', () => {
     process.env = {DD_API_KEY: 'PLACEHOLDER', ...extraEnv}
     context.env = process.env
     context.stderr = new PassThrough()
-    const code = await cli.run(['span', '--dry-run', ...extraArgs], context)
+    const code = await cli.run(['trace', 'span', '--dry-run', ...extraArgs], context)
 
     return {context, code}
   }

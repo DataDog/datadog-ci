@@ -5,7 +5,7 @@ import * as validation from '../../helpers/validation'
 import {CustomSpanCommand} from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
-  public static paths = [['span']]
+  public static paths = [['trace', 'span']]
 
   public static usage = Command.Usage({
     category: 'CI Visibility',

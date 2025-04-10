@@ -21,11 +21,11 @@ export class TraceCommand extends CustomSpanCommand {
     examples: [
       [
         'Trace a command with name "Say Hello" and report to Datadog',
-        'datadog-ci trace --name "Say Hello" -- echo "Hello World"',
+        'datadog-ci trace span --name "Say Hello" -- echo "Hello World"',
       ],
       [
         'Trace a command with name "Say Hello", extra tags and measures and report to Datadog',
-        'datadog-ci trace --name "Say Hello" --tags key1:value1 --tags key2:value2 --measures key3:3.5 --measures key4:8 -- echo "Hello World"',
+        'datadog-ci trace span --name "Say Hello" --tags key1:value1 --tags key2:value2 --measures key3:3.5 --measures key4:8 -- echo "Hello World"',
       ],
       [
         'Trace a command and report to the datadoghq.eu site',
