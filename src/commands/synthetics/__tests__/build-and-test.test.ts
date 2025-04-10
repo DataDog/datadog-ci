@@ -1,123 +1,103 @@
-import * as http from 'http'
-
-import axios from 'axios'
-
-import {UnconfiguredBuildPluginError, spawnBuildPluginDevServer} from '../build-and-test'
+import {buildAssets, MalformedBuildError, UnconfiguredBuildPluginError} from '../build-and-test'
 
 import {mockReporter} from './fixtures'
 
 const NODE_COMMAND = process.execPath
 
-describe('build-and-test - spawnBuildPluginDevServer', () => {
-  beforeEach(() => {
-    jest.resetAllMocks()
-    jest.restoreAllMocks()
+describe('build-and-test - buildAssets', () => {
+  const tearDowns: (() => Promise<void>)[] = []
+  afterEach(async () => {
+    for (let tearDown; (tearDown = tearDowns.pop()); ) {
+      await tearDown()
+    }
   })
+
+  // This httpClient function should be self-contained, as its body will be injected as a string in the build command.
+  const httpClient = () => {
+    const url = process.env.DATADOG_SYNTHETICS_REPORT_BUILD_URL
+    if (!url) {
+      throw new Error('DATADOG_SYNTHETICS_REPORT_BUILD_URL is not set')
+    }
+    void fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        outputDirectory: 'output-directory',
+        publicPath: 'prefix/',
+      }),
+    })
+  }
 
   test('alert when the build-plugin is not configured', async () => {
     // Given a build command without the build plugin configured
     const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
 
     // When calling spawnBuildPluginDevServer
-    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
+    const commandPromise = buildAssets(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
 
     // Then it should throw when the command exits.
     await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
   })
 
-  test('wait for the dev server and return expected readiness and status even with delayed server startup', async () => {
-    // Given a dev server which listen on the port provided in the environment variable BUILD_PLUGINS_S8S_PORT.
-    // The implementation of this server is written as a function, and stringified into a single line,
-    // to be used in a node -e command.
-    const httpDevServer = () => {
-      setTimeout(() => {
-        http
-          .createServer((_, res) =>
-            res
-              .writeHead(200, {
-                'Content-Type': 'application/json',
-              })
-              .end(
-                JSON.stringify({
-                  status: 'success',
-                  publicPrefix: 'prefix2/',
-                })
-              )
-          )
-          .listen(process.env.BUILD_PLUGINS_S8S_PORT)
-      }, 500)
-    }
-    const SERVER_IMPLEMENTATION = httpDevServer.toString().replace(/\n\s+/g, '')
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${SERVER_IMPLEMENTATION})()"`
+  test('advertise the right URL and returns the reported builds', async () => {
+    // Given a build command which reports a build with a publicPath and an outputDirectory to the url advertised by DATADOG_SYNTHETICS_REPORT_BUILD_URL
+    const CLIENT_IMPLEMENTATION = httpClient.toString().replace(/\n\s+/g, '')
+    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${CLIENT_IMPLEMENTATION})()"`
 
     // When calling spawnBuildPluginDevServer
-    const start = Date.now()
-    const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
-    const end = Date.now()
+    const {builds, devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, mockReporter)
+    tearDowns.push(stop)
 
-    // Then it should send requests to the dev server until it's ready to serve,
-    // and return the devServerUrl and the path prefix.
-    expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix2/')
+    // Then it should return the devServerUrl and the path prefix.
+    expect(devServerUrl).toMatch(/\/_datadog-ci_\/build$/)
+    expect(builds).toEqual([
+      {
+        outputDirectory: 'output-directory',
+        publicPath: 'prefix/',
+      },
+    ])
 
-    // The server should resolve the promise at maximum 1 second after the server is ready
-    expect(end - start).toBeLessThanOrEqual(500 + 1000)
-
-    // Stop the command at the end of the test.
-    await command.stop()
+    // Stop the devServer at the end of the test.
+    await stop()
   })
 
-  test('should wait for dev server even if the build fails', async () => {
-    // Set up axios response sequence
-    jest
-      .spyOn(axios, 'get')
-      .mockRejectedValueOnce({code: 'ECONNREFUSED'}) // First attempt: connection refused
-      .mockResolvedValueOnce({data: {status: 'fail'}}) // Second attempt: build failed
-      .mockResolvedValueOnce({data: {status: 'success', publicPrefix: 'prefix3/'}}) // Third attempt: success
+  test('rejects malformed builds', async () => {
+    // Given the devServer to which to report builds
+    const CLIENT_IMPLEMENTATION = httpClient.toString().replace(/\n\s+/g, '')
+    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${CLIENT_IMPLEMENTATION})()"`
 
-    // Setup isAxiosError for ECONNREFUSED error
-    jest.spyOn(axios, 'isAxiosError').mockImplementation((error) => {
-      return error && error.code === 'ECONNREFUSED'
-    })
+    const {devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, mockReporter)
+    tearDowns.push(stop)
 
-    // When calling spawnBuildPluginDevServer with any command
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "setTimeout(() => {}, 100000)"`
-    const command = await spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
-
-    // Then it should wait until the build succeeds
-    expect(command.devServerUrl).toBe('http://localhost:4000')
-    expect(command.publicPrefix).toBe('prefix3/')
-
-    // Verify the axios GET was called multiple times
-    expect(axios.get).toHaveBeenCalledTimes(3)
-
-    // Stop the command at the end of the test.
-    await command.stop()
-  })
-
-  test('should handle non-OK status code from dev server', async () => {
-    // Set up axios error response
-    const axiosError = {
-      isAxiosError: true,
-      code: 'ERR_BAD_RESPONSE',
-      response: {
-        status: 500,
-        statusText: 'Internal Server Error',
+    // When sending a malformed build
+    const correctPayload = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: {
+        outputDirectory: 'output-directory',
+        publicPath: 'prefix/',
       },
     }
+    const [missingOutputDirectory, missingPublicPath] = await Promise.all([
+      fetch(devServerUrl, {
+        ...correctPayload,
+        body: JSON.stringify({...correctPayload.body, outputDirectory: undefined}),
+      }),
+      fetch(devServerUrl, {
+        ...correctPayload,
+        body: JSON.stringify({...correctPayload.body, publicPath: undefined}),
+      }),
+    ])
 
-    jest.spyOn(axios, 'get').mockRejectedValueOnce(axiosError)
+    // Then it should reject the malformed builds reported.
+    expect(missingOutputDirectory.status).toBe(500)
+    expect(await missingOutputDirectory.text()).toBe(`Internal Server Error: ${MalformedBuildError.message}`)
 
-    // Setup isAxiosError for the specific error
-    jest.spyOn(axios, 'isAxiosError').mockImplementation((error) => {
-      return error === axiosError
-    })
-
-    // When calling spawnBuildPluginDevServer with any command
-    const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "setTimeout(() => {}, 100000)"`
-    const commandPromise = spawnBuildPluginDevServer(MOCKED_BUILD_COMMAND, mockReporter)
-
-    // Then it should throw with the server error
-    await expect(commandPromise).rejects.toThrow('Dev server returned error: 500 Internal Server Error')
+    expect(missingPublicPath.status).toBe(500)
+    expect(await missingPublicPath.text()).toBe(`Internal Server Error: ${MalformedBuildError.message}`)
   })
 })
