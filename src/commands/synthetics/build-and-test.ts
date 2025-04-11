@@ -36,11 +36,15 @@ const isMIMEType = (mime: string): mime is Extension => {
   return Object.keys(MIME_TYPES).includes(mime as Extension)
 }
 
-type File = {
-  found: boolean
-  ext: string
-  content: string
-}
+type File =
+  | {
+      found: true
+      ext: string
+      content: string
+    }
+  | {
+      found: false
+    }
 
 const routeVerbs = ['get', 'post', 'put', 'patch', 'delete'] as const
 type RouteVerb = typeof routeVerbs[number]
@@ -56,7 +60,8 @@ export type Routes = Record<
 >
 
 export type RequestHandlerOptions = {
-  root: string
+  builds: ReportedBuild[]
+  root?: string
   routes?: Routes
 }
 
@@ -70,27 +75,33 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 }
 
-const prepareFile = async (root: string, requestUrl: string): Promise<File> => {
+const prepareFile = async (root = process.cwd(), builds: ReportedBuild[], requestUrl: string): Promise<File> => {
   const staticPath = path.isAbsolute(root) ? root : path.resolve(process.cwd(), root)
-  const url = new URL(requestUrl, 'http://127.0.0.1')
-  // TODO remove the publicPath from the URL
-  const paths = [staticPath, url.pathname]
-  if (url.pathname.endsWith('/')) {
-    paths.push('index.html')
+
+  for (const build of builds) {
+    const url = new URL(requestUrl, 'http://127.0.0.1')
+    const filePath = path.join(
+      path.resolve(staticPath, build.outputDirectory), // absolute path to the assets directory
+      path.relative(build.publicPath, url.pathname), // relative path to the file
+      url.pathname.endsWith('/') ? 'index.html' : '' // add index.html if the path ends with a slash
+    )
+    const found = await fileExists(filePath)
+
+    if (found) {
+      return {
+        found: true,
+        ext: path.extname(filePath).substring(1).toLowerCase(),
+        content: await fs.readFile(filePath, {encoding: 'utf-8'}),
+      }
+    }
   }
 
-  const filePath = path.join(...paths)
-  const pathTraversal = filePath.startsWith(staticPath)
-  const found = pathTraversal && (await fileExists(filePath))
-
   return {
-    found,
-    ext: path.extname(filePath).substring(1).toLowerCase(),
-    content: found ? await fs.readFile(filePath, {encoding: 'utf-8'}) : '',
+    found: false,
   }
 }
 
-const getRequestHandler = ({root, routes}: RequestHandlerOptions) => async (
+const getRequestHandler = ({builds, root, routes}: RequestHandlerOptions) => async (
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
@@ -110,10 +121,17 @@ const getRequestHandler = ({root, routes}: RequestHandlerOptions) => async (
     }
 
     // Fallback to files.
-    const {content, ext, found} = await prepareFile(root, req.url || '/')
-    const mimeType = isMIMEType(ext) ? MIME_TYPES[ext] : MIME_TYPES.default
-    res.writeHead(found ? 200 : 404, {'Content-Type': mimeType})
-    res.end(content)
+    const file = await prepareFile(root, builds, req.url || '/')
+    if (file.found) {
+      const mimeType = isMIMEType(file.ext) ? MIME_TYPES[file.ext] : MIME_TYPES.default
+      res.writeHead(200, {'Content-Type': mimeType})
+      res.end(file.content)
+
+      return
+    }
+
+    res.writeHead(404)
+    res.end()
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     res.writeHead(500, {'Content-Type': MIME_TYPES.html})
@@ -145,7 +163,8 @@ const getReportedBuild = (payload: string): ReportedBuild => {
 const spawnDevServer = async (): Promise<{builds: ReportedBuild[]; server: http.Server; url: string}> => {
   const builds: ReportedBuild[] = []
   const requestHandler = getRequestHandler({
-    root: '', // TODO
+    builds,
+    root: process.cwd(),
     routes: {
       '/_datadog-ci_/build': {
         post: async (req, res) => {

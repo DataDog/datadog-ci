@@ -58,9 +58,6 @@ describe('build-and-test - buildAssets', () => {
         publicPath: 'prefix/',
       },
     ])
-
-    // Stop the devServer at the end of the test.
-    await stop()
   })
 
   test('rejects malformed builds', async () => {
