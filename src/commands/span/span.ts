@@ -83,7 +83,7 @@ export class SpanCommand extends CustomSpanCommand {
       name: this.name,
       error_message: '',
       exit_code: 0,
-      command: 'datadog-ci span',
+      command: 'datadog-ci trace span',
     })
   }
 }
