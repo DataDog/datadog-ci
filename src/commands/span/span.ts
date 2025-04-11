@@ -17,11 +17,15 @@ export class SpanCommand extends CustomSpanCommand {
     examples: [
       [
         'Create span with name "Get Dependencies" and duration of 10s and report to Datadog',
-        'datadog-ci span --name "Get Dependencies" --duration 10000',
+        'datadog-ci trace span --name "Get Dependencies" --duration 10000',
+      ],
+      [
+        'Create span with name "Build" and duration of 10s using timestamps and report to Datadog',
+        'datadog-ci trace span --name "Build" --start-time 1744357891967 --end-time 1744357901967',
       ],
       [
         'Create span with name "Get Dependencies" and duration of 10s and report to Datadog with tags and measures',
-        'datadog-ci span --name "Get Dependencies" --duration 10000 --tags "dependency-set:notify" --measures "n-dependencies:42"',
+        'datadog-ci trace span --name "Get Dependencies" --duration 10000 --tags "dependency-set:notify" --measures "n-dependencies:42"',
       ],
     ],
   })
