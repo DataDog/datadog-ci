@@ -26,7 +26,7 @@ datadog-ci span --name "Say Hello" --duration 800 --tags responded-hello-too:tru
 
 #### Environment variables
 
-You can also configure the `span` command with environment variables:
+The `DD_API_KEY` environment variable is required for the `span` command. You can also set tags and the Datadog site:
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_TAGS`: Global tags applied to all spans. The format must be `key1:value1,key2:value2`.
