@@ -8,7 +8,7 @@ import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
 import {BaseCommand, RecursivePartial} from './base-command'
-import {spawnBuildPluginDevServer} from './build-and-test'
+import {buildAssets} from './build-and-test'
 import {CiError} from './errors'
 import {Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
 import {JUnitReporter} from './reporters/junit'
@@ -137,16 +137,18 @@ export class RunTestsCommand extends BaseCommand {
         return 1
       }
 
-      const {devServerUrl, publicPrefix, stop} = await spawnBuildPluginDevServer(
-        this.config.buildCommand,
-        this.reporter
-      )
+      const {builds, devServerUrl, stop} = await buildAssets(this.config.buildCommand, this.reporter)
       this.tearDowns.push(stop)
+
+      const resourceUrlSubstitutionRegexes = builds.map(
+        // All of the resources matching the publicPath prefix will be redirected to the dev server.
+        (build) => `.*${build.publicPath}|${devServerUrl}/${build.publicPath}`
+      )
 
       this.config = deepExtend(this.config, {
         tunnel: true,
         defaultTestOverrides: {
-          resourceUrlSubstitutionRegexes: [`.*${publicPrefix}|${devServerUrl}`],
+          resourceUrlSubstitutionRegexes,
         },
       })
     }

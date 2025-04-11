@@ -30,29 +30,6 @@ const levenshtein = require('fast-levenshtein')
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 
-export const poll = async <T>(
-  fn: () => Promise<T | undefined>,
-  abortSignal: AbortSignal,
-  interval = 500,
-  timeout = +Infinity,
-  timeoutError = new Error('Polling timed out')
-): Promise<T | undefined> => {
-  const start = Date.now()
-  while (true) {
-    const result = await fn()
-
-    if (result || abortSignal.aborted) {
-      return result
-    }
-
-    if (Date.now() - start >= timeout) {
-      throw timeoutError
-    }
-
-    await wait(interval)
-  }
-}
-
 export const getOverriddenExecutionRule = (
   test?: Test,
   testOverrides?: UserConfigOverride
