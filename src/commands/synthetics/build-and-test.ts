@@ -11,6 +11,8 @@ interface ReportedBuild {
   publicPath: string // the public prefix
 }
 
+const REPORT_BUILD_PATHNAME = '/_datadog-ci_/build'
+
 export const UnconfiguredBuildPluginError = new Error(`
 We couldn't detect the Datadog Build plugins within your build. Did you add it?
 If not, you can learn more about it here: https://github.com/DataDog/build-plugins#readme
@@ -79,19 +81,25 @@ const prepareFile = async (root = process.cwd(), builds: ReportedBuild[], reques
   const staticPath = path.isAbsolute(root) ? root : path.resolve(process.cwd(), root)
 
   for (const build of builds) {
-    const url = new URL(requestUrl, 'http://127.0.0.1')
-    const filePath = path.join(
-      path.resolve(staticPath, build.outputDirectory), // absolute path to the assets directory
-      path.relative(build.publicPath, url.pathname), // relative path to the file
-      url.pathname.endsWith('/') ? 'index.html' : '' // add index.html if the path ends with a slash
-    )
-    const found = await fileExists(filePath)
+    if (requestUrl.startsWith(build.publicPath)) {
+      const url = new URL(requestUrl, 'http://127.0.0.1')
+      const filePath = path.join(
+        path.resolve(staticPath, build.outputDirectory), // absolute path to the assets directory
+        path.relative(build.publicPath, url.pathname), // relative path to the file
+        url.pathname.endsWith('/') ? 'index.html' : '' // add index.html if the path ends with a slash
+      )
 
-    if (found) {
-      return {
-        found: true,
-        ext: path.extname(filePath).substring(1).toLowerCase(),
-        content: await fs.readFile(filePath, {encoding: 'utf-8'}),
+      // Verify path is within the intended directory
+      const directDescendant = filePath.startsWith(path.resolve(staticPath, build.outputDirectory))
+      // Check if the file exists (only if it's withing the intended directory)
+      const found = directDescendant && (await fileExists(filePath))
+
+      if (directDescendant && found) {
+        return {
+          found: true,
+          ext: path.extname(filePath).substring(1).toLowerCase(),
+          content: await fs.readFile(filePath, {encoding: 'utf-8'}),
+        }
       }
     }
   }
@@ -166,7 +174,7 @@ const spawnDevServer = async (): Promise<{builds: ReportedBuild[]; server: http.
     builds,
     root: process.cwd(),
     routes: {
-      '/_datadog-ci_/build': {
+      [REPORT_BUILD_PATHNAME]: {
         post: async (req, res) => {
           const body = await getRequestBody(req)
           const reportedBuild = getReportedBuild(body)
@@ -240,7 +248,7 @@ const getBuildReportUrl = (server: http.Server): string => {
       : `http://${serverAddress.address}:${serverAddress.port}`
   )
 
-  url.pathname = '/_datadog-ci_/build'
+  url.pathname = REPORT_BUILD_PATHNAME
 
   return url.href
 }
