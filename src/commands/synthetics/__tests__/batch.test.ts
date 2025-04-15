@@ -898,8 +898,8 @@ describe('waitForResults', () => {
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, expectedDeadlineResult, MOCK_BASE_URL, 'bid')
 
-    // Initial wait + 3 polling cycles.
-    expect(internalUtils.wait).toHaveBeenCalledTimes(4)
+    // Initial wait + 12 polling cycles.
+    expect(internalUtils.wait).toHaveBeenCalledTimes(13)
   })
 
   test('results failure should be ignored if timed out', async () => {
@@ -986,7 +986,7 @@ describe('waitForResults', () => {
   test('wait between batch polling', async () => {
     const {getBatchMock} = mockApi({
       getBatchImplementation: async () => {
-        return getBatchMock.mock.calls.length === 3 ? batch : {...batch, status: 'in_progress'}
+        return getBatchMock.mock.calls.length === 12 ? batch : {...batch, status: 'in_progress'}
       },
     })
 
@@ -1005,8 +1005,8 @@ describe('waitForResults', () => {
       )
     ).toEqual([result])
 
-    expect(getBatchMock).toHaveBeenCalledTimes(3)
-    expect(internalUtils.wait).toHaveBeenCalledTimes(2)
+    expect(getBatchMock).toHaveBeenCalledTimes(12)
+    expect(internalUtils.wait).toHaveBeenCalledTimes(11)
   })
 
   test('correct number of passed and timed out results', async () => {

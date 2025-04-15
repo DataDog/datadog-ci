@@ -119,7 +119,7 @@ const waitForBatchToFinish = async (
   resultDisplayInfo: ResultDisplayInfo,
   reporter: MainReporter
 ): Promise<Result[]> => {
-  const safeDeadline = Date.now() + batchTimeout + 3 * POLLING_INTERVAL
+  const safeDeadline = Date.now() + batchTimeout + 12 * POLLING_INTERVAL
   const emittedResultIds = new Set<string>()
   const backupPollResultMap = new Map<string, PollResult>()
 
