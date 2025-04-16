@@ -268,6 +268,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
   }
 
   const dependency: Dependency = {
+    id: component['bom-ref'],
     name: component['name'],
     group: component['group'] || undefined,
     version: component['version'] || undefined,

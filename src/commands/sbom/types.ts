@@ -86,6 +86,7 @@ export interface Property {
 }
 
 export interface Dependency {
+  id: string
   name: string
   version: undefined | string
   group: undefined | string
