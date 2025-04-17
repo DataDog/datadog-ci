@@ -96,6 +96,11 @@ export interface Dependency {
   is_direct: undefined | boolean
   is_dev: undefined | boolean
   package_manager: string
+  reachable_symbol_properties: undefined | Property[]
+}
+
+export interface ReachableSymbolLocationValue extends LocationFromFile {
+  symbol: string
 }
 
 export interface CommitInformation {
@@ -121,6 +126,16 @@ export interface Relations {
   depends_on: string[]
 }
 
+export interface Vulnerability {
+  id: string
+  bom_ref: string
+  affects: Affect[]
+}
+
+export interface Affect {
+  ref: string
+}
+
 export interface ScaRequest {
   id: string
   commit: CommitInformation
@@ -128,7 +143,13 @@ export interface ScaRequest {
   dependencies: Dependency[]
   files: File[]
   relations: Relations[]
+  vulnerabilities: Vulnerability[]
   service: string
   env: string
   tags: Record<string, string>
+}
+
+export interface GenerationTool {
+  name: string
+  version: string
 }

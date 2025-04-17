@@ -40,7 +40,8 @@ export class SendDeploymentEvent extends Command {
         'datadog-ci dora deployment --service my-service --env prod \\\n' +
           '    --started-at 1699960648 --finished-at 1699961048 \\\n' +
           '    --git-repository-url https://github.com/my-organization/my-repository \\\n' +
-          '    --git-commit-sha 102836a25f5477e571c73d489b3f0f183687068e',
+          '    --git-commit-sha 102836a25f5477e571c73d489b3f0f183687068e \\\n' +
+          '    --version 1.0.0',
       ],
       [
         'Send a DORA deployment event with automatically extracted Git info (for deployments triggered from CI in the same repository as the application). The deployment is assumed to target the current HEAD commit',
@@ -73,6 +74,10 @@ export class SendDeploymentEvent extends Command {
   private finishedAt = Option.String('--finished-at', {
     validator: t.isDate(),
     description: 'In Unix seconds or ISO8601 (Examples: 1699961048, 2023-11-14T11:24:08Z)',
+  })
+
+  private version = Option.String('--version', {
+    description: 'The version of the service being deployed',
   })
 
   private gitInfo?: GitInfo
@@ -171,6 +176,9 @@ export class SendDeploymentEvent extends Command {
     }
     if (this.gitInfo) {
       deployment.git = this.gitInfo
+    }
+    if (this.version) {
+      deployment.version = this.version
     }
 
     return deployment

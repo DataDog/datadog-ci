@@ -25,6 +25,8 @@ The positional arguments are the directories or file paths in which the SARIF re
 - `--max-concurrency` (default: `20`): number of concurrent uploads to the API.
 - `--dry-run` (default: `false`): runs the command without the final upload step. All other checks are performed.
 - `--no-verify` (default: `false`): runs the command without performing report validation on the CLI.
+- `--no-ci-tags` (default: `false`): ignore the automatic detection of continuous integration environment variables.
+- `--git-repository` (default: `current working directory`): reports git environment context from the specified repository.
 
 ### Environment variables
 
@@ -34,9 +36,13 @@ Additionally, you may configure the `sarif` command with environment variables:
 - `DD_TAGS`: Set global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
 - `DATADOG_SITE` or `DD_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
-### Optional dependencies
+### Git context resolution
 
-- [`git`](https://git-scm.com/downloads) is used for extracting repository metadata.
+The Git context is resolved in the following order of priority:
+1. Current process location
+2. CI environment variables (can be disabled with: `--no-ci-tags` option)
+3. Explicitly provided Git repository (through `--git-repository` option)
+4. Override environment variables (`DD_GIT_*` variables)
 
 ### End-to-end testing process
 

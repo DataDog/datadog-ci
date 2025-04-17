@@ -18,6 +18,9 @@ export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => Axios
   if (deployment.env) {
     attrs.env = deployment.env
   }
+  if (deployment.version) {
+    attrs.version = deployment.version
+  }
   if (deployment.git) {
     attrs.git = {
       repository_url: deployment.git.repoURL,

@@ -1,1 +1,150 @@
-{"bomFormat":"CycloneDX","specVersion":"1.6","serialNumber":"urn:uuid:cb37f136-72df-4275-9175-f1c06f03af1d","version":1,"metadata":{"timestamp":"2024-12-25T22:40:31Z","tools":{"components":[{"group":"@cyclonedx","name":"cdxgen","version":"11.0.7","purl":"pkg:npm/%40cyclonedx/cdxgen@11.0.7","type":"application","bom-ref":"pkg:npm/@cyclonedx/cdxgen@11.0.7","publisher":"OWASP Foundation","authors":[{"name":"OWASP Foundation"}]}]},"authors":[{"name":"OWASP Foundation"}],"lifecycles":[{"phase":"build"}],"component":{"group":"","name":"demo-static-analysis-gates","version":"latest","type":"application","bom-ref":"pkg:pypi/demo-static-analysis-gates@latest","purl":"pkg:pypi/demo-static-analysis-gates@latest"},"properties":[{"name":"cdx:bom:componentTypes","value":"pypi"}]},"components":[{"group":"","name":"Flask","version":"3.0.0","description":"A simple framework for building complex web applications.","hashes":[{"alg":"SHA-256","content":"21128f47e4e3b9d597a3e8521a329bf56909b690fcc3fa3e477725aa81367638"}],"licenses":[{"license":{"id":"0BSD","url":"https://opensource.org/licenses/0BSD"}}],"purl":"pkg:pypi/flask@3.0.0","type":"framework","bom-ref":"pkg:pypi/flask@3.0.0","properties":[{"name":"cdx:pypi:versionSpecifiers","value":"~=3.0.0"},{"name":"cdx:pypi:latest_version","value":"3.1.0"},{"name":"cdx:pypi:resolved_from","value":"flask"}],"tags":["framework","web"]},{"authors":[{"name":"Kenneth Reitz <me@kennethreitz.org>"}],"group":"","name":"requests","version":"2.31.0","description":"Python HTTP for Humans.","hashes":[{"alg":"SHA-256","content":"58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"}],"licenses":[{"license":{"id":"Apache-2.0","url":"https://opensource.org/licenses/Apache-2.0"}}],"purl":"pkg:pypi/requests@2.31.0","externalReferences":[{"type":"website","url":"https://requests.readthedocs.io"}],"type":"library","bom-ref":"pkg:pypi/requests@2.31.0","properties":[{"name":"cdx:pypi:versionSpecifiers","value":"~=2.31.0"},{"name":"cdx:pypi:latest_version","value":"2.32.3"},{"name":"cdx:pypi:resolved_from","value":"requests"}]}],"services":[],"dependencies":[{"ref":"pkg:pypi/demo-static-analysis-gates@latest","dependsOn":[]}],"annotations":[]}
+{
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.6",
+    "serialNumber": "urn:uuid:cb37f136-72df-4275-9175-f1c06f03af1d",
+    "version": 1,
+    "metadata": {
+        "timestamp": "2024-12-25T22:40:31Z",
+        "tools": {
+            "components": [
+                {
+                    "group": "@cyclonedx",
+                    "name": "cdxgen",
+                    "version": "11.0.7",
+                    "purl": "pkg:npm/%40cyclonedx/cdxgen@11.0.7",
+                    "type": "application",
+                    "bom-ref": "pkg:npm/@cyclonedx/cdxgen@11.0.7",
+                    "publisher": "OWASP Foundation",
+                    "authors": [
+                        {
+                            "name": "OWASP Foundation"
+                        }
+                    ]
+                }
+            ]
+        },
+        "authors": [
+            {
+                "name": "OWASP Foundation"
+            }
+        ],
+        "lifecycles": [
+            {
+                "phase": "build"
+            }
+        ],
+        "component": {
+            "group": "",
+            "name": "demo-static-analysis-gates",
+            "version": "latest",
+            "type": "application",
+            "bom-ref": "pkg:pypi/demo-static-analysis-gates@latest",
+            "purl": "pkg:pypi/demo-static-analysis-gates@latest"
+        },
+        "properties": [
+            {
+                "name": "cdx:bom:componentTypes",
+                "value": "pypi"
+            }
+        ]
+    },
+    "components": [
+        {
+            "group": "",
+            "name": "Flask",
+            "version": "3.0.0",
+            "description": "A simple framework for building complex web applications.",
+            "hashes": [
+                {
+                    "alg": "SHA-256",
+                    "content": "21128f47e4e3b9d597a3e8521a329bf56909b690fcc3fa3e477725aa81367638"
+                }
+            ],
+            "licenses": [
+                {
+                    "license": {
+                        "id": "0BSD",
+                        "url": "https://opensource.org/licenses/0BSD"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/flask@3.0.0",
+            "type": "framework",
+            "bom-ref": "pkg:pypi/flask@3.0.0",
+            "properties": [
+                {
+                    "name": "cdx:pypi:versionSpecifiers",
+                    "value": "~=3.0.0"
+                },
+                {
+                    "name": "cdx:pypi:latest_version",
+                    "value": "3.1.0"
+                },
+                {
+                    "name": "cdx:pypi:resolved_from",
+                    "value": "flask"
+                }
+            ],
+            "tags": [
+                "framework",
+                "web"
+            ]
+        },
+        {
+            "authors": [
+                {
+                    "name": "Kenneth Reitz <me@kennethreitz.org>"
+                }
+            ],
+            "group": "",
+            "name": "requests",
+            "version": "2.31.0",
+            "description": "Python HTTP for Humans.",
+            "hashes": [
+                {
+                    "alg": "SHA-256",
+                    "content": "58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f"
+                }
+            ],
+            "licenses": [
+                {
+                    "license": {
+                        "id": "Apache-2.0",
+                        "url": "https://opensource.org/licenses/Apache-2.0"
+                    }
+                }
+            ],
+            "purl": "pkg:pypi/requests@2.31.0",
+            "externalReferences": [
+                {
+                    "type": "website",
+                    "url": "https://requests.readthedocs.io"
+                }
+            ],
+            "type": "library",
+            "bom-ref": "pkg:pypi/requests@2.31.0",
+            "properties": [
+                {
+                    "name": "cdx:pypi:versionSpecifiers",
+                    "value": "~=2.31.0"
+                },
+                {
+                    "name": "cdx:pypi:latest_version",
+                    "value": "2.32.3"
+                },
+                {
+                    "name": "cdx:pypi:resolved_from",
+                    "value": "requests"
+                }
+            ]
+        }
+    ],
+    "services": [],
+    "dependencies": [
+        {
+            "ref": "pkg:pypi/demo-static-analysis-gates@latest",
+            "dependsOn": []
+        }
+    ],
+    "annotations": []
+}

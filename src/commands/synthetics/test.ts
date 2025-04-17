@@ -19,7 +19,6 @@ import {
   DeployTestsCommandConfig,
 } from './interfaces'
 import {uploadMobileApplicationsAndUpdateOverrideConfigs} from './mobile'
-import {DEFAULT_TEST_CONFIG_FILES_GLOB, MAX_TESTS_TO_TRIGGER} from './run-tests-command'
 import {
   getPublicIdOrPlaceholder,
   getTriggerConfigPublicId,
@@ -34,6 +33,10 @@ import {
   makeTestPayload,
   normalizePublicId,
 } from './utils/public'
+
+export const MAX_TESTS_TO_TRIGGER = 1000
+
+export const DEFAULT_TEST_CONFIG_FILES_GLOB = '{,!(node_modules)/**/}*.synthetics.json'
 
 export const getTestConfigs = async (
   config: RunTestsCommandConfig | ImportTestsCommandConfig | DeployTestsCommandConfig,

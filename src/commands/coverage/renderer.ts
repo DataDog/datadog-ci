@@ -34,16 +34,8 @@ export const renderRetriedUpload = (payload: Payload, errorMessage: string, atte
   return chalk.yellow(`[attempt ${attempt}] Retrying coverage report upload ${payloadDetails}: ${errorMessage}\n`)
 }
 
-export const renderFailedGitDBSync = (err: any) => {
-  return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
-}
-
 export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, duration: number) => {
   return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.`)
-}
-
-export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
-  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.`)
 }
 
 // TODO add some Datadog links to the output

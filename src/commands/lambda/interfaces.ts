@@ -36,6 +36,7 @@ export interface LambdaConfigOptions {
   service?: string
   tracing?: string
   version?: string
+  llmobs?: string
 }
 
 /**
@@ -75,6 +76,8 @@ export interface InstrumentationSettings extends InstrumentationTags {
   logLevel?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean
+  llmobsEnabled?: boolean
+  llmobsMlApp?: string
 }
 
 /**

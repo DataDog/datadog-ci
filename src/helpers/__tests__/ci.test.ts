@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import {getCIEnv, getCIMetadata, getCISpanTags} from '../ci'
+import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
 import {
   CI_NODE_LABELS,
@@ -361,5 +361,71 @@ describe('getCIEnv', () => {
       ciEnv: {SYSTEM_TEAMPROJECTID: 'project-id', BUILD_BUILDID: '55', SYSTEM_JOBID: 'job-id'},
       provider: 'azurepipelines',
     })
+  })
+})
+
+describe('isInteractive', () => {
+  let originalEnv: NodeJS.ProcessEnv
+  let mockStream: Partial<NodeJS.WriteStream>
+
+  beforeEach(() => {
+    originalEnv = {...process.env}
+    mockStream = {isTTY: true}
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
+  test('returns true when not in CI, TERM is not "dumb", and stream isTTY is true', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(true)
+  })
+
+  test('returns false when in CI', () => {
+    process.env.CI = 'true'
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when TERM is "dumb"', () => {
+    delete process.env.CI
+    process.env.TERM = 'dumb'
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when stream is not a TTY', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    mockStream.isTTY = false
+
+    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+  })
+
+  test('returns false when stream is undefined', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+
+    expect(isInteractive({stream: undefined})).toBe(false)
+  })
+
+  test('uses default process.stdout when no stream is provided', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    process.stdout.isTTY = true
+
+    expect(isInteractive()).toBe(true)
+  })
+
+  test('returns false when process.stdout is not a TTY and no stream is provided', () => {
+    delete process.env.CI
+    process.env.TERM = 'xterm'
+    process.stdout.isTTY = false
+
+    expect(isInteractive()).toBe(false)
   })
 })

@@ -1,7 +1,16 @@
 import fs from 'fs'
+import os from 'os'
+import path from 'path'
+
+import simpleGit from 'simple-git'
 
 import {DatadogCiConfig} from '../../../helpers/config'
-import {getSpanTags} from '../../../helpers/tags'
+import {
+  getSpanTags,
+  getMissingRequiredGitTags,
+  SBOM_TOOL_GENERATOR_NAME,
+  SBOM_TOOL_GENERATOR_VERSION,
+} from '../../../helpers/tags'
 
 import {generatePayload} from '../payload'
 import {DependencyLanguage, Location} from '../types'
@@ -39,6 +48,75 @@ describe('generation of payload', () => {
     expect(payload?.dependencies[0].version).toBe('1.3.0')
     expect(payload?.dependencies[0].licenses.length).toBe(0)
     expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('in-dev')
+  })
+
+  test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+
+    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.author_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.committer_name).toStrictEqual(expect.any(String))
+    expect(payload?.commit.committer_email).toStrictEqual(expect.any(String))
+    expect(payload?.commit.branch).toStrictEqual(expect.any(String))
+    expect(payload?.repository.url).toContain('github.com')
+    expect(payload?.repository.url).toContain('DataDog/datadog-ci')
+    expect(payload?.dependencies.length).toBe(147)
+    expect(payload?.files.length).toBe(2)
+    expect(payload?.relations.length).toBe(154)
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('trivy')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.44.1')
+
+    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
+    expect(dependenciesWithoutLicense?.length).toBe(147)
+
+    const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
+    expect(directDependencies?.length).toBe(1)
+
+    const devDependencies = payload?.dependencies.filter((d) => d.is_dev)
+    expect(devDependencies?.length).toBe(1)
+
+    const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
+    expect(dependenciesWithPackageManager?.length).toBe(1)
+
+    const filesWithPURL = payload?.files.filter((d) => d.purl)
+    expect(filesWithPURL?.length).toBe(2)
+  })
+
+  test('should succeed when called on a valid SBOM file for CycloneDX 1.5 with tools declared in components', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok-with-tools-as-components.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+
+    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+    expect(payload?.repository.url).toContain('github.com')
+    expect(payload?.dependencies.length).toBe(147)
+    expect(payload?.files.length).toBe(2)
+    expect(payload?.relations.length).toBe(154)
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('grype')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.87.0')
   })
 
   test('should correctly work with a CycloneDX 1.6 file', async () => {
@@ -72,48 +150,8 @@ describe('generation of payload', () => {
     expect(payload?.dependencies[1].version).toBe('2.31.0')
     expect(payload?.dependencies[1].licenses).toHaveLength(0)
     expect(payload?.dependencies[1].language).toBe(DependencyLanguage.PYTHON)
-  })
-
-  test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json'
-    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
-    const config: DatadogCiConfig = {
-      apiKey: undefined,
-      env: undefined,
-      envVarTags: undefined,
-    }
-    const tags = await getSpanTags(config, [], true)
-
-    const payload = generatePayload(sbomContent, tags, 'service', 'env')
-    expect(payload).not.toBeNull()
-    expect(payload?.id).toStrictEqual(expect.any(String))
-
-    expect(payload?.commit.sha).toStrictEqual(expect.any(String))
-    expect(payload?.commit.author_name).toStrictEqual(expect.any(String))
-    expect(payload?.commit.author_email).toStrictEqual(expect.any(String))
-    expect(payload?.commit.committer_name).toStrictEqual(expect.any(String))
-    expect(payload?.commit.committer_email).toStrictEqual(expect.any(String))
-    expect(payload?.commit.branch).toStrictEqual(expect.any(String))
-    expect(payload?.repository.url).toContain('github.com')
-    expect(payload?.repository.url).toContain('DataDog/datadog-ci')
-    expect(payload?.dependencies.length).toBe(147)
-    expect(payload?.files.length).toBe(2)
-    expect(payload?.relations.length).toBe(154)
-
-    const dependenciesWithoutLicense = payload?.dependencies.filter((d) => d.licenses.length === 0)
-    expect(dependenciesWithoutLicense?.length).toBe(147)
-
-    const directDependencies = payload?.dependencies.filter((d) => d.is_direct)
-    expect(directDependencies?.length).toBe(1)
-
-    const devDependencies = payload?.dependencies.filter((d) => d.is_dev)
-    expect(devDependencies?.length).toBe(1)
-
-    const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
-    expect(dependenciesWithPackageManager?.length).toBe(1)
-
-    const filesWithPURL = payload?.files.filter((d) => d.purl)
-    expect(filesWithPURL?.length).toBe(2)
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cdxgen')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('11.0.7')
   })
 
   test('SBOM for rust with multiple licenses', async () => {
@@ -343,4 +381,159 @@ describe('generation of payload', () => {
     expect(dependencies[1].name).toEqual('jinja2')
     expect(dependencies[1].version).toEqual('3.1.5')
   })
+
+  test('should correctly work with a CycloneDX 1.4 file and passing git repository', async () => {
+    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
+    try {
+      // Configure local git repository
+      const git = simpleGit(tmpdir)
+      setupLocalGitConfig(tmpdir)
+      await git.init()
+      // eslint-disable-next-line no-null/no-null
+      await git.commit('Initial commit', [], {'--allow-empty': null})
+
+      const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+      const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+      const config: DatadogCiConfig = {
+        apiKey: undefined,
+        env: undefined,
+        envVarTags: undefined,
+      }
+
+      // Pass git directory to load git context
+      const tags = await getSpanTags(config, [], true, tmpdir)
+      expect(getMissingRequiredGitTags(tags)).toHaveLength(0)
+
+      const payload = generatePayload(sbomContent, tags, 'service', 'env')
+      expect(payload).not.toBeNull()
+      expect(payload?.id).toStrictEqual(expect.any(String))
+
+      // Local git repository should be reported
+      expect(payload?.commit.sha).toStrictEqual(expect.any(String))
+      expect(payload?.commit.author_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.author_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.committer_name).toStrictEqual('MockUser123')
+      expect(payload?.commit.committer_email).toStrictEqual('mock@fake.local')
+      expect(payload?.commit.branch).toStrictEqual('mock-branch')
+      expect(payload?.repository.url).toContain('https://mock-repo.local/fake.git')
+      expect(payload?.dependencies.length).toBe(62)
+      expect(payload?.dependencies[0].name).toBe('stack-cors')
+      expect(payload?.dependencies[0].version).toBe('1.3.0')
+      expect(payload?.dependencies[0].licenses.length).toBe(0)
+      expect(payload?.dependencies[0].language).toBe(DependencyLanguage.PHP)
+    } finally {
+      // Removed temporary git file
+      fs.rmSync(tmpdir, {recursive: true, force: true})
+    }
+  })
+
+  test('should not override provided tool.generator with value from SBOM', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+
+    const tagsWithoutTool = await getSpanTags(config, [], true)
+    let payload = generatePayload(sbomContent, tagsWithoutTool, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('cyclonedx-php-composer')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('in-dev')
+
+    const tagsWithTool = await getSpanTags(config, ['tool.generator.name:foo', 'tool.generator.version:1.1.1.1'], true)
+    payload = generatePayload(sbomContent, tagsWithTool, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('foo')
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('1.1.1.1')
+  })
+
+  test('should not read tool.generator when missing from SBOM', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok-without-metadata.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+
+    const tags = await getSpanTags(config, [], true)
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+    expect(payload).not.toBeNull()
+    expect(payload?.id).toStrictEqual(expect.any(String))
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBeUndefined()
+    expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBeUndefined()
+  })
+
+  test('should correctly add reachability information with a CycloneDX 1.5 file', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-with-reachability.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(3)
+    const dependencies = payload!.dependencies
+
+    // Check that we can have multiple locations
+    expect(dependencies[0].name).toEqual('junit:junit')
+    expect(dependencies[0].version).toEqual('3.8.1')
+    expect(dependencies[0].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[1].name).toEqual('org.springframework:spring-context')
+    expect(dependencies[1].version).toEqual('5.3.30')
+    expect(dependencies[1].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[2].name).toEqual('org.springframework:spring-web')
+    expect(dependencies[2].version).toEqual('5.3.30')
+    expect(dependencies[2].reachable_symbol_properties).toHaveLength(1)
+    expect(dependencies[2].reachable_symbol_properties![0].name).toEqual(
+      'datadog-sbom-generator:reachable-symbol-location:GHSA-4wrc-f8pq-fpqp'
+    )
+    expect(dependencies[2].reachable_symbol_properties![0].value).toEqual(
+      '[{"file_name":"src/main/java/com/example/InsecureDeserializationExample.java","line_start":41,"line_end":41,"column_start":58,"column_end":88,"symbol":"CodebaseAwareObjectInputStream"}]'
+    )
+
+    expect(payload?.vulnerabilities.length).toStrictEqual(1)
+    const vulnerabilities = payload!.vulnerabilities
+    expect(vulnerabilities[0].id).toEqual('GHSA-4wrc-f8pq-fpqp')
+    expect(vulnerabilities[0].bom_ref).toEqual('GHSA-4wrc-f8pq-fpqp')
+    expect(vulnerabilities[0].affects).toHaveLength(1)
+    expect(vulnerabilities[0].affects[0].ref).toEqual('pkg:maven/org.springframework/spring-web@5.3.30')
+  })
+
+  test('should fail to read git information', async () => {
+    const nonExistingGitRepository = '/you/cannot/find/me'
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+
+    // Pass non existing git directory to load git context
+    // It is missing all git tags.
+    const tags = await getSpanTags(config, [], true, nonExistingGitRepository)
+    expect(getMissingRequiredGitTags(tags).length).toBeGreaterThanOrEqual(1)
+  })
 })
+
+const getFixtures = (file: string) => {
+  return path.join('./src/commands/sbom/__tests__/fixtures', file)
+}
+
+const setupLocalGitConfig = (dir: string) => {
+  const gitDir = path.join(dir, '.git')
+  if (!fs.existsSync(gitDir)) {
+    fs.mkdirSync(gitDir, {recursive: true})
+  }
+
+  const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
+  const configPath = path.join(gitDir, '/config')
+  fs.writeFileSync(configPath, configFixture)
+}

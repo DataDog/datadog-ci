@@ -1,10 +1,11 @@
 import path from 'path'
 
+import {createReaderFromFile} from '../../../helpers/filereader'
+
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,
-  createReaderFromFile,
   getElfFileMetadata,
   getOutputFilenameFromBuildId,
   readElfHeader,
@@ -736,7 +737,7 @@ describe('elf', () => {
         goBuildId: '',
         elfType: 'DYN',
         hasDebugInfo: true,
-        hasDynamicSymbolTable: true,
+        hasDynamicSymbolTable: false,
         hasSymbolTable: true,
         hasCode: false,
       })
@@ -831,15 +832,19 @@ describe('elf', () => {
       const filename = path.basename(elfFile)
       const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
-      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, false)
+      await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true)
       const debugInfoMetadata = await getElfFileMetadata(outputFilename)
 
       // check that elf and debug info metadata are equal except for hasCode and filename
+      // dynamic symbol table is kept only if there is no debug info nor symbol table
+      const hasDynamicSymbolTable =
+        !elfFileMetadata.hasDebugInfo && !elfFileMetadata.hasSymbolTable && elfFileMetadata.hasDynamicSymbolTable
       expect(debugInfoMetadata).toEqual({
         ...elfFileMetadata,
         hasCode: false,
         filename: outputFilename,
         fileHash: debugInfoMetadata.fileHash,
+        hasDynamicSymbolTable,
       })
     }
 

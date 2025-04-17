@@ -1,5 +1,5 @@
 import {exec} from 'child_process'
-import fs, {existsSync, readFileSync} from 'fs'
+import fs, {existsSync, lstatSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
@@ -8,6 +8,7 @@ import type {AxiosRequestConfig} from 'axios'
 import axios from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
+import * as glob from 'glob'
 import {ProxyAgent} from 'proxy-agent'
 
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
@@ -272,6 +273,19 @@ export const removeUndefinedValues = <T extends {[key: string]: unknown}>(object
   return newObject
 }
 
+export const recursivelyRemoveUndefinedValues = <T extends Record<string, unknown>>(object: T): Partial<T> => {
+  const newObject: Partial<T> = {}
+  for (const [key, value] of Object.entries(object) as [keyof T, T[keyof T]][]) {
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      newObject[key] = recursivelyRemoveUndefinedValues(value as any) as T[keyof T]
+    } else if (value !== undefined) {
+      newObject[key] = value
+    }
+  }
+
+  return newObject
+}
+
 export const normalizeRef = (ref: string | undefined) => {
   if (!ref) {
     return ref
@@ -408,4 +422,23 @@ export const getGitHubEventPayload = () => {
   }
 
   return JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')) as GitHubWebhookPayload
+}
+
+export const isFile = (path: string) => {
+  try {
+    return lstatSync(path).isFile()
+  } catch (e) {
+    return false
+  }
+}
+
+export const parsePathsList = (paths: string | undefined): string[] => {
+  if (!paths) {
+    return []
+  }
+
+  return paths
+    .split(',')
+    .flatMap((path) => (glob.hasMagic(path) ? glob.sync(path, {dotRelative: true}) : [path]))
+    .map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
 }

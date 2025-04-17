@@ -44,7 +44,7 @@ import process from 'process'
 
 import type * as path from 'path'
 
-import {glob} from 'glob'
+import * as glob from 'glob'
 
 import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
 
@@ -59,7 +59,7 @@ import {
   Test,
   UserConfigOverride,
 } from '../../interfaces'
-import {DEFAULT_COMMAND_CONFIG} from '../../run-tests-command'
+import {getDefaultConfig} from '../../run-tests-lib'
 import * as utils from '../../utils/public'
 
 import {
@@ -74,6 +74,8 @@ import {
   RenderResultsTestCase,
 } from '../fixtures'
 
+const DEFAULT_COMMAND_CONFIG = getDefaultConfig()
+
 describe('utils', () => {
   describe('getSuites', () => {
     const GLOB = 'testGlob'
@@ -83,7 +85,7 @@ describe('utils', () => {
       file2: '{"tests":"file2"}',
     }
 
-    jest.spyOn(glob, 'glob').mockResolvedValue(FILES)
+    jest.spyOn(glob, 'globSync').mockReturnValue(FILES)
     ;(fs.readFile as any).mockImplementation((path: 'file1' | 'file2', opts: any, callback: any) =>
       callback(undefined, FILES_CONTENT[path])
     )

@@ -1,6 +1,7 @@
 import {writeFile} from 'fs/promises'
 
-import inquirer from 'inquirer'
+import {isInteractive} from '../../helpers/ci'
+import {requestConfirmation} from '../../helpers/prompt'
 
 import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter} from './interfaces'
 import {findUniqueLocalTestDefinition} from './local-test-definition'
@@ -24,8 +25,13 @@ export const updateLTDMultiLocators = async (
     return reporter.log('No MultiLocator updates found. No changes will be made.\n')
   }
 
-  const userConfirmed = await promptUser(
-    'MultiLocator updates found. Do you want to apply them to your local test definition?'
+  if (!isInteractive()) {
+    return reporter.log('MultiLocator updates found, but cannot apply them in non-interactive mode.\n')
+  }
+
+  const userConfirmed = await requestConfirmation(
+    'MultiLocator updates found. Do you want to apply them to your local test definition?',
+    false
   )
   if (!userConfirmed) {
     return reporter.log('\nMultiLocator updates aborted by user.\n')
@@ -71,18 +77,6 @@ const getMultiLocatorsFromResults = (results: Result[]): MultiLocatorMap => {
   }
 
   return multiLocatorMap
-}
-
-export const promptUser = async (message: string): Promise<boolean> => {
-  const question: inquirer.ConfirmQuestion<{confirm: boolean}> = {
-    type: 'confirm',
-    name: 'confirm',
-    message,
-    default: false,
-  }
-  const {confirm} = await inquirer.prompt([question])
-
-  return confirm
 }
 
 const overwriteMultiLocatorsInTestConfig = (

@@ -5,13 +5,12 @@ import path from 'path'
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
 
-import {isFile} from '../commands/junit/utils'
-
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
 import {SpanTag, SpanTags} from './interfaces'
 import {getUserGitSpanTags} from './user-provided-git'
+import {isFile} from './utils'
 
 export const CI_PIPELINE_URL = 'ci.pipeline.url'
 export const CI_PROVIDER_NAME = 'ci.provider.name'
@@ -42,6 +41,10 @@ export const GIT_HEAD_SHA = 'git.commit.head_sha'
 export const GIT_BASE_REF = 'git.commit.base_ref'
 export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sha'
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
+
+// Sbom
+export const SBOM_TOOL_GENERATOR_NAME = 'tool.generator.name'
+export const SBOM_TOOL_GENERATOR_VERSION = 'tool.generator.version'
 
 // General
 export const SERVICE = 'service'
@@ -236,18 +239,19 @@ export const getMissingRequiredGitTags = (tags: SpanTags): string[] => {
 export const getSpanTags = async (
   config: DatadogCiConfig,
   additionalTags: string[] | undefined,
-  includeCiTags: boolean
+  includeCiTags: boolean,
+  gitPath?: string
 ): Promise<SpanTags> => {
   const ciSpanTags = includeCiTags ? getCISpanTags() : []
-  const gitSpanTags = await getGitMetadata()
+  const gitSpanTags = await getGitMetadata(gitPath)
   const userGitSpanTags = getUserGitSpanTags()
 
   const envVarTags = config.envVarTags ? parseTags(config.envVarTags.split(',')) : {}
   const cliTags = additionalTags ? parseTags(additionalTags) : {}
 
   return {
-    ...gitSpanTags,
-    ...ciSpanTags,
+    // if users specify a git path to read from, we prefer git env variables over the CI context one
+    ...(gitPath ? {...ciSpanTags, ...gitSpanTags} : {...gitSpanTags, ...ciSpanTags}),
     ...userGitSpanTags, // User-provided git tags have precedence over the ones we get from the git command
     ...cliTags,
     ...envVarTags,

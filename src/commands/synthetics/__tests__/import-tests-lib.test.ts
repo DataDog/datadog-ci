@@ -2,7 +2,7 @@ jest.mock('fs/promises')
 import * as fsPromises from 'fs/promises'
 
 import * as api from '../api'
-import {DEFAULT_IMPORT_TESTS_COMMAND_CONFIG} from '../import-tests-command'
+import {ImportTestsCommand} from '../import-tests-command'
 import {importTests} from '../import-tests-lib'
 import {TriggerConfig} from '../interfaces'
 import * as tests from '../test'
@@ -21,7 +21,7 @@ describe('import-tests', () => {
   describe('importTests', () => {
     test('we write imported test to file', async () => {
       const filePath = 'test.synthetics.json'
-      const config = DEFAULT_IMPORT_TESTS_COMMAND_CONFIG
+      const config = ImportTestsCommand.getDefaultConfig()
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789']
 
@@ -56,7 +56,7 @@ describe('import-tests', () => {
 
     test('we can fetch multiple public_ids', async () => {
       const filePath = 'test.synthetics.json'
-      const config = DEFAULT_IMPORT_TESTS_COMMAND_CONFIG
+      const config = ImportTestsCommand.getDefaultConfig()
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789', '987-654-321']
 
@@ -99,7 +99,7 @@ describe('import-tests', () => {
 
     test('we write browser test', async () => {
       const filePath = 'test.synthetics.json'
-      const config = DEFAULT_IMPORT_TESTS_COMMAND_CONFIG
+      const config = ImportTestsCommand.getDefaultConfig()
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789']
 
@@ -141,7 +141,7 @@ describe('import-tests', () => {
 
     test('we write imported test to already existing file', async () => {
       const filePath = 'test.synthetics.json'
-      const config = DEFAULT_IMPORT_TESTS_COMMAND_CONFIG
+      const config = ImportTestsCommand.getDefaultConfig()
       config['files'] = [filePath]
       config['publicIds'] = ['123-456-789', '987-654-321']
 

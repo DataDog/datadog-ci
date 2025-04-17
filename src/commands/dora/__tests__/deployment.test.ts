@@ -56,6 +56,7 @@ describe('execute', () => {
         '--env', 'test',
         '--git-repository-url', 'https://github.com/DataDog/datadog-ci',
         '--git-commit-sha', '2186e1b0ab2a87e312a8c831d5bc947fa081d4f9',
+        '--version', '1.0.0',
       ])
       /* eslint-enable prettier/prettier */
       expect(code).toBe(0)
@@ -68,6 +69,7 @@ describe('execute', () => {
           repoURL: 'https://github.com/DataDog/datadog-ci',
           commitSHA: '2186e1b0ab2a87e312a8c831d5bc947fa081d4f9',
         },
+        version: '1.0.0',
       })
     })
     test('with minimal parameters provided', async () => {

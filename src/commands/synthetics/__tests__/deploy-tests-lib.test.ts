@@ -1,5 +1,5 @@
 import * as api from '../api'
-import {DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG} from '../deploy-tests-command'
+import {DeployTestsCommand} from '../deploy-tests-command'
 import {deployTests} from '../deploy-tests-lib'
 import * as tests from '../test'
 
@@ -8,7 +8,7 @@ import {getApiLocalTestDefinition, getApiTest, mockApi, mockReporter} from './fi
 describe('deploy-tests', () => {
   describe('deployTests', () => {
     it('deploys local test definitions as new versions of main test definitions', async () => {
-      const config = DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG
+      const config = DeployTestsCommand.getDefaultConfig()
 
       jest
         .spyOn(tests, 'getTestConfigs')
@@ -44,7 +44,7 @@ describe('deploy-tests', () => {
     })
 
     it('supports specifying public ids', async () => {
-      const config = DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG
+      const config = DeployTestsCommand.getDefaultConfig()
       config['publicIds'] = ['123-456-789']
 
       jest

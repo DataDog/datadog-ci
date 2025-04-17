@@ -1,6 +1,7 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
+import {createReadFunctions, FileReader} from '../../helpers/filereader'
 import {execute} from '../../helpers/utils'
 
 import {
@@ -84,57 +85,6 @@ export interface Reader {
   close(): Promise<void>
 }
 
-export class FileReader implements Reader {
-  private fd: fs.promises.FileHandle
-  private buffer?: Buffer
-
-  constructor(fd: fs.promises.FileHandle) {
-    this.fd = fd
-  }
-
-  public async read(length: number, position = 0): Promise<Buffer> {
-    if (!this.buffer || this.buffer.length < length) {
-      this.buffer = Buffer.alloc(length)
-    }
-    const {buffer, bytesRead} = await this.fd.read(this.buffer, 0, length, position)
-
-    return buffer.subarray(0, bytesRead)
-  }
-
-  public async close(): Promise<void> {
-    await this.fd.close()
-  }
-}
-
-export const createReaderFromFile = async (filename: string): Promise<FileReader> => {
-  const fd = await fs.promises.open(filename, 'r')
-
-  return new FileReader(fd)
-}
-
-const createReadFunctions = (buffer: Buffer, littleEndian: boolean, elfClass: ElfClass) => {
-  let position = 0
-
-  const readAndIncrementPos = <T>(inc: number, read: (offset: number) => T) => {
-    const value = read(position)
-    position += inc
-
-    return value
-  }
-
-  const bufferReadUInt16 = (littleEndian ? buffer.readUInt16LE : buffer.readUInt16BE).bind(buffer)
-  const bufferReadUInt32 = (littleEndian ? buffer.readUInt32LE : buffer.readUInt32BE).bind(buffer)
-  const bufferReadBigUInt64 = (littleEndian ? buffer.readBigUInt64LE : buffer.readBigUInt64BE).bind(buffer)
-
-  const readUInt16 = () => readAndIncrementPos(2, bufferReadUInt16)
-  const readUInt32 = () => readAndIncrementPos(4, bufferReadUInt32)
-  const readBigUInt64 = () => readAndIncrementPos(8, bufferReadBigUInt64)
-
-  const readBigUInt32Or64 = elfClass === ElfClass.ELFCLASS32 ? () => BigInt(readUInt32()) : readBigUInt64
-
-  return {readUInt16, readUInt32, readBigUInt32Or64}
-}
-
 export interface StringTable {
   [index: number]: string
 }
@@ -212,7 +162,11 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
     const headerSizeLeft = headerSize - IDENT_SIZE
     const headerBuffer = await reader.read(headerSizeLeft, IDENT_SIZE)
 
-    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(headerBuffer, littleEndian, elfClass)
+    const {readUInt32, readUInt16, readBigUInt32Or64} = createReadFunctions(
+      headerBuffer,
+      littleEndian,
+      elfClass === ElfClass.ELFCLASS32
+    )
 
     const type = readUInt16()
     const machine = readUInt16()
@@ -274,7 +228,11 @@ export const readElfSectionHeader = async (
 ): Promise<SectionHeader> => {
   const buf = await reader.read(elfHeader.e_shentsize, Number(elfHeader.e_shoff) + index * elfHeader.e_shentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(
+    buf,
+    elfHeader.littleEndian,
+    elfHeader.elfClass === ElfClass.ELFCLASS32
+  )
 
   return {
     name: '',
@@ -327,7 +285,11 @@ export const readElfProgramHeader = async (
 ): Promise<ProgramHeader> => {
   const buf = await reader.read(elfHeader.e_phentsize, Number(elfHeader.e_phoff) + index * elfHeader.e_phentsize)
 
-  const {readUInt32, readBigUInt32Or64} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32, readBigUInt32Or64} = createReadFunctions(
+    buf,
+    elfHeader.littleEndian,
+    elfHeader.elfClass === ElfClass.ELFCLASS32
+  )
 
   if (elfHeader.elfClass === ElfClass.ELFCLASS32) {
     return {
@@ -370,7 +332,7 @@ export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHe
 const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
   const buf = await reader.read(Number(sectionHeader.sh_size), Number(sectionHeader.sh_offset))
   // read elf note header
-  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass)
+  const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
   const namesz = readUInt32()
   const descsz = readUInt32()
   const type = readUInt32()
@@ -421,12 +383,16 @@ export const isSupportedElfType = (type: string): boolean => {
   return SUPPORTED_ELF_TYPES.includes(type)
 }
 
+export const hasNonEmptySection = (sectionHeaders: SectionHeader[], name: string): boolean => {
+  return sectionHeaders.some((section) => section.name === name && section.sh_type !== SectionHeaderType.SHT_NOBITS)
+}
+
 export const getSectionInfo = (
   sections: SectionHeader[]
 ): {hasDebugInfo: boolean; hasSymbolTable: boolean; hasDynamicSymbolTable: boolean; hasCode: boolean} => {
-  const hasDebugInfo = sections.some((section) => section.name === '.debug_info')
-  const hasSymbolTable = sections.some((section) => section.name === '.symtab')
-  const hasDynamicSymbolTable = sections.some((section) => section.name === '.dynsym')
+  const hasDebugInfo = hasNonEmptySection(sections, '.debug_info') || hasNonEmptySection(sections, '.zdebug_info')
+  const hasSymbolTable = hasNonEmptySection(sections, '.symtab')
+  const hasDynamicSymbolTable = hasNonEmptySection(sections, '.dynsym')
   const hasCode = sections.some(
     (section) => section.name === '.text' && section.sh_type === SectionHeaderType.SHT_PROGBITS
   )
@@ -523,29 +489,32 @@ export const computeFileHash = async (filename: string): Promise<string> => {
   }
 }
 
-const getSupportedBfdTargetsInternal = async (): Promise<string[]> => {
+const hasZstdSupport = async (): Promise<boolean> => {
+  const {stdout} = await execute('objcopy --help')
+
+  return /--compress-debug-sections.*zstd/.test(stdout.toString())
+}
+
+const memoize = <T>(fn: () => Promise<T>): (() => Promise<T>) => {
+  let promise: Promise<T> | undefined
+
+  return () => (promise = promise || fn())
+}
+
+const hasZstdSupportCached = memoize(hasZstdSupport)
+
+const getSupportedBfdTargets = async (): Promise<string[]> => {
   const {stdout} = await execute('objcopy --help')
 
   const groups = /supported targets: (?<targets>.*)$/m.exec(stdout.toString())?.groups
   if (groups) {
-    return groups.targets.split(/\s*/)
+    return groups.targets.split(/\s+/)
   }
 
   return []
 }
 
-const getSupportedBfdTargets = (() => {
-  let promise: Promise<string[]> | undefined
-
-  return () =>
-    (promise =
-      promise ||
-      (async () => {
-        const targets = await getSupportedBfdTargetsInternal()
-
-        return targets
-      })())
-})()
+const getSupportedBfdTargetsCached = memoize(getSupportedBfdTargets)
 
 const replaceElfHeader = async (targetFilename: string, sourceFilename: string): Promise<void> => {
   const sourceElfHeader = await getElfHeaderStart(sourceFilename)
@@ -560,7 +529,7 @@ export const copyElfDebugInfo = async (
   elfFileMetadata: ElfFileMetadata,
   compressDebugSections: boolean
 ): Promise<void> => {
-  const supportedTargets = await getSupportedBfdTargets()
+  const supportedTargets = await getSupportedBfdTargetsCached()
 
   let bfdTargetOption = ''
   const bfdTarget = getBFDTargetForArch(elfFileMetadata.arch, elfFileMetadata.littleEndian, elfFileMetadata.elfClass)
@@ -574,15 +543,38 @@ export const copyElfDebugInfo = async (
     bfdTargetOption = `-I ${genericBfdTarget}`
   }
 
-  const compressDebugSectionsOption = compressDebugSections ? '--compress-debug-sections' : ''
+  let compressDebugSectionsOption = ''
+  if (compressDebugSections) {
+    compressDebugSectionsOption = '--compress-debug-sections'
+    if (await hasZstdSupportCached()) {
+      compressDebugSectionsOption += '=zstd'
+    }
+  }
+
+  const keepDynamicSymbolTable =
+    elfFileMetadata.hasDynamicSymbolTable && !elfFileMetadata.hasSymbolTable && !elfFileMetadata.hasDebugInfo
 
   // Remove .gdb_index section as it is not needed and can be quite big
-  await execute(
-    `objcopy ${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index ${filename} ${outputFile}`
-  )
+  let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
+
+  if (keepDynamicSymbolTable) {
+    // If the file has only a dynamic symbol table, preserve it
+    // `objcopy --only-keep-debug` would remove it, so we need to dump it separately with `objcopy --dump-section` and then merge it back with `objcopy --add-section`
+    await execute(
+      `objcopy ${bfdTargetOption} --dump-section .dynsym=${outputFile}.dynsym --dump-section .dynstr=${outputFile}.dynstr ${filename} ${outputFile}`
+    )
+    options = `--remove-section .dynsym --remove-section .dynstr ${options} --add-section .dynsym=${outputFile}.dynsym --add-section .dynstr=${outputFile}.dynstr`
+  }
+
+  await execute(`objcopy ${options} ${filename} ${outputFile}`).finally(() => {
+    if (keepDynamicSymbolTable) {
+      fs.unlinkSync(`${outputFile}.dynsym`)
+      fs.unlinkSync(`${outputFile}.dynstr`)
+    }
+  })
 
   if (bfdTargetOption) {
-    // Replace the ELF header in the extracted debug info file with the one from the initial file
+    // Replace the ELF header in the extracted debug info file with the one from the initial file to keep the original architecture
     await replaceElfHeader(outputFile, filename)
   }
 }
@@ -592,6 +584,6 @@ export const getOutputFilenameFromBuildId = (buildId: string): string => {
   return buildId.replace(/\//g, '-')
 }
 
-export const getBuildId = (fileMetadata: ElfFileMetadata): string => {
-  return fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash
+export const getBuildIdWithArch = (fileMetadata: ElfFileMetadata): string => {
+  return (fileMetadata.gnuBuildId || fileMetadata.goBuildId || fileMetadata.fileHash) + '-' + fileMetadata.arch
 }

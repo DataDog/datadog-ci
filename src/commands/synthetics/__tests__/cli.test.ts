@@ -5,8 +5,9 @@ import {toBoolean, toNumber, toStringMap} from '../../../helpers/env'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'
-import {DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG, DeployTestsCommand} from '../deploy-tests-command'
-import {DEFAULT_IMPORT_TESTS_COMMAND_CONFIG, ImportTestsCommand} from '../import-tests-command'
+import {DeployTestsCommand} from '../deploy-tests-command'
+import {CriticalError} from '../errors'
+import {ImportTestsCommand} from '../import-tests-command'
 import {
   CookiesObject,
   DeployTestsCommandConfig,
@@ -17,9 +18,10 @@ import {
   UploadApplicationCommandConfig,
   UserConfigOverride,
 } from '../interfaces'
-import {DEFAULT_COMMAND_CONFIG, RunTestsCommand} from '../run-tests-command'
+import * as mobile from '../mobile'
+import {RunTestsCommand} from '../run-tests-command'
 import * as testUtils from '../test'
-import {DEFAULT_UPLOAD_COMMAND_CONFIG, UploadApplicationCommand} from '../upload-application-command'
+import {UploadApplicationCommand} from '../upload-application-command'
 import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
@@ -69,6 +71,7 @@ describe('run-tests', () => {
         DATADOG_SITE: 'datadoghq.eu',
         DATADOG_SUBDOMAIN: 'custom',
         DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
+        DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
         DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config.json',
         DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'false',
         DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'false',
@@ -110,10 +113,11 @@ describe('run-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
+        ...RunTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         batchTimeout: 1,
+        buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
         datadogSite: overrideEnv.DATADOG_SITE,
         defaultTestOverrides: {
@@ -191,6 +195,7 @@ describe('run-tests', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
+        buildCommand: 'build-command',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         defaultTestOverrides: {
@@ -240,7 +245,7 @@ describe('run-tests', () => {
       }
 
       const command = createCommand(RunTestsCommand)
-      command.configPath = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
+      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -344,7 +349,7 @@ describe('run-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_COMMAND_CONFIG,
+        ...RunTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
@@ -415,6 +420,7 @@ describe('run-tests', () => {
       const configFile = {
         apiKey: 'config_file_api_key',
         appKey: 'config_file_app_key',
+        buildCommand: 'build-command',
         datadogSite: 'us3.datadoghq.com',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
@@ -467,6 +473,7 @@ describe('run-tests', () => {
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
           DATADOG_SYNTHETICS_BATCH_TIMEOUT: '1',
+          DATADOG_SYNTHETICS_BUILD_COMMAND: 'build-command',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
@@ -508,6 +515,7 @@ describe('run-tests', () => {
           apiKey: overrideEnv.DATADOG_API_KEY,
           appKey: overrideEnv.DATADOG_APP_KEY,
           batchTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
+          buildCommand: overrideEnv.DATADOG_SYNTHETICS_BUILD_COMMAND,
           configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
           datadogSite: overrideEnv.DATADOG_SITE,
           defaultTestOverrides: {
@@ -530,7 +538,10 @@ describe('run-tests', () => {
             deviceIds: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_DEVICE_IDS.split(';'),
             executionRule: toExecutionRule(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_EXECUTION_RULE),
             followRedirects: toBoolean(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_FOLLOW_REDIRECTS),
-            headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+            headers: {
+              ...configFile.defaultTestOverrides.headers,
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+            },
             locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
             mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
             resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
@@ -543,7 +554,10 @@ describe('run-tests', () => {
             startUrl: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
             startUrlSubstitutionRegex: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
             testTimeout: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_TEST_TIMEOUT),
-            variables: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+            variables: {
+              ...configFile.defaultTestOverrides.variables,
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+            },
 
             // XXX: Added to make the test pass as we don't have an ENV variable for `mobileApplicationVersionFilePath`.
             mobileApplicationVersionFilePath: configFile.defaultTestOverrides.mobileApplicationVersionFilePath,
@@ -580,6 +594,7 @@ describe('run-tests', () => {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
+          buildCommand: 'build-command',
           configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file-from-cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: true,
@@ -636,6 +651,7 @@ describe('run-tests', () => {
         command['apiKey'] = overrideCLI.apiKey
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
+        command['buildCommand'] = overrideCLI.buildCommand
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
@@ -664,7 +680,7 @@ describe('run-tests', () => {
           `deviceIds=${defaultTestOverrides.deviceIds?.join(';')}`,
           `executionRule=${defaultTestOverrides.executionRule}`,
           `followRedirects=${defaultTestOverrides.followRedirects}`,
-          `headers.Content-Type=${defaultTestOverrides.headers ? defaultTestOverrides.headers['Content-Type'] : ''}`,
+          `headers.Content-Type=${defaultTestOverrides.headers?.['Content-Type']}`,
           `headers.Authorization=${defaultTestOverrides.headers?.Authorization}`,
           `locations=${defaultTestOverrides.locations?.join(';')}`,
           `retry.count=${defaultTestOverrides.retry?.count}`,
@@ -684,7 +700,15 @@ describe('run-tests', () => {
           ...filteredOverrideCLI,
           defaultTestOverrides: {
             ...defaultTestOverrides,
+            headers: {
+              ...configFile.defaultTestOverrides.headers,
+              ...defaultTestOverrides.headers,
+            },
             mobileApplicationVersionFilePath,
+            variables: {
+              ...configFile.defaultTestOverrides.variables,
+              ...defaultTestOverrides.variables,
+            },
           },
           proxy: configFile.proxy,
         }
@@ -701,6 +725,7 @@ describe('run-tests', () => {
           DATADOG_SITE: 'us5.datadoghq.com',
           DATADOG_SYNTHETICS_CONFIG_PATH: 'path/to/config_from_env.json',
           DATADOG_SUBDOMAIN: 'subdomain_from_env',
+          DATADOG_SYNTHETICS_BUILD_COMMAND: 'default-build-command',
           DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS: 'true',
           DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT: 'true',
@@ -741,6 +766,7 @@ describe('run-tests', () => {
           apiKey: 'cli_api_key',
           appKey: 'cli_app_key',
           batchTimeout: 1,
+          buildCommand: 'build-command',
           configPath: 'path/to/config_from_cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: false,
@@ -799,6 +825,7 @@ describe('run-tests', () => {
         command['apiKey'] = overrideCLI.apiKey
         command['appKey'] = overrideCLI.appKey
         command['batchTimeout'] = overrideCLI.batchTimeout
+        command['buildCommand'] = overrideCLI.buildCommand
         command['configPath'] = overrideCLI.configPath
         command['datadogSite'] = overrideCLI.datadogSite
         command['failOnCriticalErrors'] = overrideCLI.failOnCriticalErrors
@@ -847,7 +874,15 @@ describe('run-tests', () => {
           ...filteredOverrideCLI,
           defaultTestOverrides: {
             ...defaultTestOverrides,
+            headers: {
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
+              ...defaultTestOverrides.headers,
+            },
             mobileApplicationVersionFilePath,
+            variables: {
+              ...toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_VARIABLES),
+              ...defaultTestOverrides.variables,
+            },
           },
           proxy: {protocol: 'http'},
         }
@@ -1295,7 +1330,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1349,7 +1384,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1384,7 +1419,7 @@ describe('upload-application', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_UPLOAD_COMMAND_CONFIG,
+        ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
@@ -1393,6 +1428,34 @@ describe('upload-application', () => {
         versionName: 'new',
         latest: true,
       })
+    })
+  })
+
+  describe('any kind of error is reported', () => {
+    test.each([
+      [
+        'CI error',
+        new CriticalError('INVALID_MOBILE_APP', 'some message'),
+        'A CI error occurred: [INVALID_MOBILE_APP] some message',
+      ],
+      ['Endpoint error', new api.EndpointError('some message', 404), 'A backend error occurred: some message (404)'],
+      [
+        'Axios error',
+        getAxiosError(400, {message: 'Bad Request'}),
+        'An unexpected error occurred: AxiosError: Bad Request\n    at getAxiosError',
+      ],
+      ['Unknown error', new Error('Unknown error'), 'An unexpected error occurred: Error: Unknown error\n    at '],
+    ])('%s', async (_, error, expectedMessage) => {
+      const writeMock = jest.fn()
+      const command = createCommand(UploadApplicationCommand, {stdout: {write: writeMock}})
+
+      jest.spyOn(mobile, 'uploadMobileApplicationVersion').mockImplementation(() => {
+        throw error
+      })
+
+      expect(await command['execute']()).toBe(1)
+
+      expect(writeMock).toHaveBeenCalledWith(expect.stringContaining(expectedMessage))
     })
   })
 })
@@ -1424,7 +1487,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1476,7 +1539,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1505,7 +1568,7 @@ describe('import-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_IMPORT_TESTS_COMMAND_CONFIG,
+        ...ImportTestsCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',
@@ -1541,7 +1604,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: overrideEnv.DATADOG_API_KEY,
         appKey: overrideEnv.DATADOG_APP_KEY,
         configPath: overrideEnv.DATADOG_SYNTHETICS_CONFIG_PATH,
@@ -1593,7 +1656,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
         configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
@@ -1622,7 +1685,7 @@ describe('deploy-tests', () => {
 
       await command['resolveConfig']()
       expect(command['config']).toEqual({
-        ...DEFAULT_DEPLOY_TESTS_COMMAND_CONFIG,
+        ...DeployTestsCommand.getDefaultConfig(),
         apiKey: 'api_key_cli',
         appKey: 'app_key_env',
         datadogSite: 'us5.datadoghq.com',

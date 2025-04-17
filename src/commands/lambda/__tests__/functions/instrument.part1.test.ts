@@ -12,6 +12,8 @@ import {mockClient} from 'aws-sdk-client-mock'
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../../constants'
 
 import {
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
@@ -152,6 +154,8 @@ describe('instrument', () => {
             [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
             [SITE_ENV_VAR]: 'datadoghq.com',
             [TRACE_ENABLED_ENV_VAR]: 'false',
+            [DD_LLMOBS_ENABLED_ENV_VAR]: 'true',
+            [DD_LLMOBS_ML_APP_ENV_VAR]: 'my-ml-app',
           },
         },
         FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',

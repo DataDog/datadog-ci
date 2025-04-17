@@ -106,6 +106,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--upload-git-metadata`        | `-u`      | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed.                                                                                                                                                           | `true`  |
 | `--no-upload-git-metadata`     |           | Disables Git metadata uploading, as a part of source code integration. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary.                                                                                                                                                  |         |
 | `--apm-flush-deadline`         |           | Used to determine when to submit spans before a timeout occurs, in milliseconds. When the remaining time in an AWS Lambda invocation is less than the value set, the tracer attempts to submit the current active spans and all finished spans. Supported for NodeJS and Python. Defaults to `100` milliseconds.                              |         |
+| `--llmobs`                     |           | If specified, enables LLM Observability for the instrumented function(s) with the provided ML application name.                                                                                                                                                                                                                               |         |               
 <br />
 
 #### `uninstrument`
@@ -179,6 +180,13 @@ datadog-ci lambda flare -f <function-arn> -c <case-id> -e <email-on-case-id> --w
 | `--start` and `--end` |           | Only gather logs within the time range (`--with-logs` must be included.) Both arguments are numbers in milliseconds since Unix Epoch. |         |
 | `--dry-run`           | `-d`      | Preview collected data which would be sent to Datadog support.                                                                        | `false` |
 
+**Permissions**
+
+To run this command, you must have the following IAM permissions:
+- `lambda:GetFunction`
+- `lambda:ListTags`
+- `logs:DescribeLogStreams` (required if `--with-logs` is set)
+- `logs:GetLogEvents` (required if `--with-logs` is set)
 
 ## Community
 
