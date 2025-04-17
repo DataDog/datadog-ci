@@ -101,7 +101,7 @@ describe('AppUploadReporter', () => {
 
       ttyReporter.renderProgress(1)
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -122,7 +122,7 @@ describe('AppUploadReporter', () => {
       ttyReporter.reportSuccess()
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -145,7 +145,7 @@ describe('AppUploadReporter', () => {
       })
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -166,7 +166,7 @@ describe('AppUploadReporter', () => {
       expect(ttyReporter['spinner']).toBeUndefined()
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
