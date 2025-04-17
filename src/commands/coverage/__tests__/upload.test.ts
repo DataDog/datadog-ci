@@ -1,5 +1,3 @@
-import os from 'os'
-
 import {Cli} from 'clipanion'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
@@ -262,16 +260,16 @@ describe('upload', () => {
 describe('execute', () => {
   const runCLI = async (extraArgs: string[]) => {
     const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     process.env = {DD_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['coverage', 'upload', '--dry-run', ...extraArgs], context)
+    const code = await cli.run(['coverage', 'upload', '--dry-run', ...extraArgs], context as any)
 
     return {context, code}
   }
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/__tests__/doesnotexist/../fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/__tests__/fixtures'],
@@ -280,7 +278,7 @@ describe('execute', () => {
 
   test('multiple paths', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/first/', 'src/commands/coverage/second/'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/first/', 'src/commands/coverage/second/'],
@@ -289,7 +287,7 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/coverage/__tests__/fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${process.cwd()}/src/commands/coverage/__tests__/fixtures`],
@@ -298,7 +296,7 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([process.cwd() + '/src/commands/coverage/__tests__/fixtures/single_file.xml'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${process.cwd()}/src/commands/coverage/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')

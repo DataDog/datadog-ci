@@ -238,7 +238,7 @@ describe('execute', () => {
 
       const {context, code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
 
-      const output = context.stdout.toString().split(os.EOL)
+      const output = context.stdout.toString().split('\n')
       expect(code).toBe(0)
 
       checkConsoleOutput(output, {
