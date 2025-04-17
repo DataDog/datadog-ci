@@ -1,9 +1,9 @@
 import fs from 'fs'
 import os from 'os'
-import path from 'path'
 
 import {Cli} from 'clipanion/lib/advanced'
 import simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'
@@ -33,6 +33,9 @@ const createMockContext = () => {
     },
   }
 }
+
+// Always posix, even on Windows.
+const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
   describe('getApiHelper', () => {
@@ -205,11 +208,12 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const cwd = upath.normalize(process.cwd())
+    const {context, code} = await runCLI([cwd + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
+      basePaths: [`${cwd}/src/commands/sarif/__tests__/fixtures/subfolder`],
       concurrency: 20,
       env: 'ci',
       spanTags: {
@@ -220,7 +224,7 @@ describe('execute', () => {
   })
 
   test('absolute path when passing git repository', async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
+    const tmpdir = fs.mkdtempSync(upath.join(os.tmpdir(), 'gitPath-'))
     try {
       // Configure local git repository
       const git = simpleGit(tmpdir)
@@ -232,16 +236,13 @@ describe('execute', () => {
       await git.commit('Initial commit', [], {'--allow-empty': null})
       const repositoryParam = `--git-repository=${tmpdir}`
 
-      const {context, code} = await runCLI([
-        repositoryParam,
-        process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder',
-      ])
+      const {context, code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
 
       const output = context.stdout.toString().split(os.EOL)
       expect(code).toBe(0)
 
       checkConsoleOutput(output, {
-        basePaths: [`${process.cwd()}/src/commands/sarif/__tests__/fixtures/subfolder`],
+        basePaths: [`${CWD}/src/commands/sarif/__tests__/fixtures/subfolder`],
         concurrency: 20,
         env: 'ci',
         spanTags: {
@@ -266,14 +267,14 @@ describe('execute', () => {
     const repositoryParam = `--git-repository=${nonExistingGitRepository}`
 
     // Pass a git repository which does not exist, command should fail
-    const {code} = await runCLI([repositoryParam, process.cwd() + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const {code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
     expect(code).toBe(1)
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
+    const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split('\n')
-    const location = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
+    const location = `${CWD}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
@@ -284,9 +285,9 @@ describe('execute', () => {
   })
 
   test('not found file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split('\n')
-    const location = `${process.cwd()}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
+    const location = `${CWD}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
     expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${location}`)
     expect(output[1]).toContain('Check the files exist and are valid.')
@@ -322,16 +323,16 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
 }
 
 const getFixtures = (file: string) => {
-  return path.join('./src/commands/sarif/__tests__/fixtures', file)
+  return upath.join('./src/commands/sarif/__tests__/fixtures', file)
 }
 
 const setupLocalGitConfig = (dir: string) => {
-  const gitDir = path.join(dir, '.git')
+  const gitDir = upath.join(dir, '.git')
   if (!fs.existsSync(gitDir)) {
     fs.mkdirSync(gitDir, {recursive: true})
   }
 
   const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
-  const configPath = path.join(gitDir, '/config')
+  const configPath = upath.join(gitDir, '/config')
   fs.writeFileSync(configPath, configFixture)
 }

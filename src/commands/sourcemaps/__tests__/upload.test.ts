@@ -1,8 +1,12 @@
 import chalk from 'chalk'
 import {Cli} from 'clipanion/lib/advanced'
+import upath from 'upath'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
+
+// Always posix, even on Windows.
+const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
   describe('getMinifiedURL', () => {
@@ -203,17 +207,17 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures/basic')
+    const {context, code} = await runCLI(CWD + '/src/commands/sourcemaps/__tests__/fixtures/basic')
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePath: `${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/basic`,
+      basePath: `${CWD}/src/commands/sourcemaps/__tests__/fixtures/basic`,
       concurrency: 20,
       jsFilesURLs: ['https://static.com/js/common.min.js'],
       minifiedPathPrefix: 'https://static.com/js',
       projectPath: '',
       service: 'test-service',
-      sourcemapsPaths: [`${process.cwd()}/src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map`],
+      sourcemapsPaths: [`${CWD}/src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js.map`],
       version: '1234',
     })
   })

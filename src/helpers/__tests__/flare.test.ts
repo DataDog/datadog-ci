@@ -3,6 +3,7 @@ import process from 'process'
 
 import axios from 'axios'
 import FormData from 'form-data'
+import upath from 'upath'
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
@@ -154,7 +155,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     const additionalFilePaths = new Set<string>()
 
     it('returns the correct path when the file exists', () => {
-      const filePath = '/exists'
+      const filePath = upath.normalize('/exists') // `D:/exists` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
       const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
@@ -176,7 +177,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('throws an error when the file does not exist', async () => {
-      const filePath = '/not-exists'
+      const filePath = upath.normalize('/not-exists') // `D:/not-exists` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
@@ -185,7 +186,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('throws an error when the file has already been added', async () => {
-      const filePath = '/added'
+      const filePath = upath.normalize('/added') // `D:/added` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
       projectFilePaths.add(filePath)
