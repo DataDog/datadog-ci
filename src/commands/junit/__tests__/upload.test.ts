@@ -1,6 +1,7 @@
 import os from 'os'
 
 import {Cli} from 'clipanion/lib/advanced'
+import upath from 'upath'
 
 import {createMockContext} from '../../../helpers/__tests__/fixtures'
 import id from '../../../helpers/id'
@@ -17,6 +18,9 @@ const makeCli = () => {
 
   return cli
 }
+
+// Always posix, even on Windows.
+const CWD = upath.normalize(process.cwd())
 
 describe('upload', () => {
   describe('getApiHelper', () => {
@@ -555,20 +559,20 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures'])
+    const {context, code} = await runCLI([CWD + '/src/commands/junit/__tests__/fixtures'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${process.cwd()}/src/commands/junit/__tests__/fixtures`],
+      basePaths: [`${CWD}/src/commands/junit/__tests__/fixtures`],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const {context, code} = await runCLI([CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split('\n')
-    const path = `${process.cwd()}/src/commands/junit/__tests__/fixtures/single_file.xml`
+    const path = `${CWD}/src/commands/junit/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
@@ -577,10 +581,7 @@ describe('execute', () => {
   })
 
   test('with git metadata without argument (default value is true)', async () => {
-    const {context, code} = await runCLI([
-      '--verbose',
-      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
-    ])
+    const {context, code} = await runCLI(['--verbose', CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split('\n')
     expect(id).toHaveBeenCalled()
     expect(code).toBe(0)
@@ -591,7 +592,7 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
-      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
@@ -603,7 +604,7 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
-      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
@@ -614,7 +615,7 @@ describe('execute', () => {
   test('with git metadata (with argument set to 0)', async () => {
     const {context, code} = await runCLI([
       '--skip-git-metadata-upload=0',
-      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
@@ -622,10 +623,7 @@ describe('execute', () => {
   })
 
   test('id headers are added when git metadata is uploaded', async () => {
-    await runCLI([
-      '--skip-git-metadata-upload=0',
-      process.cwd() + '/src/commands/junit/__tests__/fixtures/single_file.xml',
-    ])
+    await runCLI(['--skip-git-metadata-upload=0', CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
     expect(id).toHaveBeenCalled()
   }, 10000000)
 })
