@@ -1,11 +1,11 @@
 import {exec} from 'child_process'
 import * as fs from 'fs'
-import * as path from 'path'
 import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
 import {globSync} from 'glob'
+import upath from 'upath'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
 
@@ -157,7 +157,7 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
 }
 
 export const getSuites = async (pattern: string, reporter: MainReporter): Promise<Suite[]> => {
-  reporter.log(`Finding files matching ${path.resolve(process.cwd(), pattern)}\n`)
+  reporter.log(`Finding files matching ${upath.resolve(process.cwd(), pattern)}\n`)
 
   const files: string[] = globSync(pattern)
   if (files.length) {
@@ -181,21 +181,21 @@ export const getSuites = async (pattern: string, reporter: MainReporter): Promis
 }
 
 export const getFilePathRelativeToRepo = async (filePath: string) => {
-  const parentDirectory = path.dirname(filePath)
-  const filename = path.basename(filePath)
+  const parentDirectory = upath.dirname(filePath)
+  const filename = upath.basename(filePath)
 
   let relativeDirectory: string
 
   try {
     const {stdout} = await promisify(exec)('git rev-parse --show-toplevel')
     const repoTopLevel = stdout.trim()
-    relativeDirectory = path.relative(repoTopLevel, parentDirectory)
+    relativeDirectory = upath.relative(repoTopLevel, parentDirectory)
   } catch {
     // We aren't in a git repository: fall back to the given path, relative to the process working directory.
-    relativeDirectory = path.relative(process.cwd(), parentDirectory)
+    relativeDirectory = upath.relative(process.cwd(), parentDirectory)
   }
 
-  return path.join(relativeDirectory, filename)
+  return upath.join(relativeDirectory, filename)
 }
 
 export const normalizePublicId = (id: string): string | undefined =>
