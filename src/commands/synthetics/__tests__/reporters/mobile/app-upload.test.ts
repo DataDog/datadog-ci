@@ -86,7 +86,9 @@ describe('AppUploadReporter', () => {
   })
 
   describe('renderProgress', () => {
-    test.each([false, true])('Outputs progress (in CI: %s)', async (inCI) => {
+    // XXX: Skipped on Windows because the spinner is `-` instead of `⠋` even when `CI=false`.
+    /* eslint-disable jest/no-standalone-expect */
+    testSkipWindows.each([false, true])('Outputs progress (in CI: %s)', async (inCI) => {
       if (inCI) {
         process.env.CI = 'true'
       } else {
@@ -106,6 +108,7 @@ describe('AppUploadReporter', () => {
       }
       expect(simulatedTerminalOutput).toMatchSnapshot()
     })
+    /* eslint-enable jest/no-standalone-expect */
   })
 
   describe('reportSuccess', () => {
