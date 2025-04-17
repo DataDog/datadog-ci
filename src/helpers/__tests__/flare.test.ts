@@ -155,7 +155,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     const additionalFilePaths = new Set<string>()
 
     it('returns the correct path when the file exists', () => {
-      const filePath = upath.normalize('/exists') // `D:/exists` on Windows
+      const filePath = upath.resolve('/exists') // `D:/exists` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
       const result = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
@@ -177,7 +177,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('throws an error when the file does not exist', async () => {
-      const filePath = upath.normalize('/not-exists') // `D:/not-exists` on Windows
+      const filePath = upath.resolve('/not-exists') // `D:/not-exists` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
@@ -186,7 +186,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('throws an error when the file has already been added', async () => {
-      const filePath = upath.normalize('/added') // `D:/added` on Windows
+      const filePath = upath.resolve('/added') // `D:/added` on Windows
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
       projectFilePaths.add(filePath)
