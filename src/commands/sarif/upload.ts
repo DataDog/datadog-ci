@@ -1,8 +1,8 @@
 import fs from 'fs'
-import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
@@ -108,8 +108,7 @@ export class UploadSarifReportCommand extends Command {
 
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
 
     const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
 
@@ -181,7 +180,7 @@ export class UploadSarifReportCommand extends Command {
 
   private async getMatchingSarifReports(spanTags: SpanTags): Promise<Payload[]> {
     const sarifReports = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
-      const isFile = !!path.extname(basePath)
+      const isFile = !!upath.extname(basePath)
       if (isFile) {
         return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
       }
