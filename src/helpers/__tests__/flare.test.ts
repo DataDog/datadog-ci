@@ -181,7 +181,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
 
       ;(fs.existsSync as jest.Mock).mockReturnValue(false)
 
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrow(/File path .* not found/)
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
 
@@ -191,7 +191,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
       ;(fs.existsSync as jest.Mock).mockReturnValue(true)
       projectFilePaths.add(filePath)
 
-      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrowErrorMatchingSnapshot()
+      expect(() => validateFilePath(filePath, projectFilePaths, additionalFilePaths)).toThrow(/has already been added/)
       expect(fs.existsSync).toHaveBeenCalledWith(filePath)
     })
   })

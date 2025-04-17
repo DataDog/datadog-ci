@@ -10,16 +10,6 @@ exports[`flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and 
 
 exports[`flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
 
-exports[`flare validateFilePath throws an error when the file does not exist 1`] = `
-"[Error] File path '/not-exists' not found. Please try again.
-"
-`;
-
-exports[`flare validateFilePath throws an error when the file has already been added 1`] = `
-"[!] File '/added' has already been added.
-"
-`;
-
 exports[`flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
 
 exports[`flare validateStartEndFlags throws error when end is specified but start is not specified 1`] = `"Start time is required when end time is specified. [--start]"`;
