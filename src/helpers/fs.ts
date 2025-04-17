@@ -4,28 +4,27 @@
  */
 
 import fs from 'fs'
-import path from 'path'
 
 import * as globModule from 'glob'
 import JSZip from 'jszip'
-
-const GLOB_DEFAULT_OPTIONS: globModule.GlobOptionsWithFileTypesFalse = {
-  // For backwards compatibility, use POSIX style paths even on Windows.
-  posix: true,
-}
+import upath from 'upath'
 
 /**
  * Synchronous form of `glob`, with default options.
  */
 export const globSync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
-  return globModule.sync(pattern, {...GLOB_DEFAULT_OPTIONS, ...opts})
+  const results = globModule.sync(pattern, {...opts})
+
+  return results.map((path) => upath.normalizeSafe(path))
 }
 
 /**
  * Asynchronous form of `glob`, with default options.
  */
-export const globAsync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
-  return globModule.glob(pattern, {...GLOB_DEFAULT_OPTIONS, ...opts})
+export const globAsync = async (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
+  const results = await globModule.glob(pattern, {...opts})
+
+  return results.map((path) => upath.normalizeSafe(path))
 }
 
 /**
@@ -80,14 +79,14 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 
     const contents = fs.readdirSync(folderPath)
     for (const item of contents) {
-      const fullPath = path.join(folderPath, item)
+      const fullPath = upath.join(folderPath, item)
       const file = fs.statSync(fullPath)
 
       if (file.isDirectory()) {
         addFolderToZip(fullPath)
       } else {
         const data = fs.readFileSync(fullPath)
-        zip.file(path.relative(rootFolderPath, fullPath), data)
+        zip.file(upath.relative(rootFolderPath, fullPath), data)
       }
     }
   }
