@@ -26,7 +26,6 @@ import {
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
-  PollResultTest,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -227,10 +226,18 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<RawPoll
   return parsedPollResults
 }
 
-const parseIncludedTest = (test: RawPollResultTest): PollResultTest => {
+const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
   return {
-    id: test.id,
+    public_id: test.id,
     type: test.type,
+    subtype: test.subtype,
+    config: {
+      ...test.config,
+      request: {
+        ...test.config.request,
+        dnsServer: test.config.request.dns_server,
+      },
+    },
   }
 }
 

@@ -22,7 +22,6 @@ import {
   getBrowserResult,
   getBrowserTest,
   getFailedBrowserResult,
-  getIncompleteServerResult,
   getSummary,
   getTimedOutBrowserResult,
 } from '../fixtures'
@@ -256,7 +255,7 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      const {executionRule, incomplete, passed, retries, maxRetries, selectiveRerun, timedOut} = opts
+      const {executionRule, passed, retries, maxRetries, selectiveRerun, timedOut} = opts
 
       const result = test.type === 'api' ? getApiResult(resultId, test) : getBrowserResult(resultId, test)
 
@@ -265,7 +264,7 @@ describe('Default reporter', () => {
         result.result = {
           ...result.result,
           ...(passed ? {} : {failure}),
-          passed,
+          status: passed ? 'passed' : 'failed',
         }
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
@@ -291,10 +290,6 @@ describe('Default reporter', () => {
 
       if (selectiveRerun) {
         result.selectiveRerun = selectiveRerun
-      }
-
-      if (incomplete) {
-        result.result = getIncompleteServerResult()
       }
 
       return result
@@ -332,14 +327,17 @@ describe('Default reporter', () => {
             {
               ...getTimedOutBrowserResult(),
               result: {
+                id: 'rid',
+                finished_at: 0,
                 duration: 0,
                 failure: {code: 'FAILURE_CODE', message: 'Failure message'},
-                passed: false,
+                status: 'failed',
+                start_url: 'https://example.com',
                 steps: [],
               },
               timedOut: false,
             },
-          ],
+          ] as Result[],
         },
       },
       {

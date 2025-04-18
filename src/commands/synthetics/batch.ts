@@ -367,7 +367,7 @@ const createResult = (
     retries: resultInBatch.retries || 0,
     maxRetries: resultInBatch.max_retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult?.test), // TODO: Find solution as test and pollResult.test are not the same type. Check camelCase properties.
+    test: deepExtend({}, test, pollResult?.test),
     timedOut: hasTimedOut,
     timestamp: pollResult?.result.finished_at ?? Date.now(),
   }

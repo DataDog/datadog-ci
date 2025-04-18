@@ -411,7 +411,7 @@ export class JUnitReporter implements Reporter {
         _: step.failure.message,
       }
 
-      if (step.failure) {
+      if (step.allow_failure) {
         allowedErrors.push(xmlError)
       } else {
         errors.push(xmlError)

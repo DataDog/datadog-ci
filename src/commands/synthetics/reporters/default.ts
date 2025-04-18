@@ -252,7 +252,8 @@ const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk)
   if (isBaseResult(execution)) {
     const {result, passed, retries, maxRetries, timedOut} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
-    const device = result && isDeviceIdSet(execution) ? ` - ${setColor(`device: ${chalk.bold(execution.device.id)}`)}` : ''
+    const device =
+      result && isDeviceIdSet(execution) ? ` - ${setColor(`device: ${chalk.bold(execution.device.id)}`)}` : ''
     const attempt = getAttemptSuffix(passed, retries, maxRetries, timedOut)
 
     return ` - ${location}${device}${attempt}`

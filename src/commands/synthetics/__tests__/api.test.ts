@@ -8,8 +8,9 @@ import axios, {AxiosError} from 'axios'
 import {getAxiosError} from '../../../helpers/__tests__/fixtures'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
+import {RecursivePartial} from '../base-command'
 import {CriticalError} from '../errors'
-import {ExecutionRule, PollResult, ServerResult, TestPayload, Trigger} from '../interfaces'
+import {ExecutionRule, PollResult, RawPollResult, ServerResult, Test, TestPayload, Trigger} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
 import * as internalUtils from '../utils/internal'
 
@@ -36,13 +37,44 @@ describe('dd-api', () => {
   }
   const RESULT_ID = '123'
   const BATCH_ID = 'bid'
-  const POLL_RESULTS: {results: PollResult[]} = {
-    results: [
+  const API_TEST = getApiTest('abc-def-ghi')
+  const POLL_RESULTS: PollResult[] = [
+    {
+      test_type: 'api',
+      test: API_TEST as RecursivePartial<Test>,
+      result: ({
+        id: RESULT_ID,
+        finished_at: 0,
+      } as unknown) as ServerResult,
+    },
+  ]
+  const RAW_POLL_RESULTS: RawPollResult = {
+    data: [
       {
-        check: getApiTest('abc-def-ghi'),
-        result: ({} as unknown) as ServerResult,
-        resultID: RESULT_ID,
-        timestamp: 0,
+        type: 'result',
+        attributes: POLL_RESULTS[0],
+        id: RESULT_ID,
+        relationships: {
+          test: {
+            data: {id: 'abc-def-ghi', type: 'test'},
+          },
+        },
+      },
+    ],
+    included: [
+      {
+        id: 'abc-def-ghi',
+        type: 'test',
+        attributes: {
+          ...API_TEST,
+          config: {
+            ...API_TEST.config,
+            request: {
+              ...API_TEST.config.request,
+              dns_server: API_TEST.config.request.dnsServer,
+            },
+          },
+        },
       },
     ],
   }
@@ -56,10 +88,10 @@ describe('dd-api', () => {
   }
 
   test('should get results from api', async () => {
-    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: POLL_RESULTS})) as any)
+    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: RAW_POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
-    expect(results[0].resultID).toBe(RESULT_ID)
+    expect(results[0].result.id).toBe(RESULT_ID)
   })
 
   test('should trigger tests using api', async () => {
@@ -221,7 +253,8 @@ describe('dd-api', () => {
 
       const localApi = apiConstructor({
         ...apiConfiguration,
-        baseUrl: `http://127.0.0.1:${port}`,
+        baseV1Url: `http://127.0.0.1:${port}`,
+        baseV2Url: `http://127.0.0.1:${port}`,
       })
 
       await expect(localApi.getSyntheticsOrgSettings).rejects.toThrow('socket hang up')

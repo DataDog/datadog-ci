@@ -1,6 +1,7 @@
 import {Metadata} from '../../helpers/interfaces'
 import {ProxyConfiguration} from '../../helpers/utils'
 
+import {RecursivePartial} from './base-command'
 import {TunnelInfo} from './tunnel'
 
 export type SupportedReporter = 'junit' | 'default'
@@ -97,26 +98,27 @@ export interface RawPollResult {
   included: {
     type: string
     id: string
-    attributes: Pick<RawPollResultTest, 'type'>
+    attributes: Pick<RawPollResultTest, 'type' | 'subtype' | 'config'>
   }[]
 }
 
 export interface RawPollResultTest {
   id: string
   type: 'browser' | 'api' | 'mobile'
+  subtype?: string
+  config: {
+    request: {
+      dns_server?: string | undefined
+    }
+  }
 }
 
 export type PollResult = {
   test_type: 'api' | 'browser' | 'mobile'
   result: ServerResult
-  test: Partial<Test>
+  test: RecursivePartial<Test>
   device?: Device
 }
-
-export type PollResultTest = {
-  id: string
-  type: 'browser' | 'api' | 'mobile'
-} & Partial<Test>
 
 /**
  * Information required to convert a `PollResult` to a `Result`.
