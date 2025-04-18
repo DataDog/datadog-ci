@@ -334,13 +334,13 @@ const getResultFromBatch = (
 
   if (safeDeadlineReached) {
     pollResult.result.failure = new BatchTimeoutRunawayError().toJson()
-    pollResult.result.passed = false
+    pollResult.result.status = 'failed'
   } else if (timedOutRetry) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the retry.'}
-    pollResult.result.passed = false
+    pollResult.result.status = 'failed'
   } else if (hasTimedOut) {
     pollResult.result.failure = {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'}
-    pollResult.result.passed = false
+    pollResult.result.status = 'failed'
   }
 
   return createResult(resultInBatch, pollResult, test, hasTimedOut, isUnhealthy, resultDisplayInfo)
@@ -355,6 +355,7 @@ const createResult = (
   {getLocation, options}: Pick<ResultDisplayInfo, 'getLocation' | 'options'>
 ): Result => {
   return {
+    device: pollResult?.device,
     duration: resultInBatch.duration,
     executionRule: resultInBatch.execution_rule,
     initialResultId: resultInBatch.initial_result_id,
@@ -366,9 +367,9 @@ const createResult = (
     retries: resultInBatch.retries || 0,
     maxRetries: resultInBatch.max_retries || 0,
     selectiveRerun: resultInBatch.selective_rerun,
-    test: deepExtend({}, test, pollResult?.check),
+    test: deepExtend({}, test, pollResult?.test), // TODO: Find solution as test and pollResult.test are not the same type. Check camelCase properties.
     timedOut: hasTimedOut,
-    timestamp: pollResult?.timestamp ?? Date.now(),
+    timestamp: pollResult?.result.finished_at ?? Date.now(),
   }
 }
 
@@ -393,15 +394,8 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
     const pollResults = await api.pollResults(resultIds)
 
     pollResults.forEach((r) => {
-      // Server results are initialized to `{"eventType": "created"}` in the backend, and they may take
-      // some time to be updated. In that case, we keep the `PollResult` information (e.g. `timestamp`)
-      // but remove the server result to avoid reporting an unexpected object shape.
-      if (r.result && 'eventType' in r.result && r.result.eventType === 'created') {
-        incompleteResultIds.add(r.resultID)
-        delete r.result
-      }
-      pollResultMap.set(r.resultID, r)
-      backupPollResultMap.set(r.resultID, r)
+      pollResultMap.set(r.result.id, r)
+      backupPollResultMap.set(r.result.id, r)
     })
 
     return {pollResultMap, incompleteResultIds}

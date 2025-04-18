@@ -21,25 +21,28 @@ export interface MainReporter {
 export type Reporter = Partial<MainReporter>
 
 export interface BaseServerResult {
+  id: string
+  status: 'passed' | 'failed' | 'skipped'
   failure?: {
     code: string
     message: string
   }
-  passed: boolean
   unhealthy?: boolean
+  finished_at: number
 }
 
 export interface Device {
-  height: number
   id: string
-  width: number
+  resolution: {
+    width: number
+    height: number
+  }
 }
 
 export interface BrowserServerResult extends BaseServerResult {
-  device?: Device
   duration: number
-  startUrl: string
-  stepDetails: Step[]
+  start_url: string
+  steps: Step[]
 }
 
 interface AssertionResult {
@@ -49,22 +52,21 @@ interface AssertionResult {
 }
 
 export interface ApiServerResult extends BaseServerResult {
-  assertionResults: AssertionResult[]
+  assertions: AssertionResult[]
   timings: {
     total: number
   }
 }
 
 export interface MultiStep {
-  allowFailure: boolean
-  assertionResults: AssertionResult[]
+  allow_failure: boolean
+  assertion_results: AssertionResult[]
   failure?: {
     code: string
     message: string
   }
   name: string
-  passed: boolean
-  skipped: boolean
+  status: 'passed' | 'failed' | 'skipped'
   subtype: string
   timings: {
     total: number
@@ -78,12 +80,43 @@ export interface MultiStepsServerResult extends BaseServerResult {
 
 export type ServerResult = BrowserServerResult | ApiServerResult | MultiStepsServerResult
 
-export interface PollResult {
-  check: Pick<Test, 'config' | 'subtype' | 'type'>
-  result?: ServerResult
-  resultID: string
-  timestamp: number
+export interface RawPollResult {
+  data: {
+    id: string
+    type: string
+    attributes: Omit<PollResult, 'test'>
+    relationships: {
+      test: {
+        data: {
+          id: string
+          type: string
+        }
+      }
+    }
+  }[]
+  included: {
+    type: string
+    id: string
+    attributes: Pick<RawPollResultTest, 'type'>
+  }[]
 }
+
+export interface RawPollResultTest {
+  id: string
+  type: 'browser' | 'api' | 'mobile'
+}
+
+export type PollResult = {
+  test_type: 'api' | 'browser' | 'mobile'
+  result: ServerResult
+  test: Partial<Test>
+  device?: Device
+}
+
+export type PollResultTest = {
+  id: string
+  type: 'browser' | 'api' | 'mobile'
+} & Partial<Test>
 
 /**
  * Information required to convert a `PollResult` to a `Result`.
@@ -125,6 +158,7 @@ export type SelectiveRerunDecision =
     }
 
 export interface BaseResult {
+  device?: Device
   /** Duration of the result in milliseconds. */
   duration: number
   executionRule: ExecutionRule
@@ -212,23 +246,26 @@ export interface BrowserError {
 }
 
 export interface Step {
-  allowFailure: boolean
-  browserErrors: BrowserError[]
+  allow_failure: boolean
+  browser_errors: BrowserError[]
   description: string
   duration: number
-  error?: string
-  publicId?: string
-  skipped: boolean
-  stepId: number
-  stepElementUpdates?: {
-    multiLocator?: MultiLocator
+  failure?: {
+    code?: string
+    message: string
   }
-  subTestPublicId?: string
-  subTestStepDetails?: Step[]
+  public_id?: string
+  status: string
+  step_id: number
+  step_element_updates?: {
+    multi_locator?: MultiLocator
+  }
+  sub_test_public_id?: string
+  sub_test_step_details?: Step[]
   type: string
   url: string
   value?: string | number
-  vitalsMetrics: Vitals[]
+  vitals_metrics: Vitals[]
   warnings?: {
     message: string
     type: string
@@ -271,9 +308,9 @@ export interface LocalTestDefinition {
   options: OptionsWithUnsupportedFields
   /** Can be used to link to an existing remote test. */
   public_id?: string
-  subtype: string // This is optional in the browser and api schemas
+  subtype?: string // This is optional in the browser and api schemas
   steps?: TestStepWithUnsupportedFields[] // From browser schema
-  type: string
+  type: 'api' | 'browser' | 'mobile'
 }
 
 interface Options {
@@ -525,7 +562,8 @@ export interface APIConfiguration {
   appKey: string
   baseIntakeUrl: string
   baseUnstableUrl: string
-  baseUrl: string
+  baseV1Url: string
+  baseV2Url: string
   proxyOpts: ProxyConfiguration
 }
 
