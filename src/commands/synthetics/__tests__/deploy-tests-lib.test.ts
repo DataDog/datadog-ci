@@ -3,7 +3,14 @@ import {DeployTestsCommand} from '../deploy-tests-command'
 import {deployTests} from '../deploy-tests-lib'
 import * as tests from '../test'
 
-import {getApiLocalTestDefinition, getApiTest, mockApi, mockReporter} from './fixtures'
+import {
+  getApiTest,
+  mockApi,
+  mockReporter,
+  getApiLocalTestDefinition,
+  getBrowserLocalTestDefinition,
+  getBrowserTest,
+} from './fixtures'
 
 describe('deploy-tests', () => {
   describe('deployTests', () => {
@@ -14,7 +21,7 @@ describe('deploy-tests', () => {
         .spyOn(tests, 'getTestConfigs')
         .mockImplementation(async () => [
           {localTestDefinition: getApiLocalTestDefinition('123-456-789')},
-          {localTestDefinition: getApiLocalTestDefinition('987-654-321')},
+          {localTestDefinition: getBrowserLocalTestDefinition('987-654-321')},
         ])
 
       const apiHelper = mockApi({
@@ -37,9 +44,7 @@ describe('deploy-tests', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention, prefer-const
       let {public_id, monitor_id, ...expectedUpdate} = getApiTest('123-456-789')
       expect(apiHelper.editTest).toHaveBeenNthCalledWith(1, '123-456-789', expectedUpdate)
-
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      ;({public_id, monitor_id, ...expectedUpdate} = getApiTest('987-654-321'))
+      ;({public_id, monitor_id, ...expectedUpdate} = getBrowserTest('987-654-321'))
       expect(apiHelper.editTest).toHaveBeenNthCalledWith(2, '987-654-321', expectedUpdate)
     })
 
@@ -51,7 +56,7 @@ describe('deploy-tests', () => {
         .spyOn(tests, 'getTestConfigs')
         .mockImplementation(async () => [
           {localTestDefinition: getApiLocalTestDefinition('123-456-789')},
-          {localTestDefinition: getApiLocalTestDefinition('987-654-321')},
+          {localTestDefinition: getBrowserLocalTestDefinition('987-654-321')},
         ])
 
       const apiHelper = mockApi({

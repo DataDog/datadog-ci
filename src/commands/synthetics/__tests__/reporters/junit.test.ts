@@ -27,9 +27,11 @@ import {
   getSummary,
 } from '../fixtures'
 
-const globalTestMock = getApiTest('123-456-789')
+const globalApiTestMock = getApiTest('123-456-789')
+const globalBrowserTestMock = getBrowserTest('123-456-789')
 const globalStepMock = getStep()
-const globalResultMock = getBrowserResult('1', globalTestMock)
+const globalApiResultMock = getApiResult('1', globalApiTestMock)
+const globalBrowserResultMock = getBrowserResult('1', globalBrowserTestMock)
 const globalSummaryMock = getSummary()
 
 describe('Junit reporter', () => {
@@ -142,15 +144,15 @@ describe('Junit reporter', () => {
     })
 
     it('should give a default suite name', () => {
-      reporter.resultEnd(globalResultMock, '', '')
+      reporter.resultEnd(globalApiResultMock, '', '')
       const testsuite = reporter['json'].testsuites.testsuite[0]
       expect(testsuite.$.name).toBe('Undefined suite')
     })
 
     it('should use the same report for tests from same suite', () => {
       const results = [
-        {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}},
-        {...globalResultMock, test: {...globalTestMock, suite: 'same suite'}},
+        {...globalApiResultMock, test: {...globalApiTestMock, suite: 'same suite'}},
+        {...globalApiResultMock, test: {...globalApiTestMock, suite: 'same suite'}},
       ]
 
       results.forEach((result) => reporter.resultEnd(result, '', ''))
@@ -166,16 +168,16 @@ describe('Junit reporter', () => {
     })
 
     it('should add stats to the run', () => {
-      reporter.resultEnd({...globalResultMock, test: {...globalTestMock, suite: 'suite 1'}}, '', '')
+      reporter.resultEnd({...globalApiResultMock, test: {...globalApiTestMock, suite: 'suite 1'}}, '', '')
 
-      reporter.testTrigger({...globalTestMock, suite: 'suite 2'}, '', ExecutionRule.SKIPPED, {})
+      reporter.testTrigger({...globalApiTestMock, suite: 'suite 2'}, '', ExecutionRule.SKIPPED, {})
       reporter.resultEnd(
         {
-          ...globalResultMock,
+          ...globalApiResultMock,
           passed: false,
           result: getFailedMultiStepsServerResult(),
           test: {
-            ...globalTestMock,
+            ...globalApiTestMock,
             suite: 'suite 2',
           },
         },
@@ -189,7 +191,7 @@ describe('Junit reporter', () => {
           resultId: '123',
           selectiveRerun: {decision: 'skip', reason: 'passed', linked_result_id: '123'},
           test: {
-            ...globalTestMock,
+            ...globalApiTestMock,
             suite: 'suite 2',
           },
           timedOut: false,
@@ -216,11 +218,11 @@ describe('Junit reporter', () => {
     it('should fall back to a test level failure', () => {
       reporter.resultEnd(
         {
-          ...globalResultMock,
+          ...globalApiResultMock,
           passed: false,
           result: getFailedMultiStepsTestLevelServerResult(),
           test: {
-            ...globalTestMock,
+            ...globalApiTestMock,
             suite: 'suite 1',
           },
         },
@@ -240,14 +242,14 @@ describe('Junit reporter', () => {
 
     it('should report errors', () => {
       const browserResult1: Result = {
-        ...globalResultMock,
+        ...globalBrowserResultMock,
         result: {
           ...getBrowserServerResult(),
-          stepDetails: [
+          steps: [
             {
               ...getStep(),
-              allowFailure: true,
-              browserErrors: [
+              allow_failure: true,
+              browser_errors: [
                 {
                   description: 'error description',
                   name: 'error name',
@@ -259,7 +261,7 @@ describe('Junit reporter', () => {
                   type: 'error type',
                 },
               ],
-              error: 'error',
+              failure: {message: 'error'},
               warnings: [
                 {
                   message: 'warning message',
@@ -272,11 +274,11 @@ describe('Junit reporter', () => {
         },
       }
       const browserResult2: Result = {
-        ...globalResultMock,
+        ...globalBrowserResultMock,
         result: getBrowserServerResult(),
       }
       const browserResult3: Result = {
-        ...globalResultMock,
+        ...globalBrowserResultMock,
         result: {
           ...getBrowserServerResult(),
           failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
@@ -284,7 +286,7 @@ describe('Junit reporter', () => {
         timedOut: true,
       }
       const apiResult: Result = {
-        ...globalResultMock,
+        ...globalApiResultMock,
         result: {
           ...getMultiStepsServerResult(),
           steps: [
@@ -327,8 +329,8 @@ describe('Junit reporter', () => {
 
     it('should add stats to the test case - api test', () => {
       const resultMock = {
-        ...globalResultMock,
-        result: getApiServerResult({passed: false}),
+        ...globalApiResultMock,
+        result: getApiServerResult({status: 'failed'}),
       }
       const testCase = reporter['getTestCase'](resultMock, '', '')
       expect(testCase.$).toMatchObject({
@@ -341,7 +343,7 @@ describe('Junit reporter', () => {
 
     it('should add stats to the test case - multistep test', () => {
       const resultMock = {
-        ...globalResultMock,
+        ...globalBrowserResultMock,
         result: getFailedMultiStepsServerResult(),
       }
       const testCase = reporter['getTestCase'](resultMock, '', '')
@@ -357,23 +359,20 @@ describe('Junit reporter', () => {
 
     it('should add stats to the test case - browser test', () => {
       const resultMock = {
-        ...globalResultMock,
-        ...{
-          result: {
-            ...globalResultMock.result,
-            stepDetails: [
-              globalStepMock,
-              {
-                ...globalStepMock,
-                ...{
-                  browserErrors: [{type: 'error', name: 'Error', description: 'Description'}],
-                  error: 'Error',
-                  subTestStepDetails: [globalStepMock],
-                  warnings: [{type: 'warning', message: 'Warning'}],
-                },
-              },
-            ],
-          },
+        ...globalBrowserResultMock,
+        result: {
+          ...globalBrowserResultMock.result,
+          start_url: 'https://example.com',
+          steps: [
+            globalStepMock,
+            {
+              ...globalStepMock,
+              browser_errors: [{type: 'error', name: 'Error', description: 'Description'}],
+              failure: {message: 'Error'},
+              sub_test_step_details: [globalStepMock],
+              warnings: [{type: 'warning', message: 'Warning'}],
+            },
+          ],
         },
       }
       const testCase = reporter['getTestCase'](resultMock, '', '')
@@ -404,9 +403,15 @@ describe('GitLab test report compatibility', () => {
 
   test('all test case names are unique', () => {
     const locations = ['aws:eu-central-1', 'aws:eu-central-2']
-    const devices = {
-      chrome: {height: 1100, id: 'chrome.laptop_large', width: 1440},
-      firefox: {height: 1100, id: 'firefox.laptop_large', width: 1440},
+    const devices: Record<string, Device> = {
+      chrome: {
+        id: 'chrome.laptop_large',
+        resolution: {height: 1100, width: 1440},
+      },
+      firefox: {
+        id: 'firefox.laptop_large',
+        resolution: {height: 1100, width: 1440},
+      },
     }
 
     const apiTest = getApiTest('aaa-aaa-aaa', {locations})
@@ -416,8 +421,8 @@ describe('GitLab test report compatibility', () => {
       test: ServerTest,
       resultId: string,
       {
-        location,
         device,
+        location,
         timedOut,
       }: {
         device?: Device
@@ -427,7 +432,8 @@ describe('GitLab test report compatibility', () => {
     ): XMLTestCase =>
       reporter['getTestCase'](
         {
-          ...(test.type === 'browser' ? getBrowserResult(resultId, test, {device}) : getApiResult(resultId, test)),
+          ...(test.type === 'browser' ? getBrowserResult(resultId, test) : getApiResult(resultId, test)),
+          ...(device && {device}),
           ...(location && {location}),
           ...(timedOut && {timedOut}),
         },
@@ -446,13 +452,13 @@ describe('GitLab test report compatibility', () => {
       getTestCase(apiTest, '4', {location: locations[1], timedOut: true}),
 
       // Browser test, location 1, device 1
-      getTestCase(browserTest, '5', {location: locations[0], device: devices.chrome}),
+      getTestCase(browserTest, '5', {device: devices.chrome, location: locations[0]}),
       // Browser test, location 1, device 2
-      getTestCase(browserTest, '6', {location: locations[0], device: devices.firefox}),
+      getTestCase(browserTest, '6', {device: devices.firefox, location: locations[0]}),
       // Browser test, location 2, device 1
-      getTestCase(browserTest, '7', {location: locations[1], device: devices.chrome}),
+      getTestCase(browserTest, '7', {device: devices.chrome, location: locations[1]}),
       // Browser test, location 2, device 2
-      getTestCase(browserTest, '8', {location: locations[1], device: devices.firefox}),
+      getTestCase(browserTest, '8', {device: devices.firefox, location: locations[1]}),
       // Browser test, location 1, (timed out)
       getTestCase(browserTest, '9', {location: locations[0], timedOut: true}),
       // Browser test, location 1, (timed out)
@@ -480,10 +486,10 @@ describe('GitLab test report compatibility', () => {
       'Test name - id: bbb-bbb-bbb - location: aws:eu-central-1 - device: firefox.laptop_large',
       'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - device: chrome.laptop_large',
       'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - device: firefox.laptop_large',
-      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-1 - result id: 9 (not yet received)',
-      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-1 - result id: 10 (not yet received)',
-      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - result id: 11 (not yet received)',
-      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - result id: 12 (not yet received)',
+      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-1 - device: chrome.laptop_large - result id: 9 (not yet received)',
+      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-1 - device: chrome.laptop_large - result id: 10 (not yet received)',
+      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - device: chrome.laptop_large - result id: 11 (not yet received)',
+      'Test name - id: bbb-bbb-bbb - location: aws:eu-central-2 - device: chrome.laptop_large - result id: 12 (not yet received)',
     ])
   })
 
@@ -531,11 +537,15 @@ describe('GitLab test report compatibility', () => {
       return '✅'
     }
 
-    reporter['testTrigger'](globalTestMock, '', ExecutionRule.SKIPPED, {})
+    reporter['testTrigger'](globalBrowserTestMock, '', ExecutionRule.SKIPPED, {})
 
     reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.BLOCKING} as Result, '', '')
     reporter['resultEnd']({...getFailedBrowserResult(), executionRule: ExecutionRule.NON_BLOCKING} as Result, '', '')
-    reporter['resultEnd']({...getBrowserResult('', globalTestMock), executionRule: ExecutionRule.BLOCKING}, '', '')
+    reporter['resultEnd'](
+      {...getBrowserResult('', globalBrowserTestMock), executionRule: ExecutionRule.BLOCKING},
+      '',
+      ''
+    )
 
     const [testCaseSkipped, testCaseBlocking, testCaseNonBlocking, testCasePassed] = reporter[
       'json'
@@ -558,7 +568,7 @@ describe('GitLab test report compatibility', () => {
     ])
     const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-    const baseResult = getApiResult('1', globalTestMock)
+    const baseResult = getApiResult('1', globalApiTestMock)
     const result: Result = {
       ...baseResult,
       passed: false,

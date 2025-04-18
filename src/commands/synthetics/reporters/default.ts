@@ -54,10 +54,10 @@ const renderStepDuration = (duration: number) => {
 }
 
 const renderStepIcon = (step: Step) => {
-  if (step.error) {
+  if (step.failure) {
     return ICONS.FAILED
   }
-  if (step.skipped) {
+  if (step.status === 'skipped') {
     return ICONS.SKIPPED
   }
 
@@ -69,7 +69,7 @@ const renderStep = (step: Step) => {
   const icon = renderStepIcon(step)
 
   const value = step.value ? `\n    ${chalk.dim(step.value)}` : ''
-  const error = step.error ? `\n    ${chalk.red.dim(step.error)}` : ''
+  const error = step.failure ? `\n    ${chalk.red.dim(step.failure.message)}` : ''
 
   return `    ${icon} | ${duration} - ${step.description}${value}${error}`
 }
@@ -125,7 +125,7 @@ const renderResultOutcome = (
     ].join('\n')
   }
 
-  if (test.type === 'api') {
+  if (test.type === 'api' && test.subtype) {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
     if (result?.failure) {
@@ -146,11 +146,12 @@ const renderResultOutcome = (
     }
 
     // We render the step only if the test hasn't passed to avoid cluttering the output.
-    if (result && !result.passed && 'stepDetails' in result) {
-      const criticalFailedStepIndex = result.stepDetails.findIndex((s) => s.error && !s.allowFailure) + 1
-      lines.push(...result.stepDetails.slice(0, criticalFailedStepIndex).map(renderStep))
+    if (result && result.status !== 'passed' && 'steps' in result) {
+      const steps = result.steps as Step[]
+      const criticalFailedStepIndex = result.steps.findIndex((s) => s.failure && !s.allow_failure) + 1
+      lines.push(...steps.slice(0, criticalFailedStepIndex).map(renderStep))
 
-      const skippedStepDisplay = renderSkippedSteps(result.stepDetails.slice(criticalFailedStepIndex))
+      const skippedStepDisplay = renderSkippedSteps(steps.slice(criticalFailedStepIndex))
       if (skippedStepDisplay) {
         lines.push(skippedStepDisplay)
       }
@@ -251,7 +252,8 @@ const getResultIdentificationSuffix = (execution: Result, setColor: chalk.Chalk)
   if (isBaseResult(execution)) {
     const {result, passed, retries, maxRetries, timedOut} = execution
     const location = execution.location ? setColor(`location: ${chalk.bold(execution.location)}`) : ''
-    const device = result && isDeviceIdSet(result) ? ` - ${setColor(`device: ${chalk.bold(result.device.id)}`)}` : ''
+    const device =
+      result && isDeviceIdSet(execution) ? ` - ${setColor(`device: ${chalk.bold(execution.device.id)}`)}` : ''
     const attempt = getAttemptSuffix(passed, retries, maxRetries, timedOut)
 
     return ` - ${location}${device}${attempt}`

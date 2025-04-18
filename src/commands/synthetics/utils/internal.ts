@@ -99,7 +99,7 @@ export const isLocalTriggerConfig = (triggerConfig?: TriggerConfig): triggerConf
 }
 
 export const isBrowserServerResult = (serverResult: ServerResult): serverResult is BrowserServerResult => {
-  return (serverResult as BrowserServerResult).stepDetails !== undefined
+  return (serverResult as BrowserServerResult).steps !== undefined
 }
 
 export const getTriggerConfigPublicId = (triggerConfig: TriggerConfig): string | undefined => {
