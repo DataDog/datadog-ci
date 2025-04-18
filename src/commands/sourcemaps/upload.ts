@@ -2,7 +2,6 @@ import {URL} from 'url'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
@@ -12,6 +11,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
@@ -182,7 +182,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
+    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {

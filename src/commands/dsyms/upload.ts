@@ -3,7 +3,6 @@ import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -11,6 +10,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
@@ -176,7 +176,7 @@ export class UploadCommand extends Command {
 
   private findDSYMsInDirectory = async (directoryPath: string): Promise<Dsym[]> => {
     const dsyms: Dsym[] = []
-    for (const dSYMPath of glob.sync(buildPath(directoryPath, '**/*.dSYM'))) {
+    for (const dSYMPath of globSync(buildPath(directoryPath, '**/*.dSYM'))) {
       try {
         const stdout = (await executeDwarfdump(dSYMPath)).stdout
         const archSlices = this.parseDwarfdumpOutput(stdout)
@@ -252,7 +252,7 @@ export class UploadCommand extends Command {
 
         // The original dSYM bundle can also include `Info.plist` file, so copy it to the `<uuid>.dSYM` as well.
         // Ref.: https://opensource.apple.com/source/lldb/lldb-179.1/www/symbols.html
-        const infoPlistPath = glob.sync(buildPath(dsym.bundlePath, '**/Info.plist'))[0]
+        const infoPlistPath = globSync(buildPath(dsym.bundlePath, '**/Info.plist'))[0]
         if (infoPlistPath) {
           const newInfoPlistPath = buildPath(newDSYMBundlePath, path.relative(dsym.bundlePath, infoPlistPath))
           await promises.mkdir(path.dirname(newInfoPlistPath), {recursive: true})
