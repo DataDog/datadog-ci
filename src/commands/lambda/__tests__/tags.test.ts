@@ -55,6 +55,7 @@ describe('tags', () => {
       await applyTagConfig(lambdaClientMock as any, config)
       expect(lambdaClientMock).toHaveReceivedCommandWith(TagResourceCommand, config.tagResourceCommandInput!)
     })
+
     test('doesnt tag resources when config is undefined', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -72,6 +73,7 @@ describe('tags', () => {
       await applyTagConfig(lambdaClientMock as any, config)
       expect(lambdaClientMock).toHaveReceivedCommandTimes(TagResourceCommand, 0)
     })
+
     test('untags resources with config', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -121,6 +123,7 @@ describe('tags', () => {
       })
       expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
+
     test('Handles different version tag', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -149,6 +152,7 @@ describe('tags', () => {
       })
       expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
+
     test('Handles sam version tag', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -235,6 +239,7 @@ describe('tags', () => {
       expect(result).toBe(false)
       expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
+
     test('handles no version tag', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -256,6 +261,7 @@ describe('tags', () => {
       expect(result).toBe(false)
       expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
+
     test('handles different version tag', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {
@@ -274,6 +280,7 @@ describe('tags', () => {
       expect(result).toBe(false)
       expect(lambdaClientMock).toHaveReceivedCommandWith(ListTagsCommand, {Resource: functionArn})
     })
+
     test('handles same version tag', async () => {
       const functionArn = 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument'
       mockLambdaConfigurations(lambdaClientMock, {

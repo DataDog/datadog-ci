@@ -192,6 +192,7 @@ describe('fileSystem', () => {
 
   describe('createDirectories', () => {
     const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
+
     it('successfully creates a root folder', async () => {
       createDirectories(MOCK_FOLDER_PATH, [])
 

@@ -26,6 +26,7 @@ import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
 import {getApiTest, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
+
 test('all option flags are supported', async () => {
   const options = [
     'apiKey',
@@ -979,6 +980,7 @@ describe('run-tests', () => {
           ...getExpectedTestsToTriggerArguments(overrideTestConfig)
         )
       })
+
       test('ENV < test file', async () => {
         const getTestsToTriggerMock = jest.spyOn(testUtils, 'getTestsToTrigger')
         const command = createCommand(RunTestsCommand)
@@ -1024,6 +1026,7 @@ describe('run-tests', () => {
           ...getExpectedTestsToTriggerArguments(overrideTestConfig)
         )
       })
+
       test('CLI < test file', async () => {
         const getTestsToTriggerMock = jest.spyOn(testUtils, 'getTestsToTrigger')
         const command = createCommand(RunTestsCommand)

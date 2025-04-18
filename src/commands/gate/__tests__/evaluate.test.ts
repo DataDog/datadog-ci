@@ -18,6 +18,7 @@ describe('evaluate', () => {
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
     })
+
     test('should throw an error if App key is undefined', () => {
       process.env = {DD_API_KEY: 'PLACEHOLDER'}
       const write = jest.fn()
@@ -38,6 +39,7 @@ describe('evaluate', () => {
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
     })
+
     test('should pass the command if gate evaluation passed', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
@@ -48,6 +50,7 @@ describe('evaluate', () => {
       }
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
     })
+
     test('should render the rule URL and rule name', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
@@ -62,6 +65,7 @@ describe('evaluate', () => {
       )
       expect(write.mock.calls[0][0]).toContain('Rule Name: No new flaky tests')
     })
+
     test('should render the rule URL for datad0g', () => {
       process.env = {DD_SITE: 'datad0g.com', DD_SUBDOMAIN: 'dd'}
       const write = jest.fn()
@@ -76,6 +80,7 @@ describe('evaluate', () => {
         'Rule URL: https://dd.datad0g.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
       )
     })
+
     test('should render the rule URL for ap1.datadoghq.com', () => {
       process.env = {DD_SITE: 'ap1.datadoghq.com'}
       const write = jest.fn()
@@ -90,6 +95,7 @@ describe('evaluate', () => {
         'Rule URL: https://ap1.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
       )
     })
+
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
@@ -101,6 +107,7 @@ describe('evaluate', () => {
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
+
     test('should fail the command on empty result if the override option is provided', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
@@ -113,6 +120,7 @@ describe('evaluate', () => {
       expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(1)
       expect(write.mock.calls[0][0]).toContain('No matching rules were found in Datadog')
     })
+
     test('should pass the command on dry run evaluation status', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})
@@ -137,6 +145,7 @@ describe('evaluate', () => {
       expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. Status code: 400.')
       expect(stdErrLog).toContain('Error is "validation failure"')
     })
+
     test('should fail the command if the error is 5xx and fail-if-unavailable option is enabled', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -150,6 +159,7 @@ describe('evaluate', () => {
       expect(stdErrLog).not.toContain('--fail-if-unavailable')
       expect(stdErrLog).not.toContain('internal issue')
     })
+
     test('should pass the command if the error is 5xx and fail-if-unavailable option is not enabled', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -162,6 +172,7 @@ describe('evaluate', () => {
       expect(stdErrLog).toContain("Use the '--fail-if-unavailable' option to fail the command in this situation.")
       expect(stdErrLog).not.toContain('internal issue')
     })
+
     test('should pass the command if the error is timeout and fail-if-unavailable option is not enabled', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -171,6 +182,7 @@ describe('evaluate', () => {
       const stdErrLog = write.mock.calls[0][0]
       expect(stdErrLog).toContain('ERROR: Could not evaluate the rules. The command timed out.')
     })
+
     test('should fail the command if the error is timeout and fail-if-unavailable option is enabled', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -230,6 +242,7 @@ describe('evaluate', () => {
         },
       },
     }
+
     test('should pass the command after waiting if the status is passed on the retry', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -249,6 +262,7 @@ describe('evaluate', () => {
           expect(response).toBe(0)
         })
     })
+
     test('should pass the command after exhausting all retries and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -266,6 +280,7 @@ describe('evaluate', () => {
           expect(response).toBe(0)
         })
     })
+
     test('should fail the command after exhausting all retries and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -284,6 +299,7 @@ describe('evaluate', () => {
           expect(response).toBe(1)
         })
     })
+
     test('should pass the command if the timeout is 0 and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -300,6 +316,7 @@ describe('evaluate', () => {
           expect(response).toBe(0)
         })
     })
+
     test('should fail the command if the timeout is 0 and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -317,6 +334,7 @@ describe('evaluate', () => {
           expect(response).toBe(1)
         })
     })
+
     test('should pass the command if wait time is greater than the timeout and fail-if-unavailable option is not enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})
@@ -334,6 +352,7 @@ describe('evaluate', () => {
           expect(response).toBe(0)
         })
     })
+
     test('should fail the command if wait time is greater than the timeout and fail-if-unavailable option is enabled', async () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stderr: {write}})

@@ -519,6 +519,7 @@ describe('lambda', () => {
           `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN\n`
         )
       })
+
       test('aborts early when extensionVersion and forwarder are set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const {code, context} = await runCLI([
@@ -557,6 +558,7 @@ describe('lambda', () => {
         await command['execute']()
         expect(command['config']['functions']).toHaveLength(1)
       })
+
       test('aborts if functions and a pattern are set at the same time', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
@@ -586,6 +588,7 @@ describe('lambda', () => {
           '"--functions" and "--functions-regex" should not be used at the same time.\n'
         )
       })
+
       test('aborts if pattern is set and no default region is specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}
@@ -599,6 +602,7 @@ describe('lambda', () => {
         await command['execute']()
         expect(command.context.stdout.toString()).toMatch('[Error] No default region specified. [-r,--region]\n')
       })
+
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         process.env = {}

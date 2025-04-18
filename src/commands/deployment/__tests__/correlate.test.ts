@@ -10,6 +10,7 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Missing CD provider')
   })
+
   test('no repository URL on environment variables', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
@@ -19,6 +20,7 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Could not extract the source code repository URL')
   })
+
   test('no git commit sha on environment variables', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
@@ -28,6 +30,7 @@ describe('execute', () => {
     expect(code).toBe(1)
     expect(context.stdout.toString()).toContain('Could not extract the commit SHA from the CI environment variables')
   })
+
   test('valid with minimal data', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
@@ -37,6 +40,7 @@ describe('execute', () => {
     const {context: _, code} = await runCLI(['--provider', 'argocd', '--config-shas', 'abcdef', '--dry-run'], envVars)
     expect(code).toBe(0)
   })
+
   test('valid', async () => {
     const envVars = {
       GITLAB_CI: 'placeholder',
@@ -71,6 +75,7 @@ describe('execute', () => {
       "CI_JOB_ID": "1"
     }`)
   })
+
   test('handleError', async () => {
     const command = createCommand(DeploymentCorrelateCommand)
 

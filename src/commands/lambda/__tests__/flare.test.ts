@@ -297,6 +297,7 @@ describe('lambda flare', () => {
     })
 
     const MOCK_LOG_STREAM = 'mockLogStream'
+
     it('returns the log events for a log stream', async () => {
       mockCloudWatchLogEvents(cloudWatchLogsClientMock, [
         {timestamp: 123, message: 'Log1'},

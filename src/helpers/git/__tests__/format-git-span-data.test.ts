@@ -45,6 +45,7 @@ describe('getGitMetadata', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'authorName',
     })
   })
+
   it('does not crash when git is not available', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => {
@@ -63,6 +64,7 @@ describe('getGitMetadata', () => {
     const result = await getGitMetadata()
     expect(result).toEqual({})
   })
+
   it('scrubs credentials from https repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),
@@ -91,6 +93,7 @@ describe('getGitMetadata', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'authorName',
     })
   })
+
   it('scrubs credentials from ssh repository url', async () => {
     ;(simpleGit as jest.Mock).mockImplementation(() => ({
       branch: () => ({current: 'main'}),

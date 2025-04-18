@@ -81,6 +81,7 @@ describe('utils', () => {
       ['randomString', undefined],
       [undefined, undefined],
     ]
+
     test.each(cases)('toExecutionRule(%s) should return %s', (input, expectedOutput) => {
       expect(toExecutionRule(input)).toEqual(expectedOutput)
     })
@@ -123,11 +124,13 @@ describe('utils', () => {
         expect(parseOverrideValue('non_blocking', 'ExecutionRule')).toBe(ExecutionRule.NON_BLOCKING)
         expect(parseOverrideValue('skipped', 'ExecutionRule')).toBe(ExecutionRule.SKIPPED)
       })
+
       it('should throw an error for invalid enum values', () => {
         expect(() => parseOverrideValue('invalid_enum', 'ExecutionRule')).toThrow(
           'Invalid ExecutionRule value: invalid_enum'
         )
       })
+
       it('should parse string array values correctly', () => {
         expect(parseOverrideValue(' first value;second value ; \\,./!@#$%^&*()_-+=|/?<>[]{}\\  ', 'string[]')).toEqual([
           'first value',

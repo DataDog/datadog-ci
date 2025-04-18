@@ -26,6 +26,7 @@ describe('trace', () => {
       const command = new TraceCommand()
       expect(command['signalToNumber'](null)).toBeUndefined()
     })
+
     test('should map SIGKILL to 137', () => {
       const command = new TraceCommand()
       expect(command['signalToNumber']('SIGKILL')).toEqual(128 + 9)

@@ -76,6 +76,7 @@ describe('git', () => {
       expect(commitInfo.trackedFiles).toStrictEqual(['myfile.js'])
       expect(commitInfo.remote).toBe('https://git-repo/')
     })
+
     test('should return commit info with overridden repo name', async () => {
       const mock = createMockSimpleGit({
         hash: 'abcd',

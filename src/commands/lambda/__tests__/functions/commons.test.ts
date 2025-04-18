@@ -212,6 +212,7 @@ describe('commons', () => {
       lambdaClientMock.reset()
       mockLambdaClientCommands(lambdaClientMock)
     })
+
     test('finds latests version for Python39', async () => {
       const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
       mockLambdaLayers(lambdaClientMock, {
@@ -353,6 +354,7 @@ describe('commons', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('returns true when any Datadog Env Var is missing', () => {
       process.env[CI_SITE_ENV_VAR] = 'datadoghq.com'
       expect(isMissingDatadogEnvVars()).toBe(true)
@@ -533,6 +535,7 @@ describe('commons', () => {
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws:lambda:${region}:${mockAwsAccount}:layer:Datadog-Python39-ARM`)
     })
+
     test('gets us-gov-1 Python312 gov cloud Lambda Library layer ARN', async () => {
       const runtime = Runtime.python312
       const config = {
@@ -548,6 +551,7 @@ describe('commons', () => {
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
       expect(layerArn).toEqual(`arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python312`)
     })
+
     test('gets us-gov-1 Python39 gov cloud arm64 Lambda Library layer ARN', async () => {
       const runtime = Runtime.python39
       const config = {
@@ -566,6 +570,7 @@ describe('commons', () => {
         `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39-ARM`
       )
     })
+
     test('gets dotnet6 arm64 Lambda Library layer ARN', async () => {
       const runtime = Runtime.dotnet6
       const config = {
@@ -647,6 +652,7 @@ describe('commons', () => {
       ['env-staging:east:staging,version.minor:1,version.major:3.4/v3,category/service:not/defined', true],
       ['email:user@email.com,numb3r:t', true],
     ]
+
     test.each(tags)('check if the tags match the expected result from the regex', (tag, expectedResult) => {
       const result = !!sentenceMatchesRegEx(tag, EXTRA_TAGS_REG_EXP)
       expect(result).toEqual(expectedResult)

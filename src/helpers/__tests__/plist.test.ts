@@ -5,6 +5,7 @@ describe('plist util', () => {
     afterEach(() => {
       delete process.env.EXECUTABLE_NAME
     })
+
     it('parses the content of the info plist file', () => {
       const plist = parsePlist('src/helpers/__tests__/plist-fixtures/Info.plist')
       expect(plist.getContent()).toMatchSnapshot()
@@ -46,6 +47,7 @@ describe('plist util', () => {
         "ENOENT: no such file or directory, open 'non-existing-file'"
       )
     })
+
     it('throws an error if the file is not correctly formatted', () => {
       expect(() => parsePlist('src/helpers/__tests__/plist-fixtures/BadlyFormatted.plist')).toThrow(
         "Expected closing tag 'string' (opened in line 7, col 2) instead of closing tag 'dict'."

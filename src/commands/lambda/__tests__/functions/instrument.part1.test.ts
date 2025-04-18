@@ -386,6 +386,7 @@ describe('instrument', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('returns the update request for each function that matches the pattern', async () => {
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby': {
@@ -441,6 +442,7 @@ describe('instrument', () => {
         }
       `)
     })
+
     test('fails when retry count is exceeded', async () => {
       lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 

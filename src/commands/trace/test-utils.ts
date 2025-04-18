@@ -14,6 +14,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('Unsupported CI provider "unknown"')
     })
+
     test('should detect the circleci environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         CIRCLECI: 'true',
@@ -26,6 +27,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"CIRCLE_WORKFLOW_ID\\":\\"test\\"')
       expect(dryRunOutput).toContain('\\"CIRCLE_BUILD_NUM\\":\\"10\\"')
     })
+
     test('should detect the jenkins environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         DD_CUSTOM_TRACE_ID: 'abc',
@@ -40,6 +42,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"DD_CUSTOM_TRACE_ID\\":\\"abc\\"')
       expect(dryRunOutput).toContain('\\"DD_CUSTOM_PARENT_ID\\":\\"xyz\\"')
     })
+
     test('should detect the github environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         GITHUB_ACTIONS: 'true',
@@ -59,6 +62,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"DD_GITHUB_JOB_NAME\\":\\"custom_jobname\\"')
       expect(dryRunOutput).toContain('"ci.job.name":"jobname"')
     })
+
     test('should detect the gitlab environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         GITLAB_CI: 'true',
@@ -72,6 +76,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"CI_PIPELINE_ID\\":\\"10\\"')
       expect(dryRunOutput).toContain('\\"CI_JOB_ID\\":\\"50\\"')
     })
+
     test('should detect the azure environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         TF_BUILD: 'true',
@@ -85,6 +90,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"BUILD_BUILDID\\":\\"10\\"')
       expect(dryRunOutput).toContain('\\"SYSTEM_JOBID\\":\\"3acfg\\"')
     })
+
     test('should detect the aws codepipeline environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         CODEBUILD_INITIATOR: 'codepipeline-abc',
@@ -98,6 +104,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
         '\\"CODEBUILD_BUILD_ARN\\":\\"arn:aws:codebuild:us-west-2:123456789012:build/MyProjectName:6a8f0d8a\\"'
       )
     })
+
     test('should detect the buildkite environment', async () => {
       const {context, code} = await runCLI(runCLIArgs, {
         BUILDKITE: 'true',

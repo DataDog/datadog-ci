@@ -123,6 +123,7 @@ describe('elf', () => {
         e_shstrndx: 29,
       })
     })
+
     test('return correct header if file is a EXEC ELF arm big endian file', async () => {
       const result = await getElfHeader(`${fixtureDir}/exec_arm_big`)
       expect(result.isElf).toBeTruthy()
@@ -640,6 +641,7 @@ describe('elf', () => {
       expect(isSupportedArch('x86_64')).toBeTruthy()
       expect(isSupportedArch('arm')).toBeTruthy()
     })
+
     test('return false for unsupported arch', () => {
       expect(isSupportedArch('sparc')).toBeFalsy()
     })
@@ -650,6 +652,7 @@ describe('elf', () => {
       expect(isSupportedElfType('DYN')).toBeTruthy()
       expect(isSupportedElfType('EXEC')).toBeTruthy()
     })
+
     test('return false for unsupported type', () => {
       expect(isSupportedElfType('REL')).toBeFalsy()
     })
@@ -692,6 +695,7 @@ describe('elf', () => {
       const hash = await computeFileHash(`${fixtureDir}/exec_arm_big`)
       expect(hash).toEqual('3c8e0a68a99a3a03836d225a33ac1f8d')
     })
+
     test('return hash of small file', async () => {
       const hash = await computeFileHash(`${fixtureDir}/truncated_elf_file`)
       expect(hash).toEqual('9c4c18153f9b78e0885062b07e873259')
