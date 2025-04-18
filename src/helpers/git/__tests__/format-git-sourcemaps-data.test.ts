@@ -9,24 +9,28 @@ describe('git', () => {
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(trackedFiles)
       })
+
       test('related path in another folder', () => {
         const sources = ['webpack:///./src/file.ts']
         const trackedFiles = ['path/to/file.ts']
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(trackedFiles)
       })
+
       test('related path with query parameter', () => {
         const sources = ['file.ts?abc123']
         const trackedFiles = ['src/file.ts']
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(trackedFiles)
       })
+
       test('related path with legit question mark', () => {
         const sources = ['file.ts?abc123']
         const trackedFiles = ['src/file.ts?abc123']
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(trackedFiles)
       })
+
       test('related hidden file', () => {
         const sources = ['src/.file.ts']
         const trackedFiles = ['folder/.file.ts']
@@ -51,12 +55,14 @@ describe('git', () => {
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toHaveLength(0)
       })
+
       test('multiple related tracked files from one source', () => {
         const sources = ['webpack:///./src/file.ts']
         const trackedFiles = ['src/file.ts', 'src/commands/sourcemaps/file.ts', 'other']
         const matcher = new TrackedFilesMatcher(trackedFiles)
         expect(matcher.matchSources(sources)).toStrictEqual(['src/file.ts', 'src/commands/sourcemaps/file.ts'])
       })
+
       test('mix of related and not related', () => {
         const sources = ['folder/file.ts', 'folder/other.ts']
         const trackedFiles = ['src/file.ts', 'file.ts', 'src/other2.ts']

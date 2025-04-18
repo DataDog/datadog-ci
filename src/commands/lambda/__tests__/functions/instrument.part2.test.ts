@@ -559,6 +559,7 @@ describe('instrument', () => {
       describe(`test for runtime ${dotnetRuntime}`, () => {
         const dotNetConfig = {...config, Runtime: dotnetRuntime}
         const dotNetConfigOnArm86 = {...config, Runtime: dotnetRuntime, Architectures: [Architecture.arm64]}
+
         test('should throw error when the extension version and trace version are not compatible', async () => {
           process.env[CI_KMS_API_KEY_ENV_VAR] = '5678'
           const badSettings = {...settings, extensionVersion: 24, layerVersion: 3}

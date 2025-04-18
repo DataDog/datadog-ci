@@ -112,6 +112,7 @@ describe('prompt', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('sets the AWS credentials as environment variables', async () => {
       ;(prompt as any).mockImplementation(() =>
         Promise.resolve({
@@ -165,6 +166,7 @@ describe('prompt', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('sets the Datadog Environment Variables as provided/selected by user', async () => {
       const site = 'datadoghq.com'
       ;(prompt as any).mockImplementation((question: any) => {
@@ -210,6 +212,7 @@ describe('prompt', () => {
 
   describe('requestFunctionSelection', () => {
     const selectedFunctions = ['my-func', 'my-func-2', 'my-third-func']
+
     test('returns the selected functions', async () => {
       ;(prompt as any).mockImplementation(() => Promise.resolve({functions: selectedFunctions}))
 

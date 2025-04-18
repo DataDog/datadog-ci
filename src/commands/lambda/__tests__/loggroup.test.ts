@@ -43,6 +43,7 @@ describe('loggroup', () => {
         }
       `)
     })
+
     test("adds a subscription filter when one doesn't exist", async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         'aws/lambda/my-func': {
@@ -73,6 +74,7 @@ describe('loggroup', () => {
         }
       `)
     })
+
     test('updates a subscription filter when an owned one already exists', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -108,6 +110,7 @@ describe('loggroup', () => {
         }
       `)
     })
+
     test('adds the DD filter if an unowned filter exists but another slot is still open', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -140,6 +143,7 @@ describe('loggroup', () => {
         },
       })
     })
+
     test('updates the DD filter if it exists alongside an unowned filter', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -177,6 +181,7 @@ describe('loggroup', () => {
         },
       })
     })
+
     test('throws an exception when unowned subscriptions are already at AWS max', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -210,6 +215,7 @@ describe('loggroup', () => {
         )
       )
     })
+
     test("doesn't update a subscription when filter is already correct", async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -265,6 +271,7 @@ describe('loggroup', () => {
         }
       `)
     })
+
     test('deletes the subscription filter that matches the datadog subscription filter constant name', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -294,6 +301,7 @@ describe('loggroup', () => {
         }
       `)
     })
+
     test('returns log group configuration without delete request when forwarder and filter name does not match', async () => {
       mockLogGroups(cloudWatchLogsClientMock, {
         '/aws/lambda/my-func': {
@@ -362,6 +370,7 @@ describe('loggroup', () => {
         logGroupName: '/aws/lambda/my-func',
       })
     })
+
     test("doesn't apply unspecified changes", async () => {
       const config: LogGroupConfiguration = {
         logGroupName: '/aws/lambda/my-func',
