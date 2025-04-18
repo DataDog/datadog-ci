@@ -1,8 +1,8 @@
 import fs from 'fs'
-import path, {basename} from 'path'
 
 import {Command, Option} from 'clipanion'
 import {glob} from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -219,7 +219,7 @@ export class UploadCommand extends Command {
   }
 
   private async getBuildId(): Promise<number> {
-    const buildIdPath = path.join(this.symbolsLocation!, 'build_id')
+    const buildIdPath = upath.join(this.symbolsLocation!, 'build_id')
     if (!fs.existsSync(buildIdPath)) {
       this.context.stderr.write(renderMissingBuildId(buildIdPath))
 
@@ -257,14 +257,14 @@ export class UploadCommand extends Command {
         }
 
         const tempDir = buildPath(tmpDirectory, elfMetadata.arch)
-        const tempFilePath = buildPath(tempDir, basename(soFileName))
+        const tempFilePath = buildPath(tempDir, upath.basename(soFileName))
         if (!fs.existsSync(tempDir)) {
           fs.mkdirSync(tempDir)
         }
         await elf.copyElfDebugInfo(soFileName, tempFilePath, elfMetadata, true)
 
         const metadata = this.getMappingMetadata(TYPE_NDK_SYMBOL_FILE, elfMetadata.arch)
-        const baseFilename = path.basename(soFileName)
+        const baseFilename = upath.basename(soFileName)
 
         this.context.stdout.write(`[] ${tempFilePath}\n`)
 
@@ -318,7 +318,7 @@ export class UploadCommand extends Command {
   }
 
   private async performIl2CppMappingUpload(): Promise<UploadStatus> {
-    const il2cppMappingPath = path.join(this.symbolsLocation!, 'LineNumberMappings.json')
+    const il2cppMappingPath = upath.join(this.symbolsLocation!, 'LineNumberMappings.json')
 
     if (!fs.existsSync(il2cppMappingPath)) {
       this.context.stderr.write(renderMissingIl2CppMappingFile(il2cppMappingPath))

@@ -1,9 +1,9 @@
-import path from 'path'
 import {URL} from 'url'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {glob} from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -109,8 +109,7 @@ export class UploadCommand extends Command {
     }
 
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath)
+    this.basePath = upath.normalize(this.basePath)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath,
