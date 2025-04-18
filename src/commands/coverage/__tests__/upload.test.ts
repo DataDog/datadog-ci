@@ -1,8 +1,6 @@
 import os from 'os'
 
-import {Cli} from 'clipanion'
-
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createMockContext, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import {SpanTags} from '../../../helpers/interfaces'
 
 import {UploadCodeCoverageReportCommand} from '../upload'
@@ -260,14 +258,7 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (extraArgs: string[]) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['coverage', 'upload', '--dry-run', ...extraArgs], context)
-
-    return {context, code}
-  }
+  const runCLI = makeRunCLI(UploadCodeCoverageReportCommand, ['coverage', 'upload', '--dry-run'])
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/__tests__/doesnotexist/../fixtures'])
@@ -315,11 +306,4 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
   expect(output[1]).toContain(`Starting upload`)
   expect(output[2]).toContain(`Will look for code coverage report files in ${expected.basePaths.join(', ')}`)
-}
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadCodeCoverageReportCommand)
-
-  return cli
 }

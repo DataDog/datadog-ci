@@ -1,7 +1,7 @@
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 
-import {MOCK_BASE_URL, getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {MOCK_BASE_URL, getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import * as ciHelpers from '../../../helpers/ci'
 import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'

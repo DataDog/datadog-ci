@@ -1,7 +1,9 @@
 import os from 'os'
 
 import chalk from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
+
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -150,9 +152,12 @@ describe('upload', () => {
 
 describe('execute', () => {
   const runCLI = async (path: string) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    const cli = new Cli()
+    cli.register(UploadCommand)
+
+    const context = createMockContext()
+    process.env = getEnvVarPlaceholders()
+
     const code = await cli.run(
       [
         'sourcemaps',
@@ -267,26 +272,6 @@ describe('execute', () => {
     expect(output[1]).toContain('  * 2 sourcemaps were skipped')
   })
 })
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadCommand)
-
-  return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 interface ExpectedOutput {
   basePath: string

@@ -1,20 +1,10 @@
-import {Cli} from 'clipanion/lib/advanced'
-
-import {createMockContext, getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {createCommand, getAxiosError, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {DeploymentCorrelateCommand} from '../correlate'
 
 describe('execute', () => {
-  const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
-    const cli = new Cli()
-    cli.register(DeploymentCorrelateCommand)
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER', ...extraEnv}
-    context.env = process.env
-    const code = await cli.run(['deployment', 'correlate', ...extraArgs], context)
+  const runCLI = makeRunCLI(DeploymentCorrelateCommand, ['deployment', 'correlate'])
 
-    return {context, code}
-  }
   test('no arguments', async () => {
     const {context, code} = await runCLI([])
     expect(code).toBe(1)
@@ -82,8 +72,7 @@ describe('execute', () => {
     }`)
   })
   test('handleError', async () => {
-    const command = new DeploymentCorrelateCommand()
-    command['context'] = createMockContext() as any
+    const command = createCommand(DeploymentCorrelateCommand)
 
     const axiosError = getAxiosError(400, {
       message: 'Request failed with status code 400',
@@ -92,7 +81,7 @@ describe('execute', () => {
 
     command['handleError'](axiosError)
 
-    expect(command['context'].stdout.toString()).toStrictEqual(
+    expect(command.context.stderr.toString()).toStrictEqual(
       `[ERROR] Could not send deployment correlation data: {
   "status": 400,
   "response": {

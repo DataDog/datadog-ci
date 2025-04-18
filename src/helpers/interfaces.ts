@@ -1,5 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
-import type {Writable} from 'stream'
+
+import {BaseContext} from 'clipanion'
 
 import {
   CI_ENV_VARS,
@@ -111,7 +112,7 @@ export type SpanTags = Partial<Record<SpanTag, string>>
 
 export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
 
-export type CommandContext = {
-  stdout: Writable
-  stderr: Writable
-}
+/**
+ * A subset of Clipanion's BaseContext.
+ */
+export type CommandContext = Pick<BaseContext, 'stdout' | 'stderr'> & Partial<Pick<BaseContext, 'env'>>

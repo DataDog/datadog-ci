@@ -17,7 +17,7 @@ import {
 } from '@aws-sdk/client-sfn'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 
 import {
   createLogGroup,

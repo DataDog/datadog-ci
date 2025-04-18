@@ -1,8 +1,6 @@
 import os from 'os'
 
-import {Cli} from 'clipanion/lib/advanced'
-
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, createMockContext, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import id from '../../../helpers/id'
 import {SpanTags} from '../../../helpers/interfaces'
 
@@ -11,20 +9,12 @@ import {UploadJUnitXMLCommand} from '../upload'
 
 jest.mock('../../../helpers/id', () => jest.fn())
 
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadJUnitXMLCommand)
-
-  return cli
-}
-
 describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new UploadJUnitXMLCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadJUnitXMLCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
@@ -522,17 +512,14 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (extraArgs: string[]) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(
-      ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs', ...extraArgs],
-      context
-    )
-
-    return {context, code}
-  }
+  const runCLI = makeRunCLI(UploadJUnitXMLCommand, [
+    'junit',
+    'upload',
+    '--service',
+    'test-service',
+    '--dry-run',
+    '--logs',
+  ])
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/junit/__tests__/doesnotexist/../fixtures'])
     const output = context.stdout.toString().split(os.EOL)

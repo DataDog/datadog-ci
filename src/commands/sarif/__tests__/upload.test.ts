@@ -2,18 +2,12 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
-import {Cli} from 'clipanion/lib/advanced'
 import simpleGit from 'simple-git'
+
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadSarifReportCommand)
-
-  return cli
-}
 
 const createMockContext = () => {
   let data = ''
@@ -169,14 +163,8 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (args: string[]) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...args], context)
+  const runCLI = makeRunCLI(UploadSarifReportCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
 
-    return {context, code}
-  }
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)
