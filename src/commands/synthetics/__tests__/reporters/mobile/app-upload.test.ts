@@ -97,7 +97,7 @@ describe('AppUploadReporter', () => {
 
       ttyReporter.renderProgress(1)
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -117,7 +117,7 @@ describe('AppUploadReporter', () => {
       ttyReporter.reportSuccess()
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -140,7 +140,7 @@ describe('AppUploadReporter', () => {
       })
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -161,7 +161,7 @@ describe('AppUploadReporter', () => {
       expect(ttyReporter['spinner']).toBeUndefined()
       expect(simulatedTerminalOutput).toMatchSnapshot()
       if (inCI) {
-        // In CI, there in no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
+        // In CI, there is no spinning, so `stopping` the spinner (which happens when rendering a 2nd time) does not clear a line.
         expect(clearLine).not.toHaveBeenCalled()
       } else {
         expect(clearLine).toHaveBeenCalled()
@@ -201,7 +201,7 @@ describe('AppUploadReporter', () => {
     })
   })
 
-  test.each([false, true])('Outputs a failure durings uploads correctly (in CI: %s)', async (inCI) => {
+  test.each([false, true])('Outputs a failure during uploads correctly (in CI: %s)', async (inCI) => {
     if (inCI) {
       process.env.CI = 'true'
     } else {
