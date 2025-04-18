@@ -1,7 +1,9 @@
 import os from 'os'
 
 import chalk from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
+
+import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -9,7 +11,7 @@ import {UploadCommand} from '../upload'
 describe('upload', () => {
   describe('getMinifiedURL', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -21,7 +23,7 @@ describe('upload', () => {
 
   describe('getMinifiedURL: minifiedPathPrefix has the protocol omitted', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '//datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -33,7 +35,7 @@ describe('upload', () => {
 
   describe('getMinifiedURL: minifiedPathPrefix is an absolute path', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -45,7 +47,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: full URL', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -54,7 +56,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: URL without protocol', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = '//datadog.com/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -63,7 +65,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: leading slash', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = '/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -72,7 +74,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: no leading slash', () => {
     test('should return false', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
@@ -81,7 +83,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: invalid URL without host', () => {
     test('should return false', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'info: undesired log line\nhttps://example.com/static/js/'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
@@ -91,7 +93,7 @@ describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
@@ -101,9 +103,8 @@ describe('upload', () => {
 
   describe('addRepositoryDataToPayloads', () => {
     test('repository url and commit still defined without payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
       const sourcemaps = new Array<Sourcemap>(
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
@@ -123,9 +124,8 @@ describe('upload', () => {
     })
 
     test('should include payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
       const sourcemaps = new Array<Sourcemap>(
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
@@ -150,9 +150,12 @@ describe('upload', () => {
 
 describe('execute', () => {
   const runCLI = async (path: string) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    const cli = new Cli()
+    cli.register(UploadCommand)
+
+    const context = createMockContext()
+    process.env = getEnvVarPlaceholders()
+
     const code = await cli.run(
       [
         'sourcemaps',
@@ -267,26 +270,6 @@ describe('execute', () => {
     expect(output[1]).toContain('  * 2 sourcemaps were skipped')
   })
 })
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadCommand)
-
-  return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 interface ExpectedOutput {
   basePath: string

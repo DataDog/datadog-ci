@@ -2,18 +2,12 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
-import {Cli} from 'clipanion/lib/advanced'
 import simpleGit from 'simple-git'
+
+import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadSarifReportCommand)
-
-  return cli
-}
 
 const createMockContext = () => {
   let data = ''
@@ -39,8 +33,7 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new UploadSarifReportCommand()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadSarifReportCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
@@ -49,7 +42,7 @@ describe('upload', () => {
   describe('getMatchingSarifReports', () => {
     test('should read all sarif reports and reject invalid ones', async () => {
       const context = createMockContext()
-      const command = new UploadSarifReportCommand()
+      const command = createCommand(UploadSarifReportCommand)
       const [firstFile, secondFile] = await command['getMatchingSarifReports'].call(
         {
           basePaths: ['./src/commands/sarif/__tests__/fixtures'],
@@ -94,7 +87,7 @@ describe('upload', () => {
     })
     test('should allow single files', async () => {
       const context = createMockContext()
-      const command = new UploadSarifReportCommand()
+      const command = createCommand(UploadSarifReportCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
           basePaths: ['./src/commands/sarif/__tests__/fixtures/valid-results.sarif'],
@@ -112,7 +105,7 @@ describe('upload', () => {
     })
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
-      const command = new UploadSarifReportCommand()
+      const command = createCommand(UploadSarifReportCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
           basePaths: ['./src/commands/sarif/__tests__/fixtures/does-not-exist.sarif'],
@@ -126,7 +119,7 @@ describe('upload', () => {
     })
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
-      const command = new UploadSarifReportCommand()
+      const command = createCommand(UploadSarifReportCommand)
       const [firstFile, secondFile, thirdFile] = await command['getMatchingSarifReports'].call(
         {
           basePaths: [
@@ -150,7 +143,7 @@ describe('upload', () => {
     })
     test('should not have repeated files', async () => {
       const context = createMockContext()
-      const command = new UploadSarifReportCommand()
+      const command = createCommand(UploadSarifReportCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
           basePaths: [
@@ -169,14 +162,8 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (args: string[]) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(['sarif', 'upload', '--env', 'ci', '--dry-run', ...args], context)
+  const runCLI = makeRunCLI(UploadSarifReportCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
 
-    return {context, code}
-  }
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split(os.EOL)

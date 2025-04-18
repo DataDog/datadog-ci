@@ -1,7 +1,8 @@
 import path from 'path'
+import {Writable} from 'stream'
 
 import {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from 'axios'
-import {BaseContext, Command} from 'clipanion'
+import {BaseContext, Cli, Command, CommandClass} from 'clipanion'
 import {CommandOption} from 'clipanion/lib/advanced/options'
 
 import {CommandContext} from '../interfaces'
@@ -11,35 +12,69 @@ export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_CWD = 'mock-folder'
 export const MOCK_FLARE_FOLDER_PATH = path.join(MOCK_CWD, '.datadog-ci')
 
-export const createMockContext = (appendStdoutWithStderr = true): CommandContext => {
+export const createMockContext = (opts?: {
+  appendStdoutWithStderr?: boolean
+  env?: CommandContext['env']
+}): CommandContext => {
   let out = ''
   let err = ''
 
   return {
+    env: opts?.env,
     stdout: {
       toString: () => out,
       write: (chunk: string) => {
         out += chunk
       },
-    },
+    } as Writable,
     stderr: {
       toString: () => err,
       write: (chunk: string) => {
         err += chunk
         // This is solely for testing purposes: it's easier to check only `stdout` against snapshots.
         // This way, `context.stdout.toString()` looks like what a user would see in their terminal.
-        if (appendStdoutWithStderr) {
+        if (opts?.appendStdoutWithStderr) {
           out += chunk
         }
       },
-    },
-  } as CommandContext
+    } as Writable,
+  }
+}
+
+export const getEnvVarPlaceholders = () => ({
+  DD_API_KEY: 'PLACEHOLDER',
+  DD_APP_KEY: 'PLACEHOLDER',
+  DATADOG_API_KEY: 'PLACEHOLDER',
+  DATADOG_APP_KEY: 'PLACEHOLDER',
+})
+
+export const makeRunCLI = (
+  commandClass: CommandClass,
+  baseArgs: string[],
+  opts?: {appendStdoutWithStderr?: boolean; skipResetEnv?: boolean}
+) => async (extraArgs: string[], extraEnv?: Record<string, string>) => {
+  const cli = new Cli()
+  cli.register(commandClass)
+
+  // Enable `skipResetEnv` if you want to set `process.env` yourself in the test before running `runCLI`.
+  if (!opts?.skipResetEnv) {
+    process.env = getEnvVarPlaceholders()
+  }
+
+  process.env = {
+    ...process.env,
+    ...extraEnv,
+  }
+
+  const context = createMockContext({env: process.env, appendStdoutWithStderr: opts?.appendStdoutWithStderr})
+  const code = await cli.run([...baseArgs, ...extraArgs], context)
+
+  return {context, code}
 }
 
 const isCommandOption = <T = unknown>(value: unknown): value is CommandOption<T> => {
-  // TODO: upgrade TypeScript to do `Command.isOption in value && !!value[Command.isOption]`
   // eslint-disable-next-line no-null/no-null
-  return typeof value === `object` && value !== null && !!(value as any)[Command.isOption]
+  return typeof value === `object` && value !== null && Command.isOption in value && !!value[Command.isOption]
 }
 
 /**

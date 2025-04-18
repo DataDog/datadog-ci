@@ -1,4 +1,4 @@
-import {createCommand} from '../../../../helpers/__tests__/fixtures'
+import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 import * as ciUtils from '../../../../helpers/utils'
 
 import {RunTestsCommand} from '../../run-tests-command'

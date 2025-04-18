@@ -1,6 +1,6 @@
 import os from 'os'
 
-import {createCommand} from '../../../helpers/__tests__/fixtures'
+import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'

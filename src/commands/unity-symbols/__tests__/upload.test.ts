@@ -1,6 +1,6 @@
 import os from 'os'
 
-import {createCommand} from '../../../helpers/__tests__/fixtures'
+import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue, MultipartValue} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
@@ -121,11 +121,10 @@ describe('unity-symbols upload', () => {
 
     test('requires platform', async () => {
       const {exitCode, context} = await runCommand((_) => {})
-      const output = context.stdout.toString()
 
       expect(exitCode).not.toBe(0)
 
-      expect(output).toContain(renderMustSupplyPlatform())
+      expect(context.stderr.toString()).toContain(renderMustSupplyPlatform())
     })
 
     test('uses API Key from env over config from JSON file', async () => {

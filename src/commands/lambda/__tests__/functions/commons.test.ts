@@ -11,7 +11,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
-import {createCommand} from '../../../../helpers/__tests__/fixtures'
+import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,

@@ -1,8 +1,8 @@
 jest.unmock('chalk')
 
-import {BaseContext} from 'clipanion/lib/advanced'
+import {BaseContext} from 'clipanion'
 
-import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
+import {MOCK_BASE_URL} from '../../../../helpers/__tests__/testing-tools'
 
 import {
   ExecutionRule,

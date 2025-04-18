@@ -666,51 +666,5 @@ GCP credentials verified!
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
-
-🐶 Generating Cloud Run flare to send your configuration to Datadog...
-
-🔑 Verifying GCP credentials...
-GCP credentials verified!
-
-🔍 Fetching service configuration...
-
-{
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
-  containers: [
-    {
-      env: [
-        {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
-        },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
-      ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
-    }
-  ]
-}
-(This is a summary of the configuration. The full configuration will be saved in "service_config.json".)
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-[!] No additional files specified.
-
-🌧 Fetching recent revisions...
-• Found 5 revisions
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./service_config.json
-• Saved insights file to ./INSIGHTS.md
-
-
-🚀 Sending to Datadog Support...
-
-✅ Successfully sent flare file to Datadog Support!
 "
 `;

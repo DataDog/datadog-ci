@@ -1,6 +1,6 @@
 import {default as axios} from 'axios'
 
-import {getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'

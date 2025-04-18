@@ -1,5 +1,6 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 import * as formatGitSourcemapsData from '../../../helpers/git/format-git-sourcemaps-data'
 
 import * as utils from '../utils'
@@ -26,34 +27,7 @@ beforeEach(() => {
   reactNativeVersionSpy.mockClear()
 })
 
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(XCodeCommand)
-
-  return cli
-}
-
 const reactNativeVersionSpy = jest.spyOn(utils, 'getReactNativeVersion').mockReturnValue(undefined)
-
-const createMockContext = () => {
-  let data = ''
-  let errorData = ''
-
-  return {
-    stderr: {
-      toString: () => errorData,
-      write: (input: string) => {
-        errorData += input
-      },
-    },
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 const basicEnvironment = {
   CONFIGURATION: 'Release',
@@ -77,9 +51,11 @@ const runCLI = async (
     service?: string
   }
 ) => {
-  const cli = makeCli()
-  const context = createMockContext() as any
-  process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
+  const cli = new Cli()
+  cli.register(XCodeCommand)
+
+  const context = createMockContext()
+  process.env = {...process.env, ...getEnvVarPlaceholders()}
 
   const command = ['react-native', 'xcode']
   if (script) {

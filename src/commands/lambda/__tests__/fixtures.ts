@@ -30,22 +30,8 @@ import {
   ListTagsCommandOutput,
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
-import {Cli} from 'clipanion/lib/advanced'
 
-import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
-
-import {LambdaFlareCommand} from '../flare'
-import {InstrumentCommand} from '../instrument'
-import {UninstrumentCommand} from '../uninstrument'
-
-export const makeCli = () => {
-  const cli = new Cli()
-  cli.register(InstrumentCommand)
-  cli.register(UninstrumentCommand)
-  cli.register(LambdaFlareCommand)
-
-  return cli
-}
+import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
 
 export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>) => {
   lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})

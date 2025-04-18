@@ -1,6 +1,4 @@
-import {Cli} from 'clipanion/lib/advanced'
-
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as gitFunctions from '../../../helpers/git/get-git-data'
 
 import {SendDeploymentEvent} from '../deployment'
@@ -11,8 +9,7 @@ describe('deployment', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = new SendDeploymentEvent()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(SendDeploymentEvent, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
@@ -20,23 +17,9 @@ describe('deployment', () => {
   })
 })
 
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(SendDeploymentEvent)
-
-  return cli
-}
-
 describe('execute', () => {
-  const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER', ...extraEnv}
-    context.env = process.env
-    const code = await cli.run(['dora', 'deployment', ...extraArgs], context)
+  const runCLI = makeRunCLI(SendDeploymentEvent, ['dora', 'deployment'])
 
-    return {context, code}
-  }
   describe('dry-run', () => {
     const fakeCurrentDate = new Date(1699960651000)
     beforeAll(() => {
@@ -48,6 +31,7 @@ describe('execute', () => {
     })
     test('with all parameters provided', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
@@ -74,6 +58,7 @@ describe('execute', () => {
     })
     test('with minimal parameters provided', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -94,6 +79,7 @@ describe('execute', () => {
         DD_ENV: 'test-env',
       }
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -118,6 +104,7 @@ describe('execute', () => {
       mockGitRepositoryURL.mockResolvedValue(gitInfo.repoURL)
       mockGitHash.mockResolvedValue(gitInfo.commitSHA)
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
@@ -136,6 +123,7 @@ describe('execute', () => {
     })
     test('service is required', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -147,6 +135,7 @@ describe('execute', () => {
     })
     test('started-at is required', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
@@ -158,6 +147,7 @@ describe('execute', () => {
     })
     test('started-at after finished-at is rejected', async () => {
       /* eslint-disable prettier/prettier */
+      // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',

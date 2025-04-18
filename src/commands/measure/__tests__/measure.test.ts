@@ -1,4 +1,6 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
+
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {MeasureCommand, parseMeasures} from '../measure'
 
@@ -9,26 +11,6 @@ const makeCLI = () => {
   cli.register(MeasureCommand)
 
   return cli
-}
-
-const createMockContext = () => {
-  let out = ''
-  let err = ''
-
-  return {
-    stderr: {
-      toString: () => err,
-      write: (input: string) => {
-        err += input
-      },
-    },
-    stdout: {
-      toString: () => out,
-      write: (input: string) => {
-        out += input
-      },
-    },
-  }
 }
 
 describe('parse measures', () => {
@@ -57,9 +39,9 @@ describe('parse measures', () => {
 describe('execute', () => {
   const runCLI = async (level: string, measures: string[], env: Record<string, string>, extraArgs: string[] = []) => {
     const cli = makeCLI()
-    const context = createMockContext() as any
+    const context = createMockContext()
     process.env = {
-      DATADOG_API_KEY: 'PLACEHOLDER',
+      ...getEnvVarPlaceholders(),
       ...env,
     }
 

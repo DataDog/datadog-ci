@@ -46,7 +46,7 @@ import type * as path from 'path'
 
 import * as glob from 'glob'
 
-import {getAxiosError} from '../../../../helpers/__tests__/fixtures'
+import {getAxiosError} from '../../../../helpers/__tests__/testing-tools'
 
 import * as api from '../../api'
 import {CiError, CiErrorCode, CriticalError} from '../../errors'

@@ -2,9 +2,10 @@ import {existsSync, promises} from 'fs'
 import {EOL, platform} from 'os'
 import path from 'path'
 
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 import {glob} from 'glob'
 
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '../../../helpers/apikey'
 import {buildPath} from '../../../helpers/utils'
 
@@ -243,35 +244,17 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const makeCli = () => {
+  const runCLI = async (dsymPath: string, options?: {configPath?: string; env?: Record<string, string>}) => {
     const cli = new Cli()
     cli.register(UploadCommand)
 
-    return cli
-  }
-
-  const createMockContext = () => {
-    let data = ''
-
-    return {
-      stdout: {
-        toString: () => data,
-        write: (input: string) => {
-          data += input
-        },
-      },
-    }
-  }
-
-  const runCLI = async (dsymPath: string, options?: {configPath?: string; env?: Record<string, string>}) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
+    const context = createMockContext()
     const command = ['dsyms', 'upload', dsymPath, '--dry-run']
     if (options?.configPath) {
       command.push('--config')
       command.push(options.configPath)
     } else {
-      process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+      process.env = getEnvVarPlaceholders()
     }
     if (options?.env) {
       process.env = {

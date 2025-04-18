@@ -7,11 +7,11 @@ import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {
-  createMockContext,
+  makeRunCLI,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
-} from '../../../helpers/__tests__/fixtures'
+} from '../../../helpers/__tests__/testing-tools'
 import * as helpersFlareModule from '../../../helpers/flare'
 import * as fsModule from '../../../helpers/fs'
 import * as helpersPromptModule from '../../../helpers/prompt'
@@ -27,17 +27,14 @@ import {
   MAX_LOGS,
   saveLogsFile,
   summarizeConfig,
+  CloudRunFlareCommand,
 } from '../flare'
-
-import {makeCli} from './fixtures'
 
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'
 const MOCK_PROJECT = 'mock-project'
 const MOCK_LOG_CLIENT = new Logging({projectId: MOCK_PROJECT})
 const MOCK_REQUIRED_FLAGS = [
-  'cloud-run',
-  'flare',
   '-s',
   MOCK_SERVICE,
   '-p',
@@ -168,20 +165,21 @@ fs.readdirSync = jest.fn().mockReturnValue([])
 fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)
 
 describe('cloud-run flare', () => {
+  const runCLI = makeRunCLI(CloudRunFlareCommand, ['cloud-run', 'flare'], {
+    appendStdoutWithStderr: true,
+    skipResetEnv: true,
+  })
+
   describe('prints correct headers', () => {
     it('prints non-dry-run header', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(['cloud-run', 'flare'], context)
+      const {code, context} = await runCLI([])
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
     })
 
     it('prints dry-run header', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(['cloud-run', 'flare', '-d'], context)
+      const {code, context} = await runCLI(['-d'])
       const output = context.stdout.toString()
       expect(code).toBe(1)
       expect(output).toMatchSnapshot()
@@ -194,60 +192,44 @@ describe('cloud-run flare', () => {
     })
 
     it('prints error when no service specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(
-        ['cloud-run', 'flare', '-p', MOCK_PROJECT, '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context
-      )
+      const {code, context} = await runCLI(['-p', MOCK_PROJECT, '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'])
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('prints error when no project specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(
-        ['cloud-run', 'flare', '-s', MOCK_SERVICE, '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'],
-        context
-      )
+      const {code, context} = await runCLI(['-s', MOCK_SERVICE, '-r', MOCK_REGION, '-c', '123', '-e', 'test@test.com'])
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('prints error when no region specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(
-        ['cloud-run', 'flare', '-s', MOCK_SERVICE, '-p', MOCK_PROJECT, '-c', '123', '-e', 'test@test.com'],
-        context
-      )
+      const {code, context} = await runCLI(['-s', MOCK_SERVICE, '-p', MOCK_PROJECT, '-c', '123', '-e', 'test@test.com'])
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('prints error when no case ID specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(
-        ['cloud-run', 'flare', '-s', MOCK_SERVICE, '-p', MOCK_PROJECT, '-r', MOCK_REGION, '-e', 'test@test.com'],
-        context
-      )
+      const {code, context} = await runCLI([
+        '-s',
+        MOCK_SERVICE,
+        '-p',
+        MOCK_PROJECT,
+        '-r',
+        MOCK_REGION,
+        '-e',
+        'test@test.com',
+      ])
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('prints error when no email specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(
-        ['cloud-run', 'flare', '-s', MOCK_SERVICE, '-p', MOCK_PROJECT, '-r', MOCK_REGION, '-c', '123'],
-        context
-      )
+      const {code, context} = await runCLI(['-s', MOCK_SERVICE, '-p', MOCK_PROJECT, '-r', MOCK_REGION, '-c', '123'])
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -255,9 +237,7 @@ describe('cloud-run flare', () => {
 
     it('prints error when no API key in env variables', async () => {
       process.env = {}
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -267,25 +247,21 @@ describe('cloud-run flare', () => {
       process.env = {}
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       process.env[API_KEY_ENV_VAR] = undefined
-      const cli = makeCli()
-      const context = createMockContext()
-      let code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      let {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(0)
       let output = context.stdout.toString()
       expect(output).toMatchSnapshot()
 
       process.env[CI_API_KEY_ENV_VAR] = undefined
       process.env[API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
-      code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      ;({code, context} = await runCLI(MOCK_REQUIRED_FLAGS))
       expect(code).toBe(0)
       output = context.stdout.toString()
       expect(output).toMatchSnapshot()
     })
 
     it('runs successfully with all required options specified', async () => {
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -318,9 +294,7 @@ describe('cloud-run flare', () => {
         getApplicationDefault: () => Promise.reject(),
       }))
 
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -338,9 +312,7 @@ describe('cloud-run flare', () => {
       ;(getCloudRunServiceConfig as any).mockImplementation(() => {
         throw new Error('MOCK ERROR: Some API error')
       })
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(1)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -348,9 +320,7 @@ describe('cloud-run flare', () => {
 
     it('prints config when running as a dry run', async () => {
       ;(getCloudRunServiceConfig as any).mockImplementation(() => Promise.resolve(MOCK_CLOUDRUN_CONFIG))
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run([...MOCK_REQUIRED_FLAGS, '-d'], context)
+      const {code, context} = await runCLI([...MOCK_REQUIRED_FLAGS, '-d'])
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -418,9 +388,7 @@ describe('cloud-run flare', () => {
       jest.spyOn(flareModule, 'generateInsightsFile').mockImplementationOnce(() => {
         throw new Error('Some error')
       })
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context as any)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       const output = context.stdout.toString()
       expect(code).toBe(0)
       expect(output).toMatchSnapshot()
@@ -460,9 +428,7 @@ describe('cloud-run flare', () => {
   describe('prompts for confirmation before sending', () => {
     it('sends when user answers prompt with yes', async () => {
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(true)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
@@ -472,9 +438,7 @@ describe('cloud-run flare', () => {
     it('does not send when user answers prompt with no', async () => {
       // The first prompt is for additional files, the second is for confirmation before sending
       jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValueOnce(false).mockResolvedValueOnce(false)
-      const cli = makeCli()
-      const context = createMockContext()
-      const code = await cli.run(MOCK_REQUIRED_FLAGS, context)
+      const {code, context} = await runCLI(MOCK_REQUIRED_FLAGS)
       expect(code).toBe(0)
       const output = context.stdout.toString()
       expect(output).toMatchSnapshot()
