@@ -1,7 +1,6 @@
 import fs from 'fs'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
@@ -10,6 +9,7 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/fs'
 import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
@@ -211,7 +211,7 @@ export class UploadCommand extends Command {
   }
 
   private getFlutterSymbolFiles(dartSymbolLocation: string): string[] {
-    const symbolPaths = glob.sync(buildPath(dartSymbolLocation, '*.symbols'), {dotRelative: true})
+    const symbolPaths = globSync(buildPath(dartSymbolLocation, '*.symbols'), {dotRelative: true})
 
     return symbolPaths
   }

@@ -3,10 +3,10 @@
  */
 
 import fs from 'fs'
-import path from 'path'
 
 import axios from 'axios'
 import FormData from 'form-data'
+import upath from 'upath'
 
 import {
   CI_SITE_ENV_VAR,
@@ -114,7 +114,7 @@ export const getProjectFiles = async (projectFiles: string[]) => {
   const filePaths = new Set<string>()
   const cwd = process.cwd()
   for (const fileName of projectFiles) {
-    const filePath = path.join(cwd, fileName)
+    const filePath = upath.join(cwd, fileName)
     if (fs.existsSync(filePath)) {
       filePaths.add(filePath)
     }
@@ -133,12 +133,12 @@ export const getProjectFiles = async (projectFiles: string[]) => {
  */
 export const validateFilePath = (filePath: string, projectFilePaths: Set<string>, additionalFiles: Set<string>) => {
   const originalPath = filePath
-  filePath = fs.existsSync(filePath) ? filePath : path.join(process.cwd(), filePath)
+  filePath = fs.existsSync(filePath) ? filePath : upath.join(process.cwd(), filePath)
   if (!fs.existsSync(filePath)) {
     throw Error(helpersRenderer.renderError(`File path '${originalPath}' not found. Please try again.`))
   }
 
-  filePath = path.resolve(filePath)
+  filePath = upath.resolve(filePath)
   if (projectFilePaths.has(filePath) || additionalFiles.has(filePath)) {
     throw Error(helpersRenderer.renderSoftWarning(`File '${filePath}' has already been added.`))
   }

@@ -4,9 +4,28 @@
  */
 
 import fs from 'fs'
-import path from 'path'
 
+import * as globModule from 'glob'
 import JSZip from 'jszip'
+import upath from 'upath'
+
+/**
+ * Synchronous form of `glob`, with default options.
+ */
+export const globSync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
+  const results = globModule.sync(pattern, {...opts})
+
+  return results.map((path) => upath.normalizeSafe(path))
+}
+
+/**
+ * Asynchronous form of `glob`, with default options.
+ */
+export const globAsync = async (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
+  const results = await globModule.glob(pattern, {...opts})
+
+  return results.map((path) => upath.normalizeSafe(path))
+}
 
 /**
  * Delete a folder and all its contents
@@ -60,14 +79,14 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 
     const contents = fs.readdirSync(folderPath)
     for (const item of contents) {
-      const fullPath = path.join(folderPath, item)
+      const fullPath = upath.join(folderPath, item)
       const file = fs.statSync(fullPath)
 
       if (file.isDirectory()) {
         addFolderToZip(fullPath)
       } else {
         const data = fs.readFileSync(fullPath)
-        zip.file(path.relative(rootFolderPath, fullPath), data)
+        zip.file(upath.relative(rootFolderPath, fullPath), data)
       }
     }
   }

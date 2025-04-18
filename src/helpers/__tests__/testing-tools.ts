@@ -1,16 +1,16 @@
-import path from 'path'
 import {Writable} from 'stream'
 
 import {AxiosError, AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 import {BaseContext, Cli, Command, CommandClass} from 'clipanion'
 import {CommandOption} from 'clipanion/lib/advanced/options'
+import upath from 'upath'
 
 import {CommandContext} from '../interfaces'
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_CWD = 'mock-folder'
-export const MOCK_FLARE_FOLDER_PATH = path.join(MOCK_CWD, '.datadog-ci')
+export const MOCK_FLARE_FOLDER_PATH = upath.join(MOCK_CWD, '.datadog-ci')
 
 export const createMockContext = (opts?: {
   appendStdoutWithStderr?: boolean

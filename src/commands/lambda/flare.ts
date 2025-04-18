@@ -1,5 +1,4 @@
 import * as fs from 'fs'
-import * as path from 'path'
 import util from 'util'
 
 import {
@@ -13,6 +12,7 @@ import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+import upath from 'upath'
 
 import {
   ADDITIONAL_FILES_DIRECTORY,
@@ -246,7 +246,7 @@ export class LambdaFlareCommand extends Command {
       try {
         filePath = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
         additionalFilePaths.add(filePath)
-        const fileName = path.basename(filePath)
+        const fileName = upath.basename(filePath)
         this.context.stdout.write(`• Added file '${fileName}'\n`)
       } catch (err) {
         if (err instanceof Error) {
@@ -310,10 +310,10 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Create folders
-      const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
-      const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
-      const projectFilesFolderPath = path.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
-      const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
+      const rootFolderPath = upath.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
+      const logsFolderPath = upath.join(rootFolderPath, LOGS_DIRECTORY)
+      const projectFilesFolderPath = upath.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
+      const additionalFilesFolderPath = upath.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
       this.context.stdout.write(chalk.bold(`\n💾 Saving files to ${rootFolderPath}...\n`))
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
@@ -331,13 +331,13 @@ export class LambdaFlareCommand extends Command {
       createDirectories(rootFolderPath, subFolders)
 
       // Write config file
-      const configFilePath = path.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
+      const configFilePath = upath.join(rootFolderPath, FUNCTION_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
       this.context.stdout.write(`• Saved function config to ./${FUNCTION_CONFIG_FILE_NAME}\n`)
 
       // Write tags file
       if (tagsLength > 0) {
-        const tagsFilePath = path.join(rootFolderPath, TAGS_FILE_NAME)
+        const tagsFilePath = upath.join(rootFolderPath, TAGS_FILE_NAME)
         writeFile(tagsFilePath, JSON.stringify(tags, undefined, 2))
         this.context.stdout.write(`• Saved tags to ./${TAGS_FILE_NAME}\n`)
       }
@@ -347,7 +347,7 @@ export class LambdaFlareCommand extends Command {
         if (logEvents.length === 0) {
           continue
         }
-        const logFilePath = path.join(logsFolderPath, `${logStreamName.split('/').join('-')}.csv`)
+        const logFilePath = upath.join(logsFolderPath, `${logStreamName.split('/').join('-')}.csv`)
         const data = convertToCSV(logEvents)
         writeFile(logFilePath, data)
         this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${logStreamName}\n`)
@@ -358,8 +358,8 @@ export class LambdaFlareCommand extends Command {
 
       // Write project files
       for (const filePath of projectFilePaths) {
-        const fileName = path.basename(filePath)
-        const newFilePath = path.join(projectFilesFolderPath, fileName)
+        const fileName = upath.basename(filePath)
+        const newFilePath = upath.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
         this.context.stdout.write(`• Copied ${fileName} to ./${PROJECT_FILES_DIRECTORY}/${fileName}\n`)
       }
@@ -367,15 +367,15 @@ export class LambdaFlareCommand extends Command {
       // Write additional files
       const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
       for (const [originalFilePath, newFileName] of additionalFilesMap) {
-        const originalFileName = path.basename(originalFilePath)
-        const newFilePath = path.join(additionalFilesFolderPath, newFileName)
+        const originalFileName = upath.basename(originalFilePath)
+        const newFilePath = upath.join(additionalFilesFolderPath, newFileName)
         fs.copyFileSync(originalFilePath, newFilePath)
         this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${newFileName}\n`)
       }
 
       // Write insights file
       try {
-        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        const insightsFilePath = upath.join(rootFolderPath, INSIGHTS_FILE_NAME)
         generateInsightsFile(insightsFilePath, this.isDryRun, config)
         this.context.stdout.write(`• Saved the insights file to ./${INSIGHTS_FILE_NAME}\n`)
       } catch (err) {
@@ -411,7 +411,7 @@ export class LambdaFlareCommand extends Command {
       }
 
       // Zip folder
-      const zipPath = path.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
+      const zipPath = upath.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog
@@ -627,7 +627,7 @@ export const getUniqueFileNames = (filePaths: Set<string>): Map<string, string> 
   // Count occurrences of each filename
   const fileNameCount: {[fileName: string]: number} = {}
   filePaths.forEach((filePath) => {
-    const fileName = path.basename(filePath)
+    const fileName = upath.basename(filePath)
     const count = fileNameCount[fileName] || 0
     fileNameCount[fileName] = count + 1
   })
@@ -635,13 +635,13 @@ export const getUniqueFileNames = (filePaths: Set<string>): Map<string, string> 
   // Create new filenames
   const filePathsToNewFileNames = new Map<string, string>()
   filePaths.forEach((filePath) => {
-    const fileName = path.basename(filePath)
+    const fileName = upath.basename(filePath)
     if (fileNameCount[fileName] > 1) {
       // Trim leading and trailing '/'s and '\'s
       const trimRegex = /^\/+|\/+$/g
       const filePathTrimmed = filePath.replace(trimRegex, '')
       // Replace '/'s and '\'s with '-'s
-      const newFileName = filePathTrimmed.split(path.sep).join('-')
+      const newFileName = filePathTrimmed.split('/').join('-')
       filePathsToNewFileNames.set(filePath, newFileName)
     } else {
       filePathsToNewFileNames.set(filePath, fileName)

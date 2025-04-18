@@ -1,5 +1,14 @@
 jest.unmock('chalk')
 
+// Force `process.platform` to have the same spinner snapshots on all platforms.
+// Without this, `ora` falls back to use a `-` on Windows, resulting in snapshot diffs (`-` instead of `⠋`).
+// See https://github.com/sindresorhus/ora#spinner
+Object.defineProperty(process, 'platform', {
+  value: 'linux',
+  configurable: true,
+  writable: true,
+})
+
 import {BaseContext} from 'clipanion'
 
 import {MOCK_BASE_URL} from '../../../../helpers/__tests__/testing-tools'

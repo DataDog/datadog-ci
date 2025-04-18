@@ -1,8 +1,8 @@
 import fs from 'fs'
-import path from 'path'
 import process from 'process'
 
 import JSZip from 'jszip'
+import upath from 'upath'
 
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../fs'
 
@@ -11,7 +11,7 @@ import {MOCK_DATADOG_API_KEY} from './testing-tools'
 // Mock constants
 const MOCK_CWD = 'mock-cwd'
 const MOCK_FOLDER_NAME = 'mock-folder'
-const MOCK_FOLDER_PATH = path.join(MOCK_CWD, MOCK_FOLDER_NAME)
+const MOCK_FOLDER_PATH = upath.join(MOCK_CWD, MOCK_FOLDER_NAME)
 const MOCK_FILE_NAME = 'function_config.json'
 const MOCK_ZIP_PATH = 'output.zip'
 const MOCK_FILES = new Set([MOCK_FILE_NAME, 'file1.csv', 'file2.csv', 'file3.csv'])
@@ -191,7 +191,7 @@ describe('fileSystem', () => {
   })
 
   describe('createDirectories', () => {
-    const MOCK_LOG_PATH = path.join(MOCK_FOLDER_PATH, 'logs')
+    const MOCK_LOG_PATH = upath.join(MOCK_FOLDER_PATH, 'logs')
 
     it('successfully creates a root folder', async () => {
       createDirectories(MOCK_FOLDER_PATH, [])

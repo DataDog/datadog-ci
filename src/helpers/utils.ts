@@ -11,6 +11,8 @@ import deepExtend from 'deep-extend'
 import * as glob from 'glob'
 import {ProxyAgent} from 'proxy-agent'
 
+import {globSync} from './fs'
+
 export const DEFAULT_CONFIG_PATHS = ['datadog-ci.json']
 
 export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, keys: K[]) => {
@@ -439,6 +441,6 @@ export const parsePathsList = (paths: string | undefined): string[] => {
 
   return paths
     .split(',')
-    .flatMap((path) => (glob.hasMagic(path) ? glob.sync(path, {dotRelative: true}) : [path]))
+    .flatMap((path) => (glob.hasMagic(path) ? globSync(path, {dotRelative: true}) : [path]))
     .map((path) => (path.endsWith('/') ? path.slice(0, -1) : path))
 }

@@ -1,9 +1,9 @@
 import os from 'os'
-import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
@@ -37,11 +37,11 @@ const errorCodesStopUpload = [400, 403]
 const MAX_REPORTS_PER_REQUEST = 10
 
 const isCoverageReport = (file: string): boolean => {
-  if (path.extname(file) !== '.xml') {
+  if (upath.extname(file) !== '.xml') {
     return false
   }
 
-  const filename = path.basename(file)
+  const filename = upath.basename(file)
 
   return (
     filename.startsWith('jacoco') || filename.includes('Jacoco') // jacoco*.xml, *Jacoco*.xml
@@ -144,8 +144,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private async uploadCodeCoverageReports() {
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
 
     this.logger.info(renderCommandInfo(this.basePaths, this.dryRun))
 

@@ -1,7 +1,6 @@
 import IService = google.cloud.run.v2.IService
 import IContainer = google.cloud.run.v2.IContainer
 import fs from 'fs'
-import path from 'path'
 import process from 'process'
 import util from 'util'
 
@@ -11,6 +10,7 @@ import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {GoogleAuth} from 'google-auth-library'
+import upath from 'upath'
 
 import {
   ADDITIONAL_FILES_DIRECTORY,
@@ -231,7 +231,7 @@ export class CloudRunFlareCommand extends Command {
       try {
         filePath = validateFilePath(filePath, projectFilePaths, additionalFilePaths)
         additionalFilePaths.add(filePath)
-        const fileName = path.basename(filePath)
+        const fileName = upath.basename(filePath)
         this.context.stdout.write(`• Added file '${fileName}'\n`)
       } catch (err) {
         if (err instanceof Error) {
@@ -282,10 +282,10 @@ export class CloudRunFlareCommand extends Command {
 
     try {
       // Create folders
-      const rootFolderPath = path.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
-      const logsFolderPath = path.join(rootFolderPath, LOGS_DIRECTORY)
-      const projectFilesFolderPath = path.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
-      const additionalFilesFolderPath = path.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
+      const rootFolderPath = upath.join(process.cwd(), FLARE_OUTPUT_DIRECTORY)
+      const logsFolderPath = upath.join(rootFolderPath, LOGS_DIRECTORY)
+      const projectFilesFolderPath = upath.join(rootFolderPath, PROJECT_FILES_DIRECTORY)
+      const additionalFilesFolderPath = upath.join(rootFolderPath, ADDITIONAL_FILES_DIRECTORY)
       this.context.stdout.write(chalk.bold(`\n💾 Saving files to ${rootFolderPath}...\n`))
       if (fs.existsSync(rootFolderPath)) {
         deleteFolder(rootFolderPath)
@@ -303,21 +303,21 @@ export class CloudRunFlareCommand extends Command {
       createDirectories(rootFolderPath, subFolders)
 
       // Write config file
-      const configFilePath = path.join(rootFolderPath, SERVICE_CONFIG_FILE_NAME)
+      const configFilePath = upath.join(rootFolderPath, SERVICE_CONFIG_FILE_NAME)
       writeFile(configFilePath, JSON.stringify(config, undefined, 2))
       this.context.stdout.write(`• Saved function config to ./${SERVICE_CONFIG_FILE_NAME}\n`)
 
       // Write logs
       for (const [fileName, logs] of logFileMappings) {
-        const logFilePath = path.join(logsFolderPath, fileName)
+        const logFilePath = upath.join(logsFolderPath, fileName)
         saveLogsFile(logs, logFilePath)
         this.context.stdout.write(`• Saved logs to ./${LOGS_DIRECTORY}/${fileName}\n`)
       }
 
       // Write project files
       for (const filePath of projectFilePaths) {
-        const fileName = path.basename(filePath)
-        const newFilePath = path.join(projectFilesFolderPath, fileName)
+        const fileName = upath.basename(filePath)
+        const newFilePath = upath.join(projectFilesFolderPath, fileName)
         fs.copyFileSync(filePath, newFilePath)
         this.context.stdout.write(`• Copied ${fileName} to ./${PROJECT_FILES_DIRECTORY}/${fileName}\n`)
       }
@@ -325,15 +325,15 @@ export class CloudRunFlareCommand extends Command {
       // Write additional files
       const additionalFilesMap = getUniqueFileNames(additionalFilePaths)
       for (const [originalFilePath, newFileName] of additionalFilesMap) {
-        const originalFileName = path.basename(originalFilePath)
-        const newFilePath = path.join(additionalFilesFolderPath, newFileName)
+        const originalFileName = upath.basename(originalFilePath)
+        const newFilePath = upath.join(additionalFilesFolderPath, newFileName)
         fs.copyFileSync(originalFilePath, newFilePath)
         this.context.stdout.write(`• Copied ${originalFileName} to ./${ADDITIONAL_FILES_DIRECTORY}/${newFileName}\n`)
       }
 
       // Write insights file
       try {
-        const insightsFilePath = path.join(rootFolderPath, INSIGHTS_FILE_NAME)
+        const insightsFilePath = upath.join(rootFolderPath, INSIGHTS_FILE_NAME)
         generateInsightsFile(
           insightsFilePath,
           this.isDryRun,
@@ -376,7 +376,7 @@ export class CloudRunFlareCommand extends Command {
       }
 
       // Zip folder
-      const zipPath = path.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
+      const zipPath = upath.join(rootFolderPath, FLARE_ZIP_FILE_NAME)
       await zipContents(rootFolderPath, zipPath)
 
       // Send to Datadog

@@ -1,4 +1,5 @@
 import fs from 'fs'
+import os from 'os'
 
 import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import * as ciUtils from '../../../helpers/utils'
@@ -288,7 +289,7 @@ describe('run-test', () => {
       )
 
       // use /dev/null to create a valid empty fs.ReadStream
-      const testStream = fs.createReadStream('/dev/null')
+      const testStream = fs.createReadStream(os.devNull)
       jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
 
       const {AppUploadReporter} = jest.requireActual<typeof appUploadReporterModule>('../reporters/mobile/app-upload')
@@ -322,7 +323,7 @@ describe('run-test', () => {
       )
 
       // use /dev/null to create a valid empty fs.ReadStream
-      const testStream = fs.createReadStream('/dev/null')
+      const testStream = fs.createReadStream(os.devNull)
       jest.spyOn(fs, 'createReadStream').mockReturnValue(testStream)
 
       const {AppUploadReporter} = jest.requireActual<typeof appUploadReporterModule>('../reporters/mobile/app-upload')

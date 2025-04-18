@@ -1,11 +1,11 @@
 import fs from 'fs'
 import os from 'os'
-import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import * as t from 'typanion'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
@@ -47,11 +47,11 @@ const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const isJunitXmlReport = (file: string): boolean => {
-  if (path.extname(file) !== '.xml') {
+  if (upath.extname(file) !== '.xml') {
     return false
   }
 
-  const filename = path.basename(file)
+  const filename = upath.basename(file)
 
   return (
     filename.includes('junit') || // *junit*.xml
@@ -202,8 +202,7 @@ export class UploadJUnitXMLCommand extends Command {
     const api = this.getApiHelper()
 
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
     this.logger.info(renderCommandInfo(this.basePaths, this.service, this.maxConcurrency, this.dryRun))
 
     const spanTags = await this.getSpanTags()
@@ -311,7 +310,7 @@ export class UploadJUnitXMLCommand extends Command {
       // maintaining legacy matching logic for backward compatibility
       basePaths = this.basePaths || []
       searchFoldersRecursively = false
-      filterFile = (file) => path.extname(file) === '.xml'
+      filterFile = (file) => upath.extname(file) === '.xml'
     }
 
     const validUniqueFiles = findFiles(
