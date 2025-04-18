@@ -76,7 +76,7 @@ describe('elf-symbols upload', () => {
         cmd['symbolsLocations'] = [fixtureDir]
         process.env.DATADOG_API_KEY = 'fake_api_key'
       })
-      const output = context.stdout.toString().split(os.EOL)
+      const output = context.stdout.toString().split('\n')
 
       expect(exitCode).toBe(0)
 

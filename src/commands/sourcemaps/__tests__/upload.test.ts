@@ -1,5 +1,3 @@
-import os from 'os'
-
 import chalk from 'chalk'
 import {Cli} from 'clipanion'
 import upath from 'upath'
@@ -181,7 +179,7 @@ describe('execute', () => {
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePath: 'src/commands/sourcemaps/__tests__/fixtures/basic',
@@ -197,7 +195,7 @@ describe('execute', () => {
 
   test('relative path', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/basic')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePath: 'src/commands/sourcemaps/__tests__/fixtures/basic',
@@ -213,7 +211,7 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI(CWD + '/src/commands/sourcemaps/__tests__/fixtures/basic')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePath: `${CWD}/src/commands/sourcemaps/__tests__/fixtures/basic`,
@@ -229,7 +227,7 @@ describe('execute', () => {
 
   test('using the mjs extension', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/mjs')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePath: 'src/commands/sourcemaps/__tests__/mjs',
@@ -245,7 +243,7 @@ describe('execute', () => {
 
   test('all files are skipped', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()
     expect(output[3]).toContain('Some sourcemaps have been skipped')
@@ -255,7 +253,7 @@ describe('execute', () => {
 
   test('mix of skipped filed and correct files', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/mixed')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()
     expect(output[4]).toContain('Some sourcemaps have been skipped')
@@ -266,7 +264,7 @@ describe('execute', () => {
 
   test('completely empty sourcemap should be skipped', async () => {
     const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/empty-file/')
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()
     expect(output[3]).toContain('Some sourcemaps have been skipped')

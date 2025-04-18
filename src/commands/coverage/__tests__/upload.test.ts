@@ -1,5 +1,3 @@
-import os from 'os'
-
 import upath from 'upath'
 
 import {createCommand, createMockContext, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
@@ -266,7 +264,7 @@ describe('execute', () => {
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/__tests__/doesnotexist/../fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/__tests__/fixtures'],
@@ -275,7 +273,7 @@ describe('execute', () => {
 
   test('multiple paths', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/first/', 'src/commands/coverage/second/'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/coverage/first/', 'src/commands/coverage/second/'],
@@ -284,7 +282,7 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const {context, code} = await runCLI([CWD + '/src/commands/coverage/__tests__/fixtures'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${CWD}/src/commands/coverage/__tests__/fixtures`],
@@ -293,7 +291,7 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([CWD + '/src/commands/coverage/__tests__/fixtures/single_file.xml'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${CWD}/src/commands/coverage/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')

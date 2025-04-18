@@ -173,7 +173,7 @@ describe('execute', () => {
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
@@ -187,7 +187,7 @@ describe('execute', () => {
       './src/commands/sarif/__tests__/fixtures/subfolder/',
       './src/commands/sarif/__tests__/fixtures/another_subfolder/',
     ])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [
@@ -202,7 +202,7 @@ describe('execute', () => {
   test('absolute path', async () => {
     const cwd = upath.normalize(process.cwd())
     const {context, code} = await runCLI([cwd + '/src/commands/sarif/__tests__/fixtures/subfolder'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
       basePaths: [`${cwd}/src/commands/sarif/__tests__/fixtures/subfolder`],
@@ -230,7 +230,7 @@ describe('execute', () => {
 
       const {context, code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
 
-      const output = context.stdout.toString().split(os.EOL)
+      const output = context.stdout.toString().split('\n')
       expect(code).toBe(0)
 
       checkConsoleOutput(output, {
@@ -265,7 +265,7 @@ describe('execute', () => {
 
   test('single file', async () => {
     const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${CWD}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
@@ -278,7 +278,7 @@ describe('execute', () => {
 
   test('not found file', async () => {
     const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     const path = `${CWD}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
     expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path}`)

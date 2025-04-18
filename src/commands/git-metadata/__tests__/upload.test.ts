@@ -1,5 +1,3 @@
-import os from 'os'
-
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {UploadCommand} from '../upload'
@@ -9,7 +7,7 @@ describe('execute', () => {
 
   test('runCLI', async () => {
     const {code, context} = await runCLI([], {DATADOG_API_KEY: 'PLACEHOLDER'})
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     output.reverse()
     expect(output[1]).toContain('[DRYRUN] Handled')
     expect(code).toBe(0)
@@ -17,7 +15,7 @@ describe('execute', () => {
 
   test('runCLI without api key', async () => {
     const {code, context} = await runCLI([], {DATADOG_API_KEY: ''})
-    const output = context.stdout.toString().split(os.EOL)
+    const output = context.stdout.toString().split('\n')
     output.reverse()
     expect(output[1]).toContain('Missing DATADOG_API_KEY in your environment')
     expect(code).toBe(1)
