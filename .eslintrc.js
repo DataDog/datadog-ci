@@ -256,6 +256,7 @@ module.exports = {
     'use-isnan': 'error',
     'valid-typeof': 'off',
     'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
+    'jest/padding-around-test-blocks': 'error',
     'no-restricted-imports': [
       'error',
       {
