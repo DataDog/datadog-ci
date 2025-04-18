@@ -44,7 +44,7 @@ describe('plist util', () => {
 
     it('throws an error if the file does not exist', () => {
       expect(() => parsePlist('non-existing-file')).toThrow(
-        "ENOENT: no such file or directory, open 'non-existing-file'"
+        /ENOENT: no such file or directory, open '.*non-existing-file'/
       )
     })
 
