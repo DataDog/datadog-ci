@@ -1,4 +1,4 @@
-import path from 'path'
+import upath from 'upath'
 
 import {createReaderFromFile} from '../../../helpers/filereader'
 
@@ -833,7 +833,7 @@ describe('elf', () => {
     })
 
     const checkCopyDebugInfo = async (elfFile: string) => {
-      const filename = path.basename(elfFile)
+      const filename = upath.basename(elfFile)
       const outputFilename = `${tmpDirectory}/${filename}.debug`
       const elfFileMetadata = await getElfFileMetadata(elfFile)
       await copyElfDebugInfo(elfFile, outputFilename, elfFileMetadata, true)

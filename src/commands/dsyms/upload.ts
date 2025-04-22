@@ -1,8 +1,8 @@
 import {promises} from 'fs'
-import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -10,7 +10,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
-import {globSync} from '../../helpers/fs'
+import {globSync} from '../../helpers/glob'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
@@ -83,7 +83,7 @@ export class UploadCommand extends Command {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     // Normalizing the basePath to resolve .. and .
-    this.basePath = path.posix.normalize(this.basePath)
+    this.basePath = upath.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
     this.config = await resolveConfigFromFileAndEnvironment(
@@ -244,18 +244,18 @@ export class UploadCommand extends Command {
       try {
         const newDSYMBundleName = `${slice.uuid}.dSYM`
         const newDSYMBundlePath = buildPath(intermediatePath, newDSYMBundleName)
-        const newObjectPath = buildPath(newDSYMBundlePath, path.relative(dsym.bundlePath, slice.objectPath))
+        const newObjectPath = buildPath(newDSYMBundlePath, upath.relative(dsym.bundlePath, slice.objectPath))
 
         // Extract arch slice:
-        await promises.mkdir(path.dirname(newObjectPath), {recursive: true})
+        await promises.mkdir(upath.dirname(newObjectPath), {recursive: true})
         await executeLipo(slice.objectPath, slice.arch, newObjectPath)
 
         // The original dSYM bundle can also include `Info.plist` file, so copy it to the `<uuid>.dSYM` as well.
         // Ref.: https://opensource.apple.com/source/lldb/lldb-179.1/www/symbols.html
         const infoPlistPath = globSync(buildPath(dsym.bundlePath, '**/Info.plist'))[0]
         if (infoPlistPath) {
-          const newInfoPlistPath = buildPath(newDSYMBundlePath, path.relative(dsym.bundlePath, infoPlistPath))
-          await promises.mkdir(path.dirname(newInfoPlistPath), {recursive: true})
+          const newInfoPlistPath = buildPath(newDSYMBundlePath, upath.relative(dsym.bundlePath, infoPlistPath))
+          await promises.mkdir(upath.dirname(newInfoPlistPath), {recursive: true})
           await promises.copyFile(infoPlistPath, newInfoPlistPath)
         }
 

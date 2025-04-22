@@ -1,7 +1,7 @@
 import fs from 'fs'
-import path from 'path'
 
 import {XMLValidator} from 'fast-xml-parser'
+import upath from 'upath'
 
 import {renderFileReadError} from './renderer'
 
@@ -32,7 +32,7 @@ export const detectFormat = (filePath: string): 'jacoco' | undefined => {
   if (!fs.existsSync(filePath)) {
     return undefined
   }
-  if (path.extname(filePath).toLowerCase() !== '.xml') {
+  if (upath.extname(filePath).toLowerCase() !== '.xml') {
     return undefined
   }
 

@@ -5,27 +5,8 @@
 
 import fs from 'fs'
 
-import * as globModule from 'glob'
 import JSZip from 'jszip'
 import upath from 'upath'
-
-/**
- * Synchronous form of `glob` which returns `upath`-normalized paths.
- */
-export const globSync = (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
-  const results = globModule.sync(pattern, {...opts})
-
-  return results.map((path) => upath.normalizeSafe(path))
-}
-
-/**
- * Asynchronous form of `glob` which returns `upath`-normalized paths.
- */
-export const globAsync = async (pattern: string, opts?: globModule.GlobOptionsWithFileTypesFalse) => {
-  const results = await globModule.glob(pattern, {...opts})
-
-  return results.map((path) => upath.normalizeSafe(path))
-}
 
 /**
  * Delete a folder and all its contents

@@ -1,8 +1,6 @@
 import * as fs from 'fs'
 
-import * as glob from 'glob'
-
-import {globSync} from './fs'
+import {globSync, hasMagic} from './glob'
 import {buildPath, isFile} from './utils'
 
 const DEFAULT_IGNORED_FOLDERS = [
@@ -68,7 +66,7 @@ export const findFiles = (
     if (isFile(basePath)) {
       // regular file
       return fs.existsSync(basePath) ? [basePath] : []
-    } else if (glob.hasMagic(basePath)) {
+    } else if (hasMagic(basePath)) {
       // glob pattern
       const globMatches = globSync(basePath, {dotRelative: true})
       if (searchRecursively) {

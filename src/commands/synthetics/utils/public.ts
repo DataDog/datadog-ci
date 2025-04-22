@@ -4,10 +4,10 @@ import process from 'process'
 import {promisify} from 'util'
 
 import chalk from 'chalk'
-import {globSync} from 'glob'
 import upath from 'upath'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
+import {globSync} from '../../../helpers/glob'
 
 import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'

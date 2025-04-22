@@ -1,6 +1,5 @@
-import path from 'path'
-
 import chalk from 'chalk'
+import upath from 'upath'
 
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
@@ -108,8 +107,8 @@ export const renderCommandDetail = (intermediateDirectory: string, uploadDirecto
   `Will use temporary upload directory: ${uploadDirectory}\n`
 
 export const renderUpload = (dSYM: CompressedDsym): string => {
-  const archiveName = path.basename(dSYM.archivePath)
-  const objectName = dSYM.dsym.slices.map((slice) => path.basename(slice.objectPath))[0]
+  const archiveName = upath.basename(dSYM.archivePath)
+  const objectName = dSYM.dsym.slices.map((slice) => upath.basename(slice.objectPath))[0]
   const archs = dSYM.dsym.slices.map((slice) => slice.arch).join()
   const uuids = dSYM.dsym.slices.map((slice) => slice.uuid).join()
 

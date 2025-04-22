@@ -1,9 +1,9 @@
 import fs from 'fs'
-import path from 'path'
 
 import type {Writable} from 'stream'
 
 import c from 'chalk'
+import upath from 'upath'
 import {Builder} from 'xml2js'
 
 import type {CommandContext} from '../../../helpers/interfaces'
@@ -291,7 +291,7 @@ export class JUnitReporter implements Reporter {
     // Write the file
     try {
       const xml = this.builder.buildObject(this.json)
-      fs.mkdirSync(path.dirname(this.destination), {recursive: true})
+      fs.mkdirSync(upath.dirname(this.destination), {recursive: true})
       fs.writeFileSync(this.destination, xml, 'utf8')
       this.write(`\n✅ Created a jUnit report at ${c.bold.green(this.destination)}\n`)
     } catch (e) {

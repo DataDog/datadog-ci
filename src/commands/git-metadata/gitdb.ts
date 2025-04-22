@@ -2,13 +2,13 @@ import child_process from 'child_process'
 import fs from 'fs'
 import {mkdtemp} from 'fs/promises'
 import os from 'os'
-import path from 'path'
 
 import type {AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 import {lte} from 'semver'
 import * as simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
 import {RequestBuilder} from '../../helpers/interfaces'
@@ -287,8 +287,8 @@ const generatePackFilesForCommits = async (log: Logger, commits: string[]): Prom
 
   const generatePackfiles = async (baseTmpPath: string): Promise<[string[], string | undefined]> => {
     const randomPrefix = String(Math.floor(Math.random() * 10000))
-    const tmpPath = await mkdtemp(path.join(baseTmpPath, 'dd-packfiles-'))
-    const packfilePath = path.join(tmpPath, randomPrefix)
+    const tmpPath = await mkdtemp(upath.join(baseTmpPath, 'dd-packfiles-'))
+    const packfilePath = upath.join(tmpPath, randomPrefix)
     const packObjectResults = child_process
       .execSync(`git pack-objects --compression=9 --max-pack-size=3m ${packfilePath}`, {
         input: commits.join('\n'),
@@ -359,7 +359,7 @@ export const uploadPackfile = async (
   form.append('pushedSha', pushedSha, {contentType: 'application/json'})
   const packFileContent = fs.readFileSync(packfilePath)
   // The original filename includes a random prefix, so we remove it here
-  const [, filename] = path.basename(packfilePath).split('-')
+  const [, filename] = upath.basename(packfilePath).split('-')
   form.append('packfile', packFileContent, {
     filename,
     contentType: 'application/octet-stream',

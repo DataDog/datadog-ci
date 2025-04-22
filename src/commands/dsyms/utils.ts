@@ -1,6 +1,7 @@
 import fs from 'fs/promises'
 import {tmpdir} from 'os'
-import path from 'path'
+
+import upath from 'upath'
 
 import {buildPath, execute} from '../../helpers/utils'
 
@@ -8,7 +9,7 @@ export const isZipFile = async (filepath: string) => {
   try {
     const stats = await fs.stat(filepath)
 
-    return stats.size !== 0 && path.extname(filepath) === '.zip'
+    return stats.size !== 0 && upath.extname(filepath) === '.zip'
   } catch (error) {
     // Log to console "file exists yet empty" ?
     return false
@@ -28,8 +29,8 @@ export const deleteDirectory = async (directoryPath: string): Promise<void> => {
 }
 
 export const zipDirectoryToArchive = async (directoryPath: string, archivePath: string) => {
-  const cwd = path.dirname(directoryPath)
-  const directoryName = path.basename(directoryPath)
+  const cwd = upath.dirname(directoryPath)
+  const directoryName = upath.basename(directoryPath)
   await execute(`zip -r '${archivePath}' '${directoryName}'`, cwd)
 }
 

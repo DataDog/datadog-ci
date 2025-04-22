@@ -2,10 +2,10 @@ import child_process from 'child_process'
 import fs from 'fs'
 import fspromises from 'fs/promises'
 import os from 'os'
-import path from 'path'
 
 import {default as axios} from 'axios'
 import * as simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {Logger, LogLevel} from '../../../helpers/logger'
 import {getRequestBuilder} from '../../../helpers/utils'
@@ -13,7 +13,7 @@ import {getRequestBuilder} from '../../../helpers/utils'
 import {uploadToGitDB} from '../gitdb'
 
 describe('gitdb', () => {
-  const tmpdir = path.join(os.tmpdir(), 'random')
+  const tmpdir = upath.join(os.tmpdir(), 'random')
 
   const temporaryPackFile = `${tmpdir}/1000-87ce64f636853fbebc05edfcefe9cccc28a7968b.pack`
   const secondTemporaryPackFile = `${tmpdir}/1000-cc424c261da5e261b76d982d5d361a023556e2aa.pack`
@@ -866,7 +866,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -951,7 +951,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
           output: Buffer.from('87ce64f636853fbebc05edfcefe9cccc28a7968b\ncc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -1052,7 +1052,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],
@@ -1149,7 +1149,7 @@ describe('gitdb', () => {
       version: [{input: undefined, output: newGitVersion}],
       execSync: [
         {
-          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}${path.sep}1000`,
+          input: `git pack-objects --compression=9 --max-pack-size=3m ${tmpdir}/1000`,
           output: Buffer.from('cc424c261da5e261b76d982d5d361a023556e2aa\n'),
         },
       ],

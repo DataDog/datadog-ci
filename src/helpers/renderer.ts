@@ -1,7 +1,7 @@
-import path from 'path'
 import process from 'process'
 
 import chalk from 'chalk'
+import upath from 'upath'
 
 export const dryRunTag = chalk.bold(chalk.cyan('[Dry Run]'))
 export const errorTag = chalk.bold(chalk.red('[Error]'))
@@ -65,7 +65,7 @@ export const renderProjectFiles = (projectFilePaths: Set<string>) => {
   }
   let msg = chalk.bold(`\n✅ Found project file(s) in ${process.cwd()}:\n`)
   for (const filePath of projectFilePaths) {
-    const fileName = path.basename(filePath)
+    const fileName = upath.basename(filePath)
     msg += `• ${fileName}\n`
   }
 
@@ -89,7 +89,7 @@ export const renderAdditionalFiles = (additionalFilePaths: Set<string>) => {
   }
   let msg = chalk.bold(`\nAdded ${additionalFilePaths.size} custom file(s):\n`)
   for (const filePath of additionalFilePaths) {
-    const fileName = path.basename(filePath)
+    const fileName = upath.basename(filePath)
     msg += `• ${fileName}\n`
   }
 
