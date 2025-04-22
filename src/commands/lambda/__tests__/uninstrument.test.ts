@@ -213,12 +213,12 @@ describe('lambda', () => {
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-        const {code, context} = await runCLI(['lambda', 'uninstrument'])
+        const {code, context} = await runCLI([])
         expect(code).toBe(1)
         expect(context.stdout.toString()).toMatchInlineSnapshot(`
-          "[31m[1mUnknown Syntax Error[22m[39m: Extraneous positional argument ("lambda").
-
-          $ ... lambda uninstrument [--config #0] [-d,--dry,--dry-run] [--forwarder #0] [-f,--function #0] [-i,--interactive] [--profile #0] [--functions-regex,--functionsRegex #0] [-r,--region #0] [--fips] [--fips-ignore-error]
+          "
+          🐶 Uninstrumenting Lambda function
+          [Error] No functions specified to remove instrumentation.
           "
         `)
       })
