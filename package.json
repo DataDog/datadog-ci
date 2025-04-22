@@ -41,7 +41,7 @@
     "clean:win": "rm dist -r",
     "clean": "rm -rf dist/*",
     "dist-standalone": "pkg --compress GZip .",
-    "dist-standalone:test": "jest --config ./jest.config-standalone.js",
+    "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
     "format": "yarn eslint --fix",
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
