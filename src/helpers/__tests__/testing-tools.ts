@@ -12,10 +12,27 @@ export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
 export const MOCK_CWD = 'mock-folder'
 export const MOCK_FLARE_FOLDER_PATH = path.join(MOCK_CWD, '.datadog-ci')
 
-export const createMockContext = (opts?: {
+interface MockContextOptions {
+  /**
+   * Whether to append `stderr` to `stdout` for testing purposes, to make it easier to check against snapshots.
+   *
+   * This way, `context.stdout.toString()` looks like what a user would see in their terminal if they didn't redirect the standard output or error.
+   */
   appendStdoutWithStderr?: boolean
+  /**
+   * Define a custom environment for the command. That's only useful if your command uses `this.env` instead of `process.env`.
+   */
   env?: CommandContext['env']
-}): CommandContext => {
+}
+
+interface MakeRunCLIOptions extends MockContextOptions {
+  /**
+   * Enable this if you want to set `process.env` yourself in the test before running `runCLI`.
+   */
+  skipResetEnv?: boolean
+}
+
+export const createMockContext = (opts?: MockContextOptions): CommandContext => {
   let out = ''
   let err = ''
 
@@ -31,8 +48,6 @@ export const createMockContext = (opts?: {
       toString: () => err,
       write: (chunk: string) => {
         err += chunk
-        // This is solely for testing purposes: it's easier to check only `stdout` against snapshots.
-        // This way, `context.stdout.toString()` looks like what a user would see in their terminal.
         if (opts?.appendStdoutWithStderr) {
           out += chunk
         }
@@ -48,25 +63,24 @@ export const getEnvVarPlaceholders = () => ({
   DATADOG_APP_KEY: 'PLACEHOLDER',
 })
 
-export const makeRunCLI = (
-  commandClass: CommandClass,
-  baseArgs: string[],
-  opts?: {appendStdoutWithStderr?: boolean; skipResetEnv?: boolean}
-) => async (extraArgs: string[], extraEnv?: Record<string, string>) => {
+export const makeRunCLI = (commandClass: CommandClass, baseArgs: string[], opts?: MakeRunCLIOptions) => async (
+  extraArgs: string[],
+  extraEnv?: Record<string, string>
+) => {
   const cli = new Cli()
   cli.register(commandClass)
 
-  // Enable `skipResetEnv` if you want to set `process.env` yourself in the test before running `runCLI`.
   if (!opts?.skipResetEnv) {
     process.env = getEnvVarPlaceholders()
   }
 
   process.env = {
     ...process.env,
+    ...opts?.env,
     ...extraEnv,
   }
 
-  const context = createMockContext({env: process.env, appendStdoutWithStderr: opts?.appendStdoutWithStderr})
+  const context = createMockContext({...opts, env: process.env})
   const code = await cli.run([...baseArgs, ...extraArgs], context)
 
   return {context, code}
