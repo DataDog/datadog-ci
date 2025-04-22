@@ -46,6 +46,7 @@ describe('dd-api', () => {
         id: RESULT_ID,
         finished_at: 0,
       } as unknown) as ServerResult,
+      resultID: RESULT_ID,
     },
   ]
   const RAW_POLL_RESULTS: RawPollResult = {
@@ -91,7 +92,7 @@ describe('dd-api', () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: RAW_POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
-    expect(results[0].result.id).toBe(RESULT_ID)
+    expect(results[0].resultID).toBe(RESULT_ID)
   })
 
   test('should trigger tests using api', async () => {

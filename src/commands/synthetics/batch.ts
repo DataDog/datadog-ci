@@ -15,6 +15,7 @@ import {
   Result,
   ResultDisplayInfo,
   ResultInBatch,
+  ServerResult,
   Test,
   TestPayload,
   Trigger,
@@ -369,7 +370,7 @@ const createResult = (
     selectiveRerun: resultInBatch.selective_rerun,
     test: deepExtend({}, test, pollResult?.test),
     timedOut: hasTimedOut,
-    timestamp: pollResult?.result.finished_at ?? Date.now(),
+    timestamp: pollResult?.result?.finished_at ?? Date.now(),
   }
 }
 
@@ -394,8 +395,16 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
     const pollResults = await api.pollResults(resultIds)
 
     pollResults.forEach((r) => {
-      pollResultMap.set(r.result.id, r)
-      backupPollResultMap.set(r.result.id, r)
+      // Server results can take some time to arrive. During this time,
+      // the endpoint returns a partial result with only `id` and `test_type` set.
+      // We keep the `PollResult` information (e.g. `timestamp`)
+      // but remove the server result to avoid reporting an unexpected object shape.
+      if (r.result && !('finished_at' in (r.result as Partial<ServerResult>))) {
+        incompleteResultIds.add(r.resultID)
+        delete r.result
+      }
+      pollResultMap.set(r.resultID, r)
+      backupPollResultMap.set(r.resultID, r)
     })
 
     return {pollResultMap, incompleteResultIds}

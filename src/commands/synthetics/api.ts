@@ -218,6 +218,7 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<RawPoll
     const pollResult: PollResult = {
       ...r.attributes,
       test: parseIncludedTest(test),
+      resultID: r.id,
     }
 
     parsedPollResults.push(pollResult)

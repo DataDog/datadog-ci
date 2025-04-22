@@ -115,8 +115,9 @@ export interface RawPollResultTest {
 
 export type PollResult = {
   test_type: 'api' | 'browser' | 'mobile'
-  result: ServerResult
   test: RecursivePartial<Test>
+  result?: ServerResult
+  resultID: string
   device?: Device
 }
 
