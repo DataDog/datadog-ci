@@ -396,9 +396,8 @@ const getPollResultMap = async (api: APIHelper, resultIds: string[], backupPollR
 
     pollResults.forEach((r) => {
       // Server results can take some time to arrive. During this time,
-      // the endpoint returns a partial result with only `id` and `test_type` set.
-      // We keep the `PollResult` information (e.g. `timestamp`)
-      // but remove the server result to avoid reporting an unexpected object shape.
+      // the endpoint returns a partial result with only `test_type` and `result.id` set.
+      // We keep the `PollResult` but remove the `ServerResult` to avoid reporting incomplete data.
       if (r.result && !('finished_at' in (r.result as Partial<ServerResult>))) {
         incompleteResultIds.add(r.resultID)
         delete r.result

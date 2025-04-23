@@ -212,7 +212,7 @@ export const getApiResult = (
 })
 
 export const getIncompleteServerResult = (): ServerResult => {
-  return ({test_type: 'api'} as unknown) as ServerResult
+  return {id: 'my_result_id'} as ServerResult
 }
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({

@@ -22,6 +22,7 @@ import {
   getBrowserResult,
   getBrowserTest,
   getFailedBrowserResult,
+  getIncompleteServerResult,
   getSummary,
   getTimedOutBrowserResult,
 } from '../fixtures'
@@ -255,7 +256,7 @@ describe('Default reporter', () => {
       ])
       const failure = {code: 'INCORRECT_ASSERTION', message: errorMessage}
 
-      const {executionRule, passed, retries, maxRetries, selectiveRerun, timedOut} = opts
+      const {executionRule, incomplete, passed, retries, maxRetries, selectiveRerun, timedOut} = opts
 
       const result = test.type === 'api' ? getApiResult(resultId, test) : getBrowserResult(resultId, test)
 
@@ -290,6 +291,10 @@ describe('Default reporter', () => {
 
       if (selectiveRerun) {
         result.selectiveRerun = selectiveRerun
+      }
+
+      if (incomplete) {
+        result.result = getIncompleteServerResult()
       }
 
       return result
