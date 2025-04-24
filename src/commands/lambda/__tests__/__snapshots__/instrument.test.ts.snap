@@ -668,7 +668,6 @@ exports[`lambda instrument execute prints which functions failed to instrument w
 	- arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
 	- arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
 	- arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
-	- arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
 
 Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
@@ -766,29 +765,10 @@ TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
 {
   "dd_sls_ci": "vXXXX"
 }
-UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
-{
-  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2",
-  "Environment": {
-    "Variables": {
-      "DD_LAMBDA_HANDLER": "index.handler",
-      "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
-      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
-      "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
-    }
-  }
-}
-TagResource -> arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2
-{
-  "dd_sls_ci": "vXXXX"
-}
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1 Error: Unexpected error updating request
 [Error] Failed updating arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2 Error: Unexpected error updating request
-[!] Updated 3 Lambda functions.
+[!] Updated 2 Lambda functions.
 
 "
 `;

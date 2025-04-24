@@ -1,8 +1,7 @@
 import chalk from 'chalk'
-import {Cli} from 'clipanion'
 import upath from 'upath'
 
-import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -151,34 +150,20 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (path: string) => {
-    const cli = new Cli()
-    cli.register(UploadCommand)
-
-    const context = createMockContext()
-    process.env = getEnvVarPlaceholders()
-
-    const code = await cli.run(
-      [
-        'sourcemaps',
-        'upload',
-        path,
-        '--release-version',
-        '1234',
-        '--service',
-        'test-service',
-        '--minified-path-prefix',
-        'https://static.com/js',
-        '--dry-run',
-      ],
-      context
-    )
-
-    return {context, code}
-  }
+  const runCLI = makeRunCLI(UploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--release-version',
+    '1234',
+    '--service',
+    'test-service',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
 
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -194,7 +179,7 @@ describe('execute', () => {
   })
 
   test('relative path', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/basic')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -210,7 +195,7 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI(CWD + '/src/commands/sourcemaps/__tests__/fixtures/basic')
+    const {context, code} = await runCLI([CWD + '/src/commands/sourcemaps/__tests__/fixtures/basic'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -226,7 +211,7 @@ describe('execute', () => {
   })
 
   test('using the mjs extension', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/mjs')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/mjs'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -242,7 +227,7 @@ describe('execute', () => {
   })
 
   test('all files are skipped', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()
@@ -252,7 +237,7 @@ describe('execute', () => {
   })
 
   test('mix of skipped filed and correct files', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/mixed')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/mixed'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()
@@ -263,7 +248,7 @@ describe('execute', () => {
   })
 
   test('completely empty sourcemap should be skipped', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/empty-file/')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/empty-file/'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     output.reverse()

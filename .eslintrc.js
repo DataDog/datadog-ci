@@ -11,7 +11,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:jest/recommended',
   ],
-  ignorePatterns: '*.js',
+  ignorePatterns: ['.eslintrc.js', 'jest.config.js'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: 'tsconfig.json',
