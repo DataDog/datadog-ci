@@ -9,7 +9,7 @@ import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constant
 import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../flare'
 import * as flareModule from '../flare'
 
-import {MOCK_CWD} from './fixtures'
+import {MOCK_CWD} from './testing-tools'
 
 // Mocks
 jest.mock('fs')

@@ -5,7 +5,7 @@ import type {AxiosResponse} from 'axios'
 
 import axios, {AxiosError} from 'axios'
 
-import {getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {CriticalError} from '../errors'

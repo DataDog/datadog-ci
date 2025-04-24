@@ -1,43 +1,20 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
+
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {TagCommand} from '../tag'
 
 const fixturesPath = './src/commands/tag/__tests__/fixtures'
 
-const makeCLI = () => {
-  const cli = new Cli()
-  cli.register(TagCommand)
-
-  return cli
-}
-
-const createMockContext = () => {
-  let out = ''
-  let err = ''
-
-  return {
-    stderr: {
-      toString: () => err,
-      write: (input: string) => {
-        err += input
-      },
-    },
-    stdout: {
-      toString: () => out,
-      write: (input: string) => {
-        out += input
-      },
-    },
-  }
-}
-
 describe('execute', () => {
   const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {
-    const cli = makeCLI()
-    const context = createMockContext() as any
+    const cli = new Cli()
+    cli.register(TagCommand)
+
+    const context = createMockContext()
     process.env = {
-      DATADOG_API_KEY: 'PLACEHOLDER',
       ...env,
+      ...getEnvVarPlaceholders(),
     }
 
     const tagsList: string[] = []

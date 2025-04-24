@@ -1,8 +1,12 @@
 // Only the function is exported, not the test such that there is no test duplication
 
+import {makeRunCLI} from '../../helpers/__tests__/testing-tools'
+
+type RunCLIType = ReturnType<typeof makeRunCLI>
+
 /* eslint-disable jest/no-export */
 
-export const makeCIProviderTests = (runCLI: any, runCLIArgs: string[]) => {
+export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) => {
   describe('execute', () => {
     test('should fail if no CI is detected', async () => {
       process.env = {}

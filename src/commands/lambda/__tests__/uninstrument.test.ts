@@ -20,7 +20,7 @@ import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../constants'
-import {createCommand, createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'
@@ -43,7 +43,6 @@ import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
 
 import {
-  makeCli,
   mockAwsAccessKeyId,
   mockAwsSecretAccessKey,
   mockLambdaClientCommands,
@@ -51,7 +50,9 @@ import {
 } from './fixtures'
 
 describe('lambda', () => {
+  const runCLI = makeRunCLI(UninstrumentCommand, ['lambda', 'uninstrument'], {skipResetEnv: true})
   const lambdaClientMock = mockClient(LambdaClient)
+
   describe('uninstrument', () => {
     describe('execute', () => {
       const OLD_ENV = process.env
@@ -110,14 +111,11 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
         process.env.DATADOG_API_KEY = '1234'
-        const code = await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1', '-d'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-f', functionARN, '-r', 'us-east-1', '-d'])
         expect(code).toBe(0)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           [Dry Run] 🐶 Uninstrumenting Lambda function
 
@@ -179,11 +177,9 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:000000000000:function:uninstrument'
         process.env.DATADOG_API_KEY = '1234'
-        await cli.run(['lambda', 'uninstrument', '-f', functionARN, '-r', 'us-east-1'], context)
+        await runCLI(['-f', functionARN, '-r', 'us-east-1'])
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
       })
       test('aborts early when the aws-sdk throws an error', async () => {
@@ -196,9 +192,8 @@ describe('lambda', () => {
         command['region'] = 'us-east-1'
 
         const code = await command['execute']()
-        const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] Couldn't fetch Lambda functions. Error: Lambda Failed
@@ -208,25 +203,19 @@ describe('lambda', () => {
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument', '--function', 'my-func'], context)
+        const {code, context} = await runCLI(['--function', 'my-func'])
 
-        const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch(
+        expect(context.stdout.toString()).toMatch(
           'No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN'
         )
       })
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] No functions specified to remove instrumentation.
@@ -240,8 +229,7 @@ describe('lambda', () => {
         const command = createCommand(UninstrumentCommand)
         command['config']['region'] = 'ap-southeast-1'
         await command['execute']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] No functions specified to remove instrumentation.
@@ -257,8 +245,7 @@ describe('lambda', () => {
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
         await command['execute']()
-        let output = command.context.stdout.toString()
-        expect(output).toMatch(
+        expect(command.context.stdout.toString()).toMatch(
           'Functions in config file and "--functions-regex" should not be used at the same time.\n'
         )
 
@@ -267,8 +254,9 @@ describe('lambda', () => {
         command['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['regExPattern'] = 'valid-pattern'
         await command['execute']()
-        output = command.context.stdout.toString()
-        expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+        expect(command.context.stdout.toString()).toMatch(
+          '"--functions" and "--functions-regex" should not be used at the same time.\n'
+        )
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -278,9 +266,8 @@ describe('lambda', () => {
         command['region'] = 'ap-southeast-1'
         command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
         const code = await command['execute']()
-        const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+        expect(command.context.stdout.toString()).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
 
       test('aborts if the regEx pattern is set but no region is specified', async () => {
@@ -290,9 +277,8 @@ describe('lambda', () => {
         const command = createCommand(UninstrumentCommand)
         command['regExPattern'] = 'my-function'
         const code = await command['execute']()
-        const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch('No default region specified. [-r,--region]')
+        expect(command.context.stdout.toString()).toMatch('No default region specified. [-r,--region]')
       })
 
       test('aborts if the the aws-sdk fails', async () => {
@@ -304,9 +290,8 @@ describe('lambda', () => {
         command['region'] = 'ap-southeast-1'
         command['regExPattern'] = 'my-function'
         const code = await command['execute']()
-        const output = command.context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
@@ -402,12 +387,9 @@ describe('lambda', () => {
         ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('uninstrument multiple specified functions interactively', async () => {
@@ -498,34 +480,23 @@ describe('lambda', () => {
         ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'uninstrument',
-            '-i',
-            '-f',
-            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-            '-f',
-            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-i',
+          '-f',
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+          '-f',
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
@@ -542,12 +513,9 @@ describe('lambda', () => {
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa-east-1',
         }
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] Couldn't find any Lambda functions in the specified region.
@@ -565,12 +533,9 @@ describe('lambda', () => {
 
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'uninstrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] Couldn't fetch Lambda functions. Error: ListFunctionsError
@@ -583,159 +548,15 @@ describe('lambda', () => {
           throw Error('Update failed!')
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(
-          ['lambda', 'uninstrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-f', functionARN, '--profile', 'SOME-AWS-PROFILE'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Uninstrumenting Lambda function
           [Error] Error: Couldn't set AWS profile credentials. Update failed!
           "
         `)
-      })
-
-      test('prints which functions failed to uninstrument without aborting when at least one function was uninstrumented correctly', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const failingLambdas = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-        ]
-        mockLambdaConfigurations(lambdaClientMock, {
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-              FunctionName: 'lambda-1-us-east-1',
-              Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
-            },
-          },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-              FunctionName: 'lambda-2-us-east-1',
-              Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
-            },
-          },
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
-              FunctionName: 'lambda-3-us-east-1',
-              Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-              FunctionName: 'lambda-1-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-              FunctionName: 'lambda-2-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
-              FunctionName: 'lambda-3-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs20.x',
-            },
-          },
-        })
-
-        for (const failingLambda of failingLambdas) {
-          lambdaClientMock
-            .on(UpdateFunctionConfigurationCommand, {FunctionName: failingLambda})
-            .rejects('Unexpected error updating request')
-        }
-
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
-      })
-
-      test('aborts when every lambda function fails to update on uninstrument', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const failingLambdas = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-        ]
-        mockLambdaConfigurations(lambdaClientMock, {
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-              FunctionName: 'lambda-1-us-east-1',
-              Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-              FunctionName: 'lambda-1-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
-            },
-          },
-        })
-        for (const failingLambda of failingLambdas) {
-          lambdaClientMock
-            .on(UpdateFunctionConfigurationCommand, {FunctionName: failingLambda})
-            .rejects('Unexpected error updating request')
-        }
-
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(code).toBe(1)
-        expect(output).toMatchSnapshot()
       })
     })
 
@@ -745,12 +566,11 @@ describe('lambda', () => {
         const command = createCommand(UninstrumentCommand)
 
         command['printPlannedActions']([])
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-                   "
-                   No updates will be applied.
-                   "
-                `)
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
+          "
+          No updates will be applied.
+          "
+        `)
       })
     })
   })

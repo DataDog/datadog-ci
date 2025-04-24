@@ -1,7 +1,8 @@
 import os from 'os'
 
 import chalk from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+
+import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -9,7 +10,7 @@ import {UploadCommand} from '../upload'
 describe('upload', () => {
   describe('getMinifiedURL', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -21,7 +22,7 @@ describe('upload', () => {
 
   describe('getMinifiedURL: minifiedPathPrefix has the protocol omitted', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '//datadog.com/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -33,7 +34,7 @@ describe('upload', () => {
 
   describe('getMinifiedURL: minifiedPathPrefix is an absolute path', () => {
     test('should return correct URL', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['basePath'] = '/js/sourcemaps'
       command['minifiedPathPrefix'] = '/js'
       expect(command['getMinifiedURLAndRelativePath']('/js/sourcemaps/common.min.js.map')).toStrictEqual([
@@ -45,7 +46,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: full URL', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'http://datadog.com/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -54,7 +55,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: URL without protocol', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = '//datadog.com/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -63,7 +64,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: leading slash', () => {
     test('should return true', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = '/js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(true)
@@ -72,7 +73,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: no leading slash', () => {
     test('should return false', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'js'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
@@ -81,7 +82,7 @@ describe('upload', () => {
 
   describe('isMinifiedPathPrefixValid: invalid URL without host', () => {
     test('should return false', () => {
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
       command['minifiedPathPrefix'] = 'info: undesired log line\nhttps://example.com/static/js/'
 
       expect(command['isMinifiedPathPrefixValid']()).toBe(false)
@@ -91,7 +92,7 @@ describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
-      const command = new UploadCommand()
+      const command = createCommand(UploadCommand)
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
@@ -101,9 +102,8 @@ describe('upload', () => {
 
   describe('addRepositoryDataToPayloads', () => {
     test('repository url and commit still defined without payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
       const sourcemaps = new Array<Sourcemap>(
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/sourcemap-with-no-files/empty.min.js',
@@ -123,9 +123,8 @@ describe('upload', () => {
     })
 
     test('should include payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
       const sourcemaps = new Array<Sourcemap>(
         new Sourcemap(
           'src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js',
@@ -149,31 +148,20 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = async (path: string) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
-    const code = await cli.run(
-      [
-        'sourcemaps',
-        'upload',
-        path,
-        '--release-version',
-        '1234',
-        '--service',
-        'test-service',
-        '--minified-path-prefix',
-        'https://static.com/js',
-        '--dry-run',
-      ],
-      context
-    )
-
-    return {context, code}
-  }
+  const runCLI = makeRunCLI(UploadCommand, [
+    'sourcemaps',
+    'upload',
+    '--release-version',
+    '1234',
+    '--service',
+    'test-service',
+    '--minified-path-prefix',
+    'https://static.com/js',
+    '--dry-run',
+  ])
 
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/doesnotexist/../fixtures/basic'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -189,7 +177,7 @@ describe('execute', () => {
   })
 
   test('relative path', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/basic')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/basic'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -205,7 +193,7 @@ describe('execute', () => {
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI(process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures/basic')
+    const {context, code} = await runCLI([process.cwd() + '/src/commands/sourcemaps/__tests__/fixtures/basic'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -221,7 +209,7 @@ describe('execute', () => {
   })
 
   test('using the mjs extension', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/mjs')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/mjs'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -237,7 +225,7 @@ describe('execute', () => {
   })
 
   test('all files are skipped', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     output.reverse()
@@ -247,7 +235,7 @@ describe('execute', () => {
   })
 
   test('mix of skipped filed and correct files', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/stdout-output/mixed')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/mixed'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     output.reverse()
@@ -258,7 +246,7 @@ describe('execute', () => {
   })
 
   test('completely empty sourcemap should be skipped', async () => {
-    const {context, code} = await runCLI('./src/commands/sourcemaps/__tests__/fixtures/empty-file/')
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/empty-file/'])
     const output = context.stdout.toString().split(os.EOL)
     expect(code).toBe(0)
     output.reverse()
@@ -267,26 +255,6 @@ describe('execute', () => {
     expect(output[1]).toContain('  * 2 sourcemaps were skipped')
   })
 })
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadCommand)
-
-  return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 interface ExpectedOutput {
   basePath: string

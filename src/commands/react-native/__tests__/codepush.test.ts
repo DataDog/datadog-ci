@@ -1,6 +1,8 @@
 import {readFileSync} from 'fs'
 
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
+
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {CodepushCommand} from '../codepush'
 
@@ -54,37 +56,12 @@ jest.mock('child_process', () => ({
   }),
 }))
 
-const makeCli = () => {
+const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
   const cli = new Cli()
   cli.register(CodepushCommand)
 
-  return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-  let errorData = ''
-
-  return {
-    stderr: {
-      toString: () => errorData,
-      write: (input: string) => {
-        errorData += input
-      },
-    },
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
-
-const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
-  const cli = makeCli()
-  const context = createMockContext() as any
-  process.env = {...process.env, DATADOG_API_KEY: 'PLACEHOLDER'}
+  const context = createMockContext()
+  process.env = {...process.env, ...getEnvVarPlaceholders()}
 
   const command = [
     'react-native',

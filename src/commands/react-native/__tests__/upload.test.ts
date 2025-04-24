@@ -1,8 +1,9 @@
 import os from 'os'
 
 import chalk from 'chalk'
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 
+import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '../../../helpers/apikey'
 
 import {RNSourcemap} from '../interfaces'
@@ -22,9 +23,9 @@ describe('upload', () => {
 
   describe('addRepositoryDataToPayloads', () => {
     test('repository url and commit still defined without payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
+
       const sourcemaps = new Array<RNSourcemap>(
         new RNSourcemap(
           'empty.min.js',
@@ -41,9 +42,9 @@ describe('upload', () => {
     })
 
     test('should include payload', async () => {
-      const command = new UploadCommand()
       const write = jest.fn()
-      command.context = {stdout: {write}} as any
+      const command = createCommand(UploadCommand, {stdout: {write}})
+
       const sourcemaps = new Array<RNSourcemap>(
         new RNSourcemap('main.jsbundle', 'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map')
       )
@@ -65,9 +66,11 @@ describe('execute', () => {
     bundle: string,
     options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>}
   ) => {
-    const cli = makeCli()
-    const context = createMockContext() as any
-    process.env = {DATADOG_API_KEY: 'PLACEHOLDER'}
+    const cli = new Cli()
+    cli.register(UploadCommand)
+
+    const context = createMockContext()
+    process.env = getEnvVarPlaceholders()
     const command = [
       'react-native',
       'upload',
@@ -200,26 +203,6 @@ describe('execute', () => {
     )
   })
 })
-
-const makeCli = () => {
-  const cli = new Cli()
-  cli.register(UploadCommand)
-
-  return cli
-}
-
-const createMockContext = () => {
-  let data = ''
-
-  return {
-    stdout: {
-      toString: () => data,
-      write: (input: string) => {
-        data += input
-      },
-    },
-  }
-}
 
 interface ExpectedOutput {
   build: string

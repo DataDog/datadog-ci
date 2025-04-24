@@ -14,7 +14,7 @@ import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} 
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 
 import {
   CI_API_KEY_ENV_VAR,
@@ -23,7 +23,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
-import {createCommand, createMockContext, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/fixtures'
+import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import {
@@ -43,7 +43,6 @@ import {
 } from '../prompt'
 
 import {
-  makeCli,
   mockAwsAccessKeyId,
   mockAwsCredentials,
   mockAwsSecretAccessKey,
@@ -56,6 +55,7 @@ import {
 } from './fixtures'
 
 describe('lambda', () => {
+  const runCLI = makeRunCLI(InstrumentCommand, ['lambda', 'instrument'], {skipResetEnv: true})
   const lambdaClientMock = mockClient(LambdaClient)
 
   describe('instrument', () => {
@@ -85,37 +85,29 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '--layerVersion',
-            '10',
-            '--logLevel',
-            'debug',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--no-source-code-integration',
-            '--llmobs',
-            'my-ml-app',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '--layerVersion',
+          '10',
+          '--logLevel',
+          'debug',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--no-source-code-integration',
+          '--llmobs',
+          'my-ml-app',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda library and extension layers using kebab case args', async () => {
@@ -129,42 +121,34 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--layer-version',
-            '10',
-            '--extension-version',
-            '5',
-            '--merge-xray-traces',
-            'true',
-            '--flush-metrics-to-logs',
-            'false',
-            '--log-level',
-            'debug',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--layer-version',
+          '10',
+          '--extension-version',
+          '5',
+          '--merge-xray-traces',
+          'true',
+          '--flush-metrics-to-logs',
+          'false',
+          '--log-level',
+          'debug',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda extension layer', async () => {
@@ -178,34 +162,26 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '--extensionVersion',
-            '6',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '--extensionVersion',
+          '6',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('prints dry run data for lambda .NET layer', async () => {
@@ -218,34 +194,26 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '-v',
-            '129',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '-v',
+          '129',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('instrumenting with source code integrations fails if not run within a git repo', async () => {
@@ -260,28 +228,20 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const cli = makeCli()
-        const context = createMockContext()
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output.replace('\n', '')).toMatch(/.*Error: Couldn't get local git status.*/)
+        const {context} = await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '-s',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ])
+        expect(context.stdout.toString().replace('\n', '')).toMatch(/.*Error: Couldn't get local git status.*/)
       })
 
       test('ensure the instrument command ran from a dirty git repo fails', async () => {
@@ -296,7 +256,6 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -307,26 +266,20 @@ describe('lambda', () => {
         const cli = new Cli()
         cli.register(instrumentCommand)
 
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toMatch('Error: Local git repository is dirty')
+        const {context} = await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '-s',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ])
+        expect(context.stdout.toString()).toMatch('Error: Local git repository is dirty')
       })
 
       test('ensure source code integration flag works from a clean repo', async () => {
@@ -341,7 +294,6 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -358,26 +310,20 @@ describe('lambda', () => {
         const cli = new Cli()
         cli.register(instrumentCommand)
 
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
-        expect(output).toMatchSnapshot()
+        const {context} = await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '-s',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ])
+        expect(context.stdout.toString()).toMatchSnapshot()
         expect(mockUploadFunction).toHaveBeenCalledTimes(1)
       })
 
@@ -393,7 +339,6 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -410,27 +355,21 @@ describe('lambda', () => {
         const cli = new Cli()
         cli.register(instrumentCommand)
 
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '--no-upload-git-metadata',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {context} = await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '--no-upload-git-metadata',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ])
         expect(mockUploadFunction).toHaveBeenCalledTimes(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('ensure the instrument command ran from a local git repo ahead of the origin fails', async () => {
@@ -445,7 +384,6 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const context = createMockContext()
         const instrumentCommand = InstrumentCommand
         const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
@@ -456,26 +394,22 @@ describe('lambda', () => {
         const cli = new Cli()
         cli.register(instrumentCommand)
 
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '-s',
-            '--service',
-            'dummy',
-            '--env',
-            'dummy',
-            '--version',
-            '0.1',
-          ],
-          context
+        const {context} = await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '-s',
+          '--service',
+          'dummy',
+          '--env',
+          'dummy',
+          '--version',
+          '0.1',
+        ])
+        expect(context.stdout.toString()).toMatch(
+          'Error: Local changes have not been pushed remotely. Aborting git data tagging.'
         )
-        const output = context.stdout.toString()
-        expect(output).toMatch('Error: Local changes have not been pushed remotely. Aborting git data tagging.')
       })
 
       test('runs function update command for lambda library layer', async () => {
@@ -489,20 +423,13 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--layerVersion',
-            '10',
-            '--no-source-code-integration',
-          ],
-          context
-        )
+        await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--layerVersion',
+          '10',
+          '--no-source-code-integration',
+        ])
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
       })
 
@@ -517,47 +444,32 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
-            '--extensionVersion',
-            '6',
-            '--no-source-code-integration',
-          ],
-          context
-        )
+        await runCLI([
+          '--function',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+          '--extensionVersion',
+          '6',
+          '--no-source-code-integration',
+        ])
 
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
       })
 
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--layerVersion',
-            '10',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '--layerVersion',
+          '10',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+        ])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
           [Error] No functions specified to instrument.
@@ -577,8 +489,8 @@ describe('lambda', () => {
         command['config']['version'] = '0.2'
 
         await command['execute']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
+
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
           [Error] No functions specified to instrument.
@@ -588,61 +500,45 @@ describe('lambda', () => {
 
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'my-func',
-            '--layerVersion',
-            '10',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
+        const {code, context} = await runCLI([
+          '--function',
+          'my-func',
+          '--layerVersion',
+          '10',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
 
-        const output = context.stdout.toString()
         expect(code).toBe(1)
-        expect(output).toMatch(
+        expect(context.stdout.toString()).toMatch(
           `Couldn't group functions. Error: No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN\n`
         )
       })
       test('aborts early when extensionVersion and forwarder are set', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '--function',
-            'test-function-arn',
-            '--forwarder',
-            'arn:aws:lambda:sa-east-1:000000000000:function:datadog-forwarder',
-            '--extensionVersion',
-            '6',
-            '--region',
-            'us-east-1',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '--function',
+          'test-function-arn',
+          '--forwarder',
+          'arn:aws:lambda:sa-east-1:000000000000:function:datadog-forwarder',
+          '--extensionVersion',
+          '6',
+          '--region',
+          'us-east-1',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+        ])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
           [Error] "extensionVersion" and "forwarder" should not be used at the same time.
@@ -673,8 +569,7 @@ describe('lambda', () => {
         command['regExPattern'] = 'valid-pattern'
         command['sourceCodeIntegration'] = false
         await command['execute']()
-        let output = command.context.stdout.toString()
-        expect(output).toMatch(
+        expect(command.context.stdout.toString()).toMatch(
           'Functions in config file and "--functions-regex" should not be used at the same time.\n'
         )
 
@@ -687,8 +582,9 @@ describe('lambda', () => {
         command['regExPattern'] = 'valid-pattern'
         command['sourceCodeIntegration'] = false
         await command['execute']()
-        output = command.context.stdout.toString()
-        expect(output).toMatch('"--functions" and "--functions-regex" should not be used at the same time.\n')
+        expect(command.context.stdout.toString()).toMatch(
+          '"--functions" and "--functions-regex" should not be used at the same time.\n'
+        )
       })
       test('aborts if pattern is set and no default region is specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -701,8 +597,7 @@ describe('lambda', () => {
         command['regExPattern'] = 'valid-pattern'
         command['sourceCodeIntegration'] = false
         await command['execute']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatch('[Error] No default region specified. [-r,--region]\n')
+        expect(command.context.stdout.toString()).toMatch('[Error] No default region specified. [-r,--region]\n')
       })
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
@@ -715,8 +610,7 @@ describe('lambda', () => {
         command['regExPattern'] = 'arn:aws:lambda:ap-southeast-1:123456789012:function:*'
         command['sourceCodeIntegration'] = false
         await command['execute']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
+        expect(command.context.stdout.toString()).toMatch(`"--functions-regex" isn't meant to be used with ARNs.\n`)
       })
 
       test('instrument multiple functions interactively', async () => {
@@ -798,12 +692,9 @@ describe('lambda', () => {
         ])
         ;(requestConfirmation as any).mockImplementation(() => true)
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i', '--no-source-code-integration'])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('instrument multiple specified functions interactively', async () => {
@@ -882,35 +773,24 @@ describe('lambda', () => {
         })
         ;(requestConfirmation as any).mockImplementation(() => true)
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-i',
-            '-f',
-            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
-            '-f',
-            'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-i',
+          '-f',
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+          '-f',
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
           [!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
@@ -927,12 +807,9 @@ describe('lambda', () => {
           [AWS_DEFAULT_REGION_ENV_VAR]: 'sa,-east-1',
         }
         ;(requestDatadogEnvVars as any).mockImplementation(() => Promise.reject('Unexpected error'))
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
 
@@ -989,12 +866,9 @@ describe('lambda', () => {
           process.env[VERSION_ENV_VAR] = mockDatadogVersion
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i', '--no-source-code-integration'])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
@@ -1041,12 +915,9 @@ describe('lambda', () => {
           process.env[VERSION_ENV_VAR] = undefined
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i', '--no-source-code-integration'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i', '--no-source-code-integration'])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('aborts if there are no functions to instrument in the user AWS account', async () => {
@@ -1059,12 +930,9 @@ describe('lambda', () => {
           [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY,
         }
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
 
@@ -1086,12 +954,9 @@ describe('lambda', () => {
 
         lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(['lambda', 'instrument', '-i'], context)
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
 
@@ -1133,42 +998,34 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
-            '--dry-run',
-            '-e',
-            '40',
-            '-v',
-            '19',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
+          '--dry-run',
+          '-e',
+          '40',
+          '-v',
+          '19',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
 
-        const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('instruments image runtimes properly', async () => {
@@ -1190,36 +1047,28 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
-            '--dry-run',
-            '-e',
-            '40',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:provided-al2023',
+          '--dry-run',
+          '-e',
+          '40',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
 
-        const output = context.stdout.toString()
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('aborts early when a layer version is set for a Custom runtime', async () => {
@@ -1232,34 +1081,26 @@ describe('lambda', () => {
             },
           },
         })
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '-v',
-            '6',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '-v',
+          '6',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           [Dry Run] 🐶 Instrumenting Lambda function
           [Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command.
@@ -1279,34 +1120,26 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            functionARN,
-            '--dry-run',
-            '-v',
-            '6',
-            '--extra-tags',
-            'layer:api,team:intake',
-            '--service',
-            'middletier',
-            '--env',
-            'staging',
-            '--version',
-            '0.2',
-            '--no-source-code-integration',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--dry-run',
+          '-v',
+          '6',
+          '--extra-tags',
+          'layer:api,team:intake',
+          '--service',
+          'middletier',
+          '--env',
+          'staging',
+          '--version',
+          '0.2',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           [Dry Run] 🐶 Instrumenting Lambda function
           [Error] Couldn't fetch Lambda functions. Error: Instrumenting arm64 architecture is not supported for the given dd-extension version. Please choose the latest dd-extension version or use x86_64 architecture.
@@ -1328,13 +1161,14 @@ describe('lambda', () => {
           },
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE', '--no-source-code-integration'],
-          context
-        )
+        const {code} = await runCLI([
+          '-f',
+          functionARN,
+          '--profile',
+          'SOME-AWS-PROFILE',
+          '--no-source-code-integration',
+        ])
         expect(code).toBe(0)
       })
 
@@ -1343,16 +1177,10 @@ describe('lambda', () => {
           throw Error('Update failed!')
         })
 
-        const cli = makeCli()
-        const context = createMockContext()
         const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
-        const code = await cli.run(
-          ['lambda', 'instrument', '-f', functionARN, '--profile', 'SOME-AWS-PROFILE'],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI(['-f', functionARN, '--profile', 'SOME-AWS-PROFILE'])
         expect(code).toBe(1)
-        expect(output).toMatchInlineSnapshot(`
+        expect(context.stdout.toString()).toMatchInlineSnapshot(`
           "
           🐶 Instrumenting Lambda function
           [Error] Error: Couldn't set AWS profile credentials. Update failed!
@@ -1416,28 +1244,20 @@ describe('lambda', () => {
             .rejects('Unexpected error updating request')
         }
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+        ])
         expect(code).toBe(0)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
 
       test('aborts when every lambda function fails to update on instrument', async () => {
@@ -1463,22 +1283,14 @@ describe('lambda', () => {
 
         lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects('Unexpected error updating request')
 
-        const cli = makeCli()
-        const context = createMockContext()
-        const code = await cli.run(
-          [
-            'lambda',
-            'instrument',
-            '-f',
-            'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-            '-f',
-            'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-          ],
-          context
-        )
-        const output = context.stdout.toString()
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+        ])
         expect(code).toBe(1)
-        expect(output).toMatchSnapshot()
+        expect(context.stdout.toString()).toMatchSnapshot()
       })
     })
 
@@ -1642,15 +1454,13 @@ describe('lambda', () => {
           command['config'][option] = 'NotBoolean'
           command['getSettings']()
 
-          let output = command.context.stdout.toString()
-          expect(output).toMatch(`[Error] Invalid boolean specified for ${option}.\n`)
+          expect(command.context.stdout.toString()).toMatch(`[Error] Invalid boolean specified for ${option}.\n`)
 
           command = createCommand(InstrumentCommand)
           command[option] = 'NotBoolean'
           command['getSettings']()
 
-          output = command.context.stdout.toString()
-          expect(output).toMatch(`Invalid boolean specified for ${option}.\n`)
+          expect(command.context.stdout.toString()).toMatch(`Invalid boolean specified for ${option}.\n`)
         }
       })
 
@@ -1661,8 +1471,7 @@ describe('lambda', () => {
         command['config']['region'] = 'ap-southeast-1'
         command['config']['functions'] = ['arn:aws:lambda:ap-southeast-1:123456789012:function:lambda-hello-world']
         command['getSettings']()
-        let output = command.context.stdout.toString()
-        expect(output).toMatch(
+        expect(command.context.stdout.toString()).toMatch(
           '[Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
 
@@ -1672,8 +1481,7 @@ describe('lambda', () => {
         command['config']['environment'] = 'b'
         command['config']['service'] = 'middletier'
         command['getSettings']()
-        output = command.context.stdout.toString()
-        expect(output).toMatch(
+        expect(command.context.stdout.toString()).toMatch(
           '[Warning] The version tag has not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.\n'
         )
       })
@@ -1689,8 +1497,9 @@ describe('lambda', () => {
         command['config']['version'] = '0.2'
         command['config']['extraTags'] = 'not@complying:illegal-chars-in-key,complies:valid-pair'
         command['getSettings']()
-        const output = command.context.stdout.toString()
-        expect(output).toMatch('[Error] Extra tags do not comply with the <key>:<value> array.\n')
+        expect(command.context.stdout.toString()).toMatch(
+          '[Error] Extra tags do not comply with the <key>:<value> array.\n'
+        )
       })
     })
     describe('printPlannedActions', () => {
@@ -1699,12 +1508,11 @@ describe('lambda', () => {
         const command = createCommand(InstrumentCommand)
 
         command['printPlannedActions']([])
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
-                                        "
-                                        No updates will be applied.
-                                        "
-                                `)
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
+          "
+          No updates will be applied.
+          "
+        `)
       })
 
       test('prints log group actions', () => {
@@ -1723,8 +1531,7 @@ describe('lambda', () => {
             },
           },
         ])
-        const output = command.context.stdout.toString()
-        expect(output).toMatchInlineSnapshot(`
+        expect(command.context.stdout.toString()).toMatchInlineSnapshot(`
           "
           [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 

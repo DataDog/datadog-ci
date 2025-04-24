@@ -1,9 +1,9 @@
 /* eslint-disable no-null/no-null */
 import {PassThrough} from 'stream'
 
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {makeCIProviderTests} from '../test-utils'
 import {TraceCommand} from '../trace'
@@ -12,9 +12,9 @@ describe('trace', () => {
   const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
     const cli = new Cli()
     cli.register(TraceCommand)
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER', ...extraEnv}
-    context.env = process.env
+
+    process.env = {...getEnvVarPlaceholders(), ...extraEnv}
+    const context = createMockContext({env: process.env})
     context.stderr = new PassThrough()
     const code = await cli.run(['trace', '--dry-run', ...extraArgs, '--', 'echo'], context)
 

@@ -1,6 +1,6 @@
-import {Cli} from 'clipanion/lib/advanced'
+import {Cli} from 'clipanion'
 
-import {createCommand, getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {createCommand, getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import {toBoolean, toNumber, toStringMap} from '../../../helpers/env'
 import * as ciUtils from '../../../helpers/utils'
 

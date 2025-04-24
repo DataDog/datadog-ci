@@ -10,7 +10,7 @@ import {ProxyAgent} from 'proxy-agent'
 import * as ciUtils from '../utils'
 import {formatBytes, maskString} from '../utils'
 
-import {MOCK_DATADOG_API_KEY} from './fixtures'
+import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
 describe('utils', () => {
   beforeEach(() => {

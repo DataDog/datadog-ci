@@ -1068,47 +1068,6 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 🚀 Sending to Datadog Support...
 
 ✅ Successfully sent flare file to Datadog Support!
-
-🐶 Generating Lambda flare to send your configuration to Datadog...
-
-🔑 Getting AWS credentials...
-
-[!] No AWS credentials found, let's set them up! Or you can re-run the command and supply the AWS credentials in the same way when you invoke the AWS CLI.
-
-🔍 Fetching Lambda function configuration...
-
-{
-  Environment: {
-    Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
-    }
-  },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
-}
-(This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
-
-📁 Searching for project files in current directory...
-[!] No project files found.
-
-
-[!] No additional files specified.
-
-🏷 Getting Resource Tags...
-[!] No resource tags were found.
-
-💾 Saving files to mock-folder/.datadog-ci...
-• Saved function config to ./function_config.json
-• Saved the insights file to ./INSIGHTS.md
-
-
-🚀 Sending to Datadog Support...
-
-✅ Successfully sent flare file to Datadog Support!
 "
 `;
 

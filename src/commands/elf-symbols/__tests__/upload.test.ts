@@ -2,7 +2,7 @@ import fs from 'fs'
 import os from 'os'
 import path from 'path'
 
-import {createCommand} from '../../../helpers/__tests__/fixtures'
+import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue, UploadStatus} from '../../../helpers/upload'
 import {version} from '../../../helpers/version'

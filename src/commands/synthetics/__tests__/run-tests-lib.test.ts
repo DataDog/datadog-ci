@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {getAxiosError} from '../../../helpers/__tests__/fixtures'
+import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import * as ciUtils from '../../../helpers/utils'
 
 import * as api from '../api'

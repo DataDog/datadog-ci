@@ -6,7 +6,7 @@ import JSZip from 'jszip'
 
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../fs'
 
-import {MOCK_DATADOG_API_KEY} from './fixtures'
+import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'

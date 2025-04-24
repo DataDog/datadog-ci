@@ -1,26 +1,13 @@
 /* eslint-disable no-null/no-null */
-import {PassThrough} from 'stream'
 
-import {Cli} from 'clipanion/lib/advanced'
-
-import {createMockContext} from '../../../helpers/__tests__/fixtures'
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {makeCIProviderTests} from '../../trace/test-utils'
 
 import {SpanCommand} from '../span'
 
 describe('span', () => {
-  const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {
-    const cli = new Cli()
-    cli.register(SpanCommand)
-    const context = createMockContext() as any
-    process.env = {DD_API_KEY: 'PLACEHOLDER', ...extraEnv}
-    context.env = process.env
-    context.stderr = new PassThrough()
-    const code = await cli.run(['trace', 'span', '--dry-run', ...extraArgs], context)
-
-    return {context, code}
-  }
+  const runCLI = makeRunCLI(SpanCommand, ['trace', 'span', '--dry-run'])
 
   describe('execute', () => {
     test('ci_provider', async () => {

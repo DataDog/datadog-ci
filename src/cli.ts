@@ -1,7 +1,6 @@
 import fs from 'fs'
 
-import {Builtins, Cli} from 'clipanion'
-import {CommandClass} from 'clipanion/lib/advanced/Command'
+import {Builtins, Cli, CommandClass} from 'clipanion'
 
 import {version} from './helpers/version'
 

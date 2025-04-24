@@ -1,27 +1,27 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 1`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: false) 1`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
 "
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 2`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: false) 2`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
 [36m⠋[39m Uploading 2 application(s)…"
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 3`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: false) 3`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
 [36m⠋[39m Uploading 1 application(s)…"
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: false) 4`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: false) 4`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
@@ -31,14 +31,14 @@ exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: f
 "
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 1`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: true) 1`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
 "
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 2`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: true) 2`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
@@ -46,7 +46,7 @@ exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: t
 "
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 3`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: true) 3`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m
@@ -55,7 +55,7 @@ exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: t
 "
 `;
 
-exports[`AppUploadReporter Outputs a failure durings uploads correctly (in CI: true) 4`] = `
+exports[`AppUploadReporter Outputs a failure during uploads correctly (in CI: true) 4`] = `
 "2 mobile application(s) to upload:
     Version [2m[36m1.0.0[39m[22m - Application ID [2m[36m123[39m[22m - Local Path [2m[36m/path/to/app[39m[22m
     Version [2m[36m2.0.0[39m[22m - Application ID [2m[36m456[39m[22m - Local Path [2m[36m/path/to/another/app[39m[22m

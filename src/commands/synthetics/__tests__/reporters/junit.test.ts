@@ -2,9 +2,9 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import {Writable} from 'stream'
 
-import {BaseContext} from 'clipanion/lib/advanced'
+import {BaseContext} from 'clipanion'
 
-import {MOCK_BASE_URL} from '../../../../helpers/__tests__/fixtures'
+import {MOCK_BASE_URL} from '../../../../helpers/__tests__/testing-tools'
 
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
