@@ -7,6 +7,7 @@ describe('react-native utils', () => {
     beforeEach(() => {
       jest.spyOn(fs, 'createReadStream').mockImplementation(() => undefined as any)
     })
+
     test('should extract the bundle name from the file ==', () => {
       expect(getBundleName('./path/index.bundle', 'android')).toBe('index.bundle')
     })

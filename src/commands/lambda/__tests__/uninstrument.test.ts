@@ -137,6 +137,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test('runs function update command for valid uninstrumentation', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
@@ -182,6 +183,7 @@ describe('lambda', () => {
         await runCLI(['-f', functionARN, '-r', 'us-east-1'])
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
       })
+
       test('aborts early when the aws-sdk throws an error', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         lambdaClientMock.on(GetFunctionCommand).rejects('Lambda Failed')
@@ -200,6 +202,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test("aborts early when function regions can't be found", async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
@@ -210,6 +213,7 @@ describe('lambda', () => {
           'No default region specified for ["my-func"]. Use -r, --region, or use a full functionARN'
         )
       })
+
       test('aborts early when no functions are specified', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
@@ -222,6 +226,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test('aborts early when no functions are specified while using config file', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
@@ -236,6 +241,7 @@ describe('lambda', () => {
           "
         `)
       })
+
       test('aborts if functions and a pattern are set at the same time', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
@@ -258,6 +264,7 @@ describe('lambda', () => {
           '"--functions" and "--functions-regex" should not be used at the same time.\n'
         )
       })
+
       test('aborts if the regEx pattern is an ARN', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 

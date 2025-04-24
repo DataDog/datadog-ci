@@ -85,6 +85,7 @@ describe('upload', () => {
         ])
       )
     })
+
     test('should allow single files', async () => {
       const context = createMockContext()
       const command = createCommand(UploadSarifReportCommand)
@@ -103,6 +104,7 @@ describe('upload', () => {
         reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
       })
     })
+
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
       const command = createCommand(UploadSarifReportCommand)
@@ -117,6 +119,7 @@ describe('upload', () => {
 
       expect(files.length).toEqual(0)
     })
+
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
       const command = createCommand(UploadSarifReportCommand)
@@ -141,6 +144,7 @@ describe('upload', () => {
         reportPath: './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
       })
     })
+
     test('should not have repeated files', async () => {
       const context = createMockContext()
       const command = createCommand(UploadSarifReportCommand)
@@ -174,6 +178,7 @@ describe('execute', () => {
       env: 'ci',
     })
   })
+
   test('multiple paths', async () => {
     const {context, code} = await runCLI([
       './src/commands/sarif/__tests__/fixtures/subfolder/',

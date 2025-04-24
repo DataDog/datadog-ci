@@ -29,6 +29,7 @@ describe('execute', () => {
     afterAll(() => {
       jest.useRealTimers()
     })
+
     test('with all parameters provided', async () => {
       /* eslint-disable prettier/prettier */
       // prettier-ignore
@@ -56,6 +57,7 @@ describe('execute', () => {
         version: '1.0.0',
       })
     })
+
     test('with minimal parameters provided', async () => {
       /* eslint-disable prettier/prettier */
       // prettier-ignore
@@ -73,6 +75,7 @@ describe('execute', () => {
         finishedAt: fakeCurrentDate,
       })
     })
+
     test('with parameters from env', async () => {
       const envVars = {
         DD_SERVICE: 'different-test-service',
@@ -94,6 +97,7 @@ describe('execute', () => {
         env: envVars.DD_ENV,
       })
     })
+
     test('with automatic git info', async () => {
       const mockGitRepositoryURL = jest.spyOn(gitFunctions, 'gitRepositoryURL')
       const mockGitHash = jest.spyOn(gitFunctions, 'gitHash')
@@ -121,6 +125,7 @@ describe('execute', () => {
         git: gitInfo,
       })
     })
+
     test('service is required', async () => {
       /* eslint-disable prettier/prettier */
       // prettier-ignore
@@ -133,6 +138,7 @@ describe('execute', () => {
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--service')
     })
+
     test('started-at is required', async () => {
       /* eslint-disable prettier/prettier */
       // prettier-ignore
@@ -145,6 +151,7 @@ describe('execute', () => {
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })
+
     test('started-at after finished-at is rejected', async () => {
       /* eslint-disable prettier/prettier */
       // prettier-ignore

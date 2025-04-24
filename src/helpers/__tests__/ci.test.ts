@@ -188,6 +188,7 @@ describe('ci spec', () => {
         })
         // We grab the first assertion because we only need to test one
         const [env] = assertions[0]
+
         it('can read pull request data from GitHub Actions', () => {
           process.env = env
           process.env.GITHUB_BASE_REF = 'datadog:main'

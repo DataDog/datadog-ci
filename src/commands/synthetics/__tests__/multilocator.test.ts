@@ -97,6 +97,7 @@ describe('multilocator', () => {
       expect(fsPromises.writeFile).toHaveBeenCalled()
       expect(mockReporter.error).toHaveBeenCalledWith(expect.stringContaining('Error writing to file'))
     })
+
     test('should throw an error if multiple LTDs with the same publicId are found', async () => {
       mockTestConfig.tests.push({
         localTestDefinition: {

@@ -52,6 +52,7 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
     })
   })
+
   it('does not include empty values', () => {
     process.env = {...DD_GIT_METADATA, DD_GIT_COMMIT_SHA: undefined}
     const result = getUserGitSpanTags()
@@ -67,6 +68,7 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
     })
   })
+
   it('has both branch and tag when available', () => {
     process.env = {...DD_GIT_METADATA, DD_GIT_TAG: 'DD_GIT_TAG'}
     const result = getUserGitSpanTags()
@@ -84,6 +86,7 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
     })
   })
+
   it('returns an empty object if no user git is defined', () => {
     process.env = {}
     const result = getUserGitSpanTags()
@@ -119,6 +122,7 @@ describe('getUserCISpanTags', () => {
       [CI_WORKSPACE_PATH]: 'DD_CI_WORKSPACE_PATH',
     })
   })
+
   it('does not include empty values', () => {
     process.env = {...DD_CI_METADATA, DD_CI_PIPELINE_ID: undefined}
     const result = getUserCISpanTags()
@@ -133,6 +137,7 @@ describe('getUserCISpanTags', () => {
       [CI_WORKSPACE_PATH]: 'DD_CI_WORKSPACE_PATH',
     })
   })
+
   it('returns an empty object if no user CI is defined', () => {
     process.env = {}
     const result = getUserCISpanTags()

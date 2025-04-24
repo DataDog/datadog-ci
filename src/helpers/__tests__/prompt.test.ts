@@ -40,6 +40,7 @@ describe('prompt', () => {
 
   describe('requestFilePath', () => {
     const mockFilePath = '/Users/username/project/test.ts'
+
     test('returns the selected file path', async () => {
       ;(prompt as any).mockImplementation(() => Promise.resolve({filePath: mockFilePath}))
 

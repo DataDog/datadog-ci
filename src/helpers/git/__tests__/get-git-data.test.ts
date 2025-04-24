@@ -22,6 +22,7 @@ describe('git', () => {
 
       expect(remote).toBe('remote2')
     })
+
     test('should choose the remote named first if that is the default origin', async () => {
       const mock = createMockSimpleGit(
         [
@@ -34,6 +35,7 @@ describe('git', () => {
 
       expect(remote).toBe('remote1')
     })
+
     test('should choose the first remote', async () => {
       const mock = createMockSimpleGit(
         [

@@ -52,9 +52,11 @@ describe('parseTags', () => {
     expect(parseTags(['not.correct.format'])).toEqual({})
     expect(parseTags(['not.correct.format,either'])).toEqual({})
   })
+
   test('returns an object with the tags with well formatted strings', () => {
     expect(parseTags(['key1:value1', 'key2:value2'])).toEqual({key1: 'value1', key2: 'value2'})
   })
+
   test('should not include invalid key:value pairs', () => {
     expect(parseTags(['key1:value1', 'key2:value2', 'invalidkeyvalue'])).toEqual({key1: 'value1', key2: 'value2'})
   })
@@ -67,6 +69,7 @@ describe('parseTagsFile', () => {
     expect(valid).toBe(true)
     expect(tags).toEqual({foo: 'hello', bar: 'world'})
   })
+
   test('valid but ignores data', () => {
     const context = createMockContext()
     const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-mixed.json`)
@@ -79,6 +82,7 @@ describe('parseTagsFile', () => {
     })
     expect(context.stdout.toString()).toContain("[WARN] tag 'metric_mistake' was not a string, converting to string")
   })
+
   test('nested fields should be removed', () => {
     const context = createMockContext()
     const [tags, valid] = parseTagsFile(context, `${fixturesPath}/tags-with-nested-fields.json`)
@@ -86,30 +90,35 @@ describe('parseTagsFile', () => {
     expect(tags).toEqual({bar: 'world'})
     expect(context.stdout.toString()).toContain("[WARN] tag 'foo' had nested fields which will be ignored")
   })
+
   test('empty file path', () => {
     const context = createMockContext()
     const [tags, valid] = parseTagsFile(context, '')
     expect(valid).toBe(true)
     expect(tags).toEqual({})
   })
+
   test('undefined file path', () => {
     const context = createMockContext()
     const [tags, valid] = parseTagsFile(context, undefined)
     expect(valid).toBe(true)
     expect(tags).toEqual({})
   })
+
   test('file does not exist', () => {
     const context = createMockContext()
     const [_, valid] = parseTagsFile(context, 'non-existent-file.json')
     expect(valid).toBe(false)
     expect(context.stderr.toString()).toContain("[ERROR] file 'non-existent-file.json' does not exist")
   })
+
   test('path points to folder', () => {
     const context = createMockContext()
     const [_, valid] = parseTagsFile(context, `${fixturesPath}/invalid`)
     expect(valid).toBe(false)
     expect(context.stderr.toString()).toContain('did not point to a file')
   })
+
   test('file is not a JSON', () => {
     const context = createMockContext()
     const [_, valid] = parseTagsFile(context, `${fixturesPath}/invalid/not-a-json.yaml`)
@@ -124,6 +133,7 @@ describe('parseMetrics', () => {
     expect(parseMetrics(['not.correct.format'])).toEqual({})
     expect(parseMetrics(['not.correct.format,either'])).toEqual({})
   })
+
   test('returns an object with the tags with well formatted numbers', () => {
     expect(parseMetrics(['key1:123', 'key2:321', 'key3:321.1', 'key4:-123.1'])).toEqual({
       key1: 123,
@@ -132,6 +142,7 @@ describe('parseMetrics', () => {
       key4: -123.1,
     })
   })
+
   test('should not include invalid key:value pairs', () => {
     expect(parseMetrics(['key1:123', 'key2:321', 'invalidkeyvalue', 'key3:a'])).toEqual({key1: 123, key2: 321})
   })
@@ -144,6 +155,7 @@ describe('parseMetricsFile', () => {
     expect(valid).toBe(true)
     expect(measures).toEqual({foo: 123, bar: 456})
   })
+
   test('valid but ignores data', () => {
     const context = createMockContext()
     const [measures, valid] = parseMeasuresFile(context, `${fixturesPath}/measures-mixed.json`)
@@ -182,6 +194,7 @@ describe('getSpanTags', () => {
       key2: 'value2',
     })
   })
+
   test('should parse tags argument', async () => {
     const spanTags: SpanTags = await getSpanTags(
       {
@@ -197,6 +210,7 @@ describe('getSpanTags', () => {
       key2: 'value2',
     })
   })
+
   test('should prioritized git context accordingly', async () => {
     const config: DatadogCiConfig = {
       apiKey: undefined,

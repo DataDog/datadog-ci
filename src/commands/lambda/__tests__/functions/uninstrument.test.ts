@@ -430,6 +430,7 @@ describe('uninstrument', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('throws an error when it encounters an unsupported runtime', async () => {
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:uninstrument': {
@@ -524,6 +525,7 @@ describe('uninstrument', () => {
     afterAll(() => {
       process.env = OLD_ENV
     })
+
     test('returns the update request for each function that matches the pattern', async () => {
       mockLambdaConfigurations(lambdaClientMock, {
         'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument-scooby': {
@@ -584,6 +586,7 @@ describe('uninstrument', () => {
         }
       `)
     })
+
     test('fails when retry count is exceeded', async () => {
       lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
