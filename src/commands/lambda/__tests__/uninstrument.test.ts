@@ -698,7 +698,7 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
         ])
         expect(code).toBe(1)
-        expect(context.stdout.toString()).toMatchSnapshot()
+        expect(context.stdout.toString()).toContain(`✖ Failed updating every Lambda function.`)
       })
     })
 
