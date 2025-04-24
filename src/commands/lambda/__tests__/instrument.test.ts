@@ -1189,19 +1189,19 @@ describe('lambda', () => {
       })
 
       test('prints which functions failed to instrument without aborting when at least one function was instrumented correctly', async () => {
-        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         const failingLambdas = [
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
         ]
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
@@ -1209,7 +1209,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
               FunctionName: 'lambda-2-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
@@ -1217,7 +1217,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
               FunctionName: 'lambda-3-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -1225,7 +1225,7 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
               FunctionName: 'lambda-1-us-east-2',
               Handler: 'index.handler',
-              Runtime: 'nodejs18.x',
+              Runtime: 'nodejs16.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
@@ -1234,14 +1234,6 @@ describe('lambda', () => {
               FunctionName: 'lambda-2-us-east-2',
               Handler: 'index.handler',
               Runtime: 'nodejs18.x',
-            },
-          },
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2': {
-            config: {
-              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
-              FunctionName: 'lambda-3-us-east-2',
-              Handler: 'index.handler',
-              Runtime: 'nodejs20.x',
             },
           },
         })
@@ -1263,8 +1255,6 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
           '-f',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
-          '-f',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-3-us-east-2',
         ])
         expect(code).toBe(0)
         expect(context.stdout.toString()).toMatchSnapshot()
@@ -1272,17 +1262,13 @@ describe('lambda', () => {
 
       test('aborts when every lambda function fails to update on instrument', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
-        const failingLambdas = [
-          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
-          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
-        ]
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
               FunctionName: 'lambda-1-us-east-1',
               Handler: 'index.handler',
-              Runtime: 'nodejs16.x',
+              Runtime: 'nodejs22.x',
             },
           },
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
@@ -1294,11 +1280,8 @@ describe('lambda', () => {
             },
           },
         })
-        for (const failingLambda of failingLambdas) {
-          lambdaClientMock
-            .on(UpdateFunctionConfigurationCommand, {FunctionName: failingLambda})
-            .rejects('Unexpected error updating request')
-        }
+
+        lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects('Unexpected error updating request')
 
         const {code, context} = await runCLI([
           '-f',
