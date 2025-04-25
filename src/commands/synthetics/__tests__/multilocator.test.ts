@@ -26,10 +26,10 @@ describe('multilocator', () => {
     mockConfig = {files: ['test.json']} as ImportTestsCommandConfig
     mockResults = [
       getBrowserResult('result-1', browserTest, {
-        stepDetails: [
+        steps: [
           getStep(), // Step 0 (ignored)
           getStep(),
-          {...getStep(), stepElementUpdates: {multiLocator: {ab: 'xpath-1'}}},
+          {...getStep(), step_element_updates: {multi_locator: {ab: 'xpath-1'}}},
         ],
       }),
     ]
@@ -66,7 +66,7 @@ describe('multilocator', () => {
     test('should not modify tests when no MultiLocators exist', async () => {
       mockResults = [
         getBrowserResult('result-1', getBrowserTest('test-1'), {
-          stepDetails: [getStep(), {...getStep(), stepElementUpdates: {}}], // No ML updates
+          steps: [getStep(), {...getStep(), step_element_updates: {}}], // No ML updates
         }),
       ]
 

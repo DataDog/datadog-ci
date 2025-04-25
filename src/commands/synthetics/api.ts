@@ -11,19 +11,21 @@ import {
   APIConfiguration,
   APIHelperConfig,
   Batch,
+  LocalTestDefinition,
+  MobileAppUploadResult,
+  MobileApplicationNewVersionParams,
   MobileApplicationUploadPart,
   MobileApplicationUploadPartResponse,
+  MultipartPresignedUrlsResponse,
   Payload,
   PollResult,
-  MultipartPresignedUrlsResponse,
+  RawPollResultTest,
+  RawPollResult,
   ServerBatch,
   ServerTest,
   SyntheticsOrgSettings,
   TestSearchResult,
   Trigger,
-  MobileAppUploadResult,
-  MobileApplicationNewVersionParams,
-  LocalTestDefinition,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -181,7 +183,7 @@ const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: Ser
   }
 }
 
-const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{results: PollResult[]}>) => async (
+const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<RawPollResult>) => async (
   resultIds: string[]
 ) => {
   const resp = await retryRequest(
@@ -195,7 +197,49 @@ const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<{result
     {retryOn404: true, retryOn429: true}
   )
 
-  return resp.data.results
+  const includedTestsByID = new Map<string, RawPollResultTest>()
+  resp.data.included?.forEach((r) => {
+    if (r.type === 'test') {
+      const test = {
+        id: r.id,
+        ...r.attributes,
+      }
+      includedTestsByID.set(r.id, test)
+    }
+  })
+
+  const rawPollResults = resp.data.data
+  const parsedPollResults = []
+  for (const r of rawPollResults) {
+    const test = includedTestsByID.get(r.relationships.test.data.id)
+    if (!test) {
+      continue
+    }
+    const pollResult: PollResult = {
+      ...r.attributes,
+      test: parseIncludedTest(test),
+      resultID: r.id,
+    }
+
+    parsedPollResults.push(pollResult)
+  }
+
+  return parsedPollResults
+}
+
+const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
+  return {
+    public_id: test.id,
+    type: test.type,
+    subtype: test.subtype,
+    config: {
+      ...test.config,
+      request: {
+        ...test.config.request,
+        dnsServer: test.config.request.dns_server,
+      },
+    },
+  }
 }
 
 const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
@@ -382,24 +426,25 @@ const retryRequest = <T>(
   )
 
 export const apiConstructor = (configuration: APIConfiguration) => {
-  const {baseUrl, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
+  const {baseV1Url, baseV2Url, baseIntakeUrl, baseUnstableUrl, apiKey, appKey, proxyOpts} = configuration
   const baseOptions = {apiKey, appKey, proxyOpts}
-  const request = getRequestBuilder({...baseOptions, baseUrl})
+  const requestV1 = getRequestBuilder({...baseOptions, baseUrl: baseV1Url})
+  const requestV2 = getRequestBuilder({...baseOptions, baseUrl: baseV2Url})
   const requestUnstable = getRequestBuilder({...baseOptions, baseUrl: baseUnstableUrl})
   const requestIntake = getRequestBuilder({...baseOptions, baseUrl: baseIntakeUrl})
 
   return {
-    getBatch: getBatch(request),
+    getBatch: getBatch(requestV1),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
-    getTest: getTest(request),
-    getLocalTestDefinition: getLocalTestDefinition(request),
-    editTest: editTest(request),
-    getSyntheticsOrgSettings: getSyntheticsOrgSettings(request),
+    getTest: getTest(requestV1),
+    getLocalTestDefinition: getLocalTestDefinition(requestV1),
+    editTest: editTest(requestV1),
+    getSyntheticsOrgSettings: getSyntheticsOrgSettings(requestV1),
     getTunnelPresignedURL: getTunnelPresignedURL(requestIntake),
-    pollResults: pollResults(request),
-    searchTests: searchTests(request),
+    pollResults: pollResults(requestV2),
+    searchTests: searchTests(requestV1),
     triggerTests: triggerTests(requestIntake),
-    uploadMobileApplicationPart: uploadMobileApplicationPart(request),
+    uploadMobileApplicationPart: uploadMobileApplicationPart(requestV1),
     completeMultipartMobileApplicationUpload: completeMultipartMobileApplicationUpload(requestUnstable),
     pollMobileApplicationUploadResponse: pollMobileApplicationUploadResponse(requestUnstable),
   }
@@ -420,7 +465,8 @@ export const getApiHelper = (config: APIHelperConfig): APIHelper => {
     appKey: config.appKey,
     baseIntakeUrl: getDatadogHost({useIntake: true, apiVersion: 'v1', config}),
     baseUnstableUrl: getDatadogHost({useIntake: false, apiVersion: 'unstable', config}),
-    baseUrl: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
+    baseV1Url: getDatadogHost({useIntake: false, apiVersion: 'v1', config}),
+    baseV2Url: getDatadogHost({useIntake: false, apiVersion: 'v2', config}),
     proxyOpts: config.proxy,
   })
 }

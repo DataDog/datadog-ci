@@ -13,7 +13,6 @@ import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'
 import {
   APIHelperConfig,
-  BrowserServerResult,
   ExecutionRule,
   MainReporter,
   Operator,
@@ -21,7 +20,6 @@ import {
   Result,
   ResultSkippedBySelectiveRerun,
   RunTestsCommandConfig,
-  ServerResult,
   Suite,
   Summary,
   SyntheticsCIConfig,
@@ -305,7 +303,7 @@ export const getReporter = (reporters: Reporter[]): MainReporter => ({
   },
 })
 
-export const isDeviceIdSet = (result: ServerResult): result is Required<BrowserServerResult> =>
+export const isDeviceIdSet = (result: Result): result is Required<Result> =>
   'device' in result && result.device !== undefined
 
 export const fetchTest = async (publicId: string, config: SyntheticsCIConfig): Promise<Test> => {
@@ -488,13 +486,25 @@ export const toExitCode = (reason: ExitReason) => {
 }
 
 export const getDatadogHost = (hostConfig: {
-  apiVersion: 'v1' | 'unstable'
+  apiVersion: 'v1' | 'v2' | 'unstable'
   config: APIHelperConfig
   useIntake: boolean
 }) => {
   const {useIntake, apiVersion, config} = hostConfig
 
-  const apiPath = apiVersion === 'v1' ? 'api/v1' : 'api/unstable'
+  const apiPath = (() => {
+    switch (apiVersion) {
+      case 'v1':
+        return 'api/v1'
+      case 'v2':
+        return 'api/v2'
+      case 'unstable':
+        return 'api/unstable'
+      default:
+        return 'api/unstable'
+    }
+  })()
+
   let host = `https://api.${config.datadogSite}`
   const hostOverride = process.env.DD_API_HOST_OVERRIDE
 

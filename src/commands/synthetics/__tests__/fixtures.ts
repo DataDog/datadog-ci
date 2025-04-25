@@ -82,6 +82,8 @@ export const getApiLocalTestDefinition = (
   publicId = 'abc-def-ghi',
   opts: Partial<LocalTestDefinition> = {}
 ): LocalTestDefinition & {public_id: string} => ({
+  type: 'api',
+  subtype: 'http',
   config: {
     assertions: [],
     request: {
@@ -98,8 +100,6 @@ export const getApiLocalTestDefinition = (
     device_ids: [],
   },
   public_id: publicId,
-  subtype: 'http',
-  type: 'api',
   ...opts,
 })
 
@@ -111,28 +111,40 @@ export const getApiTest = (publicId = 'abc-def-ghi', opts: Partial<LocalTestDefi
   tags: [],
 })
 
+export const getBrowserLocalTestDefinition = (
+  publicId = 'abc-def-ghi',
+  deviceIds = ['chrome.laptop_large'],
+  opts: Partial<LocalTestDefinition> = {}
+): LocalTestDefinition & {public_id: string} => ({
+  ...getApiLocalTestDefinition(publicId, opts),
+  options: {device_ids: deviceIds},
+  type: 'browser',
+  subtype: undefined,
+})
+
 export const getBrowserTest = (
   publicId = 'abc-def-ghi',
   deviceIds = ['chrome.laptop_large'],
-  opts: Partial<ServerTest> = {}
+  opts: Partial<LocalTestDefinition> = {}
 ): ServerTest => ({
-  ...getApiTest(publicId),
-  options: {device_ids: deviceIds},
-  type: 'browser',
-  ...opts,
+  ...getBrowserLocalTestDefinition(publicId, deviceIds, opts),
+  message: '',
+  monitor_id: 0,
+  status: 'live',
+  tags: [],
 })
 
 export const getStep = (): Step => ({
-  allowFailure: false,
-  browserErrors: [],
+  allow_failure: false,
+  browser_errors: [],
   description: 'description',
   duration: 1000,
-  skipped: false,
-  stepId: -1,
+  step_id: -1,
   type: 'type',
+  status: 'passed',
   url: 'about:blank',
   value: 'value',
-  vitalsMetrics: [
+  vitals_metrics: [
     {
       cls: 1,
       lcp: 1,
@@ -143,11 +155,10 @@ export const getStep = (): Step => ({
 })
 
 export const getMultiStep = (): MultiStep => ({
-  allowFailure: false,
-  assertionResults: [],
+  allow_failure: false,
+  assertion_results: [],
   name: 'name',
-  passed: true,
-  skipped: false,
+  status: 'passed',
   subtype: 'subtype',
   timings: {
     total: 123,
@@ -182,6 +193,13 @@ export const getBrowserResult = (
 ): BaseResult & {result: ServerResult} => ({
   ...getBaseResult(resultId, test),
   result: getBrowserServerResult(resultOpts),
+  device: {
+    id: 'chrome.laptop_large',
+    resolution: {
+      height: 1100,
+      width: 1440,
+    },
+  },
 })
 
 export const getApiResult = (
@@ -194,15 +212,16 @@ export const getApiResult = (
 })
 
 export const getIncompleteServerResult = (): ServerResult => {
-  return ({eventType: 'created'} as unknown) as ServerResult
+  return {id: 'my_result_id'} as ServerResult
 }
 
 export const getBrowserServerResult = (opts: Partial<BrowserServerResult> = {}): BrowserServerResult => ({
-  device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
+  id: 'my_result_id',
+  finished_at: 1,
   duration: 1000,
-  passed: true,
-  startUrl: '',
-  stepDetails: [],
+  status: 'passed',
+  start_url: '',
+  steps: [],
   ...opts,
 })
 
@@ -212,9 +231,11 @@ export const getTimedOutBrowserResult = (): Result => ({
   location: 'Location name',
   passed: false,
   result: {
+    id: 'ghjsdghc',
     duration: 0,
+    finished_at: 1,
     failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-    passed: false,
+    status: 'failed',
     steps: [],
   },
   resultId: '1',
@@ -231,52 +252,60 @@ export const getFailedBrowserResult = (): Result => ({
   location: 'Location name',
   passed: false,
   result: {
-    device: {height: 1100, id: 'chrome.laptop_large', width: 1440},
+    id: 'my_result_id',
+    finished_at: 1,
     duration: 22000,
     failure: {code: 'STEP_TIMEOUT', message: 'Step failed because it took more than 20 seconds.'},
-    passed: false,
-    startUrl: 'https://example.org/',
-    stepDetails: [
+    status: 'failed',
+    start_url: 'https://example.org/',
+    steps: [
       {
         ...getStep(),
-        browserErrors: [{description: 'Error', name: 'Console error', type: 'js'}],
+        browser_errors: [{description: 'Error', name: 'Console error', type: 'js'}],
         description: 'Navigate to start URL',
         duration: 1000,
-        skipped: false,
-        stepId: -1,
+        status: 'passed',
+        step_id: -1,
         type: 'goToUrlAndMeasureTti',
         url: 'https://example.org/',
         value: 'https://example.org/',
-        vitalsMetrics: [{url: 'https://example.com', lcp: 100, cls: 0}],
+        vitals_metrics: [{url: 'https://example.com', lcp: 100, cls: 0}],
       },
       {
         ...getStep(),
-        allowFailure: true,
+        allow_failure: true,
         description: 'Navigate again',
         duration: 1000,
-        error: 'Navigation failure',
-        skipped: true,
-        stepId: 2,
+        failure: {message: 'Navigation failure'},
+        status: 'skipped',
+        step_id: 2,
         type: 'goToUrl',
         url: 'https://example.org/',
         value: 'https://example.org/',
-        vitalsMetrics: [],
+        vitals_metrics: [],
       },
       {
         ...getStep(),
         description: 'Assert',
         duration: 20000,
-        error: 'Step timeout',
-        publicId: 'abc-def-hij',
-        stepId: 3,
+        failure: {message: 'Step timeout'},
+        public_id: 'abc-def-hij',
+        step_id: 3,
         type: 'assertElementContent',
         url: 'https://example.org/',
-        vitalsMetrics: [],
+        vitals_metrics: [],
       },
-      {...getStep(), skipped: true},
-      {...getStep(), skipped: true},
-      {...getStep(), skipped: true},
+      {...getStep(), status: 'skipped'},
+      {...getStep(), status: 'skipped'},
+      {...getStep(), status: 'skipped'},
     ],
+  },
+  device: {
+    id: 'chrome.laptop_large',
+    resolution: {
+      height: 1100,
+      width: 1440,
+    },
   },
   resultId: '1',
   retries: 0,
@@ -287,13 +316,15 @@ export const getFailedBrowserResult = (): Result => ({
 })
 
 export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServerResult => ({
-  assertionResults: [
+  id: 'my_api_result_id',
+  finished_at: 1,
+  assertions: [
     {
       actual: 'actual',
       valid: true,
     },
   ],
-  passed: true,
+  status: 'passed',
   timings: {
     total: 1000,
   },
@@ -301,57 +332,63 @@ export const getApiServerResult = (opts: Partial<ApiServerResult> = {}): ApiServ
 })
 
 export const getMultiStepsServerResult = (): MultiStepsServerResult => ({
+  id: 'my_multi_steps_result_id',
   duration: 1000,
-  passed: true,
+  finished_at: 1,
+  status: 'passed',
   steps: [],
 })
 
 export const getFailedMultiStepsTestLevelServerResult = (): MultiStepsServerResult => ({
+  id: 'my_multi_steps_result_id',
+  finished_at: 1,
   duration: 2000,
   failure: {code: 'TEST_TIMEOUT', message: 'Error: Maximum test execution time reached: 2 seconds.'},
-  passed: false,
+  status: 'failed',
   steps: [
     {
       ...getMultiStep(),
-      passed: true,
+      status: 'passed',
     },
     {
       ...getMultiStep(),
-      skipped: true,
+      status: 'skipped',
     },
   ],
 })
 
 export const getFailedMultiStepsServerResult = (): MultiStepsServerResult => ({
+  id: 'my_multi_steps_result_id',
+  finished_at: 1,
   duration: 123,
   failure: {code: 'INCORRECT_ASSERTION', message: 'incorrect assertion'},
-  passed: false,
+  status: 'failed',
   steps: [
     {
       ...getMultiStep(),
-      passed: true,
+      status: 'passed',
     },
     {
       ...getMultiStep(),
-      skipped: true,
+      status: 'skipped',
     },
     {
       ...getMultiStep(),
-      allowFailure: true,
+      allow_failure: true,
       failure: {
         code: 'INCORRECT_ASSERTION',
         message: 'incorrect assertion',
       },
-      passed: false,
+      status: 'failed',
     },
     {
       ...getMultiStep(),
-      allowFailure: false,
+      allow_failure: false,
       failure: {
         code: 'INCORRECT_ASSERTION',
         message: 'incorrect assertion',
       },
-      passed: false,
+      status: 'failed',
     },
   ],
 })
@@ -480,7 +517,7 @@ export const getResults = (resultsFixtures: ResultFixtures[]): Result[] => {
     const result = getApiResult(index.toString(), test)
     result.executionRule = testExecutionRule || executionRule || ExecutionRule.BLOCKING
     result.passed = !!passed
-    result.result = {...result.result, passed: !!passed, unhealthy}
+    result.result = {...result.result, status: !!passed ? 'passed' : 'failed', unhealthy}
 
     if (timedOut) {
       result.timedOut = true
@@ -586,7 +623,6 @@ export const getMobileTest = (
   },
   public_id: publicId,
   status: 'live',
-  subtype: '',
   tags: [],
   type: 'mobile',
 })
@@ -596,7 +632,8 @@ export const getMockApiConfiguration = (): APIConfiguration => ({
   appKey: '123',
   baseIntakeUrl: 'http://baseIntake',
   baseUnstableUrl: 'http://baseUnstable',
-  baseUrl: 'http://base',
+  baseV1Url: 'http://baseV1',
+  baseV2Url: 'http://baseV2',
   proxyOpts: {protocol: 'http'} as ProxyConfiguration,
 })
 

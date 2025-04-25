@@ -274,7 +274,7 @@ describe('Default reporter', () => {
         result.result = {
           ...result.result,
           ...(passed ? {} : {failure}),
-          passed,
+          status: passed ? 'passed' : 'failed',
         }
       } else if (executionRule === ExecutionRule.SKIPPED) {
         delete (result as {result?: unknown}).result
@@ -341,14 +341,17 @@ describe('Default reporter', () => {
             {
               ...getTimedOutBrowserResult(),
               result: {
+                id: 'rid',
+                finished_at: 0,
                 duration: 0,
                 failure: {code: 'FAILURE_CODE', message: 'Failure message'},
-                passed: false,
+                status: 'failed',
+                start_url: 'https://example.com',
                 steps: [],
               },
               timedOut: false,
             },
-          ],
+          ] as Result[],
         },
       },
       {

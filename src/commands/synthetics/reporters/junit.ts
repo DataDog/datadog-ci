@@ -235,21 +235,25 @@ export class JUnitReporter implements Reporter {
         ? testCase.error // ❗️
         : testCase.failure // ❌
 
-    if (hasDefinedResult(result) && 'stepDetails' in result.result) {
-      // It's a browser test.
-      for (const stepDetail of result.result.stepDetails) {
-        const {allowedErrors, browserErrors, errors, warnings} = this.getBrowserTestErrors(stepDetail)
-        testCase.allowed_error.push(...allowedErrors)
-        testCase.browser_error.push(...browserErrors)
-        errorOrFailure.push(...errors)
-        testCase.warning.push(...warnings)
-      }
-    } else if (hasDefinedResult(result) && 'steps' in result.result) {
-      // It's a multistep test.
-      for (const step of result.result.steps) {
-        const {allowedErrors, errors} = this.getMultiStepTestErrors(step)
-        testCase.allowed_error.push(...allowedErrors)
-        errorOrFailure.push(...errors)
+    if (hasDefinedResult(result) && 'steps' in result.result) {
+      if (result.test.type === 'browser') {
+        // It's a browser test.
+        const steps = result.result.steps as Step[]
+        for (const step of steps) {
+          const {allowedErrors, browserErrors, errors, warnings} = this.getBrowserTestErrors(step)
+          testCase.allowed_error.push(...allowedErrors)
+          testCase.browser_error.push(...browserErrors)
+          errorOrFailure.push(...errors)
+          testCase.warning.push(...warnings)
+        }
+      } else if (result.test.type === 'api') {
+        // It's a multistep test.
+        const steps = result.result.steps as MultiStep[]
+        for (const step of steps) {
+          const {allowedErrors, errors} = this.getMultiStepTestErrors(step)
+          testCase.allowed_error.push(...allowedErrors)
+          errorOrFailure.push(...errors)
+        }
       }
     } else {
       // It's an api test.
@@ -334,18 +338,18 @@ export class JUnitReporter implements Reporter {
     // TODO use more granular result based on step.assertionResults
     let allowfailures = 0
     let skipped = 0
-    if ('allowFailure' in step) {
-      allowfailures += step.allowFailure ? 1 : 0
+    if ('allow_failure' in step) {
+      allowfailures += step.allow_failure ? 1 : 0
     }
-    if ('skipped' in step) {
-      skipped += step.skipped ? 1 : 0
+    if ('status' in step) {
+      skipped += step.status === 'skipped' ? 1 : 0
     }
 
     return {
       steps_allowfailures: allowfailures,
       steps_count: 1,
-      steps_errors: step.passed ? 0 : 1,
-      steps_failures: step.passed ? 0 : 1,
+      steps_errors: step.status === 'failed' ? 1 : 0,
+      steps_failures: step.status === 'failed' ? 1 : 0,
       steps_skipped: skipped,
       steps_warnings: 0,
     }
@@ -367,20 +371,20 @@ export class JUnitReporter implements Reporter {
   }
 
   private getBrowserStepStats(step: Step): TestCaseStats {
-    const errors = step.browserErrors ? step.browserErrors.length : 0
+    const errors = step.browser_errors ? step.browser_errors.length : 0
 
     return {
-      steps_allowfailures: step.allowFailure ? 1 : 0,
-      steps_count: step.subTestStepDetails ? step.subTestStepDetails.length : 1,
-      steps_errors: errors + (step.error ? 1 : 0),
-      steps_failures: step.error ? 1 : 0,
-      steps_skipped: step.skipped ? 1 : 0,
+      steps_allowfailures: step.allow_failure ? 1 : 0,
+      steps_count: step.sub_test_step_details ? step.sub_test_step_details.length : 1,
+      steps_errors: errors + (step.failure ? 1 : 0),
+      steps_failures: step.failure ? 1 : 0,
+      steps_skipped: step.status === 'skipped' ? 1 : 0,
       steps_warnings: step.warnings ? step.warnings.length : 0,
     }
   }
 
   private getBrowserTestErrors(
-    stepDetail: Step
+    step: Step
   ): {
     allowedErrors: XMLError[]
     browserErrors: XMLError[]
@@ -392,32 +396,32 @@ export class JUnitReporter implements Reporter {
     const errors = []
     const warnings = []
 
-    if (stepDetail.browserErrors?.length) {
+    if (step.browser_errors?.length) {
       browserErrors.push(
-        ...stepDetail.browserErrors.map((e) => ({
-          $: {type: e.type, name: e.name, step: stepDetail.description},
+        ...step.browser_errors.map((e) => ({
+          $: {type: e.type, name: e.name, step: step.description},
           _: e.description,
         }))
       )
     }
 
-    if (stepDetail.error) {
+    if (step.failure) {
       const xmlError = {
-        $: {type: 'assertion', step: stepDetail.description, allowFailure: `${stepDetail.allowFailure}`},
-        _: stepDetail.error,
+        $: {type: 'assertion', step: step.description, allowFailure: `${step.allow_failure}`},
+        _: step.failure.message,
       }
 
-      if (stepDetail.allowFailure) {
+      if (step.allow_failure) {
         allowedErrors.push(xmlError)
       } else {
         errors.push(xmlError)
       }
     }
 
-    if (stepDetail.warnings?.length) {
+    if (step.warnings?.length) {
       warnings.push(
-        ...stepDetail.warnings.map((w) => ({
-          $: {type: w.type, step: stepDetail.description},
+        ...step.warnings.map((w) => ({
+          $: {type: w.type, step: step.description},
           _: w.message,
         }))
       )
@@ -432,11 +436,11 @@ export class JUnitReporter implements Reporter {
 
     if (step.failure) {
       const xmlError = {
-        $: {type: step.failure.code, step: step.name, allowFailure: `${step.allowFailure}`},
+        $: {type: step.failure.code, step: step.name, allowFailure: `${step.allow_failure}`},
         _: renderApiError(step.failure.code, step.failure.message),
       }
 
-      if (step.allowFailure) {
+      if (step.allow_failure) {
         allowedErrors.push(xmlError)
       } else {
         errors.push(xmlError)
@@ -508,8 +512,7 @@ export class JUnitReporter implements Reporter {
     const publicId = getPublicIdOrPlaceholder(test)
     const id = `id: ${publicId}`
     const location = isBaseResult(result) ? `location: ${result.location}` : ''
-    const device =
-      hasDefinedResult(result) && isDeviceIdSet(result.result) ? ` - device: ${result.result.device.id}` : ''
+    const device = hasDefinedResult(result) && isDeviceIdSet(result) ? ` - device: ${result.device.id}` : ''
     const resultTimedOut = result.timedOut ? ` - result id: ${result.resultId} (not yet received)` : ''
 
     // This has to identify results, otherwise GitLab will only show the last result with the same name.
@@ -521,7 +524,9 @@ export class JUnitReporter implements Reporter {
         file: test.suite,
         name: resultIdentification,
         time: isBaseResult(result) ? result.duration / 1000 : 0,
-        timestamp: isBaseResult(result) ? new Date(result.timestamp).toISOString() : new Date().toISOString(),
+        timestamp: hasDefinedResult(result)
+          ? new Date(result.result.finished_at).toISOString()
+          : new Date().toISOString(),
         ...this.getTestCaseStats(result),
       },
       allowed_error: [],
@@ -531,11 +536,11 @@ export class JUnitReporter implements Reporter {
       properties: {
         property: [
           {$: {name: 'check_id', value: publicId}},
-          ...(hasDefinedResult(result) && isDeviceIdSet(result.result)
+          ...(hasDefinedResult(result) && isDeviceIdSet(result)
             ? [
-                {$: {name: 'device', value: result.result.device.id}},
-                {$: {name: 'width', value: result.result.device.width}},
-                {$: {name: 'height', value: result.result.device.height}},
+                {$: {name: 'device', value: result.device.id}},
+                {$: {name: 'width', value: result.device.resolution.width}},
+                {$: {name: 'height', value: result.device.resolution.height}},
               ]
             : []),
           {$: {name: 'execution_rule', value: test.options.ci?.executionRule}},
@@ -573,22 +578,27 @@ export class JUnitReporter implements Reporter {
     }
 
     let stepsStats: TestCaseStats[] = []
-    if ('stepDetails' in result.result) {
-      // It's a browser test.
-      stepsStats = result.result.stepDetails
-        .map((step) => {
-          if (!step.subTestStepDetails) {
-            return [step]
-          }
+    if ('steps' in result.result) {
+      if (result.test.type === 'browser') {
+        // It's a browser test.
+        const steps = result.result.steps as Step[]
+        stepsStats = steps
+          .map((step) => {
+            if (!step.sub_test_step_details) {
+              return [step]
+            }
 
-          return [step, ...step.subTestStepDetails]
-        })
-        .reduce((acc, val) => acc.concat(val), [])
-        .map(this.getBrowserStepStats)
-    } else if ('steps' in result.result) {
-      // It's an multistep API test
-      stepsStats = result.result.steps.map(this.getApiStepStats)
+            return [step, ...step.sub_test_step_details]
+          })
+          .reduce((acc, val) => acc.concat(val), [])
+          .map(this.getBrowserStepStats)
+      } else if (result.test.type === 'api') {
+        // It's an multistep API test
+        const steps = result.result.steps as MultiStep[]
+        stepsStats = steps.map(this.getApiStepStats)
+      }
     } else {
+      // It's an api test
       stepsStats = [this.getApiStepStats(result.result)]
     }
 

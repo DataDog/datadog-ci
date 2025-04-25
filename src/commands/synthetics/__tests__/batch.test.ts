@@ -9,9 +9,20 @@ import {ProxyConfiguration} from '../../../helpers/utils'
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
 import {apiConstructor} from '../api'
+import {RecursivePartial} from '../base-command'
 import {getResultsToReport, reportReceivedResults, runTests, waitForResults} from '../batch'
 import {BatchTimeoutRunawayError} from '../errors'
-import {BaseResult, Batch, ExecutionRule, PollResult, Result, ResultInBatch, ServerResult, Trigger} from '../interfaces'
+import {
+  BaseResult,
+  Batch,
+  ExecutionRule,
+  PollResult,
+  Result,
+  ResultInBatch,
+  ServerResult,
+  Test,
+  Trigger,
+} from '../interfaces'
 import {getDefaultConfig} from '../run-tests-lib'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
@@ -34,7 +45,8 @@ const apiConfiguration = {
   appKey: '123',
   baseIntakeUrl: 'baseintake',
   baseUnstableUrl: 'baseUnstable',
-  baseUrl: 'base',
+  baseV1Url: 'baseV1',
+  baseV2Url: 'baseV2',
   proxyOpts: {protocol: 'http'} as ProxyConfiguration,
 }
 const api = apiConstructor(apiConfiguration)
@@ -151,13 +163,14 @@ describe('waitForResults', () => {
   const batch: Batch = getBatch()
   const apiTest = getApiTest('pid')
   const result: BaseResult & {result: ServerResult} = {
+    device: undefined,
     duration: 1000,
     executionRule: ExecutionRule.BLOCKING,
     initialResultId: undefined,
     isNonFinal: false,
     location: mockLocation.display_name,
     passed: true,
-    result: getBrowserServerResult({passed: true}),
+    result: getBrowserServerResult({status: 'passed', finished_at: 0, id: 'rid'}),
     resultId: 'rid',
     retries: 0,
     maxRetries: 0,
@@ -167,10 +180,13 @@ describe('waitForResults', () => {
     timestamp: 0,
   }
   const pollResult: PollResult & {result: ServerResult} = {
-    check: result.test,
-    result: result.result,
+    test_type: 'browser',
+    test: result.test as RecursivePartial<Test>,
+    result: {
+      ...result.result,
+      id: result.resultId,
+    },
     resultID: result.resultId,
-    timestamp: result.timestamp,
   }
   const trigger = {batch_id: 'bid', locations: [mockLocation]}
 
@@ -283,8 +299,8 @@ describe('waitForResults', () => {
       }),
       pollResultsImplementation: async () => [
         deepExtend({}, pollResult),
-        deepExtend({}, pollResult, {resultID: 'rid-2'}),
-        deepExtend({}, pollResult, {resultID: 'rid-3'}),
+        deepExtend({}, pollResult, {resultID: 'rid-2', result: {id: 'rid-2'}}),
+        deepExtend({}, pollResult, {resultID: 'rid-3', result: {id: 'rid-3'}}),
       ],
     })
 
@@ -296,7 +312,19 @@ describe('waitForResults', () => {
       status: 'passed',
       result_id: 'rid-2',
     })
-    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
+    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+      1,
+      {
+        ...result,
+        result: {
+          ...result.result,
+          id: 'rid-2',
+        },
+        resultId: 'rid-2',
+      },
+      MOCK_BASE_URL,
+      'bid'
+    )
     // Still waiting for 2 tests
     expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
 
@@ -315,8 +343,8 @@ describe('waitForResults', () => {
       }),
       pollResultsImplementation: async () => [
         deepExtend({}, pollResult),
-        deepExtend({}, pollResult, {resultID: 'rid-2'}),
-        deepExtend({}, pollResult, {resultID: 'rid-3'}),
+        deepExtend({}, pollResult, {resultID: 'rid-2', result: {id: 'rid-2'}}),
+        deepExtend({}, pollResult, {resultID: 'rid-3', result: {id: 'rid-3'}}),
       ],
     })
 
@@ -353,8 +381,8 @@ describe('waitForResults', () => {
       }),
       pollResultsImplementation: async () => [
         deepExtend({}, pollResult),
-        deepExtend({}, pollResult, {resultID: 'rid-2'}),
-        deepExtend({}, pollResult, {resultID: 'rid-3'}),
+        deepExtend({}, pollResult, {resultID: 'rid-2', result: {id: 'rid-2'}}),
+        deepExtend({}, pollResult, {resultID: 'rid-3', result: {id: 'rid-3'}}),
       ],
     })
 
@@ -370,7 +398,16 @@ describe('waitForResults', () => {
     })
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
       3,
-      {...result, isNonFinal: true, resultId: 'rid-3', passed: false}, // the first attempt failed, so it's being retried
+      {
+        ...result,
+        isNonFinal: true,
+        resultId: 'rid-3',
+        passed: false,
+        result: {
+          ...result.result,
+          id: 'rid-3',
+        },
+      }, // the first attempt failed, so it's being retried
       MOCK_BASE_URL,
       'bid'
     )
@@ -391,15 +428,15 @@ describe('waitForResults', () => {
       }),
       pollResultsImplementation: async () => [
         deepExtend({}, pollResult),
-        deepExtend({}, pollResult, {resultID: 'rid-2'}),
-        deepExtend({}, pollResult, {resultID: 'rid-3-final'}),
+        deepExtend({}, pollResult, {resultID: 'rid-2', result: {id: 'rid-2'}}),
+        deepExtend({}, pollResult, {resultID: 'rid-3-final', result: {id: 'rid-3-final'}}),
       ],
     })
 
     expect(await resultsPromise).toEqual([
       result,
-      {...result, resultId: 'rid-2'},
-      {...result, resultId: 'rid-3-final', retries: 1},
+      {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
+      {...result, result: {...result.result, id: 'rid-3-final'}, resultId: 'rid-3-final', retries: 1},
     ])
 
     // One result received
@@ -412,7 +449,7 @@ describe('waitForResults', () => {
     })
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
       4,
-      {...result, resultId: 'rid-3-final', retries: 1},
+      {...result, result: {...result.result, id: 'rid-3-final'}, resultId: 'rid-3-final', retries: 1},
       MOCK_BASE_URL,
       'bid'
     )
@@ -437,7 +474,7 @@ describe('waitForResults', () => {
           {...getInProgressResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
         ],
       }),
-      pollResultsImplementation: async () => [{...pollResult, resultID: 'rid-2'}],
+      pollResultsImplementation: async () => [deepExtend({}, pollResult, {result: {id: 'rid-2'}})],
     })
 
     const resultsPromise = waitForResults(
@@ -486,10 +523,13 @@ describe('waitForResults', () => {
           {...getPassedResultInBatch(), test_public_id: 'other-public-id', result_id: 'rid-2'},
         ],
       }),
-      pollResultsImplementation: async () => [deepExtend({}, pollResult, {resultID: 'rid-2'})],
+      pollResultsImplementation: async () => [deepExtend({}, pollResult, {resultID: 'rid-2', result: {id: 'rid-2'}})],
     })
 
-    expect(await resultsPromise).toEqual([{...skippedResult}, {...result, resultId: 'rid-2'}])
+    expect(await resultsPromise).toEqual([
+      {...skippedResult},
+      {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
+    ])
 
     // One result received
     expect(mockReporter.resultReceived).toHaveBeenNthCalledWith(2, {
@@ -498,7 +538,12 @@ describe('waitForResults', () => {
       test_public_id: 'other-public-id',
       result_id: 'rid-2',
     })
-    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
+    expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
+      2,
+      {...result, result: {...result.result, id: 'rid-2'}, resultId: 'rid-2'},
+      MOCK_BASE_URL,
+      'bid'
+    )
     expect(mockReporter.testsWait).toHaveBeenCalledTimes(2)
   })
 
@@ -603,7 +648,7 @@ describe('waitForResults', () => {
     })
 
     expect(await resultsPromise).toEqual([
-      {...result, resultId: 'rid', passed: false, result: undefined},
+      {...result, resultId: 'rid', passed: false, result: undefined, timestamp: 123},
       {...result, resultId: 'rid-2'},
       {...result, resultId: 'rid-3'},
     ])
@@ -621,7 +666,7 @@ describe('waitForResults', () => {
     // Result 1 never became available (but the batch says it did not pass)
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(
       3,
-      {...result, passed: false, resultId: 'rid', result: undefined},
+      {...result, passed: false, resultId: 'rid', result: undefined, timestamp: 123},
       MOCK_BASE_URL,
       'bid'
     )
@@ -778,7 +823,7 @@ describe('waitForResults', () => {
       pollResultsImplementation: async () => [
         deepExtend({}, pollResult),
         // The test object from the second result has an overridden start URL
-        deepExtend({}, pollResult, {check: {config: {request: {url: 'https://reddit.com/'}}}, resultID: '3'}),
+        deepExtend({}, pollResult, {test: {config: {request: {url: 'https://reddit.com/'}}}, resultID: '3'}),
       ],
     })
 
@@ -815,7 +860,7 @@ describe('waitForResults', () => {
       result: {
         ...result.result,
         failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-        passed: false,
+        status: 'failed',
       },
       resultId: '3',
       timedOut: true,
@@ -870,7 +915,7 @@ describe('waitForResults', () => {
           code: 'BATCH_TIMEOUT_RUNAWAY',
           message: "The batch didn't timeout after the expected timeout period.",
         },
-        passed: false,
+        status: 'failed',
       },
       resultId: '3',
       timedOut: true,
@@ -913,11 +958,10 @@ describe('waitForResults', () => {
       pollResultsImplementation: async () => [
         {
           ...pollResult,
-          passed: false,
           result: {
             ...pollResult.result,
             failure: {code: 'FAILURE', message: 'Original failure, should be ignored'},
-            passed: false,
+            status: 'failed',
           },
         },
       ],
@@ -942,7 +986,7 @@ describe('waitForResults', () => {
         result: {
           ...result.result,
           failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-          passed: false,
+          status: 'failed',
         },
         timedOut: true,
       },
@@ -976,7 +1020,7 @@ describe('waitForResults', () => {
         result: {
           ...result.result,
           failure: {code: 'TIMEOUT', message: 'The batch timed out before receiving the result.'},
-          passed: false,
+          status: 'failed',
         },
         timedOut: true,
       },
@@ -1010,7 +1054,9 @@ describe('waitForResults', () => {
   })
 
   test('correct number of passed and timed out results', async () => {
-    const pollTimeoutResult: PollResult = {...deepExtend({}, pollResult), resultID: 'another-id'}
+    const pollTimeoutResult: PollResult = {
+      ...deepExtend({}, pollResult, {result: {...pollResult.result, id: 'another-id'}, resultID: 'another-id'}),
+    }
     const batchWithTimeoutResult: Batch = {
       ...batch,
       results: [
@@ -1051,11 +1097,12 @@ describe('waitForResults', () => {
         resultId: pollTimeoutResult.resultID,
         result: {
           ...result.result,
+          id: pollTimeoutResult.resultID,
           failure: {
             code: 'TIMEOUT',
             message: 'The batch timed out before receiving the result.',
           },
-          passed: false,
+          status: 'failed',
         },
       },
     ])
@@ -1112,9 +1159,11 @@ describe('waitForResults', () => {
     )
     expect((results[0] as BaseResult).location).toBe('Tunneled')
 
-    const newTest = {...result.test}
-    newTest.type = 'api'
-    newTest.subtype = 'http'
+    const newTest: Test = {
+      ...result.test,
+      type: 'api',
+      subtype: 'http',
+    }
     results = await waitForResults(
       api,
       trigger,

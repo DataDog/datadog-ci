@@ -3,7 +3,7 @@ import {writeFile} from 'fs/promises'
 import {isInteractive} from '../../helpers/ci'
 import {requestConfirmation} from '../../helpers/prompt'
 
-import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter} from './interfaces'
+import {Result, MultiLocator, TestConfig, ImportTestsCommandConfig, MainReporter, Step} from './interfaces'
 import {findUniqueLocalTestDefinition} from './local-test-definition'
 import {ICONS} from './reporters/constants'
 import {getTestConfigs} from './test'
@@ -64,9 +64,9 @@ const getMultiLocatorsFromResults = (results: Result[]): MultiLocatorMap => {
     const stepMLUpdates: (MultiLocator | undefined)[] = []
 
     if (hasDefinedResult(result) && result.result && isBrowserServerResult(result.result)) {
-      const steps = result.result.stepDetails.slice(1) // Skip first step (navigation)
+      const steps = result.result.steps.slice(1) as Step[] // Skip first step (navigation)
       for (const step of steps) {
-        const multiLocator = step.stepElementUpdates?.multiLocator
+        const multiLocator = step.step_element_updates?.multi_locator
         stepMLUpdates.push(multiLocator)
       }
     }
