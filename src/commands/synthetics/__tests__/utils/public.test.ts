@@ -42,11 +42,10 @@ import child_process from 'child_process'
 import * as fs from 'fs'
 import process from 'process'
 
-import type * as path from 'path'
-
-import * as glob from 'glob'
+import type * as path from 'upath'
 
 import {getAxiosError} from '../../../../helpers/__tests__/testing-tools'
+import * as glob from '../../../../helpers/glob'
 
 import * as api from '../../api'
 import {CiError, CiErrorCode, CriticalError} from '../../errors'

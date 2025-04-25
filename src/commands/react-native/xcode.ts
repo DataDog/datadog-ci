@@ -1,7 +1,6 @@
 /* eslint-disable no-null/no-null */
 import {spawn} from 'child_process'
 import {existsSync, readFileSync} from 'fs'
-import {sep} from 'path'
 
 import {Cli, Command, Option} from 'clipanion'
 
@@ -23,7 +22,7 @@ const getReactNativePath = () => {
     const reactNativeIndexFile = require.resolve('react-native')
 
     // We need to remove the trailing "/index.js" at the end of the path
-    return reactNativeIndexFile.split(sep).slice(0, -1).join(sep)
+    return reactNativeIndexFile.split('/').slice(0, -1).join('/')
   } catch (error) {
     // When the command is ran from XCode with `../node_modules/.bin/datadog-ci react-native xcode`
     if (existsSync('../node_modules/react-native/package.json')) {

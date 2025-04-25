@@ -1,6 +1,5 @@
-import path from 'path'
-
 import chalk from 'chalk'
+import upath from 'upath'
 
 import {SpanTags} from '../../helpers/interfaces'
 
@@ -83,7 +82,7 @@ export const renderCommandInfo = (
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML\n`)
   }
   fullStr += chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
-  if (basePaths.length === 1 && !!path.extname(basePaths[0])) {
+  if (basePaths.length === 1 && !!upath.extname(basePaths[0])) {
     fullStr += chalk.green(`Will upload jUnit XML file ${basePaths[0]}\n`)
   } else {
     fullStr += chalk.green(`Will look for jUnit XML files in ${basePaths.join(', ')}\n`)

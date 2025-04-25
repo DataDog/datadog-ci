@@ -1,12 +1,12 @@
 import {existsSync, promises} from 'fs'
-import {EOL, platform} from 'os'
-import path from 'path'
+import {platform} from 'os'
 
 import {Cli} from 'clipanion'
-import {glob} from 'glob'
+import upath from 'upath'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '../../../helpers/apikey'
+import {globSync} from '../../../helpers/glob'
 import {buildPath} from '../../../helpers/utils'
 
 import {Dsym} from '../interfaces'
@@ -25,7 +25,7 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
 
       if (fixture !== undefined) {
         const outputLines = fixture.slices.map((slice) => {
-          const objectPathInDsym = path.relative(fixture!.bundlePath, slice.objectPath)
+          const objectPathInDsym = upath.relative(fixture!.bundlePath, slice.objectPath)
           const objectPathInMockedDSYM = buildPath(dsymPath, objectPathInDsym)
 
           return `UUID: ${slice.uuid} (${slice.arch}) ${objectPathInMockedDSYM}`
@@ -194,7 +194,7 @@ describe('upload', () => {
           ],
         })
       })
-      const objectFilesInTargetFolder = glob.sync(buildPath(tmpDirectory, '**/Contents/Resources/DWARF/DDTest'))
+      const objectFilesInTargetFolder = globSync(buildPath(tmpDirectory, '**/Contents/Resources/DWARF/DDTest'))
       expect(objectFilesInTargetFolder.length).toEqual(inputDSYM.slices.length)
 
       await deleteDirectory(tmpDirectory)
@@ -212,7 +212,7 @@ describe('upload', () => {
 
       // Then
       expect(extractedDSYMs).toEqual([inputDSYM])
-      const filesInTargetFolder = glob.sync(buildPath(tmpDirectory, '*'))
+      const filesInTargetFolder = globSync(buildPath(tmpDirectory, '*'))
       expect(filesInTargetFolder.length).toEqual(0)
 
       await deleteDirectory(tmpDirectory)
@@ -279,7 +279,7 @@ describe('execute', () => {
   test('Should succeed with folder input', async () => {
     const {context, code} = await runCLI('src/commands/dsyms/__tests__/fixtures/')
     const outputString = context.stdout.toString()
-    const output = outputString.split(EOL)
+    const output = outputString.split('\n')
 
     expect(outputString).not.toContain('Error')
     expect(code).toBe(0)
@@ -305,7 +305,7 @@ describe('execute', () => {
   test('Should succeed with zip file input', async () => {
     const {context, code} = await runCLI('src/commands/dsyms/__tests__/fixtures/all.zip')
     const outputString = context.stdout.toString()
-    const output = outputString.split(EOL)
+    const output = outputString.split('\n')
 
     expect(outputString).not.toContain('Error')
     expect(code).toBe(0)
@@ -333,7 +333,7 @@ describe('execute', () => {
       configPath: 'src/commands/dsyms/__tests__/fixtures/datadog-ci.json',
     })
     const outputString = context.stdout.toString()
-    const output = outputString.split(EOL)
+    const output = outputString.split('\n')
 
     expect(outputString).not.toContain('Error')
     expect(code).toBe(0)
@@ -367,7 +367,7 @@ describe('execute', () => {
     })
 
     const outputString = context.stdout.toString()
-    const output = outputString.split(EOL)
+    const output = outputString.split('\n')
     expect(code).toBe(0)
 
     expect(apiKeyValidatorSpy).toHaveBeenCalledWith({

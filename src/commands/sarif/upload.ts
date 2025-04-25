@@ -1,15 +1,15 @@
 import fs from 'fs'
-import path from 'path'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {DatadogCiConfig} from '../../helpers/config'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {globSync} from '../../helpers/glob'
 import {SpanTags} from '../../helpers/interfaces'
 import {retryRequest} from '../../helpers/retry'
 import {GIT_SHA, getSpanTags, getMissingRequiredGitTags} from '../../helpers/tags'
@@ -108,8 +108,7 @@ export class UploadSarifReportCommand extends Command {
 
     const api = this.getApiHelper()
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePaths = this.basePaths.map((basePath) => path.posix.normalize(basePath))
+    this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
 
     const spanTags = await getSpanTags(this.config, this.tags, !this.noCiTags, this.gitPath)
 
@@ -181,12 +180,12 @@ export class UploadSarifReportCommand extends Command {
 
   private async getMatchingSarifReports(spanTags: SpanTags): Promise<Payload[]> {
     const sarifReports = (this.basePaths || []).reduce((acc: string[], basePath: string) => {
-      const isFile = !!path.extname(basePath)
+      const isFile = !!upath.extname(basePath)
       if (isFile) {
         return acc.concat(fs.existsSync(basePath) ? [basePath] : [])
       }
 
-      return acc.concat(glob.sync(buildPath(basePath, '*.sarif'), {dotRelative: true}))
+      return acc.concat(globSync(buildPath(basePath, '*.sarif'), {dotRelative: true}))
     }, [])
 
     const validUniqueFiles = [...new Set(sarifReports)].filter((sarifReport) => {

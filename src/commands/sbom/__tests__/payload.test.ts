@@ -1,8 +1,8 @@
 import fs from 'fs'
 import os from 'os'
-import path from 'path'
 
 import simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {DatadogCiConfig} from '../../../helpers/config'
 import {
@@ -383,7 +383,7 @@ describe('generation of payload', () => {
   })
 
   test('should correctly work with a CycloneDX 1.4 file and passing git repository', async () => {
-    const tmpdir = fs.mkdtempSync(path.join(os.tmpdir(), 'gitPath-'))
+    const tmpdir = fs.mkdtempSync(upath.join(os.tmpdir(), 'gitPath-'))
     try {
       // Configure local git repository
       const git = simpleGit(tmpdir)
@@ -524,16 +524,16 @@ describe('generation of payload', () => {
 })
 
 const getFixtures = (file: string) => {
-  return path.join('./src/commands/sbom/__tests__/fixtures', file)
+  return upath.join('./src/commands/sbom/__tests__/fixtures', file)
 }
 
 const setupLocalGitConfig = (dir: string) => {
-  const gitDir = path.join(dir, '.git')
+  const gitDir = upath.join(dir, '.git')
   if (!fs.existsSync(gitDir)) {
     fs.mkdirSync(gitDir, {recursive: true})
   }
 
   const configFixture = fs.readFileSync(getFixtures('gitconfig'), 'utf8')
-  const configPath = path.join(gitDir, '/config')
+  const configPath = upath.join(gitDir, '/config')
   fs.writeFileSync(configPath, configFixture)
 }

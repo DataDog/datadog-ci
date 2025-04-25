@@ -1,8 +1,7 @@
 import fs from 'fs'
-import path from 'path'
 
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -10,6 +9,7 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
+import {globAsync} from '../../helpers/glob'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
@@ -188,7 +188,7 @@ export class UploadCommand extends Command {
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
       symbol_source: this.getElfSymbolSource(elfFileMetadata),
-      filename: path.basename(elfFileMetadata.filename),
+      filename: upath.basename(elfFileMetadata.filename),
       overwrite: this.replaceExisting,
       type: TYPE_ELF_DEBUG_INFOS,
     }
@@ -211,7 +211,7 @@ export class UploadCommand extends Command {
 
     const stat = await fs.promises.stat(symbolsLocation)
     if (stat.isDirectory()) {
-      paths = await glob(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
+      paths = await globAsync(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable

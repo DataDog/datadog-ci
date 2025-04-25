@@ -1,7 +1,6 @@
 import fs from 'fs'
 
 import {Command, Option} from 'clipanion'
-import glob from 'glob'
 import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
@@ -10,9 +9,9 @@ import {doWithMaxConcurrency} from '../../helpers/concurrency'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
+import {globSync} from '../../helpers/glob'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {MultipartValue, UploadStatus} from '../../helpers/upload'
-// import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import {buildPath, DEFAULT_CONFIG_PATHS, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
@@ -33,8 +32,6 @@ import {
   renderMissingPdbFile,
   renderEventPayload,
   renderRetriedUpload,
-  // renderMissingBinUtils,
-  // renderRetriedUpload,
   renderUpload,
   renderWarning,
 } from './renderer'
@@ -213,7 +210,7 @@ export class UploadCommand extends Command {
     const stat = await fs.promises.stat(symbolsLocation)
     if (stat.isDirectory()) {
       // strict: false is needed to avoid throwing an error if a directory is not readable
-      paths = glob.sync(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
+      paths = globSync(buildPath(symbolsLocation, '**'), {dot: true, dotRelative: true})
       reportFailure = (message: string) => this.context.stdout.write(renderWarning(message))
 
       // throw an error if top-level directory is not readable

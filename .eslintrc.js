@@ -332,7 +332,34 @@ module.exports = {
             ],
             message: "Please use a default import instead, e.g. `import chalk from 'chalk'`",
           },
+          {
+            name: 'path',
+            message: 'Please use `upath` instead of `path` to support Windows. This is a drop-in replacement.',
+          },
+          {
+            name: 'glob',
+            message:
+              'Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly.',
+          },
+          {
+            // imported as `import { EOL } from 'os'`
+            name: 'os',
+            importNames: ['EOL'],
+            message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
+          },
         ],
+      },
+    ],
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: "Literal[value='/dev/null']",
+        message: "Please use `os.devNull` instead of `'/dev/null'`.",
+      },
+      {
+        // imported as `import os from 'os'`
+        selector: "MemberExpression[object.name='os'][property.name='EOL']",
+        message: 'Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines.',
       },
     ],
   },

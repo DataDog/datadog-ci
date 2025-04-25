@@ -1,6 +1,5 @@
-import path from 'path'
-
 import chalk from 'chalk'
+import upath from 'upath'
 
 import {getBaseUrl} from '../junit/utils'
 
@@ -96,7 +95,7 @@ export const renderCommandInfo = (
     )
   }
   fullStr += chalk.green(`Starting upload with concurrency ${concurrency}. \n`)
-  if (basePaths.length === 1 && !!path.extname(basePaths[0])) {
+  if (basePaths.length === 1 && !!upath.extname(basePaths[0])) {
     fullStr += chalk.green(`Will upload SARIF report file ${basePaths[0]}\n`)
   } else {
     fullStr += chalk.green(`Will look for SARIF report files in ${basePaths.join(', ')}\n`)
@@ -109,7 +108,7 @@ export const renderCommandInfo = (
 
 export const renderFilesNotFound = (basePaths: string[]) => {
   let fullStr = ''
-  const paths = basePaths.length === 1 && !!path.extname(basePaths[0]) ? basePaths[0] : basePaths.join(', ')
+  const paths = basePaths.length === 1 && !!upath.extname(basePaths[0]) ? basePaths[0] : basePaths.join(', ')
 
   fullStr += chalk.yellow(`${ICONS.WARNING} Cannot find valid SARIF report files to upload in ${paths}.\n`)
   fullStr += chalk.yellow(`Check the files exist and are valid.\n`)

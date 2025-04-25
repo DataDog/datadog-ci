@@ -59,6 +59,34 @@ jobs:
           path: sarif-datadog-ci.sarif
           if-no-files-found: error
 
+  unit-tests-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [18, 20, 22]
+
+    name: Unit tests (Windows)
+    runs-on: windows-latest
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.version }}
+      - run: yarn install --immutable
+      - run: yarn test:windows
+        env:
+          CI: true
+          DD_SERVICE: datadog-ci-tests
+          DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
+          DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
+          DD_ENV: ci
+          NODE_OPTIONS: -r dd-trace/ci/init
+
   e2e-test:
     strategy:
       matrix:

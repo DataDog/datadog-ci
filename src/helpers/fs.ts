@@ -4,9 +4,9 @@
  */
 
 import fs from 'fs'
-import path from 'path'
 
 import JSZip from 'jszip'
+import upath from 'upath'
 
 /**
  * Delete a folder and all its contents
@@ -60,14 +60,14 @@ export const zipContents = async (rootFolderPath: string, zipPath: string) => {
 
     const contents = fs.readdirSync(folderPath)
     for (const item of contents) {
-      const fullPath = path.join(folderPath, item)
+      const fullPath = upath.join(folderPath, item)
       const file = fs.statSync(fullPath)
 
       if (file.isDirectory()) {
         addFolderToZip(fullPath)
       } else {
         const data = fs.readFileSync(fullPath)
-        zip.file(path.relative(rootFolderPath, fullPath), data)
+        zip.file(upath.relative(rootFolderPath, fullPath), data)
       }
     }
   }

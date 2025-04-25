@@ -1,8 +1,9 @@
 import {spawn} from 'child_process'
 import {once} from 'events'
 import {promises as fs} from 'fs'
-import * as http from 'http'
-import * as path from 'path'
+import http from 'http'
+
+import upath from 'upath'
 
 import {MainReporter} from './interfaces'
 
@@ -78,26 +79,26 @@ const fileExists = async (filePath: string): Promise<boolean> => {
 }
 
 const prepareFile = async (root = process.cwd(), builds: ReportedBuild[], requestUrl: string): Promise<File> => {
-  const staticPath = path.isAbsolute(root) ? root : path.resolve(process.cwd(), root)
+  const staticPath = upath.isAbsolute(root) ? root : upath.resolve(process.cwd(), root)
 
   for (const build of builds) {
     if (requestUrl.startsWith(build.publicPath)) {
       const url = new URL(requestUrl, 'http://127.0.0.1')
-      const filePath = path.join(
-        path.resolve(staticPath, build.outputDirectory), // absolute path to the assets directory
-        path.relative(build.publicPath, url.pathname), // relative path to the file
+      const filePath = upath.join(
+        upath.resolve(staticPath, build.outputDirectory), // absolute path to the assets directory
+        upath.relative(build.publicPath, url.pathname), // relative path to the file
         url.pathname.endsWith('/') ? 'index.html' : '' // add index.html if the path ends with a slash
       )
 
       // Verify path is within the intended directory
-      const directDescendant = filePath.startsWith(path.resolve(staticPath, build.outputDirectory))
+      const directDescendant = filePath.startsWith(upath.resolve(staticPath, build.outputDirectory))
       // Check if the file exists (only if it's withing the intended directory)
       const found = directDescendant && (await fileExists(filePath))
 
       if (directDescendant && found) {
         return {
           found: true,
-          ext: path.extname(filePath).substring(1).toLowerCase(),
+          ext: upath.extname(filePath).substring(1).toLowerCase(),
           content: await fs.readFile(filePath, {encoding: 'utf-8'}),
         }
       }

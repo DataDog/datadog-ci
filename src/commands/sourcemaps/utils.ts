@@ -1,7 +1,7 @@
-import path from 'path'
+import upath from 'upath'
 
 export const getMinifiedFilePath = (sourcemapPath: string) => {
-  if (path.extname(sourcemapPath) !== '.map') {
+  if (upath.extname(sourcemapPath) !== '.map') {
     throw Error('cannot get minified file path from a file which is not a sourcemap')
   }
 

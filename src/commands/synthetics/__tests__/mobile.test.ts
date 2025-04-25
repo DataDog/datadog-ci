@@ -1,5 +1,6 @@
 import fs from 'fs'
-import path from 'path'
+
+import upath from 'upath'
 
 import {EndpointError} from '../api'
 import {CiError, CriticalError} from '../errors'
@@ -27,7 +28,7 @@ describe('mobile', () => {
       const tmpdir = fs.mkdtempSync('getSizeAndPartsFromFile')
       try {
         // write test content to a file in the temporary directory
-        const filename = path.join(tmpdir, 'compute_md5_test')
+        const filename = upath.join(tmpdir, 'compute_md5_test')
         const fileContent = '7 bytes'
         fs.writeFileSync(filename, fileContent)
 

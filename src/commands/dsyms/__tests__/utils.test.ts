@@ -1,7 +1,6 @@
 import fs, {promises} from 'fs'
 
-import {glob} from 'glob'
-
+import {globSync} from '../../../helpers/glob'
 import {buildPath} from '../../../helpers/utils'
 
 import {
@@ -70,8 +69,8 @@ describe('utils', () => {
 
       await unzipArchiveToDirectory(archivePath, destinationDirectory)
 
-      const originalContentList = glob.sync(buildPath('./src/commands/dsyms/__tests__/', 'fixtures/**/*'))
-      const unzippedContentList = glob.sync(buildPath(destinationDirectory, 'fixtures/**/*'))
+      const originalContentList = globSync(buildPath('./src/commands/dsyms/__tests__/', 'fixtures/**/*'))
+      const unzippedContentList = globSync(buildPath(destinationDirectory, 'fixtures/**/*'))
       expect(originalContentList.length).toEqual(unzippedContentList.length)
 
       await deleteDirectory(archiveDirectory)

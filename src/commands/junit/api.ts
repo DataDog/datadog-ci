@@ -1,10 +1,10 @@
 import fs from 'fs'
-import path from 'path'
 import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
+import upath from 'upath'
 import {v4 as uuidv4} from 'uuid'
 
 import {getRequestBuilder} from '../../helpers/utils'
@@ -26,7 +26,7 @@ export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromi
 
   let fileName
   try {
-    fileName = path.parse(jUnitXML.xmlPath).name
+    fileName = upath.parse(jUnitXML.xmlPath).name
   } catch (e) {
     fileName = 'default_file_name'
   }

@@ -1,9 +1,9 @@
 // Build
 import fs from 'fs'
-import path from 'path'
 
 import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
+import upath from 'upath'
 
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
@@ -260,7 +260,7 @@ export const getSpanTags = async (
 }
 
 const readJsonFile = (context: BaseContext, filename: string): string => {
-  filename = path.posix.normalize(filename) // resolve relative paths
+  filename = upath.normalize(filename) // resolve relative paths
   if (!fs.existsSync(filename)) {
     context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${filename}' does not exist\n`)
 
@@ -271,7 +271,7 @@ const readJsonFile = (context: BaseContext, filename: string): string => {
 
     return ''
   }
-  if (path.extname(filename) !== '.json') {
+  if (upath.extname(filename) !== '.json') {
     context.stderr.write(`${chalk.red.bold('[ERROR]')} file '${filename}' is not a JSON file\n`)
 
     return ''

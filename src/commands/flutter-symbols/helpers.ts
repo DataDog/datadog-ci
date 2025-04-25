@@ -1,4 +1,4 @@
-import * as path from 'path'
+import upath from 'upath'
 
 import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
 import {RequestBuilder} from '../../helpers/interfaces'
@@ -24,7 +24,7 @@ export const uploadMultipartHelper = async (
 ) => upload(requestBuilder)(payload, opts)
 
 export const getArchInfoFromFilename = (filename: string) => {
-  const parsed = path.parse(filename)
+  const parsed = upath.parse(filename)
   const basename = parsed.name
   const groups = /^.*\.(?<platform>.*)-(?<arch>.*)$/.exec(basename)?.groups
   if (!groups) {

@@ -1,6 +1,7 @@
 import fs from 'fs'
 import os from 'os'
-import path from 'path'
+
+import upath from 'upath'
 
 import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
@@ -75,7 +76,7 @@ describe('elf-symbols upload', () => {
         cmd['symbolsLocations'] = [fixtureDir]
         process.env.DATADOG_API_KEY = 'fake_api_key'
       })
-      const output = context.stdout.toString().split(os.EOL)
+      const output = context.stdout.toString().split('\n')
 
       expect(exitCode).toBe(0)
 
@@ -132,8 +133,8 @@ describe('elf-symbols upload', () => {
       let tmpDir
       let tmpSubDir
       try {
-        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'elf-tests-'))
-        tmpSubDir = fs.mkdtempSync(path.join(tmpDir, 'unreadable-'))
+        tmpDir = fs.mkdtempSync(upath.join(os.tmpdir(), 'elf-tests-'))
+        tmpSubDir = fs.mkdtempSync(upath.join(tmpDir, 'unreadable-'))
         fs.chmodSync(tmpSubDir, 0o200)
         await expect(command['getElfSymbolFiles'](tmpDir)).resolves.toEqual([])
       } finally {

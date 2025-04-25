@@ -1,5 +1,6 @@
 import fs from 'fs'
-import path from 'path'
+
+import upath from 'upath'
 
 import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
 import {Metadata, SpanTags} from '../interfaces'
@@ -12,7 +13,7 @@ import {
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
-const CI_PROVIDERS = fs.readdirSync(path.join(__dirname, 'ci-env'))
+const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
 const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
   const metadata: Metadata = {
@@ -109,7 +110,7 @@ describe('getCIMetadata', () => {
   })
 
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+    const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[tag: string]: string}
     ][]
@@ -149,7 +150,7 @@ describe('getCIMetadata', () => {
     const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
     delete expectedMetadata.git.branch
 
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+    const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[tag: string]: string}
     ][]
@@ -175,7 +176,7 @@ describe('ci spec', () => {
   })
 
   CI_PROVIDERS.forEach((ciProvider) => {
-    const assertions = require(path.join(__dirname, 'ci-env', ciProvider)) as [
+    const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
       {[key: string]: string}
     ][]
@@ -192,7 +193,7 @@ describe('ci spec', () => {
         it('can read pull request data from GitHub Actions', () => {
           process.env = env
           process.env.GITHUB_BASE_REF = 'datadog:main'
-          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'ci-fixtures', 'github_event_payload.json')
+          process.env.GITHUB_EVENT_PATH = upath.join(__dirname, 'ci-fixtures', 'github_event_payload.json')
           const {
             [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
             [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
@@ -213,7 +214,7 @@ describe('ci spec', () => {
         it('does not crash if GITHUB_EVENT_PATH is not a valid JSON file', () => {
           process.env = env
           process.env.GITHUB_BASE_REF = 'datadog:main'
-          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'github_event_payload_malformed.json')
+          process.env.GITHUB_EVENT_PATH = upath.join(__dirname, 'fixtures', 'github_event_payload_malformed.json')
           const {
             [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
             [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
@@ -228,7 +229,7 @@ describe('ci spec', () => {
         it('does not crash if GITHUB_EVENT_PATH is not a file', () => {
           process.env = env
           process.env.GITHUB_BASE_REF = 'datadog:main'
-          process.env.GITHUB_EVENT_PATH = path.join(__dirname, 'fixtures', 'does_not_exist.json')
+          process.env.GITHUB_EVENT_PATH = upath.join(__dirname, 'fixtures', 'does_not_exist.json')
           const {
             [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
             [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,

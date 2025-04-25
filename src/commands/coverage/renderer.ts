@@ -1,6 +1,5 @@
-import path from 'path'
-
 import chalk from 'chalk'
+import upath from 'upath'
 
 import {Payload} from './interfaces'
 
@@ -69,7 +68,7 @@ export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
   }
   fullStr += chalk.green(`${new Date().toLocaleString()} - Starting upload. \n`)
   if (!!basePaths.length) {
-    if (basePaths.length === 1 && !!path.extname(basePaths[0])) {
+    if (basePaths.length === 1 && !!upath.extname(basePaths[0])) {
       fullStr += chalk.green(`Will upload code coverage report file ${basePaths[0]}`)
     } else {
       fullStr += chalk.green(`Will look for code coverage report files in ${basePaths.join(', ')}`)

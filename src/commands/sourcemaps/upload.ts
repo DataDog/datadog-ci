@@ -1,9 +1,8 @@
-import path from 'path'
 import {URL} from 'url'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {glob} from 'glob'
+import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
@@ -13,6 +12,7 @@ import {toBoolean} from '../../helpers/env'
 import {InvalidConfigurationError} from '../../helpers/errors'
 import {enableFips} from '../../helpers/fips'
 import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {globSync} from '../../helpers/glob'
 import {RequestBuilder} from '../../helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
@@ -109,8 +109,7 @@ export class UploadCommand extends Command {
     }
 
     // Normalizing the basePath to resolve .. and .
-    // Always using the posix version to avoid \ on Windows.
-    this.basePath = path.posix.normalize(this.basePath)
+    this.basePath = upath.normalize(this.basePath)
     this.context.stdout.write(
       renderCommandInfo(
         this.basePath,
@@ -183,7 +182,7 @@ export class UploadCommand extends Command {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
-    const sourcemapFiles = glob.sync(buildPath(this.basePath, '**/*js.map'))
+    const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(
       sourcemapFiles.map(async (sourcemapPath) => {
