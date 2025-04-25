@@ -48,7 +48,7 @@
     "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
-    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf 'dist/**/__tests__'",
+    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf --glob 'dist/**/__tests__'",
     "prettier": "prettier \"src/**/*.{ts,js,json,yml}\" --ignore-path .gitignore",
     "test": "jest --colors",
     "test:windows": "jest --config ./jest.config-windows.js --colors",
