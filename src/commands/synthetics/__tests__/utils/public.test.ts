@@ -390,17 +390,33 @@ describe('utils', () => {
   })
 
   describe('retry', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+
+      jest.spyOn(global, 'setTimeout').mockImplementation((callback, ms) => {
+        jest.advanceTimersByTime(ms ?? 0)
+        callback()
+
+        return {} as NodeJS.Timeout
+      })
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
     test('retry works fine', async () => {
       const result = await utils.retry(
         async () => 42,
-        () => 1
+        () => 0
       )
+
       expect(result).toBe(42)
+      expect(global.setTimeout).toHaveBeenCalledTimes(0)
     })
 
     test('retry works fine after some retries', async () => {
       let counter = 0
-      const start = +new Date()
       const result = await utils.retry(
         async () => {
           if (counter === 3) {
@@ -411,12 +427,13 @@ describe('utils', () => {
         },
         (retries: number) => 100 * (retries + 1)
       )
-      const end = +new Date()
-      const approximateWait = 100 + 100 * 2 + 100 * 3
 
       expect(result).toBe(42)
       expect(counter).toBe(3)
-      expect(end - start - approximateWait < 50).toBeTruthy()
+      expect(global.setTimeout).toHaveBeenCalledTimes(3)
+      expect(global.setTimeout).toHaveBeenNthCalledWith(1, expect.any(Function), 100)
+      expect(global.setTimeout).toHaveBeenNthCalledWith(2, expect.any(Function), 200)
+      expect(global.setTimeout).toHaveBeenNthCalledWith(3, expect.any(Function), 300)
     })
 
     test('retry rethrows after some retries', async () => {
@@ -430,12 +447,16 @@ describe('utils', () => {
           },
           (retries: number) => {
             if (retries < 2) {
-              return 1
+              return 100
             }
           }
         )
       ).rejects.toThrow('FAILURE')
+
       expect(counter).toBe(3)
+      expect(global.setTimeout).toHaveBeenCalledTimes(2)
+      expect(global.setTimeout).toHaveBeenNthCalledWith(1, expect.any(Function), 100)
+      expect(global.setTimeout).toHaveBeenNthCalledWith(2, expect.any(Function), 100)
     })
   })
 
