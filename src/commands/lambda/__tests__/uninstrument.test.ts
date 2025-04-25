@@ -565,6 +565,141 @@ describe('lambda', () => {
           "
         `)
       })
+
+      test('prints which functions failed to uninstrument without aborting when at least one function was uninstrumented correctly', async () => {
+        const failingLambdas = [
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+        ]
+        const layers = [
+          {
+            Arn: 'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:11',
+            CodeSize: 0,
+            SigningJobArn: 'some-signing-job-arn',
+            SigningProfileVersionArn: 'some-signing-profile',
+          },
+        ]
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs22.x',
+              Layers: layers,
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+              FunctionName: 'lambda-2-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs22.x',
+              Layers: layers,
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+              FunctionName: 'lambda-3-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs22.x',
+              Layers: [
+                {
+                  Arn: 'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:11',
+                  CodeSize: 0,
+                  SigningJobArn: 'some-signing-job-arn',
+                  SigningProfileVersionArn: 'some-signing-profile',
+                },
+              ],
+            },
+          },
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs16.x',
+              Layers: layers,
+            },
+          },
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+              FunctionName: 'lambda-2-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs18.x',
+              Layers: layers,
+            },
+          },
+        })
+
+        for (const failingLambda of failingLambdas) {
+          lambdaClientMock
+            .on(UpdateFunctionConfigurationCommand, {FunctionName: failingLambda})
+            .rejects('Unexpected error updating request')
+        }
+
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+        ])
+        expect(code).toBe(0)
+        expect(context.stdout.toString()).toMatchSnapshot()
+      })
+
+      test('aborts when every lambda function fails to update on uninstrument', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const layers = [
+          {
+            Arn: 'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:11',
+            CodeSize: 0,
+            SigningJobArn: 'some-signing-job-arn',
+            SigningProfileVersionArn: 'some-signing-profile',
+          },
+        ]
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+              FunctionName: 'lambda-1-us-east-1',
+              Handler: 'index.handler',
+              Runtime: 'nodejs22.x',
+              Layers: layers,
+            },
+          },
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+              FunctionName: 'lambda-1-us-east-2',
+              Handler: 'index.handler',
+              Runtime: 'nodejs18.x',
+              Layers: layers,
+            },
+          },
+        })
+
+        lambdaClientMock.on(UpdateFunctionConfigurationCommand).rejects('Unexpected error updating request')
+
+        const {code, context} = await runCLI([
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
+          '-f',
+          'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+        ])
+        expect(code).toBe(1)
+        expect(context.stdout.toString()).toContain(`✖ Failed updating every Lambda function.`)
+      })
     })
 
     describe('printPlannedActions', () => {

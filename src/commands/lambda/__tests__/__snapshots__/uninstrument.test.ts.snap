@@ -1,5 +1,65 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`lambda uninstrument execute prints which functions failed to uninstrument without aborting when at least one function was uninstrumented correctly 1`] = `
+"
+🐶 Uninstrumenting Lambda function
+
+[!] Functions to be updated:
+	- arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
+	- arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
+	- arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
+	- arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
+	- arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
+
+Will apply the following updates:
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1",
+  "Environment": {
+    "Variables": {}
+  },
+  "Layers": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1",
+  "Environment": {
+    "Variables": {}
+  },
+  "Layers": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-3-us-east-1",
+  "Environment": {
+    "Variables": {}
+  },
+  "Layers": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2
+{
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2",
+  "Environment": {
+    "Variables": {}
+  },
+  "Layers": []
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2
+{
+  "FunctionName": "arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2",
+  "Environment": {
+    "Variables": {}
+  },
+  "Layers": []
+}
+[Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1 Error: Unexpected error updating request
+[Error] Failed updating arn:aws:lambda:us-east-1:123456789012:function:lambda-2-us-east-1 Error: Unexpected error updating request
+[Error] Failed updating arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2 Error: Unexpected error updating request
+[!] Updated 2 Lambda functions.
+
+"
+`;
+
 exports[`lambda uninstrument execute uninstrument multiple functions interactively 1`] = `
 "
 🐶 Uninstrumenting Lambda function
