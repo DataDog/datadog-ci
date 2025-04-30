@@ -110,6 +110,7 @@ export abstract class CustomSpanCommand extends Command {
     }
     const api = this.getApiHelper()
     try {
+      console.log('PAYLOAD', JSON.stringify(payload, undefined, 2));
       await retryRequest(() => api.reportCustomSpan(payload), {
         onRetry: (e, attempt) => {
           this.context.stderr.write(
