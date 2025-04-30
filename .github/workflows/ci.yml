@@ -300,6 +300,8 @@ jobs:
   check-licenses:
     name: Check licenses
     runs-on: ubuntu-latest
+    env:
+      DD_GITHUB_JOB_NAME: Check licenses
 
     steps:
       - uses: actions/checkout@v4
