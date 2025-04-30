@@ -447,7 +447,6 @@ export interface BaseConfigOverride {
   startUrl?: string
   startUrlSubstitutionRegex?: string
   testTimeout?: number
-  tunnel?: TunnelInfo
   variables?: {[key: string]: string}
 }
 
@@ -459,6 +458,8 @@ export interface UserConfigOverride extends BaseConfigOverride {
 export interface ServerConfigOverride extends BaseConfigOverride {
   mobileApplication?: MobileApplication
   appExtractedMetadata?: MobileAppExtractedMetadata
+  // XXX: This would be better passed as a batch option in the future since it's always the same for all tests.
+  tunnel?: TunnelInfo
 }
 
 export interface BatchOptions {
@@ -472,13 +473,10 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface BaseTestPayload extends ServerConfigOverride {
-  executionRule?: ExecutionRule
-}
-export interface LocalTestPayload extends BaseTestPayload {
+export interface LocalTestPayload extends ServerConfigOverride {
   local_test_definition: LocalTestDefinition
 }
-export interface RemoteTestPayload extends BaseTestPayload {
+export interface RemoteTestPayload extends ServerConfigOverride {
   public_id: string
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
