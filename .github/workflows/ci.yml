@@ -307,6 +307,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.11.0
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable
