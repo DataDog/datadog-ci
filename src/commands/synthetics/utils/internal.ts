@@ -153,7 +153,7 @@ type AccumulatorBaseConfigOverride = Omit<
   | 'basicAuth'
   | 'cookies'
   | 'setCookies'
-  // TODO SYNTH-19776: These options will be implemented later.
+  // TODO SYNTH-12980: These options will be implemented later.
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
 > & {
