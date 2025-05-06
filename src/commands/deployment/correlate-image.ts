@@ -1,14 +1,13 @@
+import {isAxiosError} from 'axios'
+import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {Logger, LogLevel} from '../../helpers/logger'
-import { enableFips } from 'src/helpers/fips'
-import { FIPS_IGNORE_ERROR_ENV_VAR } from 'src/constants'
-import { toBoolean } from 'src/helpers/env'
-import { FIPS_ENV_VAR } from 'src/constants'
-import chalk from 'chalk'
+import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
-import { retryRequest } from 'src/helpers/retry'
-import { isAxiosError } from 'axios'
 
 export class DeploymentCorrelateImageCommand extends Command {
   public static paths = [['deployment', 'correlate-image']]
@@ -43,21 +42,25 @@ export class DeploymentCorrelateImageCommand extends Command {
       this.logger.error(
         `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`
       )
+
       return 1
     }
 
     if (!this.commitSha) {
       this.logger.error('Missing commit SHA. It must be provided with --commit-sha')
+
       return 1
     }
 
     if (!this.repositoryUrl) {
       this.logger.error('Missing repository URL. It must be provided with --repository-url')
+
       return 1
     }
 
     if (!this.image) {
       this.logger.error('Missing image. It must be provided with --image')
+
       return 1
     }
 
