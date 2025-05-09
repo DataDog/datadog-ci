@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
-import terminalLink from 'terminal-link'
+
+import {makeTerminalLink} from '../../helpers/utils'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {importTests} from './import-tests-lib'
@@ -7,7 +8,7 @@ import {ImportTestsCommandConfig} from './interfaces'
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
+const $1 = makeTerminalLink(`${configurationLink}#test-files`)
 
 export class ImportTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'import-tests']]
@@ -30,7 +31,7 @@ export class ImportTestsCommand extends BaseCommand {
   protected config: ImportTestsCommandConfig = ImportTestsCommand.getDefaultConfig()
 
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test files ${$2('configuration files')}} and write to this file.`,
+    description: `Glob pattern to detect Synthetic ${$1`test configuration files`}} and write to this file.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
   private testSearchQuery = Option.String('-s,--search', {

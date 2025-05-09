@@ -1,12 +1,11 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {makeTerminalLink, recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {CiError} from './errors'
 import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
@@ -19,17 +18,17 @@ export type RecursivePartial<T> = {
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
+const $1 = makeTerminalLink(`${configurationLink}#global-configuration-file-options`)
 
 export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
-  protected configPath = Option.String('--config', {
-    description: `Pass a path to a ${$1('global configuration file')}.`,
-  })
   protected apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
   protected appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  protected configPath = Option.String('--config', {
+    description: `Pass a path to a ${$1`global configuration file`}.`,
+  })
   protected datadogSite = Option.String('--datadogSite', {
     description: 'The Datadog instance to which request is sent.',
   })

@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
 import {toBoolean, toNumber, toStringMap} from '../../helpers/env'
-import {removeUndefinedValues} from '../../helpers/utils'
+import {makeTerminalLink, removeUndefinedValues} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
@@ -18,8 +17,8 @@ import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
-const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
+const $1 = makeTerminalLink(`${configurationLink}#test-files`)
+const $2 = makeTerminalLink(`${configurationLink}#use-the-testing-tunnel`)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -69,15 +68,13 @@ export class RunTestsCommand extends BaseCommand {
       'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
   })
   private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
-    description: `A boolean flag that fails the CI job if at least one specified test with a public ID (a \`--public-id\` CLI argument or listed in a ${$2(
-      'test file'
-    )} is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).`,
+    description: `A boolean flag that fails the CI job if at least one specified test with a public ID (a \`--public-id\` CLI argument or listed in a ${$1`test file`}) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).`,
   })
   private failOnTimeout = Option.Boolean('--failOnTimeout', {
     description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
   })
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+    description: `Glob pattern to detect Synthetic test ${$1`configuration files`}}.`,
   })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
     description: 'Override the default mobile application version to test a different version within Datadog.',
@@ -101,7 +98,7 @@ export class RunTestsCommand extends BaseCommand {
     description: 'Pass a query to select which Synthetic tests to run.',
   })
   private tunnel = Option.Boolean('-t,--tunnel', {
-    description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
+    description: `Use the ${$2`Continuous Testing Tunnel`} to execute your test batch.`,
   })
 
   private buildCommand = Option.String('--buildCommand', {

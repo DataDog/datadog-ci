@@ -1,5 +1,6 @@
 import {Command, Option} from 'clipanion'
-import terminalLink from 'terminal-link'
+
+import {makeTerminalLink} from '../../helpers/utils'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {deployTests} from './deploy-tests-lib'
@@ -7,7 +8,7 @@ import {DeployTestsCommandConfig} from './interfaces'
 
 const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
+const $1 = makeTerminalLink(`${configurationLink}#test-files`)
 
 export class DeployTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'deploy-tests']]
@@ -38,7 +39,7 @@ export class DeployTestsCommand extends BaseCommand {
   protected config: DeployTestsCommandConfig = DeployTestsCommand.getDefaultConfig()
 
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+    description: `Glob pattern to detect Synthetic test ${$1`configuration files`}}.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
 
