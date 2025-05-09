@@ -55,7 +55,7 @@ export class RunTestsCommand extends BaseCommand {
     description: 'The filename for a JUnit report if you want to generate one.',
   })
   public runName = Option.String('-n,--runName', {
-    description: 'A name for this run, which will be included in the JUnit report file.',
+    description: 'A name for this run, which will be included in the JUnit report.',
   })
 
   protected config: RunTestsCommandConfig = getDefaultConfig()

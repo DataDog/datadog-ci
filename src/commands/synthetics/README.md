@@ -1001,10 +1001,10 @@ Two reporters are supported out-of-the-box:
 1. `stdout`
 2. JUnit
 
-To enable the JUnit report, pass the `--jUnitReport` (`-j` shorthand) in your command, specifying a filename for your JUnit XML report.
+To enable the JUnit report, specify a filename for your JUnit report with `-j/--jUnitReport`.
 
 ```bash
-yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport e2e-test-junit
+yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests' --config global-config.json --jUnitReport junit-report.xml
 ```
 
 Reporters can hook themselves into the `MainReporter` of the command.
