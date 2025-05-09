@@ -258,7 +258,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
   For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
-#### `apiKey`
+#### `apiKey` (Required)
 
 Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -268,7 +268,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 * ENV variable: `DATADOG_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey`
+#### `appKey` (Required)
 
 Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
@@ -371,6 +371,7 @@ The filename for a JUnit report if you want to generate one.
 
 **Configuration options**
 
+* Default: None
 * Global Config: `"jUnitReport": "e2e-test-junit.xml"`
 * ENV variable: `DATADOG_SYNTHETICS_JUNIT_REPORT="e2e-test-junit.xml"`
 * CLI param:`-j "e2e-test-junit.xml"` / `--jUnitReport "e2e-test-junit.xml"`
@@ -401,6 +402,7 @@ Public IDs of Synthetic tests to run. If no value is provided, tests are discove
 
 **Configuration options**
 
+* Default: None
 * Global Config: `"publicIds": ["abc-def-ghi", "123-456-789"]`
 * ENV variable: `DATADOG_SYNTHETICS_PUBLIC_IDS="abc-def-ghi;123-456-789"`
 * CLI param: `-p "abc-def-ghi" --public-id "123-456-789"`
@@ -411,6 +413,7 @@ Whether to only rerun failed tests. If a test has already passed for a given com
 
 **Configuration options**
 
+* Default: `false`
 * Global Config: `"selectiveRerun": true`
 * ENV variable: `DATADOG_SYNTHETICS_SELECTIVE_RERUN=true`
 * CLI param: `--selectiveRerun` / `--no-selectiveRerun`
@@ -421,6 +424,7 @@ The name of the custom subdomain set to access your Datadog application. If the 
 
 **Configuration options**
 
+* Default: `app`
 * Global Config: `"subdomain": "myorg"`
 * ENV variable: `DATADOG_SUBDOMAIN="myorg"`
 * CLI param: `--subdomain "myorg"`
@@ -437,6 +441,7 @@ datadog-ci synthetics run-tests --search 'team:unicorn tag:e2e-tests tag:"manage
 
 **Configuration options**
 
+* Default: None
 * Global Config: `"testSearchQuery": "tag:e2e-tests"`
 * ENV variable: `DATADOG_SYNTHETICS_TEST_SEARCH_QUERY="tag:e2e-tests"`
 * CLI param: `-s "tag:e2e-tests"` / `--search "tag:e2e-tests"`
@@ -449,6 +454,7 @@ For more information, see [Using Local and Staging Environments](#using-local-an
 
 **Configuration options**
 
+* Default: `false`
 * Global Config: `"tunnel": true`
 * ENV variable: `DATADOG_SYNTHETICS_TUNNEL=true`
 * CLI param: `-t` / `--tunnel` / `--no-tunnel`
@@ -834,7 +840,7 @@ This command uploads a new version to an **existing** mobile application.
   For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
-#### `apiKey`
+#### `apiKey` (Required)
 
 The API key used to query the Datadog API.
 
@@ -844,7 +850,7 @@ The API key used to query the Datadog API.
 * ENV variable: `DATADOG_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
-#### `appKey`
+#### `appKey` (Required)
 
 The application key used to query the Datadog API.
 
@@ -860,6 +866,7 @@ A path to the global configuration file. See the [example configuration](#global
 
 **Configuration options**
 
+* Default: `datadog-ci.json`
 * Global Config: N/A
 * ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
 * CLI param: `--config global-config.json`
@@ -870,6 +877,7 @@ The Datadog instance to which request is sent. The default is `datadoghq.com`.<!
 
 **Configuration options**
 
+* Default: `datadoghq.com`
 * Global Config: `"datadogSite": "datadoghq.com"`
 * ENV variable: `DATADOG_SITE=datadoghq.com`
 * CLI param: `--datadogSite datadoghq.com`
@@ -885,7 +893,7 @@ Mark the new version as `latest`. Any tests that run on the latest version will 
 * ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
 * CLI param: `--latest` / `--no-latest`
 
-#### `mobileApplicationId`
+#### `mobileApplicationId` (Required)
 
 The ID of the application you want to upload the new version to.
 
@@ -895,7 +903,7 @@ The ID of the application you want to upload the new version to.
 * ENV variable: `DATADOG_SYNTHETICS_MOBILE_APPLICATION_ID=123-123-123`
 * CLI param: `--mobileApplicationId 123-123-123`
 
-#### `mobileApplicationVersionFilePath`
+#### `mobileApplicationVersionFilePath` (Required)
 
 The path to the new version of your mobile application (`.apk` or `.ipa`).
 
@@ -915,7 +923,7 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 * ENV variable: N/A
 * CLI param: N/A
 
-#### `versionName`
+#### `versionName` (Required)
 
 The name of the new version. It has to be unique.
 
