@@ -427,12 +427,9 @@ The name of the custom subdomain set to access your Datadog application. If the 
 
 #### `testSearchQuery`
 
-Pass a query to select which Synthetic tests to run.
+A [search query][14] to select which Synthetic tests to run. Use the [Synthetic Tests list page's search bar][5] to craft your query, then copy and paste it.
 
-The syntax for this query is the same as that used in the [Synthetics tests list page's search bar][14].
-You can craft the query in the UI, then copy and paste it in your command line inside single quotes.
-
-Example query with a facet, a `value` tag, and a `<KEY>:<VALUE>` tag:
+In the command line, the query should be inside single quotes. Here is an example with a facet, a `value` tag, and a `<KEY>:<VALUE>` tag:
 
 ```
 datadog-ci synthetics run-tests --search 'team:unicorn tag:e2e-tests tag:"managedBy:terraform"'
@@ -1026,7 +1023,7 @@ Reporters can hook themselves into the `MainReporter` of the command.
 
 ## View test results
 
-You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Testing Results Explorer][4] or clicking on a test on the [**Tests** page][5].
+You can see results for CI batches by clicking on a batch in the [Synthetic Monitoring & Testing Results Explorer][4] or clicking on a test on the [Synthetic Tests list page][5].
 
 You can also see the outcome of test executions directly in your CI as your tests are being executed. To identify what caused a test to fail, look at the execution logs and search for causes of the failed assertion.
 
@@ -1077,7 +1074,7 @@ Additional helpful documentation, links, and articles:
 [11]: https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
-[14]: https://app.datadoghq.com/synthetics/tests
+[14]: https://docs.datadoghq.com/synthetics/explore/#search
 [15]: https://docs.datadoghq.com/account_management/api-app-keys/
 [16]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
 [17]: https://app.datadoghq.com/synthetics/settings/continuous-testing

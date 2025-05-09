@@ -20,6 +20,8 @@ const configurationDocsLink = 'https://docs.datadoghq.com/continuous_testing/cic
 const $1 = makeTerminalLink(`${configurationDocsLink}#test-files`)
 const $2 = makeTerminalLink(`${configurationDocsLink}#use-the-testing-tunnel`)
 const $3 = makeTerminalLink(`https://app.datadoghq.com/synthetics/settings/continuous-testing`)
+const $4 = makeTerminalLink(`https://docs.datadoghq.com/synthetics/explore/#search`)
+const $5 = makeTerminalLink(`https://app.datadoghq.com/synthetics/tests`)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -100,7 +102,7 @@ export class RunTestsCommand extends BaseCommand {
       'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
   })
   private testSearchQuery = Option.String('-s,--search', {
-    description: 'Pass a query to select which Synthetic tests to run.',
+    description: `A ${$4`search query`} to select which Synthetic tests to run. Use the ${$5`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
   private tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$2`Continuous Testing Tunnel`} to execute your test batch.`,
