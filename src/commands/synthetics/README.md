@@ -407,7 +407,7 @@ Public IDs of Synthetic tests to run. If no value is provided, tests are discove
 
 #### `selectiveRerun`
 
-A boolean flag to only run the tests which failed in the previous test batches. By default, the [organization default setting](https://app.datadoghq.com/synthetics/settings/continuous-testing) is used. Use the `--no-selectiveRerun` CLI flag or `selectiveRerun: false` to force a full run.
+Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your [organization's default setting][17] is used. Set it to `false` to force full runs when your configuration enables it by default.
 
 **Configuration options**
 
@@ -1080,6 +1080,7 @@ Additional helpful documentation, links, and articles:
 [14]: https://app.datadoghq.com/synthetics/tests
 [15]: https://docs.datadoghq.com/account_management/api-app-keys/
 [16]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
+[17]: https://app.datadoghq.com/synthetics/settings/continuous-testing
 
 <!--
   This page is single-sourced:

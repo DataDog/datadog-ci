@@ -15,10 +15,11 @@ import {executeTests, getDefaultConfig} from './run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from './utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs} from './utils/public'
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const configurationDocsLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
 
-const $1 = makeTerminalLink(`${configurationLink}#test-files`)
-const $2 = makeTerminalLink(`${configurationLink}#use-the-testing-tunnel`)
+const $1 = makeTerminalLink(`${configurationDocsLink}#test-files`)
+const $2 = makeTerminalLink(`${configurationDocsLink}#use-the-testing-tunnel`)
+const $3 = makeTerminalLink(`https://app.datadoghq.com/synthetics/settings/continuous-testing`)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -92,8 +93,7 @@ export class RunTestsCommand extends BaseCommand {
     description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
   })
   private selectiveRerun = Option.Boolean('--selectiveRerun', {
-    description:
-      'A boolean flag to only run the tests which failed in the previous test batches. Use `--no-selectiveRerun` to force a full run if your configuration enables it by default.',
+    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$3`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
   })
   private subdomain = Option.String('--subdomain', {
     description:
