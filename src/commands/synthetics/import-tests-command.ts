@@ -6,9 +6,12 @@ import {BaseCommand, RecursivePartial} from './base-command'
 import {importTests} from './import-tests-lib'
 import {ImportTestsCommandConfig} from './interfaces'
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
+const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
-const $1 = makeTerminalLink(`${configurationLink}#test-files`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
+const $2 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
+const $3 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
 
 export class ImportTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'import-tests']]
@@ -36,7 +39,7 @@ export class ImportTestsCommand extends BaseCommand {
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to import.'})
   private testSearchQuery = Option.String('-s,--search', {
-    description: 'Pass a query to select which Synthetic tests to run.',
+    description: `A ${$2`search query`} to select which Synthetic tests to import. Use the ${$3`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
 
   public static getDefaultConfig(): ImportTestsCommandConfig {
