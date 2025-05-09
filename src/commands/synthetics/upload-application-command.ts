@@ -30,15 +30,17 @@ export class UploadApplicationCommand extends BaseCommand {
   protected config: UploadApplicationCommandConfig = UploadApplicationCommand.getDefaultConfig()
 
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: 'Override the application version for all Synthetic mobile application tests.',
+    description: 'The path to the new version of your mobile application (`.apk` or `.ipa`).',
   })
   private mobileApplicationId = Option.String('--mobileApplicationId', {
-    description: 'ID of the application you want to upload the new version to.',
+    description: 'The ID of the application you want to upload the new version to.',
   })
-  private versionName = Option.String('--versionName', {description: 'Name of the new version. It has to be unique.'})
+  private versionName = Option.String('--versionName', {
+    description: 'The name of the new version. It has to be unique.',
+  })
   private latest = Option.Boolean('--latest', {
     description:
-      'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
+      'Mark the new version as `latest`. Any tests that run on the latest version will use this version on their next run.',
   })
 
   public static getDefaultConfig(): UploadApplicationCommandConfig {

@@ -1,12 +1,11 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {makeTerminalLink, recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {CiError} from './errors'
 import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
@@ -17,21 +16,29 @@ export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>
 }
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
-const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-keys`)
+const $2 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file`
+)
+const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
 
 export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
-  protected configPath = Option.String('--config', {
-    description: `Pass a path to a ${$1('global configuration file')}.`,
+  protected apiKey = Option.String('--apiKey', {
+    description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
-  protected apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
-  protected appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  protected appKey = Option.String('--appKey', {
+    description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
+  protected configPath = Option.String('--config', {
+    description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
+  })
   protected datadogSite = Option.String('--datadogSite', {
-    description: 'The Datadog instance to which request is sent.',
+    description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
   })
 
   protected fips = Option.Boolean('--fips', false)

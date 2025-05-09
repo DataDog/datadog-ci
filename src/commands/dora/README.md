@@ -54,7 +54,7 @@ Additionally, you can configure the `deployment` command with environment variab
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_ENV`: you may choose the environment you that the deployment has targetted
 - `DD_SERVICE`: If you haven't specified a service through `--service` you can set it with this env var.
-- `DD_SITE`: Set to you your Datadog site. For example, `datadoghq.com` or `datadoghq.eu`.
+- `DD_SITE`: Set to your Datadog site. For example, `datadoghq.com` or `datadoghq.eu`.
 
 
 ### Optional dependencies
