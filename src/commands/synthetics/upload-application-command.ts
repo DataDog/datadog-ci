@@ -33,7 +33,7 @@ export class UploadApplicationCommand extends BaseCommand {
     description: 'Override the application version for all Synthetic mobile application tests.',
   })
   private mobileApplicationId = Option.String('--mobileApplicationId', {
-    description: 'ID of the application you want to upload the new version to.',
+    description: 'The ID of the application you want to upload the new version to.',
   })
   private versionName = Option.String('--versionName', {description: 'Name of the new version. It has to be unique.'})
   private latest = Option.Boolean('--latest', {
