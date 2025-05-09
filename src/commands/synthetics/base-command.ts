@@ -16,18 +16,25 @@ export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>
 }
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
-const $1 = makeTerminalLink(`${configurationLink}#global-configuration-file-options`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-keys`)
+const $2 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file-options`
+)
 
 export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
-  protected apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
-  protected appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  protected apiKey = Option.String('--apiKey', {
+    description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
+  protected appKey = Option.String('--appKey', {
+    description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
   protected configPath = Option.String('--config', {
-    description: `Pass a path to a ${$1`global configuration file`}.`,
+    description: `Pass a path to a ${$2`global configuration file`}.`,
   })
   protected datadogSite = Option.String('--datadogSite', {
     description: 'The Datadog instance to which request is sent.',

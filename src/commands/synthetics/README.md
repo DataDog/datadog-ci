@@ -257,7 +257,7 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 
 #### `apiKey`
 
-The API key used to query the Datadog API.
+Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
 **Configuration options**
 
@@ -267,7 +267,7 @@ The API key used to query the Datadog API.
 
 #### `appKey`
 
-The application key used to query the Datadog API.
+Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
 **Configuration options**
 
@@ -1043,6 +1043,7 @@ Additional helpful documentation, links, and articles:
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
 [14]: https://app.datadoghq.com/synthetics/tests
+[15]: https://docs.datadoghq.com/account_management/api-app-keys/
 
 <!--
   This page is single-sourced:
