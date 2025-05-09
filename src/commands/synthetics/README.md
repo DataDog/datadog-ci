@@ -622,7 +622,7 @@ Override the list of locations to run the test from. The possible values are lis
 
 #### `mobileApplicationVersion` (String)
 
-Override the mobile application version for a Synthetic mobile application test. The version must be uploaded and available within Datadog.
+Override the mobile application version for Synthetic mobile application tests. The version must be uploaded and available within Datadog.
 
 **Configuration options**
 
