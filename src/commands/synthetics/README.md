@@ -165,7 +165,7 @@ Example:
 
 ```jsonc
 {
-  ...
+  // ...
   "proxy": {
     "auth": {
       "username": "login",
@@ -175,7 +175,7 @@ Example:
     "port": 3128,
     "protocol": "http"
   },
-  ...
+  // ...
 }
 ```
 
@@ -604,7 +604,7 @@ This object specifies the headers to be replaced in the test. It should have key
 **Configuration options**
 
 * Global/Test Config: `"headers": {"NEW_HEADER_1": "NEW VALUE 1", "NEW_HEADER_2": "NEW VALUE 2"}`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_HEADERS='{"NEW_HEADER_1":"NEW VALUE 1", "NEW_HEADER_2":"NEW VALUE 2"}'` (**note** this must be a valid JSON)
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_HEADERS='{"NEW_HEADER_1":"NEW VALUE 1", "NEW_HEADER_2":"NEW VALUE 2"}'` (**Note**: This must be valid JSON)
 * CLI param:
   * `--override headers.NEW_HEADER_1="NEW VALUE 1"`
   * `--override headers.NEW_HEADER_2="NEW VALUE 2"`
@@ -726,7 +726,7 @@ This object should include keys corresponding to the names of the variables to b
 **Configuration options**
 
 * Global/Test Config: `"variables": {"NEW_VARIABLE_1": "NEW VARIABLE 1", "NEW_VARIABLE_2": "NEW VARIABLE 2"}`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_VARIABLES='{"NEW_VARIABLE_1":"NEW VARIABLE 1", "NEW_VARIABLE_2":"NEW VARIABLE 2"}'` (**note** this must be a valid JSON)
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_VARIABLES='{"NEW_VARIABLE_1":"NEW VARIABLE 1", "NEW_VARIABLE_2":"NEW VARIABLE 2"}'` (**Note**: This must be valid JSON)
 * CLI param:
   * `--override variables.NEW_VARIABLE_1="NEW VARIABLE 1"`
   * `--override variables.NEW_VARIABLE_2="NEW VARIABLE 2"`
@@ -813,7 +813,7 @@ Example:
       "id": "<TEST_PUBLIC_ID_2>",
       "testOverrides": {
         "allowInsecureCertificates": true,
-        ...
+        // ...
         "variables": {"MY_VARIABLE": "new title"}
       }
     }
