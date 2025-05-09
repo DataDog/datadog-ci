@@ -22,6 +22,7 @@ const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-ke
 const $2 = makeTerminalLink(
   `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file`
 )
+const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
 
 export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
@@ -37,7 +38,7 @@ export abstract class BaseCommand extends Command {
     description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
   })
   protected datadogSite = Option.String('--datadogSite', {
-    description: 'The Datadog instance to which request is sent.',
+    description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
   })
 
   protected fips = Option.Boolean('--fips', false)

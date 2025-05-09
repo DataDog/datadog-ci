@@ -68,7 +68,7 @@ Example:
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "batchTimeout": 1800000,
-  "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
+  "datadogSite": "datadoghq.com",
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
     "basicAuth": {"username": "test", "password": "test"},
@@ -302,10 +302,11 @@ The path to the [global configuration file](#global-configuration-file) that con
 
 #### `datadogSite`
 
-The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+Your Datadog site. The possible values are listed [in this table][16].<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 **Configuration options**
 
+* Default: `datadoghq.com`
 * Global Config: `"datadogSite": "datadoghq.com"`
 * ENV variable: `DATADOG_SITE=datadoghq.com`
 * CLI param: `--datadogSite datadoghq.com`
@@ -1059,6 +1060,7 @@ Additional helpful documentation, links, and articles:
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
 [14]: https://app.datadoghq.com/synthetics/tests
 [15]: https://docs.datadoghq.com/account_management/api-app-keys/
+[16]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
 
 <!--
   This page is single-sourced:
