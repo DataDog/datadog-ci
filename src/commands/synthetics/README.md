@@ -558,7 +558,7 @@ The maximum duration of steps in seconds for browser tests, which does not overr
 
 #### `deviceIds` (Array)
 
-A list of devices to run the browser test on. The values that it can take can be found in the [Datadog Synthetics Terraform documentation][11].
+Override the list of devices on which to run the Synthetic test(s).
 
 **Configuration options**
 
@@ -1055,7 +1055,6 @@ Additional helpful documentation, links, and articles:
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/examples/global-config-complete-example.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
-[11]: https://registry.terraform.io/providers/DataDog/datadog/latest/docs/resources/synthetics_test#device_ids
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
 [14]: https://app.datadoghq.com/synthetics/tests
