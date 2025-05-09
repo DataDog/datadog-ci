@@ -33,7 +33,7 @@ yarn add --dev @datadog/datadog-ci
 
 To setup the client, your Datadog API and application keys need to be configured. These keys can be defined in three different ways:
 
-1. Defined in a [global JSON configuration file](#global-configuration-file-options):
+1. Defined in a [global JSON configuration file](#global-configuration-file):
 
     ```json
     {
@@ -55,7 +55,7 @@ To setup the client, your Datadog API and application keys need to be configured
     yarn datadog-ci synthetics run-tests --apiKey "<API_KEY>" --appKey "<APPLICATION_KEY>"
     ```
 
-### Global configuration file options
+### Global configuration file
 
 Using a global configuration file (Global Config) is one of the ways to configure datadog-ci. To do so, create a JSON configuration file on your system. Specify the path to the file using the `--config` flag or configure it through the `DATADOG_SYNTHETICS_CONFIG_PATH` environment variable [when launching your tests](#run-tests-command) or [uploading a new application](#upload-application-command). If you don't specify a file path, Datadog looks for a file with the default filename of `datadog-ci.json`.
 
@@ -218,7 +218,7 @@ Then, run:
 npm run datadog-ci-synthetics
 ```
 
-**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file-options), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxx tab "Yarn" xxx -->
@@ -231,7 +231,7 @@ The `run-tests` sub-command accepts the `--public-id` (or shorthand `-p`) argume
 yarn datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
 ```
 
-It is also possible to trigger tests corresponding to a search query by using the `--search` (or shorthand `-s`) argument. With this option, the overrides defined in your [global configuration file](#global-configuration-file-options) apply to all tests discovered with the search query.
+It is also possible to trigger tests corresponding to a search query by using the `--search` (or shorthand `-s`) argument. With this option, the overrides defined in your [global configuration file](#global-configuration-file) apply to all tests discovered with the search query.
 
 ```bash
 yarn datadog-ci synthetics run-tests -s 'tag:e2e-tests'
@@ -243,7 +243,7 @@ You can use `--files` (shorthand `-f`) to override the default glob pattern (whi
 yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json
 ```
 
-**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file-options), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
+**Note**: If you are launching your tests with a custom filename for the [global configuration file](#global-configuration-file), append the command associated to your `datadog-ci-synthetics` script with `--config <CUSTOM_PATH_TO_GLOBAL_CONFIG_FILE>`.
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
@@ -288,7 +288,7 @@ The duration in milliseconds after which the CI batch fails as timed out. This d
 
 #### `configPath`
 
-A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file) for more details.
 
 **Configuration options**
 
@@ -449,7 +449,7 @@ Use [Local and Staging Environments](#use-local-and-staging-environments) to exe
 
 All test overrides are optional and allow overriding the test configuration that is stored in Datadog.
 
-These overrides can either be applied to all tests with `defaultTestOverrides` in the [global configuration file](#global-configuration-file-options), or to some specific tests with `testOverrides` in a [test configuration file](#test-files).
+These overrides can either be applied to all tests with `defaultTestOverrides` in the [global configuration file](#global-configuration-file), or to some specific tests with `testOverrides` in a [test configuration file](#test-files).
 
 These options can also be set with environment variables starting with `DATADOG_SYNTHETICS_OVERRIDE_...` or with the `--override` CLI parameter following this pattern: `--override option=value`.
 
@@ -824,7 +824,7 @@ The application key used to query the Datadog API.
 
 #### `configPath`
 
-A path to the global configuration file. See the [example configuration](#global-configuration-file-options) for more details.
+A path to the global configuration file. See the [example configuration](#global-configuration-file) for more details.
 
 **Configuration options**
 
@@ -925,7 +925,7 @@ Pass this config file to the command with the `--config` flag:
 datadog-ci synthetics upload-application --config global-config.json
 ```
 
-The default file name for the [global configuration file](#global-configuration-file-options) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
+The default file name for the [global configuration file](#global-configuration-file) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
 ## Use local and staging environments
 
