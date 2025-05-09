@@ -377,7 +377,7 @@ The filename for a JUnit report if you want to generate one.
 
 #### `mobileApplicationVersionFilePath`
 
-Override the application version for all Synthetic mobile application tests.
+Override the application version for Synthetic mobile application tests.
 
 **Configuration options**
 
@@ -471,7 +471,7 @@ These options can also be set with environment variables starting with `DATADOG_
 
 #### `allowInsecureCertificates` (Boolean)
 
-Disable certificate checks in Synthetic API and Browser tests.
+Override the certificate checks in Synthetic API and Browser tests.
 
 **Configuration options**
 
@@ -481,7 +481,7 @@ Disable certificate checks in Synthetic API and Browser tests.
 
 #### `basicAuth` (Object)
 
-Credentials to provide if basic authentication is required.
+Override the credentials for basic authentication.
 
 * `username` (String): The username for basic authentication.
 * `password` (String): The password for basic authentication.
@@ -498,7 +498,7 @@ Credentials to provide if basic authentication is required.
 
 #### `body` (String)
 
-Data to send in an API test.
+Override the data to send in API tests.
 
 **Configuration options**
 
@@ -508,7 +508,7 @@ Data to send in an API test.
 
 #### `bodyType` (String)
 
-Content type for the data to send in an API test.
+Override the content type for the data to send in API tests.
 
 **Configuration options**
 
@@ -518,7 +518,7 @@ Content type for the data to send in an API test.
 
 #### `cookies` (String or object)
 
-Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).
+Override the cookies for API and browser tests.
 
 * If this is a string, it is used to replace the original cookies.
 * If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies.
@@ -535,10 +535,10 @@ Use the provided string as a cookie header in an API or browser test (in additio
 
 #### `setCookies` (String or object)
 
-Use the provided string as a set-cookie header in a browser test only (in addition or as a replacement).
+Override the `Set-Cookie` headers in browser tests only.
 
-* If this is a string, it is used to replace the original set-cookies.
-* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original set-cookies.
+* If this is a string, it is used to replace the original `Set-Cookie` headers.
+* If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original `Set-Cookie` headers.
 
 **Configuration options**
 
@@ -552,7 +552,7 @@ Use the provided string as a set-cookie header in a browser test only (in additi
 
 #### `defaultStepTimeout` (Number)
 
-The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.
+Override the maximum duration of steps in seconds for browser tests. This does not override individually set step timeouts.
 
 **Configuration options**
 
@@ -562,7 +562,7 @@ The maximum duration of steps in seconds for browser tests, which does not overr
 
 #### `deviceIds` (Array)
 
-Override the list of devices on which to run the Synthetic test(s).
+Override the list of devices on which to run the Synthetic tests.
 
 **Configuration options**
 
@@ -572,12 +572,13 @@ Override the list of devices on which to run the Synthetic test(s).
 
 #### `executionRule` (String)
 
-The execution rule for the test defines the behavior of the CLI in case of a failing test.
-It accepts one of the following values:
+Override the execution rule for Synthetic tests.
 
-* `blocking`: The CLI returns an error if the test fails.
-* `non_blocking`: The CLI only prints a warning if the test fails.
-* `skipped`: The test is not executed at all.
+The execution rule for the test defines the behavior of the CI batch in case of a failing test. It accepts one of the following values:
+
+* `blocking`: A failed test causes the CI batch to fail.
+* `non_blocking`: A failed test does not cause the CI batch to fail.
+* `skipped`: The test is not run at all.
 
 **Configuration options**
 
@@ -587,7 +588,7 @@ It accepts one of the following values:
 
 #### `followRedirects` (Boolean)
 
-Indicates whether or not to follow HTTP redirections in Synthetic API tests.
+Override whether or not to follow HTTP redirections in API tests.
 
 **Configuration options**
 
@@ -596,6 +597,8 @@ Indicates whether or not to follow HTTP redirections in Synthetic API tests.
 * CLI param: `--override followRedirects=true`
 
 #### `headers` (Object)
+
+Override the headers in the API and browser tests.
 
 This object specifies the headers to be replaced in the test. It should have keys representing the names of the headers to be replaced, and values indicating the new header values.
 
@@ -609,7 +612,7 @@ This object specifies the headers to be replaced in the test. It should have key
 
 #### `locations` (Array)
 
-A list of locations to run the test from. The specific values that it can accept for your org can be found [here][12].
+Override the list of locations to run the test from. The possible values are listed [in this API response][12].
 
 **Configuration options**
 
@@ -619,7 +622,7 @@ A list of locations to run the test from. The specific values that it can accept
 
 #### `mobileApplicationVersion` (String)
 
-Override the default mobile application version for a Synthetic mobile application test. The version must be uploaded and available within Datadog.
+Override the mobile application version for a Synthetic mobile application test. The version must be uploaded and available within Datadog.
 
 **Configuration options**
 
@@ -654,8 +657,9 @@ Each regex pattern should be in the format:
 
 #### `retry` (Object)
 
-The retry policy for the test. The 2 possible attributes for this object are independent:
+Override the retry policy for the test.
 
+This object has the two following independent attributes:
 * `count` (Integer): The number of attempts to perform in case of test failure.
 * `interval` (Integer): The interval between attempts in milliseconds.
 
@@ -671,23 +675,31 @@ The retry policy for the test. The 2 possible attributes for this object are ind
 
 #### `startUrl` (String)
 
-The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.
+Override the start URL for API and browser tests.
+
+Local and [global variables][11] specified in the URL (for example, `{{ URL }}`) are replaced when the test is run.
+
+You can combine this with the `variables` override to override both the start URL and the variable values. For example:
+
+```bash
+--override startUrl="{{ URL }}?static_hash={{ STATIC_HASH }}" --override variables.STATIC_HASH=abcdef
+```
 
 **Configuration options**
 
-* Global/Test Config: `"startUrl": "{{URL}}?static_hash={{STATIC_HASH}}"`
-* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL="{{URL}}?static_hash={{STATIC_HASH}}"`
-* CLI param: `--override startUrl="{{URL}}?static_hash={{STATIC_HASH}}"`
+* Global/Test Config: `"startUrl": "{{ URL }}?static_hash={{ STATIC_HASH }}"`
+* ENV variable: `DATADOG_SYNTHETICS_OVERRIDE_START_URL="{{ URL }}?static_hash={{ STATIC_HASH }}"`
+* CLI param: `--override startUrl="{{ URL }}?static_hash={{ STATIC_HASH }}"`
 
 #### `startUrlSubstitutionRegex` (String)
 
-The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override startUrl.
+A regex to modify the starting URL of browser and HTTP tests, whether it comes from the original test or the `startUrl` override.
 
 If the URL contains variables, this regex applies after the interpolation of the variables.
 
 There are two possible formats:
 
-* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
+* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
 * **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
 
 **Configuration options**
@@ -698,7 +710,7 @@ There are two possible formats:
 
 #### `testTimeout` (Number)
 
-The maximum duration of a browser test in seconds.
+Override the maximum duration in seconds for browser tests.
 
 **Configuration options**
 
@@ -708,7 +720,9 @@ The maximum duration of a browser test in seconds.
 
 #### `variables` (Object)
 
-This object defines the variables to be substituted in the test. It should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
+Override the local and [global variables][11] in Synthetic tests.
+
+This object should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
 
 **Configuration options**
 
@@ -720,11 +734,11 @@ This object defines the variables to be substituted in the test. It should inclu
 
 ### Configure a start URL
 
-To configure which URL your test starts on, provide a `startUrl` to your test object. Build your own starting URL with any part of your test's original starting URL and include environment variables.
+To configure which URL your test starts on, provide a `startUrl` to your test object. Build your own starting URL with any part of your test's original starting URL and include local and [global variables][11].
 
 ### Configure a custom subdomain
 
-If the organization uses a custom sub-domain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
+If the organization uses a custom subdomain to access Datadog, this needs to be set in the `DATADOG_SUBDOMAIN` environment variable or in the global configuration file under the `subdomain` key in order to properly display the test results URL.
 
 For example, if the URL used to access Datadog is `myorg.datadoghq.com`, set the environment variable to `myorg`:
 
@@ -1060,6 +1074,7 @@ Additional helpful documentation, links, and articles:
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
 [9]: https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/examples/global-config-complete-example.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
+[11]: https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true
 [13]: https://www.npmjs.com/package/proxy-from-env#external-resources
 [14]: https://app.datadoghq.com/synthetics/tests
