@@ -252,8 +252,10 @@ yarn datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./
 ### List of Configurations
 
 <!--
-  The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
-  If want to update them please update the doc and the relevant integrations as well.
+  When updating any of these, don't forget to update the Google Sheets document and relevant CI integrations:
+    https://docs.google.com/spreadsheets/d/1VB8ntED7hz2McIwp7NaHADVt16nFUuNnKERBl78tldQ/edit?usp=sharing
+
+  For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
 #### `apiKey`
@@ -447,6 +449,13 @@ Use [Local and Staging Environments](#use-local-and-staging-environments) to exe
 * CLI param: `-t` / `--tunnel` / `--no-tunnel`
 
 ### Test overrides
+
+<!--
+  When updating any of these, don't forget to update the Google Sheets document and relevant CI integrations:
+    https://docs.google.com/spreadsheets/d/1VB8ntED7hz2McIwp7NaHADVt16nFUuNnKERBl78tldQ/edit?usp=sharing
+
+  For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
+-->
 
 All test overrides are optional and allow overriding the test configuration that is stored in Datadog.
 
@@ -800,8 +809,10 @@ This command uploads a new version to an **existing** mobile application.
 ### List of Configurations
 
 <!--
-  The descriptions of these is kept for consistency in this doc - https://datadoghq.atlassian.net/wiki/spaces/SYN/pages/3378446383/Configuration+parameters+and+their+usages#Proposal-for-aligning-Descriptions-and-labels
-  If want to update them please update the doc and the relevant integrations as well.
+  When updating any of these, don't forget to update the Google Sheets document and relevant CI integrations:
+    https://docs.google.com/spreadsheets/d/1VB8ntED7hz2McIwp7NaHADVt16nFUuNnKERBl78tldQ/edit?usp=sharing
+
+  For more information, see https://datadoghq.atlassian.net/wiki/x/LwBfyQ
 -->
 
 #### `apiKey`
