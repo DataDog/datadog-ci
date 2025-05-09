@@ -719,7 +719,7 @@ Override the maximum duration in seconds for browser tests.
 
 #### `variables` (Object)
 
-Override the local and [global variables][11] in Synthetic tests.
+Override existing or inject new local and [global variables][11] in Synthetic tests.
 
 This object should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
 

@@ -50,7 +50,7 @@ export class RunTestsCommand extends BaseCommand {
         'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json',
       ],
       [
-        'Pass variables as arguments',
+        'Override existing or inject new local and global variables in tests',
         'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json --override variables.NAME=VALUE',
       ],
     ],
