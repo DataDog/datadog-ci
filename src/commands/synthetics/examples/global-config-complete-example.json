@@ -1,7 +1,7 @@
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "batchTimeout": 180000,
+  "batchTimeout": 1800000,
   "datadogSite": "datadoghq.com",
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,

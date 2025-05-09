@@ -60,7 +60,7 @@ export class RunTestsCommand extends BaseCommand {
 
   private batchTimeout = Option.String('--batchTimeout', {
     description:
-      'The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+      'The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.',
     validator: validation.isInteger(),
   })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {

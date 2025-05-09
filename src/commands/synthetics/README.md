@@ -67,7 +67,7 @@ Example:
 {
   "apiKey": "<DATADOG_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
-  "batchTimeout": 180000,
+  "batchTimeout": 1800000,
   "datadogSite": "datadoghq.com", // You can use another Datadog site in https://docs.datadoghq.com/getting_started/site/. By default, requests are sent to Datadog US1. 
   "defaultTestOverrides": {
     "allowInsecureCertificates": true,
@@ -277,13 +277,14 @@ Your Datadog application key. This key is [created in your Datadog organization]
 
 #### `batchTimeout`
 
-The duration (integer in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.
+The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.
 
 **Configuration options**
 
-* Global Config: `"batchTimeout": 180000`
-* ENV variable: `DATADOG_SYNTHETICS_BATCH_TIMEOUT=180000`
-* CLI param: `--batchTimeout 180000`
+* Default: `1800000` (30 minutes)
+* Global Config: `"batchTimeout": 1800000`
+* ENV variable: `DATADOG_SYNTHETICS_BATCH_TIMEOUT=1800000`
+* CLI param: `--batchTimeout 1800000`
 
 #### `configPath`
 
