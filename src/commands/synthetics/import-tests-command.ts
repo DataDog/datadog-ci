@@ -34,7 +34,7 @@ export class ImportTestsCommand extends BaseCommand {
   private files = Option.Array('-f,--files', {
     description: `The path to the Synthetic ${$1`test configuration file`} to which to append imported Local Test Definitions.`,
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
+  private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to import.'})
   private testSearchQuery = Option.String('-s,--search', {
     description: 'Pass a query to select which Synthetic tests to run.',
   })

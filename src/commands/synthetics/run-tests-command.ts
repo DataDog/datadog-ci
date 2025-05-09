@@ -88,7 +88,9 @@ export class RunTestsCommand extends BaseCommand {
   private overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private publicIds = Option.Array('-p,--public-id', {
+    description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
+  })
   private selectiveRerun = Option.Boolean('--selectiveRerun', {
     description:
       'A boolean flag to only run the tests which failed in the previous test batches. Use `--no-selectiveRerun` to force a full run if your configuration enables it by default.',

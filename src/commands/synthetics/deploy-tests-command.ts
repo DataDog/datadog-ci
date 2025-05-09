@@ -41,7 +41,7 @@ export class DeployTestsCommand extends BaseCommand {
   private files = Option.Array('-f,--files', {
     description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to deploy.'})
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
     return {

@@ -397,7 +397,7 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 
 #### `publicIds`
 
-List of IDs for the Synthetic tests you want to trigger.
+Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic [test configuration files](#test-files).
 
 **Configuration options**
 
