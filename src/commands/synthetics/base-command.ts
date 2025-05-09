@@ -20,7 +20,7 @@ const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
 const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-keys`)
 const $2 = makeTerminalLink(
-  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file-options`
+  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file`
 )
 
 export abstract class BaseCommand extends Command {
@@ -34,7 +34,7 @@ export abstract class BaseCommand extends Command {
     description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
   protected configPath = Option.String('--config', {
-    description: `Pass a path to a ${$2`global configuration file`}.`,
+    description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
   })
   protected datadogSite = Option.String('--datadogSite', {
     description: 'The Datadog instance to which request is sent.',

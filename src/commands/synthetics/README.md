@@ -291,10 +291,11 @@ The duration in milliseconds after which the CI batch fails as timed out. This d
 
 #### `configPath`
 
-A path to the global configuration file. See the [example configuration](#global-configuration-file) for more details.
+The path to the [global configuration file](#global-configuration-file) that configures datadog-ci.
 
 **Configuration options**
 
+* Default: `datadog-ci.json`
 * Global Config: N/A
 * ENV variable: `DATADOG_SYNTHETICS_CONFIG_PATH=global-config.json`
 * CLI param: `--config global-config.json`
