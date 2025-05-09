@@ -323,10 +323,11 @@ Overrides for Synthetic tests applied to all tests.
 
 #### `failOnCriticalErrors`
 
-A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog. The default is set to `false`.
+Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.
 
 **Configuration options**
 
+* Default: `false`
 * Global Config: `"failOnCriticalErrors": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_CRITICAL_ERRORS=true`
 * CLI param: `--failOnCriticalErrors` / `--no-failOnCriticalErrors`
