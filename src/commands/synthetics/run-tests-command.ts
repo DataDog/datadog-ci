@@ -15,13 +15,16 @@ import {executeTests, getDefaultConfig} from './run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from './utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs} from './utils/public'
 
-const configurationDocsLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
+const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
-const $1 = makeTerminalLink(`${configurationDocsLink}#test-files`)
-const $2 = makeTerminalLink(`${configurationDocsLink}#use-the-testing-tunnel`)
-const $3 = makeTerminalLink(`https://app.datadoghq.com/synthetics/settings/continuous-testing`)
-const $4 = makeTerminalLink(`https://docs.datadoghq.com/synthetics/explore/#search`)
-const $5 = makeTerminalLink(`https://app.datadoghq.com/synthetics/tests`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
+const $2 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/settings/continuous-testing`)
+const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
+const $4 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
+const $5 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/environments/proxy_firewall_vpn#what-is-the-testing-tunnel`
+)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -95,17 +98,17 @@ export class RunTestsCommand extends BaseCommand {
     description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
   })
   private selectiveRerun = Option.Boolean('--selectiveRerun', {
-    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$3`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
+    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$2`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
   })
   private subdomain = Option.String('--subdomain', {
     description:
       'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
   })
   private testSearchQuery = Option.String('-s,--search', {
-    description: `A ${$4`search query`} to select which Synthetic tests to run. Use the ${$5`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
+    description: `A ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
   private tunnel = Option.Boolean('-t,--tunnel', {
-    description: `Use the ${$2`Continuous Testing Tunnel`} to execute your test batch.`,
+    description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
   })
 
   private buildCommand = Option.String('--buildCommand', {

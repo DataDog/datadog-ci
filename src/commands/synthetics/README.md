@@ -443,7 +443,9 @@ datadog-ci synthetics run-tests --search 'team:unicorn tag:e2e-tests tag:"manage
 
 #### `tunnel`
 
-Use [Local and Staging Environments](#use-local-and-staging-environments) to execute your test batch.
+Use the [Continuous Testing tunnel](https://docs.datadoghq.com/continuous_testing/environments/proxy_firewall_vpn#what-is-the-testing-tunnel) to launch tests against internal environments.
+
+For more information, see [Using Local and Staging Environments](#using-local-and-staging-environments).
 
 **Configuration options**
 
@@ -958,7 +960,7 @@ datadog-ci synthetics upload-application --config global-config.json
 
 The default file name for the [global configuration file](#global-configuration-file) is `datadog-ci.json`. If you use this name for your global configuration file, you may omit the `--config` flag.
 
-## Use local and staging environments
+## Using local and staging environments
 
 You can combine variable overrides with [Local and Staging Environments][3] to run tests within your development environment. This connection ensures that all test requests sent through the CLI are automatically routed through the `datadog-ci` client. 
 
