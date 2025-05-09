@@ -51,7 +51,9 @@ export class RunTestsCommand extends BaseCommand {
   })
 
   // JUnit options
-  public jUnitReport = Option.String('-j,--jUnitReport', {description: 'Pass a path to a JUnit report file.'})
+  public jUnitReport = Option.String('-j,--jUnitReport', {
+    description: 'The filename for a JUnit report if you want to generate one.',
+  })
   public runName = Option.String('-n,--runName', {
     description: 'A name for this run, which will be included in the JUnit report file.',
   })

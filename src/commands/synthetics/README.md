@@ -367,7 +367,7 @@ Glob patterns to detect Synthetic [test configuration files](#test-files).
 
 #### `jUnitReport`
 
-The filename for a JUnit report if you want to generate one. The file created will be an XML file.
+The filename for a JUnit report if you want to generate one.
 
 **Configuration options**
 
