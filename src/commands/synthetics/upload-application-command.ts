@@ -38,7 +38,7 @@ export class UploadApplicationCommand extends BaseCommand {
   private versionName = Option.String('--versionName', {description: 'Name of the new version. It has to be unique.'})
   private latest = Option.Boolean('--latest', {
     description:
-      'Marks the application as `latest`. Any tests that run on the latest version will use this version on their next run.',
+      'Mark the new version as `latest`. Any tests that run on the latest version will use this version on their next run.',
   })
 
   public static getDefaultConfig(): UploadApplicationCommandConfig {

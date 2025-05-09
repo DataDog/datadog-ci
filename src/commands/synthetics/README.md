@@ -863,10 +863,11 @@ The Datadog instance to which request is sent. The default is `datadoghq.com`.<!
 
 #### `latest`
 
-If present, marks the application as 'latest'. Any tests that run on the latest version will use this version on their next run.
+Mark the new version as `latest`. Any tests that run on the latest version will use this version on their next run.
 
 **Configuration options**
 
+* Default: `false`
 * Global Config: `"latest": true`
 * ENV variable:  `DATADOG_SYNTHETICS_LATEST=true`
 * CLI param: `--latest` / `--no-latest`
