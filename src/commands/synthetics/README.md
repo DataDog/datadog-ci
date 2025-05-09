@@ -345,10 +345,11 @@ Fail the CI job if the lists of tests to run is empty or if some explicitly list
 
 #### `failOnTimeout`
 
-A boolean flag that fails the CI job if at least one test exceeds the default batch timeout. The default is set to `true`.
+Fail the CI job if the CI batch fails as timed out.
 
 **Configuration options**
 
+* Default: `true`
 * Global Config: `"failOnTimeout": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_TIMEOUT=true`
 * CLI param: `--failOnTimeout` / `--no-failOnTimeout`
