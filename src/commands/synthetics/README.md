@@ -632,7 +632,7 @@ Override the mobile application version for Synthetic mobile application tests. 
 
 #### `mobileApplicationVersionFilePath` (String)
 
-Override the application version for a Synthetic mobile application test.
+Override the application version for Synthetic mobile application tests.
 
 **Configuration options**
 
@@ -898,7 +898,7 @@ The ID of the application you want to upload the new version to.
 
 #### `mobileApplicationVersionFilePath`
 
-The path to your mobile application (`.apk` or `.ipa`).
+The path to the new version of your mobile application (`.apk` or `.ipa`).
 
 **Configuration options**
 

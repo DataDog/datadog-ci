@@ -30,7 +30,7 @@ export class UploadApplicationCommand extends BaseCommand {
   protected config: UploadApplicationCommandConfig = UploadApplicationCommand.getDefaultConfig()
 
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: 'Override the application version for all Synthetic mobile application tests.',
+    description: 'The path to the new version of your mobile application (`.apk` or `.ipa`).',
   })
   private mobileApplicationId = Option.String('--mobileApplicationId', {
     description: 'The ID of the application you want to upload the new version to.',

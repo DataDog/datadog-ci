@@ -83,7 +83,7 @@ export class RunTestsCommand extends BaseCommand {
       'Override the mobile application version for Synthetic mobile application tests. The version must be uploaded and available within Datadog.',
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: 'Override the application version for all Synthetic mobile application tests.',
+    description: 'Override the application version for Synthetic mobile application tests.',
   })
   private overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
