@@ -39,7 +39,7 @@ export class DeployTestsCommand extends BaseCommand {
   protected config: DeployTestsCommandConfig = DeployTestsCommand.getDefaultConfig()
 
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$1`configuration files`}}.`,
+    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
 

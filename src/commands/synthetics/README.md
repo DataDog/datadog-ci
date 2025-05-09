@@ -360,6 +360,7 @@ Glob patterns to detect Synthetic [test configuration files](#test-files).
 
 **Configuration options**
 
+* Default: `["{,!(node_modules)/**/}*.synthetics.json"]`
 * Global Config: `"files": ["{,!(node_modules)/**/}*.synthetics.json"]`
 * ENV variable: `DATADOG_SYNTHETICS_FILES="{,!(node_modules)/**/}*.synthetics.json"`
 * CLI param: `-f "{,!(node_modules)/**/}*.synthetics.json"` / `--files "{,!(node_modules)/**/}*.synthetics.json"`

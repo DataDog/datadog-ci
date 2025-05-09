@@ -74,7 +74,7 @@ export class RunTestsCommand extends BaseCommand {
     description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
   })
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$1`configuration files`}}.`,
+    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
     description: 'Override the default mobile application version to test a different version within Datadog.',

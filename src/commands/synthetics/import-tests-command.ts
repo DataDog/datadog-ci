@@ -30,8 +30,9 @@ export class ImportTestsCommand extends BaseCommand {
 
   protected config: ImportTestsCommandConfig = ImportTestsCommand.getDefaultConfig()
 
+  // TODO: Let's not reuse `files` as it has a different meaning.
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic ${$1`test configuration files`}} and write to this file.`,
+    description: `The path to the Synthetic ${$1`test configuration file`} to which to append imported Local Test Definitions.`,
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
   private testSearchQuery = Option.String('-s,--search', {
