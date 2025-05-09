@@ -334,10 +334,11 @@ Fail the CI job if a critical error that is typically transient occurs, such as 
 
 #### `failOnMissingTests`
 
-A boolean flag that fails the CI job if at least one specified test with a public ID (a `--public-id` CLI argument or listed in a [test file](#test-files)) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site). The default is set to `false`.
+Fail the CI job if the lists of tests to run is empty or if some explicitly listed tests are missing.
 
 **Configuration options**
 
+* Default: `false`
 * Global Config: `"failOnMissingTests": true`
 * ENV variable: `DATADOG_SYNTHETICS_FAIL_ON_MISSING_TESTS=true`
 * CLI param: `--failOnMissingTests` / `--no-failOnMissingTests`

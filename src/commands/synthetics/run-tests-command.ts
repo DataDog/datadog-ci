@@ -68,7 +68,7 @@ export class RunTestsCommand extends BaseCommand {
       'Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.',
   })
   private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
-    description: `A boolean flag that fails the CI job if at least one specified test with a public ID (a \`--public-id\` CLI argument or listed in a ${$1`test file`}) is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).`,
+    description: `Fail the CI job if the lists of tests to run is empty or if some explicitly listed tests are missing.`,
   })
   private failOnTimeout = Option.Boolean('--failOnTimeout', {
     description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
