@@ -39,7 +39,7 @@ export class ImportTestsCommand extends BaseCommand {
   })
   private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to import.'})
   private testSearchQuery = Option.String('-s,--search', {
-    description: `A ${$2`search query`} to select which Synthetic tests to import. Use the ${$3`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
+    description: `Use a ${$2`search query`} to select which Synthetic tests to import. Use the ${$3`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
 
   public static getDefaultConfig(): ImportTestsCommandConfig {

@@ -431,7 +431,7 @@ The custom subdomain to access your Datadog organization. If your URL is `myorg.
 
 #### `testSearchQuery`
 
-A [search query][14] to select which Synthetic tests to run. Use the [Synthetic Tests list page's search bar][5] to craft your query, then copy and paste it.
+Use a [search query][14] to select which Synthetic tests to run. Use the [Synthetic Tests list page's search bar][5] to craft your query, then copy and paste it.
 
 In the command line, the query should be inside single quotes. Here is an example with a facet, a `value` tag, and a `<KEY>:<VALUE>` tag:
 
