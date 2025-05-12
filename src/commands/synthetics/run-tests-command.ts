@@ -25,6 +25,7 @@ const $4 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
 const $5 = makeTerminalLink(
   `${datadogDocsBaseUrl}/continuous_testing/environments/proxy_firewall_vpn#what-is-the-testing-tunnel`
 )
+const $6 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/mobile_app_testing/`)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -85,11 +86,10 @@ export class RunTestsCommand extends BaseCommand {
     description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
-    description:
-      'Override the mobile application version for Synthetic mobile application tests. The version must be uploaded and available within Datadog.',
+    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`}. The version must be uploaded and available within Datadog.`,
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: 'Override the application version for Synthetic mobile application tests.',
+    description: `Override the application version for ${$6`Synthetic mobile application tests`}.`,
   })
   private overrides = Option.Array('--override', {
     description: 'Override specific test properties.',

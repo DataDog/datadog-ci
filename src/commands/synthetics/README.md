@@ -378,7 +378,7 @@ The filename for a JUnit report if you want to generate one.
 
 #### `mobileApplicationVersionFilePath`
 
-Override the application version for Synthetic mobile application tests.
+Override the application version for [Synthetic mobile application tests][18].
 
 **Configuration options**
 
@@ -1088,6 +1088,7 @@ Additional helpful documentation, links, and articles:
 [15]: https://docs.datadoghq.com/account_management/api-app-keys/
 [16]: https://docs.datadoghq.com/getting_started/site/#access-the-datadog-site
 [17]: https://app.datadoghq.com/synthetics/settings/continuous-testing
+[18]: https://docs.datadoghq.com/synthetics/mobile_app_testing/
 
 <!--
   This page is single-sourced:
