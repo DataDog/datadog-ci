@@ -378,7 +378,7 @@ The filename for a JUnit report if you want to generate one.
 
 #### `mobileApplicationVersionFilePath`
 
-Override the application version for [Synthetic mobile application tests][18].
+Override the mobile application version for [Synthetic mobile application tests][18] with a local or recently built application.
 
 **Configuration options**
 
