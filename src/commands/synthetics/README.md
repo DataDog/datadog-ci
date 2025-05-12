@@ -420,7 +420,7 @@ Whether to only rerun failed tests. If a test has already passed for a given com
 
 #### `subdomain`
 
-The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.
+The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.
 
 **Configuration options**
 

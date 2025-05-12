@@ -102,7 +102,7 @@ export class RunTestsCommand extends BaseCommand {
   })
   private subdomain = Option.String('--subdomain', {
     description:
-      'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
+      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
   private testSearchQuery = Option.String('-s,--search', {
     description: `A ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,

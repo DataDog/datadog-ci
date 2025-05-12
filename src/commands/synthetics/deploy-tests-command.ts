@@ -39,7 +39,7 @@ export class DeployTestsCommand extends BaseCommand {
   private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to deploy.'})
   private subdomain = Option.String('--subdomain', {
     description:
-      'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
+      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
