@@ -334,7 +334,7 @@ Fail the CI job if a critical error that is typically transient occurs, such as 
 
 #### `failOnMissingTests`
 
-Fail the CI job if the lists of tests to run is empty or if some explicitly listed tests are missing.
+Fail the CI job if the list of tests to run is empty or if some explicitly listed tests are missing.
 
 **Configuration options**
 
