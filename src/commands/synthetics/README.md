@@ -33,7 +33,7 @@ yarn add --dev @datadog/datadog-ci
 
 To setup the client, your Datadog API and application keys need to be configured. These keys can be defined in three different ways:
 
-1. Defined in a [global JSON configuration file](#global-configuration-file):
+1. Defined in a [global configuration file](#global-configuration-file):
 
     ```json
     {
