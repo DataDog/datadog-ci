@@ -18,7 +18,7 @@ export const renderCommandInfo = (dryRun: boolean, buildId: string, symbolsLocat
   const startStr = chalk.green('Starting upload. \n')
 
   fullString += startStr
-  fullString += chalk.green(`Uploading symobls at location ${symbolsLocation}\n`)
+  fullString += chalk.green(`Uploading symbols at location ${symbolsLocation}\n`)
   const serviceVersionProjectPathStr = chalk.green(`  buildId: ${buildId}\n`)
   fullString += serviceVersionProjectPathStr
 
