@@ -842,7 +842,7 @@ This command uploads a new version to an **existing** mobile application.
 
 #### `apiKey` (Required)
 
-The API key used to query the Datadog API.
+Your Datadog API key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
 **Configuration options**
 
@@ -852,7 +852,7 @@ The API key used to query the Datadog API.
 
 #### `appKey` (Required)
 
-The application key used to query the Datadog API.
+Your Datadog application key. This key is [created in your Datadog organization][15] and should be stored as a secret.
 
 **Configuration options**
 
@@ -862,7 +862,7 @@ The application key used to query the Datadog API.
 
 #### `configPath`
 
-A path to the global configuration file. See the [example configuration](#global-configuration-file) for more details.
+The path to the [global configuration file](#global-configuration-file) that configures datadog-ci.
 
 **Configuration options**
 
@@ -873,7 +873,7 @@ A path to the global configuration file. See the [example configuration](#global
 
 #### `datadogSite`
 
-The Datadog instance to which request is sent. The default is `datadoghq.com`.<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+Your Datadog site. The possible values are listed [in this table][16].<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 **Configuration options**
 
