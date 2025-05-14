@@ -873,7 +873,7 @@ The path to the [global configuration file](#global-configuration-file) that con
 
 #### `datadogSite`
 
-Your Datadog site. The possible values are listed [in this table][16].<!-- partial Your Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
+Your Datadog site. The possible values are listed [in this table][16].<!-- partial The selected Datadog site is {{< region-param key="dd_site" code="true" >}}. partial -->
 
 **Configuration options**
 
