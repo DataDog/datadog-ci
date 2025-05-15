@@ -302,7 +302,9 @@ The path to the [global configuration file](#global-configuration-file) that con
 
 #### `datadogSite`
 
-Your Datadog site. The possible values are listed [in this table][16].<!-- partial The currently selected site is {{< region-param key="dd_site" code="true" >}}. partial -->
+Your Datadog site. The possible values are listed [in this table][16].
+
+<!-- partial Set it to {{< region-param key="dd_site" code="true" >}} (ensure the correct SITE is selected on the right). partial -->
 
 **Configuration options**
 
@@ -873,7 +875,9 @@ The path to the [global configuration file](#global-configuration-file) that con
 
 #### `datadogSite`
 
-Your Datadog site. The possible values are listed [in this table][16].<!-- partial The currently selected site is {{< region-param key="dd_site" code="true" >}}. partial -->
+Your Datadog site. The possible values are listed [in this table][16].
+
+<!-- partial Set it to {{< region-param key="dd_site" code="true" >}} (ensure the correct SITE is selected on the right). partial -->
 
 **Configuration options**
 
