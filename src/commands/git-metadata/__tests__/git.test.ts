@@ -1,6 +1,9 @@
-import * as simpleGit from 'simple-git'
+import fs from 'fs'
 
-import {getCommitInfo, newSimpleGit, stripCredentials} from '../git'
+import * as simpleGit from 'simple-git'
+import path from 'upath'
+
+import { getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, DiffNode } from "../git";
 
 interface MockConfig {
   hash?: string
@@ -118,3 +121,50 @@ describe('git', () => {
     })
   })
 })
+
+describe('parseGitDiff – tree structure', () => {
+  const fixtures = (name: string) => fs.readFileSync(path.join(__dirname, 'fixtures', name), 'utf8')
+
+  test('modification of a single file', () => {
+    const diff = fixtures('modify_single_file.diff')
+    const tree = parseGitDiff(diff)
+
+    const calc = tree['src/Calculator.java']
+    expect(decode(calc.addedLines)).toEqual(new Set([10, 11]))
+    expect(decode(calc.removedLines)).toEqual(new Set([10, 11]))
+  })
+
+  test('file add & delete in one patch', () => {
+    const diff = fixtures('add_delete.diff')
+    const tree = parseGitDiff(diff)
+
+    // deleted README.md
+    const readme = tree['README.md']
+    expect(readme.addedLines).toBe('')
+    expect(decode(readme.removedLines)).toEqual(new Set([1, 2]))
+
+    // new Utils.java
+    const utils = tree['src/Utils.java']
+    expect(decode(utils.addedLines)).toEqual(new Set([1, 2, 3, 4]))
+    expect(utils.removedLines).toBe('')
+  })
+})
+
+const decode = (base64: string | undefined): Set<number> => {
+  if (!base64) {
+    return new Set()
+  }
+  const bytes = Buffer.from(base64, 'base64')
+  const out = new Set<number>()
+  for (let i = 0; i < bytes.length; i++) {
+    const byte = bytes[i]
+    for (let bit = 0; bit < 8; bit++) {
+      // eslint-disable-next-line no-bitwise
+      if (byte & (1 << bit)) {
+        out.add(i * 8 + bit + 1) // 1-based
+      }
+    }
+  }
+
+  return out
+}

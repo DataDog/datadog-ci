@@ -1,0 +1,19 @@
+diff --git a/src/Utils.java b/src/Utils.java
+new file mode 100644
+index 0000000..b7e23ce
+\--- /dev/null
++++ b/src/Utils.java
+@@ -0,0 +1,4 @@
++package com.example;
+\+
++public class Utils {
++}
+
+diff --git a/README.md b/README.md
+deleted file mode 100644
+index f18dd09..0000000
+\--- a/README.md
++++ /dev/null
+@@ -1,2 +0,0 @@
+-# My Project
+-Initial version
