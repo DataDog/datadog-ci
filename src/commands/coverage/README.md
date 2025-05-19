@@ -29,6 +29,7 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
   - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
+- `--upload-git-diff` (default: `true`): if the command is run in a PR context, it will try to upload the PR git diff along with the coverage data.
 
 #### Environment variables
 

@@ -420,6 +420,7 @@ type GitHubWebhookPayload = {
     base?: {
       sha: string
     }
+    number?: number
   }
 }
 

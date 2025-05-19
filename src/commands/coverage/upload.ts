@@ -15,8 +15,17 @@ import {parsePathsList} from '../../helpers/glob'
 import {SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
+import {
+  GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+  parseMetrics,
+  parseTags,
+} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+
+import {newSimpleGit, getGitDiff, DiffNode} from '../git-metadata/git'
 
 import {apiConstructor, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -34,7 +43,7 @@ import {detectFormat, validateCoverageReport} from './utils'
 
 const errorCodesStopUpload = [400, 403]
 
-const MAX_REPORTS_PER_REQUEST = 10
+const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
 
 const isCoverageReport = (file: string): boolean => {
   if (upath.extname(file) !== '.xml') {
@@ -102,6 +111,7 @@ export class UploadCodeCoverageReportCommand extends Command {
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
+  private uploadGitDiff = Option.Boolean('--upload-git-diff', true)
 
   private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
     validator: t.isBoolean(),
@@ -179,6 +189,12 @@ export class UploadCodeCoverageReportCommand extends Command {
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
 
+    if (!!customTags['resolved']) {
+      throw new Error('"resolved" is a reserved tag name, please avoid using it in your custom tags')
+    }
+
+    const commitDiff = await this.getCommitDiff(spanTags)
+    const prDiff = await this.getPrDiff(spanTags)
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
     let payloads: Payload[] = []
@@ -193,11 +209,56 @@ export class UploadCodeCoverageReportCommand extends Command {
           customTags,
           customMeasures,
           hostname: os.hostname(),
+          commitDiff,
+          prDiff,
         }))
       })
     }
 
     return payloads
+  }
+
+  private async getPrDiff(spanTags: SpanTags): Promise<Record<string, DiffNode> | undefined> {
+    if (!this.uploadGitDiff) {
+      return undefined
+    }
+
+    const baseCommit = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    const headCommit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!baseCommit || !headCommit) {
+      return undefined
+    }
+
+    try {
+      const git = await newSimpleGit()
+
+      return await getGitDiff(git, baseCommit, headCommit)
+    } catch (e) {
+      this.logger.debug(`Error while trying to calculate PR diff: ${e}`)
+
+      return undefined
+    }
+  }
+
+  private async getCommitDiff(spanTags: SpanTags): Promise<Record<string, DiffNode> | undefined> {
+    if (!this.uploadGitDiff) {
+      return undefined
+    }
+
+    const commit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!commit) {
+      return undefined
+    }
+
+    try {
+      const git = await newSimpleGit()
+
+      return await getGitDiff(git, commit + '^', commit)
+    } catch (e) {
+      this.logger.debug(`Error while trying to calculate commit diff: ${e}`)
+
+      return undefined
+    }
   }
 
   private async getSpanTags(): Promise<SpanTags> {
