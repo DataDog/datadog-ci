@@ -98,9 +98,7 @@ describe('deploy-tests', () => {
         locations: ['new-location'],
       })
 
-      jest
-        .spyOn(tests, 'getTestConfigs')
-        .mockImplementation(async () => [{localTestDefinition: localTest}])
+      jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [{localTestDefinition: localTest}])
 
       const existingRemoteTest = getApiTest('123-456-789', {
         config: {
@@ -157,9 +155,7 @@ describe('deploy-tests', () => {
         },
       })
 
-      jest
-        .spyOn(tests, 'getTestConfigs')
-        .mockImplementation(async () => [{localTestDefinition: localTest}])
+      jest.spyOn(tests, 'getTestConfigs').mockImplementation(async () => [{localTestDefinition: localTest}])
 
       const existingRemoteTest = getApiTest('123-456-789', {
         config: {

@@ -5,7 +5,11 @@ import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} 
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
 
-const removeExcludedFields = (existingRemoteTest: ServerTest, excludeFields: string[], test: ServerTest): ServerTest => {
+const removeExcludedFields = (
+  existingRemoteTest: ServerTest,
+  excludeFields: string[],
+  test: ServerTest
+): ServerTest => {
   if (!excludeFields || excludeFields.length === 0) {
     return test
   }
@@ -14,7 +18,7 @@ const removeExcludedFields = (existingRemoteTest: ServerTest, excludeFields: str
   for (const field of excludeFields as (keyof ServerTest)[]) {
     const value = existingRemoteTest[field] as unknown
     if (value !== undefined) {
-      (newTest as Record<keyof ServerTest, unknown>)[field] = value
+      ;(newTest as Record<keyof ServerTest, unknown>)[field] = value
     }
   }
 

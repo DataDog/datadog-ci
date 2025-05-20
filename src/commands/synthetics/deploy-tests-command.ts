@@ -42,7 +42,8 @@ export class DeployTestsCommand extends BaseCommand {
       'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
   private excludeFields = Option.Array('--exclude-fields', {
-    description: 'Fields to exclude from the payload when calling the API. The "config" attribute is excluded by default.',
+    description:
+      'Fields to exclude from the payload when calling the API. The "config" attribute is excluded by default.',
   })
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
