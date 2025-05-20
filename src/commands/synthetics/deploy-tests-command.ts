@@ -41,6 +41,9 @@ export class DeployTestsCommand extends BaseCommand {
     description:
       'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
+  private excludeFields = Option.Array('--exclude-fields', {
+    description: 'Fields to exclude from the payload when calling the API. The "config" attribute is excluded by default.',
+  })
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
     return {
@@ -48,6 +51,7 @@ export class DeployTestsCommand extends BaseCommand {
       files: [],
       publicIds: [],
       subdomain: 'app',
+      exclude_fields: ['config'],
     }
   }
 
@@ -72,6 +76,7 @@ export class DeployTestsCommand extends BaseCommand {
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
       publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),
       subdomain: process.env.DATADOG_SUBDOMAIN,
+      exclude_fields: process.env.DATADOG_SYNTHETICS_EXCLUDE_FIELDS?.split(';'),
     }
   }
 
@@ -81,6 +86,7 @@ export class DeployTestsCommand extends BaseCommand {
       files: this.files,
       publicIds: this.publicIds,
       subdomain: this.subdomain,
+      exclude_fields: this.excludeFields,
     }
   }
 }
