@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {toBoolean} from '../../helpers/env'
@@ -58,7 +59,20 @@ export class UploadApplicationCommand extends BaseCommand {
 
     const appUploadReporter = new AppUploadReporter(this.context)
     try {
-      await uploadMobileApplicationVersion(this.config, appUploadReporter)
+      const result = await uploadMobileApplicationVersion(this.config, appUploadReporter)
+      const versionUuid = result.valid_app_result?.app_version_uuid
+
+      if (!versionUuid) {
+        this.logger.error('The upload was successful, but the version ID is missing.')
+
+        return 1
+      }
+
+      this.logger.info(
+        `\nThe new version has version ID: ${chalk.green(
+          versionUuid
+        )}\nPass it when triggering Synthetic tests to run tests against that version.`
+      )
     } catch (error) {
       if (error instanceof CiError) {
         this.logger.error(`A CI error occurred: [${error.code}] ${error.message}`)
