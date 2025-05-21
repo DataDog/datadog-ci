@@ -163,7 +163,12 @@ const renderResultOutcome = (
 
 const renderApiRequestDescription = (subType: string, config: Test['config']): string => {
   const {request, steps} = config
+
   if (subType === 'dns') {
+    if (!request?.host) {
+      return 'Invalid DNS result'
+    }
+
     const text = `Query for ${request.host}`
     if (request.dnsServer) {
       return `${text} on server ${request.dnsServer}`
@@ -173,6 +178,10 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   }
 
   if (subType === 'ssl' || subType === 'tcp') {
+    if (!request?.host || !request?.port) {
+      return 'Invalid SSL/TCP result'
+    }
+
     return `Host: ${request.host}:${request.port}`
   }
 
@@ -193,6 +202,10 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   }
 
   if (subType === 'http') {
+    if (!request?.method || !request?.url) {
+      return 'Invalid HTTP result'
+    }
+
     return `${chalk.bold(request.method)} - ${request.url}`
   }
 

@@ -107,7 +107,7 @@ export interface RawPollResultTest {
   type: 'browser' | 'api' | 'mobile'
   subtype?: string
   config: {
-    request: {
+    request?: {
       dns_server?: string | undefined
     }
   }
@@ -294,7 +294,7 @@ export interface TestStepWithUnsupportedFields {
 export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
-    request: {
+    request?: {
       dnsServer?: string
       headers: {[key: string]: string}
       host?: string

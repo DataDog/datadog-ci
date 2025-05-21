@@ -236,7 +236,7 @@ const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
       ...test.config,
       request: {
         ...test.config.request,
-        dnsServer: test.config.request.dns_server,
+        dnsServer: test.config.request?.dns_server,
       },
     },
   }
