@@ -85,6 +85,8 @@ export class UploadApplicationCommand extends BaseCommand {
 
       return 1
     }
+
+    return 0
   }
 
   protected resolveConfigFromEnv(): RecursivePartial<UploadApplicationCommandConfig> {
