@@ -72,9 +72,29 @@ describe('dd-api', () => {
             ...API_TEST.config,
             request: {
               ...API_TEST.config.request,
-              dns_server: API_TEST.config.request.dnsServer,
+              dns_server: API_TEST.config.request?.dnsServer,
             },
           },
+        },
+      },
+    ],
+  }
+  const MOBILE_RAW_POLL_RESULTS: RawPollResult = {
+    data: [
+      {
+        ...RAW_POLL_RESULTS.data[0],
+        attributes: {
+          ...POLL_RESULTS[0],
+          test_type: 'mobile',
+        },
+      },
+    ],
+    included: [
+      {
+        ...RAW_POLL_RESULTS.included[0],
+        attributes: {
+          ...RAW_POLL_RESULTS.included[0].attributes,
+          config: {}, // Mobile tests do not have a `request` object.
         },
       },
     ],
@@ -90,6 +110,13 @@ describe('dd-api', () => {
 
   test('should get results from api', async () => {
     jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: RAW_POLL_RESULTS})) as any)
+    const api = apiConstructor(apiConfiguration)
+    const results = await api.pollResults([RESULT_ID])
+    expect(results[0].resultID).toBe(RESULT_ID)
+  })
+
+  test('should get mobile results from api', async () => {
+    jest.spyOn(axios, 'create').mockImplementation((() => () => ({data: MOBILE_RAW_POLL_RESULTS})) as any)
     const api = apiConstructor(apiConfiguration)
     const results = await api.pollResults([RESULT_ID])
     expect(results[0].resultID).toBe(RESULT_ID)

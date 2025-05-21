@@ -840,7 +840,7 @@ describe('waitForResults', () => {
       mockReporter
     )
 
-    expect(results.map(({test}) => test.config.request.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
+    expect(results.map(({test}) => test.config.request?.url)).toEqual(['http://fake.url', 'https://reddit.com/'])
   })
 
   test('results should be timed out if the backend says so', async () => {
