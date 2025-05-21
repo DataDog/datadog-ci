@@ -1313,6 +1313,7 @@ describe('lambda', () => {
         command['config']['layerAWSAccount'] = 'another-account'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'false'
+        command['config']['logging'] = 'false'
         command['config']['logLevel'] = 'debug'
         command['config']['llmobs'] = 'my-ml-app'
 
@@ -1328,6 +1329,7 @@ describe('lambda', () => {
           interactive: false,
           layerAWSAccount: 'another-account',
           layerVersion: 2,
+          loggingEnabled: false,
           logLevel: 'debug',
           mergeXrayTraces: false,
           service: undefined,
@@ -1352,6 +1354,8 @@ describe('lambda', () => {
         command['config']['flushMetricsToLogs'] = 'true'
         command['tracing'] = 'true'
         command['config']['tracing'] = 'false'
+        command['logging'] = 'true'
+        command['config']['logging'] = 'false'
         command['logLevel'] = 'debug'
         command['config']['logLevel'] = 'info'
         command['apmFlushDeadline'] = '20'
@@ -1368,6 +1372,7 @@ describe('lambda', () => {
           interactive: false,
           layerAWSAccount: 'my-account',
           layerVersion: 1,
+          loggingEnabled: true,
           logLevel: 'debug',
           mergeXrayTraces: true,
           tracingEnabled: true,
@@ -1411,12 +1416,14 @@ describe('lambda', () => {
           interactive: false,
           layerAWSAccount: undefined,
           layerVersion: undefined,
+          loggingEnabled: true,
           logLevel: undefined,
           mergeXrayTraces: false,
           tracingEnabled: true,
         }
         command['config']['captureLambdaPayload'] = 'truE'
         command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['logging'] = 'trUe'
         command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
 
@@ -1424,23 +1431,27 @@ describe('lambda', () => {
 
         command['config']['captureLambdaPayload'] = 'true'
         command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['logging'] = 'true'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'true'
         expect(command['getSettings']()).toEqual(validSettings)
 
         validSettings.captureLambdaPayload = false
         validSettings.flushMetricsToLogs = true
+        validSettings.loggingEnabled = false
         validSettings.mergeXrayTraces = true
         validSettings.tracingEnabled = false
 
         command['captureLambdaPayload'] = 'faLSE'
         command['flushMetricsToLogs'] = 'truE'
+        command['logging'] = 'FALse'
         command['mergeXrayTraces'] = 'TRUe'
         command['tracing'] = 'FALSE'
         expect(command['getSettings']()).toEqual(validSettings)
 
         command['captureLambdaPayload'] = 'false'
         command['flushMetricsToLogs'] = 'true'
+        command['logging'] = 'false'
         command['mergeXrayTraces'] = 'true'
         command['tracing'] = 'false'
         expect(command['getSettings']()).toEqual(validSettings)
@@ -1450,6 +1461,7 @@ describe('lambda', () => {
         process.env = {}
         const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appsecEnabled'>)[] = [
           'flushMetricsToLogs',
+          'logging',
           'mergeXrayTraces',
           'tracing',
         ]
