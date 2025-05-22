@@ -44,11 +44,11 @@ export const renderDuplicateUpload = (sha: string, env: string, service: string)
 export const renderNoDefaultBranch = (repositoryUrl: string) => {
   let fullStr = ''
 
-  fullStr += chalk.red(`Default branch not found for repository ${repositoryUrl}\n`)
-  fullStr += chalk.red(`Fix this issue by either:\n`)
-  fullStr += chalk.red(` - define a default branch in the repository settings on Datadog\n`)
-  fullStr += chalk.red(` - push result from your default branch first\n\n`)
-  fullStr += chalk.red(`Run an analysis once the issue is resolved\n`)
+c  fullStr += chalk.red(`${ICONS.WARNING}  Failed to infer the default branch for ${repositoryUrl}\n`)
+  fullStr += chalk.red(`To fix this:\n`)
+  fullStr += chalk.red(` - upload from your default branch first (must be one of master, main, default, stable, source, prod, or develop)\n`)
+  fullStr += chalk.red(` - visit ${getBaseUrl()}source-code/repositories two override your default branch for this repository\n`)
+  fullStr += chalk.red(`Afterwards, you may attempt to re-upload your SBOM on this branch\n`)
 
   return fullStr
 }
