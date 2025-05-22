@@ -31,7 +31,7 @@ export const renderInvalidPayload = (sbomReport: string) => {
   return fullStr
 }
 
-export const renderDuplicateUpload = (branch:string, sha: string) => {
+export const renderDuplicateUpload = (branch: string, sha: string) => {
   let fullStr = ''
   fullStr += chalk.red(`${ICONS.WARNING}  Duplicate upload detected\n`)
   fullStr += chalk.red(`An SBOM has already been processed for branch:${branch} and sha:${sha}\n`)
