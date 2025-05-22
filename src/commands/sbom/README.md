@@ -30,6 +30,9 @@ The following environment variables must be defined:
  - `DD_APP_KEY`: the App key to use
  - `DD_API_KEY`: the API key to use
 
+Optional environment variables:
+ - `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
+
 ### Git context resolution
 
 The Git context is resolved in the following order of priority:
