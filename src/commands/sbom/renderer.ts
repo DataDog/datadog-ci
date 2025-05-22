@@ -46,8 +46,12 @@ export const renderNoDefaultBranch = (repositoryUrl: string) => {
 
   fullStr += chalk.red(`${ICONS.WARNING}  Failed to infer the default branch for ${repositoryUrl}\n`)
   fullStr += chalk.red(`To resolve this, do one of the following:\n`)
-  fullStr += chalk.red(` - Upload from your default branch first (must be one of: master, main, default, stable, source, prod, or develop)\n`)
-  fullStr += chalk.red(` - Or visit ${getBaseUrl()}source-code/repositories to manually override the default branch for this repository\n`)
+  fullStr += chalk.red(
+    ` - Upload from your default branch first (must be one of: master, main, default, stable, source, prod, or develop)\n`
+  )
+  fullStr += chalk.red(
+    ` - Or visit ${getBaseUrl()}source-code/repositories to manually override the default branch for this repository\n`
+  )
   fullStr += chalk.red(`After completing either step, you can retry uploading the SBOM from this branch\n`)
 
   return fullStr
