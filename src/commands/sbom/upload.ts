@@ -8,7 +8,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {GIT_SHA, GIT_REPOSITORY_URL, getSpanTags, getMissingRequiredGitTags} from '../../helpers/tags'
+import {GIT_SHA, GIT_REPOSITORY_URL, getSpanTags, getMissingRequiredGitTags, GIT_BRANCH} from '../../helpers/tags'
 
 import {renderMissingTags} from '../sarif/renderer'
 
@@ -171,13 +171,14 @@ export class UploadSbomCommand extends Command {
       if (isAxiosError(error)) {
         if (error.response?.status === 409) {
           const sha = tags[GIT_SHA] || 'sha-not-found'
-          this.context.stderr.write(renderDuplicateUpload(sha, environment, service))
+          const branch = tags[GIT_BRANCH] || 'branch-not-found'
+          this.context.stderr.write(renderDuplicateUpload(branch, sha))
 
           return 0
         }
 
         if (error.response?.status === 412) {
-          const repositoryUrl = tags[GIT_REPOSITORY_URL] || 'url-not-found'
+          const repositoryUrl = tags[GIT_REPOSITORY_URL] || 'repourl-not-found'
           this.context.stderr.write(renderNoDefaultBranch(repositoryUrl))
 
           return 1

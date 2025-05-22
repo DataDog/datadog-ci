@@ -31,11 +31,12 @@ export const renderInvalidPayload = (sbomReport: string) => {
   return fullStr
 }
 
-export const renderDuplicateUpload = (sha: string, env: string, service: string) => {
+export const renderDuplicateUpload = (branch:string, sha: string) => {
   let fullStr = ''
-  fullStr += chalk.red(`${ICONS.WARNING}  Duplicate SBOM upload detected\n`)
-  fullStr += chalk.red(`An analysis has already been processed for sha:${sha} env:${env} service:${service}\n`)
-  fullStr += chalk.red(`Push a new commit or specify a different env or service variable\n`)
+  fullStr += chalk.red(`${ICONS.WARNING}  Duplicate upload detected\n`)
+  fullStr += chalk.red(`An SBOM has already been processed for branch:${branch} and sha:${sha}\n`)
+  fullStr += chalk.red(`Push a new commit before uploading again\n`)
+  fullStr += chalk.red(`If you have a monorepo with multiple SBOM's you will need to combine them\n`)
   fullStr += chalk.red(`Exiting with code 0\n`)
 
   return fullStr
