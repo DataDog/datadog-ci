@@ -31,7 +31,7 @@ The following environment variables must be defined:
  - `DD_API_KEY`: the API key to use
 
 Optional environment variables:
- - `DD_SUBDOMAIN`: if you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, this value should be set with the subdomain so that the link to the Datadog Application that the library logs once the upload finishes is accurate.
+ - `DD_SUBDOMAIN`: If you have a [custom sub-domain enabled](https://docs.datadoghq.com/account_management/multi_organization/#custom-sub-domains) for your organization, set this variable to your subdomain. This ensures that the link to the Datadog Application, which the library logs after uploading, points to the correct location.
 
 ### Git context resolution
 
