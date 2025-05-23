@@ -178,7 +178,7 @@ export class UploadSbomCommand extends Command {
         }
 
         if (error.response?.status === 412) {
-          const repositoryUrl = tags[GIT_REPOSITORY_URL] || 'repourl-not-found'
+          const repositoryUrl = tags[GIT_REPOSITORY_URL] || 'repo-url-not-found'
           this.context.stderr.write(renderNoDefaultBranch(repositoryUrl))
 
           return 1
