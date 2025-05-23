@@ -36,13 +36,13 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
 
   if (payload.prDiff) {
     form.append('pr_diff', gzipSync(Buffer.from(JSON.stringify(payload.prDiff), 'utf8')), {
-      filename: 'pr_diff.json',
+      filename: 'pr_diff.json.gz',
     })
   }
 
   if (payload.commitDiff) {
     form.append('commit_diff', gzipSync(Buffer.from(JSON.stringify(payload.commitDiff), 'utf8')), {
-      filename: 'commit_diff.json',
+      filename: 'commit_diff.json.gz',
     })
   }
 
