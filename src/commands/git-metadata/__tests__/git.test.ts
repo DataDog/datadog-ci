@@ -3,12 +3,13 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import path from 'upath'
 
-import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff} from '../git'
+import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
 interface MockConfig {
   hash?: string
   remotes?: any[]
   trackedFiles?: string[]
+  diff?: string
 }
 
 const createMockSimpleGit = (conf: MockConfig) => ({
@@ -33,6 +34,13 @@ const createMockSimpleGit = (conf: MockConfig) => ({
     }
 
     return conf.hash
+  },
+  diff: async (_: string) => {
+    if (conf.diff === undefined) {
+      throw Error('Unexpected call to diff')
+    }
+
+    return conf.diff
   },
 })
 
@@ -63,6 +71,22 @@ describe('git', () => {
       const input = 'https://token@gitlab.com/user/project.git'
 
       expect(stripCredentials(input)).toBe('https://gitlab.com/user/project.git')
+    })
+  })
+  describe('getDiff', () => {
+    test('should return git diff', async () => {
+      const mock = createMockSimpleGit({
+        hash: 'abcd',
+        diff: fs.readFileSync(path.join(__dirname, 'fixtures', 'modify_single_file.diff'), 'utf8'),
+      }) as any
+      const gitDiff = await getGitDiff(mock, 'HEAD^', 'HEAD')
+
+      expect(gitDiff.headSha).toEqual('abcd')
+      expect(gitDiff.baseSha).toEqual('abcd')
+
+      const calc = gitDiff.files['src/Calculator.java']
+      expect(decode(calc.addedLines)).toEqual(new Set([10, 11]))
+      expect(decode(calc.removedLines)).toEqual(new Set([10, 11]))
     })
   })
   describe('getCommitInfo', () => {

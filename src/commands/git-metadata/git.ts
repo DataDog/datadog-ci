@@ -67,17 +67,30 @@ export const getGitDiff = async (
   git: simpleGit.SimpleGit,
   from: string,
   to: string
-): Promise<Record<string, DiffNode>> => {
+): Promise<DiffData> => {
+  const fromResolved = await git.revparse(from)
+  const toResolved = await git.revparse(to)
+
   const rawDiff = await git.diff([
     '--unified=0',
     '--no-color',
     '--no-ext-diff',
     '--no-renames',
     '--diff-algorithm=minimal',
-    `${from}..${to}`,
+    `${fromResolved}..${toResolved}`,
   ])
 
-  return parseGitDiff(rawDiff)
+  return {
+    headSha: toResolved,
+    baseSha: fromResolved,
+    files: parseGitDiff(rawDiff),
+  }
+}
+
+export interface DiffData {
+  headSha: string
+  baseSha: string
+  files: Record<string, DiffNode>
 }
 
 export interface DiffNode {
