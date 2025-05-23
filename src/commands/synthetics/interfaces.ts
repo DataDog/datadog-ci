@@ -696,4 +696,5 @@ export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
   files: string[]
   publicIds: string[]
   subdomain: string
+  exclude_fields?: string[]
 }
