@@ -184,7 +184,7 @@ export class UploadSbomCommand extends Command {
         }
       }
 
-      this.context.stderr.write(renderFailedUpload(basePath, error))
+      this.context.stderr.write(renderFailedUpload(basePath, error, !!this.debug))
 
       return 1
     }
