@@ -36,6 +36,9 @@ export const getLanguageFromComponent = (component: any): DependencyLanguage | u
     if (component['purl'].includes('pkg:nuget')) {
       return DependencyLanguage.DOTNET
     }
+    if (component['purl'].includes('pkg:conan')) {
+      return DependencyLanguage.C_CPP
+    }
   }
 
   console.debug(`language not detected for ${componentName} with due to purl (${purlDisplay})`)
