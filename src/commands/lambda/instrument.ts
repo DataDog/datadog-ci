@@ -73,6 +73,7 @@ export class InstrumentCommand extends Command {
   private interactive = Option.Boolean('-i,--interactive', false)
   private layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
   private layerVersion = Option.String('-v,--layer-version,--layerVersion')
+  private logging = Option.String('--logging')
   private logLevel = Option.String('--log-level,--logLevel')
   private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
   private profile = Option.String('--profile')
@@ -88,6 +89,7 @@ export class InstrumentCommand extends Command {
   private config: LambdaConfigOptions = {
     functions: [],
     tracing: 'true',
+    logging: 'true',
   }
 
   private credentials?: AwsCredentialIdentity
@@ -450,6 +452,7 @@ export class InstrumentCommand extends Command {
     const stringBooleansMap: {[key: string]: string | undefined} = {
       captureLambdaPayload: this.captureLambdaPayload ?? this.config.captureLambdaPayload,
       flushMetricsToLogs: this.flushMetricsToLogs ?? this.config.flushMetricsToLogs,
+      logging: this.logging ?? this.config.logging,
       mergeXrayTraces: this.mergeXrayTraces ?? this.config.mergeXrayTraces,
       tracing: this.tracing ?? this.config.tracing,
     }
@@ -464,6 +467,7 @@ export class InstrumentCommand extends Command {
 
     const captureLambdaPayload = coerceBoolean(false, this.captureLambdaPayload, this.config.captureLambdaPayload)
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
+    const loggingEnabled = coerceBoolean(true, this.logging, this.config.logging)
     const mergeXrayTraces = coerceBoolean(false, this.mergeXrayTraces, this.config.mergeXrayTraces)
     const tracingEnabled = coerceBoolean(true, this.tracing, this.config.tracing)
     const interactive = coerceBoolean(false, this.interactive, this.config.interactive)
@@ -511,6 +515,7 @@ export class InstrumentCommand extends Command {
       interactive,
       layerAWSAccount,
       layerVersion,
+      loggingEnabled,
       logLevel,
       mergeXrayTraces,
       service,
