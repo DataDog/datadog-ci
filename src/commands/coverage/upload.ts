@@ -25,7 +25,7 @@ import {
 } from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 
-import {newSimpleGit, getGitDiff, DiffNode} from '../git-metadata/git'
+import {newSimpleGit, getGitDiff, DiffData} from '../git-metadata/git'
 
 import {apiConstructor, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -218,7 +218,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     return payloads
   }
 
-  private async getPrDiff(spanTags: SpanTags): Promise<Record<string, DiffNode> | undefined> {
+  private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
     if (!this.uploadGitDiff) {
       return undefined
     }
@@ -240,7 +240,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
   }
 
-  private async getCommitDiff(spanTags: SpanTags): Promise<Record<string, DiffNode> | undefined> {
+  private async getCommitDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
     if (!this.uploadGitDiff) {
       return undefined
     }

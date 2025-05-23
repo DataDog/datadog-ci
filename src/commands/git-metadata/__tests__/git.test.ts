@@ -3,12 +3,13 @@ import fs from 'fs'
 import * as simpleGit from 'simple-git'
 import path from 'upath'
 
-import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff} from '../git'
+import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
 interface MockConfig {
   hash?: string
   remotes?: any[]
   trackedFiles?: string[]
+  diff?: string
 }
 
 const createMockSimpleGit = (conf: MockConfig) => ({
@@ -33,6 +34,13 @@ const createMockSimpleGit = (conf: MockConfig) => ({
     }
 
     return conf.hash
+  },
+  diff: async (_: string) => {
+    if (conf.diff === undefined) {
+      throw Error('Unexpected call to diff')
+    }
+
+    return conf.diff
   },
 })
 
@@ -63,6 +71,22 @@ describe('git', () => {
       const input = 'https://token@gitlab.com/user/project.git'
 
       expect(stripCredentials(input)).toBe('https://gitlab.com/user/project.git')
+    })
+  })
+  describe('getDiff', () => {
+    test('should return git diff', async () => {
+      const mock = createMockSimpleGit({
+        hash: 'abcd',
+        diff: fs.readFileSync(path.join(__dirname, 'fixtures', 'modify_single_file.diff'), 'utf8'),
+      }) as any
+      const gitDiff = await getGitDiff(mock, 'HEAD^', 'HEAD')
+
+      expect(gitDiff.head_sha).toEqual('abcd')
+      expect(gitDiff.base_sha).toEqual('abcd')
+
+      const calc = gitDiff.files['src/Calculator.java']
+      expect(decode(calc.added_lines)).toEqual(new Set([10, 11]))
+      expect(decode(calc.removed_lines)).toEqual(new Set([10, 11]))
     })
   })
   describe('getCommitInfo', () => {
@@ -130,8 +154,8 @@ describe('parseGitDiff – tree structure', () => {
     const tree = parseGitDiff(diff)
 
     const calc = tree['src/Calculator.java']
-    expect(decode(calc.addedLines)).toEqual(new Set([10, 11]))
-    expect(decode(calc.removedLines)).toEqual(new Set([10, 11]))
+    expect(decode(calc.added_lines)).toEqual(new Set([10, 11]))
+    expect(decode(calc.removed_lines)).toEqual(new Set([10, 11]))
   })
 
   test('file add & delete in one patch', () => {
@@ -140,13 +164,13 @@ describe('parseGitDiff – tree structure', () => {
 
     // deleted README.md
     const readme = tree['README.md']
-    expect(readme.addedLines).toBe('')
-    expect(decode(readme.removedLines)).toEqual(new Set([1, 2]))
+    expect(readme.added_lines).toBe('')
+    expect(decode(readme.removed_lines)).toEqual(new Set([1, 2]))
 
     // new Utils.java
     const utils = tree['src/Utils.java']
-    expect(decode(utils.addedLines)).toEqual(new Set([1, 2, 3, 4]))
-    expect(utils.removedLines).toBe('')
+    expect(decode(utils.added_lines)).toEqual(new Set([1, 2, 3, 4]))
+    expect(utils.removed_lines).toBe('')
   })
 })
 

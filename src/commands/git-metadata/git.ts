@@ -63,26 +63,35 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
   return new CommitInfo(hash, remote, trackedFiles)
 }
 
-export const getGitDiff = async (
-  git: simpleGit.SimpleGit,
-  from: string,
-  to: string
-): Promise<Record<string, DiffNode>> => {
+export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: string): Promise<DiffData> => {
+  const fromResolved = await git.revparse(from)
+  const toResolved = await git.revparse(to)
+
   const rawDiff = await git.diff([
     '--unified=0',
     '--no-color',
     '--no-ext-diff',
     '--no-renames',
     '--diff-algorithm=minimal',
-    `${from}..${to}`,
+    `${fromResolved}..${toResolved}`,
   ])
 
-  return parseGitDiff(rawDiff)
+  return {
+    head_sha: toResolved,
+    base_sha: fromResolved,
+    files: parseGitDiff(rawDiff),
+  }
+}
+
+export interface DiffData {
+  head_sha: string
+  base_sha: string
+  files: Record<string, DiffNode>
 }
 
 export interface DiffNode {
-  addedLines: string // base-64 bit-vector
-  removedLines: string // base-64 bit-vector
+  added_lines: string // base-64 bit-vector
+  removed_lines: string // base-64 bit-vector
 }
 
 const diffHeaderRegex = /^diff --git a\/.+ b\/(.+)$/
@@ -103,8 +112,8 @@ export const parseGitDiff = (diff: string): Record<string, DiffNode> => {
     if (diffHeader) {
       if (currentPath && currentLines) {
         root[currentPath] = {
-          addedLines: base64Encode(currentLines.addedLines),
-          removedLines: base64Encode(currentLines.removedLines),
+          added_lines: base64Encode(currentLines.addedLines),
+          removed_lines: base64Encode(currentLines.removedLines),
         }
       }
 
@@ -136,8 +145,8 @@ export const parseGitDiff = (diff: string): Record<string, DiffNode> => {
 
   if (currentPath && currentLines) {
     root[currentPath] = {
-      addedLines: base64Encode(currentLines.addedLines),
-      removedLines: base64Encode(currentLines.removedLines),
+      added_lines: base64Encode(currentLines.addedLines),
+      removed_lines: base64Encode(currentLines.removedLines),
     }
   }
 
