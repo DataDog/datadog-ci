@@ -77,21 +77,21 @@ export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: str
   ])
 
   return {
-    headSha: toResolved,
-    baseSha: fromResolved,
+    head_sha: toResolved,
+    base_sha: fromResolved,
     files: parseGitDiff(rawDiff),
   }
 }
 
 export interface DiffData {
-  headSha: string
-  baseSha: string
+  head_sha: string
+  base_sha: string
   files: Record<string, DiffNode>
 }
 
 export interface DiffNode {
-  addedLines: string // base-64 bit-vector
-  removedLines: string // base-64 bit-vector
+  added_lines: string // base-64 bit-vector
+  removed_lines: string // base-64 bit-vector
 }
 
 const diffHeaderRegex = /^diff --git a\/.+ b\/(.+)$/
@@ -112,8 +112,8 @@ export const parseGitDiff = (diff: string): Record<string, DiffNode> => {
     if (diffHeader) {
       if (currentPath && currentLines) {
         root[currentPath] = {
-          addedLines: base64Encode(currentLines.addedLines),
-          removedLines: base64Encode(currentLines.removedLines),
+          added_lines: base64Encode(currentLines.addedLines),
+          removed_lines: base64Encode(currentLines.removedLines),
         }
       }
 
@@ -145,8 +145,8 @@ export const parseGitDiff = (diff: string): Record<string, DiffNode> => {
 
   if (currentPath && currentLines) {
     root[currentPath] = {
-      addedLines: base64Encode(currentLines.addedLines),
-      removedLines: base64Encode(currentLines.removedLines),
+      added_lines: base64Encode(currentLines.addedLines),
+      removed_lines: base64Encode(currentLines.removedLines),
     }
   }
 
