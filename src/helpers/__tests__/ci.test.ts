@@ -206,7 +206,7 @@ describe('ci spec', () => {
             pullRequestBaseBranch,
             pullRequestBaseBranchSha,
             headCommitSha,
-            prNumber: prNumber,
+            prNumber,
           }).toEqual({
             pullRequestBaseBranch: 'datadog:main',
             pullRequestBaseBranchSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
