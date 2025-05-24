@@ -27,7 +27,7 @@ import {
   GIT_BASE_REF,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-  PR_ID,
+  PR_NUMBER,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
@@ -304,7 +304,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
         const eventPayload = getGitHubEventPayload()
         tags[GIT_HEAD_SHA] = eventPayload?.pull_request?.head?.sha
         tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = eventPayload?.pull_request?.base?.sha
-        tags[PR_ID] = eventPayload?.pull_request?.number?.toString()
+        tags[PR_NUMBER] = eventPayload?.pull_request?.number?.toString()
       } catch (e) {
         // ignore malformed event content
       }

@@ -43,7 +43,7 @@ export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sh
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
 
 // PR
-export const PR_ID = 'pr.id'
+export const PR_NUMBER = 'pr.number'
 
 // Sbom
 export const SBOM_TOOL_GENERATOR_NAME = 'tool.generator.name'
