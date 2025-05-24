@@ -10,7 +10,7 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_HEAD_SHA,
-  PR_ID,
+  PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
@@ -199,19 +199,19 @@ describe('ci spec', () => {
             [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
             [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
             [GIT_HEAD_SHA]: headCommitSha,
-            [PR_ID]: prId,
+            [PR_NUMBER]: prNumber,
           } = getCISpanTags() as SpanTags
 
           expect({
             pullRequestBaseBranch,
             pullRequestBaseBranchSha,
             headCommitSha,
-            prId,
+            prNumber: prNumber,
           }).toEqual({
             pullRequestBaseBranch: 'datadog:main',
             pullRequestBaseBranchSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
             headCommitSha: 'df289512a51123083a8e6931dd6f57bb3883d4c4',
-            prId: '1',
+            prNumber: '1',
           })
         })
 

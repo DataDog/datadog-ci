@@ -33,7 +33,7 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
-  PR_ID,
+  PR_NUMBER,
 } from './tags'
 
 export interface Metadata {
@@ -108,7 +108,7 @@ export type SpanTag =
   | typeof GIT_PULL_REQUEST_BASE_BRANCH_SHA
   | typeof SBOM_TOOL_GENERATOR_NAME
   | typeof SBOM_TOOL_GENERATOR_VERSION
-  | typeof PR_ID
+  | typeof PR_NUMBER
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 
