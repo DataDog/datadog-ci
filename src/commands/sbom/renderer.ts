@@ -58,13 +58,18 @@ export const renderNoDefaultBranch = (repositoryUrl: string) => {
   return fullStr
 }
 
-export const renderFailedUpload = (sbomReport: string, error: any) => {
+export const renderFailedUpload = (sbomReport: string, error: any, debug: boolean) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 
   let fullStr = ''
   fullStr += chalk.red(`${ICONS.FAILED}  Failed upload SBOM file ${reportPath}: ${error.message}\n`)
   if (error?.response?.status) {
     fullStr += chalk.red(`API status code: ${error.response.status}\n`)
+  }
+  if (debug) {
+    if (error?.response?.data && error.response.data.errors) {
+      fullStr += chalk.red(`API error response:\n${JSON.stringify(error?.response?.data, undefined, 2)}\n`)
+    }
   }
 
   return fullStr
