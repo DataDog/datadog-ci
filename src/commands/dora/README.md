@@ -43,6 +43,7 @@ datadog-ci dora deployment --service my-service --env prod \
 - `--finished-at` (default: current timestamp) is the timestamp in Unix seconds or ISO8601 when the deployment finished.
 - `--git-repository-url` is a string with the repository URL for the deployed service. If this is missing, the URL is retrieved from the local git repository.
 - `--git-commit-sha` is a string with the git commit SHA that has been deployed. If this is missing, the current HEAD is retrieved from the local git repository.
+- `--version` is a string that specifies the version identifier of the deployed artifact.
 - `--skip-git` (default: `false`): Disables sending git URL and SHA. Change Lead Time will not be available
 - `--dry-run` (default: `false`): It runs the command without actually sending the event. All other checks are still performed.
 
