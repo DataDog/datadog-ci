@@ -38,17 +38,13 @@ export class DeploymentCorrelateImageCommand extends Command {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
     if (!this.config.apiKey) {
-      this.logger.error(
-        `Missing ${chalk.red.bold('DD_API_KEY')} in your environment.`
-      )
+      this.logger.error(`Missing ${chalk.red.bold('DD_API_KEY')} in your environment.`)
 
       return 1
     }
 
     if (!this.config.appKey) {
-      this.logger.error(
-        `Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.`
-      )
+      this.logger.error(`Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.`)
 
       return 1
     }
