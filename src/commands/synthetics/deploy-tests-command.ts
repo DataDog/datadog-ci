@@ -1,13 +1,14 @@
 import {Command, Option} from 'clipanion'
-import terminalLink from 'terminal-link'
+
+import {makeTerminalLink} from '../../helpers/utils'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {deployTests} from './deploy-tests-lib'
 import {DeployTestsCommandConfig} from './interfaces'
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
 
 export class DeployTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'deploy-tests']]
@@ -30,17 +31,16 @@ export class DeployTestsCommand extends BaseCommand {
     ],
   })
 
-  protected subdomain = Option.String('--subdomain', {
-    description:
-      'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
-  })
-
   protected config: DeployTestsCommandConfig = DeployTestsCommand.getDefaultConfig()
 
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to deploy.'})
+  private subdomain = Option.String('--subdomain', {
+    description:
+      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
+  })
 
   public static getDefaultConfig(): DeployTestsCommandConfig {
     return {

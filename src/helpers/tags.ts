@@ -42,6 +42,9 @@ export const GIT_BASE_REF = 'git.commit.base_ref'
 export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sha'
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
 
+// PR
+export const PR_NUMBER = 'pr.number'
+
 // Sbom
 export const SBOM_TOOL_GENERATOR_NAME = 'tool.generator.name'
 export const SBOM_TOOL_GENERATOR_VERSION = 'tool.generator.version'

@@ -1,13 +1,17 @@
 import {Command, Option} from 'clipanion'
-import terminalLink from 'terminal-link'
+
+import {makeTerminalLink} from '../../helpers/utils'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {importTests} from './import-tests-lib'
 import {ImportTestsCommandConfig} from './interfaces'
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
+const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
+const $2 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
+const $3 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
 
 export class ImportTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'import-tests']]
@@ -29,12 +33,13 @@ export class ImportTestsCommand extends BaseCommand {
 
   protected config: ImportTestsCommandConfig = ImportTestsCommand.getDefaultConfig()
 
+  // TODO: Let's not reuse `files` as it has a different meaning.
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test files ${$2('configuration files')}} and write to this file.`,
+    description: `The path to the Synthetic ${$1`test configuration file`} to which to append imported Local Test Definitions.`,
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to import.'})
+  private publicIds = Option.Array('-p,--public-id', {description: 'Public IDs of Synthetic tests to import.'})
   private testSearchQuery = Option.String('-s,--search', {
-    description: 'Pass a query to select which Synthetic tests to run.',
+    description: `Use a ${$2`search query`} to select which Synthetic tests to import. Use the ${$3`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
 
   public static getDefaultConfig(): ImportTestsCommandConfig {

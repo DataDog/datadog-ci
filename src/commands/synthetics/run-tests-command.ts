@@ -1,9 +1,8 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
 import {toBoolean, toNumber, toStringMap} from '../../helpers/env'
-import {removeUndefinedValues} from '../../helpers/utils'
+import {makeTerminalLink, removeUndefinedValues} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {isValidDatadogSite} from '../../helpers/validation'
 
@@ -16,10 +15,17 @@ import {executeTests, getDefaultConfig} from './run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from './utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs} from './utils/public'
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
+const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
-const $2 = (text: string) => terminalLink(text, `${configurationLink}#test-files`)
-const $3 = (text: string) => terminalLink(text, `${configurationLink}#use-the-testing-tunnel`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
+const $2 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/settings/continuous-testing`)
+const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
+const $4 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
+const $5 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/environments/proxy_firewall_vpn#what-is-the-testing-tunnel`
+)
+const $6 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/mobile_app_testing/`)
 
 export class RunTestsCommand extends BaseCommand {
   public static paths = [
@@ -45,63 +51,64 @@ export class RunTestsCommand extends BaseCommand {
         'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json -f ./component-2/**/*.synthetics.json',
       ],
       [
-        'Pass variables as arguments',
+        'Override existing or inject new local and global variables in tests',
         'datadog-ci synthetics run-tests -f ./component-1/**/*.synthetics.json --override variables.NAME=VALUE',
       ],
     ],
   })
 
   // JUnit options
-  public jUnitReport = Option.String('-j,--jUnitReport', {description: 'Pass a path to a JUnit report file.'})
+  public jUnitReport = Option.String('-j,--jUnitReport', {
+    description: 'The filename for a JUnit report if you want to generate one.',
+  })
   public runName = Option.String('-n,--runName', {
-    description: 'A name for this run, which will be included in the JUnit report file.',
+    description: 'A name for this run, which will be included in the JUnit report.',
   })
 
   protected config: RunTestsCommandConfig = getDefaultConfig()
 
   private batchTimeout = Option.String('--batchTimeout', {
     description:
-      'The duration (in milliseconds) after which `datadog-ci` stops waiting for test results. The default is 30 minutes. At the CI level, test results completed after this duration are considered failed.',
+      'The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.',
     validator: validation.isInteger(),
   })
   private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
-      'A boolean flag that fails the CI job if no tests were triggered, or results could not be fetched from Datadog.',
+      'Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.',
   })
   private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
-    description: `A boolean flag that fails the CI job if at least one specified test with a public ID (a \`--public-id\` CLI argument or listed in a ${$2(
-      'test file'
-    )} is missing in a run (for example, if it has been deleted programmatically or on the Datadog site).`,
+    description: `Fail the CI job if the list of tests to run is empty or if some explicitly listed tests are missing.`,
   })
   private failOnTimeout = Option.Boolean('--failOnTimeout', {
     description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
   })
   private files = Option.Array('-f,--files', {
-    description: `Glob pattern to detect Synthetic test ${$2('configuration files')}}.`,
+    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
   private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
-    description: 'Override the default mobile application version to test a different version within Datadog.',
+    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`}. The version must be uploaded and available within Datadog.`,
   })
   private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: 'Override the application version for all Synthetic mobile application tests.',
+    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`} with a local or recently built application.`,
   })
   private overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
   })
-  private publicIds = Option.Array('-p,--public-id', {description: 'Specify a test to run.'})
+  private publicIds = Option.Array('-p,--public-id', {
+    description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
+  })
   private selectiveRerun = Option.Boolean('--selectiveRerun', {
-    description:
-      'A boolean flag to only run the tests which failed in the previous test batches. Use `--no-selectiveRerun` to force a full run if your configuration enables it by default.',
+    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$2`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
   })
   private subdomain = Option.String('--subdomain', {
     description:
-      'The name of the custom subdomain set to access your Datadog application. If the URL used to access Datadog is `myorg.datadoghq.com`, the `subdomain` value needs to be set to `myorg`.',
+      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
   private testSearchQuery = Option.String('-s,--search', {
-    description: 'Pass a query to select which Synthetic tests to run.',
+    description: `Use a ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
   private tunnel = Option.Boolean('-t,--tunnel', {
-    description: `Use the ${$3('Continuous Testing Tunnel')} to execute your test batch.`,
+    description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
   })
 
   private buildCommand = Option.String('--buildCommand', {

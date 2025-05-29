@@ -13,6 +13,7 @@ import {
   DeployTestsCommandConfig,
   ExecutionRule,
   ImportTestsCommandConfig,
+  MobileAppUploadResult,
   RunTestsCommandConfig,
   ServerTest,
   UploadApplicationCommandConfig,
@@ -1431,6 +1432,36 @@ describe('upload-application', () => {
         versionName: 'new',
         latest: true,
       })
+    })
+  })
+
+  describe('reporting version UUID', () => {
+    test('UUID is reported when present', async () => {
+      jest.spyOn(mobile, 'uploadMobileApplicationVersion').mockResolvedValue({
+        valid_app_result: {
+          app_version_uuid: 'fake-uuid',
+        },
+      } as MobileAppUploadResult)
+
+      const writeMock = jest.fn()
+      const command = createCommand(UploadApplicationCommand, {stdout: {write: writeMock}})
+
+      expect(await command['execute']()).toBe(0)
+      expect(writeMock).toHaveBeenCalledWith(expect.stringContaining('The new version has version ID: fake-uuid'))
+    })
+
+    test('the command fails when no UUID is present', async () => {
+      jest.spyOn(mobile, 'uploadMobileApplicationVersion').mockResolvedValue({
+        valid_app_result: undefined,
+      } as MobileAppUploadResult)
+
+      const writeMock = jest.fn()
+      const command = createCommand(UploadApplicationCommand, {stdout: {write: writeMock}})
+
+      expect(await command['execute']()).toBe(1)
+      expect(writeMock).toHaveBeenCalledWith(
+        expect.stringContaining('The upload was successful, but the version ID is missing.')
+      )
     })
   })
 
