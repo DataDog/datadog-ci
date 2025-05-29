@@ -57,7 +57,7 @@ describe('execute', () => {
     )
     expect(code).toBe(0)
     const output = context.stdout.toString()
-    expect(output).toContain('"type": "ci_app_deployment_correlate_image"')
+    expect(output).toContain('"type": "ci_deployment_correlate_image"')
     expect(output).toContain('"attributes"')
     expect(output).toContain('"commit_sha": "abcdef"')
     expect(output).toContain('"repository_url": "https://github.com/DataDog/example"')
