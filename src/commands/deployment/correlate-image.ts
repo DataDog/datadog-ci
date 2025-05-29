@@ -15,9 +15,7 @@ export class DeploymentCorrelateImageCommand extends Command {
   public static usage = Command.Usage({
     category: 'CI Visibility',
     description: 'Correlate images with their source commit.',
-    details: `
-      This command will correlate the image with a commit of the application repository.
-    `,
+    details: 'This command will correlate the image with a commit of the application repository.',
   })
 
   private commitSha = Option.String('--commit-sha')
@@ -30,8 +28,8 @@ export class DeploymentCorrelateImageCommand extends Command {
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   private config = {
-    apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
+    apiKey: process.env.DD_API_KEY,
+    appKey: process.env.DD_APP_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
@@ -41,7 +39,15 @@ export class DeploymentCorrelateImageCommand extends Command {
 
     if (!this.config.apiKey) {
       this.logger.error(
-        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} is in your environment.`
+        `Missing ${chalk.red.bold('DD_API_KEY')} in your environment.`
+      )
+
+      return 1
+    }
+
+    if (!this.config.appKey) {
+      this.logger.error(
+        `Missing ${chalk.red.bold('DD_APP_KEY')} in your environment.`
       )
 
       return 1
@@ -65,7 +71,7 @@ export class DeploymentCorrelateImageCommand extends Command {
       return 1
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+    const site = process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey, appKey: this.config.appKey})
 

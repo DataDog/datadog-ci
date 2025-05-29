@@ -41,7 +41,8 @@ describe('execute', () => {
 
   test('valid with dry run', async () => {
     const envVars = {
-      DATADOG_API_KEY: 'fake-api-key',
+      DD_API_KEY: 'fake-api-key',
+      DD_APP_KEY: 'fake-app-key',
     }
     const {context, code} = await runCLI(
       [
