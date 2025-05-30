@@ -66,7 +66,7 @@ const getMultiLocatorsFromResults = (results: Result[]): MultiLocatorMap => {
     if (hasDefinedResult(result) && result.result && isBrowserServerResult(result.result)) {
       const steps = result.result.steps.slice(1) as Step[] // Skip first step (navigation)
       for (const step of steps) {
-        const multiLocator = step.step_element_updates?.multi_locator
+        const multiLocator = step.element_updates?.multi_locator
         stepMLUpdates.push(multiLocator)
       }
     }

@@ -259,8 +259,8 @@ export interface Step {
   }
   public_id?: string
   status: string
-  step_id: number
-  step_element_updates?: {
+  id?: number // Navigation step has no id
+  element_updates?: {
     multi_locator?: MultiLocator
   }
   sub_test_public_id?: string

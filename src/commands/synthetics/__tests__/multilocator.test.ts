@@ -29,7 +29,7 @@ describe('multilocator', () => {
         steps: [
           getStep(), // Step 0 (ignored)
           getStep(),
-          {...getStep(), step_element_updates: {multi_locator: {ab: 'xpath-1'}}},
+          {...getStep(), element_updates: {multi_locator: {ab: 'xpath-1'}}},
         ],
       }),
     ]
@@ -66,7 +66,7 @@ describe('multilocator', () => {
     test('should not modify tests when no MultiLocators exist', async () => {
       mockResults = [
         getBrowserResult('result-1', getBrowserTest('test-1'), {
-          steps: [getStep(), {...getStep(), step_element_updates: {}}], // No ML updates
+          steps: [getStep(), {...getStep(), element_updates: {}}], // No ML updates
         }),
       ]
 
