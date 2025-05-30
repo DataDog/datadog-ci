@@ -47,10 +47,11 @@ datadog-ci deployment correlate --provider argocd
 
 
 ### `correlate-image`
-**Note**: This command replaces `datadog-ci deployment correlate`
+**Note**: This command replaces `datadog-ci deployment correlate`.
 
-The `correlate-image` command connects an image generated on CI with a commit of the application repository. Then, when we receive a deployment that deploys your image
-we correlate the deployment to the application commit. This allows for correlation between configuration and application repositories in GitOps scenarios.
+The `correlate-image` command connects an image generated on CI with a commit of the application repository. Then, when Datadog receives a deployment that deploys your image,
+the deployment is correlated to the application commit. This allows for correlation between configuration and application repositories in GitOps scenarios.
+
 **Important**: This command does not work for every setup. Refer to the [documentation][3] for more details.
 
 For example:
@@ -59,8 +60,8 @@ datadog-ci deployment correlate-image --commit-sha c9c4e93346652f426c91a2c413646
 ```
 
 - `--commit-sha` (**required**): Commit SHA to correlate with an image. Should be from the application repository.
-- `--repository-url` (**required**) Repository URL for the commit SHA being correlated.
-- `--image`: (**required**) Image to correlate with the commit SHA.
+- `--repository-url` (**required**): Repository URL for the commit SHA being correlated.
+- `--image` (**required**): Image to correlate with the commit SHA.
 
 
 ### Environment variables
