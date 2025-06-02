@@ -15,6 +15,9 @@ describe('validation', () => {
     expect(isValidDatadogSite('ap1.datadoghq.com')).toBe(true)
     expect(isValidDatadogSite('AP1.datadoghq.com')).toBe(true)
 
+    expect(isValidDatadogSite('ap2.datadoghq.com')).toBe(true)
+    expect(isValidDatadogSite('AP2.datadoghq.com')).toBe(true)
+
     expect(isValidDatadogSite('us3.datadoghq.com')).toBe(true)
     expect(isValidDatadogSite('US3.datadoghq.com')).toBe(true)
 
