@@ -64,7 +64,10 @@ export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => g
 
 // Returns the author and committer information of the current commit in JSON format to avoid parsing issues with values that contain commas.
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
-  git.show(['-s', `--format='{"authorName":"%an","authorEmail":"%ae","authorDate":"%aI","committerName":"%cn","committerEmail":"%ce","committerDate":"%cI"}'`])
+  git.show([
+    '-s',
+    `--format='{"authorName":"%an","authorEmail":"%ae","authorDate":"%aI","committerName":"%cn","committerEmail":"%ce","committerDate":"%cI"}'`,
+  ])
 
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
