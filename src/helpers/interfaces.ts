@@ -78,12 +78,12 @@ export interface Metadata {
 }
 
 export interface GitAuthorAndCommitterMetadata {
-  authorName: string;
-  authorEmail: string;
-  authorDate: string;
-  committerName: string;
-  committerEmail: string;
-  committerDate: string;
+  authorName: string
+  authorEmail: string
+  authorDate: string
+  committerName: string
+  committerEmail: string
+  committerDate: string
 }
 
 export type SpanTag =
