@@ -77,6 +77,15 @@ export interface Metadata {
   }
 }
 
+export interface GitAuthorAndCommitterMetadata {
+  authorName: string;
+  authorEmail: string;
+  authorDate: string;
+  committerName: string;
+  committerEmail: string;
+  committerDate: string;
+}
+
 export type SpanTag =
   | typeof CI_JOB_NAME
   | typeof CI_JOB_URL
