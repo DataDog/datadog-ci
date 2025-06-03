@@ -66,7 +66,7 @@ export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => g
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.show([
     '-s',
-    `--format='{"authorName":"%an","authorEmail":"%ae","authorDate":"%aI","committerName":"%cn","committerEmail":"%ce","committerDate":"%cI"}'`,
+    '--format={"authorName":"%an","authorEmail":"%ae","authorDate":"%aI","committerName":"%cn","committerEmail":"%ce","committerDate":"%cI"}',
   ])
 
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
