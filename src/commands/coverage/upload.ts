@@ -48,7 +48,6 @@ import {
   renderSuccessfulGitDBSync,
 } from './renderer'
 import {detectFormat, validateCoverageReport} from './utils'
-import { Dsym } from "../dsyms/interfaces";
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
