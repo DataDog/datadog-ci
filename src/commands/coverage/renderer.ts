@@ -77,3 +77,11 @@ export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
 
   return fullStr
 }
+
+export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.`)
+}
+
+export const renderFailedGitDBSync = (err: any) => {
+  return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
+}
