@@ -1628,6 +1628,7 @@ describe('deploy-tests', () => {
         proxy: {protocol: 'http'},
         publicIds: ['ran-dom-id1'],
         subdomain: 'ppa',
+        excludeFields: ['config'],
       }
 
       const command = createCommand(DeployTestsCommand)

@@ -1,9 +1,32 @@
+import jsonpath from 'jsonpath'
+
 import {getCommonAppBaseURL} from '../../helpers/app'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'
 import {getTestConfigs} from './test'
 import {isLocalTriggerConfig} from './utils/internal'
+
+const removeExcludedFields = (
+  existingRemoteTest: ServerTest,
+  excludeFields: string[],
+  test: ServerTest
+): ServerTest => {
+  if (!excludeFields || excludeFields.length === 0) {
+    return test
+  }
+
+  const newTest: ServerTest = {...test}
+
+  for (const path of excludeFields) {
+    const existingValues = jsonpath.query(existingRemoteTest, path)
+    if (existingValues.length > 0) {
+      jsonpath.apply(newTest, path, () => existingValues[0])
+    }
+  }
+
+  return newTest
+}
 
 export const deployTests = async (reporter: MainReporter, config: DeployTestsCommandConfig): Promise<void> => {
   const api = getApiHelper(config)
@@ -32,7 +55,7 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
     const publicId = localTestDefinition.localTestDefinition.public_id!
 
     try {
-      await deployLocalTestDefinition(api, localTestDefinition)
+      await deployLocalTestDefinition(api, localTestDefinition, config.excludeFields)
 
       // SYNTH-18527: the edit test endpoint should return a version in the response, so we can print it in the logs and see it in version history
       const baseUrl = getCommonAppBaseURL(config.datadogSite, config.subdomain)
@@ -49,7 +72,11 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
   }
 }
 
-const deployLocalTestDefinition = async (api: APIHelper, test: LocalTriggerConfig): Promise<void> => {
+const deployLocalTestDefinition = async (
+  api: APIHelper,
+  test: LocalTriggerConfig,
+  excludeFields?: string[]
+): Promise<void> => {
   // SYNTH-18434: public ID should be made required
   const publicId = test.localTestDefinition.public_id!
 
@@ -69,7 +96,10 @@ const deployLocalTestDefinition = async (api: APIHelper, test: LocalTriggerConfi
     },
   })
 
-  await api.editTest(publicId, newRemoteTest)
+  // Replace excluded fields with values from the existing remote test
+  const finalTest = removeExcludedFields(existingRemoteTest, excludeFields || [], newRemoteTest)
+
+  await api.editTest(publicId, finalTest)
 }
 
 const removeUnsupportedEditTestFields = (testConfig: ServerTest): ServerTest => {
