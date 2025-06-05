@@ -30,8 +30,8 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 - `--upload-git-diff` (default: `true`): if the command is run in a PR context, it will try to upload the PR git diff along with the coverage data.
-- `--skip-git-metadata-upload` (default: `false`): allows to skip the upload of git metadata.
-- `--git-repository-url` is a string with the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
+- `--skip-git-metadata-upload` (default: `false`): skip the upload of git metadata.
+- `--git-repository-url` is a string specifying the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 
 #### Environment variables
 
