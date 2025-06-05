@@ -1,0 +1,499 @@
+---
+request:
+  headers:
+    host: firefox.settings.services.mozilla.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    connection: keep-alive
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: GET
+  timestamp: '2025-05-27T14:00:32.124Z'
+  url: /v1/
+response:
+  headers:
+    server: nginx
+    content-length: '1228'
+    access-control-allow-origin: '*'
+    access-control-expose-headers: Retry-After, Backoff, Content-Length, Content-Type, Alert
+    x-content-type-options: nosniff
+    content-security-policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none';
+    strict-transport-security: max-age=31536000
+    via: 1.1 google
+    date: Tue, 27 May 2025 13:25:40 GMT
+    age: '2092'
+    content-type: application/json
+    cache-control: public,max-age=3600
+    alt-svc: clear
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-05-27T14:00:32.124Z'
+  body:
+    project_name: Remote Settings PROD
+    project_version: 23.0.1
+    http_api_version: '1.23'
+    project_docs: https://remote-settings.readthedocs.io
+    url: https://firefox.settings.services.mozilla.com/v1/
+    config:
+      path: /etc/kinto.ini
+      hash: 8cfcf3a6f7c87f382e9bb895161fb58d90cadfdfd631ecf2d4a6d7ef2e339b55
+      modified: '2025-05-17T22:45:40.199739'
+    settings:
+      readonly: true
+      batch_max_requests: 25
+      explicit_permissions: false
+    capabilities:
+      changes:
+        description: Track modifications of records in Kinto and store the collection timestamps into a specific bucket and collection.
+        url: http://kinto.readthedocs.io/en/latest/tutorials/synchronisation.html#polling-for-remote-changes
+        version: 35.1.1
+        collections:
+          - /buckets/blocklists
+          - /buckets/blocklists-preview
+          - /buckets/main
+          - /buckets/main-preview
+          - /buckets/security-state
+          - /buckets/security-state-preview
+      attachments:
+        description: Add file attachments to records
+        url: https://github.com/Kinto/kinto-attachment/
+        version: 7.1.0
+        base_url: https://firefox-settings-attachments.cdn.mozilla.net/
+      prometheus:
+        description: Prometheus metrics.
+        url: https://github.com/Kinto/kinto/
+        prefix: remotesettings_
+        disabled_metrics: []
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: text/plain;charset=UTF-8
+    referer: http://localhost:5173/
+    content-length: '15964'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:33.268Z'
+  url: /api/v2/rum?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=ccbf75dd-dc15-459e-bb19-cf39adcbbbff&batch_time=1748354432814
+  body:
+    request_id: ccbf75dd-dc15-459e-bb19-cf39adcbbbff
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: ccbf75dd-dc15-459e-bb19-cf39adcbbbff
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:33 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:33.268Z'
+  body:
+    request_id: ccbf75dd-dc15-459e-bb19-cf39adcbbbff
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: text/plain;charset=UTF-8
+    referer: http://localhost:5173/
+    content-length: '15700'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:33.320Z'
+  url: /api/v2/rum?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=6b58d7b0-6bba-44b2-b796-db7ca147fe00&batch_time=1748354432860
+  body:
+    request_id: 6b58d7b0-6bba-44b2-b796-db7ca147fe00
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 6b58d7b0-6bba-44b2-b796-db7ca147fe00
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:33 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:33.320Z'
+  body:
+    request_id: 6b58d7b0-6bba-44b2-b796-db7ca147fe00
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundaryce9f31120a0bac5aaa57be9229200a11
+    referer: http://localhost:5173/
+    content-length: '10953'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:38.140Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=2548ffaf-4398-4721-943e-eb97b30abb6b
+  body:
+    request_id: 2548ffaf-4398-4721-943e-eb97b30abb6b
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 2548ffaf-4398-4721-943e-eb97b30abb6b
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:37 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:38.140Z'
+  body:
+    request_id: 2548ffaf-4398-4721-943e-eb97b30abb6b
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundaryd9ecbc9e613452ae2fc2b3ab728c1e53
+    referer: http://localhost:5173/
+    content-length: '10548'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:38.198Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=a0076a3a-6f63-4a6c-92d9-9af7f216a3ce
+  body:
+    request_id: a0076a3a-6f63-4a6c-92d9-9af7f216a3ce
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: a0076a3a-6f63-4a6c-92d9-9af7f216a3ce
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:37 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:38.198Z'
+  body:
+    request_id: a0076a3a-6f63-4a6c-92d9-9af7f216a3ce
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundary2869ee3bec3cf60f9d837ec0bcedd3f9
+    referer: http://localhost:5173/
+    content-length: '1407'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:39.359Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=6e54d78f-02c2-43b3-accc-f5a83646f85f
+  body:
+    request_id: 6e54d78f-02c2-43b3-accc-f5a83646f85f
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 6e54d78f-02c2-43b3-accc-f5a83646f85f
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:38 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:39.359Z'
+  body:
+    request_id: 6e54d78f-02c2-43b3-accc-f5a83646f85f
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundary22602509f688517fbd1605675bc6d54c
+    referer: http://localhost:5173/
+    content-length: '1667'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:39.363Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=cf635f64-6eca-4199-a34f-e6494d845b2c
+  body:
+    request_id: cf635f64-6eca-4199-a34f-e6494d845b2c
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: cf635f64-6eca-4199-a34f-e6494d845b2c
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:39 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:39.363Z'
+  body:
+    request_id: cf635f64-6eca-4199-a34f-e6494d845b2c
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: text/plain;charset=UTF-8
+    referer: http://localhost:5173/
+    content-length: '15941'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:39.485Z'
+  url: /api/v2/rum?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=5382d2c7-1542-4412-944b-13afb8069ac1&batch_time=1748354439028
+  body:
+    request_id: 5382d2c7-1542-4412-944b-13afb8069ac1
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 5382d2c7-1542-4412-944b-13afb8069ac1
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:39 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:39.485Z'
+  body:
+    request_id: 5382d2c7-1542-4412-944b-13afb8069ac1
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundary4eee0009cf120a0b4f68ac83e57fba1c
+    referer: http://localhost:5173/
+    content-length: '12363'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:42.760Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=03d129d0-3d6e-4c60-b4c4-f8ac4c35639f
+  body:
+    request_id: 03d129d0-3d6e-4c60-b4c4-f8ac4c35639f
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 03d129d0-3d6e-4c60-b4c4-f8ac4c35639f
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:42 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:42.760Z'
+  body:
+    request_id: 03d129d0-3d6e-4c60-b4c4-f8ac4c35639f
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundarydd431545f97141265564179863f79b0e
+    referer: http://localhost:5173/
+    content-length: '11843'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:42.806Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=c4a4fb3e-b916-4eef-8b8a-299de932fcf5
+  body:
+    request_id: c4a4fb3e-b916-4eef-8b8a-299de932fcf5
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: c4a4fb3e-b916-4eef-8b8a-299de932fcf5
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:42 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:42.806Z'
+  body:
+    request_id: c4a4fb3e-b916-4eef-8b8a-299de932fcf5
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: text/plain;charset=UTF-8
+    referer: http://localhost:5173/
+    content-length: '16179'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:42.846Z'
+  url: /api/v2/rum?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=38bbcc3f-2c28-4b8b-aac5-27cab80d721a&batch_time=1748354442474
+  body:
+    request_id: 38bbcc3f-2c28-4b8b-aac5-27cab80d721a
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 38bbcc3f-2c28-4b8b-aac5-27cab80d721a
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:42 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:42.846Z'
+  body:
+    request_id: 38bbcc3f-2c28-4b8b-aac5-27cab80d721a
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundaryc650a6601d946d5b1cd7c0de9d30aac1
+    referer: http://localhost:5173/
+    content-length: '11348'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:44.725Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A6.6.4%2Capi%3Afetch-keepalive%2Cenv%3Adevelopment%2Cservice%3Ablog&dd-api-key=pubb930f261f7acd7f60ee264a2c801b590&dd-evp-origin-version=6.6.4&dd-evp-origin=browser&dd-request-id=1649cb31-a9b2-436d-848b-5dc8290ec0c1
+  body:
+    request_id: 1649cb31-a9b2-436d-848b-5dc8290ec0c1
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: 1649cb31-a9b2-436d-848b-5dc8290ec0c1
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:44 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:44.725Z'
+  body:
+    request_id: 1649cb31-a9b2-436d-848b-5dc8290ec0c1
+---
+request:
+  headers:
+    host: browser-intake-datadoghq.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    content-type: multipart/form-data; boundary=----geckoformboundaryee49a77ce2cb1857dfc46c720e086546
+    referer: http://localhost:5173/
+    content-length: '10924'
+    origin: http://localhost:5173
+    connection: keep-alive
+    priority: u=4
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: wde-f4n-i6j'
+  method: POST
+  timestamp: '2025-05-27T14:00:44.770Z'
+  url: /api/v2/replay?ddsource=browser&ddtags=sdk_version%3A5.34.1%2Capi%3Afetch%2Cservice%3Asynthetics-browser%2Cdatacenter%3Aus1.prod.dog&dd-api-key=pub20861402d57cafe8aa6fd1a8192b6d1d&dd-evp-origin-version=5.34.1&dd-evp-origin=browser&dd-request-id=f0e58df3-078f-4aab-9d43-93e90a4f2cde
+  body:
+    request_id: f0e58df3-078f-4aab-9d43-93e90a4f2cde
+response:
+  headers:
+    content-type: application/json
+    content-length: '53'
+    dd-request-id: f0e58df3-078f-4aab-9d43-93e90a4f2cde
+    cross-origin-resource-policy: cross-origin
+    access-control-allow-origin: '*'
+    accept-encoding: identity,gzip,x-gzip,deflate,x-deflate,zstd
+    x-content-type-options: nosniff
+    strict-transport-security: max-age=31536000; includeSubDomains; preload
+    date: Tue, 27 May 2025 14:00:44 GMT
+  statusCode: 202
+  statusMessage: Accepted
+  timestamp: '2025-05-27T14:00:44.770Z'
+  body:
+    request_id: f0e58df3-078f-4aab-9d43-93e90a4f2cde

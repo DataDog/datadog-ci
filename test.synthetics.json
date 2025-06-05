@@ -1,0 +1,113 @@
+{
+  "tests": [
+    {
+      "localTestDefinition": {
+        "public_id": "tbq-wt4-jts",
+        "name": "test google pl",
+        "type": "browser",
+        "config": {
+          "configVariables": [],
+          "request": {
+            "method": "GET",
+            "headers": {},
+            "url": "https://google.com"
+          },
+          "setCookie": "",
+          "variables": []
+        },
+        "options": {
+          "device_ids": [
+            "firefox.laptop_large"
+          ],
+          "ignoreServerCertificateError": false,
+          "disableCors": false,
+          "disableCsp": false,
+          "noScreenshot": false,
+          "retry": {
+            "count": 0,
+            "interval": 230
+          },
+          "rumSettings": {
+            "isEnabled": true,
+            "applicationId": "f2ee207c-0723-40dc-b1ce-1fa59e34bf00",
+            "clientTokenId": 30861
+          },
+          "blockedRequestPatterns": []
+        },
+        "locations": [
+          "pl:mtalec-pl-sandbox-staging-e194c5891a9bba30df180056854c3776"
+        ],
+        "steps": [
+          {
+            "name": "Type text on textarea #APjFqb",
+            "params": {
+              "value": "datadog",
+              "element": {
+                "url": "https://www.google.com/webhp?hl=fr&sa=X&ved=0ahUKEwjKuJfhgO6MAxVIVaQEHZDKI5gQPAgI",
+                "multiLocator": {
+                  "ab": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]/*[local-name()=\"form\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"textarea\"][1]",
+                  "at": "/descendant::*[@name=\"q\" and @title=\"Rechercher\"]",
+                  "cl": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" gLFyf \")]",
+                  "co": "[{\"tagName\":\"TEXTAREA\",\"text\":\"rech.\",\"textType\":\"aria-label\"}]",
+                  "ro": "//*[@id=\"APjFqb\"]",
+                  "clt": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" gLFyf \")]"
+                },
+                "targetOuterHTML": "<textarea class=\"gLFyf\" aria-controls=\"Alh6id\" aria-owns=\"Alh6id\" autofocus=\"\" title=\"Rechercher\" value=\"\" aria-label=\"Rech.\" placeholder=\"\" aria-autocomplete=\"both\" aria-expanded=\"true\" aria-haspopup ..."
+              }
+            },
+            "type": "typeText",
+            "allowFailure": false,
+            "isCritical": true,
+            "noScreenshot": false,
+            "exitIfSucceed": false,
+            "alwaysExecute": false
+          },
+          {
+            "name": "Click on span \"datadog\"",
+            "params": {
+              "element": {
+                "url": "https://www.google.com/webhp?hl=fr&sa=X&ved=0ahUKEwjKuJfhgO6MAxVIVaQEHZDKI5gQPAgI",
+                "multiLocator": {
+                  "ab": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]/*[local-name()=\"form\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][4]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"ul\"][1]/*[local-name()=\"li\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"span\"][1]",
+                  "at": "/descendant::*[@*[local-name()=\"aria-label\"]=\"datadog\"]/descendant::*[@role=\"presentation\"][1]/*[local-name()=\"span\"][1]",
+                  "cl": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" sbhl \")]/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" wM6W7d \")]/*[local-name()=\"span\"][1]",
+                  "co": "[{\"text\":\"datadog\",\"textType\":\"directText\"},{\"relation\":\"PARENT OF\",\"tagName\":\"DIV\",\"text\":\"datadogécole d'informatique · tour initiale, 1 terr. bellini, puteauxvoir plussupprimer\",\"textType\":\"innerText\"}]",
+                  "clt": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" sbhl \")]/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" wM6W7d \")]/descendant::*[text()[normalize-space(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞŸŽŠŒ', 'abcdefghijklmnopqrstuvwxyzàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿžšœ')) = \"datadog\"]]"
+                },
+                "targetOuterHTML": "<span>datadog</span>"
+              }
+            },
+            "type": "click",
+            "allowFailure": false,
+            "isCritical": true,
+            "noScreenshot": false,
+            "exitIfSucceed": false,
+            "alwaysExecute": false
+          },
+          {
+            "name": "Click on div \"L3Ezfd\"",
+            "params": {
+              "element": {
+                "url": "https://www.google.com/search?q=datadog&sca_esv=a8f2e26b4241c72c&hl=fr&source=hp&ei=DskIaJnsGdOqkdUPpqyx0Q8&iflsig=ACkRmUkAAAAAaAjXHqdPcN_768Iofn-YIofxCHOec5YD&oq=datadog&gs_lp=Egdnd3Mtd2l6IgdkYXRhZG9nKgIIADIIEAAYgAQYsQMyCxAAGIAEGLEDGIMBMgUQABiABDILEC4YgAQYxwEYrwEyBRAAGIAEMgUQABiABDIFEAAYgAQyBRAAGIAEMgUQABiABDIFEAAYgARI_mNQsBtYgipwBHgAkAEAmAFNoAGuA6oBATe4AQHIAQD4AQGYAgugAsADqAIKwgIKEAAYAxjqAhiPAcICChAuGAMY6gIYjwHCAg4QLhiABBjHARiOBRivAcICERAuGIAEGLEDGNEDGIMBGMcBwgIOEC4YgAQYsQMY0QMYxwHCAg4QABiABBixAxiDARiKBcICCBAuGIAEGLEDwgILEC4YgAQYsQMYgwHCAg4QLhiABBixAxiDARiKBcICBRAuGIAEwgIREC4YgAQYsQMYxwEYjgUYrwGYAwTxBR731ktSQinYkgcCMTGgB7xQsgcBN7gHtgM&sclient=gws-wiz",
+                "multiLocator": {
+                  "ab": "/*[local-name()=\"html\"][1]/*[local-name()=\"body\"][1]/*[local-name()=\"div\"][3]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][12]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][2]/*[local-name()=\"div\"][1]/*[local-name()=\"div\"][3]",
+                  "at": "/descendant::*[@eid=\"KMkIaL7SH93X7M8P_dPF8Q0\"]/descendant::*[@jsname=\"N760b\"]/descendant::*[@jsname=\"pcRaIe\"][1]",
+                  "cl": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" cS7M8 \")]/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" L3Ezfd \")]",
+                  "co": "",
+                  "clt": "/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" cS7M8 \")]/descendant::*[contains(concat(' ', normalize-space(@class), ' '), \" L3Ezfd \")]"
+                },
+                "targetOuterHTML": "<div jsname=\"pcRaIe\" class=\"L3Ezfd\" data-ved=\"2ahUKEwi-hrr7gO6MAxXdK_sDHf1pMd4Quk56BAgvEAI\"></div>"
+              }
+            },
+            "type": "click",
+            "allowFailure": false,
+            "isCritical": true,
+            "noScreenshot": false,
+            "exitIfSucceed": false,
+            "alwaysExecute": false
+          }
+        ]
+      }
+    }
+  ]
+}
