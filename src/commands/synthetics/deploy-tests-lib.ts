@@ -1,4 +1,4 @@
-import jsonpath from 'jsonpath'
+import {JSONPath} from 'jsonpath-plus'
 
 import {getCommonAppBaseURL} from '../../helpers/app'
 
@@ -19,9 +19,16 @@ const removeExcludedFields = (
   const newTest: ServerTest = {...test}
 
   for (const path of excludeFields) {
-    const existingValues = jsonpath.query(existingRemoteTest, path)
-    if (existingValues.length > 0) {
-      jsonpath.apply(newTest, path, () => existingValues[0])
+    const existingValue = JSONPath({path, json: existingRemoteTest, wrap: false})
+    if (existingValue) {
+       JSONPath({
+         path,
+         json: newTest,
+         resultType: 'all',
+         callback: (matchInfo: {parent: any; parentProperty: string | number; value: any}) => {
+           matchInfo.parent[matchInfo.parentProperty] = existingValue
+         },
+       })
     }
   }
 
