@@ -63,6 +63,12 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
   return new CommitInfo(hash, remote, trackedFiles)
 }
 
+export const getMergeBase = async (git: simpleGit.SimpleGit, target: string, source: string): Promise<string> => {
+  const result = await git.raw(['merge-base', target, source])
+
+  return result.trim()
+}
+
 export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: string): Promise<DiffData> => {
   const fromResolved = await git.revparse(from)
   const toResolved = await git.revparse(to)
