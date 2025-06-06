@@ -22,6 +22,7 @@ import {
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  PR_NUMBER,
 } from './tags'
 import {normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
 
@@ -41,6 +42,7 @@ export const getUserGitSpanTags = () => {
     DD_GIT_PULL_REQUEST_BASE_BRANCH,
     DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA,
     DD_GIT_COMMIT_HEAD_SHA,
+    DD_PR_NUMBER,
   } = process.env
 
   let branch = normalizeRef(DD_GIT_BRANCH)
@@ -66,6 +68,7 @@ export const getUserGitSpanTags = () => {
     [GIT_PULL_REQUEST_BASE_BRANCH]: DD_GIT_PULL_REQUEST_BASE_BRANCH,
     [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA,
     [GIT_HEAD_SHA]: DD_GIT_COMMIT_HEAD_SHA,
+    [PR_NUMBER]: DD_PR_NUMBER,
   })
 }
 
