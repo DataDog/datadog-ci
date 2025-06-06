@@ -15,7 +15,7 @@ Expose these environment variables in the environment where you are running `dat
 | Environment Variable | Description                                                                                                                                                                                                                                      | Example                          |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
 | `DD_API_KEY`         | Datadog API Key. Used to attach the flare files to your Zendesk ticket. For more information about getting a Datadog API key, see the [API key documentation][2].                                                                                | `export DD_API_KEY=<API_KEY>`    |
-| `DD_SITE`            | Optional. Set which Datadog site to send the flare for lower latency. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE="datadoghq.com"` |
+| `DD_SITE`            | Optional. Set which Datadog site to send the flare for lower latency. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE="datadoghq.com"` |
 
 ## Flare Command
 
