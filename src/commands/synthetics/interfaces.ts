@@ -693,6 +693,7 @@ export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
 
 export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
+  excludeFields?: string[]
   files: string[]
   publicIds: string[]
   subdomain: string
