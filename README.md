@@ -108,6 +108,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 #### `deployment`
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 - `correlate`: [Correlate](src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
+- `correlate-image`: [Correlate an image](src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 
 #### `dora`
 - `deployment`: Send a new deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
