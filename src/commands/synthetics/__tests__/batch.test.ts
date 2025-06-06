@@ -86,7 +86,8 @@ describe('runTests', () => {
 
     const metadata: Metadata = {
       ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
-      git: {commit: {author: {}, committer: {}, message: 'test'}},
+      git: {commit: {author: {}, committer: {}}, pull_request: {}},
+      pr: {},
     }
     jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
 
