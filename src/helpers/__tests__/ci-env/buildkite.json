@@ -1047,8 +1047,8 @@
     {
       "BUILDKITE": "true",
       "BUILDKITE_AGENT_ID": "1a222222-e999-3636-8ddd-802222222222",
-      "BUILDKITE_AGENT_META_DATA_MYOTHERTAG": "my-other-value",
       "BUILDKITE_AGENT_META_DATA_MYTAG": "my-value",
+      "BUILDKITE_AGENT_META_DATA_MYOTHERTAG": "my-other-value",
       "BUILDKITE_BRANCH": "",
       "BUILDKITE_BUILD_AUTHOR": "buildkite-git-commit-author-name",
       "BUILDKITE_BUILD_AUTHOR_EMAIL": "buildkite-git-commit-author-email@datadoghq.com",

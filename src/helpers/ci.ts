@@ -848,18 +848,9 @@ export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}
         }),
         message: tags[GIT_COMMIT_MESSAGE],
         sha: tags[GIT_SHA],
-        head_sha: tags[GIT_HEAD_SHA],
-      }),
-      pull_request: removeUndefinedValues({
-        base_branch: tags[GIT_PULL_REQUEST_BASE_BRANCH],
-        base_branch_sha: tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA],
       }),
       repository_url: tags[GIT_REPOSITORY_URL],
       tag: tags[GIT_TAG],
-    }),
-
-    pr: removeUndefinedValues({
-      number: parseNumber(tags[PR_NUMBER]),
     }),
   }
 

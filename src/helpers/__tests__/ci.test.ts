@@ -3,52 +3,18 @@ import fs from 'fs'
 import upath from 'upath'
 
 import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
-import {Metadata, SpanTags} from '../interfaces'
+import {SpanTags} from '../interfaces'
 import {
-  CI_NODE_LABELS,
   CI_ENV_VARS,
+  CI_NODE_LABELS, CI_NODE_NAME,
+  GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-  GIT_HEAD_SHA,
-  PR_NUMBER,
-} from '../tags'
+  PR_NUMBER
+} from "../tags";
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
-
-const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
-  const metadata: Metadata = {
-    ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
-    git: {commit: {author: {}, committer: {}}, pull_request: {}},
-    pr: {},
-  }
-
-  Object.entries(tags).forEach(([tag, value]) => {
-    // Ignore JSON fixtures pipeline number that can't be parsed to numbers
-    if (
-      !value ||
-      tag === 'ci.pipeline.number' ||
-      tag === '_dd.ci.env_vars' ||
-      tag === 'ci.node.labels' ||
-      tag === 'ci.node.name'
-    ) {
-      return
-    }
-
-    // Get Metadata nested property from tag name ('git.commit.author.name')
-    let currentAttr: {[k: string]: any} = metadata
-    // Current attribute up to second to last
-    const properties = tag.split('.')
-    for (let i = 0; i < properties.length - 1; i++) {
-      currentAttr = currentAttr[properties[i]]
-    }
-
-    const attributeName = properties[properties.length - 1]
-    currentAttr[attributeName] = value
-  })
-
-  return metadata
-}
 
 const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => {
   const spanTags: SpanTags = {}
@@ -126,8 +92,7 @@ describe('getCIMetadata', () => {
     test.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = env
 
-      const expectedMetadata = ciAppTagsToMetadata(tags)
-      expect(getCIMetadata()).toEqual(expectedMetadata)
+      expect(getTags()).toEqual(tags)
     })
   })
 
@@ -158,8 +123,7 @@ describe('getCIMetadata', () => {
       DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA: 'DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA',
     }
 
-    const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
-    delete expectedMetadata.git.branch
+    const expectedMetadata = ddMetadataToSpanTags(DD_METADATA)
 
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
@@ -168,9 +132,13 @@ describe('getCIMetadata', () => {
 
     it.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = {...env, ...DD_METADATA}
-      const ciMetadata = getCIMetadata()
-      delete ciMetadata?.git.branch
-      delete ciMetadata?.pr.number
+      const ciMetadata = getTags()
+      // the tags below are deleted as they cannot be overridden by DD env variables
+      // so we should ignore them in the comparison
+      delete ciMetadata?.[CI_ENV_VARS]
+      delete ciMetadata?.[CI_NODE_LABELS]
+      delete ciMetadata?.[CI_NODE_NAME]
+      delete ciMetadata?.[PR_NUMBER]
       expect(ciMetadata).toEqual(expectedMetadata)
     })
   })
@@ -446,3 +414,11 @@ describe('isInteractive', () => {
     expect(isInteractive()).toBe(false)
   })
 })
+
+const getTags = (): SpanTags => {
+  return {
+    ...getCISpanTags(),
+    ...getUserCISpanTags(),
+    ...getUserGitSpanTags(),
+  }
+}
