@@ -6,12 +6,13 @@ import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
-  CI_NODE_LABELS, CI_NODE_NAME,
+  CI_NODE_LABELS,
+  CI_NODE_NAME,
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-  PR_NUMBER
-} from "../tags";
+  PR_NUMBER,
+} from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
