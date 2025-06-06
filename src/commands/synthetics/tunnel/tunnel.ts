@@ -120,10 +120,6 @@ export class Tunnel {
       }
     })
 
-    if (this.multiplexer) {
-      this.multiplexer.close()
-    }
-
     await this.ws.close()
   }
 
@@ -209,7 +205,9 @@ export class Tunnel {
         })
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
-            this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+            if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+              this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+            }
             src.close()
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
