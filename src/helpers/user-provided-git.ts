@@ -15,11 +15,14 @@ import {
   GIT_COMMIT_COMMITTER_DATE,
   GIT_COMMIT_COMMITTER_EMAIL,
   GIT_COMMIT_COMMITTER_NAME,
-  GIT_COMMIT_MESSAGE, GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_COMMIT_MESSAGE,
+  GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
-  GIT_TAG
-} from "./tags";
+  GIT_TAG,
+} from './tags'
 import {normalizeRef, removeEmptyValues, filterSensitiveInfoFromRepository} from './utils'
 
 export const getUserGitSpanTags = () => {
