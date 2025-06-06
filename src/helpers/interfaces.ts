@@ -72,8 +72,15 @@ export interface Metadata {
       message?: string
       sha?: string
     }
+    pull_request: {
+      base_branch?: string
+      base_branch_sha?: string
+    }
     repository_url?: string
     tag?: string
+  }
+  pr: {
+    number?: number
   }
 }
 

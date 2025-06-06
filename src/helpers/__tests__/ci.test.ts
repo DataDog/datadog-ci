@@ -19,7 +19,8 @@ const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 const ciAppTagsToMetadata = (tags: SpanTags): Metadata => {
   const metadata: Metadata = {
     ci: {job: {}, pipeline: {}, provider: {}, stage: {}},
-    git: {commit: {author: {}, committer: {}}},
+    git: {commit: {author: {}, committer: {}}, pull_request: {}},
+    pr: {},
   }
 
   Object.entries(tags).forEach(([tag, value]) => {
@@ -56,6 +57,12 @@ const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => 
 
     if (tagKey === 'git.repository.url') {
       tagKey = 'git.repository_url'
+    } else if (tagKey === 'git.commit.head.sha') {
+      tagKey = 'git.commit.head_sha'
+    } else if (tagKey === 'git.pull.request.base.branch') {
+      tagKey = 'git.pull_request.base_branch'
+    } else if (tagKey === 'git.pull.request.base.branch.sha') {
+      tagKey = 'git.pull_request.base_branch_sha'
     } else if (tagKey === 'ci.workspace.path') {
       tagKey = 'ci.workspace_path'
     }
@@ -146,6 +153,9 @@ describe('getCIMetadata', () => {
       DD_GIT_COMMIT_SHA: 'DD_GIT_COMMIT_SHA',
       DD_GIT_REPOSITORY_URL: 'DD_GIT_REPOSITORY_URL',
       DD_GIT_TAG: 'DD_GIT_TAG',
+      DD_GIT_COMMIT_HEAD_SHA: 'DD_GIT_COMMIT_HEAD_SHA',
+      DD_GIT_PULL_REQUEST_BASE_BRANCH: 'DD_GIT_PULL_REQUEST_BASE_BRANCH',
+      DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA: 'DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA',
     }
 
     const expectedMetadata = ciAppTagsToMetadata(ddMetadataToSpanTags(DD_METADATA))
@@ -160,6 +170,7 @@ describe('getCIMetadata', () => {
       process.env = {...env, ...DD_METADATA}
       const ciMetadata = getCIMetadata()
       delete ciMetadata?.git.branch
+      delete ciMetadata?.pr.number
       expect(ciMetadata).toEqual(expectedMetadata)
     })
   })
