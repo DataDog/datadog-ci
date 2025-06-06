@@ -19,6 +19,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {
   GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
@@ -29,7 +30,7 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
 import {isGitRepo} from '../git-metadata'
-import {newSimpleGit, getGitDiff, DiffData} from '../git-metadata/git'
+import {newSimpleGit, getGitDiff, DiffData, getMergeBase} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
 import {apiUrl} from '../junit/api'
 
@@ -275,19 +276,39 @@ export class UploadCodeCoverageReportCommand extends Command {
       return undefined
     }
 
-    const baseCommit = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
-    const headCommit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
-    if (!baseCommit || !headCommit) {
-      return undefined
-    }
-
     try {
-      return await getGitDiff(await this.git, baseCommit, headCommit)
+      const pr = await this.getHeadAndBase(spanTags)
+      if (!pr.headSha || !pr.baseSha) {
+        return undefined
+      }
+
+      return await getGitDiff(await this.git, pr.baseSha, pr.headSha)
     } catch (e) {
       this.logger.debug(`Error while trying to calculate PR diff: ${e}`)
 
       return undefined
     }
+  }
+
+  private async getHeadAndBase(spanTags: SpanTags): Promise<{headSha?: string; baseSha?: string}> {
+    const headSha = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!headSha) {
+      return {}
+    }
+
+    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    if (baseSha) {
+      return {headSha, baseSha}
+    }
+
+    const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
+    if (baseBranch) {
+      const mergeBase = await getMergeBase(await this.git, baseBranch, headSha)
+
+      return {headSha, baseSha: mergeBase}
+    }
+
+    return {}
   }
 
   private async getCommitDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
