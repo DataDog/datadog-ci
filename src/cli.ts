@@ -4,7 +4,7 @@ import {Builtins, Cli, CommandClass} from 'clipanion'
 
 import {version} from './helpers/version'
 
-export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols']
+export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols', 'aas']
 
 const onError = (err: any) => {
   console.log(err)
