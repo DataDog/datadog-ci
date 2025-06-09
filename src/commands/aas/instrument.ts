@@ -1,10 +1,4 @@
-import {
-  EnvironmentVariable,
-  NameValuePair,
-  SiteConfigResource,
-  StringDictionary,
-  WebSiteManagementClient,
-} from '@azure/arm-appservice'
+import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
