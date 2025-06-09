@@ -4,6 +4,7 @@ import chalk from 'chalk'
 import {Command} from 'clipanion'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
+
 import {AasCommand, collect, equal, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
 
@@ -36,6 +37,7 @@ export class InstrumentCommand extends AasCommand {
           )} to authenticate.\n`
         )
       )
+
       return 1
     }
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
@@ -81,6 +83,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     if (config.logPath) {
       envVars.DD_SERVERLESS_LOG_PATH = config.logPath
     }
+
     return envVars
   }
 
@@ -88,9 +91,9 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    name: string
+    aasName: string
   ) {
-    const siteContainers = await collect(client.webApps.listSiteContainers(resourceGroup, name))
+    const siteContainers = await collect(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = this.getEnvVars(config)
     if (
@@ -108,7 +111,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
         )}\n`
       )
       if (!this.dryRun) {
-        await client.webApps.createOrUpdateSiteContainer(resourceGroup, name, SIDECAR_CONTAINER_NAME, {
+        await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
           image: SIDECAR_IMAGE,
           targetPort: SIDECAR_PORT,
           isMain: false,
@@ -122,12 +125,12 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
         )} already exists with correct configuration.\n`
       )
     }
-    const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, name)
+    const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
     if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
       if (!this.dryRun) {
-        await client.webApps.updateApplicationSettings(resourceGroup, name, updatedEnvVars)
+        await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
       }
     } else {
       this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)
