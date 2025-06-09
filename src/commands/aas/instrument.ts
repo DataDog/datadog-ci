@@ -1,8 +1,17 @@
-import {Command} from 'clipanion'
-import {AasCommand} from './common'
+import {
+  EnvironmentVariable,
+  NameValuePair,
+  SiteConfigResource,
+  StringDictionary,
+  WebSiteManagementClient,
+} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
-import {WebSiteManagementClient} from '@azure/arm-appservice'
+import chalk from 'chalk'
+import {Command} from 'clipanion'
+
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
+import {AasCommand, collect, equal, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
+import {AasConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -17,23 +26,117 @@ export class InstrumentCommand extends AasCommand {
       for (const error of errors) {
         this.context.stdout.write(renderError(error))
       }
+
+      return 1
+    }
+    const cred = new DefaultAzureCredential()
+    try {
+      await cred.getToken('https://management.azure.com/.default')
+    } catch (error) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Failed to authenticate with Azure: ${
+            error.name
+          }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
+            'az login'
+          )} to authenticate.\n`
+        )
+      )
       return 1
     }
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
-    const client = new WebSiteManagementClient(new DefaultAzureCredential(), config.subscriptionId)
-    const app = await client.webApps.get(config.resourceGroup, config.aasName)
-    if (app.kind && !app.kind.toLowerCase().includes('linux')) {
-        this.context.stdout.write(
-          renderSoftWarning(
-            `Only Linux-based Azure App Services are currently supported. 
+    const client = new WebSiteManagementClient(cred, config.subscriptionId)
+
+    const siteConfig = await client.webApps.getConfiguration(config.resourceGroup, config.aasName)
+    if (siteConfig.kind && !siteConfig.kind.toLowerCase().includes('linux')) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Only Linux-based Azure App Services are currently supported. 
 Please see the documentation for information on 
 how to instrument Windows-based App Services: 
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-          )
         )
-        return 1
+      )
+
+      return 1
     }
-    this.context.stdout.write(`Application: ${JSON.stringify(app, undefined, 2)}\n`)
+    try {
+      await this.instrumentSidecar(client, config, config.resourceGroup, config.aasName)
+    } catch (error) {
+      this.context.stdout.write(renderError(`Failed to instrument sidecar: ${error}`))
+
+      return 1
+    }
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumentation complete!\n`)
+
     return 0
+  }
+
+  private getEnvVars(config: AasConfigOptions): Record<string, string> {
+    const envVars: Record<string, string> = {
+      DD_API_KEY: process.env.DD_API_KEY!,
+      DD_SITE: process.env.DD_SITE ?? 'datadoghq.com',
+      DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
+    }
+    if (config.service) {
+      envVars.DD_SERVICE = config.service
+    }
+    if (config.environment) {
+      envVars.DD_ENV = config.environment
+    }
+    if (config.logPath) {
+      envVars.DD_SERVERLESS_LOG_PATH = config.logPath
+    }
+    return envVars
+  }
+
+  private async instrumentSidecar(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    name: string
+  ) {
+    const siteContainers = await collect(client.webApps.listSiteContainers(resourceGroup, name))
+    const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
+    const envVars = this.getEnvVars(config)
+    if (
+      sidecarContainer === undefined ||
+      sidecarContainer.image !== SIDECAR_IMAGE ||
+      sidecarContainer.targetPort !== SIDECAR_PORT ||
+      !equal(
+        Object.fromEntries(sidecarContainer.environmentVariables?.map(({name, value}) => [name, value]) ?? []),
+        envVars
+      )
+    ) {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
+          SIDECAR_CONTAINER_NAME
+        )}\n`
+      )
+      if (!this.dryRun) {
+        await client.webApps.createOrUpdateSiteContainer(resourceGroup, name, SIDECAR_CONTAINER_NAME, {
+          image: SIDECAR_IMAGE,
+          targetPort: SIDECAR_PORT,
+          isMain: false,
+          environmentVariables: Object.entries(envVars).map(([name, value]) => ({name, value})),
+        })
+      }
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}Sidecar container ${chalk.bold(
+          SIDECAR_CONTAINER_NAME
+        )} already exists with correct configuration.\n`
+      )
+    }
+    const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, name)
+    const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
+    if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
+      if (!this.dryRun) {
+        await client.webApps.updateApplicationSettings(resourceGroup, name, updatedEnvVars)
+      }
+    } else {
+      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)
+    }
   }
 }
