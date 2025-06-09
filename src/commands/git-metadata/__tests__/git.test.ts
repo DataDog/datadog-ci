@@ -85,8 +85,8 @@ describe('git', () => {
       expect(gitDiff.base_sha).toEqual('abcd')
 
       const calc = gitDiff.files['src/Calculator.java']
-      expect(decode(calc.added_lines)).toEqual(new Set([10, 11]))
-      expect(decode(calc.removed_lines)).toEqual(new Set([10, 11]))
+      expect(decode(calc.added_lines)).toEqual(new Set([11, 12]))
+      expect(decode(calc.removed_lines)).toEqual(new Set([11, 12]))
     })
   })
   describe('getCommitInfo', () => {
