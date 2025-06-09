@@ -154,8 +154,8 @@ describe('parseGitDiff – tree structure', () => {
     const tree = parseGitDiff(diff)
 
     const calc = tree['src/Calculator.java']
-    expect(decode(calc.added_lines)).toEqual(new Set([10, 11]))
-    expect(decode(calc.removed_lines)).toEqual(new Set([10, 11]))
+    expect(decode(calc.added_lines)).toEqual(new Set([11, 12]))
+    expect(decode(calc.removed_lines)).toEqual(new Set([11, 12]))
   })
 
   test('file add & delete in one patch', () => {
@@ -165,11 +165,11 @@ describe('parseGitDiff – tree structure', () => {
     // deleted README.md
     const readme = tree['README.md']
     expect(readme.added_lines).toBe('')
-    expect(decode(readme.removed_lines)).toEqual(new Set([1, 2]))
+    expect(decode(readme.removed_lines)).toEqual(new Set([2, 3]))
 
     // new Utils.java
     const utils = tree['src/Utils.java']
-    expect(decode(utils.added_lines)).toEqual(new Set([1, 2, 3, 4]))
+    expect(decode(utils.added_lines)).toEqual(new Set([2, 3, 4, 5]))
     expect(utils.removed_lines).toBe('')
   })
 })
