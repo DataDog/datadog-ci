@@ -16,6 +16,7 @@ export class InstrumentCommand extends AasCommand {
   })
 
   public async execute(): Promise<0 | 1> {
+    this.enableFips()
     const [config, errors] = await this.ensureConfig()
     if (errors.length > 0) {
       for (const error of errors) {
