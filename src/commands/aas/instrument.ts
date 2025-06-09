@@ -48,9 +48,9 @@ export class InstrumentCommand extends AasCommand {
     if (siteConfig.kind && !siteConfig.kind.toLowerCase().includes('linux')) {
       this.context.stdout.write(
         renderSoftWarning(
-          `Only Linux-based Azure App Services are currently supported. 
-Please see the documentation for information on 
-how to instrument Windows-based App Services: 
+          `Only Linux-based Azure App Services are currently supported.
+Please see the documentation for information on
+how to instrument Windows-based App Services:
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
         )
       )
