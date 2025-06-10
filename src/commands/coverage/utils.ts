@@ -75,5 +75,5 @@ export const getCoverageDetailsUrl = (spanTags: SpanTags): string => {
   const escapedPrNumber = encodeURIComponent(prNumber)
   const escapedRepoUrl = encodeURIComponent(repoUrl)
 
-  return `${getBaseUrl()}api/ui/code-coverage-api/redirect/pull-requests/${escapedPrNumber}?repository_url=${escapedRepoUrl}`
+  return `${getBaseUrl()}api/ui/code-coverage/redirect/pull-requests/${escapedPrNumber}?repository_url=${escapedRepoUrl}`
 }
