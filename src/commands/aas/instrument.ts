@@ -2,10 +2,11 @@ import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
+import equal from 'fast-deep-equal'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
-import {AasCommand, collect, equal, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
+import {AasCommand, collect, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends AasCommand {

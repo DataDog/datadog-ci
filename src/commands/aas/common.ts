@@ -105,10 +105,3 @@ export const collect = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]
 
   return arr
 }
-
-export const equal = (x: unknown, y: unknown): boolean => {
-  return x && y && typeof x === 'object' && typeof x === typeof y
-    ? Object.keys(x).length === Object.keys(y).length &&
-        Object.keys(x).every((key) => equal((x as Record<string, unknown>)[key], (y as Record<string, unknown>)[key]))
-    : x === y
-}
