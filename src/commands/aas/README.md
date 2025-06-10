@@ -27,14 +27,8 @@ Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Servi
 
 ```bash
 # Instrument a function by subscription ID, resource group, and app service name
-datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -w <app-service-name> -v 81 -e 49
-
-# Instrument multiple functions specified by full resource IDs
-datadog-ci aas instrument -f <lambda-arn> -f <another-lambda-arn> -f <a-third-lambda-arn> -v 81 -e 49
-
-# Instrument multiple functions that match a regex pattern
-datadog-ci aas instrument --functions-regex <valid-regex-pattern> -r us-east-1 -v 81 -e 49
+datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -w <app-service-name>
 
 # Dry run of all updates
-datadog-ci aas instrument -f <function-name> -f <another-function-name> -r us-east-1 -v 81 -e 49 --dry-run
+datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -w <app-service-name> --dry-run
 ```
