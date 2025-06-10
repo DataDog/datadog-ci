@@ -93,6 +93,7 @@ Updating Application Settings
         },
       })
     })
+
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([
         '-s',
