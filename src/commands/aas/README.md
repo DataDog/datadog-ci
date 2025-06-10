@@ -23,7 +23,7 @@ To instrument your App Services using the `datadog-ci aas instrument` command, f
 
 ### `instrument`
 
-Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds the Datadog Lambda Library and/or the Datadog Lambda Extension as Lambda Layers to the instrumented App Services and modifies their configurations.
+Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration.
 
 ```bash
 # Instrument a function by subscription ID, resource group, and app service name
