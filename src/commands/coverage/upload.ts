@@ -2,6 +2,7 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+import * as simpleGit from 'simple-git'
 import * as t from 'typanion'
 import upath from 'upath'
 
@@ -12,11 +13,13 @@ import {findFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {parsePathsList} from '../../helpers/glob'
-import {SpanTags} from '../../helpers/interfaces'
+import id from '../../helpers/id'
+import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {
   GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
@@ -24,8 +27,12 @@ import {
   parseTags,
 } from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
-import {newSimpleGit, getGitDiff, DiffData} from '../git-metadata/git'
+import {isGitRepo} from '../git-metadata'
+import {newSimpleGit, getGitDiff, DiffData, getMergeBase} from '../git-metadata/git'
+import {uploadToGitDB} from '../git-metadata/gitdb'
+import {apiUrl} from '../junit/api'
 
 import {apiConstructor, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
@@ -38,9 +45,13 @@ import {
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
+  renderFailedGitDBSync,
+  renderSuccessfulGitDBSync,
 } from './renderer'
 import {detectFormat, validateCoverageReport} from './utils'
 
+const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
+const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
@@ -112,6 +123,8 @@ export class UploadCodeCoverageReportCommand extends Command {
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
   private uploadGitDiff = Option.Boolean('--upload-git-diff', true)
+  private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', false)
+  private gitRepositoryURL = Option.String('--git-repository-url')
 
   private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
     validator: t.isBoolean(),
@@ -133,6 +146,13 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
+  private git: Promise<simpleGit.SimpleGit>
+
+  constructor() {
+    super()
+    this.git = newSimpleGit()
+  }
+
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
@@ -145,11 +165,44 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
+    if (!this.skipGitMetadataUpload) {
+      if (await isGitRepo()) {
+        const traceId = id()
+
+        const requestBuilder = getRequestBuilder({
+          baseUrl: apiUrl,
+          apiKey: this.config.apiKey!,
+          headers: new Map([
+            [TRACE_ID_HTTP_HEADER, traceId],
+            [PARENT_ID_HTTP_HEADER, traceId],
+          ]),
+        })
+        try {
+          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
+          let elapsed = 0
+          if (!this.dryRun) {
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          }
+          this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+        } catch (err) {
+          this.logger.info(renderFailedGitDBSync(err))
+        }
+      } else {
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
+      }
+    } else {
+      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
+    }
+
     await this.uploadCodeCoverageReports()
 
     if (!this.dryRun) {
       this.context.stdout.write(renderSuccessfulUploadCommand())
     }
+  }
+
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    await uploadToGitDB(this.logger, opts.requestBuilder, await this.git, this.dryRun, this.gitRepositoryURL)
   }
 
   private async uploadCodeCoverageReports() {
@@ -223,21 +276,39 @@ export class UploadCodeCoverageReportCommand extends Command {
       return undefined
     }
 
-    const baseCommit = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
-    const headCommit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
-    if (!baseCommit || !headCommit) {
-      return undefined
-    }
-
     try {
-      const git = await newSimpleGit()
+      const pr = await this.getHeadAndBase(spanTags)
+      if (!pr.headSha || !pr.baseSha) {
+        return undefined
+      }
 
-      return await getGitDiff(git, baseCommit, headCommit)
+      return await getGitDiff(await this.git, pr.baseSha, pr.headSha)
     } catch (e) {
       this.logger.debug(`Error while trying to calculate PR diff: ${e}`)
 
       return undefined
     }
+  }
+
+  private async getHeadAndBase(spanTags: SpanTags): Promise<{headSha?: string; baseSha?: string}> {
+    const headSha = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!headSha) {
+      return {}
+    }
+
+    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    if (baseSha) {
+      return {headSha, baseSha}
+    }
+
+    const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
+    if (baseBranch) {
+      const mergeBase = await getMergeBase(await this.git, baseBranch, headSha)
+
+      return {headSha, baseSha: mergeBase}
+    }
+
+    return {}
   }
 
   private async getCommitDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
@@ -251,9 +322,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
 
     try {
-      const git = await newSimpleGit()
-
-      return await getGitDiff(git, commit + '^', commit)
+      return await getGitDiff(await this.git, commit + '^', commit)
     } catch (e) {
       this.logger.debug(`Error while trying to calculate commit diff: ${e}`)
 

@@ -1883,12 +1883,14 @@ __metadata:
     "@types/async-retry": 1.4.8
     "@types/datadog-metrics": 0.6.1
     "@types/deep-extend": 0.4.31
+    "@types/get-value": ^3.0.5
     "@types/glob": 7.1.1
     "@types/inquirer": 8.2.6
     "@types/jest": 29.5.3
     "@types/js-yaml": ^4.0.5
     "@types/node": ^18.19.76
     "@types/semver": ^7.3.12
+    "@types/set-value": ^4.0.3
     "@types/ssh2": 1.11.6
     "@types/ssh2-streams": 0.1.9
     "@types/sshpk": 1.10.5
@@ -1922,6 +1924,7 @@ __metadata:
     fast-xml-parser: ^4.4.1
     form-data: 4.0.0
     fuzzy: ^0.1.3
+    get-value: ^4.0.1
     glob: ^10.4.5
     google-auth-library: ^9.12.0
     inquirer: ^8.2.5
@@ -1937,6 +1940,7 @@ __metadata:
     proxy-agent: ^6.4.0
     rimraf: ^5.0.0
     semver: ^7.5.3
+    set-value: ^4.1.0
     simple-git: 3.16.0
     ssh2: ^1.15.0
     ssh2-streams: 0.4.10
@@ -3465,6 +3469,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/get-value@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "@types/get-value@npm:3.0.5"
+  checksum: dd77252d3b31662cb76af745ababe07c113e8fc34d32fa9f4701fae802f5cecc8236760a59c3c5c6405ca14d11695cd3fb7f62227163e5d52a67e7ab46bb699a
+  languageName: node
+  linkType: hard
+
 "@types/glob@npm:7.1.1":
   version: 7.1.1
   resolution: "@types/glob@npm:7.1.1"
@@ -3606,6 +3617,13 @@ __metadata:
   version: 7.5.8
   resolution: "@types/semver@npm:7.5.8"
   checksum: ea6f5276f5b84c55921785a3a27a3cd37afee0111dfe2bcb3e03c31819c197c782598f17f0b150a69d453c9584cd14c4c4d7b9a55d2c5e6cacd4d66fdb3b3663
+  languageName: node
+  linkType: hard
+
+"@types/set-value@npm:^4.0.3":
+  version: 4.0.3
+  resolution: "@types/set-value@npm:4.0.3"
+  checksum: e7e45af27403d710d460ba7a1c4ba75fdeaa783ac7f8e1483f43273fd6feb27354d3dba92982a7f66021037e2f5383db6b799afb85b1cfc17c769648648843b5
   languageName: node
   linkType: hard
 
@@ -6402,6 +6420,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"get-value@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "get-value@npm:4.0.1"
+  checksum: 5096ba4c5aaffa22651180040eaa1ad7ea285ff7663d7a1c95a734323f82613cb3735deeaad06ab132a6d62acef25d5914fe8547caa4d515bf0f4d38d79d61d2
+  languageName: node
+  linkType: hard
+
 "getpass@npm:^0.1.1":
   version: 0.1.7
   resolution: "getpass@npm:0.1.7"
@@ -7074,6 +7099,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-plain-object@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "is-plain-object@npm:2.0.4"
+  dependencies:
+    isobject: ^3.0.1
+  checksum: 2a401140cfd86cabe25214956ae2cfee6fbd8186809555cd0e84574f88de7b17abacb2e477a6a658fa54c6083ecbda1e6ae404c7720244cd198903848fca70ca
+  languageName: node
+  linkType: hard
+
+"is-primitive@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "is-primitive@npm:3.0.1"
+  checksum: c4da6a6e6d487f31d85b9259b67695fffcc75dca6c9612b0a002e3050c734227b9911be09b877539ec6309710229c19f4edd0f9e26ed2a67924ee0916baf0bed
+  languageName: node
+  linkType: hard
+
 "is-regex@npm:^1.1.4":
   version: 1.1.4
   resolution: "is-regex@npm:1.1.4"
@@ -7168,6 +7209,13 @@ __metadata:
   version: 3.1.1
   resolution: "isexe@npm:3.1.1"
   checksum: 7fe1931ee4e88eb5aa524cd3ceb8c882537bc3a81b02e438b240e47012eef49c86904d0f0e593ea7c3a9996d18d0f1f3be8d3eaa92333977b0c3a9d353d5563e
+  languageName: node
+  linkType: hard
+
+"isobject@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "isobject@npm:3.0.1"
+  checksum: db85c4c970ce30693676487cca0e61da2ca34e8d4967c2e1309143ff910c207133a969f9e4ddb2dc6aba670aabce4e0e307146c310350b298e74a31f7d464703
   languageName: node
   linkType: hard
 
@@ -9573,6 +9621,16 @@ jschardet@latest:
     functions-have-names: ^1.2.3
     has-property-descriptors: ^1.0.2
   checksum: d6229a71527fd0404399fc6227e0ff0652800362510822a291925c9d7b48a1ca1a468b11b281471c34cd5a2da0db4f5d7ff315a61d26655e77f6e971e6d0c80f
+  languageName: node
+  linkType: hard
+
+"set-value@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "set-value@npm:4.1.0"
+  dependencies:
+    is-plain-object: ^2.0.4
+    is-primitive: ^3.0.1
+  checksum: 2b4f0f222538ae4c1f4171a5014c113649631c86ed81d1ac0c2df406d0a974d8006412ce1d7844c531268f1c66eb912f7eae7245ab3114e34357f1ff9d6dc697
   languageName: node
   linkType: hard
 

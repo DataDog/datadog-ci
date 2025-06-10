@@ -294,9 +294,11 @@ describe('execute', () => {
     const output = context.stdout.toString().split('\n')
     const path = `${CWD}/src/commands/coverage/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
-    expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
-    expect(output[1]).toContain('Starting upload')
-    expect(output[2]).toContain(`Will upload code coverage report file ${path}`)
+    expect(output[0]).toContain('[DRYRUN] Syncing git metadata...')
+    // output[1] is "Synced git metadata in XXX seconds"
+    expect(output[2]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
+    expect(output[3]).toContain('Starting upload')
+    expect(output[4]).toContain(`Will upload code coverage report file ${path}`)
   })
 })
 
@@ -305,7 +307,9 @@ interface ExpectedOutput {
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
-  expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
-  expect(output[1]).toContain(`Starting upload`)
-  expect(output[2]).toContain(`Will look for code coverage report files in ${expected.basePaths.join(', ')}`)
+  expect(output[0]).toContain('[DRYRUN] Syncing git metadata...')
+  // output[1] is "Synced git metadata in XXX seconds"
+  expect(output[2]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
+  expect(output[3]).toContain(`Starting upload`)
+  expect(output[4]).toContain(`Will look for code coverage report files in ${expected.basePaths.join(', ')}`)
 }

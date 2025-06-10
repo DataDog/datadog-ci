@@ -1,6 +1,7 @@
 import {URL} from 'url'
 
 import * as simpleGit from 'simple-git'
+import {GitConfigScope} from 'simple-git'
 
 import {gitRemote} from '../../helpers/git/get-git-data'
 
@@ -8,14 +9,25 @@ import {CommitInfo} from './interfaces'
 
 // Returns a configured SimpleGit.
 export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
+  const currentDir = process.cwd()
   const options = {
-    baseDir: process.cwd(),
+    baseDir: currentDir,
     binary: 'git',
     maxConcurrentProcesses: 1,
   }
+
+  const git = simpleGit.simpleGit(options)
+
+  try {
+    // In some CI envs repo may be checked out as a different user than the one running the command.
+    // To be able to run git commands, we need to add the current directory as a safe directory.
+    await git.addConfig('safe.directory', currentDir, true, GitConfigScope.global)
+  } catch (e) {
+    // Ignore the error
+  }
+
   // Attempt to set the baseDir to the root of the repository so the 'git ls-files' command
   // returns the tracked files paths relative to the root of the repository.
-  const git = simpleGit.simpleGit(options)
   const root = await git.revparse('--show-toplevel')
   options.baseDir = root
 
@@ -61,6 +73,12 @@ export const getCommitInfo = async (git: simpleGit.SimpleGit, repositoryURL?: st
   }
 
   return new CommitInfo(hash, remote, trackedFiles)
+}
+
+export const getMergeBase = async (git: simpleGit.SimpleGit, target: string, source: string): Promise<string> => {
+  const result = await git.raw(['merge-base', target, source])
+
+  return result.trim()
 }
 
 export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: string): Promise<DiffData> => {
@@ -160,9 +178,8 @@ const base64Encode = (set: Set<number>): string => {
   }
   const bytes = new Uint8Array(Math.ceil(maxBit / 8))
   for (const n of set) {
-    const idx = n - 1
     // eslint-disable-next-line no-bitwise
-    bytes[idx >> 3] |= 1 << (idx & 7)
+    bytes[n >> 3] |= 1 << (n & 7)
   }
 
   return Buffer.from(bytes).toString('base64')
