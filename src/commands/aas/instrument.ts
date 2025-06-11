@@ -106,7 +106,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       sidecarContainer.image !== SIDECAR_IMAGE ||
       sidecarContainer.targetPort !== SIDECAR_PORT ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
-      equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
+      !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
     ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
