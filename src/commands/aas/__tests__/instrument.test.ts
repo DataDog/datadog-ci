@@ -31,11 +31,21 @@ jest.mock('@azure/arm-appservice', () => ({
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
+import {AasConfigOptions} from '../interfaces'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
     yield item
   }
+}
+const DEFAULT_CONFIG: AasConfigOptions = {
+  subscriptionId: '00000000-0000-0000-0000-000000000000',
+  resourceGroup: 'my-resource-group',
+  aasName: 'my-web-app',
+  service: undefined,
+  environment: undefined,
+  isInstanceLoggingEnabled: false,
+  logPath: undefined,
 }
 
 describe('aas instrument', () => {
@@ -258,6 +268,94 @@ Creating sidecar container datadog-sidecar
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
+    })
+  })
+  describe('getEnvVars', () => {
+    let command: InstrumentCommand
+    let originalEnv: NodeJS.ProcessEnv
+    beforeAll(() => {
+      originalEnv = {...process.env}
+    })
+
+    beforeEach(() => {
+      command = new InstrumentCommand()
+      process.env.DD_API_KEY = 'test-api-key'
+      delete process.env.DD_SITE
+    })
+
+    afterEach(() => {
+      delete process.env.DD_API_KEY
+      delete process.env.DD_SITE
+    })
+
+    afterAll(() => {
+      process.env = originalEnv
+    })
+
+    test('returns required env vars with default DD_SITE', () => {
+      const envVars = command.getEnvVars(DEFAULT_CONFIG)
+      expect(envVars).toEqual({
+        DD_API_KEY: 'test-api-key',
+        DD_SITE: 'datadoghq.com',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+      })
+    })
+
+    test('uses DD_SITE from environment if set', () => {
+      process.env.DD_SITE = 'datadoghq.eu'
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        isInstanceLoggingEnabled: true,
+      }
+      const envVars = command.getEnvVars(config)
+      expect(envVars.DD_SITE).toEqual('datadoghq.eu')
+      expect(envVars.DD_AAS_INSTANCE_LOGGING_ENABLED).toEqual('true')
+    })
+
+    test('includes DD_SERVICE if provided in config', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        service: 'my-service',
+      }
+      const envVars = command.getEnvVars(config)
+      expect(envVars.DD_SERVICE).toEqual('my-service')
+    })
+
+    test('includes DD_ENV if provided in config', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        isInstanceLoggingEnabled: false,
+        environment: 'prod',
+      }
+      const envVars = command.getEnvVars(config)
+      expect(envVars.DD_ENV).toEqual('prod')
+    })
+
+    test('includes DD_SERVERLESS_LOG_PATH if provided in config', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        isInstanceLoggingEnabled: false,
+        logPath: '/tmp/logs',
+      }
+      const envVars = command.getEnvVars(config)
+      expect(envVars.DD_SERVERLESS_LOG_PATH).toEqual('/tmp/logs')
+    })
+
+    test('includes all optional vars if provided', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        isInstanceLoggingEnabled: true,
+        service: 'svc',
+        environment: 'dev',
+        logPath: '/var/log',
+      }
+      const envVars = command.getEnvVars(config)
+      expect(envVars).toMatchObject({
+        DD_SERVICE: 'svc',
+        DD_ENV: 'dev',
+        DD_SERVERLESS_LOG_PATH: '/var/log',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
+      })
     })
   })
 })
