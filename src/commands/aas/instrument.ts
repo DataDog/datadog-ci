@@ -1,7 +1,7 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
+import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
@@ -14,6 +14,10 @@ export class InstrumentCommand extends AasCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Apply Datadog instrumentation to an Azure App Service.',
+  })
+
+  private shouldNotRestart = Option.Boolean('--no-restart', false, {
+    description: 'Do not restart the App Service after applying instrumentation',
   })
 
   public async execute(): Promise<0 | 1> {
@@ -65,6 +69,20 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 
       return 1
     }
+
+    if (!this.shouldNotRestart) {
+      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service\n`)
+      if (!this.dryRun) {
+        try {
+          await client.webApps.restart(config.resourceGroup, config.aasName)
+        } catch (error) {
+          this.context.stdout.write(renderError(`Failed to restart Azure App Service: ${error}`))
+
+          return 1
+        }
+      }
+    }
+
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumentation complete!\n`)
 
     return 0

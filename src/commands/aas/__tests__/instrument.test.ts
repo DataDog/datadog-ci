@@ -19,6 +19,7 @@ const webAppsOperations = {
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
   updateApplicationSettings: jest.fn(),
+  restart: jest.fn(),
 }
 
 jest.mock('@azure/arm-appservice', () => ({
@@ -49,6 +50,7 @@ describe('aas instrument', () => {
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
+      webAppsOperations.restart.mockReset().mockResolvedValue({})
     })
 
     test('Adds a sidecar and updates the application settings', async () => {
@@ -59,6 +61,78 @@ describe('aas instrument', () => {
         'my-resource-group',
         '-n',
         'my-web-app',
+      ])
+      expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
+Creating sidecar container datadog-sidecar
+Updating Application Settings
+Restarting Azure App Service
+🐶 Instrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar',
+        {
+          environmentVariables: [
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ],
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          isMain: false,
+          targetPort: '8126',
+        }
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_API_KEY: 'PLACEHOLDER',
+          DD_SITE: 'datadoghq.com',
+        },
+      })
+      expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
+
+    test('Performs no actions in dry run mode', async () => {
+      const {code, context} = await runCLI([
+        '-s',
+        '00000000-0000-0000-0000-000000000000',
+        '-g',
+        'my-resource-group',
+        '-n',
+        'my-web-app',
+        '--dry-run',
+      ])
+      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Instrumenting Azure App Service
+[Dry Run] Creating sidecar container datadog-sidecar
+[Dry Run] Updating Application Settings
+[Dry Run] Restarting Azure App Service
+[Dry Run] 🐶 Instrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
+    })
+
+    test('Does not restart when specified', async () => {
+      const {code, context} = await runCLI([
+        '-s',
+        '00000000-0000-0000-0000-000000000000',
+        '-g',
+        'my-resource-group',
+        '-n',
+        'my-web-app',
+        '--no-restart',
       ])
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 Creating sidecar container datadog-sidecar
@@ -92,30 +166,7 @@ Updating Application Settings
           DD_SITE: 'datadoghq.com',
         },
       })
-    })
-
-    test('Performs no actions in dry run mode', async () => {
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-        '--dry-run',
-      ])
-      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Instrumenting Azure App Service
-[Dry Run] Creating sidecar container datadog-sidecar
-[Dry Run] Updating Application Settings
-[Dry Run] 🐶 Instrumentation complete!
-`)
-      expect(code).toEqual(0)
-      expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
-      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -142,6 +193,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
     test('Warns and exits if App Service is not Linux', async () => {
@@ -167,6 +219,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
     test('Handles errors during sidecar instrumentation', async () => {
@@ -201,9 +254,10 @@ Creating sidecar container datadog-sidecar
           targetPort: '8126',
         }
       )
-      // the last two operations never get called due to the above failure
+      // the last operations never get called due to the above failure
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
   })
 })
