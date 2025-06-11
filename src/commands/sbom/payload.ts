@@ -160,13 +160,16 @@ export const generatePayload = (
           continue
         }
         const affects: Affect[] = []
-        for (const affected of vulnerability['affects']) {
-          if (!affected['ref']) {
-            continue
+        // Iterate over the affects of the vulnerability when it exists
+        if (vulnerability['affects']) {
+          for (const affected of vulnerability['affects']) {
+            if (!affected['ref']) {
+              continue
+            }
+            affects.push({
+              ref: affected['ref'],
+            })
           }
-          affects.push({
-            ref: affected['ref'],
-          })
         }
         vulnerabilities.push({
           id: vulnerability['id'],

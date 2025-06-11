@@ -500,12 +500,15 @@ describe('generation of payload', () => {
       '[{"file_name":"src/main/java/com/example/InsecureDeserializationExample.java","line_start":41,"line_end":41,"column_start":58,"column_end":88,"symbol":"CodebaseAwareObjectInputStream"}]'
     )
 
-    expect(payload?.vulnerabilities.length).toStrictEqual(1)
+    expect(payload?.vulnerabilities.length).toStrictEqual(2)
     const vulnerabilities = payload!.vulnerabilities
     expect(vulnerabilities[0].id).toEqual('GHSA-4wrc-f8pq-fpqp')
     expect(vulnerabilities[0].bom_ref).toEqual('GHSA-4wrc-f8pq-fpqp')
     expect(vulnerabilities[0].affects).toHaveLength(1)
     expect(vulnerabilities[0].affects[0].ref).toEqual('pkg:maven/org.springframework/spring-web@5.3.30')
+    expect(vulnerabilities[1].id).toEqual('GHSA-4jrv-ppp4-jm57')
+    expect(vulnerabilities[1].bom_ref).toEqual('GHSA-4jrv-ppp4-jm57')
+    expect(vulnerabilities[1].affects).toHaveLength(0)
   })
 
   test('should fail to read git information', async () => {
