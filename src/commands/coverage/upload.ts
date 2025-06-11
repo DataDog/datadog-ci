@@ -2,11 +2,7 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-<<<<<<< Updated upstream
 import * as simpleGit from 'simple-git'
-import * as t from 'typanion'
-=======
->>>>>>> Stashed changes
 import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
@@ -33,7 +29,7 @@ import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
 import {isGitRepo} from '../git-metadata'
-import {newSimpleGit, getGitDiff, DiffData, getMergeBase} from '../git-metadata/git'
+import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '../git-metadata/git'
 import {uploadToGitDB} from '../git-metadata/gitdb'
 import {apiUrl} from '../junit/api'
 
@@ -42,14 +38,14 @@ import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
+  renderFailedGitDBSync,
   renderFailedUpload,
   renderInvalidFile,
   renderRetriedUpload,
+  renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
-  renderFailedGitDBSync,
-  renderSuccessfulGitDBSync,
 } from './renderer'
 import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from './utils'
 
@@ -147,7 +143,14 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
-<<<<<<< Updated upstream
+    if (this.format && !isCoverageFormat(this.format)) {
+      this.context.stderr.write(
+        `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
+      )
+
+      return 1
+    }
+
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
         const traceId = id()
@@ -175,14 +178,6 @@ export class UploadCodeCoverageReportCommand extends Command {
       }
     } else {
       this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
-=======
-    if (this.format && !isCoverageFormat(this.format)) {
-      this.context.stderr.write(
-        `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
-      )
-
-      return 1
->>>>>>> Stashed changes
     }
 
     await this.uploadCodeCoverageReports()
