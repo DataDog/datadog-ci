@@ -1,9 +1,26 @@
-import {exec} from 'child_process'
-import {promisify} from 'util'
+import child_process from 'node:child_process'
 
 import {version} from '../package.json'
 
-const execPromise = promisify(exec)
+const execPromise = async (command: string): Promise<{exitCode: number; stdout: string; stderr: string}> => {
+  return new Promise((resolve) => {
+    child_process.exec(command, (error, stdout, stderr) => {
+      if (error) {
+        resolve({
+          exitCode: error.code || 1,
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+        })
+      } else {
+        resolve({
+          exitCode: 0,
+          stdout: stdout.trim(),
+          stderr: stderr.trim(),
+        })
+      }
+    })
+  })
+}
 
 const isWin = process.platform === 'win32'
 const os = isWin ? 'win' : process.platform === 'darwin' ? 'darwin' : 'linux'
@@ -13,8 +30,6 @@ const arch = isARM ? 'arm64' : 'x64'
 
 const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
 const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isWin ? '.exe' : ''}`
-
-const sanitizeOutput = (output: string) => output.replace(/(\r\n|\n|\r)/gm, '')
 
 const timeoutPerPlatform: Record<typeof os, number> = {
   // Some macOS agents sometimes run slower, making this test suite flaky on macOS only.
@@ -31,71 +46,98 @@ describe('standalone binary', () => {
 
   describe('version', () => {
     it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} version`)
-      const binaryVersion = sanitizeOutput(stdout)
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} version`)
       // .slice(1) to remove the "v"
-      expect(binaryVersion.slice(1)).toEqual(version)
+      expect(result.stdout.slice(1)).toStrictEqual(version)
     })
   })
   describe('dsyms', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} dsyms upload --help`)
-      const dsymsHelpText = sanitizeOutput(stdout)
-      expect(dsymsHelpText).toContain('datadog-ci dsyms upload')
+    it('upload can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} dsyms upload --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci dsyms upload') as string,
+        stderr: '',
+      })
     })
   })
   describe('git-metadata', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} git-metadata upload --help`)
-      const gitMetadataHelpText = sanitizeOutput(stdout)
-      expect(gitMetadataHelpText).toContain('datadog-ci git-metadata upload')
+    it('upload can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} git-metadata upload --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci git-metadata upload') as string,
+        stderr: '',
+      })
     })
   })
   describe('junit', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} junit upload --help`)
-      const junitHelpText = sanitizeOutput(stdout)
-      expect(junitHelpText).toContain('datadog-ci junit upload')
+    it('upload can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} junit upload --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci junit upload') as string,
+        stderr: '',
+      })
     })
   })
   describe('lambda', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} lambda instrument --help`)
-      const lambdaHelpText = sanitizeOutput(stdout)
-      expect(lambdaHelpText).toContain('datadog-ci lambda instrument')
+    it('instrument can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} lambda instrument --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci lambda instrument') as string,
+        stderr: '',
+      })
     })
   })
   describe('sourcemaps', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} sourcemaps upload --help`)
-      const sourceMapsHelpText = sanitizeOutput(stdout)
-      expect(sourceMapsHelpText).toContain('datadog-ci sourcemaps upload')
+    it('upload can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} sourcemaps upload --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci sourcemaps upload') as string,
+        stderr: '',
+      })
     })
   })
   describe('stepfunctions', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions instrument --help`)
-      const stepFunctionsHelpText = sanitizeOutput(stdout)
-      expect(stepFunctionsHelpText).toContain('datadog-ci stepfunctions instrument')
+    it('instrument can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions instrument --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci stepfunctions instrument') as string,
+        stderr: '',
+      })
     })
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions uninstrument --help`)
-      const stepFunctionsHelpText = sanitizeOutput(stdout)
-      expect(stepFunctionsHelpText).toContain('datadog-ci stepfunctions uninstrument')
+
+    it('uninstrument can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} stepfunctions uninstrument --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci stepfunctions uninstrument') as string,
+        stderr: '',
+      })
     })
   })
   describe('synthetics', () => {
-    it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)
-      const syntheticsHelpText = sanitizeOutput(stdout)
-      expect(syntheticsHelpText).toContain('datadog-ci synthetics run-tests')
+    it('run-tests can be called', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} synthetics run-tests --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci synthetics run-tests') as string,
+        stderr: '',
+      })
     })
   })
   describe('trace', () => {
     it('can be called', async () => {
-      const {stdout} = await execPromise(`${STANDALONE_BINARY_PATH} trace --help`)
-      const traceHelpText = sanitizeOutput(stdout)
-      expect(traceHelpText).toContain('datadog-ci trace')
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} trace --help`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('datadog-ci trace') as string,
+        stderr: '',
+      })
     })
   })
 })

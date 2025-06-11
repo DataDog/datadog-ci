@@ -11,10 +11,10 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:jest/recommended',
   ],
-  ignorePatterns: ['.eslintrc.js', 'jest.config.js'],
+  ignorePatterns: ['.eslintrc.js', 'jest.config*.js'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
-    project: 'tsconfig.json',
+    project: true,
     sourceType: 'module',
   },
   plugins: ['@typescript-eslint', 'import', 'jest', 'no-null', 'prefer-arrow'],

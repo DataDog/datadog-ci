@@ -4,7 +4,7 @@ module.exports = {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
-        tsconfig: 'tsconfig.json',
+        tsconfig: 'standalone-e2e/tsconfig.json',
       },
     ],
   },
