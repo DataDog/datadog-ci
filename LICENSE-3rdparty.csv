@@ -18,12 +18,14 @@ Component,Origin,Licence,Copyright
 @types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
+@types/get-value,dev,MIT,Copyright Microsoft Corporation
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
 @types/semver,dev,MIT,Copyright Microsoft Corporation
+@types/set-value,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
@@ -45,6 +47,7 @@ fast-levenshtein,import,MIT,Copyright (c) 2013 Ramesh Nair
 fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 fuzzy,import,MIT,Copyright (c) 2012 Matt York
+get-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
@@ -58,6 +61,7 @@ proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
+set-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
 ssh2-streams,import,MIT,Copyright (c) 2014 Brian White

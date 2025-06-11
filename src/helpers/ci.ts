@@ -24,7 +24,6 @@ import {
   GIT_SHA,
   GIT_TAG,
   GIT_HEAD_SHA,
-  GIT_BASE_REF,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   PR_NUMBER,
@@ -110,6 +109,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       DRONE_COMMIT_AUTHOR_NAME,
       DRONE_COMMIT_AUTHOR_EMAIL,
       DRONE_COMMIT_MESSAGE,
+      DRONE_PULL_REQUEST,
+      DRONE_TARGET_BRANCH,
     } = env
     tags = {
       [CI_PROVIDER_NAME]: 'drone',
@@ -126,6 +127,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_AUTHOR_EMAIL]: DRONE_COMMIT_AUTHOR_EMAIL,
       [GIT_COMMIT_MESSAGE]: DRONE_COMMIT_MESSAGE,
     }
+
+    if (DRONE_PULL_REQUEST) {
+      tags[PR_NUMBER] = DRONE_PULL_REQUEST
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = DRONE_TARGET_BRANCH
+    }
   }
 
   if (env.CIRCLECI) {
@@ -140,6 +146,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CIRCLE_SHA1,
       CIRCLE_REPOSITORY_URL,
       CIRCLE_JOB,
+      CIRCLE_PR_NUMBER,
+      CIRCLE_PULL_REQUEST,
     } = env
 
     const pipelineUrl = `https://app.circleci.com/pipelines/workflows/${CIRCLE_WORKFLOW_ID}`
@@ -162,6 +170,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
         CIRCLE_BUILD_NUM,
       }),
     }
+
+    if (CIRCLE_PR_NUMBER || CIRCLE_PULL_REQUEST) {
+      tags[PR_NUMBER] = CIRCLE_PR_NUMBER || CIRCLE_PULL_REQUEST?.split('/').pop()
+    }
   }
 
   if (env.TRAVIS) {
@@ -177,6 +189,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       TRAVIS_BUILD_WEB_URL,
       TRAVIS_BUILD_DIR,
       TRAVIS_COMMIT_MESSAGE,
+      TRAVIS_EVENT_TYPE,
+      TRAVIS_PULL_REQUEST,
+      TRAVIS_PULL_REQUEST_SHA,
     } = env
     tags = {
       [CI_JOB_URL]: TRAVIS_JOB_WEB_URL,
@@ -191,6 +206,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_BRANCH]: TRAVIS_PULL_REQUEST_BRANCH || TRAVIS_BRANCH,
       [GIT_REPOSITORY_URL]: `https://github.com/${TRAVIS_REPO_SLUG}.git`,
       [GIT_COMMIT_MESSAGE]: TRAVIS_COMMIT_MESSAGE,
+    }
+
+    if (TRAVIS_EVENT_TYPE === 'pull_request') {
+      tags[PR_NUMBER] = TRAVIS_PULL_REQUEST
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = normalizeRef(TRAVIS_BRANCH)
+      tags[GIT_HEAD_SHA] = TRAVIS_PULL_REQUEST_SHA
     }
   }
 
@@ -215,6 +236,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_PROJECT_URL: GITLAB_CI_PROJECT_URL,
       CI_RUNNER_ID,
       CI_RUNNER_TAGS,
+      CI_MERGE_REQUEST_IID,
+      CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
+      CI_MERGE_REQUEST_SOURCE_BRANCH_SHA,
     } = env
 
     const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
@@ -245,6 +269,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
       }),
       [CI_NODE_LABELS]: CI_RUNNER_TAGS,
       [CI_NODE_NAME]: CI_RUNNER_ID,
+    }
+
+    if (CI_MERGE_REQUEST_IID) {
+      tags[PR_NUMBER] = CI_MERGE_REQUEST_IID
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      tags[GIT_HEAD_SHA] = CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
     }
   }
 
@@ -298,7 +328,6 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     if (GITHUB_BASE_REF) {
       // GITHUB_BASE_REF is defined if it's a pull_request or pull_request_target trigger
-      tags[GIT_BASE_REF] = GITHUB_BASE_REF
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = GITHUB_BASE_REF
       try {
         const eventPayload = getGitHubEventPayload()
@@ -326,6 +355,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       DD_CUSTOM_PARENT_ID,
       NODE_NAME,
       NODE_LABELS,
+      CHANGE_ID,
+      CHANGE_TARGET,
     } = env
 
     tags = {
@@ -366,6 +397,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
       }
       tags[CI_PIPELINE_NAME] = finalPipelineName
     }
+
+    if (CHANGE_ID) {
+      tags[PR_NUMBER] = CHANGE_ID
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = CHANGE_TARGET
+    }
   }
 
   if (env.BUILDKITE) {
@@ -384,6 +420,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUILDKITE_BUILD_AUTHOR,
       BUILDKITE_BUILD_AUTHOR_EMAIL,
       BUILDKITE_MESSAGE,
+      BUILDKITE_PULL_REQUEST,
+      BUILDKITE_PULL_REQUEST_BASE_BRANCH,
     } = env
 
     const extraTags = Object.keys(env)
@@ -418,6 +456,11 @@ export const getCISpanTags = (): SpanTags | undefined => {
     if (extraTags.length) {
       tags[CI_NODE_LABELS] = JSON.stringify(extraTags)
     }
+
+    if (BUILDKITE_PULL_REQUEST && BUILDKITE_PULL_REQUEST !== 'false') {
+      tags[PR_NUMBER] = BUILDKITE_PULL_REQUEST
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = BUILDKITE_PULL_REQUEST_BASE_BRANCH
+    }
   }
 
   if (env.BITRISE_BUILD_SLUG) {
@@ -434,6 +477,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       GIT_REPOSITORY_URL: BITRISE_GIT_REPOSITORY_URL,
       BITRISE_GIT_TAG,
       BITRISE_GIT_MESSAGE,
+      BITRISE_PULL_REQUEST,
     } = env
 
     tags = {
@@ -446,8 +490,13 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_REPOSITORY_URL]: BITRISE_GIT_REPOSITORY_URL,
       [CI_WORKSPACE_PATH]: BITRISE_SOURCE_DIR,
       [GIT_TAG]: BITRISE_GIT_TAG,
-      [GIT_BRANCH]: BITRISEIO_GIT_BRANCH_DEST || BITRISE_GIT_BRANCH,
+      [GIT_BRANCH]: BITRISE_GIT_BRANCH,
       [GIT_COMMIT_MESSAGE]: BITRISE_GIT_MESSAGE,
+    }
+
+    if (BITRISE_PULL_REQUEST) {
+      tags[PR_NUMBER] = BITRISE_PULL_REQUEST
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = BITRISEIO_GIT_BRANCH_DEST
     }
   }
 
@@ -461,6 +510,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BITBUCKET_GIT_HTTP_ORIGIN,
       BITBUCKET_TAG,
       BITBUCKET_PIPELINE_UUID,
+      BITBUCKET_PR_ID,
+      BITBUCKET_PR_DESTINATION_BRANCH,
       BITBUCKET_CLONE_DIR,
     } = env
 
@@ -479,10 +530,24 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_WORKSPACE_PATH]: BITBUCKET_CLONE_DIR,
       [CI_PIPELINE_ID]: BITBUCKET_PIPELINE_UUID && BITBUCKET_PIPELINE_UUID.replace(/{|}/gm, ''),
     }
+
+    if (BITBUCKET_PR_ID) {
+      tags[PR_NUMBER] = BITBUCKET_PR_ID
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = BITBUCKET_PR_DESTINATION_BRANCH
+    }
   }
 
   if (env.CF_BUILD_ID) {
-    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
+    const {
+      CF_BUILD_ID,
+      CF_PIPELINE_NAME,
+      CF_BUILD_URL,
+      CF_STEP_NAME,
+      CF_BRANCH,
+      CF_PULL_REQUEST_ID,
+      CF_PULL_REQUEST_NUMBER,
+      CF_PULL_REQUEST_TARGET,
+    } = env
 
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.CODEFRESH,
@@ -493,15 +558,31 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_BRANCH]: CF_BRANCH,
       [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
     }
+
+    const isTag = CF_BRANCH && CF_BRANCH.includes('tags/')
+    const refKey = isTag ? GIT_TAG : GIT_BRANCH
+    const ref = normalizeRef(CF_BRANCH)
+
+    tags[refKey] = ref
+
+    if (CF_PULL_REQUEST_NUMBER || CF_PULL_REQUEST_ID) {
+      tags[PR_NUMBER] = CF_PULL_REQUEST_NUMBER || CF_PULL_REQUEST_ID
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = CF_PULL_REQUEST_TARGET
+    }
   }
 
   if (env.TEAMCITY_VERSION) {
-    const {BUILD_URL, TEAMCITY_BUILDCONF_NAME} = env
+    const {BUILD_URL, TEAMCITY_BUILDCONF_NAME, TEAMCITY_PULLREQUEST_NUMBER, TEAMCITY_PULLREQUEST_TARGET_BRANCH} = env
 
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.TEAMCITY,
       [CI_JOB_URL]: BUILD_URL,
       [CI_JOB_NAME]: TEAMCITY_BUILDCONF_NAME,
+    }
+
+    if (TEAMCITY_PULLREQUEST_NUMBER) {
+      tags[PR_NUMBER] = TEAMCITY_PULLREQUEST_NUMBER
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = TEAMCITY_PULLREQUEST_TARGET_BRANCH
     }
   }
 
@@ -517,8 +598,10 @@ export const getCISpanTags = (): SpanTags | undefined => {
       SYSTEM_PULLREQUEST_SOURCEBRANCH,
       BUILD_SOURCEBRANCH,
       BUILD_SOURCEBRANCHNAME,
+      SYSTEM_PULLREQUEST_PULLREQUESTNUMBER,
       SYSTEM_PULLREQUEST_SOURCECOMMITID,
       SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI,
+      SYSTEM_PULLREQUEST_TARGETBRANCH,
       BUILD_REPOSITORY_URI,
       BUILD_SOURCEVERSION,
       BUILD_REQUESTEDFORID,
@@ -560,6 +643,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
         [CI_JOB_URL]: jobUrl,
       }
     }
+
+    if (SYSTEM_PULLREQUEST_PULLREQUESTNUMBER) {
+      tags[PR_NUMBER] = SYSTEM_PULLREQUEST_PULLREQUESTNUMBER
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = SYSTEM_PULLREQUEST_TARGETBRANCH?.replace('refs/heads/', '')
+      tags[GIT_HEAD_SHA] = SYSTEM_PULLREQUEST_SOURCECOMMITID
+    }
   }
 
   if (env.APPVEYOR) {
@@ -570,7 +659,9 @@ export const getCISpanTags = (): SpanTags | undefined => {
       APPVEYOR_BUILD_ID,
       APPVEYOR_BUILD_NUMBER,
       APPVEYOR_REPO_COMMIT,
+      APPVEYOR_PULL_REQUEST_HEAD_COMMIT,
       APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH,
+      APPVEYOR_PULL_REQUEST_NUMBER,
       APPVEYOR_REPO_BRANCH,
       APPVEYOR_REPO_TAG_NAME,
       APPVEYOR_REPO_COMMIT_AUTHOR,
@@ -603,6 +694,12 @@ export const getCISpanTags = (): SpanTags | undefined => {
         [GIT_BRANCH]: APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH || APPVEYOR_REPO_BRANCH,
       }
     }
+
+    if (APPVEYOR_PULL_REQUEST_HEAD_REPO_BRANCH) {
+      tags[PR_NUMBER] = APPVEYOR_PULL_REQUEST_NUMBER
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = normalizeRef(APPVEYOR_REPO_BRANCH)
+      tags[GIT_HEAD_SHA] = APPVEYOR_PULL_REQUEST_HEAD_COMMIT
+    }
   }
 
   if (env.BUDDY) {
@@ -618,6 +715,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       BUDDY_EXECUTION_REVISION_MESSAGE,
       BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
       BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
+      BUDDY_RUN_PR_NO,
+      BUDDY_RUN_PR_BASE_BRANCH,
     } = env
 
     tags = {
@@ -634,32 +733,34 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_COMMITTER_EMAIL]: BUDDY_EXECUTION_REVISION_COMMITTER_EMAIL,
       [GIT_COMMIT_COMMITTER_NAME]: BUDDY_EXECUTION_REVISION_COMMITTER_NAME,
     }
-  }
 
-  if (env.CF_BUILD_ID) {
-    const {CF_BUILD_ID, CF_PIPELINE_NAME, CF_BUILD_URL, CF_STEP_NAME, CF_BRANCH} = env
-    tags = {
-      [CI_PROVIDER_NAME]: 'codefresh',
-      [CI_PIPELINE_ID]: CF_BUILD_ID,
-      [CI_PIPELINE_NAME]: CF_PIPELINE_NAME,
-      [CI_PIPELINE_URL]: CF_BUILD_URL,
-      [CI_JOB_NAME]: CF_STEP_NAME,
-      [CI_ENV_VARS]: JSON.stringify({CF_BUILD_ID}),
+    if (BUDDY_RUN_PR_NO) {
+      tags[PR_NUMBER] = BUDDY_RUN_PR_NO
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = BUDDY_RUN_PR_BASE_BRANCH
     }
-
-    const isTag = CF_BRANCH && CF_BRANCH.includes('tags/')
-    const refKey = isTag ? GIT_TAG : GIT_BRANCH
-    const ref = normalizeRef(CF_BRANCH)
-
-    tags[refKey] = ref
   }
 
   if (env.CODEBUILD_INITIATOR?.startsWith('codepipeline')) {
-    const {CODEBUILD_BUILD_ARN, DD_ACTION_EXECUTION_ID, DD_PIPELINE_EXECUTION_ID} = env
+    const {
+      CODEBUILD_BUILD_ARN,
+      DD_ACTION_EXECUTION_ID,
+      DD_PIPELINE_EXECUTION_ID,
+      CODEBUILD_SOURCE_VERSION,
+      CODEBUILD_RESOLVED_SOURCE_VERSION,
+      CODEBUILD_WEBHOOK_BASE_REF,
+    } = env
+
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.AWSCODEPIPELINE,
       [CI_PIPELINE_ID]: DD_PIPELINE_EXECUTION_ID,
       [CI_ENV_VARS]: JSON.stringify({CODEBUILD_BUILD_ARN, DD_PIPELINE_EXECUTION_ID, DD_ACTION_EXECUTION_ID}),
+    }
+
+    const prMatch = (CODEBUILD_SOURCE_VERSION ?? '').match(/^pr\/(\d+)$/)
+    if (prMatch) {
+      tags[PR_NUMBER] = prMatch?.[1]
+      tags[GIT_PULL_REQUEST_BASE_BRANCH] = CODEBUILD_WEBHOOK_BASE_REF
+      tags[GIT_HEAD_SHA] = CODEBUILD_RESOLVED_SOURCE_VERSION
     }
   }
 
@@ -720,7 +821,7 @@ export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}
       pipeline: removeUndefinedValues({
         id: tags[CI_PIPELINE_ID],
         name: tags[CI_PIPELINE_NAME],
-        number: parsePipelineNumber(tags[CI_PIPELINE_NUMBER]),
+        number: parseNumber(tags[CI_PIPELINE_NUMBER]),
         url: tags[CI_PIPELINE_URL],
       }),
       provider: removeUndefinedValues({
@@ -756,11 +857,11 @@ export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}
   return metadata
 }
 
-const parsePipelineNumber = (pipelineNumberStr: string | undefined): number | undefined => {
-  if (pipelineNumberStr) {
-    const pipelineNumber = parseInt(pipelineNumberStr, 10)
+const parseNumber = (numberStr: string | undefined): number | undefined => {
+  if (numberStr) {
+    const number = parseInt(numberStr, 10)
 
-    return isFinite(pipelineNumber) ? pipelineNumber : undefined
+    return isFinite(number) ? number : undefined
   }
 }
 

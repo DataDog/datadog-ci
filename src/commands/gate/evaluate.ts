@@ -13,7 +13,7 @@ import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {GIT_HEAD_SHA, GIT_BASE_REF, parseTags} from '../../helpers/tags'
+import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import * as validation from '../../helpers/validation'
 
@@ -104,7 +104,7 @@ export class GateEvaluateCommand extends Command {
 
     const api = this.getApiHelper()
     const spanTags = await this.getSpanTags()
-    const headRef = spanTags[GIT_BASE_REF]
+    const headRef = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
 
     if (headRef) {
       const headSha = spanTags[GIT_HEAD_SHA]

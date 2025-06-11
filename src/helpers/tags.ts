@@ -38,7 +38,6 @@ export const GIT_COMMIT_MESSAGE = 'git.commit.message'
 export const GIT_SHA = 'git.commit.sha'
 export const GIT_TAG = 'git.tag'
 export const GIT_HEAD_SHA = 'git.commit.head_sha'
-export const GIT_BASE_REF = 'git.commit.base_ref'
 export const GIT_PULL_REQUEST_BASE_BRANCH_SHA = 'git.pull_request.base_branch_sha'
 export const GIT_PULL_REQUEST_BASE_BRANCH = 'git.pull_request.base_branch'
 

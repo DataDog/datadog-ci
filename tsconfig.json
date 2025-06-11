@@ -1,20 +1,19 @@
 {
   "compilerOptions": {
+    "lib": ["es2020"],
     "target": "es6",
     "module": "commonjs",
+    "moduleResolution": "node16",
     "declaration": true,
     "sourceMap": true,
-    "outDir": "dist",
     "rootDir": "src",
+    "outDir": "dist",
     "strict": true,
     "noImplicitAny": true,
-    "moduleResolution": "node",
-    "baseUrl": "./",
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
-    "esModuleInterop": true,
-    "lib": ["es2020"],
-    "resolveJsonModule": true
+    "esModuleInterop": true, // Allows default imports from modules with no default export
+    "resolveJsonModule": true // Used for SBOM json schemas
   },
   "include": ["src/**/*"]
 }
