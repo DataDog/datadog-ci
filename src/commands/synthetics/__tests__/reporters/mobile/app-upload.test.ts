@@ -9,7 +9,7 @@ Object.defineProperty(process, 'platform', {
   writable: true,
 })
 
-import {CommandContext} from 'src/helpers/interfaces'
+import {CommandContext} from '../../../../../helpers/interfaces'
 
 import {AppUploadReporter} from '../../../reporters/mobile/app-upload'
 
