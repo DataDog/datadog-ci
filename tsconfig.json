@@ -9,7 +9,6 @@
     "strict": true,
     "noImplicitAny": true,
     "moduleResolution": "node16",
-    "baseUrl": "./",
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
     "esModuleInterop": true,
