@@ -90,8 +90,9 @@ export class Tunnel {
    *   - establish a WebSocket connection to the tunnel service
    */
   public async start(): Promise<TunnelInfo> {
-    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
+    process.addListener('SIGINT', this.handleSIGINT)
 
+    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
     this.reporter?.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
     try {
       // Establish a WebSocket connection to the tunnel service
@@ -113,6 +114,7 @@ export class Tunnel {
    */
   public async stop(): Promise<void> {
     this.reporter?.log('Shutting down tunnel…')
+    this.connected = false
 
     this.forwardedSockets.forEach((socket) => {
       if (!!socket) {
@@ -178,7 +180,7 @@ export class Tunnel {
         this.forwardedSockets.add(dest)
 
         dest.on('timeout', () => {
-          this.reporter?.warn(`Connection timeout (${destIP})`)
+          // this.reporter?.warn(`Connection timeout (${destIP})`)
           if (src) {
             src.destroy()
           } else {
@@ -206,7 +208,7 @@ export class Tunnel {
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
             if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
-              this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+              // this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
             }
             src.close()
           } else {
@@ -257,7 +259,7 @@ export class Tunnel {
     }
     this.multiplexer = new Multiplexer((stream) => {
       stream.on('error', (error) => {
-        this.reporter?.warn(`Error in multiplexing: ${error}`)
+        // this.reporter?.warn(`Error in multiplexing: ${error}`)
       })
 
       void this.processSSHStream(stream)
@@ -266,16 +268,18 @@ export class Tunnel {
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
     this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
+    duplex.on('error', (error) => {
+      // this.reporter?.warn(`Websocket error: ${error.message}`)
+    })
 
     pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on duplex connection close: ${err}`)
+        // this.reporter?.warn(`Error on duplex connection close: ${err}`)
       }
     })
     pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
+        // this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
       }
     })
 
@@ -347,7 +351,19 @@ export class Tunnel {
         server.close()
       })
       .on('error', (err) => {
-        this.reporter?.warn(`SSH error in proxy: ${err.message}`)
+        // this.reporter?.warn(`SSH error in proxy: ${err.message}`)
       })
+  }
+
+  private handleSIGINT = () => {
+    if (this.connected) {
+      // The tunnel is connected, so we stop it gracefully – all tests will be aborted.
+      this.reporter?.log('Received Ctrl+C, closing tunnel...')
+      void this.stop()
+    } else {
+      // The tunnel was already closed and we received a second Ctrl+C.
+      // Removing the listener automatically stops the process.
+      process.removeListener('SIGINT', this.handleSIGINT)
+    }
   }
 }
