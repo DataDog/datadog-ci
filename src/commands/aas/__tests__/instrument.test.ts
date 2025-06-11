@@ -28,10 +28,12 @@ jest.mock('@azure/arm-appservice', () => ({
   })),
 }))
 
+import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 import {AasConfigOptions} from '../interfaces'
+import {DefaultAzureCredential} from '@azure/identity'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
@@ -356,6 +358,134 @@ Creating sidecar container datadog-sidecar
         DD_SERVERLESS_LOG_PATH: '/var/log',
         DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
       })
+    })
+  })
+  describe('instrumentSidecar', () => {
+    let command: InstrumentCommand
+    let client: WebSiteManagementClient
+
+    beforeEach(() => {
+      command = new InstrumentCommand()
+      // no-dd-sa:typescript-best-practices/no-unsafe-assignment
+      command.context = {stdout: {write: jest.fn()}} as any
+      command.dryRun = false
+
+      client = new WebSiteManagementClient(new DefaultAzureCredential(), '00000000-0000-0000-0000-000000000000')
+
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      webAppsOperations.getConfiguration.mockReset().mockResolvedValue({kind: 'app,linux,container'})
+      webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
+      webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
+      webAppsOperations.restart.mockReset().mockResolvedValue({})
+    })
+
+    test('creates sidecar if not present and updates app settings', async () => {
+      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'rg',
+        'app',
+        'datadog-sidecar',
+        expect.objectContaining({
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          targetPort: '8126',
+          isMain: false,
+          environmentVariables: expect.arrayContaining([
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ]),
+        })
+      )
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'rg',
+        'app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            DD_API_KEY: process.env.DD_API_KEY,
+            DD_SITE: 'datadoghq.com',
+            DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          }),
+        })
+      )
+    })
+
+    test('updates sidecar if present but config is incorrect', async () => {
+      webAppsOperations.listSiteContainers.mockReturnValue(
+        asyncIterable({
+          name: 'datadog-sidecar',
+          image: 'wrong-image',
+          targetPort: '8126',
+          environmentVariables: [
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ],
+        })
+      )
+      webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
+      webAppsOperations.createOrUpdateSiteContainer.mockResolvedValue({})
+      webAppsOperations.updateApplicationSettings.mockResolvedValue({})
+
+      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalled()
+    })
+
+    test('does not update sidecar if config is correct', async () => {
+      webAppsOperations.listSiteContainers.mockReturnValue(
+        asyncIterable({
+          name: 'datadog-sidecar',
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          targetPort: '8126',
+          environmentVariables: [
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ],
+        })
+      )
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        },
+      })
+
+      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('does not call Azure APIs in dry run mode', async () => {
+      command.dryRun = true
+      webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
+      webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
+
+      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('does not update app settings if no changes needed', async () => {
+      webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
+      webAppsOperations.listApplicationSettings.mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        },
+      })
+
+      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })
   })
 })
