@@ -1,7 +1,7 @@
-import {SiteContainer, StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
+import {Command} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
