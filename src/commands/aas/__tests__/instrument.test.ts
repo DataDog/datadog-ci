@@ -29,11 +29,12 @@ jest.mock('@azure/arm-appservice', () => ({
 }))
 
 import {WebSiteManagementClient} from '@azure/arm-appservice'
+import {DefaultAzureCredential} from '@azure/identity'
+
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 import {AasConfigOptions} from '../interfaces'
-import {DefaultAzureCredential} from '@azure/identity'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
