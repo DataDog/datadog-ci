@@ -125,13 +125,18 @@ export type ConstructorOf<T> = new (...args: unknown[]) => T
  */
 export const createCommand = <T extends Command>(
   commandClass: ConstructorOf<T>,
-  context: {stdout?: {write: () => void}; stderr?: {write: () => void}} = {}
+  context: {stdout?: {write: () => void}; stderr?: {write: () => void}} = {},
+  patch: unknown = undefined
 ) => {
   // Create a new instance of commandClass and pass in the parameters
   const command = new commandClass()
   command.context = {...createMockContext(), ...context} as BaseContext
 
   resolveCommandOptionsDefaults(command)
+
+  if (patch) {
+    return Object.assign(Object.create(Object.getPrototypeOf(command)), command, patch)
+  }
 
   return command
 }

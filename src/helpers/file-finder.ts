@@ -31,12 +31,74 @@ const DEFAULT_IGNORED_FOLDERS = [
   'bower_components',
   'conftest_*.c.gcov',
   'htmlcov',
-  'js/generated/coverage',
   'jspm_packages',
   'node_modules',
   'virtualenv',
   'virtualenvs',
 ]
+
+export const partitionFiles = (
+  basePaths: string[],
+  ignoredPaths: string[],
+  // strict is set to true when the path is a file that was specified explicitly:
+  // for such files stricter validation is applied
+  partition: (filePath: string, strict: boolean) => string | undefined
+): {[key: string]: string[]} => {
+  const results: {[key: string]: string[]} = {}
+
+  for (const basePath of basePaths) {
+    if (hasMagic(basePath)) {
+      // glob pattern
+      const globMatches = globSync(basePath, {dotRelative: true})
+      for (const globMatch of globMatches) {
+        partitionFilesRecursive(globMatch, ignoredPaths, partition, results, false)
+      }
+    } else {
+      partitionFilesRecursive(basePath, ignoredPaths, partition, results, true)
+    }
+  }
+
+  // deduplicate
+  for (const key in results) {
+    if (results.hasOwnProperty(key)) {
+      results[key] = [...new Set(results[key])]
+    }
+  }
+
+  return results
+}
+
+const partitionFilesRecursive = (
+  path: string,
+  ignoredPaths: string[],
+  partition: (filePath: string, strict: boolean) => string | undefined,
+  results: {[key: string]: string[]},
+  strict: boolean
+) => {
+  if (!fs.existsSync(path)) {
+    return
+  }
+
+  if (isFile(path)) {
+    // regular file
+    const pathPartition = partition(path, strict)
+    if (pathPartition) {
+      results[pathPartition] = results[pathPartition] || []
+      results[pathPartition].push(path)
+    }
+
+    return
+  }
+
+  const entries = fs.readdirSync(path, {withFileTypes: true})
+  for (const entry of entries) {
+    const fullPath = buildPath(path, entry.name)
+    if (ignoredPaths.includes(fullPath) || DEFAULT_IGNORED_FOLDERS.includes(entry.name)) {
+      continue
+    }
+    partitionFilesRecursive(fullPath, ignoredPaths, partition, results, false)
+  }
+}
 
 /**
  * Finds and validates files based on the provided base paths.

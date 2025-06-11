@@ -2,14 +2,17 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+<<<<<<< Updated upstream
 import * as simpleGit from 'simple-git'
 import * as t from 'typanion'
+=======
+>>>>>>> Stashed changes
 import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
-import {findFiles} from '../../helpers/file-finder'
+import {partitionFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {parsePathsList} from '../../helpers/glob'
@@ -48,34 +51,13 @@ import {
   renderFailedGitDBSync,
   renderSuccessfulGitDBSync,
 } from './renderer'
-import {detectFormat, validateCoverageReport} from './utils'
+import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from './utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
-
-const isCoverageReport = (file: string): boolean => {
-  if (upath.extname(file) !== '.xml') {
-    return false
-  }
-
-  const filename = upath.basename(file)
-
-  return (
-    filename.startsWith('jacoco') || filename.includes('Jacoco') // jacoco*.xml, *Jacoco*.xml
-  )
-}
-
-const validateReport = (explicitFormat: string | undefined, file: string): string | undefined => {
-  const format = explicitFormat || detectFormat(file)
-  if (format === undefined) {
-    return `Could not detect format of ${file}, please specify the format manually using the --format option`
-  }
-
-  return validateCoverageReport(file, format)
-}
 
 export class UploadCodeCoverageReportCommand extends Command {
   public static paths = [['coverage', 'upload']]
@@ -96,6 +78,10 @@ export class UploadCodeCoverageReportCommand extends Command {
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
         'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
+      ],
+      [
+        'Upload all XML code coverage report files in /coverage/ folders, ignoring src/ignored-module-a',
+        'datadog-ci coverage upload **/coverage/*.xml --ignored-paths src/ignored-module-a',
       ],
       [
         'Upload all code coverage report files in current directory and add extra tags globally',
@@ -126,10 +112,6 @@ export class UploadCodeCoverageReportCommand extends Command {
   private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', false)
   private gitRepositoryURL = Option.String('--git-repository-url')
 
-  private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
-    validator: t.isBoolean(),
-    tolerateBoolean: true,
-  })
   private ignoredPaths = Option.String('--ignored-paths')
 
   private fips = Option.Boolean('--fips', false)
@@ -165,6 +147,7 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
+<<<<<<< Updated upstream
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
         const traceId = id()
@@ -192,6 +175,14 @@ export class UploadCodeCoverageReportCommand extends Command {
       }
     } else {
       this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
+=======
+    if (this.format && !isCoverageFormat(this.format)) {
+      this.context.stderr.write(
+        `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
+      )
+
+      return 1
+>>>>>>> Stashed changes
     }
 
     await this.uploadCodeCoverageReports()
@@ -374,27 +365,31 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
-    const validUniqueFiles = findFiles(
+    return partitionFiles(
       this.basePaths || ['.'],
-      this.automaticReportsDiscovery,
       parsePathsList(this.ignoredPaths),
-      isCoverageReport,
-      (filePath: string) => validateReport(this.format, filePath),
-      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      this.getCoverageReportFormat.bind(this)
     )
+  }
 
-    const pathsByFormat: {[key: string]: string[]} = {}
-    for (const file of validUniqueFiles) {
-      const format = this.format || detectFormat(file)
-      if (format === undefined) {
-        // should not be possible, such files will fail validation
-        continue
+  private getCoverageReportFormat(filePath: string, strict: boolean): string | undefined {
+    const format = toCoverageFormat(this.format) || detectFormat(filePath)
+    if (!format) {
+      if (strict) {
+        this.context.stdout.write(renderInvalidFile(filePath, `format could not be detected`))
       }
-      pathsByFormat[format] = pathsByFormat[format] || []
-      pathsByFormat[format].push(file)
+
+      return undefined
     }
 
-    return pathsByFormat
+    const validationError = validateCoverageReport(filePath, format)
+    if (validationError) {
+      this.context.stdout.write(renderInvalidFile(filePath, validationError))
+
+      return undefined
+    }
+
+    return format
   }
 
   private async uploadCodeCoverageReport(api: APIHelper, codeCoverageReport: Payload) {
