@@ -97,7 +97,7 @@ export abstract class AasCommand extends Command {
   }
 }
 
-export const collect = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
+export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
     arr.push(x)

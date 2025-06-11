@@ -6,7 +6,7 @@ import equal from 'fast-deep-equal'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
-import {AasCommand, collect, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
+import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends AasCommand {
@@ -95,7 +95,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     resourceGroup: string,
     aasName: string
   ) {
-    const siteContainers = await collect(client.webApps.listSiteContainers(resourceGroup, aasName))
+    const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = this.getEnvVars(config)
     if (
