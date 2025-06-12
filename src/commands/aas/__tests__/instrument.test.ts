@@ -75,9 +75,9 @@ Updating Application Settings
         'datadog-sidecar',
         {
           environmentVariables: [
-            {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
-            {name: 'DD_SITE', value: 'datadoghq.com'},
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -192,9 +192,9 @@ Creating sidecar container datadog-sidecar
         'datadog-sidecar',
         {
           environmentVariables: [
-            {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
-            {name: 'DD_SITE', value: 'datadoghq.com'},
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,

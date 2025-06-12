@@ -2,7 +2,7 @@ import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-import equal from 'fast-deep-equal'
+import equal from 'fast-deep-equal/es6'
 
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
@@ -98,14 +98,15 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = this.getEnvVars(config)
+    // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
+    // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
+    // env values point to env keys in the main App Settings. (essentially env var forwarding)
     if (
       sidecarContainer === undefined ||
       sidecarContainer.image !== SIDECAR_IMAGE ||
       sidecarContainer.targetPort !== SIDECAR_PORT ||
-      !equal(
-        Object.fromEntries(sidecarContainer.environmentVariables?.map(({name, value}) => [name, value]) ?? []),
-        envVars
-      )
+      !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
+      !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
     ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
@@ -117,7 +118,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
           image: SIDECAR_IMAGE,
           targetPort: SIDECAR_PORT,
           isMain: false,
-          environmentVariables: Object.entries(envVars).map(([name, value]) => ({name, value})),
+          environmentVariables: Object.keys(envVars).map((name) => ({name, value: name})),
         })
       }
     } else {
