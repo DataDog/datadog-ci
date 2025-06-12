@@ -4,7 +4,10 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
+import {DATADOG_SITE_US1} from '../../constants'
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
+import {maskString} from '../../helpers/utils'
 
 import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
@@ -27,6 +30,21 @@ export class InstrumentCommand extends AasCommand {
       for (const error of errors) {
         this.context.stdout.write(renderError(error))
       }
+
+      return 1
+    }
+    const isApiKeyValid = await newApiKeyValidator({
+      apiKey: process.env.DD_API_KEY,
+      datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+    }).validateApiKey()
+    if (!isApiKeyValid) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )}\nEnsure you copied the value and not the Key ID.`
+        )
+      )
 
       return 1
     }
@@ -91,7 +109,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   public getEnvVars(config: AasConfigOptions): Record<string, string> {
     const envVars: Record<string, string> = {
       DD_API_KEY: process.env.DD_API_KEY!,
-      DD_SITE: process.env.DD_SITE ?? 'datadoghq.com',
+      DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
       DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
     }
     if (config.service) {

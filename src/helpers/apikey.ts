@@ -9,6 +9,7 @@ import {InvalidConfigurationError} from './errors'
  */
 export interface ApiKeyValidator {
   verifyApiKey(error: AxiosError): Promise<void>
+  validateApiKey(): Promise<boolean>
 }
 
 export interface ApiKeyValidatorParams {
@@ -55,19 +56,11 @@ class ApiKeyValidatorImplem {
     }
   }
 
-  private getApiKeyValidationURL(): string {
-    return `https://api.${this.datadogSite}/api/v1/validate`
-  }
-
-  private async isApiKeyValid(): Promise<boolean | undefined> {
-    if (this.isValid === undefined) {
-      this.isValid = await this.validateApiKey()
-    }
-
-    return this.isValid
-  }
-
-  private async validateApiKey(): Promise<boolean> {
+  /**
+   * Check if the API key is valid by making a request to the Datadog validate API.
+   * @returns `true` if the API key is valid, `false` otherwise.
+   */
+  public async validateApiKey(): Promise<boolean> {
     try {
       const response = await axios.get(this.getApiKeyValidationURL(), {
         headers: {
@@ -82,5 +75,17 @@ class ApiKeyValidatorImplem {
       }
       throw error
     }
+  }
+
+  private getApiKeyValidationURL(): string {
+    return `https://api.${this.datadogSite}/api/v1/validate`
+  }
+
+  private async isApiKeyValid(): Promise<boolean | undefined> {
+    if (this.isValid === undefined) {
+      this.isValid = await this.validateApiKey()
+    }
+
+    return this.isValid
   }
 }

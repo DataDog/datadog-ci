@@ -5,6 +5,13 @@ jest.mock('fs', () => ({
 
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
+const validateApiKey = jest.fn()
+jest.mock('../../../helpers/apikey', () => ({
+  newApiKeyValidator: jest.fn().mockImplementation(() => ({
+    validateApiKey,
+  })),
+}))
+
 const getToken = jest.fn()
 
 jest.mock('@azure/identity', () => ({
@@ -51,6 +58,8 @@ const DEFAULT_CONFIG: AasConfigOptions = {
   logPath: undefined,
 }
 
+const DEFAULT_ARGS = ['-s', '00000000-0000-0000-0000-000000000000', '-g', 'my-resource-group', '-n', 'my-web-app']
+
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['aas', 'instrument'])
 
@@ -64,17 +73,11 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
+      validateApiKey.mockClear().mockResolvedValue(true)
     })
 
     test('Adds a sidecar and updates the application settings', async () => {
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-      ])
+      const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 Creating sidecar container datadog-sidecar
 Updating Application Settings
@@ -112,15 +115,7 @@ Restarting Azure App Service
     })
 
     test('Performs no actions in dry run mode', async () => {
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-        '--dry-run',
-      ])
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
       expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Instrumenting Azure App Service
 [Dry Run] Creating sidecar container datadog-sidecar
 [Dry Run] Updating Application Settings
@@ -138,15 +133,7 @@ Restarting Azure App Service
     })
 
     test('Does not restart when specified', async () => {
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-        '--no-restart',
-      ])
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--no-restart'])
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 Creating sidecar container datadog-sidecar
 Updating Application Settings
@@ -185,15 +172,7 @@ Updating Application Settings
     test('Fails if not authenticated with Azure', async () => {
       getToken.mockClear().mockRejectedValue(new Error())
 
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-        '--dry-run',
-      ])
+      const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`[!] Failed to authenticate with Azure: Error
 
 Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
@@ -209,16 +188,28 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
+    test('Fails if datadog API key is invalid', async () => {
+      validateApiKey.mockClear().mockResolvedValue(false)
+
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(
+        `[!] Invalid API Key stored in the environment variable DD_API_KEY: ****************
+Ensure you copied the value and not the Key ID.
+`
+      )
+      expect(code).toEqual(1)
+      expect(getToken).not.toHaveBeenCalled()
+      expect(webAppsOperations.getConfiguration).not.toHaveBeenCalled()
+      expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
+      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).not.toHaveBeenCalled()
+    })
+
     test('Warns and exits if App Service is not Linux', async () => {
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue({kind: 'app,windows'})
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-      ])
+      const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 [!] Only Linux-based Azure App Services are currently supported.
 Please see the documentation for information on
@@ -237,14 +228,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 
     test('Handles errors during sidecar instrumentation', async () => {
       webAppsOperations.createOrUpdateSiteContainer.mockClear().mockRejectedValue(new Error('sidecar error'))
-      const {code, context} = await runCLI([
-        '-s',
-        '00000000-0000-0000-0000-000000000000',
-        '-g',
-        'my-resource-group',
-        '-n',
-        'my-web-app',
-      ])
+      const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 Creating sidecar container datadog-sidecar
 [Error] Failed to instrument sidecar: Error: sidecar error
