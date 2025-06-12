@@ -30,6 +30,28 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
+    // Validate the Datadog API key
+    const apiKey = process.env.DD_API_KEY!
+    const response = await fetch(`https://api.${process.env.DD_SITE ?? 'datadoghq.com'}/api/v1/validate`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'DD-API-KEY': apiKey,
+      },
+    })
+    // no-dd-sa:typescript-best-practices/no-explicit-any
+    const data: any = await response.json()
+    if (data?.valid !== true) {
+      const censoredKey =
+        apiKey.length < 4
+          ? '(too short to display)'
+          : '*'.repeat(apiKey.length - 4) + apiKey.slice(-4)
+      this.context.stdout.write(
+        renderSoftWarning(`Invalid API Key ${censoredKey}, ensure you copied the value and not the Key ID`)
+      )
+
+      return 1
+    }
     const cred = new DefaultAzureCredential()
     try {
       await cred.getToken('https://management.azure.com/.default')
