@@ -43,9 +43,7 @@ export class InstrumentCommand extends AasCommand {
     const data: any = await response.json()
     if (data?.valid !== true) {
       const censoredKey =
-        apiKey.length < 4
-          ? '(too short to display)'
-          : '*'.repeat(apiKey.length - 4) + apiKey.slice(-4)
+        apiKey.length < 4 ? '(too short to display)' : '*'.repeat(apiKey.length - 4) + apiKey.slice(-4)
       this.context.stdout.write(
         renderSoftWarning(`Invalid API Key ${censoredKey}, ensure you copied the value and not the Key ID`)
       )
