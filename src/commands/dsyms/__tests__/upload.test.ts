@@ -24,11 +24,11 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
       fixture = fixture ?? (dsymPath.includes('single-arch') ? slimDSYMFixture : undefined)
 
       if (fixture !== undefined) {
-        const outputLines = fixture.slices.map((slice) => {
-          const objectPathInDsym = upath.relative(fixture!.bundlePath, slice.objectPath)
+        const outputLines = fixture.dwarf.map((dwarf) => {
+          const objectPathInDsym = upath.relative(fixture!.bundle, dwarf.object)
           const objectPathInMockedDSYM = buildPath(dsymPath, objectPathInDsym)
 
-          return `UUID: ${slice.uuid} (${slice.arch}) ${objectPathInMockedDSYM}`
+          return `UUID: ${dwarf.uuid} (${dwarf.arch}) ${objectPathInMockedDSYM}`
         })
 
         return {stderr: '', stdout: outputLines.join('\n')}
@@ -53,17 +53,23 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
  * read with `dwarfdump --uuid ./src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM` on macOS.
  */
 const fatDSYMFixture: Dsym = {
-  bundlePath: 'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM',
-  slices: [
+  bundle: 'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM',
+  dwarf: [
+    {
+      arch: 'arm64',
+      object:
+        'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest.debug.dylib',
+      uuid: '3BC12422-63CC-30E8-B916-E5006CE3286C',
+    },
     {
       arch: 'armv7',
-      objectPath:
+      object:
         'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest',
       uuid: 'C8469F85-B060-3085-B69D-E46C645560EA',
     },
     {
       arch: 'arm64',
-      objectPath:
+      object:
         'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest',
       uuid: '06EE3D68-D605-3E92-B92D-2F48C02A505E',
     },
@@ -75,12 +81,11 @@ const fatDSYMFixture: Dsym = {
  * read with `dwarfdump --uuid ./src/commands/dsyms/__tests__/fixtures/single-archs/DDTest.framework.dSYM` on macOS.
  */
 const slimDSYMFixture: Dsym = {
-  bundlePath: 'src/commands/dsyms/__tests__/fixtures/single-arch/DDTest.framework.dSYM',
-  slices: [
+  bundle: 'src/commands/dsyms/__tests__/fixtures/single-arch/DDTest.framework.dSYM',
+  dwarf: [
     {
       arch: 'arm64',
-      objectPath:
-        'src/commands/dsyms/__tests__/fixtures/single-arch/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest',
+      object: 'src/commands/dsyms/__tests__/fixtures/single-arch/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest',
       uuid: '3BC12422-63CC-30E8-B916-E5006CE3286C',
     },
   ],
@@ -91,13 +96,13 @@ describe('upload', () => {
     mockDwarfdumpAndLipoIfNotMacOS()
   })
 
-  describe('findDSYMsInDirectory', () => {
+  describe('findDsyms', () => {
     const command = new UploadCommand()
 
     test('Should find dSYMs recursively', async () => {
       const expectedDSYMs = [fatDSYMFixture, slimDSYMFixture]
 
-      const actualDSYMs = await command['findDSYMsInDirectory']('src/commands/dsyms/__tests__/fixtures')
+      const actualDSYMs = await command['findDsyms']('src/commands/dsyms/__tests__/fixtures')
 
       expect(actualDSYMs.length).toEqual(2)
       expect(actualDSYMs).toContainEqual(expectedDSYMs[0])
@@ -111,11 +116,11 @@ describe('upload', () => {
     test('Should read arch slice from single-line output', () => {
       const output = 'UUID: 00000000-1111-2222-3333-444444444444 (arm64) /folder/Foo.dSYM/Contents/Resources/DWARF/Foo'
 
-      const slices = command['parseDwarfdumpOutput'](output)
-      expect(slices).toEqual([
+      const dwarf = command['parseDwarfdumpOutput'](output)
+      expect(dwarf).toEqual([
         {
           arch: 'arm64',
-          objectPath: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
+          object: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
           uuid: '00000000-1111-2222-3333-444444444444',
         },
       ])
@@ -127,21 +132,21 @@ describe('upload', () => {
         'UUID: AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE (x86_64) /folder/Foo.dSYM/Contents/Resources/DWARF/Foo\n' +
         'UUID: FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF (armv7) /folder/Foo.dSYM/Contents/Resources/DWARF/Foo\n'
 
-      const slices = command['parseDwarfdumpOutput'](output)
-      expect(slices).toEqual([
+      const dwarf = command['parseDwarfdumpOutput'](output)
+      expect(dwarf).toEqual([
         {
           arch: 'arm64',
-          objectPath: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
+          object: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
           uuid: '00000000-1111-2222-3333-444444444444',
         },
         {
           arch: 'x86_64',
-          objectPath: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
+          object: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
           uuid: 'AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE',
         },
         {
           arch: 'armv7',
-          objectPath: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
+          object: '/folder/Foo.dSYM/Contents/Resources/DWARF/Foo',
           uuid: 'FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF',
         },
       ])
@@ -151,23 +156,23 @@ describe('upload', () => {
       const output =
         'UUID: 00000000-1111-2222-3333-444444444444 (arm64) /folder with whitespaces/Foo Bar.dSYM/Contents/Resources/DWARF/Foo Bar'
 
-      const slices = command['parseDwarfdumpOutput'](output)
-      expect(slices).toEqual([
+      const dwarf = command['parseDwarfdumpOutput'](output)
+      expect(dwarf).toEqual([
         {
           arch: 'arm64',
-          objectPath: '/folder with whitespaces/Foo Bar.dSYM/Contents/Resources/DWARF/Foo Bar',
+          object: '/folder with whitespaces/Foo Bar.dSYM/Contents/Resources/DWARF/Foo Bar',
           uuid: '00000000-1111-2222-3333-444444444444',
         },
       ])
     })
 
     test('Should read no arch slices from invalid output', () => {
-      const slices = command['parseDwarfdumpOutput']('')
-      expect(slices).toEqual([])
+      const dwarf = command['parseDwarfdumpOutput']('')
+      expect(dwarf).toEqual([])
     })
   })
 
-  describe('thinDSYMs', () => {
+  describe('processDsyms', () => {
     const command = new UploadCommand()
 
     test('Given fat dSYM, it should extract each arch slice to separate dSYM in target folder', async () => {
@@ -175,27 +180,48 @@ describe('upload', () => {
 
       // Given
       const inputDSYM = fatDSYMFixture
-      expect(inputDSYM.slices.length).toBeGreaterThan(1)
+      expect(inputDSYM.dwarf.length).toBeGreaterThan(1)
 
       // When
-      const extractedDSYMs = await command['thinDSYMs']([inputDSYM], tmpDirectory)
+      const extractedDSYMs = await command['processDsyms']([inputDSYM], tmpDirectory)
 
       // Then
-      expect(extractedDSYMs.length).toEqual(inputDSYM.slices.length)
-      inputDSYM.slices.forEach((slice) => {
-        expect(extractedDSYMs).toContainEqual({
-          bundlePath: `${buildPath(tmpDirectory, slice.uuid)}.dSYM`,
-          slices: [
-            {
-              arch: slice.arch,
-              objectPath: `${buildPath(tmpDirectory, slice.uuid)}.dSYM/Contents/Resources/DWARF/DDTest`,
-              uuid: slice.uuid,
-            },
-          ],
-        })
+      expect(extractedDSYMs.length).toEqual(inputDSYM.dwarf.length)
+      expect(extractedDSYMs).toContainEqual({
+        bundle: `${tmpDirectory}/3BC12422-63CC-30E8-B916-E5006CE3286C.dSYM`,
+        dwarf: [
+          {
+            arch: 'arm64',
+            object: `${tmpDirectory}/3BC12422-63CC-30E8-B916-E5006CE3286C.dSYM/Contents/Resources/DWARF/DDTest.debug.dylib`,
+            uuid: '3BC12422-63CC-30E8-B916-E5006CE3286C',
+          },
+        ],
       })
-      const objectFilesInTargetFolder = globSync(buildPath(tmpDirectory, '**/Contents/Resources/DWARF/DDTest'))
-      expect(objectFilesInTargetFolder.length).toEqual(inputDSYM.slices.length)
+
+      expect(extractedDSYMs).toContainEqual({
+        bundle: `${tmpDirectory}/C8469F85-B060-3085-B69D-E46C645560EA.dSYM`,
+        dwarf: [
+          {
+            arch: 'armv7',
+            object: `${tmpDirectory}/C8469F85-B060-3085-B69D-E46C645560EA.dSYM/Contents/Resources/DWARF/DDTest`,
+            uuid: 'C8469F85-B060-3085-B69D-E46C645560EA',
+          },
+        ],
+      })
+
+      expect(extractedDSYMs).toContainEqual({
+        bundle: `${tmpDirectory}/06EE3D68-D605-3E92-B92D-2F48C02A505E.dSYM`,
+        dwarf: [
+          {
+            arch: 'arm64',
+            object: `${tmpDirectory}/06EE3D68-D605-3E92-B92D-2F48C02A505E.dSYM/Contents/Resources/DWARF/DDTest`,
+            uuid: '06EE3D68-D605-3E92-B92D-2F48C02A505E',
+          },
+        ],
+      })
+
+      const objectFilesInTargetFolder = globSync(buildPath(tmpDirectory, '**/Contents/Resources/DWARF/DDTest*'))
+      expect(objectFilesInTargetFolder.length).toEqual(inputDSYM.dwarf.length)
 
       await deleteDirectory(tmpDirectory)
     })
@@ -205,10 +231,10 @@ describe('upload', () => {
 
       // Given
       const inputDSYM = slimDSYMFixture
-      expect(inputDSYM.slices.length).toEqual(1)
+      expect(inputDSYM.dwarf.length).toEqual(1)
 
       // When
-      const extractedDSYMs = await command['thinDSYMs']([inputDSYM], tmpDirectory)
+      const extractedDSYMs = await command['processDsyms']([inputDSYM], tmpDirectory)
 
       // Then
       expect(extractedDSYMs).toEqual([inputDSYM])
@@ -219,7 +245,7 @@ describe('upload', () => {
     })
   })
 
-  describe('compressDSYMsToDirectory', () => {
+  describe('compressDsyms', () => {
     const command = new UploadCommand()
 
     test('Should archive dSYMs to target directory and name archives by their UUIDs', async () => {
@@ -227,15 +253,15 @@ describe('upload', () => {
       const dsymFixtures = [fatDSYMFixture, slimDSYMFixture]
 
       // When
-      const compressedDSYMs = await command['compressDSYMsToDirectory'](dsymFixtures, tmpDirectory)
+      const compressedDSYMs = await command['compressDsyms'](dsymFixtures, tmpDirectory)
 
       // Then
       expect(compressedDSYMs[0].dsym).toEqual(dsymFixtures[0])
-      expect(compressedDSYMs[0].archivePath).toEqual(buildPath(tmpDirectory, `${dsymFixtures[0].slices[0].uuid}.zip`))
+      expect(compressedDSYMs[0].archivePath).toEqual(buildPath(tmpDirectory, `${dsymFixtures[0].dwarf[0].uuid}.zip`))
       expect(existsSync(compressedDSYMs[0].archivePath)).toBeTruthy()
 
       expect(compressedDSYMs[1].dsym).toEqual(dsymFixtures[1])
-      expect(compressedDSYMs[1].archivePath).toEqual(buildPath(tmpDirectory, `${dsymFixtures[1].slices[0].uuid}.zip`))
+      expect(compressedDSYMs[1].archivePath).toEqual(buildPath(tmpDirectory, `${dsymFixtures[1].dwarf[0].uuid}.zip`))
       expect(existsSync(compressedDSYMs[1].archivePath)).toBeTruthy()
 
       await deleteDirectory(tmpDirectory)
@@ -294,12 +320,15 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest.debug.dylib, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[8]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[9]).toContain(
       'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
-    expect(output[11]).toContain('Handled 3 dSYMs with success')
+    expect(output[12]).toContain('Handled 4 dSYMs with success')
   })
 
   test('Should succeed with zip file input', async () => {
@@ -348,12 +377,15 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest.debug.dylib, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[8]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[9]).toContain(
       'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
-    expect(output[11]).toContain('Handled 3 dSYMs with success')
+    expect(output[12]).toContain('Handled 4 dSYMs with success')
   })
 
   test('Should use API Key from env over config from JSON file', async () => {
