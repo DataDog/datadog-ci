@@ -487,9 +487,11 @@ describe('generation of payload', () => {
     expect(dependencies[0].name).toEqual('junit:junit')
     expect(dependencies[0].version).toEqual('3.8.1')
     expect(dependencies[0].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[0].exclusions).toHaveLength(0)
     expect(dependencies[1].name).toEqual('org.springframework:spring-context')
     expect(dependencies[1].version).toEqual('5.3.30')
     expect(dependencies[1].reachable_symbol_properties).toHaveLength(0)
+    expect(dependencies[1].exclusions).toHaveLength(0)
     expect(dependencies[2].name).toEqual('org.springframework:spring-web')
     expect(dependencies[2].version).toEqual('5.3.30')
     expect(dependencies[2].reachable_symbol_properties).toHaveLength(1)
@@ -509,6 +511,37 @@ describe('generation of payload', () => {
     expect(vulnerabilities[1].id).toEqual('GHSA-4jrv-ppp4-jm57')
     expect(vulnerabilities[1].bom_ref).toEqual('GHSA-4jrv-ppp4-jm57')
     expect(vulnerabilities[1].affects).toHaveLength(0)
+  })
+
+  test('should correctly add exclusions information with a CycloneDX 1.5 file', async () => {
+    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-with-exclusion.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(2)
+    const dependencies = payload!.dependencies
+
+    expect(dependencies[0].name).toEqual('com.datastax.cassandra:cassandra-driver-core')
+    expect(dependencies[0].version).toEqual('3.11.5')
+    expect(dependencies[0].exclusions).toHaveLength(4)
+    expect(dependencies[0].exclusions).toEqual([
+      'com.github.jnr:jnr-ffi',
+      'com.github.jnr:jnr-posix',
+      'io.dropwizard.metrics:metrics-core',
+      'io.netty:netty-handler',
+    ])
+
+    expect(dependencies[1].name).toEqual('org.apache.curator:curator-client')
+    expect(dependencies[1].version).toEqual('2.7.1')
+    expect(dependencies[1].exclusions).toHaveLength(1)
+    expect(dependencies[1].exclusions).toEqual(['org.apache.zookeeper:zookeeper'])
   })
 
   test('should fail to read git information', async () => {

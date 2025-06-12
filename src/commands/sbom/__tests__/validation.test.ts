@@ -106,6 +106,7 @@ describe('validation of sbom file', () => {
         package_manager: 'pypi',
         is_dev: undefined,
         reachable_symbol_properties: undefined,
+        exclusions: undefined,
       })
     ).toBeFalsy()
     expect(
@@ -121,6 +122,7 @@ describe('validation of sbom file', () => {
         package_manager: 'pypi',
         is_dev: undefined,
         reachable_symbol_properties: undefined,
+        exclusions: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -136,6 +138,7 @@ describe('validation of sbom file', () => {
         package_manager: 'pypi',
         is_dev: undefined,
         reachable_symbol_properties: undefined,
+        exclusions: undefined,
       })
     ).toBeTruthy()
     expect(
@@ -151,6 +154,7 @@ describe('validation of sbom file', () => {
         package_manager: 'pypi',
         is_dev: undefined,
         reachable_symbol_properties: undefined,
+        exclusions: undefined,
       })
     ).toBeTruthy()
   })

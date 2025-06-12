@@ -97,6 +97,7 @@ export interface Dependency {
   is_dev: undefined | boolean
   package_manager: string
   reachable_symbol_properties: undefined | Property[]
+  exclusions: undefined | string[]
 }
 
 export interface ReachableSymbolLocationValue extends LocationFromFile {
