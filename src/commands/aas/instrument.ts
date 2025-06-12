@@ -99,8 +99,8 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = this.getEnvVars(config)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
-    // and environment variables. The environment variables are must have the matching names and values as the
-    // keys in the App Settings, since the value indicates the name of the environment variable.
+    // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
+    // env values point to env keys in the main App Settings. (essentially env var forwarding)
     if (
       sidecarContainer === undefined ||
       sidecarContainer.image !== SIDECAR_IMAGE ||
