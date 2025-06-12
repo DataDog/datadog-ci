@@ -187,6 +187,7 @@ describe('upload', () => {
         {
           apiKeyValidator: {
             verifyApiKey: verifyKey,
+            validateApiKey: jest.fn()
           },
           onError: errorCallback,
           onRetry: retryCallback,
@@ -218,6 +219,7 @@ describe('upload', () => {
         {
           apiKeyValidator: {
             verifyApiKey: verifyKey,
+            validateApiKey: jest.fn(),
           },
           onError: errorCallback,
           onRetry: retryCallback,
