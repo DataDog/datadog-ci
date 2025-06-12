@@ -56,18 +56,6 @@ class ApiKeyValidatorImplem {
     }
   }
 
-  private getApiKeyValidationURL(): string {
-    return `https://api.${this.datadogSite}/api/v1/validate`
-  }
-
-  private async isApiKeyValid(): Promise<boolean | undefined> {
-    if (this.isValid === undefined) {
-      this.isValid = await this.validateApiKey()
-    }
-
-    return this.isValid
-  }
-
   /**
    * Check if the API key is valid by making a request to the Datadog validate API.
    * @returns `true` if the API key is valid, `false` otherwise.
@@ -87,5 +75,17 @@ class ApiKeyValidatorImplem {
       }
       throw error
     }
+  }
+
+  private getApiKeyValidationURL(): string {
+    return `https://api.${this.datadogSite}/api/v1/validate`
+  }
+
+  private async isApiKeyValid(): Promise<boolean | undefined> {
+    if (this.isValid === undefined) {
+      this.isValid = await this.validateApiKey()
+    }
+
+    return this.isValid
   }
 }

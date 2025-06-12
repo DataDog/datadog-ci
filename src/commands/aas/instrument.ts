@@ -4,12 +4,12 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
+import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
+import {maskString} from '../../helpers/utils'
 
 import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {maskString} from '../../helpers/utils'
 
 export class InstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -45,6 +45,7 @@ export class InstrumentCommand extends AasCommand {
           )}\nEnsure you copied the value and not the Key ID.`
         )
       )
+
       return 1
     }
     const cred = new DefaultAzureCredential()
