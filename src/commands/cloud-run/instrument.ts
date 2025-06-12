@@ -45,6 +45,16 @@ export class InstrumentCommand extends Command {
 
     // TODO resolve config from file
 
+    // Verify GCP credentials
+    this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
+    const authenticated = await checkAuthentication()
+    if (!authenticated) {
+      this.context.stderr.write(renderAuthenticationInstructions())
+
+      return 1
+    }
+    this.context.stdout.write('GCP credentials verified!\n')
+
     return Promise.resolve(0)
   }
 }

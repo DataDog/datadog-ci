@@ -9,7 +9,6 @@ import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {GoogleAuth} from 'google-auth-library'
 import upath from 'upath'
 
 import {
@@ -39,6 +38,7 @@ import {getUniqueFileNames} from '../lambda/flare'
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
+import {checkAuthentication} from './util'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
@@ -395,21 +395,6 @@ export class CloudRunFlareCommand extends Command {
     }
 
     return 0
-  }
-}
-
-/**
- * Check if the user is authenticated with GCP.
- * @returns true if the user is authenticated, false otherwise
- */
-export const checkAuthentication = async () => {
-  const auth = new GoogleAuth()
-  try {
-    await auth.getApplicationDefault()
-
-    return true
-  } catch (_) {
-    return false
   }
 }
 
