@@ -17,7 +17,7 @@ export class InstrumentCommand extends AasCommand {
   })
 
   private shouldNotRestart = Option.Boolean('--no-restart', false, {
-    description: 'Do not restart the App Service after applying instrumentation',
+    description: 'Do not restart the App Service after applying instrumentation.',
   })
 
   public async execute(): Promise<0 | 1> {
