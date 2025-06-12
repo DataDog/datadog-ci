@@ -121,24 +121,17 @@ export type ConstructorOf<T> = new (...args: unknown[]) => T
  *
  * @param commandClass any class that extends the Command class.
  * @param context command context
- * @param patch allows to patch command fields after creation.
  * @returns the instance of the given command with a mock context attached.
  */
 export const createCommand = <T extends Command>(
   commandClass: ConstructorOf<T>,
   context: {stdout?: {write: () => void}; stderr?: {write: () => void}} = {},
-  patch: unknown = undefined
-): T => {
+) => {
   // Create a new instance of commandClass and pass in the parameters
   const command = new commandClass()
   command.context = {...createMockContext(), ...context} as BaseContext
 
   resolveCommandOptionsDefaults(command)
-
-  if (patch) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-argument
-    return Object.assign(Object.create(Object.getPrototypeOf(command)), command, patch)
-  }
 
   return command
 }

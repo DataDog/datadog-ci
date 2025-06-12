@@ -24,16 +24,8 @@ describe('upload', () => {
 
   describe('getMatchingCoverageReportFilesByFormat', () => {
     test('should read all coverage report files and reject invalid ones', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: ['src/commands/coverage/__tests__/fixtures'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -46,17 +38,9 @@ describe('upload', () => {
     })
 
     test('should filter by format', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          format: 'jacoco',
-          basePaths: ['src/commands/coverage/__tests__/fixtures'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['format'] = 'jacoco'
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -68,17 +52,10 @@ describe('upload', () => {
     })
 
     test('should read all coverage report files excluding ignored paths', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: ['src/commands/coverage/__tests__/fixtures'],
-          ignoredPaths: 'src/commands/coverage/__tests__/fixtures/subfolder.xml',
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['ignoredPaths'] = 'src/commands/coverage/__tests__/fixtures/subfolder.xml'
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
@@ -89,19 +66,12 @@ describe('upload', () => {
     })
 
     test('should allow specifying files directly', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: [
-            'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-            'src/commands/coverage/__tests__/fixtures/lcov.info',
-          ],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        'src/commands/coverage/__tests__/fixtures/lcov.info',
+      ]
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
@@ -112,20 +82,13 @@ describe('upload', () => {
     })
 
     test('should filter files by format if format is provided', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          format: 'lcov',
-          basePaths: [
-            'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-            'src/commands/coverage/__tests__/fixtures/lcov.info',
-          ],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['format'] = 'lcov'
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        'src/commands/coverage/__tests__/fixtures/lcov.info',
+      ]
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
@@ -135,16 +98,9 @@ describe('upload', () => {
     })
 
     test('should not fail for invalid single files', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml']
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -153,19 +109,12 @@ describe('upload', () => {
     })
 
     test('should allow folder and single unit paths', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: [
-            'src/commands/coverage/__tests__/fixtures',
-            'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
-          ],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures',
+        'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
+      ]
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -177,19 +126,12 @@ describe('upload', () => {
     })
 
     test('should not have repeated files', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: [
-            'src/commands/coverage/__tests__/fixtures',
-            'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-          ],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures',
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+      ]
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -202,16 +144,9 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders when using glob patterns', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: ['**/coverage/**/*.xml'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = ['**/coverage/**/*.xml']
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -222,17 +157,10 @@ describe('upload', () => {
     })
 
     test('should filter by format when using glob patterns', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          format: 'lcov',
-          basePaths: ['**/coverage/**'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['format'] = 'lcov'
+      command['basePaths'] = ['**/coverage/**']
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -241,16 +169,9 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders and ignore files that are not coverage reports', () => {
-      const context = createMockContext()
-      const command = createCommand(
-        UploadCodeCoverageReportCommand,
-        {},
-        {
-          basePaths: ['**/coverage/**'],
-          config: {},
-          context,
-        }
-      )
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = ['**/coverage/**']
+
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
