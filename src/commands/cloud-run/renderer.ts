@@ -1,4 +1,7 @@
 import * as helpersRenderer from '../../helpers/renderer'
+import {dryRunTag} from '../../helpers/renderer'
+
+import {InstrumentCommand} from './instrument'
 
 const AUTHENTICATION_INSTRUCTIONS = [
   '\n' + helpersRenderer.renderError('Unable to authenticate with GCP.'),
@@ -12,4 +15,16 @@ const AUTHENTICATION_INSTRUCTIONS = [
  */
 export const renderAuthenticationInstructions = () => {
   return AUTHENTICATION_INSTRUCTIONS.join('\n')
+}
+
+export const renderCloudRunInstrumentUninstrumentHeader = (commandType: InstrumentCommand, isDryRun: boolean) => {
+  const prefix = isDryRun ? `${dryRunTag} ` : ''
+
+  const commandVerb = 'Instrumenting'
+  // TODO
+  // if (commandType === UninstrumentCommand.prototype) {
+  //   commandVerb = 'Uninstrumenting'
+  // }
+
+  return `\n${prefix}🐶 ${commandVerb} Cloud Run service\n`
 }
