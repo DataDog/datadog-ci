@@ -88,7 +88,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     return 0
   }
 
-  private getEnvVars(config: AasConfigOptions): Record<string, string> {
+  public getEnvVars(config: AasConfigOptions): Record<string, string> {
     const envVars: Record<string, string> = {
       DD_API_KEY: process.env.DD_API_KEY!,
       DD_SITE: process.env.DD_SITE ?? 'datadoghq.com',
@@ -107,7 +107,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     return envVars
   }
 
-  private async instrumentSidecar(
+  public async instrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
