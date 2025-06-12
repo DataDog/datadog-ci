@@ -58,13 +58,25 @@ export const renderNoDefaultBranch = (repositoryUrl: string) => {
   return fullStr
 }
 
-export const renderFailedUpload = (sbomReport: string, error: any) => {
+export const renderFailedUpload = (sbomReport: string, error: any, debug: boolean) => {
   const reportPath = `[${chalk.bold.dim(sbomReport)}]`
 
   let fullStr = ''
   fullStr += chalk.red(`${ICONS.FAILED}  Failed upload SBOM file ${reportPath}: ${error.message}\n`)
-  if (error?.response?.status) {
-    fullStr += chalk.red(`API status code: ${error.response.status}\n`)
+  const status = error?.response?.status
+  const errors = error?.response?.data?.errors
+
+  if (status) {
+    let str = `API status code: ${status}`
+    // Always show the first error detail if present
+    if (Array.isArray(errors) && errors.length > 0 && errors[0].detail) {
+      str += `, Detail: ${errors[0].detail}`
+    }
+    fullStr += chalk.red(`${str}\n`)
+  }
+
+  if (debug && Array.isArray(errors)) {
+    fullStr += chalk.red(`API full error response:\n${JSON.stringify(error?.response?.data, undefined, 2)}\n`)
   }
 
   return fullStr
@@ -80,12 +92,12 @@ export const renderUploading = (sbomReport: string, scaRequest: ScaRequest): str
     scaRequest.dependencies.length
   } dependencies detected for languages ${Array.from(languages).join(',')})\nUpload for repository ${
     scaRequest.repository.url
-  }, branch ${scaRequest.commit.branch}\n`
+  }, branch ${scaRequest.commit.branch}, sha ${scaRequest.commit.sha}\n`
 }
 
 export const renderSuccessfulCommand = (duration: number) => {
   let fullStr = ''
-  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded file in ${duration} seconds.\n`)
+  fullStr += chalk.green(`${ICONS.SUCCESS} Uploaded SBOM file in ${duration} seconds.\n`)
   fullStr += chalk.green(`${ICONS.INFO}  Results available on ${getBaseUrl()}ci/code-analysis\n`)
   fullStr += chalk.green(
     '=================================================================================================\n'
