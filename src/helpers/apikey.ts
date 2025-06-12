@@ -9,6 +9,7 @@ import {InvalidConfigurationError} from './errors'
  */
 export interface ApiKeyValidator {
   verifyApiKey(error: AxiosError): Promise<void>
+  validateApiKey(): Promise<boolean>
 }
 
 export interface ApiKeyValidatorParams {
@@ -67,7 +68,11 @@ class ApiKeyValidatorImplem {
     return this.isValid
   }
 
-  private async validateApiKey(): Promise<boolean> {
+  /**
+   * Check if the API key is valid by making a request to the Datadog validate API.
+   * @returns `true` if the API key is valid, `false` otherwise.
+   */
+  public async validateApiKey(): Promise<boolean> {
     try {
       const response = await axios.get(this.getApiKeyValidationURL(), {
         headers: {

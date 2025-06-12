@@ -5,6 +5,13 @@ jest.mock('fs', () => ({
 
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
+const validateApiKey = jest.fn()
+jest.mock('../../../helpers/apikey', () => ({
+  newApiKeyValidator: jest.fn().mockImplementation(() => ({
+    validateApiKey,
+  })),
+}))
+
 const getToken = jest.fn()
 
 jest.mock('@azure/identity', () => ({
@@ -53,8 +60,6 @@ const DEFAULT_CONFIG: AasConfigOptions = {
 
 const DEFAULT_ARGS = ['-s', '00000000-0000-0000-0000-000000000000', '-g', 'my-resource-group', '-n', 'my-web-app']
 
-const mockResponses: Record<string, unknown> = {}
-
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['aas', 'instrument'])
 
@@ -68,13 +73,7 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
-      mockResponses['https://api.datadoghq.com/api/v1/validate'] = {valid: true}
-      global.fetch = jest.fn().mockImplementation((url) => {
-        return Promise.resolve({
-          json: () => Promise.resolve(mockResponses[url]),
-          ok: true,
-        })
-      })
+      validateApiKey.mockClear().mockResolvedValue(true)
     })
 
     test('Adds a sidecar and updates the application settings', async () => {
@@ -190,36 +189,13 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
     })
 
     test('Fails if datadog API key is invalid', async () => {
-      mockResponses['https://api.datadoghq.com/api/v1/validate'] = {
-        status: 'error',
-        code: 403,
-        errors: ['Forbidden'],
-      }
+      validateApiKey.mockClear().mockResolvedValue(false)
 
       const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(
-        '[!] Invalid API Key *******LDER, ensure you copied the value and not the Key ID\n'
-      )
-      expect(code).toEqual(1)
-      expect(getToken).not.toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).not.toHaveBeenCalled()
-      expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
-      expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
-      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
-      expect(webAppsOperations.restart).not.toHaveBeenCalled()
-    })
-
-    test('Fails if datadog API key is invalid and too short to censor', async () => {
-      mockResponses['https://api.datadoghq.com/api/v1/validate'] = {
-        status: 'error',
-        code: 403,
-        errors: ['Forbidden'],
-      }
-
-      const {code, context} = await runCLI(DEFAULT_ARGS, {DD_API_KEY: 'hi'})
-      expect(context.stdout.toString()).toEqual(
-        '[!] Invalid API Key (too short to display), ensure you copied the value and not the Key ID\n'
+        `[!] Invalid API Key stored in the environment variable DD_API_KEY: ****************
+Ensure you copied the value and not the Key ID.
+`
       )
       expect(code).toEqual(1)
       expect(getToken).not.toHaveBeenCalled()

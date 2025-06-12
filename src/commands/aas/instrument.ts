@@ -8,6 +8,8 @@ import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
 import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
 import {AasConfigOptions} from './interfaces'
+import {newApiKeyValidator} from '../../helpers/apikey'
+import {maskString} from '../../helpers/utils'
 
 export class InstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -30,24 +32,19 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
-    // Validate the Datadog API key
-    const apiKey = process.env.DD_API_KEY!
-    const response = await fetch(`https://api.${process.env.DD_SITE ?? 'datadoghq.com'}/api/v1/validate`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'DD-API-KEY': apiKey,
-      },
-    })
-    // no-dd-sa:typescript-best-practices/no-explicit-any
-    const data: any = await response.json()
-    if (data?.valid !== true) {
-      const censoredKey =
-        apiKey.length < 4 ? '(too short to display)' : '*'.repeat(apiKey.length - 4) + apiKey.slice(-4)
+    if (
+      !(await newApiKeyValidator({
+        apiKey: process.env.DD_API_KEY,
+        datadogSite: process.env.DD_SITE ?? 'datadoghq.com',
+      }).validateApiKey())
+    ) {
       this.context.stdout.write(
-        renderSoftWarning(`Invalid API Key ${censoredKey}, ensure you copied the value and not the Key ID`)
+        renderSoftWarning(
+          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )}\nEnsure you copied the value and not the Key ID.`
+        )
       )
-
       return 1
     }
     const cred = new DefaultAzureCredential()
@@ -125,6 +122,28 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     }
 
     return envVars
+  }
+
+  /**
+   * Validates the Datadog API key in the env by making a request to the Datadog API.
+   * @returns {boolean} - Returns true if the API key is valid, false otherwise.
+   */
+  public async validateAPIKey(): Promise<boolean> {
+    // Validate the Datadog API key
+    const apiKey = process.env.DD_API_KEY!
+    const response = await fetch(`https://api.${process.env.DD_SITE ?? 'datadoghq.com'}/api/v1/validate`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'DD-API-KEY': apiKey,
+      },
+    })
+    // no-dd-sa:typescript-best-practices/no-explicit-any
+    const data: any = await response.json()
+    if (data?.valid !== true) {
+      return false
+    }
+    return true
   }
 
   public async instrumentSidecar(
