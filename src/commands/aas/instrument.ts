@@ -124,28 +124,6 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     return envVars
   }
 
-  /**
-   * Validates the Datadog API key in the env by making a request to the Datadog API.
-   * @returns {boolean} - Returns true if the API key is valid, false otherwise.
-   */
-  public async validateAPIKey(): Promise<boolean> {
-    // Validate the Datadog API key
-    const apiKey = process.env.DD_API_KEY!
-    const response = await fetch(`https://api.${process.env.DD_SITE ?? 'datadoghq.com'}/api/v1/validate`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'DD-API-KEY': apiKey,
-      },
-    })
-    // no-dd-sa:typescript-best-practices/no-explicit-any
-    const data: any = await response.json()
-    if (data?.valid !== true) {
-      return false
-    }
-    return true
-  }
-
   public async instrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
