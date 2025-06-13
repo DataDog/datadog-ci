@@ -23,15 +23,26 @@ describe('upload', () => {
   })
 
   describe('getMatchingCoverageReportFilesByFormat', () => {
-    test('should read all xml files and reject invalid ones', () => {
-      const context = createMockContext()
+    test('should read all coverage report files and reject invalid ones', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['src/commands/coverage/__tests__/fixtures'],
-        automaticReportsDiscovery: true,
-        config: {},
-        context,
-      })
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
+      const fileNames = Object.values(result).flatMap((paths) => paths)
+
+      expect(fileNames.length).toEqual(4)
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
+    })
+
+    test('should filter by format', () => {
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['format'] = 'jacoco'
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(3)
@@ -40,46 +51,57 @@ describe('upload', () => {
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
-    test('should read all xml files excluding ignored paths', () => {
-      const context = createMockContext()
+    test('should read all coverage report files excluding ignored paths', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['src/commands/coverage/__tests__/fixtures'],
-        automaticReportsDiscovery: true,
-        ignoredPaths: 'src/commands/coverage/__tests__/fixtures/subfolder.xml',
-        config: {},
-        context,
-      })
+      command['ignoredPaths'] = 'src/commands/coverage/__tests__/fixtures/subfolder.xml'
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
+      const fileNames = Object.values(result).flatMap((paths) => paths)
+
+      expect(fileNames.length).toEqual(3)
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
+    })
+
+    test('should allow specifying files directly', () => {
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        'src/commands/coverage/__tests__/fixtures/lcov.info',
+      ]
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(2)
-      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
+
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
     })
 
-    test('should allow single files', () => {
-      const context = createMockContext()
+    test('should filter files by format if format is provided', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['src/commands/coverage/__tests__/fixtures/jacoco-report.xml'],
-        config: {},
-        context,
-      })
+      command['format'] = 'lcov'
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+        'src/commands/coverage/__tests__/fixtures/lcov.info',
+      ]
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
       expect(fileNames.length).toEqual(1)
 
-      expect(fileNames[0]).toEqual('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
     })
 
     test('should not fail for invalid single files', () => {
-      const context = createMockContext()
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml'],
-        config: {},
-        context,
-      })
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
@@ -87,53 +109,45 @@ describe('upload', () => {
     })
 
     test('should allow folder and single unit paths', () => {
-      const context = createMockContext()
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: [
-          'src/commands/coverage/__tests__/fixtures',
-          'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
-        ],
-        config: {},
-        context,
-      })
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures',
+        'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
+      ]
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
-      expect(fileNames.length).toEqual(3)
+      expect(fileNames.length).toEqual(4)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
     })
 
     test('should not have repeated files', () => {
-      const context = createMockContext()
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: [
-          'src/commands/coverage/__tests__/fixtures',
-          'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
-        ],
-        automaticReportsDiscovery: true,
-        config: {},
-        context,
-      })
+      command['basePaths'] = [
+        'src/commands/coverage/__tests__/fixtures',
+        'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
+      ]
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames.length).toEqual(3)
+      expect(fileNames.length).toEqual(4)
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
     })
 
     test('should fetch nested folders when using glob patterns', () => {
-      const context = createMockContext()
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['**/coverage/**/*.xml'],
-        config: {},
-        context,
-      })
+      command['basePaths'] = ['**/coverage/**/*.xml']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
       expect(fileNames.length).toEqual(3)
@@ -142,20 +156,30 @@ describe('upload', () => {
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
     })
 
-    test('should fetch nested folders and ignore non xml files', () => {
-      const context = createMockContext()
+    test('should filter by format when using glob patterns', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      const result = command['getMatchingCoverageReportFilesByFormat'].call({
-        basePaths: ['**/coverage/**'],
-        config: {},
-        context,
-      })
+      command['format'] = 'lcov'
+      command['basePaths'] = ['**/coverage/**']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
-      expect(fileNames.length).toEqual(3)
+      expect(fileNames.length).toEqual(1)
+      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/lcov.info')
+    })
+
+    test('should fetch nested folders and ignore files that are not coverage reports', () => {
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['basePaths'] = ['**/coverage/**']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
+
+      const fileNames = Object.values(result).flatMap((paths) => paths)
+      expect(fileNames.length).toEqual(4)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
+      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/lcov.info')
     })
   })
 
