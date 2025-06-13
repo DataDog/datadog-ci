@@ -1,4 +1,8 @@
+import IService = google.cloud.run.v2.IService
+import IContainer = google.cloud.run.v2.IContainer
+
 import {ServicesClient} from '@google-cloud/run'
+import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -8,7 +12,7 @@ import {renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
 import {CloudRunConfigOptions} from './interfaces'
-import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader} from './renderer'
+import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader, withSpinner} from './renderer'
 import {checkAuthentication} from './utils'
 
 export class InstrumentCommand extends Command {
@@ -104,17 +108,16 @@ export class InstrumentCommand extends Command {
     if (!project || !services || !services.length || !region) {
       return 1
     }
+    this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
 
     // Instrument services with sidecar
     try {
       await this.instrumentSidecar(project, services, region)
     } catch (error) {
-      this.context.stderr.write(chalk.red(`Instrumentation failed: ${error}\n`))
-
       return 1
     }
 
-    this.context.stdout.write(chalk.green('\n✅ Cloud Run instrumentation completed successfully!\n'))
+    this.context.stdout.write('\n✅ Cloud Run instrumentation completed successfully!\n')
 
     return 0
   }
@@ -139,13 +142,68 @@ export class InstrumentCommand extends Command {
 
     const servicePath = client.servicePath(project, region, serviceName)
 
-    let service
-    try {
-      const [existingService] = await client.getService({name: servicePath})
-      service = existingService
-    } catch (error) {
-      throw new Error(`Service ${serviceName} not found in project ${project}, region ${region}`)
+    const service = await withSpinner(
+      `Fetching service configuration...`,
+      async () => {
+        try {
+          const [existingService] = await client.getService({name: servicePath})
+
+          return existingService
+        } catch (error) {
+          throw new Error(`Service ${serviceName} not found in project ${project}, region ${region}`)
+        }
+      },
+      `Fetched service configuration`
+    )
+
+    const updatedService = this.createInstrumentedServiceConfig(service)
+
+    await withSpinner(
+      `Updating service ${serviceName}...`,
+      async () => {
+        const [operation] = await client.updateService({
+          service: updatedService,
+        })
+        await operation.promise()
+      },
+      `Updated service ${serviceName}`
+    )
+  }
+
+  private createInstrumentedServiceConfig(service: IService): IService {
+    const template = service.template || {}
+    const containers: IContainer[] = template.containers || []
+    const sidecarName = 'datadog-sidecar'
+
+    // Check if sidecar already exists
+    const existingSidecarIndex = containers.findIndex((c) => c.name === sidecarName)
+
+    // Create sidecar container
+    const sidecarContainer: IContainer = {
+      name: sidecarName,
+      image: 'gcr.io/datadoghq/serverless-init:latest',
+      resources: {
+        limits: {
+          memory: '512Mi',
+          cpu: '1',
+        },
+      },
     }
-    console.log(service)
+
+    const updatedContainers = [...containers]
+
+    if (existingSidecarIndex >= 0) {
+      updatedContainers[existingSidecarIndex] = sidecarContainer
+    } else {
+      updatedContainers.push(sidecarContainer)
+    }
+
+    return {
+      ...service,
+      template: {
+        ...template,
+        containers: updatedContainers,
+      },
+    }
   }
 }
