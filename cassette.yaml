@@ -1,0 +1,697 @@
+---
+request:
+  headers:
+    host: firefox.settings.services.mozilla.com
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: '*/*'
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate, br, zstd
+    connection: keep-alive
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:36.164Z'
+  url: /v1/
+response:
+  headers:
+    server: nginx
+    content-length: '1228'
+    access-control-allow-origin: '*'
+    access-control-expose-headers: Content-Type, Content-Length, Alert, Retry-After, Backoff
+    x-content-type-options: nosniff
+    content-security-policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none';
+    strict-transport-security: max-age=31536000
+    via: 1.1 google
+    date: Wed, 11 Jun 2025 09:08:28 GMT
+    age: '2828'
+    content-type: application/json
+    cache-control: public,max-age=3600
+    alt-svc: clear
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:36.164Z'
+  body:
+    project_name: Remote Settings PROD
+    project_version: 23.0.2
+    http_api_version: '1.23'
+    project_docs: https://remote-settings.readthedocs.io
+    url: https://firefox.settings.services.mozilla.com/v1/
+    config:
+      path: /etc/kinto.ini
+      hash: 8cfcf3a6f7c87f382e9bb895161fb58d90cadfdfd631ecf2d4a6d7ef2e339b55
+      modified: '2025-06-10T20:15:13.839057'
+    settings:
+      batch_max_requests: 25
+      readonly: true
+      explicit_permissions: false
+    capabilities:
+      changes:
+        description: Track modifications of records in Kinto and store the collection timestamps into a specific bucket and collection.
+        url: http://kinto.readthedocs.io/en/latest/tutorials/synchronisation.html#polling-for-remote-changes
+        version: 35.3.1
+        collections:
+        - /buckets/blocklists
+        - /buckets/blocklists-preview
+        - /buckets/main
+        - /buckets/main-preview
+        - /buckets/security-state
+        - /buckets/security-state-preview
+      attachments:
+        description: Add file attachments to records
+        url: https://github.com/Kinto/kinto-attachment/
+        version: 7.1.0
+        base_url: https://firefox-settings-attachments.cdn.mozilla.net/
+      prometheus:
+        description: Prometheus metrics.
+        url: https://github.com/Kinto/kinto/
+        prefix: remotesettings_
+        disabled_metrics: []
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636642212'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:42.282Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/config
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:42 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '60'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '13'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:42.282Z'
+  body:
+    environment: staging
+    debug: false
+    theme: light
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636642212'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:47.277Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/config
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:47 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '60'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '3'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:47.277Z'
+  body:
+    environment: staging
+    debug: false
+    theme: light
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636642212'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:47.379Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts?filter_by=all&page=1&limit=5
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:47 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '3199'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '53'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:47.379Z'
+  body:
+    items:
+    - categories: []
+      id: 7
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:47:14.415Z'
+      updated_at: '2025-06-06T08:47:14.415Z'
+      is_favorite: true
+    - categories: []
+      id: 6
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:45:01.194Z'
+      updated_at: '2025-06-06T08:45:01.194Z'
+      is_favorite: true
+    - categories: []
+      id: 4
+      title: New test 2
+      content: Test 2
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:40:02.495Z'
+      updated_at: '2025-06-06T08:40:02.495Z'
+      is_favorite: false
+    - categories: []
+      id: 3
+      title: New test 1
+      content: Test
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:39:46.607Z'
+      updated_at: '2025-06-06T08:39:46.607Z'
+      is_favorite: false
+    - categories: []
+      id: 1
+      title: Lorem ipsum
+      content: |-
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet dapibus mi. Suspendisse at mi enim. Fusce at magna non lacus porta porta non non metus. Etiam tincidunt, ligula nec laoreet dignissim, erat sapien fermentum enim, nec euismod nulla justo vitae purus. Curabitur sed dolor in magna tincidunt dapibus. Sed finibus, turpis et efficitur blandit, elit sapien ultricies sapien, et fermentum orci ante vitae est.
+
+        Phasellus malesuada lorem in finibus fringilla. Pellentesque scelerisque magna ut lorem interdum, ac blandit massa porttitor. Mauris nec odio at ante lobortis fringilla. Duis a ante nisi. Aenean id felis id lacus finibus volutpat. Proin posuere, mi sed convallis ullamcorper, velit purus convallis mauris, eget efficitur sem justo id sem. Nullam feugiat lacus nec massa rhoncus, a pretium metus accumsan.
+
+        Donec vitae ex eros. Etiam ac suscipit lectus. Quisque in urna tincidunt, tincidunt lorem vitae, scelerisque nulla. Sed vulputate convallis suscipit. Vivamus cursus tincidunt augue, id porta turpis fermentum non. Integer sed bibendum magna. Vestibulum imperdiet, nisl in rutrum laoreet, mi urna efficitur massa, nec varius diam metus at libero.
+
+        Suspendisse potenti. Nullam sollicitudin tristique tortor in suscipit. Suspendisse et neque non sapien rutrum vestibulum. Donec convallis, justo nec fermentum tincidunt, diam nulla porttitor sem, vel suscipit ligula metus id nibh. Duis nec sapien at sapien efficitur congue. Sed pretium posuere fermentum. Integer volutpat sem nec felis interdum, at vestibulum diam vestibulum.
+
+        Maecenas varius mauris quis velit convallis, nec luctus neque lacinia. Integer a mi eros. Nunc varius justo sed imperdiet dapibus. Donec congue purus vitae dolor placerat, nec tincidunt neque fermentum. Morbi a lorem non erat dictum pharetra. Integer vel eros at nisl scelerisque scelerisque. Morbi laoreet faucibus nulla, sit amet lobortis purus malesuada ut.
+      featured_image: null
+      status: published
+      created_at: '2025-05-07T15:47:25.336Z'
+      updated_at: '2025-05-07T15:47:25.336Z'
+      is_favorite: false
+    total: 5
+    page: 1
+    total_pages: 1
+    has_next: false
+    has_previous: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    content-type: application/json
+    content-length: '86'
+    origin: http://envoy.staging.svc.cluster.local
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/create
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636651509'
+    priority: u=0
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: POST
+  timestamp: '2025-06-11T09:55:51.887Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts
+  body:
+    categories: []
+    id: 15
+    title: My first post 🥳
+    content: This is a super fancy post
+    featured_image: null
+    status: draft
+    created_at: '2025-06-11T09:55:51.834Z'
+    updated_at: '2025-06-11T09:55:51.834Z'
+    is_favorite: false
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:51 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '257'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    access-control-allow-origin: '*'
+    x-envoy-upstream-service-time: '49'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:51.887Z'
+  body:
+    categories: []
+    id: 15
+    title: My first post 🥳
+    content: This is a super fancy post
+    featured_image: null
+    status: draft
+    created_at: '2025-06-11T09:55:51.834Z'
+    updated_at: '2025-06-11T09:55:51.834Z'
+    is_favorite: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/post/15
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636651509'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:52.024Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts/15
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:51 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '257'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '45'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:52.024Z'
+  body:
+    categories: []
+    id: 15
+    title: My first post 🥳
+    content: This is a super fancy post
+    featured_image: null
+    status: draft
+    created_at: '2025-06-11T09:55:51.834Z'
+    updated_at: '2025-06-11T09:55:51.834Z'
+    is_favorite: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636652564'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:52.925Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/config
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:52 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '60'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '3'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:52.925Z'
+  body:
+    environment: staging
+    debug: false
+    theme: light
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636652564'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:53.075Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts?filter_by=all&page=1&limit=5
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:53 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '1312'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '46'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:53.075Z'
+  body:
+    items:
+    - categories: []
+      id: 15
+      title: My first post 🥳
+      content: This is a super fancy post
+      featured_image: null
+      status: draft
+      created_at: '2025-06-11T09:55:51.834Z'
+      updated_at: '2025-06-11T09:55:51.834Z'
+      is_favorite: false
+    - categories: []
+      id: 7
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:47:14.415Z'
+      updated_at: '2025-06-06T08:47:14.415Z'
+      is_favorite: true
+    - categories: []
+      id: 6
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:45:01.194Z'
+      updated_at: '2025-06-06T08:45:01.194Z'
+      is_favorite: true
+    - categories: []
+      id: 4
+      title: New test 2
+      content: Test 2
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:40:02.495Z'
+      updated_at: '2025-06-06T08:40:02.495Z'
+      is_favorite: false
+    - categories: []
+      id: 3
+      title: New test 1
+      content: Test
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:39:46.607Z'
+      updated_at: '2025-06-06T08:39:46.607Z'
+      is_favorite: false
+    total: 6
+    page: 1
+    total_pages: 2
+    has_next: true
+    has_previous: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/post/15
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636654858'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:54.960Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts/15
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:54 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '257'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '39'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:54.960Z'
+  body:
+    categories: []
+    id: 15
+    title: My first post 🥳
+    content: This is a super fancy post
+    featured_image: null
+    status: draft
+    created_at: '2025-06-11T09:55:51.834Z'
+    updated_at: '2025-06-11T09:55:51.834Z'
+    is_favorite: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    origin: http://envoy.staging.svc.cluster.local
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/post/15
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636654858'
+    priority: u=0
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+    content-length: '0'
+  method: DELETE
+  timestamp: '2025-06-11T09:55:56.514Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts/15
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:56 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '3199'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    access-control-allow-origin: '*'
+    x-envoy-upstream-service-time: '57'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:56.514Z'
+  body:
+    items:
+    - categories: []
+      id: 7
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:47:14.415Z'
+      updated_at: '2025-06-06T08:47:14.415Z'
+      is_favorite: true
+    - categories: []
+      id: 6
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:45:01.194Z'
+      updated_at: '2025-06-06T08:45:01.194Z'
+      is_favorite: true
+    - categories: []
+      id: 4
+      title: New test 2
+      content: Test 2
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:40:02.495Z'
+      updated_at: '2025-06-06T08:40:02.495Z'
+      is_favorite: false
+    - categories: []
+      id: 3
+      title: New test 1
+      content: Test
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:39:46.607Z'
+      updated_at: '2025-06-06T08:39:46.607Z'
+      is_favorite: false
+    - categories: []
+      id: 1
+      title: Lorem ipsum
+      content: |-
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet dapibus mi. Suspendisse at mi enim. Fusce at magna non lacus porta porta non non metus. Etiam tincidunt, ligula nec laoreet dignissim, erat sapien fermentum enim, nec euismod nulla justo vitae purus. Curabitur sed dolor in magna tincidunt dapibus. Sed finibus, turpis et efficitur blandit, elit sapien ultricies sapien, et fermentum orci ante vitae est.
+
+        Phasellus malesuada lorem in finibus fringilla. Pellentesque scelerisque magna ut lorem interdum, ac blandit massa porttitor. Mauris nec odio at ante lobortis fringilla. Duis a ante nisi. Aenean id felis id lacus finibus volutpat. Proin posuere, mi sed convallis ullamcorper, velit purus convallis mauris, eget efficitur sem justo id sem. Nullam feugiat lacus nec massa rhoncus, a pretium metus accumsan.
+
+        Donec vitae ex eros. Etiam ac suscipit lectus. Quisque in urna tincidunt, tincidunt lorem vitae, scelerisque nulla. Sed vulputate convallis suscipit. Vivamus cursus tincidunt augue, id porta turpis fermentum non. Integer sed bibendum magna. Vestibulum imperdiet, nisl in rutrum laoreet, mi urna efficitur massa, nec varius diam metus at libero.
+
+        Suspendisse potenti. Nullam sollicitudin tristique tortor in suscipit. Suspendisse et neque non sapien rutrum vestibulum. Donec convallis, justo nec fermentum tincidunt, diam nulla porttitor sem, vel suscipit ligula metus id nibh. Duis nec sapien at sapien efficitur congue. Sed pretium posuere fermentum. Integer volutpat sem nec felis interdum, at vestibulum diam vestibulum.
+
+        Maecenas varius mauris quis velit convallis, nec luctus neque lacinia. Integer a mi eros. Nunc varius justo sed imperdiet dapibus. Donec congue purus vitae dolor placerat, nec tincidunt neque fermentum. Morbi a lorem non erat dictum pharetra. Integer vel eros at nisl scelerisque scelerisque. Morbi laoreet faucibus nulla, sit amet lobortis purus malesuada ut.
+      featured_image: null
+      status: published
+      created_at: '2025-05-07T15:47:25.336Z'
+      updated_at: '2025-05-07T15:47:25.336Z'
+      is_favorite: false
+    total: 5
+    page: 1
+    total_pages: 1
+    has_next: false
+    has_previous: false
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636656405'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:56.570Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/config
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:56 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '60'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '2'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:56.570Z'
+  body:
+    environment: staging
+    debug: false
+    theme: light
+---
+request:
+  headers:
+    host: envoy.staging.svc.cluster.local
+    user-agent: Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/135.0 DatadogSynthetics
+    accept: application/json, text/plain, */*
+    accept-language: en-US,en;q=0.5
+    accept-encoding: gzip, deflate
+    connection: keep-alive
+    referer: http://envoy.staging.svc.cluster.local/
+    cookie: ' _dd_s=aid=7072a712-79f3-4457-bea2-e1cc9b87af23&rum=2&id=02e23373-502e-48f7-9daa-6bccdefca863&created=1749635742212&expire=1749636656405'
+    Sec-Datadog: 'Request sent by a Datadog Synthetics Browser Test (https://docs.datadoghq.com/synthetics/) - test_id: mjz-k8h-jrr'
+  method: GET
+  timestamp: '2025-06-11T09:55:56.692Z'
+  url: http://envoy.staging.svc.cluster.local/api/blog/posts?filter_by=all&page=1&limit=5
+response:
+  headers:
+    server: envoy
+    date: Wed, 11 Jun 2025 09:55:56 GMT
+    content-type: application/json; charset=utf-8
+    x-frame-options: DENY
+    content-length: '3199'
+    x-content-type-options: nosniff
+    referrer-policy: same-origin
+    cross-origin-opener-policy: same-origin
+    vary: origin
+    x-envoy-upstream-service-time: '62'
+  statusCode: 200
+  statusMessage: OK
+  timestamp: '2025-06-11T09:55:56.692Z'
+  body:
+    items:
+    - categories: []
+      id: 7
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:47:14.415Z'
+      updated_at: '2025-06-06T08:47:14.415Z'
+      is_favorite: true
+    - categories: []
+      id: 6
+      title: Test - star a post
+      content: Test - star a post - content
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:45:01.194Z'
+      updated_at: '2025-06-06T08:45:01.194Z'
+      is_favorite: true
+    - categories: []
+      id: 4
+      title: New test 2
+      content: Test 2
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:40:02.495Z'
+      updated_at: '2025-06-06T08:40:02.495Z'
+      is_favorite: false
+    - categories: []
+      id: 3
+      title: New test 1
+      content: Test
+      featured_image: null
+      status: published
+      created_at: '2025-06-06T08:39:46.607Z'
+      updated_at: '2025-06-06T08:39:46.607Z'
+      is_favorite: false
+    - categories: []
+      id: 1
+      title: Lorem ipsum
+      content: |-
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet dapibus mi. Suspendisse at mi enim. Fusce at magna non lacus porta porta non non metus. Etiam tincidunt, ligula nec laoreet dignissim, erat sapien fermentum enim, nec euismod nulla justo vitae purus. Curabitur sed dolor in magna tincidunt dapibus. Sed finibus, turpis et efficitur blandit, elit sapien ultricies sapien, et fermentum orci ante vitae est.
+
+        Phasellus malesuada lorem in finibus fringilla. Pellentesque scelerisque magna ut lorem interdum, ac blandit massa porttitor. Mauris nec odio at ante lobortis fringilla. Duis a ante nisi. Aenean id felis id lacus finibus volutpat. Proin posuere, mi sed convallis ullamcorper, velit purus convallis mauris, eget efficitur sem justo id sem. Nullam feugiat lacus nec massa rhoncus, a pretium metus accumsan.
+
+        Donec vitae ex eros. Etiam ac suscipit lectus. Quisque in urna tincidunt, tincidunt lorem vitae, scelerisque nulla. Sed vulputate convallis suscipit. Vivamus cursus tincidunt augue, id porta turpis fermentum non. Integer sed bibendum magna. Vestibulum imperdiet, nisl in rutrum laoreet, mi urna efficitur massa, nec varius diam metus at libero.
+
+        Suspendisse potenti. Nullam sollicitudin tristique tortor in suscipit. Suspendisse et neque non sapien rutrum vestibulum. Donec convallis, justo nec fermentum tincidunt, diam nulla porttitor sem, vel suscipit ligula metus id nibh. Duis nec sapien at sapien efficitur congue. Sed pretium posuere fermentum. Integer volutpat sem nec felis interdum, at vestibulum diam vestibulum.
+
+        Maecenas varius mauris quis velit convallis, nec luctus neque lacinia. Integer a mi eros. Nunc varius justo sed imperdiet dapibus. Donec congue purus vitae dolor placerat, nec tincidunt neque fermentum. Morbi a lorem non erat dictum pharetra. Integer vel eros at nisl scelerisque scelerisque. Morbi laoreet faucibus nulla, sit amet lobortis purus malesuada ut.
+      featured_image: null
+      status: published
+      created_at: '2025-05-07T15:47:25.336Z'
+      updated_at: '2025-05-07T15:47:25.336Z'
+      is_favorite: false
+    total: 5
+    page: 1
+    total_pages: 1
+    has_next: false
+    has_previous: false
