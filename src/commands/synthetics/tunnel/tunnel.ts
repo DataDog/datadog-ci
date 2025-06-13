@@ -267,7 +267,9 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
+    this.multiplexer.on('error', (error) => {
+      // this.reporter?.warn(`Multiplexer error: ${error.message}`)
+    })
     duplex.on('error', (error) => {
       // this.reporter?.warn(`Websocket error: ${error.message}`)
     })
