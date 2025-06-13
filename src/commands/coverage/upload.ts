@@ -146,9 +146,14 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
+    const isGitRepository = await isGitRepo()
+
+    if (isGitRepository) {
+      this.git = await newSimpleGit()
+    }
+
     if (!this.skipGitMetadataUpload) {
-      if (await isGitRepo()) {
-        this.git = await newSimpleGit()
+      if (isGitRepository) {
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({
