@@ -1,13 +1,18 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
+import {DATADOG_SITE_US1} from '../../constants'
+import {newApiKeyValidator} from '../../helpers/apikey'
+import {renderSoftWarning} from '../../helpers/renderer'
+import {maskString} from '../../helpers/utils'
+
 import {CloudRunConfigOptions} from './interfaces'
 import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader} from './renderer'
 import {checkAuthentication} from './utils'
 
 export class InstrumentCommand extends Command {
   // TODO uncomment when commnand is ready and add to docs: https://github.com/DataDog/datadog-ci#cloud-run
-  // public static paths = [['cloud-run', 'instrument']]
+  public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({
     category: 'Serverless',
@@ -25,7 +30,6 @@ export class InstrumentCommand extends Command {
   private logLevel = Option.String('--log-level,--logLevel') // todo
   private regExPattern = Option.String('--services-regex,--servicesRegex') // todo
   private region = Option.String('-r,--region') // todo
-  private service = Option.String('--service') // todo
   private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true) // todo
   private tracing = Option.String('--tracing') // todo
@@ -41,9 +45,30 @@ export class InstrumentCommand extends Command {
   public async execute(): Promise<0 | 1> {
     // TODO FIPS
 
-    this.context.stdout.write(renderCloudRunInstrumentUninstrumentHeader(Object.getPrototypeOf(this), this.dryRun))
+    this.context.stdout.write(
+      chalk.bold(renderCloudRunInstrumentUninstrumentHeader(Object.getPrototypeOf(this), this.dryRun))
+    )
 
     // TODO resolve config from file
+    // TODO dry run
+    // TODO interactive
+
+    // Verify DD API Key
+    const isApiKeyValid = await newApiKeyValidator({
+      apiKey: process.env.DD_API_KEY,
+      datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+    }).validateApiKey()
+    if (!isApiKeyValid) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
+            process.env.DD_API_KEY ?? ''
+          )}\nEnsure you copied the value and not the Key ID.`
+        )
+      )
+
+      return 1
+    }
 
     // Verify GCP credentials
     this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
