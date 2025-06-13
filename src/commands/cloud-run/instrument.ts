@@ -3,10 +3,10 @@ import {Command, Option} from 'clipanion'
 
 import {CloudRunConfigOptions} from './interfaces'
 import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader} from './renderer'
-import {checkAuthentication} from './util'
+import {checkAuthentication} from './utils'
 
 export class InstrumentCommand extends Command {
-  // TODO uncomment when commnand is ready
+  // TODO uncomment when commnand is ready and add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   // public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({

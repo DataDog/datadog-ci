@@ -28,7 +28,7 @@ import {
   summarizeConfig,
   CloudRunFlareCommand,
 } from '../flare'
-import {checkAuthentication} from '../util'
+import {checkAuthentication} from '../utils'
 
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'

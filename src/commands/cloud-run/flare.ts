@@ -38,7 +38,7 @@ import {getUniqueFileNames} from '../lambda/flare'
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
-import {checkAuthentication} from './util'
+import {checkAuthentication} from './utils'
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
