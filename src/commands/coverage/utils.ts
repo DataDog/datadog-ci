@@ -7,10 +7,11 @@ import {renderFileReadError} from './renderer'
 
 const ROOT_TAG_REGEX = /<([^?!\s/>]+)/
 
-const jacocoFormat = 'jacoco' as const
-const lcovFormat = 'lcov' as const
+export const jacocoFormat = 'jacoco' as const
+export const lcovFormat = 'lcov' as const
+export const opencoverFormat = 'opencover' as const
 
-export const coverageFormats = [jacocoFormat, lcovFormat] as const
+export const coverageFormats = [jacocoFormat, lcovFormat, opencoverFormat] as const
 export type CoverageFormat = typeof coverageFormats[number]
 
 export const isCoverageFormat = (value: string): value is CoverageFormat => {
@@ -36,9 +37,13 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
   const filename = upath.basename(lowercaseFile)
   const extension = upath.extname(lowercaseFile)
 
-  if (extension === '.xml' && filename.includes('jacoco')) {
+  if (extension === '.xml' && (filename.includes('coverage') || filename.includes('jacoco'))) {
     return readFirstKb(filePath, (data) => {
-      return data.includes('<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"') ? jacocoFormat : undefined
+      if (data.includes('<CoverageSession')) {
+        return opencoverFormat
+      } else if (data.includes('<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"') || data.includes('<report')) {
+        return jacocoFormat
+      }
     })
   } else if (
     extension === '.lcov' ||
@@ -94,6 +99,20 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
     }
     if (!xmlFileContentString.includes('<sourcefile')) {
       return 'Invalid Jacoco report: missing <sourcefile> tags'
+    }
+  }
+
+  if (format === opencoverFormat) {
+    const xmlFileContentString = String(fs.readFileSync(filePath))
+    const validationOutput = XMLValidator.validate(xmlFileContentString)
+    if (validationOutput !== true) {
+      return validationOutput.err.msg
+    }
+
+    // Check that the root element is 'CoverageSession'
+    const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
+    if (!rootTagMatch || rootTagMatch[1] !== 'CoverageSession') {
+      return 'Invalid Opencover report: root element must be <CoverageSession>'
     }
   }
 

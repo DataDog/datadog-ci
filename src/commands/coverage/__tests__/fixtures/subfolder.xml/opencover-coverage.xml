@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Summary numSequencePoints="1657" visitedSequencePoints="1577" numBranchPoints="922" visitedBranchPoints="769" sequenceCoverage="95.17" branchCoverage="83.41" maxCyclomaticComplexity="31" minCyclomaticComplexity="1" />
+  <Modules>
+    <Module hash="B0-C2-FD-A1-3A-C9-E1-62-0F-2F-6D-EB-74-68-5A-20-27-5F-00-BC">
+      <Summary numSequencePoints="1657" visitedSequencePoints="1577" numBranchPoints="922" visitedBranchPoints="769" sequenceCoverage="95.17" branchCoverage="83.41" maxCyclomaticComplexity="31" minCyclomaticComplexity="1" />
+      <FullName>C:\Projects\opencover.git\working\main\bin\Debug\OpenCover.Framework.dll</FullName>
+      <ModuleName>OpenCover.Framework</ModuleName>
+      <Files>
+        <File uid="1" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\Bootstrapper.cs" />
+        <File uid="2" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\CommandLineParserBase.cs" />
+        <File uid="3" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\CommandLineParser.cs" />
+        <File uid="5" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\Communication\MarshalWapper.cs" />
+      </Files>
+      <Classes>
+        <Class>
+          <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" />
+          <FullName>&lt;Module&gt;</FullName>
+          <Methods />
+        </Class>
+        <Class>
+          <Summary numSequencePoints="22" visitedSequencePoints="22" numBranchPoints="3" visitedBranchPoints="3" sequenceCoverage="100" branchCoverage="100" maxCyclomaticComplexity="1" minCyclomaticComplexity="1" />
+          <FullName>OpenCover.Framework.Bootstrapper</FullName>
+          <Methods>
+            <Method visited="true" cyclomaticComplexity="1" sequenceCoverage="100" branchCoverage="100" isConstructor="false" isStatic="false" isGetter="true" isSetter="false">
+              <Summary numSequencePoints="3" visitedSequencePoints="3" numBranchPoints="1" visitedBranchPoints="1" sequenceCoverage="100" branchCoverage="100" maxCyclomaticComplexity="1" minCyclomaticComplexity="1" />
+              <MetadataToken>100663298</MetadataToken>
+              <Name>Microsoft.Practices.Unity.IUnityContainer OpenCover.Framework.Bootstrapper::get_Container()</Name>
+              <FileRef uid="1" />
+              <SequencePoints>
+                <SequencePoint vc="2" uspid="1" ordinal="0" offset="0" sl="46" sc="17" el="46" ec="18" />
+                <SequencePoint vc="2" uspid="2" ordinal="1" offset="1" sl="46" sc="19" el="46" ec="37" />
+                <SequencePoint vc="2" uspid="3" ordinal="2" offset="10" sl="46" sc="38" el="46" ec="39" />
+              </SequencePoints>
+              <BranchPoints />
+              <MethodPoint xsi:type="SequencePoint" vc="2" uspid="1" ordinal="0" offset="0" sl="46" sc="17" el="46" ec="18" />
+            </Method>
+          </Methods>
+        </Class>
+      </Classes>
+    </Module>
+    <Module skippedDueTo="Filter" hash="70-2E-5B-8B-05-0C-3D-E1-31-05-34-A1-87-7E-B0-D3-D3-A6-4D-F9">
+      <FullName>C:\Projects\opencover.git\working\main\bin\Debug\Gendarme.Framework.dll</FullName>
+      <ModuleName>Gendarme.Framework</ModuleName>
+      <Classes />
+    </Module>
+  </Modules>
+</CoverageSession>
