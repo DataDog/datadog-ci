@@ -18,7 +18,6 @@ import * as helpersPromptModule from '../../../helpers/prompt'
 
 import * as flareModule from '../flare'
 import {
-  checkAuthentication,
   generateInsightsFile,
   getCloudRunServiceConfig,
   getLogs,
@@ -29,6 +28,7 @@ import {
   summarizeConfig,
   CloudRunFlareCommand,
 } from '../flare'
+import {checkAuthentication} from '../utils'
 
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'

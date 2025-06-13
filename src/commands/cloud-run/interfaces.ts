@@ -26,3 +26,47 @@ export interface LogConfig {
   fileName: string
   severityFilter?: string
 }
+
+/**
+ * Configuration options provided by the user through
+ * the CLI in order to instrument properly.
+ */
+export interface CloudRunConfigOptions {
+  environment?: string
+  extraTags?: string
+  services: string[]
+  interactive?: boolean
+  logging?: string
+  logLevel?: string
+  profile?: string
+  region?: string
+  service?: string
+  tracing?: string
+  version?: string
+  llmobs?: string
+}
+
+/**
+ * Interface for Unified Service Tagging.
+ *
+ * See more at: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=kubernetes#overview
+ */
+interface InstrumentationTags {
+  environment?: string
+  extraTags?: string
+  service?: string
+  version?: string
+}
+
+/**
+ * Basic settings to use in every specified
+ * cloud run service to be instrumented.
+ */
+export interface InstrumentationSettings extends InstrumentationTags {
+  interactive?: boolean
+  loggingEnabled?: boolean
+  logLevel?: string
+  tracingEnabled: boolean
+  llmobsEnabled?: boolean
+  llmobsMlApp?: string
+}
