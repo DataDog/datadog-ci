@@ -3,4 +3,4 @@
 # Fix "detected dubious ownership in repository at '/w'" error
 git config --global --add safe.directory /w
 
-datadog-ci "$@"
+exec datadog-ci "$@"
