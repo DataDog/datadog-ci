@@ -161,25 +161,35 @@ export type SelectiveRerunDecision =
     }
 
 export interface BaseResult {
+  /** The device used in this test run. */
   device?: Device
-  /** Duration of the result in milliseconds. */
+  /** Duration of this test run in milliseconds. */
   duration: number
+  /** The execution rule that was used for this test run. */
   executionRule: ExecutionRule
+  /** The ID of the initial attempt if this test run is a retry. */
   initialResultId?: string
-  /** Whether the result is an intermediary result that is expected to be retried. */
+  /** Whether this test run is intermediary and expected to be retried. */
   isNonFinal?: boolean
+  /** The location from which this test run was executed. */
   location: string
-  /** Whether the result is passed or not, according to `failOnCriticalErrors` and `failOnTimeout`. */
+  /** Whether this test run passed, taking into account `failOnCriticalErrors` and `failOnTimeout`. */
   passed: boolean
+  /** Raw information about the test run. May not always be present. */
   result?: ServerResult
+  /** The ID of this test run. */
   resultId: string
-  /** Number of retries, including this result. */
+  /** The number of retries, including this test run. */
   retries: number
+  /** The maximum number of retries for this test run. */
   maxRetries: number
+  /** Information about the selective rerun that was applied to this test run. */
   selectiveRerun?: SelectiveRerunDecision
-  /** Original test for this result, including overrides if any. */
+  /** The test that was run, including any overrides. */
   test: Test
+  /** Whether this test run timed out. */
   timedOut: boolean
+  /** The timestamp of this test run. */
   timestamp: number
 }
 
@@ -538,17 +548,25 @@ export interface TestConfig {
 }
 
 export interface Summary {
-  // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
+  /** The ID of the CI batch that was started by this datadog-ci execution. */
   batchId: string
+  /** The number of critical errors that occurred during the CI batch. */
   criticalErrors: number
-  // Number of results expected by datadog-ci, prior to any selective rerun.
+  /** The number of results expected by datadog-ci, prior to any selective rerun. */
   expected: number
+  /** The number of results that failed during the CI batch. */
   failed: number
+  /** The number of results that failed during the CI batch without blocking the CI. */
   failedNonBlocking: number
+  /** The number of results that passed during the CI batch. */
   passed: number
+  /** The number of results that already passed in previous CI batches on the same commit. */
   previouslyPassed: number
+  /** The number of results that were skipped during the CI batch. */
   skipped: number
+  /** The public IDs of tests that could not be found when starting the CI batch. */
   testsNotFound: Set<string>
+  /** The number of results that timed out during the CI batch. */
   timedOut: number
 }
 
