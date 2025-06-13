@@ -21,7 +21,7 @@ const mockDwarfdumpAndLipoIfNotMacOS = () => {
     // For `dwarfdump --uuid` mock, return the same output as the command would give on macOS:
     require('../utils').executeDwarfdump = jest.fn().mockImplementation((dsymPath: string) => {
       let fixture = dsymPath.includes('multiple-archs') ? fatDSYMFixture : undefined
-      fixture = fixture ?? (dsymPath.includes('single-arch') ? slimDSYMFixture : undefined)
+      fixture = fixture || (dsymPath.includes('single-arch') ? slimDSYMFixture : undefined)
 
       if (fixture !== undefined) {
         const outputLines = fixture.dwarf.map((dwarf) => {
@@ -59,7 +59,7 @@ const fatDSYMFixture: Dsym = {
       arch: 'arm64',
       object:
         'src/commands/dsyms/__tests__/fixtures/multiple-archs/DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest.debug.dylib',
-      uuid: '3BC12422-63CC-30E8-B916-E5006CE3286C',
+      uuid: '736806EB-DDE8-3B08-BCBC-7C2BA338CCF2',
     },
     {
       arch: 'armv7',
@@ -100,13 +100,11 @@ describe('upload', () => {
     const command = new UploadCommand()
 
     test('Should find dSYMs recursively', async () => {
-      const expectedDSYMs = [fatDSYMFixture, slimDSYMFixture]
-
       const actualDSYMs = await command['findDsyms']('src/commands/dsyms/__tests__/fixtures')
 
       expect(actualDSYMs.length).toEqual(2)
-      expect(actualDSYMs).toContainEqual(expectedDSYMs[0])
-      expect(actualDSYMs).toContainEqual(expectedDSYMs[1])
+      expect(actualDSYMs).toContainEqual(fatDSYMFixture)
+      expect(actualDSYMs).toContainEqual(slimDSYMFixture)
     })
   })
 
@@ -188,12 +186,12 @@ describe('upload', () => {
       // Then
       expect(extractedDSYMs.length).toEqual(inputDSYM.dwarf.length)
       expect(extractedDSYMs).toContainEqual({
-        bundle: `${tmpDirectory}/3BC12422-63CC-30E8-B916-E5006CE3286C.dSYM`,
+        bundle: `${tmpDirectory}/736806EB-DDE8-3B08-BCBC-7C2BA338CCF2.dSYM`,
         dwarf: [
           {
             arch: 'arm64',
-            object: `${tmpDirectory}/3BC12422-63CC-30E8-B916-E5006CE3286C.dSYM/Contents/Resources/DWARF/DDTest.debug.dylib`,
-            uuid: '3BC12422-63CC-30E8-B916-E5006CE3286C',
+            object: `${tmpDirectory}/736806EB-DDE8-3B08-BCBC-7C2BA338CCF2.dSYM/Contents/Resources/DWARF/DDTest.debug.dylib`,
+            uuid: '736806EB-DDE8-3B08-BCBC-7C2BA338CCF2',
           },
         ],
       })
@@ -320,7 +318,7 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest.debug.dylib, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+      'Uploading 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2.zip (DDTest.debug.dylib, arch: arm64, UUID: 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2)'
     )
     expect(output[8]).toContain(
       'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
@@ -349,12 +347,16 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+      'Uploading 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2.zip (DDTest.debug.dylib, arch: arm64, UUID: 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2)'
     )
     expect(output[8]).toContain(
+      'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
+    )
+    expect(output[9]).toContain(
       'Uploading 06EE3D68-D605-3E92-B92D-2F48C02A505E.zip (DDTest, arch: arm64, UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E)'
     )
-    expect(output[11]).toContain('Handled 3 dSYMs with success')
+
+    expect(output[12]).toContain('Handled 4 dSYMs with success')
   })
 
   test('Should succeed with API key and site from datadog.json file', async () => {
@@ -377,7 +379,7 @@ describe('execute', () => {
       'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
     )
     expect(output[7]).toContain(
-      'Uploading 3BC12422-63CC-30E8-B916-E5006CE3286C.zip (DDTest.debug.dylib, arch: arm64, UUID: 3BC12422-63CC-30E8-B916-E5006CE3286C)'
+      'Uploading 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2.zip (DDTest.debug.dylib, arch: arm64, UUID: 736806EB-DDE8-3B08-BCBC-7C2BA338CCF2)'
     )
     expect(output[8]).toContain(
       'Uploading C8469F85-B060-3085-B69D-E46C645560EA.zip (DDTest, arch: armv7, UUID: C8469F85-B060-3085-B69D-E46C645560EA)'
