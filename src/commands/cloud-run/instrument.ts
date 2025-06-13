@@ -1,5 +1,6 @@
 import IService = google.cloud.run.v2.IService
 import IContainer = google.cloud.run.v2.IContainer
+import IVolume = google.cloud.run.v2.IVolume
 
 import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
@@ -173,15 +174,23 @@ export class InstrumentCommand extends Command {
   private createInstrumentedServiceConfig(service: IService): IService {
     const template = service.template || {}
     const containers: IContainer[] = template.containers || []
+    const volumes: IVolume[] = template.volumes || []
     const sidecarName = 'datadog-sidecar'
+    const volumeName = 'shared-volume'
 
     // Check if sidecar already exists
     const existingSidecarIndex = containers.findIndex((c) => c.name === sidecarName)
 
-    // Create sidecar container
+    // Create sidecar container with volume mount
     const sidecarContainer: IContainer = {
       name: sidecarName,
       image: 'gcr.io/datadoghq/serverless-init:latest',
+      volumeMounts: [
+        {
+          name: volumeName,
+          mountPath: '/shared-volume',
+        },
+      ],
       resources: {
         limits: {
           memory: '512Mi',
@@ -190,19 +199,57 @@ export class InstrumentCommand extends Command {
       },
     }
 
-    const updatedContainers = [...containers]
+    // Update all containers to add volume mounts if they don't have them
+    const updatedContainers = containers.map((container) => {
+      if (container.name === sidecarName) {
+        return sidecarContainer
+      }
 
-    if (existingSidecarIndex >= 0) {
-      updatedContainers[existingSidecarIndex] = sidecarContainer
-    } else {
+      // Add volume mount to main containers if not already present
+      const existingVolumeMounts = container.volumeMounts || []
+      const hasSharedVolumeMount = existingVolumeMounts.some((mount) => mount.name === volumeName)
+
+      if (!hasSharedVolumeMount) {
+        return {
+          ...container,
+          volumeMounts: [
+            ...existingVolumeMounts,
+            {
+              name: volumeName,
+              mountPath: '/shared-volume',
+            },
+          ],
+        }
+      }
+
+      return container
+    })
+
+    // Add sidecar if it doesn't exist
+    if (existingSidecarIndex < 0) {
       updatedContainers.push(sidecarContainer)
     }
+
+    // Add shared volume if it doesn't exist
+    const hasSharedVolume = volumes.some((volume) => volume.name === volumeName)
+    const updatedVolumes = hasSharedVolume
+      ? volumes
+      : [
+          ...volumes,
+          {
+            name: volumeName,
+            emptyDir: {
+              medium: google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY,
+            },
+          },
+        ]
 
     return {
       ...service,
       template: {
         ...template,
         containers: updatedContainers,
+        volumes: updatedVolumes,
       },
     }
   }
