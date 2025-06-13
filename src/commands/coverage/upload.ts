@@ -146,7 +146,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
-  private git: simpleGit.SimpleGit
+  private git: simpleGit.SimpleGit | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -198,6 +198,10 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    if (!this.git) {
+      return
+    }
+
     await uploadToGitDB(this.logger, opts.requestBuilder, this.git, this.dryRun, this.gitRepositoryURL)
   }
 
@@ -268,7 +272,7 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
-    if (!this.uploadGitDiff) {
+    if (!this.uploadGitDiff || !this.git) {
       return undefined
     }
 
@@ -296,6 +300,9 @@ export class UploadCodeCoverageReportCommand extends Command {
     if (baseSha) {
       return {headSha, baseSha}
     }
+    if (!this.git) {
+      return {}
+    }
 
     const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
     if (baseBranch) {
@@ -314,6 +321,10 @@ export class UploadCodeCoverageReportCommand extends Command {
 
     const commit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
     if (!commit) {
+      return undefined
+    }
+
+    if (!this.git) {
       return undefined
     }
 
