@@ -32,6 +32,7 @@ export interface LogConfig {
  * the CLI in order to instrument properly.
  */
 export interface CloudRunConfigOptions {
+  project?: string
   environment?: string
   extraTags?: string
   services: string[]

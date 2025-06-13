@@ -1,3 +1,4 @@
+import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -80,6 +81,71 @@ export class InstrumentCommand extends Command {
     }
     this.context.stdout.write('GCP credentials verified!\n')
 
-    return Promise.resolve(0)
+    // Validate required variables
+    this.context.stdout.write(chalk.bold('\n🔍 Verifying command flags...\n'))
+    const project = this.project ?? this.config.project
+    if (!project) {
+      this.context.stdout.write(
+        chalk.yellow('No project specified for instrumentation. Please use the --project flag.\n')
+      )
+    }
+    const services = this.services.length > 0 ? this.services : this.config.services
+    if (services.length === 0) {
+      this.context.stdout.write(
+        chalk.yellow('No services specified for instrumentation. Please use the --service flag.\n')
+      )
+    }
+    const region = this.region ?? this.config.region
+    if (!region) {
+      this.context.stdout.write(
+        chalk.yellow('No region specified for instrumentation. Please use the --region flag.\n')
+      )
+    }
+    if (!project || !services || !services.length || !region) {
+      return 1
+    }
+
+    // Instrument services with sidecar
+    try {
+      await this.instrumentSidecar(project, services, region)
+    } catch (error) {
+      this.context.stderr.write(chalk.red(`Instrumentation failed: ${error}\n`))
+
+      return 1
+    }
+
+    this.context.stdout.write(chalk.green('\n✅ Cloud Run instrumentation completed successfully!\n'))
+
+    return 0
+  }
+
+  private async instrumentSidecar(project: string, services: string[], region: string) {
+    const client = new ServicesClient()
+
+    this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
+
+    for (const service of services) {
+      try {
+        await this.instrumentService(client, project, service, region)
+      } catch (error) {
+        this.context.stderr.write(chalk.red(`Failed to instrument service ${service}: ${error}\n`))
+        throw error
+      }
+    }
+  }
+
+  private async instrumentService(client: ServicesClient, project: string, serviceName: string, region: string) {
+    this.context.stdout.write(`Instrumenting service: ${chalk.bold(serviceName)}\n`)
+
+    const servicePath = client.servicePath(project, region, serviceName)
+
+    let service
+    try {
+      const [existingService] = await client.getService({name: servicePath})
+      service = existingService
+    } catch (error) {
+      throw new Error(`Service ${serviceName} not found in project ${project}, region ${region}`)
+    }
+    console.log(service)
   }
 }
