@@ -124,12 +124,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
-  private git: Promise<simpleGit.SimpleGit>
-
-  constructor() {
-    super()
-    this.git = newSimpleGit()
-  }
+  private git: simpleGit.SimpleGit | undefined = undefined
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -153,6 +148,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
     if (!this.skipGitMetadataUpload) {
       if (await isGitRepo()) {
+        this.git = await newSimpleGit()
         const traceId = id()
 
         const requestBuilder = getRequestBuilder({
@@ -188,7 +184,11 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
-    await uploadToGitDB(this.logger, opts.requestBuilder, await this.git, this.dryRun, this.gitRepositoryURL)
+    if (!this.git) {
+      return
+    }
+
+    await uploadToGitDB(this.logger, opts.requestBuilder, this.git, this.dryRun, this.gitRepositoryURL)
   }
 
   private async uploadCodeCoverageReports() {
@@ -258,7 +258,7 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
-    if (!this.uploadGitDiff) {
+    if (!this.uploadGitDiff || !this.git) {
       return undefined
     }
 
@@ -268,7 +268,7 @@ export class UploadCodeCoverageReportCommand extends Command {
         return undefined
       }
 
-      return await getGitDiff(await this.git, pr.baseSha, pr.headSha)
+      return await getGitDiff(this.git, pr.baseSha, pr.headSha)
     } catch (e) {
       this.logger.debug(`Error while trying to calculate PR diff: ${e}`)
 
@@ -286,10 +286,13 @@ export class UploadCodeCoverageReportCommand extends Command {
     if (baseSha) {
       return {headSha, baseSha}
     }
+    if (!this.git) {
+      return {}
+    }
 
     const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
     if (baseBranch) {
-      const mergeBase = await getMergeBase(await this.git, baseBranch, headSha)
+      const mergeBase = await getMergeBase(this.git, baseBranch, headSha)
 
       return {headSha, baseSha: mergeBase}
     }
@@ -307,8 +310,12 @@ export class UploadCodeCoverageReportCommand extends Command {
       return undefined
     }
 
+    if (!this.git) {
+      return undefined
+    }
+
     try {
-      return await getGitDiff(await this.git, commit + '^', commit)
+      return await getGitDiff(this.git, commit + '^', commit)
     } catch (e) {
       this.logger.debug(`Error while trying to calculate commit diff: ${e}`)
 
