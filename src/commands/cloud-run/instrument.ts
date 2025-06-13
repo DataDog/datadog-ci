@@ -7,7 +7,17 @@ import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {DATADOG_SITE_US1} from '../../constants'
+import {
+  API_KEY_ENV_VAR,
+  DATADOG_SITE_US1,
+  ENVIRONMENT_ENV_VAR,
+  HEALTH_PORT_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
+  LOGS_PATH_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
@@ -26,20 +36,21 @@ export class InstrumentCommand extends Command {
   })
 
   private configPath = Option.String('--config') // todo
+  private ddService = Option.String('--dd-service, --ddservice')
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false) // todo
-  private environment = Option.String('--env') // todo
+  private environment = Option.String('--env')
   private extraTags = Option.String('--extra-tags,--extraTags') // todo
-  private project = Option.String('-p,--project') // todo
-  private services = Option.Array('-s,--service,--services', []) // todo
+  private project = Option.String('-p,--project')
+  private services = Option.Array('-s,--service,--services', [])
   private interactive = Option.Boolean('-i,--interactive', false) // todo
   private logging = Option.String('--logging') // todo
   private logLevel = Option.String('--log-level,--logLevel') // todo
   private regExPattern = Option.String('--services-regex,--servicesRegex') // todo
-  private region = Option.String('-r,--region') // todo
+  private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true) // todo
   private tracing = Option.String('--tracing') // todo
-  private version = Option.String('--version') // todo
+  private version = Option.String('--version')
   private llmobs = Option.String('--llmobs') // todo
 
   private config: CloudRunConfigOptions = {
@@ -106,14 +117,22 @@ export class InstrumentCommand extends Command {
         chalk.yellow('No region specified for instrumentation. Please use the --region flag.\n')
       )
     }
-    if (!project || !services || !services.length || !region) {
+    const ddService = this.ddService ?? process.env[SERVICE_ENV_VAR]
+    if (!ddService) {
+      this.context.stdout.write(
+        chalk.yellow(
+          'No DD_SERVICE specified for instrumentation. Please use the DD_SERVICE env var or the --dd-service flag.\n'
+        )
+      )
+    }
+    if (!project || !services || !services.length || !region || !ddService) {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
 
     // Instrument services with sidecar
     try {
-      await this.instrumentSidecar(project, services, region)
+      await this.instrumentSidecar(project, services, region, ddService)
     } catch (error) {
       return 1
     }
@@ -123,14 +142,14 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private async instrumentSidecar(project: string, services: string[], region: string) {
+  private async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
     const client = new ServicesClient()
 
     this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
 
     for (const service of services) {
       try {
-        await this.instrumentService(client, project, service, region)
+        await this.instrumentService(client, project, service, region, ddService)
       } catch (error) {
         this.context.stderr.write(chalk.red(`Failed to instrument service ${service}: ${error}\n`))
         throw error
@@ -138,7 +157,13 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private async instrumentService(client: ServicesClient, project: string, serviceName: string, region: string) {
+  private async instrumentService(
+    client: ServicesClient,
+    project: string,
+    serviceName: string,
+    region: string,
+    ddService: string
+  ) {
     this.context.stdout.write(`Instrumenting service: ${chalk.bold(serviceName)}\n`)
 
     const servicePath = client.servicePath(project, region, serviceName)
@@ -157,7 +182,7 @@ export class InstrumentCommand extends Command {
       `Fetched service configuration`
     )
 
-    const updatedService = this.createInstrumentedServiceConfig(service)
+    const updatedService = this.createInstrumentedServiceConfig(service, ddService)
 
     await withSpinner(
       `Updating service ${serviceName}...`,
@@ -171,7 +196,7 @@ export class InstrumentCommand extends Command {
     )
   }
 
-  private createInstrumentedServiceConfig(service: IService): IService {
+  private createInstrumentedServiceConfig(service: IService, ddService: string): IService {
     const template = service.template || {}
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
@@ -181,7 +206,7 @@ export class InstrumentCommand extends Command {
     // Check if sidecar already exists
     const existingSidecarIndex = containers.findIndex((c) => c.name === sidecarName)
 
-    // Create sidecar container with volume mount
+    // Create sidecar container with volume mount and environment variables
     const sidecarContainer: IContainer = {
       name: sidecarName,
       image: 'gcr.io/datadoghq/serverless-init:latest',
@@ -191,6 +216,25 @@ export class InstrumentCommand extends Command {
           mountPath: '/shared-volume',
         },
       ],
+      env: [
+        {name: SITE_ENV_VAR, value: process.env.DD_SITE || DATADOG_SITE_US1},
+        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
+        {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
+        {name: HEALTH_PORT_ENV_VAR, value: '12345'},
+        {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+        {name: SERVICE_ENV_VAR, value: ddService},
+        ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
+        ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
+      ],
+      startupProbe: {
+        tcpSocket: {
+          port: 12345,
+        },
+        initialDelaySeconds: 0,
+        periodSeconds: 10,
+        failureThreshold: 3,
+        timeoutSeconds: 1,
+      },
       resources: {
         limits: {
           memory: '512Mi',
@@ -208,21 +252,39 @@ export class InstrumentCommand extends Command {
       // Add volume mount to main containers if not already present
       const existingVolumeMounts = container.volumeMounts || []
       const hasSharedVolumeMount = existingVolumeMounts.some((mount) => mount.name === volumeName)
+      const existingEnvVars = container.env || []
 
+      const updatedContainer = {...container}
       if (!hasSharedVolumeMount) {
-        return {
-          ...container,
-          volumeMounts: [
-            ...existingVolumeMounts,
-            {
-              name: volumeName,
-              mountPath: '/shared-volume',
-            },
-          ],
-        }
+        updatedContainer.volumeMounts = [
+          ...existingVolumeMounts,
+          {
+            name: volumeName,
+            mountPath: '/shared-volume',
+          },
+        ]
       }
 
-      return container
+      // Update environment variables
+      const updatedEnvVars = [...existingEnvVars]
+
+      // Replace DD_SERVICE with new value
+      const serviceEnvIndex = updatedEnvVars.findIndex((envVar) => envVar.name === SERVICE_ENV_VAR)
+      if (serviceEnvIndex >= 0) {
+        updatedEnvVars[serviceEnvIndex] = {name: SERVICE_ENV_VAR, value: ddService}
+      } else {
+        updatedEnvVars.push({name: SERVICE_ENV_VAR, value: ddService})
+      }
+
+      // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
+      const hasLogsInjection = updatedEnvVars.some((envVar) => envVar.name === LOGS_INJECTION_ENV_VAR)
+      if (!hasLogsInjection) {
+        updatedEnvVars.push({name: LOGS_INJECTION_ENV_VAR, value: 'true'})
+      }
+
+      updatedContainer.env = updatedEnvVars
+
+      return updatedContainer
     })
 
     // Add sidecar if it doesn't exist
