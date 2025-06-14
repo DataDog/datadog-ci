@@ -1,0 +1,44 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "components": [
+    {
+      "bom-ref": "pkg:maven/com.datastax.cassandra/cassandra-driver-core@3.11.5",
+      "type": "library",
+      "name": "com.datastax.cassandra:cassandra-driver-core",
+      "version": "3.11.5",
+      "purl": "pkg:maven/com.datastax.cassandra/cassandra-driver-core@3.11.5",
+      "properties": [
+        {"name": "datadog-sbom-generator:exclusion", "value": "com.github.jnr:jnr-ffi"},
+        {"name": "datadog-sbom-generator:exclusion", "value": "com.github.jnr:jnr-posix"},
+        {"name": "datadog-sbom-generator:exclusion", "value": "io.dropwizard.metrics:metrics-core"},
+        {"name": "datadog-sbom-generator:exclusion", "value": "io.netty:netty-handler"},
+        {"name": "osv-scanner:is-direct", "value": "true"},
+        {"name": "osv-scanner:package-manager", "value": "Maven"}
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.apache.curator/curator-client@2.7.1",
+      "type": "library",
+      "name": "org.apache.curator:curator-client",
+      "version": "2.7.1",
+      "purl": "pkg:maven/org.apache.curator/curator-client@2.7.1",
+      "properties": [
+        {"name": "datadog-sbom-generator:exclusion", "value": "org.apache.zookeeper:zookeeper"},
+        {"name": "osv-scanner:is-direct", "value": "true"},
+        {"name": "osv-scanner:package-manager", "value": "Maven"}
+      ]
+    },
+    {
+      "bom-ref": "pom.xml",
+      "type": "file",
+      "name": "pom.xml",
+      "properties": [
+        {"name": "osv-scanner:package", "value": "pkg:maven/com.example/secure-deserialization@1.0-SNAPSHOT"}
+      ]
+    }
+  ],
+  "vulnerabilities": []
+}
