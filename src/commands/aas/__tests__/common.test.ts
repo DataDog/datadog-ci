@@ -1,4 +1,5 @@
 import {Site} from '@azure/arm-appservice'
+
 import {getEnvVars, isDotnet, isWindows} from '../common'
 import {AasConfigOptions} from '../interfaces'
 
@@ -99,6 +100,7 @@ describe('aas common', () => {
         DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
       })
     })
+
     describe('isWindows', () => {
       test('returns true if site.kind includes "windows"', () => {
         const site: Site = {
@@ -147,6 +149,7 @@ describe('aas common', () => {
         expect(isWindows(site)).toBe(false)
       })
     })
+
     test('includes .NET specific env vars when isDotnet is true', () => {
       const envVars = getEnvVars({...DEFAULT_CONFIG, isDotnet: true})
       expect(envVars).toMatchObject({

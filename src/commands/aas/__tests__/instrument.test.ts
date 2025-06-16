@@ -352,6 +352,7 @@ Creating sidecar container datadog-sidecar
         },
       })
     })
+
     test('adds .NET settings when the config option is specified', async () => {
       await command.instrumentSidecar(client, {...DEFAULT_CONFIG, isDotnet: true}, 'rg', 'app')
 
