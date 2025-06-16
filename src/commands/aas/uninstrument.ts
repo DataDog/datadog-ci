@@ -4,31 +4,29 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {DATADOG_SITE_US1} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
-import {maskString} from '../../helpers/utils'
 
 import {
   AasCommand,
   collectAsyncIterator,
   getEnvVars,
   isDotnet,
+  isWindows,
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
   SIDECAR_PORT,
 } from './common'
 import {AasConfigOptions} from './interfaces'
 
-export class InstrumentCommand extends AasCommand {
-  public static paths = [['aas', 'instrument']]
+export class UninstrumentCommand extends AasCommand {
+  public static paths = [['aas', 'uninstrument']]
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Apply Datadog instrumentation to an Azure App Service.',
+    description: 'Remove Datadog instrumentation from an Azure App Service.',
   })
 
   private shouldNotRestart = Option.Boolean('--no-restart', false, {
-    description: 'Do not restart the App Service after applying instrumentation.',
+    description: 'Do not restart the App Service after removing instrumentation.',
   })
 
   public async execute(): Promise<0 | 1> {
@@ -41,30 +39,26 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
-    const isApiKeyValid = await newApiKeyValidator({
-      apiKey: process.env.DD_API_KEY,
-      datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
-    }).validateApiKey()
-    if (!isApiKeyValid) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
-            process.env.DD_API_KEY ?? ''
-          )}\nEnsure you copied the value and not the Key ID.`
-        )
-      )
 
-      return 1
-    }
     const cred = new DefaultAzureCredential()
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
     }
+
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
     const client = new WebSiteManagementClient(cred, config.subscriptionId, {apiVersion: '2024-11-01'})
 
     const site = await client.webApps.get(config.resourceGroup, config.aasName)
-    if (!this.ensureLinux(site)) {
+    if (isWindows(site)) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Only Linux-based Azure App Services are currently supported.
+Please see the documentation for information on
+how to instrument Windows-based App Services:
+https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
+        )
+      )
+
       return 1
     }
 

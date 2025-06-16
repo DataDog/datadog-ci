@@ -1,12 +1,14 @@
 import type {PagedAsyncIterableIterator} from '@azure/core-paging'
 
 import {Site} from '@azure/arm-appservice'
+import {DefaultAzureCredential} from '@azure/identity'
+import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {dryRunTag} from '../../helpers/renderer'
+import {dryRunTag, renderSoftWarning} from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AasConfigOptions, ValueOptional} from './interfaces'
@@ -113,6 +115,43 @@ export abstract class AasCommand extends Command {
 
     return [config as AasConfigOptions, errors]
   }
+
+  public async ensureAzureAuth(cred: DefaultAzureCredential): Promise<boolean> {
+    try {
+      await cred.getToken('https://management.azure.com/.default')
+    } catch (error) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Failed to authenticate with Azure: ${
+            error.name
+          }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
+            'az login'
+          )} to authenticate.\n`
+        )
+      )
+
+      return false
+    }
+
+    return true
+  }
+
+  public ensureLinux(site: Site): boolean {
+    if (isWindows(site)) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Only Linux-based Azure App Services are currently supported.
+Please see the documentation for information on
+how to instrument Windows-based App Services:
+https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
+        )
+      )
+
+      return false
+    }
+
+    return true
+  }
 }
 
 export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
@@ -159,6 +198,7 @@ export const isDotnet = (site: Site): boolean => {
     (!!site.siteConfig?.windowsFxVersion && site.siteConfig.windowsFxVersion.toLowerCase().startsWith('dotnet'))
   )
 }
+
 export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
