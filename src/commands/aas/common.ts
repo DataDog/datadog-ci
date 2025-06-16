@@ -15,7 +15,6 @@ export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
 export const SIDECAR_PORT = '8126'
 
-
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME = '/home/site/wwwroot/datadog'
 // Where tracer logs are stored
@@ -58,7 +57,8 @@ export abstract class AasCommand extends Command {
   })
 
   private isDotnet = Option.Boolean('--dotnet', false, {
-    description: 'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
+    description:
+      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
 
   private fips = Option.Boolean('--fips', false)
@@ -133,7 +133,6 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
   if (config.isDotnet) {
     envVars = {
       ...envVars,
-
       DD_DOTNET_TRACER_HOME,
       DD_TRACE_LOG_DIRECTORY,
       CORECLR_ENABLE_PROFILING,
