@@ -1,4 +1,4 @@
-import {AxiosError, default as axios} from 'axios'
+import {AxiosError, get as axiosGet} from 'axios'
 import chalk from 'chalk'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 
@@ -62,7 +62,7 @@ class ApiKeyValidatorImplem {
    */
   public async validateApiKey(): Promise<boolean> {
     try {
-      const response = await axios.get(this.getApiKeyValidationURL(), {
+      const response = await axiosGet(this.getApiKeyValidationURL(), {
         headers: {
           'DD-API-KEY': this.apiKey,
         },
