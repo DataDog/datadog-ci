@@ -74,26 +74,12 @@ describe('DatadogCIMCPServer', () => {
   })
 
   describe('constructor', () => {
-    it('should create server with correct configuration', () => {
+    it('should create server instance without initializing MCP components', () => {
       const {Server} = require('@modelcontextprotocol/sdk/server/index.js')
 
-      expect(Server).toHaveBeenCalledWith(
-        {
-          name: 'datadog-ci-mcp-server',
-          version: expect.any(String),
-        },
-        {
-          capabilities: {
-            tools: {},
-          },
-        }
-      )
-    })
-
-    it('should set up request handlers', () => {
-      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledTimes(2)
-      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledWith('list-tools', expect.any(Function))
-      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledWith('call-tool', expect.any(Function))
+      // Server should not be called in constructor since we use lazy initialization
+      expect(Server).not.toHaveBeenCalled()
+      expect(mockInternalServer.setRequestHandler).not.toHaveBeenCalled()
     })
   })
 
@@ -101,7 +87,10 @@ describe('DatadogCIMCPServer', () => {
     let listToolsHandler: () => Promise<unknown>
     let callToolHandler: (request: any) => Promise<unknown>
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      // Initialize the server to set up handlers
+      await server.start()
+      
       const calls = mockInternalServer.setRequestHandler.mock.calls
       listToolsHandler = calls.find((call: any) => call[0] === 'list-tools')?.[1]
       callToolHandler = calls.find((call: any) => call[0] === 'call-tool')?.[1]
@@ -205,12 +194,34 @@ describe('DatadogCIMCPServer', () => {
   })
 
   describe('start', () => {
-    it('should connect to stdio transport and log startup', async () => {
+    it('should initialize server, set up handlers, and connect to stdio transport', async () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+      const {Server} = require('@modelcontextprotocol/sdk/server/index.js')
 
       await server.start()
 
+      // Check that server was created with correct configuration
+      expect(Server).toHaveBeenCalledWith(
+        {
+          name: 'datadog-ci-mcp-server',
+          version: expect.any(String),
+        },
+        {
+          capabilities: {
+            tools: {},
+          },
+        }
+      )
+
+      // Check that request handlers were set up
+      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledTimes(2)
+      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledWith('list-tools', expect.any(Function))
+      expect(mockInternalServer.setRequestHandler).toHaveBeenCalledWith('call-tool', expect.any(Function))
+
+      // Check that transport was connected
       expect(mockInternalServer.connect).toHaveBeenCalledWith(mockTransport)
+      
+      // Check startup logs
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Datadog CI MCP Server'))
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Protocol version:'))
       expect(consoleSpy).toHaveBeenCalledWith('Available tools: lambda-flare')
@@ -220,10 +231,21 @@ describe('DatadogCIMCPServer', () => {
   })
 
   describe('stop', () => {
-    it('should close the server connection', async () => {
+    it('should close the server connection if initialized', async () => {
+      // First start the server to initialize it
+      await server.start()
+      
       await server.stop()
 
       expect(mockInternalServer.close).toHaveBeenCalled()
+    })
+
+    it('should handle stop without initialization gracefully', async () => {
+      // Don't start the server first
+      await expect(server.stop()).resolves.not.toThrow()
+      
+      // Should not try to close uninitialized server
+      expect(mockInternalServer.close).not.toHaveBeenCalled()
     })
   })
 })
