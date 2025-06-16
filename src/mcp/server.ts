@@ -7,14 +7,18 @@
  * @author Ryan Strat
  */
 
-import {Server} from '@modelcontextprotocol/sdk/server/index.js'
-import {StdioServerTransport} from '@modelcontextprotocol/sdk/server/stdio.js'
-import {CallToolRequestSchema, ListToolsRequestSchema, ErrorCode, McpError} from '@modelcontextprotocol/sdk/types.js'
-
 import {version} from '../helpers/version'
 
 import {LAMBDA_FLARE_TOOL, executeLambdaFlareTool} from './tools/lambda-flare-tool'
 import {MCP_PROTOCOL_VERSION, MCPToolCallParams} from './types'
+
+// Dynamic imports to avoid ESLint import resolution issues with ES modules
+let Server: any
+let StdioServerTransport: any
+let CallToolRequestSchema: any
+let ListToolsRequestSchema: any
+let ErrorCode: any
+let McpError: any
 
 /**
  * Datadog CI MCP Server
@@ -23,28 +27,19 @@ import {MCP_PROTOCOL_VERSION, MCPToolCallParams} from './types'
  * It follows the MCP specification and uses JSON-RPC 2.0 for communication.
  */
 export class DatadogCIMCPServer {
-  private server: Server
+  private server: any
+  private initialized = false
 
   constructor() {
-    this.server = new Server(
-      {
-        name: 'datadog-ci-mcp-server',
-        version,
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
-      }
-    )
-
-    this.setupHandlers()
+    // Server will be initialized in the init method
   }
 
   /**
    * Starts the MCP server with stdio transport
    */
   public async start(): Promise<void> {
+    this.init()
+
     const transport = new StdioServerTransport()
     await this.server.connect(transport)
 
@@ -58,7 +53,48 @@ export class DatadogCIMCPServer {
    * Stops the MCP server
    */
   public async stop(): Promise<void> {
-    await this.server.close()
+    if (this.initialized && this.server) {
+      await this.server.close()
+    }
+  }
+
+  /**
+   * Initialize the MCP server with dynamic imports
+   */
+  private init(): void {
+    if (this.initialized) {
+      return
+    }
+
+    // Use require to work around ESLint import resolution issues with ES modules
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const serverModule = require('@modelcontextprotocol/sdk/server/index.js')
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const stdioModule = require('@modelcontextprotocol/sdk/server/stdio.js')
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const typesModule = require('@modelcontextprotocol/sdk/types.js')
+
+    Server = serverModule.Server
+    StdioServerTransport = stdioModule.StdioServerTransport
+    CallToolRequestSchema = typesModule.CallToolRequestSchema
+    ListToolsRequestSchema = typesModule.ListToolsRequestSchema
+    ErrorCode = typesModule.ErrorCode
+    McpError = typesModule.McpError
+
+    this.server = new Server(
+      {
+        name: 'datadog-ci-mcp-server',
+        version,
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    )
+
+    this.setupHandlers()
+    this.initialized = true
   }
 
   /**
@@ -73,7 +109,7 @@ export class DatadogCIMCPServer {
     })
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request: any) => {
       const {name, arguments: args} = request.params
 
       switch (name) {
