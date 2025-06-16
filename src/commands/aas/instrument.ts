@@ -9,7 +9,16 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
-import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
+import {
+  AasCommand,
+  collectAsyncIterator,
+  getEnvVars,
+  isDotnet,
+  isWindows,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+  SIDECAR_PORT,
+} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends AasCommand {
@@ -65,10 +74,10 @@ export class InstrumentCommand extends AasCommand {
       return 1
     }
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
-    const client = new WebSiteManagementClient(cred, config.subscriptionId)
+    const client = new WebSiteManagementClient(cred, config.subscriptionId, {apiVersion: '2024-11-01'})
 
-    const siteConfig = await client.webApps.getConfiguration(config.resourceGroup, config.aasName)
-    if (siteConfig.kind && !siteConfig.kind.toLowerCase().includes('linux')) {
+    const site = await client.webApps.get(config.resourceGroup, config.aasName)
+    if (isWindows(site)) {
       this.context.stdout.write(
         renderSoftWarning(
           `Only Linux-based Azure App Services are currently supported.
@@ -80,6 +89,8 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 
       return 1
     }
+
+    config.isDotnet = config.isDotnet || isDotnet(site)
     try {
       await this.instrumentSidecar(client, config, config.resourceGroup, config.aasName)
     } catch (error) {
@@ -106,25 +117,6 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     return 0
   }
 
-  public getEnvVars(config: AasConfigOptions): Record<string, string> {
-    const envVars: Record<string, string> = {
-      DD_API_KEY: process.env.DD_API_KEY!,
-      DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
-      DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
-    }
-    if (config.service) {
-      envVars.DD_SERVICE = config.service
-    }
-    if (config.environment) {
-      envVars.DD_ENV = config.environment
-    }
-    if (config.logPath) {
-      envVars.DD_SERVERLESS_LOG_PATH = config.logPath
-    }
-
-    return envVars
-  }
-
   public async instrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
@@ -133,7 +125,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   ) {
     const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = this.getEnvVars(config)
+    const envVars = getEnvVars(config)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)

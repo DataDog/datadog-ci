@@ -1,8 +1,9 @@
 import type {PagedAsyncIterableIterator} from '@azure/core-paging'
 
+import {Site} from '@azure/arm-appservice'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
@@ -13,6 +14,17 @@ import {AasConfigOptions, ValueOptional} from './interfaces'
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
 export const SIDECAR_PORT = '8126'
+
+// Path to tracing libraries, copied within the Docker file
+const DD_DOTNET_TRACER_HOME = '/home/site/wwwroot/datadog'
+// Where tracer logs are stored
+const DD_TRACE_LOG_DIRECTORY = '/home/LogFiles/dotnet'
+// Instructs the .NET CLR that profiling should be enabled
+const CORECLR_ENABLE_PROFILING = '1'
+// Profiler GUID
+const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
+// The profiler binary that the .NET CLR loads into memory, which contains the GUID
+const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
 export abstract class AasCommand extends Command {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
@@ -44,6 +56,11 @@ export abstract class AasCommand extends Command {
     description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
   })
 
+  private isDotnet = Option.Boolean('--dotnet', false, {
+    description:
+      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
+  })
+
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private fipsConfig = {
@@ -71,6 +88,7 @@ export abstract class AasCommand extends Command {
             environment: this.environment,
             isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
             logPath: this.logPath,
+            isDotnet: this.isDotnet,
           },
         },
         {
@@ -97,6 +115,50 @@ export abstract class AasCommand extends Command {
   }
 }
 
+export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
+  let envVars: Record<string, string> = {
+    DD_API_KEY: process.env.DD_API_KEY!,
+    DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
+    DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
+  }
+  if (config.service) {
+    envVars.DD_SERVICE = config.service
+  }
+  if (config.environment) {
+    envVars.DD_ENV = config.environment
+  }
+  if (config.logPath) {
+    envVars.DD_SERVERLESS_LOG_PATH = config.logPath
+  }
+  if (config.isDotnet) {
+    envVars = {
+      ...envVars,
+      DD_DOTNET_TRACER_HOME,
+      DD_TRACE_LOG_DIRECTORY,
+      CORECLR_ENABLE_PROFILING,
+      CORECLR_PROFILER,
+      CORECLR_PROFILER_PATH,
+    }
+  }
+
+  return envVars
+}
+
+export const isWindows = (site: Site): boolean => {
+  if (!site.kind) {
+    // search for windowsFxVersion in siteConfig if there is no kind
+    return !!site.siteConfig?.windowsFxVersion
+  }
+
+  return site.kind.includes('windows')
+}
+
+export const isDotnet = (site: Site): boolean => {
+  return (
+    (!!site.siteConfig?.linuxFxVersion && site.siteConfig.linuxFxVersion.toLowerCase().startsWith('dotnet')) ||
+    (!!site.siteConfig?.windowsFxVersion && site.siteConfig.windowsFxVersion.toLowerCase().startsWith('dotnet'))
+  )
+}
 export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
