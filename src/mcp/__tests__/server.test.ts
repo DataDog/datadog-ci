@@ -90,7 +90,7 @@ describe('DatadogCIMCPServer', () => {
     beforeEach(async () => {
       // Initialize the server to set up handlers
       await server.start()
-      
+
       const calls = mockInternalServer.setRequestHandler.mock.calls
       listToolsHandler = calls.find((call: any) => call[0] === 'list-tools')?.[1]
       callToolHandler = calls.find((call: any) => call[0] === 'call-tool')?.[1]
@@ -220,7 +220,7 @@ describe('DatadogCIMCPServer', () => {
 
       // Check that transport was connected
       expect(mockInternalServer.connect).toHaveBeenCalledWith(mockTransport)
-      
+
       // Check startup logs
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Datadog CI MCP Server'))
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Protocol version:'))
@@ -234,7 +234,7 @@ describe('DatadogCIMCPServer', () => {
     it('should close the server connection if initialized', async () => {
       // First start the server to initialize it
       await server.start()
-      
+
       await server.stop()
 
       expect(mockInternalServer.close).toHaveBeenCalled()
@@ -243,7 +243,7 @@ describe('DatadogCIMCPServer', () => {
     it('should handle stop without initialization gracefully', async () => {
       // Don't start the server first
       await expect(server.stop()).resolves.not.toThrow()
-      
+
       // Should not try to close uninitialized server
       expect(mockInternalServer.close).not.toHaveBeenCalled()
     })

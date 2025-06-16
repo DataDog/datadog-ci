@@ -7,8 +7,12 @@
  * @author Ryan Strat
  */
 
+import * as fs from 'fs'
+import {promisify} from 'util'
+
 import {OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import * as upath from 'upath'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -131,20 +135,6 @@ export const executeLambdaFlareTool = async (params: MCPToolCallParams): Promise
   } catch (error) {
     // Handle specific AWS errors
     if (error instanceof Error) {
-      let errorCode = LambdaFlareErrorCode.INTERNAL_ERROR
-
-      if (error.message.includes('No credentials')) {
-        errorCode = LambdaFlareErrorCode.AWS_AUTH_FAILED
-      } else if (error.message.includes('Function not found') || error.message.includes('ResourceNotFoundException')) {
-        errorCode = LambdaFlareErrorCode.FUNCTION_NOT_FOUND
-      } else if (error.message.includes('AccessDenied') || error.message.includes('UnauthorizedOperation')) {
-        errorCode = LambdaFlareErrorCode.INSUFFICIENT_PERMISSIONS
-      } else if (error.message.includes('Invalid time range')) {
-        errorCode = LambdaFlareErrorCode.INVALID_TIME_RANGE
-      }
-
-      createMCPError(errorCode, error.message)
-
       const result: LambdaFlareToolResult = {
         success: false,
         error: error.message,
@@ -273,10 +263,6 @@ const collectLambdaFlareData = async (params: LambdaFlareToolParams): Promise<La
  * Reads a file and converts it to LambdaFlareProjectFile format
  */
 const readFileAsProjectFile = async (filePath: string): Promise<LambdaFlareProjectFile> => {
-  const fs = await import('fs')
-  const {promisify} = await import('util')
-  const upath = await import('upath')
-
   const stat = await promisify(fs.stat)(filePath)
   const content = await promisify(fs.readFile)(filePath, 'utf-8')
 
@@ -293,7 +279,6 @@ const readFileAsProjectFile = async (filePath: string): Promise<LambdaFlareProje
  * Determines MIME type based on file extension
  */
 const getMimeType = (filePath: string): string => {
-  const upath = require('upath')
   const ext = upath.extname(filePath).toLowerCase()
 
   const mimeTypes: Record<string, string> = {
