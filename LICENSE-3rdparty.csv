@@ -9,6 +9,7 @@ Component,Origin,Licence,Copyright
 @aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @azure/identity,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
+@modelcontextprotocol/sdk,import,MIT,Copyright (c) Anthropic PBC
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
@@ -63,6 +64,7 @@ rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 set-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 simple-git,import,MIT,Copyright (c) 2015 Steve King
+source-map-support,import,MIT,Copyright (c) 2014 Evan Wallace
 ssh2,import,MIT,Copyright (c) Brian White
 ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
 sshpk,import,MIT,"Copyright (c) Joyent, Inc."
