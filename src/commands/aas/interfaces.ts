@@ -10,6 +10,7 @@ export interface AasConfigOptions {
   environment: string | undefined
   isInstanceLoggingEnabled: boolean
   logPath: string | undefined
+  isDotnet: boolean
 }
 
 export type ValueOptional<T> = {

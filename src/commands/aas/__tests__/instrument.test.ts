@@ -21,7 +21,7 @@ jest.mock('@azure/identity', () => ({
 }))
 
 const webAppsOperations = {
-  getConfiguration: jest.fn(),
+  get: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
@@ -35,7 +35,7 @@ jest.mock('@azure/arm-appservice', () => ({
   })),
 }))
 
-import {WebSiteManagementClient} from '@azure/arm-appservice'
+import {Site, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
@@ -56,6 +56,57 @@ const DEFAULT_CONFIG: AasConfigOptions = {
   environment: undefined,
   isInstanceLoggingEnabled: false,
   logPath: undefined,
+  isDotnet: false,
+}
+
+const CONTAINER_WEB_APP: Site = {
+  id:
+    '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',
+  name: 'my-web-app',
+  kind: 'app,linux',
+  location: 'East US',
+  type: 'Microsoft.Web/sites',
+  state: 'Running',
+  hostNames: ['my-web-app.azurewebsites.net'],
+  repositorySiteName: 'my-web-app',
+  usageState: 'Normal',
+  enabled: true,
+  enabledHostNames: ['my-web-app.azurewebsites.net', 'my-web-app.scm.azurewebsites.net'],
+  availabilityState: 'Normal',
+  serverFarmId:
+    '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/serverfarms/my-asp',
+  siteConfig: {
+    numberOfWorkers: 1,
+    linuxFxVersion: 'SITECONTAINERS',
+    windowsFxVersion: undefined,
+    acrUseManagedIdentityCreds: false,
+    alwaysOn: false,
+    localMySqlEnabled: false,
+    http20Enabled: true,
+    functionAppScaleLimit: 0,
+    minimumElasticInstanceCount: 0,
+  },
+  scmSiteAlsoStopped: false,
+  clientAffinityEnabled: true,
+  clientCertEnabled: false,
+  clientCertMode: 'Required',
+  ipMode: 'IPv4',
+  endToEndEncryptionEnabled: false,
+  hostNamesDisabled: false,
+  customDomainVerificationId: 'C311F02DCF9463F87DA1F7BD5F93E1E0DF1C9C3AAC1706DA8214AB95CF540DE3',
+  outboundIpAddresses: '20.75.146.31,20.75.146.32,20.75.146.33,20.75.146.40,20.75.146.64,20.75.146.65,20.119.8.46',
+  possibleOutboundIpAddresses:
+    '20.75.146.211,20.75.146.221,20.75.146.228,20.75.146.229,20.75.146.254,20.75.146.255,40.88.199.185,20.75.146.16,20.75.146.17,20.75.146.24,20.75.146.25,20.75.146.30,20.75.146.31,20.75.146.32,20.75.146.33,20.75.146.40,20.75.146.64,20.75.146.65,20.75.149.122,20.75.146.74,40.88.194.183,20.75.146.166,20.75.146.194,20.75.146.195,20.75.147.4,20.75.147.5,20.75.147.18,20.75.147.19,20.75.147.37,20.75.147.65,20.119.8.46',
+  containerSize: 0,
+  dailyMemoryTimeQuota: 0,
+  resourceGroup: 'my-resource-group',
+  defaultHostName: 'my-web-app.azurewebsites.net',
+  httpsOnly: false,
+  redundancyMode: 'None',
+  publicNetworkAccess: 'Enabled',
+  storageAccountRequired: false,
+  keyVaultReferenceIdentity: 'SystemAssigned',
+  sku: 'PremiumV2',
 }
 
 const DEFAULT_ARGS = ['-s', '00000000-0000-0000-0000-000000000000', '-g', 'my-resource-group', '-n', 'my-web-app']
@@ -67,7 +118,7 @@ describe('aas instrument', () => {
     beforeEach(() => {
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
-      webAppsOperations.getConfiguration.mockReset().mockResolvedValue({kind: 'app,linux,container'})
+      webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
@@ -86,7 +137,7 @@ Restarting Azure App Service
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
         'my-resource-group',
@@ -124,7 +175,7 @@ Restarting Azure App Service
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -141,7 +192,7 @@ Updating Application Settings
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
         'my-resource-group',
@@ -180,7 +231,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 `)
       expect(code).toEqual(1)
       expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).not.toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
@@ -199,7 +250,7 @@ Ensure you copied the value and not the Key ID.
       )
       expect(code).toEqual(1)
       expect(getToken).not.toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).not.toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
@@ -208,7 +259,7 @@ Ensure you copied the value and not the Key ID.
     })
 
     test('Warns and exits if App Service is not Linux', async () => {
-      webAppsOperations.getConfiguration.mockClear().mockResolvedValue({kind: 'app,windows'})
+      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
 [!] Only Linux-based Azure App Services are currently supported.
@@ -218,7 +269,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 `)
       expect(code).toEqual(1)
       expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
@@ -234,7 +285,7 @@ Creating sidecar container datadog-sidecar
 [Error] Failed to instrument sidecar: Error: sidecar error
 `)
       expect(code).toEqual(1)
-      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
         'my-resource-group',
@@ -257,94 +308,7 @@ Creating sidecar container datadog-sidecar
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
   })
-  describe('getEnvVars', () => {
-    let command: InstrumentCommand
-    let originalEnv: NodeJS.ProcessEnv
-    beforeAll(() => {
-      originalEnv = {...process.env}
-    })
 
-    beforeEach(() => {
-      command = new InstrumentCommand()
-      process.env.DD_API_KEY = 'test-api-key'
-      delete process.env.DD_SITE
-    })
-
-    afterEach(() => {
-      delete process.env.DD_API_KEY
-      delete process.env.DD_SITE
-    })
-
-    afterAll(() => {
-      process.env = originalEnv
-    })
-
-    test('returns required env vars with default DD_SITE', () => {
-      const envVars = command.getEnvVars(DEFAULT_CONFIG)
-      expect(envVars).toEqual({
-        DD_API_KEY: 'test-api-key',
-        DD_SITE: 'datadoghq.com',
-        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-      })
-    })
-
-    test('uses DD_SITE from environment if set', () => {
-      process.env.DD_SITE = 'datadoghq.eu'
-      const config: AasConfigOptions = {
-        ...DEFAULT_CONFIG,
-        isInstanceLoggingEnabled: true,
-      }
-      const envVars = command.getEnvVars(config)
-      expect(envVars.DD_SITE).toEqual('datadoghq.eu')
-      expect(envVars.DD_AAS_INSTANCE_LOGGING_ENABLED).toEqual('true')
-    })
-
-    test('includes DD_SERVICE if provided in config', () => {
-      const config: AasConfigOptions = {
-        ...DEFAULT_CONFIG,
-        service: 'my-service',
-      }
-      const envVars = command.getEnvVars(config)
-      expect(envVars.DD_SERVICE).toEqual('my-service')
-    })
-
-    test('includes DD_ENV if provided in config', () => {
-      const config: AasConfigOptions = {
-        ...DEFAULT_CONFIG,
-        isInstanceLoggingEnabled: false,
-        environment: 'prod',
-      }
-      const envVars = command.getEnvVars(config)
-      expect(envVars.DD_ENV).toEqual('prod')
-    })
-
-    test('includes DD_SERVERLESS_LOG_PATH if provided in config', () => {
-      const config: AasConfigOptions = {
-        ...DEFAULT_CONFIG,
-        isInstanceLoggingEnabled: false,
-        logPath: '/tmp/logs',
-      }
-      const envVars = command.getEnvVars(config)
-      expect(envVars.DD_SERVERLESS_LOG_PATH).toEqual('/tmp/logs')
-    })
-
-    test('includes all optional vars if provided', () => {
-      const config: AasConfigOptions = {
-        ...DEFAULT_CONFIG,
-        isInstanceLoggingEnabled: true,
-        service: 'svc',
-        environment: 'dev',
-        logPath: '/var/log',
-      }
-      const envVars = command.getEnvVars(config)
-      expect(envVars).toMatchObject({
-        DD_SERVICE: 'svc',
-        DD_ENV: 'dev',
-        DD_SERVERLESS_LOG_PATH: '/var/log',
-        DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
-      })
-    })
-  })
   describe('instrumentSidecar', () => {
     let command: InstrumentCommand
     let client: WebSiteManagementClient
@@ -359,7 +323,7 @@ Creating sidecar container datadog-sidecar
 
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
-      webAppsOperations.getConfiguration.mockReset().mockResolvedValue({kind: 'app,linux,container'})
+      webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
@@ -370,32 +334,54 @@ Creating sidecar container datadog-sidecar
     test('creates sidecar if not present and updates app settings', async () => {
       await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
 
-      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
-        'rg',
-        'app',
-        'datadog-sidecar',
-        expect.objectContaining({
-          image: 'index.docker.io/datadog/serverless-init:latest',
-          targetPort: '8126',
-          isMain: false,
-          environmentVariables: expect.arrayContaining([
-            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
-            {name: 'DD_SITE', value: 'DD_SITE'},
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-          ]),
-        })
-      )
-      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
-        'rg',
-        'app',
-        expect.objectContaining({
-          properties: expect.objectContaining({
-            DD_API_KEY: process.env.DD_API_KEY,
-            DD_SITE: 'datadoghq.com',
-            DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          }),
-        })
-      )
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
+        image: 'index.docker.io/datadog/serverless-init:latest',
+        targetPort: '8126',
+        isMain: false,
+        environmentVariables: expect.arrayContaining([
+          {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+          {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+        ]),
+      })
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('rg', 'app', {
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        },
+      })
+    })
+    test('adds .NET settings when the config option is specified', async () => {
+      await command.instrumentSidecar(client, {...DEFAULT_CONFIG, isDotnet: true}, 'rg', 'app')
+
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
+        image: 'index.docker.io/datadog/serverless-init:latest',
+        targetPort: '8126',
+        isMain: false,
+        environmentVariables: expect.arrayContaining([
+          {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+          {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
+          {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
+          {name: 'CORECLR_ENABLE_PROFILING', value: 'CORECLR_ENABLE_PROFILING'},
+          {name: 'CORECLR_PROFILER', value: 'CORECLR_PROFILER'},
+          {name: 'CORECLR_PROFILER_PATH', value: 'CORECLR_PROFILER_PATH'},
+        ]),
+      })
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('rg', 'app', {
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          CORECLR_ENABLE_PROFILING: '1',
+          CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+          DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        },
+      })
     })
 
     test('updates sidecar if present but config is incorrect', async () => {
