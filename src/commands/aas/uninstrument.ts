@@ -1,21 +1,11 @@
-import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import equal from 'fast-deep-equal/es6'
+import {Command} from 'clipanion'
 
-import {renderError, renderSoftWarning} from '../../helpers/renderer'
+import {renderError} from '../../helpers/renderer'
 
-import {
-  AasCommand,
-  collectAsyncIterator,
-  getEnvVars,
-  isDotnet,
-  isWindows,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-  SIDECAR_PORT,
-} from './common'
+import {AasCommand, formatError, getEnvVars, isDotnet, SIDECAR_CONTAINER_NAME} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class UninstrumentCommand extends AasCommand {
@@ -23,10 +13,6 @@ export class UninstrumentCommand extends AasCommand {
   public static usage = Command.Usage({
     category: 'Serverless',
     description: 'Remove Datadog instrumentation from an Azure App Service.',
-  })
-
-  private shouldNotRestart = Option.Boolean('--no-restart', false, {
-    description: 'Do not restart the App Service after removing instrumentation.',
   })
 
   public async execute(): Promise<0 | 1> {
@@ -45,95 +31,47 @@ export class UninstrumentCommand extends AasCommand {
       return 1
     }
 
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Uninstrumenting Azure App Service\n`)
     const client = new WebSiteManagementClient(cred, config.subscriptionId, {apiVersion: '2024-11-01'})
-
-    const site = await client.webApps.get(config.resourceGroup, config.aasName)
-    if (isWindows(site)) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-        )
-      )
-
-      return 1
-    }
-
-    config.isDotnet = config.isDotnet || isDotnet(site)
     try {
-      await this.instrumentSidecar(client, config, config.resourceGroup, config.aasName)
+      const site = await client.webApps.get(config.resourceGroup, config.aasName)
+      if (!this.ensureLinux(site)) {
+        return 1
+      }
+      config.isDotnet = config.isDotnet || isDotnet(site)
+      await this.uninstrumentSidecar(client, config, config.resourceGroup, config.aasName)
     } catch (error) {
-      this.context.stdout.write(renderError(`Failed to instrument sidecar: ${error}`))
+      this.context.stdout.write(renderError(`Failed to uninstrument: ${formatError(error)}`))
 
       return 1
     }
 
-    if (!this.shouldNotRestart) {
-      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service\n`)
-      if (!this.dryRun) {
-        try {
-          await client.webApps.restart(config.resourceGroup, config.aasName)
-        } catch (error) {
-          this.context.stdout.write(renderError(`Failed to restart Azure App Service: ${error}`))
-
-          return 1
-        }
-      }
-    }
-
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumentation complete!\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Uninstrumentation complete!\n`)
 
     return 0
   }
 
-  public async instrumentSidecar(
+  public async uninstrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
     aasName: string
   ) {
-    const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
-    const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = getEnvVars(config)
-    // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
-    // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
-    // env values point to env keys in the main App Settings. (essentially env var forwarding)
-    if (
-      sidecarContainer === undefined ||
-      sidecarContainer.image !== SIDECAR_IMAGE ||
-      sidecarContainer.targetPort !== SIDECAR_PORT ||
-      !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
-      !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
-    ) {
-      this.context.stdout.write(
-        `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
-          SIDECAR_CONTAINER_NAME
-        )}\n`
-      )
-      if (!this.dryRun) {
-        await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
-          image: SIDECAR_IMAGE,
-          targetPort: SIDECAR_PORT,
-          isMain: false,
-          environmentVariables: Object.keys(envVars).map((name) => ({name, value: name})),
-        })
-      }
-    } else {
-      this.context.stdout.write(
-        `${this.dryRunPrefix}Sidecar container ${chalk.bold(
-          SIDECAR_CONTAINER_NAME
-        )} already exists with correct configuration.\n`
-      )
+    this.context.stdout.write(
+      `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} (if it exists)\n`
+    )
+    if (!this.dryRun) {
+      await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
     }
-    const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
-    const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
-    if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings\n`)
+    const envVars = getEnvVars(config)
+    const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
+    if (currentEnvVars !== undefined && Object.keys(envVars).some((key) => key in currentEnvVars)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
       if (!this.dryRun) {
-        await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
+        await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
+          properties: Object.fromEntries(Object.entries(currentEnvVars).filter(([key]) => !(key in envVars))),
+        })
       }
     } else {
       this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)

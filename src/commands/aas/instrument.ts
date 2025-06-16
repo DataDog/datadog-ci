@@ -12,6 +12,7 @@ import {maskString} from '../../helpers/utils'
 import {
   AasCommand,
   collectAsyncIterator,
+  formatError,
   getEnvVars,
   isDotnet,
   SIDECAR_CONTAINER_NAME,
@@ -27,9 +28,33 @@ export class InstrumentCommand extends AasCommand {
     description: 'Apply Datadog instrumentation to an Azure App Service.',
   })
 
+  private service = Option.String('--service', {
+    description: 'How you want to tag your service. For example, `my-service`',
+  })
+  private environment = Option.String('--env,--environment', {
+    description: 'How you want to tag your env. For example, `prod`',
+  })
+  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
+    description:
+      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
+  })
+  private logPath = Option.String('--log-path', {
+    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
+  })
+
   private shouldNotRestart = Option.Boolean('--no-restart', false, {
     description: 'Do not restart the App Service after applying instrumentation.',
   })
+
+  public get additionalConfig(): Partial<AasConfigOptions> {
+    return {
+      service: this.service,
+      environment: this.environment,
+      isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
+      logPath: this.logPath,
+      shouldNotRestart: this.shouldNotRestart,
+    }
+  }
 
   public async execute(): Promise<0 | 1> {
     this.enableFips()
@@ -63,21 +88,21 @@ export class InstrumentCommand extends AasCommand {
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
     const client = new WebSiteManagementClient(cred, config.subscriptionId, {apiVersion: '2024-11-01'})
 
-    const site = await client.webApps.get(config.resourceGroup, config.aasName)
-    if (!this.ensureLinux(site)) {
-      return 1
-    }
-
-    config.isDotnet = config.isDotnet || isDotnet(site)
     try {
+      const site = await client.webApps.get(config.resourceGroup, config.aasName)
+      if (!this.ensureLinux(site)) {
+        return 1
+      }
+
+      config.isDotnet = config.isDotnet || isDotnet(site)
       await this.instrumentSidecar(client, config, config.resourceGroup, config.aasName)
     } catch (error) {
-      this.context.stdout.write(renderError(`Failed to instrument sidecar: ${error}`))
+      this.context.stdout.write(renderError(`Failed to instrument: ${formatError(error)}`))
 
       return 1
     }
 
-    if (!this.shouldNotRestart) {
+    if (!config.shouldNotRestart) {
       this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service\n`)
       if (!this.dryRun) {
         try {

@@ -6,13 +6,11 @@ export interface AasConfigOptions {
   subscriptionId: string
   resourceGroup: string
   aasName: string
-  service: string | undefined
-  environment: string | undefined
-  isInstanceLoggingEnabled: boolean
-  logPath: string | undefined
+  service?: string
+  environment?: string
+  isInstanceLoggingEnabled?: boolean
+  logPath?: string
   isDotnet: boolean
-}
-
-export type ValueOptional<T> = {
-  [K in keyof T]: T[K] | undefined
+  // no-dd-sa:typescript-best-practices/boolean-prop-naming
+  shouldNotRestart?: boolean
 }

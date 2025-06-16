@@ -1,3 +1,4 @@
 import {InstrumentCommand} from './instrument'
+import {UninstrumentCommand} from './uninstrument'
 
-module.exports = [InstrumentCommand]
+module.exports = [InstrumentCommand, UninstrumentCommand]

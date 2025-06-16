@@ -1,0 +1,254 @@
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  readFile: jest.fn().mockImplementation((a, b, callback) => callback({code: 'ENOENT'})),
+}))
+
+jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+
+const getToken = jest.fn()
+
+jest.mock('@azure/identity', () => ({
+  DefaultAzureCredential: jest.fn().mockImplementation(() => ({
+    getToken,
+  })),
+}))
+
+const webAppsOperations = {
+  get: jest.fn(),
+  deleteSiteContainer: jest.fn(),
+  listApplicationSettings: jest.fn(),
+  updateApplicationSettings: jest.fn(),
+}
+
+jest.mock('@azure/arm-appservice', () => ({
+  WebSiteManagementClient: jest.fn().mockImplementation(() => ({
+    webApps: webAppsOperations,
+  })),
+}))
+
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+
+import {UninstrumentCommand} from '../uninstrument'
+
+import {CONTAINER_WEB_APP, DEFAULT_ARGS} from './common'
+
+describe('aas instrument', () => {
+  const runCLI = makeRunCLI(UninstrumentCommand, ['aas', 'uninstrument'])
+
+  describe('execute', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.deleteSiteContainer.mockReset().mockResolvedValue(undefined)
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
+      webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue(undefined)
+    })
+
+    test('Fails if not authenticated with Azure', async () => {
+      getToken.mockClear().mockRejectedValue(new Error())
+
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`[!] Failed to authenticate with Azure: Error
+
+Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
+
+`)
+      expect(code).toEqual(1)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('Dry run uninstrumenting doesnt change settings', async () => {
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          hello: 'world', // existing setting to ensure we don't remove it
+        },
+      })
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
+      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Uninstrumenting Azure App Service
+[Dry Run] Removing sidecar container datadog-sidecar (if it exists)
+[Dry Run] Checking Application Settings
+[Dry Run] Updating Application Settings
+[Dry Run] 🐶 Uninstrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('Uninstrument sidecar and updates app settings', async () => {
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          hello: 'world', // existing setting to ensure we don't remove it
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+Removing sidecar container datadog-sidecar (if it exists)
+Checking Application Settings
+Updating Application Settings
+🐶 Uninstrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'}, // ensure existing settings are preserved
+      })
+    })
+
+    test('Uninstrument sidecar and updates app settings with .NET settings', async () => {
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
+        properties: {
+          hello: 'world',
+          foo: 'bar',
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          CORECLR_ENABLE_PROFILING: '1',
+          CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+          DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        },
+      })
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dotnet'])
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+Removing sidecar container datadog-sidecar (if it exists)
+Checking Application Settings
+Updating Application Settings
+🐶 Uninstrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world', foo: 'bar'},
+      })
+    })
+
+    test('Uninstrument sidecar and does not change dotnet settings when not specified', async () => {
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
+        properties: {
+          hello: 'world',
+          foo: 'bar',
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          CORECLR_ENABLE_PROFILING: '1',
+          CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+          DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+Removing sidecar container datadog-sidecar (if it exists)
+Checking Application Settings
+Updating Application Settings
+🐶 Uninstrumentation complete!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          hello: 'world',
+          foo: 'bar',
+          CORECLR_ENABLE_PROFILING: '1',
+          CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+          DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        },
+      })
+    })
+
+    test('Warns and exits if App Service is not Linux', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+[!] Only Linux-based Azure App Services are currently supported.
+Please see the documentation for information on
+how to instrument Windows-based App Services:
+https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows
+`)
+      expect(code).toEqual(1)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('Exits properly if the AAS does not exist', async () => {
+      webAppsOperations.get
+        .mockClear()
+        .mockRejectedValue({code: 'ResourceNotFound', details: {message: 'Could not find my-web-app'}})
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+[Error] Failed to uninstrument: ResourceNotFound: Could not find my-web-app
+`)
+      expect(code).toEqual(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      // the last operations never get called due to the above failure
+      expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+
+    test('Handles errors during sidecar uninstrumentation', async () => {
+      webAppsOperations.listApplicationSettings
+        .mockClear()
+        .mockRejectedValue({code: 'SettingsError', details: {message: 'unable to list settings'}})
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toEqual(`🐶 Uninstrumenting Azure App Service
+Removing sidecar container datadog-sidecar (if it exists)
+Checking Application Settings
+[Error] Failed to uninstrument: SettingsError: unable to list settings
+`)
+      expect(code).toEqual(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      // the last operations never get called due to the above failure
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+    })
+  })
+})

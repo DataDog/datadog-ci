@@ -11,7 +11,7 @@ import {enableFips} from '../../helpers/fips'
 import {dryRunTag, renderSoftWarning} from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
-import {AasConfigOptions, ValueOptional} from './interfaces'
+import {AasConfigOptions} from './interfaces'
 
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
@@ -44,19 +44,6 @@ export abstract class AasCommand extends Command {
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file',
   })
-  private service = Option.String('--service', {
-    description: 'How you want to tag your service. For example, `my-service`',
-  })
-  private environment = Option.String('--env,--environment', {
-    description: 'How you want to tag your env. For example, `prod`',
-  })
-  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
-    description:
-      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
-  })
-  private logPath = Option.String('--log-path', {
-    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
-  })
 
   private isDotnet = Option.Boolean('--dotnet', false, {
     description:
@@ -74,23 +61,24 @@ export abstract class AasCommand extends Command {
     return this.dryRun ? dryRunTag + ' ' : ''
   }
 
+  public get additionalConfig(): Partial<AasConfigOptions> {
+    return {}
+  }
+
   public enableFips(): void {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
   }
 
   public async ensureConfig(): Promise<[AasConfigOptions, string[]]> {
     const config = (
-      await resolveConfigFromFile<{aas: ValueOptional<AasConfigOptions>}>(
+      await resolveConfigFromFile<{aas: Partial<AasConfigOptions>}>(
         {
           aas: {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
             aasName: this.aasName,
-            service: this.service,
-            environment: this.environment,
-            isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
-            logPath: this.logPath,
             isDotnet: this.isDotnet,
+            ...this.additionalConfig,
           },
         },
         {
@@ -158,7 +146,7 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
   let envVars: Record<string, string> = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
-    DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
+    DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
   }
   if (config.service) {
     envVars.DD_SERVICE = config.service
@@ -206,4 +194,15 @@ export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>)
   }
 
   return arr
+}
+
+/**
+ * Formats an error (usually an Azure RestError) object into a string for display.
+ */
+// no-dd-sa:typescript-best-practices/no-explicit-any
+export const formatError = (error: any): string => {
+  const errorType = error.code ?? error.name
+  const errorMessage = error.details?.message ?? error.message
+
+  return `${errorType}: ${errorMessage}`
 }
