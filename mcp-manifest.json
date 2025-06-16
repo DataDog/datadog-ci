@@ -1,0 +1,97 @@
+{
+  "name": "datadog-ci-mcp-server",
+  "description": "Model Context Protocol server for Datadog CI tools. Provides AI systems with access to Datadog CI Lambda flare functionality for troubleshooting AWS Lambda functions.",
+  "version": "3.9.0",
+  "author": "Datadog CI Team",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/DataDog/datadog-ci",
+  "mcp": {
+    "protocolVersion": "2024-11-05",
+    "capabilities": {
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "tools": [
+      {
+        "name": "lambda-flare",
+        "description": "Collect diagnostic data from AWS Lambda functions for troubleshooting. Gathers function configuration, tags, CloudWatch logs, and project files.",
+        "category": "serverless",
+        "permissions": [
+          "lambda:GetFunction",
+          "lambda:ListTags",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents"
+        ],
+        "examples": [
+          {
+            "description": "Basic flare collection for a Lambda function",
+            "parameters": {
+              "functionName": "my-lambda-function",
+              "region": "us-east-1",
+              "dryRun": true
+            }
+          },
+          {
+            "description": "Collect flare data with CloudWatch logs",
+            "parameters": {
+              "functionName": "arn:aws:lambda:us-east-1:123456789012:function:my-function",
+              "withLogs": true,
+              "dryRun": true
+            }
+          },
+          {
+            "description": "Collect logs for a specific time range",
+            "parameters": {
+              "functionName": "my-lambda-function",
+              "region": "us-west-2",
+              "withLogs": true,
+              "start": 1640995200000,
+              "end": 1641081600000,
+              "dryRun": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "installation": {
+    "requirements": {
+      "node": ">=18",
+      "aws": {
+        "credentials": "AWS credentials must be configured via environment variables, AWS credentials file, or IAM roles",
+        "permissions": [
+          "lambda:GetFunction",
+          "lambda:ListTags",
+          "logs:DescribeLogStreams (optional, for --with-logs)",
+          "logs:GetLogEvents (optional, for --with-logs)"
+        ]
+      },
+      "environment": {
+        "required": [],
+        "optional": [
+          "AWS_REGION",
+          "AWS_DEFAULT_REGION",
+          "DATADOG_API_KEY (required for non-dry-run mode)",
+          "DD_API_KEY (alternative to DATADOG_API_KEY)"
+        ]
+      }
+    },
+    "setup": [
+      "Install: npm install -g @datadog/datadog-ci",
+      "Configure AWS credentials",
+      "Set DATADOG_API_KEY environment variable (optional, for sending data to Datadog support)",
+      "Run: datadog-ci-mcp"
+    ]
+  },
+  "usage": {
+    "transport": "stdio",
+    "command": "datadog-ci-mcp",
+    "description": "The MCP server communicates via stdin/stdout using JSON-RPC 2.0. It should be started by an MCP client (like Claude Desktop) rather than run directly."
+  },
+  "documentation": {
+    "website": "https://docs.datadoghq.com/serverless/troubleshooting/",
+    "github": "https://github.com/DataDog/datadog-ci",
+    "mcp_spec": "https://spec.modelcontextprotocol.io/"
+  }
+}

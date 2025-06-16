@@ -38,11 +38,27 @@ for (const commandFolder of fs.readdirSync(commandsPath)) {
 }
 
 if (require.main === module) {
-  void cli.runExit(process.argv.slice(2), {
-    stderr: process.stderr,
-    stdin: process.stdin,
-    stdout: process.stdout,
-  })
+  // Check for MCP server mode
+  if (process.argv.includes('--mcp-server')) {
+    // Import and start MCP server
+    import('./mcp/server.js')
+      .then(({main}) => {
+        main().catch((error: unknown) => {
+          console.error('Failed to start MCP server:', error)
+          process.exit(1)
+        })
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load MCP server:', error)
+        process.exit(1)
+      })
+  } else {
+    void cli.runExit(process.argv.slice(2), {
+      stderr: process.stderr,
+      stdin: process.stdin,
+      stdout: process.stdout,
+    })
+  }
 }
 
 export {cli}

@@ -4,7 +4,10 @@
   "description": "Run datadog actions from the CI.",
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
-  "bin": "dist/cli.js",
+  "bin": {
+    "datadog-ci": "dist/cli.js",
+    "datadog-ci-mcp": "dist/mcp-server.js"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -36,6 +39,7 @@
   "scripts": {
     "build": "yarn clean; tsc",
     "build:win": "tsc",
+    "build:mcp": "yarn build && node ./bin/make-mcp-executable.js",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
     "clean:win": "rm dist -r",
@@ -56,6 +60,8 @@
     "test:lambda": "jest src/commands/lambda --colors",
     "test:cloud-run": "jest src/commands/cloud-run --colors",
     "test:helpers": "jest src/helpers --colors",
+    "test:mcp": "jest src/mcp --colors",
+    "test:mcp-helpers": "jest src/commands/lambda/__tests__/mcp-helpers.test.ts --colors",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
     "watch": "tsc -w"
@@ -72,6 +78,7 @@
     "@azure/identity": "^4.10.0",
     "@google-cloud/logging": "^11.1.0",
     "@google-cloud/run": "^1.4.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
     "@types/datadog-metrics": "0.6.1",
@@ -102,6 +109,7 @@
     "semver": "^7.5.3",
     "set-value": "^4.1.0",
     "simple-git": "3.16.0",
+    "source-map-support": "^0.5.21",
     "ssh2": "^1.15.0",
     "ssh2-streams": "0.4.10",
     "sshpk": "1.16.1",
