@@ -87,16 +87,6 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    // Verify GCP credentials
-    this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
-    const authenticated = await checkAuthentication()
-    if (!authenticated) {
-      this.context.stderr.write(renderAuthenticationInstructions())
-
-      return 1
-    }
-    this.context.stdout.write('GCP credentials verified!\n')
-
     // Validate required variables
     this.context.stdout.write(chalk.bold('\n🔍 Verifying command flags...\n'))
     const project = this.project ?? this.config.project
@@ -129,6 +119,16 @@ export class InstrumentCommand extends Command {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
+
+    // Verify GCP credentials
+    this.context.stdout.write(chalk.bold('\n🔑 Verifying GCP credentials...\n'))
+    const authenticated = await checkAuthentication()
+    if (!authenticated) {
+      this.context.stderr.write(renderAuthenticationInstructions())
+
+      return 1
+    }
+    this.context.stdout.write('GCP credentials verified!\n')
 
     // Instrument services with sidecar
     try {
