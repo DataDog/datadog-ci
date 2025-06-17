@@ -116,7 +116,7 @@ export class StepFunctionsFlareCommand extends Command {
       const maskedConfig = this.maskStateMachineConfig(stateMachineConfig)
 
       // 2. Get state machine tags
-      this.context.stdout.write('🏷️ Getting resource tags...\n')
+      this.context.stdout.write('🔖 Getting resource tags...\n')
       const tags = await this.getStateMachineTags(sfnClient, this.stateMachineArn!)
 
       // 3. Get recent executions
