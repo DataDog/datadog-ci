@@ -1,5 +1,6 @@
 import fs from 'fs'
-import path from 'path'
+
+import upath from 'upath'
 
 import {
   CloudWatchLogsClient,
@@ -19,10 +20,12 @@ import {
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
-import {CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {createDirectories, writeFile, zipContents} from '../../../helpers/fs'
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {StepFunctionsFlareCommand} from '../flare'
+
 import {
   stateMachineConfigFixture,
   sensitiveStateMachineConfigFixture,
@@ -37,10 +40,7 @@ import {
   MOCK_CASE_ID,
   MOCK_EMAIL,
   MOCK_API_KEY,
-  MOCK_AWS_CREDENTIALS,
-  MOCK_FRAMEWORK,
   MOCK_OUTPUT_DIR,
-  MOCK_INSIGHTS_CONTENT,
 } from './fixtures/stepfunctions-flare'
 
 // Mock the AWS SDK clients
@@ -55,6 +55,24 @@ jest.mock('fs')
 
 describe('StepFunctionsFlareCommand', () => {
   let command: StepFunctionsFlareCommand
+  const runCLI = makeRunCLI(StepFunctionsFlareCommand, ['stepfunctions', 'flare'])
+
+  // Helper function to set up command with values for unit testing
+  // This simulates what Clipanion does when parsing command line arguments
+  const setupCommand = (options: {
+    stateMachineArn?: string
+    caseId?: string  
+    email?: string
+    region?: string
+  }) => {
+    const cmd = new StepFunctionsFlareCommand()
+    // Override the Option objects with actual values for testing
+    ;(cmd as any).stateMachineArn = options.stateMachineArn
+    ;(cmd as any).caseId = options.caseId
+    ;(cmd as any).email = options.email
+    ;(cmd as any).region = options.region
+    return cmd
+  }
 
   beforeEach(() => {
     // Reset all mocks
@@ -65,7 +83,7 @@ describe('StepFunctionsFlareCommand', () => {
     // Set up environment
     process.env[CI_API_KEY_ENV_VAR] = MOCK_API_KEY
 
-    // Create command instance
+    // Create command instance for unit tests
     command = new StepFunctionsFlareCommand()
   })
 
@@ -74,47 +92,58 @@ describe('StepFunctionsFlareCommand', () => {
   })
 
   describe('validateInputs', () => {
+
     it('should return 1 when state machine ARN is missing', async () => {
-      const result = await command['validateInputs']()
+      const cmd = setupCommand({})
+      const result = await cmd['validateInputs']()
       expect(result).toBe(1)
     })
 
     it('should return 1 when case ID is missing', async () => {
-      command['stateMachineArn'] = MOCK_STATE_MACHINE_ARN
-      const result = await command['validateInputs']()
+      const cmd = setupCommand({stateMachineArn: MOCK_STATE_MACHINE_ARN})
+      const result = await cmd['validateInputs']()
       expect(result).toBe(1)
     })
 
     it('should return 1 when email is missing', async () => {
-      command['stateMachineArn'] = MOCK_STATE_MACHINE_ARN
-      command['caseId'] = MOCK_CASE_ID
-      const result = await command['validateInputs']()
+      const cmd = setupCommand({
+        stateMachineArn: MOCK_STATE_MACHINE_ARN,
+        caseId: MOCK_CASE_ID,
+      })
+      const result = await cmd['validateInputs']()
       expect(result).toBe(1)
     })
 
     it('should return 1 when API key is missing', async () => {
       delete process.env[CI_API_KEY_ENV_VAR]
-      command['stateMachineArn'] = MOCK_STATE_MACHINE_ARN
-      command['caseId'] = MOCK_CASE_ID
-      command['email'] = MOCK_EMAIL
-      const result = await command['validateInputs']()
+      delete process.env[API_KEY_ENV_VAR]
+      const cmd = setupCommand({
+        stateMachineArn: MOCK_STATE_MACHINE_ARN,
+        caseId: MOCK_CASE_ID,
+        email: MOCK_EMAIL,
+      })
+      const result = await cmd['validateInputs']()
       expect(result).toBe(1)
     })
 
     it('should return 1 when state machine ARN is invalid', async () => {
-      command['stateMachineArn'] = 'invalid-arn'
-      command['caseId'] = MOCK_CASE_ID
-      command['email'] = MOCK_EMAIL
-      const result = await command['validateInputs']()
+      const cmd = setupCommand({
+        stateMachineArn: 'invalid-arn',
+        caseId: MOCK_CASE_ID,
+        email: MOCK_EMAIL,
+      })
+      const result = await cmd['validateInputs']()
       expect(result).toBe(1)
     })
 
     it('should return 0 when all required inputs are valid', async () => {
-      command['stateMachineArn'] = MOCK_STATE_MACHINE_ARN
-      command['caseId'] = MOCK_CASE_ID
-      command['email'] = MOCK_EMAIL
-      command['region'] = MOCK_REGION
-      const result = await command['validateInputs']()
+      const cmd = setupCommand({
+        stateMachineArn: MOCK_STATE_MACHINE_ARN,
+        caseId: MOCK_CASE_ID,
+        email: MOCK_EMAIL,
+        region: MOCK_REGION,
+      })
+      const result = await cmd['validateInputs']()
       expect(result).toBe(0)
     })
   })
@@ -138,10 +167,10 @@ describe('StepFunctionsFlareCommand', () => {
       sfnClientMock.on(DescribeStateMachineCommand).rejects(new Error('State machine not found'))
 
       const sfnClient = new SFNClient({region: MOCK_REGION})
-      
-      await expect(
-        command['getStateMachineConfiguration'](sfnClient, MOCK_STATE_MACHINE_ARN)
-      ).rejects.toThrow('State machine not found')
+
+      await expect(command['getStateMachineConfiguration'](sfnClient, MOCK_STATE_MACHINE_ARN)).rejects.toThrow(
+        'State machine not found'
+      )
     })
   })
 
@@ -239,9 +268,7 @@ describe('StepFunctionsFlareCommand', () => {
     })
 
     it('should return empty array when log group does not exist', async () => {
-      cloudWatchLogsClientMock.on(DescribeSubscriptionFiltersCommand).rejects(
-        new Error('ResourceNotFoundException')
-      )
+      cloudWatchLogsClientMock.on(DescribeSubscriptionFiltersCommand).rejects(new Error('ResourceNotFoundException'))
 
       const cwClient = new CloudWatchLogsClient({region: MOCK_REGION})
       const logGroupName = '/aws/vendedlogs/states/MyWorkflow-Logs'
@@ -296,8 +323,11 @@ describe('StepFunctionsFlareCommand', () => {
 
   describe('generateInsightsFile', () => {
     it('should generate insights file with correct content', () => {
+      // Mock fs.readdirSync for getFramework call
+      ;(fs.readdirSync as jest.Mock).mockReturnValue([])
+      
       const mockConfig = stateMachineConfigFixture()
-      const filePath = path.join(MOCK_OUTPUT_DIR, 'INSIGHTS.md')
+      const filePath = upath.join(MOCK_OUTPUT_DIR, 'INSIGHTS.md')
 
       command['generateInsightsFile'](filePath, false, mockConfig)
 
@@ -321,33 +351,33 @@ describe('StepFunctionsFlareCommand', () => {
   describe('getFramework', () => {
     it('should detect Serverless Framework', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValue(['serverless.yml', 'package.json'])
-      
+
       const framework = command['getFramework']()
-      
+
       expect(framework).toContain('Serverless Framework')
     })
 
     it('should detect AWS SAM', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValue(['template.yaml', 'samconfig.toml'])
-      
+
       const framework = command['getFramework']()
-      
+
       expect(framework).toContain('AWS SAM')
     })
 
     it('should detect AWS CDK', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValue(['cdk.json', 'tsconfig.json'])
-      
+
       const framework = command['getFramework']()
-      
+
       expect(framework).toContain('AWS CDK')
     })
 
     it('should return Unknown when no framework detected', () => {
       ;(fs.readdirSync as jest.Mock).mockReturnValue(['index.js', 'README.md'])
-      
+
       const framework = command['getFramework']()
-      
+
       expect(framework).toBe('Unknown')
     })
   })
@@ -356,9 +386,15 @@ describe('StepFunctionsFlareCommand', () => {
     it('should create output directory structure', async () => {
       ;(createDirectories as jest.Mock).mockResolvedValue(undefined)
       
-      const outputDir = await command['createOutputDirectory']()
-      
+      // Set up command with stateMachineArn
+      const cmd = setupCommand({
+        stateMachineArn: MOCK_STATE_MACHINE_ARN,
+      })
+
+      const outputDir = await cmd['createOutputDirectory']()
+
       expect(outputDir).toContain('.datadog-ci')
+      expect(outputDir).toContain('MyWorkflow')
       expect(createDirectories).toHaveBeenCalled()
     })
   })
@@ -375,27 +411,18 @@ describe('StepFunctionsFlareCommand', () => {
 
       await command['writeOutputFiles'](MOCK_OUTPUT_DIR, mockData)
 
-      expect(writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('state_machine_config.json'),
-        expect.any(String)
-      )
-      expect(writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('tags.json'),
-        expect.any(String)
-      )
-      expect(writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('recent_executions.json'),
-        expect.any(String)
-      )
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('state_machine_config.json'), expect.any(String))
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('tags.json'), expect.any(String))
+      expect(writeFile).toHaveBeenCalledWith(expect.stringContaining('recent_executions.json'), expect.any(String))
     })
   })
 
   describe('zipAndSend', () => {
     it('should zip files and send to Datadog', async () => {
       ;(zipContents as jest.Mock).mockResolvedValue(undefined)
-      
+
       await command['zipAndSend'](MOCK_OUTPUT_DIR)
-      
+
       expect(zipContents).toHaveBeenCalled()
     })
   })
@@ -403,7 +430,7 @@ describe('StepFunctionsFlareCommand', () => {
   describe('parseStateMachineArn', () => {
     it('should correctly parse state machine ARN', () => {
       const parsed = command['parseStateMachineArn'](MOCK_STATE_MACHINE_ARN)
-      
+
       expect(parsed).toEqual({
         region: 'us-east-1',
         name: 'MyWorkflow',
@@ -468,6 +495,71 @@ describe('StepFunctionsFlareCommand', () => {
       )
 
       expect(result).toEqual(mockExecutionDetails)
+    })
+  })
+
+  describe('execute', () => {
+    let context: any
+
+    beforeEach(() => {
+      // Create command with context
+      context = {
+        stdout: {write: jest.fn()},
+        stderr: {write: jest.fn()},
+      }
+      command.context = context
+
+      // Set command options
+      ;(command as any).stateMachineArn = MOCK_STATE_MACHINE_ARN
+      ;(command as any).caseId = MOCK_CASE_ID
+      ;(command as any).email = MOCK_EMAIL
+      ;(command as any).region = MOCK_REGION
+      ;(command as any).isDryRun = true
+      ;(command as any).withLogs = false
+    })
+
+    it('should successfully execute in dry run mode', async () => {
+      // Mock AWS responses
+      sfnClientMock.on(DescribeStateMachineCommand).resolves(stateMachineConfigFixture())
+      sfnClientMock.on(ListTagsForResourceCommand).resolves({tags: stepFunctionTagsFixture()})
+      sfnClientMock.on(ListExecutionsCommand).resolves({executions: executionsFixture()})
+      sfnClientMock.on(DescribeExecutionCommand).resolves({
+        executionArn: 'arn:aws:states:us-east-1:123456789012:execution:MyWorkflow:execution1',
+        status: 'SUCCEEDED',
+        input: '{"orderId": "12345"}',
+        output: '{"result": "success"}',
+      })
+      sfnClientMock.on(GetExecutionHistoryCommand).resolves({events: executionHistoryFixture()})
+      
+      // Mock fs.readdirSync for getFramework
+      ;(fs.readdirSync as jest.Mock).mockReturnValue(['serverless.yml'])
+
+      const result = await command.execute()
+
+      expect(result).toBe(0)
+      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Collecting Step Functions flare data'))
+      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('[Dry Run] Flare would be created at'))
+      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Flare data collection complete!'))
+    })
+
+    it('should handle missing required parameters', async () => {
+      ;(command as any).stateMachineArn = undefined
+
+      const result = await command.execute()
+
+      expect(result).toBe(1)
+      expect(context.stdout.write).toHaveBeenCalledWith(
+        'Usage: datadog-ci stepfunctions flare -s <state-machine-arn> -c <case-id> -e <email>\n'
+      )
+    })
+
+    it('should handle AWS API errors gracefully', async () => {
+      sfnClientMock.on(DescribeStateMachineCommand).rejects(new Error('State machine not found'))
+
+      const result = await command.execute()
+
+      expect(result).toBe(1)
+      expect(context.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Error collecting flare data'))
     })
   })
 })

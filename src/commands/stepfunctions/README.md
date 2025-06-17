@@ -1,6 +1,10 @@
 # stepfunctions commands
 
-You can use the `stepfunctions instrument` command to instrument your Step Functions with Datadog. This command enables instrumentation by subscribing Step Function logs to a [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/).
+The Step Functions commands allow you to manage Datadog instrumentation and troubleshooting for your AWS Step Functions:
+
+- Use the `stepfunctions instrument` command to instrument your Step Functions with Datadog. This command enables instrumentation by subscribing Step Function logs to a [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/).
+- Use the `stepfunctions uninstrument` command to remove Datadog instrumentation from your Step Functions.
+- Use the `stepfunctions flare` command to collect diagnostic information for troubleshooting with Datadog support.
 
 You can also add the `stepfunctions instrument` command to your CI/CD pipelines to enable Datadog instrumentation for all of your Step Functions. Run the command after your normal serverless application deployment, so that changes made by this command do not get overridden by changes in the CI/CD pipeline.
 
@@ -23,6 +27,13 @@ Run the `uninstrument` command to unsubscribe a Step Function log group from the
 datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forwarder <forwarder-arn> [--dry-run]
 ```
 
+### `flare`
+Run the `flare` command to gather state machine configuration, execution history, logs, and project files for Datadog support troubleshooting. This command collects diagnostic information about your Step Functions and creates a flare file that can be shared with Datadog support.
+
+```bash
+datadog-ci stepfunctions flare --state-machine <state-machine-arn> --case-id <case-id> --email <email> [--region] [--with-logs] [--start] [--end] [--max-executions] [--dry-run]
+```
+
 ## Arguments
 
 ### instrument
@@ -43,6 +54,20 @@ datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forw
 | `--step-function` | `-s`      | :white_check_mark: | The ARN of the Step Function to be instrumented.                                                                            |         |
 | `--forwarder`     |           | :white_check_mark: | The ARN of the [Datadog Forwarder](https://docs.datadoghq.com/logs/guide/forwarder/) to subscribe Step Function log groups. |         |
 | `--dry-run`       | `-d`      |                    | Preview changes without applying them.                                                                                      | `false` |
+
+### flare
+
+| Argument          | Shorthand | Required           | Description                                                                                                                                                                                     | Default |
+| ----------------- | --------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `--state-machine` | `-s`      | :white_check_mark: | The ARN of the Step Functions state machine to collect diagnostic information from.                                                                                                             |         |
+| `--case-id`       | `-c`      | :white_check_mark: | The Datadog support case ID to associate with this flare.                                                                                                                                      |         |
+| `--email`         | `-e`      | :white_check_mark: | The email address associated with the support case.                                                                                                                                             |         |
+| `--region`        | `-r`      |                    | The AWS region of the state machine. If not provided, it will be extracted from the state machine ARN.                                                                                         |         |
+| `--with-logs`     |           |                    | Include CloudWatch logs from the state machine's log group in the flare.                                                                                                                       | `false` |
+| `--start`         |           |                    | Start time for log collection (ISO 8601 format). Only used with `--with-logs`.                                                                                                                 |         |
+| `--end`           |           |                    | End time for log collection (ISO 8601 format). Only used with `--with-logs`.                                                                                                                   |         |
+| `--max-executions`|           |                    | Maximum number of recent executions to include in the flare.                                                                                                                                   | `10`    |
+| `--dry-run`       | `-d`      |                    | Preview the flare collection without creating or sending files.                                                                                                                                 | `false` |
 
 ## Installation
 

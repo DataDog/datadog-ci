@@ -1,10 +1,5 @@
-import {
-  DescribeStateMachineCommandOutput,
-  ExecutionListItem,
-  HistoryEvent,
-  Tag,
-} from '@aws-sdk/client-sfn'
 import {SubscriptionFilter, OutputLogEvent} from '@aws-sdk/client-cloudwatch-logs'
+import {DescribeStateMachineCommandOutput, ExecutionListItem, HistoryEvent, Tag} from '@aws-sdk/client-sfn'
 
 export const stateMachineConfigFixture = (
   props: Partial<DescribeStateMachineCommandOutput> = {}
@@ -53,8 +48,8 @@ export const sensitiveStateMachineConfigFixture = (): DescribeStateMachineComman
           Resource: 'arn:aws:lambda:us-east-1:123456789012:function:ProcessPayment',
           Parameters: {
             'ApiKey.$': '$.credentials.apiKey',
-            'SecretToken': 'secret-12345-token',
-            'DatabasePassword': 'super-secret-password',
+            SecretToken: 'secret-12345-token',
+            DatabasePassword: 'super-secret-password',
           },
           End: true,
         },
