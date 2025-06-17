@@ -103,13 +103,13 @@ export abstract class AasCommand extends Command {
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
     }
-    if (!this.subscriptionId) {
+    if (!config.subscriptionId) {
       errors.push('--subscription-id is required')
     }
-    if (!this.resourceGroup) {
+    if (!config.resourceGroup) {
       errors.push('--resource-group is required')
     }
-    if (!this.aasName) {
+    if (!config.aasName) {
       errors.push('App Service (--name) is required')
     }
 
