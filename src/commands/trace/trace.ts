@@ -52,15 +52,21 @@ export class TraceCommand extends CustomSpanCommand {
     const startTime = new Date()
     const childProcess = spawn(command, args, {
       env: {...process.env, DD_CUSTOM_PARENT_ID: id},
-      stdio: ['inherit', 'inherit', 'pipe'],
+      stdio: ['inherit', 'pipe', 'pipe'],
     })
-    const chunks: Buffer[] = []
-    childProcess.stderr.pipe(this.context.stderr)
+
+    // Manually pipe to `this.context` streams, and do not end both streams automatically.
+    childProcess.stdout.pipe(this.context.stdout, {end: false})
+    childProcess.stderr.pipe(this.context.stderr, {end: false})
+
+    // Collect the child process `stderr` output.
+    const stderrChunks: Buffer[] = []
     const stderrCatcher: Promise<string> = new Promise((resolve, reject) => {
-      childProcess.stderr.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
+      childProcess.stderr.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)))
       childProcess.stderr.on('error', (err) => reject(err))
-      childProcess.stderr.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+      childProcess.stderr.on('end', () => resolve(Buffer.concat(stderrChunks).toString('utf8')))
     })
+
     const [status, signal] = await new Promise<[number, NodeJS.Signals]>((resolve, reject) => {
       childProcess.on('error', (error: Error) => {
         reject(error)
@@ -85,7 +91,7 @@ export class TraceCommand extends CustomSpanCommand {
 
     if (res !== 0) {
       if (this.noFail) {
-        console.log('note: Not failing since --no-fail provided')
+        this.context.stdout.write('note: Not failing since --no-fail provided\n')
 
         return exitCode
       }
