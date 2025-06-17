@@ -417,15 +417,6 @@ describe('StepFunctionsFlareCommand', () => {
     })
   })
 
-  describe('zipAndSend', () => {
-    it('should zip files and send to Datadog', async () => {
-      ;(zipContents as jest.Mock).mockResolvedValue(undefined)
-
-      await command['zipAndSend'](MOCK_OUTPUT_DIR)
-
-      expect(zipContents).toHaveBeenCalled()
-    })
-  })
 
   describe('parseStateMachineArn', () => {
     it('should correctly parse state machine ARN', () => {
@@ -538,7 +529,8 @@ describe('StepFunctionsFlareCommand', () => {
 
       expect(result).toBe(0)
       expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Collecting Step Functions flare data'))
-      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('[Dry Run] Flare would be created at'))
+      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('The flare files were not sent because the command was executed in dry run mode'))
+      expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Your output files are located at'))
       expect(context.stdout.write).toHaveBeenCalledWith(expect.stringContaining('Flare data collection complete!'))
     })
 
