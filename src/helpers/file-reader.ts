@@ -1,11 +1,6 @@
 import fs from 'fs'
 
-export interface Reader {
-  read(length: number, position?: number): Promise<Buffer>
-  close(): Promise<void>
-}
-
-export class FileReader implements Reader {
+export class FileReader {
   private fd: fs.promises.FileHandle
   private buffer?: Buffer
 
@@ -22,6 +17,7 @@ export class FileReader implements Reader {
     return buffer.subarray(0, bytesRead)
   }
 
+  // XXX: Use `Symbol.asyncDispose` and `using async` when available
   public async close(): Promise<void> {
     await this.fd.close()
   }

@@ -1,6 +1,6 @@
 import upath from 'upath'
 
-import {createReaderFromFile} from '../../../helpers/filereader'
+import {createReaderFromFile} from '../../../helpers/file-reader'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
@@ -25,6 +25,7 @@ describe('elf', () => {
     const getElfHeader = async (filename: string) => {
       const reader = await createReaderFromFile(filename)
       const elfResult = await readElfHeader(reader)
+      await reader.close()
 
       return elfResult
     }
@@ -158,6 +159,7 @@ describe('elf', () => {
       const reader = await createReaderFromFile(`${fixtureDir}/dyn_aarch64`)
       const elfResult = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfResult.elfHeader!)
+      await reader.close()
 
       expect(sectionHeaders).toEqual([
         {
@@ -559,6 +561,7 @@ describe('elf', () => {
       const reader = await createReaderFromFile(`${fixtureDir}/dyn_aarch64`)
       const elfResult = await readElfHeader(reader)
       const programHeaders = await readElfProgramHeaderTable(reader, elfResult.elfHeader!)
+      await reader.close()
 
       expect(programHeaders).toEqual([
         {
@@ -664,6 +667,7 @@ describe('elf', () => {
       const {elfHeader} = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
       const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
+      await reader.close()
 
       expect(gnuBuildId).toEqual('90aef8b4a3cd45d758501e49d1d9844736c872cd')
       expect(goBuildId).toBeFalsy()
@@ -674,6 +678,7 @@ describe('elf', () => {
       const {elfHeader} = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
       const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
+      await reader.close()
 
       expect(goBuildId).toEqual('tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn')
       expect(gnuBuildId).toBeFalsy()
@@ -684,6 +689,7 @@ describe('elf', () => {
       const {elfHeader} = await readElfHeader(reader)
       const sectionHeaders = await readElfSectionHeaderTable(reader, elfHeader!)
       const {gnuBuildId, goBuildId} = await getBuildIds(reader, sectionHeaders, elfHeader!)
+      await reader.close()
 
       expect(goBuildId).toEqual('tUhrGOwxi48kXlLhYlY3/WlmPekR2qonrFvofssLt/8beXJbt0rDaHhn3I6x8D/IA6Zd8Qc8Rsh_bFKoPVn')
       expect(gnuBuildId).toEqual('6a5e565db576fe96acd8ab12bf857eb36f8afdf4')
