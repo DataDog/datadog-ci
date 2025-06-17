@@ -216,8 +216,8 @@ export const buildAssets = async (
     stdio: ['inherit', 'pipe', 'pipe'],
   })
 
-  buildCommandProcess.stdout?.pipe(context.stdout)
-  buildCommandProcess.stderr?.pipe(context.stderr)
+  buildCommandProcess.stdout.pipe(context.stdout, {end: false})
+  buildCommandProcess.stderr.pipe(context.stderr, {end: false})
 
   // Wait for the build command to finish
   await once(buildCommandProcess, 'close')
