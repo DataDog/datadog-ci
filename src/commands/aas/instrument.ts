@@ -99,13 +99,13 @@ export class InstrumentCommand extends AasCommand {
     )
     const success = results.every((result) => result)
     this.context.stdout.write(
-      `${this.dryRunPrefix}🐶 Instrumentation completed ${success ? 'successfully' : 'with errors'}!\n`
+      `${this.dryRunPrefix}🐶 Instrumentation completed ${success ? 'successfully!' : 'with errors, see above for details.'}\n`
     )
 
     return success ? 0 : 1
   }
 
-  public async processSubscription(
+  private async processSubscription(
     cred: DefaultAzureCredential,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,

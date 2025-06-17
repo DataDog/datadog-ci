@@ -1,0 +1,17 @@
+{
+  "aas": {
+    "subscriptionId": "1dd25961-a5c7-45bf-a5ba-c1475d365cc7",
+    "resourceGroup": "ava-aas",
+    "aasName": "ava-code-python",
+    "service": "ava",
+    "environment": "ava",
+    "isInstanceLoggingEnabled": false,
+    "logPath": null,
+    "isDotnet": false,
+    "shouldNotRestart": false,
+    "resourceIds": [
+      "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourceGroups/ava-aas/providers/Microsoft.Web/sites/ava-code-python",
+      "/subscriptions/1dd25961-a5c7-45bf-a5ba-c1475d365cc7/resourceGroups/ava-aas/providers/Microsoft.Web/sites/ava-code-python2"
+    ]
+  }
+}

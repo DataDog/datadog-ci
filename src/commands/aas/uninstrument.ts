@@ -30,25 +30,65 @@ export class UninstrumentCommand extends AasCommand {
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
     }
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning uninstrumentation of Azure App Service(s)\n`)
+    const results = await Promise.all(
+      Object.entries(appServicesToUninstrument).map(([subscriptionId, resourceGroupToNames]) =>
+        this.processSubscription(cred, subscriptionId, resourceGroupToNames, config)
+      )
+    )
+    const success = results.every((result) => result)
+    this.context.stdout.write(
+      `${this.dryRunPrefix}🐶 Uninstrumentation completed ${
+        success ? 'successfully!' : 'with errors, see above for details.'
+      }\n`
+    )
 
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Uninstrumenting Azure App Service\n`)
-    const client = new WebSiteManagementClient(cred, config.subscriptionId, {apiVersion: '2024-11-01'})
+    return success ? 0 : 1
+  }
+
+  private async processSubscription(
+    cred: DefaultAzureCredential,
+    subscriptionId: string,
+    resourceGroupToNames: Record<string, string[]>,
+    config: AasConfigOptions
+  ): Promise<boolean> {
+    const client = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
+    const results = await Promise.all(
+      Object.entries(resourceGroupToNames).map(([resourceGroup, aasNames]) =>
+        Promise.all(aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName)))
+      )
+    )
+    return results.every((result) => result.every((r) => r))
+  }
+
+  /**
+   * Process an Azure App Service for uninstrumentation.
+   * @returns A promise that resolves to a boolean indicating success or failure.
+   */
+  public async processAas(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    aasName: string
+  ): Promise<boolean> {
     try {
-      const site = await client.webApps.get(config.resourceGroup, config.aasName)
+      const site = await client.webApps.get(resourceGroup, aasName)
       if (!this.ensureLinux(site)) {
-        return 1
+        return false
       }
-      config.isDotnet = config.isDotnet || isDotnet(site)
-      await this.uninstrumentSidecar(client, config, config.resourceGroup, config.aasName)
+
+      await this.uninstrumentSidecar(
+        client,
+        {...config, isDotnet: config.isDotnet || isDotnet(site)},
+        resourceGroup,
+        aasName
+      )
     } catch (error) {
-      this.context.stdout.write(renderError(`Failed to uninstrument: ${formatError(error)}`))
+      this.context.stdout.write(renderError(`Failed to uninstrument ${aasName}: ${formatError(error)}`))
 
-      return 1
+      return false
     }
-
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Uninstrumentation complete!\n`)
-
-    return 0
+    return true
   }
 
   public async uninstrumentSidecar(

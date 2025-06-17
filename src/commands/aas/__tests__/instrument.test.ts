@@ -205,7 +205,7 @@ Ensure you copied the value and not the Key ID.
 Please see the documentation for information on
 how to instrument Windows-based App Services:
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows
-🐶 Instrumentation completed with errors!
+🐶 Instrumentation completed with errors, see above for details.
 `)
       expect(code).toEqual(1)
       expect(getToken).toHaveBeenCalled()
@@ -223,7 +223,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar
 [Error] Failed to instrument my-web-app: Error: sidecar error
-🐶 Instrumentation completed with errors!
+🐶 Instrumentation completed with errors, see above for details.
 `)
       expect(code).toEqual(1)
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
