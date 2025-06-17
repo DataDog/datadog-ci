@@ -5,6 +5,7 @@
 module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
+  setupFilesAfterEnv: ['<rootDir>/jest.config-setup.js'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': [
