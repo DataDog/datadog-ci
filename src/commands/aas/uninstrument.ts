@@ -17,7 +17,7 @@ export class UninstrumentCommand extends AasCommand {
 
   public async execute(): Promise<0 | 1> {
     this.enableFips()
-    const [config, errors] = await this.ensureConfig()
+    const [appServicesToUninstrument, config, errors] = await this.ensureConfig()
     if (errors.length > 0) {
       for (const error of errors) {
         this.context.stdout.write(renderError(error))

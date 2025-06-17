@@ -68,11 +68,11 @@ describe('aas instrument', () => {
 
     test('Adds a sidecar and updates the application settings', async () => {
       const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar
 Updating Application Settings
 Restarting Azure App Service
-🐶 Instrumentation complete!
+🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -106,11 +106,11 @@ Restarting Azure App Service
 
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
-      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Instrumenting Azure App Service
+      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
 [Dry Run] Creating sidecar container datadog-sidecar
 [Dry Run] Updating Application Settings
 [Dry Run] Restarting Azure App Service
-[Dry Run] 🐶 Instrumentation complete!
+[Dry Run] 🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -124,10 +124,10 @@ Restarting Azure App Service
 
     test('Does not restart when specified', async () => {
       const {code, context} = await runCLI([...DEFAULT_ARGS, '--no-restart'])
-      expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar
 Updating Application Settings
-🐶 Instrumentation complete!
+🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -200,11 +200,12 @@ Ensure you copied the value and not the Key ID.
     test('Warns and exits if App Service is not Linux', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
-[!] Only Linux-based Azure App Services are currently supported.
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
+[!] Unable to instrument my-web-app. Only Linux-based Azure App Services are currently supported.
 Please see the documentation for information on
 how to instrument Windows-based App Services:
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows
+🐶 Instrumentation completed with errors!
 `)
       expect(code).toEqual(1)
       expect(getToken).toHaveBeenCalled()
@@ -219,9 +220,10 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     test('Handles errors during sidecar instrumentation', async () => {
       webAppsOperations.createOrUpdateSiteContainer.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Instrumenting Azure App Service
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar
-[Error] Failed to instrument: Error: sidecar error
+[Error] Failed to instrument my-web-app: Error: sidecar error
+🐶 Instrumentation completed with errors!
 `)
       expect(code).toEqual(1)
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')

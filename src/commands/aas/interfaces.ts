@@ -3,9 +3,13 @@
  * the CLI in order to instrument properly.
  */
 export interface AasConfigOptions {
-  subscriptionId: string
-  resourceGroup: string
-  aasName: string
+  // AAS Targeting options
+  subscriptionId?: string
+  resourceGroup?: string
+  aasName?: string
+  resourceIds?: string[]
+
+  // Configuration options
   service?: string
   environment?: string
   isInstanceLoggingEnabled?: boolean
