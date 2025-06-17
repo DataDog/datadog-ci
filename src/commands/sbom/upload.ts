@@ -130,16 +130,21 @@ export class UploadSbomCommand extends Command {
     const startTimeMs = Date.now()
     const basePath = this.basePath
 
+    const logOptions = {
+      context: this.context,
+      debug: !!this.debug,
+    }
+
     if (this.debug) {
       this.context.stdout.write(`Processing file ${basePath}\n`)
     }
 
-    if (!validateSbomFileAgainstSchema(basePath, validator, !!this.debug)) {
+    if (!validateSbomFileAgainstSchema(basePath, validator, logOptions)) {
       this.context.stdout.write(
         'SBOM file not fully compliant against CycloneDX 1.4, 1.5 or 1.6 specifications (use --debug to get validation error)\n'
       )
     }
-    if (!validateFileAgainstToolRequirements(basePath, !!this.debug)) {
+    if (!validateFileAgainstToolRequirements(basePath, logOptions)) {
       this.context.stdout.write(renderInvalidFile(basePath))
 
       return 1
@@ -159,7 +164,7 @@ export class UploadSbomCommand extends Command {
 
       this.context.stdout.write(renderPayloadWarning(scaPayload.dependencies))
 
-      scaPayload.dependencies = filterInvalidDependencies(scaPayload.dependencies)
+      scaPayload.dependencies = filterInvalidDependencies(scaPayload.dependencies, logOptions)
 
       this.context.stdout.write(renderUploading(basePath, scaPayload))
 

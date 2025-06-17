@@ -4,6 +4,8 @@ import Ajv, {ErrorObject} from 'ajv'
 import addFormats from 'ajv-formats'
 import {PackageURL} from 'packageurl-js'
 
+import {CommandContext} from '../../helpers/interfaces'
+
 import cycloneDxSchema14 from './json-schema/cyclonedx/bom-1.4.schema.json'
 import cycloneDxSchema15 from './json-schema/cyclonedx/bom-1.5.schema.json'
 import cycloneDxSchema16 from './json-schema/cyclonedx/bom-1.6.schema.json'
@@ -24,17 +26,24 @@ export const getValidator = (): Ajv => {
   return ajv
 }
 
+interface LogOptions {
+  context: CommandContext
+  debug: boolean
+}
+
 /**
  * Validate an SBOM file against the SBOM CycloneDX schema.
  *
  * @param path - the path of the file to validate
  * @param ajv - an instance of Ajv fully initialized and ready to use.
- * @param debug - if we need to show debug information
+ * @param logOptions - options for logging
  */
-export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boolean): boolean => {
+export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, logOptions: LogOptions): boolean => {
+  const {context, debug} = logOptions
+
   const showValidationErrors = (version: string, errors: ErrorObject[]): void => {
     errors.forEach((message) => {
-      process.stderr.write(
+      context.stderr.write(
         `Error while validating file against CycloneDX ${version}: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
       )
     })
@@ -53,15 +62,15 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
 
     // if debug is set, we should show what version is valid, either CycloneDX 1.4 or 1.5
     if (isValid16 && debug) {
-      process.stdout.write('File is a valid CycloneDX 1.6 file\n')
+      context.stdout.write('File is a valid CycloneDX 1.6 file\n')
     }
 
     if (isValid15 && debug) {
-      process.stdout.write('File is a valid CycloneDX 1.5 file\n')
+      context.stdout.write('File is a valid CycloneDX 1.5 file\n')
     }
 
     if (isValid14 && debug) {
-      process.stdout.write('File is a valid CycloneDX 1.4 file\n')
+      context.stdout.write('File is a valid CycloneDX 1.4 file\n')
     }
 
     if (isValid14 || isValid15 || isValid16) {
@@ -89,7 +98,7 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
     return false
   } catch (error) {
     if (debug) {
-      process.stderr.write(`Error while reading file: ${error.message}\n`)
+      context.stderr.write(`Error while reading file: ${error.message}\n`)
     }
 
     return false
@@ -99,9 +108,11 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
 /**
  * Validate an SBOM file again what we need.
  * @param path - the path of the file to validate
- * @param debug - if we need to show debug information
+ * @param logOptions - options for logging
  */
-export const validateFileAgainstToolRequirements = (path: string, debug: boolean): boolean => {
+export const validateFileAgainstToolRequirements = (path: string, logOptions: LogOptions): boolean => {
+  const {context, debug} = logOptions
+
   try {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const fileContent = JSON.parse(fs.readFileSync(path).toString('utf8'))
@@ -129,7 +140,7 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
 
         if (!component['purl']) {
           if (debug) {
-            process.stderr.write(`Component ${name} has no purl\n`)
+            context.stderr.write(`Component ${name} has no purl\n`)
           }
 
           return false
@@ -138,7 +149,7 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
     }
   } catch (error) {
     if (debug) {
-      process.stderr.write(`Error while reading file: ${error.message}\n`)
+      context.stderr.write(`Error while reading file: ${error.message}\n`)
     }
 
     return false
@@ -151,7 +162,8 @@ export const validateFileAgainstToolRequirements = (path: string, debug: boolean
  * Filter invalid dependencies if some data is not compliant to what we expect.
  * @param dependencies
  */
-export const filterInvalidDependencies = (dependencies: Dependency[]): Dependency[] => {
+export const filterInvalidDependencies = (dependencies: Dependency[], logOptions: LogOptions): Dependency[] => {
+  const {context} = logOptions
   const filteredDependencies: Dependency[] = []
 
   for (const dep of dependencies) {
@@ -160,7 +172,7 @@ export const filterInvalidDependencies = (dependencies: Dependency[]): Dependenc
       PackageURL.fromString(dep.purl)
     } catch (purlError) {
       isValid = false
-      process.stderr.write(`invalid purl ${dep.purl} for component ${dep.name}\n`)
+      context.stderr.write(`invalid purl ${dep.purl} for component ${dep.name}\n`)
     }
     if (isValid) {
       filteredDependencies.push(dep)
@@ -170,10 +182,10 @@ export const filterInvalidDependencies = (dependencies: Dependency[]): Dependenc
   return filteredDependencies
 }
 
-const pythonPackaNameRegex = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\\-_.]*[a-zA-Z0-9]$')
+const pythonPackageNameRegex = new RegExp('^[a-zA-Z0-9][a-zA-Z0-9\\-_.]*[a-zA-Z0-9]$')
 
 export const validateDependencyName = (dependency: Dependency): boolean => {
-  if (dependency.language === DependencyLanguage.PYTHON && !pythonPackaNameRegex.test(dependency.name)) {
+  if (dependency.language === DependencyLanguage.PYTHON && !pythonPackageNameRegex.test(dependency.name)) {
     return false
   }
 
