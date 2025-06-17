@@ -56,7 +56,7 @@ export const createMockContext = (opts?: MockContextOptions): CommandContext => 
   stderr.toString = () => err
 
   return {
-    env: opts?.env,
+    env: opts?.env ?? {},
     stdout,
     stderr,
   }
