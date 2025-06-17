@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import { MultipartPayload, MultipartValue } from '../../helpers/upload'
 
 export class RNSourcemap {
   public bundleName: string
@@ -22,11 +22,12 @@ export class RNSourcemap {
     version: string,
     projectPath: string,
     platform: RNPlatform,
-    build: string
+    build: string,
+    debugId: string | undefined
   ): MultipartPayload {
     const content = new Map<string, MultipartValue>([
-      ['event', this.getMetadataPayload(cliVersion, service, version, projectPath, platform, build)],
-      ['source_map', {type: 'file', path: this.sourcemapPath, options: {filename: 'source_map'}}],
+      ['event', this.getMetadataPayload(cliVersion, service, version, projectPath, platform, build, debugId)],
+      ['source_map', { type: 'file', path: this.sourcemapPath, options: { filename: 'source_map' } }],
     ])
     if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
       content.set('repository', {
@@ -60,9 +61,10 @@ export class RNSourcemap {
     version: string,
     projectPath: string,
     platform: RNPlatform,
-    build: string
+    build: string,
+    debugId: string | undefined
   ): MultipartValue {
-    const metadata: {[k: string]: any} = {
+    const metadata: { [k: string]: any } = {
       build_number: build,
       bundle_name: this.bundleName,
       cli_version: cliVersion,
@@ -71,6 +73,7 @@ export class RNSourcemap {
       service,
       type: 'react_native_sourcemap',
       version,
+      debug_id: debugId,
     }
     if (this.gitData !== undefined) {
       metadata.git_repository_url = this.gitData.gitRepositoryURL
