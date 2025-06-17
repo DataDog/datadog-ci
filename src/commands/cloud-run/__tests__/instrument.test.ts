@@ -1,4 +1,8 @@
+import IContainer = google.cloud.run.v2.IContainer
+import IVolumeMount = google.cloud.run.v2.IVolumeMount
+
 import {ServicesClient} from '@google-cloud/run'
+import {google} from '@google-cloud/run/build/protos/protos'
 
 import {SERVICE_ENV_VAR} from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
@@ -163,13 +167,7 @@ describe('InstrumentCommand', () => {
       const fakeUpdated = {template: {foo: 'bar'}}
       jest.spyOn(command as any, 'createInstrumentedServiceConfig').mockReturnValue(fakeUpdated)
 
-      await (command as any).instrumentService(
-        mockClient as ServicesClient,
-        'project',
-        'service',
-        'region',
-        'ddService'
-      )
+      await command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
 
       expect(mockClient.updateService).toHaveBeenCalledWith({
         service: fakeUpdated,
@@ -180,7 +178,7 @@ describe('InstrumentCommand', () => {
       ;(mockClient.getService as jest.Mock).mockRejectedValue(new Error('not found'))
 
       await expect(
-        (command as any).instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
+        command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
       ).rejects.toThrow('Service service not found in project project, region region')
     })
 
@@ -192,7 +190,7 @@ describe('InstrumentCommand', () => {
       ])
 
       await expect(
-        (command as any).instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
+        command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
       ).rejects.toThrow('update failed')
     })
   })
@@ -212,19 +210,19 @@ describe('InstrumentCommand', () => {
         },
       }
 
-      const result = (command as any).createInstrumentedServiceConfig(service, 'my-dd-service')
+      const result = command.createInstrumentedServiceConfig(service, 'my-dd-service')
 
       // should have original + sidecar
-      expect(result.template.containers).toHaveLength(2)
-      expect(result.template.containers.map((c: any) => c.name)).toEqual(['main', 'datadog-sidecar'])
+      expect(result.template?.containers).toHaveLength(2)
+      expect(result.template?.containers?.map((c: IContainer) => c.name)).toEqual(['main', 'datadog-sidecar'])
 
       // main container should get the shared volume mount
-      const main = (result.template.containers as any[]).find((c) => c.name === 'main')!
-      expect(main.volumeMounts.some((vm: any) => vm.mountPath === '/shared-volume')).toBe(true)
+      const main = result.template?.containers?.find((c) => c.name === 'main')
+      expect(main?.volumeMounts?.some((vm: IVolumeMount) => vm.mountPath === '/shared-volume')).toBe(true)
 
       // should add the shared-volume
-      expect(result.template.volumes).toHaveLength(1)
-      expect((result.template.volumes as any[])[0].name).toBe('shared-volume')
+      expect(result.template?.volumes).toHaveLength(1)
+      expect(result.template?.volumes?.[0].name).toBe('shared-volume')
     })
 
     test('does not add duplicate sidecar or volume when app and sidecar already present', () => {
@@ -232,32 +230,32 @@ describe('InstrumentCommand', () => {
         name: 'app',
         env: [{name: SERVICE_ENV_VAR, value: 'old-service'}],
         volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
-      } as any
+      }
 
       const sidecarContainer = {
         name: 'datadog-sidecar',
         env: [],
         volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
-      } as any
+      }
 
-      const existingVolume = {name: 'shared-volume', emptyDir: {}} as any
+      const existingVolume = {name: 'shared-volume', emptyDir: {}}
 
       const service = {
         template: {
           containers: [appContainer, sidecarContainer],
           volumes: [existingVolume],
         },
-      } as any
+      }
 
-      const result = (command as any).createInstrumentedServiceConfig(service, 'my-dd-service')
+      const result = command.createInstrumentedServiceConfig(service, 'my-dd-service')
 
       // should not add another sidecar
-      expect(result.template.containers).toHaveLength(2)
-      expect(result.template.containers.map((c: any) => c.name)).toEqual(['app', 'datadog-sidecar'])
+      expect(result.template?.containers).toHaveLength(2)
+      expect(result.template?.containers?.map((c: IContainer) => c.name)).toEqual(['app', 'datadog-sidecar'])
 
       // should not add another shared-volume
-      expect(result.template.volumes).toHaveLength(1)
-      expect(result.template.volumes[0].name).toBe('shared-volume')
+      expect(result.template?.volumes).toHaveLength(1)
+      expect(result.template?.volumes?.[0].name).toBe('shared-volume')
     })
   })
 })

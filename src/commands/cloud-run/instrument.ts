@@ -142,7 +142,7 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  private async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
+  public async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
     const client = new ServicesClient()
 
     this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
@@ -157,7 +157,7 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private async instrumentService(
+  public async instrumentService(
     client: ServicesClient,
     project: string,
     serviceName: string,
@@ -196,7 +196,7 @@ export class InstrumentCommand extends Command {
     )
   }
 
-  private createInstrumentedServiceConfig(service: IService, ddService: string): IService {
+  public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
     const template = service.template || {}
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
