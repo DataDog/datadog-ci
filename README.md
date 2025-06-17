@@ -194,7 +194,7 @@ This example demonstrates how to run a command using the container and passing i
 ```shell
 export DD_API_KEY=$(cat /secret/dd_api_key)
 export DD_APP_KEY=$(cat /secret/dd_app_key)
-docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
+docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci <command> [<subcommand>] [options]
 ```
 
 #### Building your own container image
@@ -209,7 +209,7 @@ docker build --tag datadog-ci .
 Optionally, you can use the `VERSION` build argument to build an image for a specific version:
 
 ```sh
-docker build --build-arg "VERSION=v1.14" --t datadog-ci .
+docker build --build-arg "VERSION=v3.9.0" --t datadog-ci .
 ```
 
 ## Migration guide
