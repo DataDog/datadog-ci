@@ -73,4 +73,62 @@ describe('InstrumentCommand', () => {
       expect(context.stdout.toString()).toContain('No DD_SERVICE specified')
     })
   })
+
+  describe('main instrument command flow', () => {
+    test('should fail if GCP credentials are invalid', async () => {
+      ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(false)
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--dd-service',
+        'test-service',
+      ])
+      expect(code).toBe(1)
+      expect(context.stderr.toString()).toContain('Unable to authenticate with GCP')
+    })
+
+    test('should fail if sidecar instrumentation fails', async () => {
+      const mockInstrumentSidecar = jest.fn().mockRejectedValue(new Error('Failed to instrument sidecar'))
+      jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
+
+      const {code} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--dd-service',
+        'test-service',
+      ])
+      expect(code).toBe(1)
+    })
+
+    test('should succeed with valid parameters', async () => {
+      const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
+      jest.spyOn(InstrumentCommand.prototype as any, 'instrumentSidecar').mockImplementation(mockInstrumentSidecar)
+
+      const {code} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--dd-service',
+        'test-service',
+      ])
+      expect(code).toBe(0)
+      expect(mockInstrumentSidecar).toHaveBeenCalledWith(
+        'test-project',
+        ['test-service'],
+        'us-central1',
+        'test-service'
+      )
+    })
+  })
 })
