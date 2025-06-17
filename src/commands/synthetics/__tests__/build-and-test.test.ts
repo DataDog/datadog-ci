@@ -1,6 +1,6 @@
-import {buildAssets, MalformedBuildError, UnconfiguredBuildPluginError} from '../build-and-test'
+import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 
-import {mockReporter} from './fixtures'
+import {buildAssets, MalformedBuildError, UnconfiguredBuildPluginError} from '../build-and-test'
 
 const NODE_COMMAND = process.execPath
 
@@ -35,7 +35,7 @@ describe('build-and-test - buildAssets', () => {
     const MOCKED_BUILD_COMMAND_NOT_CONFIGURED = `${NODE_COMMAND} -e "console.log('build successful')"`
 
     // When calling spawnBuildPluginDevServer
-    const commandPromise = buildAssets(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, mockReporter)
+    const commandPromise = buildAssets(MOCKED_BUILD_COMMAND_NOT_CONFIGURED, createMockContext())
 
     // Then it should throw when the command exits.
     await expect(commandPromise).rejects.toThrow(UnconfiguredBuildPluginError)
@@ -47,7 +47,7 @@ describe('build-and-test - buildAssets', () => {
     const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${CLIENT_IMPLEMENTATION})()"`
 
     // When calling spawnBuildPluginDevServer
-    const {builds, devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, mockReporter)
+    const {builds, devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, createMockContext())
     tearDowns.push(stop)
 
     // Then it should return the devServerUrl and the path prefix.
@@ -65,7 +65,7 @@ describe('build-and-test - buildAssets', () => {
     const CLIENT_IMPLEMENTATION = httpClient.toString().replace(/\n\s+/g, '')
     const MOCKED_BUILD_COMMAND = `${NODE_COMMAND} -e "(${CLIENT_IMPLEMENTATION})()"`
 
-    const {devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, mockReporter)
+    const {devServerUrl, stop} = await buildAssets(MOCKED_BUILD_COMMAND, createMockContext())
     tearDowns.push(stop)
 
     // When sending a malformed build
