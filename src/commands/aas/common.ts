@@ -52,9 +52,6 @@ type AasDatadogConfig = Partial<Record<AasDatadogSettingName, string>>
 export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
 
 export abstract class AasCommand extends Command {
-  private configPath = Option.String('--config', {
-    description: 'Path to the configuration file',
-  })
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
   })
@@ -70,6 +67,10 @@ export abstract class AasCommand extends Command {
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
       'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
+  })
+
+  private configPath = Option.String('--config', {
+    description: 'Path to the configuration file',
   })
 
   private fips = Option.Boolean('--fips', false)
@@ -124,7 +125,7 @@ export abstract class AasCommand extends Command {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
         if (parsed) {
-          const { subscriptionId, resourceGroup, name } = parsed
+          const {subscriptionId, resourceGroup, name} = parsed
           if (!appServices[subscriptionId]) {
             appServices[subscriptionId] = {}
           }
@@ -245,18 +246,18 @@ export const formatError = (error: any): string => {
 }
 
 interface Resource {
-    subscriptionId: string
-    resourceGroup: string
-    name: string
+  subscriptionId: string
+  resourceGroup: string
+  name: string
 }
 
-export const parseResourceId = (resourceId: string): Resource | null => {
-    const match = resourceId.match(
-        /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.Web\/sites\/([^/]+)$/i
-    )
-    if (!match) {
-        return null
-    }
+export const parseResourceId = (resourceId: string): Resource | undefined => {
+  const match = resourceId.match(
+    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.Web\/sites\/([^/]+)$/i
+  )
+  if (match) {
     const [, subscriptionId, resourceGroup, name] = match
-    return { subscriptionId, resourceGroup, name }
+
+    return {subscriptionId, resourceGroup, name}
+  }
 }

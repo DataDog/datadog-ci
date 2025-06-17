@@ -46,7 +46,7 @@ export class UninstrumentCommand extends AasCommand {
     return success ? 0 : 1
   }
 
-  private async processSubscription(
+  public async processSubscription(
     cred: DefaultAzureCredential,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
@@ -58,6 +58,7 @@ export class UninstrumentCommand extends AasCommand {
         Promise.all(aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName)))
       )
     )
+
     return results.every((result) => result.every((r) => r))
   }
 
@@ -88,6 +89,7 @@ export class UninstrumentCommand extends AasCommand {
 
       return false
     }
+
     return true
   }
 

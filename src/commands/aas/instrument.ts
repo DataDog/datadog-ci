@@ -99,13 +99,15 @@ export class InstrumentCommand extends AasCommand {
     )
     const success = results.every((result) => result)
     this.context.stdout.write(
-      `${this.dryRunPrefix}🐶 Instrumentation completed ${success ? 'successfully!' : 'with errors, see above for details.'}\n`
+      `${this.dryRunPrefix}🐶 Instrumentation completed ${
+        success ? 'successfully!' : 'with errors, see above for details.'
+      }\n`
     )
 
     return success ? 0 : 1
   }
 
-  private async processSubscription(
+  public async processSubscription(
     cred: DefaultAzureCredential,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
@@ -117,6 +119,7 @@ export class InstrumentCommand extends AasCommand {
         Promise.all(aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName)))
       )
     )
+
     return results.every((result) => result.every((r) => r))
   }
 
@@ -160,6 +163,7 @@ export class InstrumentCommand extends AasCommand {
         }
       }
     }
+
     return true
   }
 
