@@ -1,11 +1,11 @@
 import {exec} from 'child_process'
-import fs, {existsSync, lstatSync, readFileSync} from 'fs'
+import {readFile, existsSync, lstatSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
 import type {AxiosRequestConfig} from 'axios'
 
-import axios from 'axios'
+import {create as axiosCreate} from 'axios'
 import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
@@ -33,9 +33,9 @@ export const pick = <T extends Record<any, any>, K extends keyof T>(base: T, key
 
 export const getConfig = async (configPath: string) => {
   try {
-    const configFile = await promisify(fs.readFile)(configPath, 'utf-8')
+    const configFile = await promisify(readFile)(configPath, 'utf-8')
 
-    return JSON.parse(configFile)
+    return JSON.parse(configFile) as Record<string, unknown>
   } catch (error) {
     if (error instanceof SyntaxError) {
       throw new Error('Config file is not correct JSON')
@@ -193,7 +193,7 @@ export const getRequestBuilder = (options: RequestOptions) => {
     proxy: false,
   }
 
-  return (args: AxiosRequestConfig) => axios.create(baseConfiguration)(overrideArgs(args))
+  return (args: AxiosRequestConfig) => axiosCreate(baseConfiguration)(overrideArgs(args))
 }
 
 const proxyAgentCache = new Map<string, ProxyAgent>()

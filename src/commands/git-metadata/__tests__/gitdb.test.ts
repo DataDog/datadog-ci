@@ -3,7 +3,7 @@ import fs from 'fs'
 import fspromises from 'fs/promises'
 import os from 'os'
 
-import {default as axios} from 'axios'
+import axios from 'axios'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
