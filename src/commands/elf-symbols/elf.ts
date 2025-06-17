@@ -527,7 +527,8 @@ export const copyElfDebugInfo = async (
   filename: string,
   outputFile: string,
   elfFileMetadata: ElfFileMetadata,
-  compressDebugSections: boolean
+  compressDebugSections: boolean,
+  sendWholeFile: boolean = false
 ): Promise<void> => {
   const supportedTargets = await getSupportedBfdTargetsCached()
 
@@ -552,10 +553,13 @@ export const copyElfDebugInfo = async (
   }
 
   const keepDynamicSymbolTable =
-    elfFileMetadata.hasDynamicSymbolTable && !elfFileMetadata.hasSymbolTable && !elfFileMetadata.hasDebugInfo
+    elfFileMetadata.hasDynamicSymbolTable &&
+    !elfFileMetadata.hasSymbolTable &&
+    !elfFileMetadata.hasDebugInfo &&
+    !sendWholeFile
 
   // Remove .gdb_index section as it is not needed and can be quite big
-  let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
+  let options = `${bfdTargetOption} ${sendWholeFile ? '' : '--only-keep-debug'} ${compressDebugSectionsOption} --remove-section=.gdb_index`
 
   if (keepDynamicSymbolTable) {
     // If the file has only a dynamic symbol table, preserve it
@@ -566,6 +570,7 @@ export const copyElfDebugInfo = async (
     options = `--remove-section .dynsym --remove-section .dynstr ${options} --add-section .dynsym=${outputFile}.dynsym --add-section .dynstr=${outputFile}.dynstr`
   }
 
+  console.log(`objcopy ${options} ${filename} ${outputFile}`)
   await execute(`objcopy ${options} ${filename} ${outputFile}`).finally(() => {
     if (keepDynamicSymbolTable) {
       fs.unlinkSync(`${outputFile}.dynsym`)

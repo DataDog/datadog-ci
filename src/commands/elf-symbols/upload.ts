@@ -63,6 +63,7 @@ export class UploadCommand extends Command {
   private repositoryUrl = Option.String('--repository-url')
   private acceptDynamicSymbolTableAsSymbolSource = Option.Boolean('--upload-dynamic-symbols', false)
   private replaceExisting = Option.Boolean('--replace-existing', false)
+  private sendWholeFile = Option.Boolean('--send-whole-file', false)
   private symbolsLocations = Option.Rest({required: 1})
 
   private cliVersion = version
@@ -330,7 +331,7 @@ export class UploadCommand extends Command {
         const metadata = this.getMappingMetadata(fileMetadata)
         const outputFilename = getOutputFilenameFromBuildId(getBuildIdWithArch(fileMetadata))
         const outputFilePath = buildPath(tmpDirectory, outputFilename)
-        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true)
+        await copyElfDebugInfo(fileMetadata.filename, outputFilePath, fileMetadata, true, this.sendWholeFile)
 
         if (this.dryRun) {
           this.context.stdout.write(`[DRYRUN] ${renderUpload(fileMetadata.filename, metadata)}`)
