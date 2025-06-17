@@ -1,5 +1,6 @@
 import {ServicesClient} from '@google-cloud/run'
 
+import {SERVICE_ENV_VAR} from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
 
@@ -193,6 +194,70 @@ describe('InstrumentCommand', () => {
       await expect(
         (command as any).instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
       ).rejects.toThrow('update failed')
+    })
+  })
+
+  describe('createInstrumentedServiceConfig', () => {
+    let command: InstrumentCommand
+
+    beforeEach(() => {
+      command = new InstrumentCommand()
+    })
+
+    test('adds sidecar and shared volume when missing', () => {
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = (command as any).createInstrumentedServiceConfig(service, 'my-dd-service')
+
+      // should have original + sidecar
+      expect(result.template.containers).toHaveLength(2)
+      expect(result.template.containers.map((c: any) => c.name)).toEqual(['main', 'datadog-sidecar'])
+
+      // main container should get the shared volume mount
+      const main = (result.template.containers as any[]).find((c) => c.name === 'main')!
+      expect(main.volumeMounts.some((vm: any) => vm.mountPath === '/shared-volume')).toBe(true)
+
+      // should add the shared-volume
+      expect(result.template.volumes).toHaveLength(1)
+      expect((result.template.volumes as any[])[0].name).toBe('shared-volume')
+    })
+
+    test('does not add duplicate sidecar or volume when app and sidecar already present', () => {
+      const appContainer = {
+        name: 'app',
+        env: [{name: SERVICE_ENV_VAR, value: 'old-service'}],
+        volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
+      } as any
+
+      const sidecarContainer = {
+        name: 'datadog-sidecar',
+        env: [],
+        volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
+      } as any
+
+      const existingVolume = {name: 'shared-volume', emptyDir: {}} as any
+
+      const service = {
+        template: {
+          containers: [appContainer, sidecarContainer],
+          volumes: [existingVolume],
+        },
+      } as any
+
+      const result = (command as any).createInstrumentedServiceConfig(service, 'my-dd-service')
+
+      // should not add another sidecar
+      expect(result.template.containers).toHaveLength(2)
+      expect(result.template.containers.map((c: any) => c.name)).toEqual(['app', 'datadog-sidecar'])
+
+      // should not add another shared-volume
+      expect(result.template.volumes).toHaveLength(1)
+      expect(result.template.volumes[0].name).toBe('shared-volume')
     })
   })
 })
