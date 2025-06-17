@@ -1,6 +1,5 @@
-import fs from 'fs'
-
-import {FileReader} from '../../helpers/file-reader'
+import type {FileReader} from '../../helpers/file-reader'
+import {createReaderFromFile} from '../../helpers/file-reader'
 
 import {
   CV_INFO_AGE_OFFSET,
@@ -234,10 +233,10 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
     pdbFilename: '',
   }
 
-  let fileHandle: fs.promises.FileHandle | undefined
+  let reader: FileReader | undefined
   try {
-    fileHandle = await fs.promises.open(filename, 'r')
-    const reader = new FileReader(fileHandle)
+    reader = await createReaderFromFile(filename)
+
     const peHeaderResult = await readPEHeader(reader)
     if (!peHeaderResult.isPE || peHeaderResult.peHeader === undefined) {
       throw peHeaderResult.error
@@ -329,14 +328,13 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
       entryOffset += IMAGE_DEBUG_DIRECTORY_SIZE
     }
   } catch (error) {
-    // console.log(error)
     if (error instanceof Error) {
       metadata.error = error
     } else {
       throw error
     }
   } finally {
-    await fileHandle?.close()
+    await reader?.close()
   }
 
   return metadata

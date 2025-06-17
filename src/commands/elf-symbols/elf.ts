@@ -1,7 +1,8 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
-import {createReadFunctions, FileReader} from '../../helpers/file-reader'
+import type {FileReader} from '../../helpers/file-reader'
+import {createReaderFromFile, createReadFunctions} from '../../helpers/file-reader'
 import {execute} from '../../helpers/utils'
 
 import {
@@ -412,10 +413,10 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     hasCode: false,
   }
 
-  let fileHandle: fs.promises.FileHandle | undefined
+  let reader: FileReader | undefined
   try {
-    fileHandle = await fs.promises.open(filename, 'r')
-    const reader = new FileReader(fileHandle)
+    reader = await createReaderFromFile(filename)
+
     const {isElf, elfHeader, error} = await readElfHeader(reader)
 
     if (isElf) {
@@ -452,9 +453,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
   } catch (error) {
     metadata.error = error
   } finally {
-    if (fileHandle) {
-      await fileHandle.close()
-    }
+    await reader?.close()
   }
 
   return metadata
