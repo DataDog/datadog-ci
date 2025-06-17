@@ -26,8 +26,12 @@ import {CloudRunConfigOptions} from './interfaces'
 import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader, withSpinner} from './renderer'
 import {checkAuthentication} from './utils'
 
+const SIDECAR_NAME = 'datadog-sidecar'
+const VOLUME_NAME = 'shared-volume'
+const VOLUME_MOUNT_PATH = '/shared-volume'
+
 export class InstrumentCommand extends Command {
-  // TODO uncomment when commnand is ready and add to docs: https://github.com/DataDog/datadog-ci#cloud-run
+  // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({
@@ -200,25 +204,23 @@ export class InstrumentCommand extends Command {
     const template = service.template || {}
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
-    const sidecarName = 'datadog-sidecar'
-    const volumeName = 'shared-volume'
 
     // Check if sidecar already exists
-    const existingSidecarIndex = containers.findIndex((c) => c.name === sidecarName)
+    const existingSidecarIndex = containers.findIndex((c) => c.name === SIDECAR_NAME)
 
     // Create sidecar container with volume mount and environment variables
     const sidecarContainer: IContainer = {
-      name: sidecarName,
+      name: SIDECAR_NAME,
       image: 'gcr.io/datadoghq/serverless-init:latest',
       volumeMounts: [
         {
-          name: volumeName,
-          mountPath: '/shared-volume',
+          name: VOLUME_NAME,
+          mountPath: VOLUME_MOUNT_PATH,
         },
       ],
       env: [
         {name: SITE_ENV_VAR, value: process.env.DD_SITE || DATADOG_SITE_US1},
-        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
+        {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`},
         {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
         {name: HEALTH_PORT_ENV_VAR, value: '12345'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
@@ -245,13 +247,13 @@ export class InstrumentCommand extends Command {
 
     // Update all containers to add volume mounts if they don't have them
     const updatedContainers = containers.map((container) => {
-      if (container.name === sidecarName) {
+      if (container.name === SIDECAR_NAME) {
         return sidecarContainer
       }
 
       // Add volume mount to main containers if not already present
       const existingVolumeMounts = container.volumeMounts || []
-      const hasSharedVolumeMount = existingVolumeMounts.some((mount) => mount.name === volumeName)
+      const hasSharedVolumeMount = existingVolumeMounts.some((mount) => mount.name === VOLUME_NAME)
       const existingEnvVars = container.env || []
 
       const updatedContainer = {...container}
@@ -259,8 +261,8 @@ export class InstrumentCommand extends Command {
         updatedContainer.volumeMounts = [
           ...existingVolumeMounts,
           {
-            name: volumeName,
-            mountPath: '/shared-volume',
+            name: VOLUME_NAME,
+            mountPath: VOLUME_MOUNT_PATH,
           },
         ]
       }
@@ -293,13 +295,13 @@ export class InstrumentCommand extends Command {
     }
 
     // Add shared volume if it doesn't exist
-    const hasSharedVolume = volumes.some((volume) => volume.name === volumeName)
+    const hasSharedVolume = volumes.some((volume) => volume.name === VOLUME_NAME)
     const updatedVolumes = hasSharedVolume
       ? volumes
       : [
           ...volumes,
           {
-            name: volumeName,
+            name: VOLUME_NAME,
             emptyDir: {
               medium: google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY,
             },
