@@ -20,13 +20,25 @@ import {
   SFNClient,
 } from '@aws-sdk/client-sfn'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
+  FLARE_OUTPUT_DIRECTORY,
+} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {createDirectories, writeFile, zipContents} from '../../helpers/fs'
+import {sendToDatadog} from '../../helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
+import {requestConfirmation} from '../../helpers/prompt'
+import * as helpersRenderer from '../../helpers/renderer'
 import {version} from '../../helpers/version'
+
+import {getAWSCredentials} from '../lambda/functions/commons'
 
 export class StepFunctionsFlareCommand extends Command {
   public static paths = [['stepfunctions', 'flare']]
@@ -68,17 +80,27 @@ export class StepFunctionsFlareCommand extends Command {
     // Enable FIPS if configured
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
+    this.context.stdout.write(helpersRenderer.renderFlareHeader('Step Functions', this.isDryRun))
+
     // Validate inputs
     const validationResult = await this.validateInputs()
     if (validationResult !== 0) {
-      this.context.stdout.write(
-        'Usage: datadog-ci stepfunctions flare -s <state-machine-arn> -c <case-id> -e <email>\n'
-      )
-
-      return 1
+      return validationResult
     }
 
     try {
+      // Get AWS credentials
+      this.context.stdout.write(chalk.bold('\n🔑 Getting AWS credentials...\n'))
+      try {
+        this.credentials = await getAWSCredentials()
+      } catch (err) {
+        if (err instanceof Error) {
+          this.context.stderr.write(helpersRenderer.renderError(err.message))
+        }
+
+        return 1
+      }
+
       // Parse ARN to get region
       const {region} = this.parseStateMachineArn(this.stateMachineArn!)
 
@@ -86,19 +108,19 @@ export class StepFunctionsFlareCommand extends Command {
       const sfnClient = new SFNClient({region, credentials: this.credentials})
       const cloudWatchLogsClient = new CloudWatchLogsClient({region, credentials: this.credentials})
 
-      this.context.stdout.write(`\nCollecting Step Functions flare data...\n`)
+      this.context.stdout.write(chalk.bold('\n🔍 Collecting Step Functions flare data...\n'))
 
       // 1. Get state machine configuration
-      this.context.stdout.write('  - Fetching state machine configuration...\n')
+      this.context.stdout.write('📋 Fetching state machine configuration...\n')
       const stateMachineConfig = await this.getStateMachineConfiguration(sfnClient, this.stateMachineArn!)
       const maskedConfig = this.maskStateMachineConfig(stateMachineConfig)
 
       // 2. Get state machine tags
-      this.context.stdout.write('  - Fetching state machine tags...\n')
+      this.context.stdout.write('🏷️  Getting resource tags...\n')
       const tags = await this.getStateMachineTags(sfnClient, this.stateMachineArn!)
 
       // 3. Get recent executions
-      this.context.stdout.write('  - Fetching recent executions...\n')
+      this.context.stdout.write('📊 Fetching recent executions...\n')
 
       const executions = await this.getRecentExecutions(sfnClient, this.stateMachineArn!)
 
@@ -106,7 +128,7 @@ export class StepFunctionsFlareCommand extends Command {
       const maskedExecutions = executions.map((exec) => this.maskExecutionData(exec))
 
       // 4. Get execution details and history for each execution
-      this.context.stdout.write('  - Fetching execution details and history...\n')
+      this.context.stdout.write('📜 Fetching execution details and history...\n')
 
       for (const execution of executions.slice(0, 5)) {
         // Limit to 5 most recent
@@ -122,34 +144,32 @@ export class StepFunctionsFlareCommand extends Command {
         }
       }
 
-      // 5. Get CloudWatch logs if enabled
+      // 5. Get log subscription filters (always collected)
       let subscriptionFilters: SubscriptionFilter[] | undefined
-      let logs: Map<string, OutputLogEvent[]> | undefined
-
-      if (this.withLogs) {
-        const logGroupName = this.getLogGroupName(stateMachineConfig)
-        if (logGroupName) {
-          this.context.stdout.write('  - Fetching CloudWatch logs...\n')
-
-          // Get subscription filters
-          subscriptionFilters = await this.getLogSubscriptions(cloudWatchLogsClient, logGroupName)
-
-          // Get logs
-          const startTime = this.start ? new Date(this.start).getTime() : undefined
-          const endTime = this.end ? new Date(this.end).getTime() : undefined
-          logs = await this.getCloudWatchLogs(cloudWatchLogsClient, logGroupName, startTime, endTime)
-        }
+      const logGroupName = this.getLogGroupName(stateMachineConfig)
+      if (logGroupName) {
+        this.context.stdout.write('🔍 Getting log subscription filters...\n')
+        subscriptionFilters = await this.getLogSubscriptions(cloudWatchLogsClient, logGroupName)
       }
 
-      // 6. Create output directory
-      this.context.stdout.write('\nGenerating flare files...\n')
+      // 6. Get CloudWatch logs if enabled
+      let logs: Map<string, OutputLogEvent[]> | undefined
+      if (this.withLogs && logGroupName) {
+        this.context.stdout.write('🌧️  Getting CloudWatch logs...\n')
+        const startTime = this.start ? new Date(this.start).getTime() : undefined
+        const endTime = this.end ? new Date(this.end).getTime() : undefined
+        logs = await this.getCloudWatchLogs(cloudWatchLogsClient, logGroupName, startTime, endTime)
+      }
+
+      // 7. Create output directory
+      this.context.stdout.write(chalk.bold('\n💾 Saving files...\n'))
       const outputDir = await this.createOutputDirectory()
 
-      // 7. Generate insights file
+      // 8. Generate insights file
       const insightsPath = `${outputDir}/INSIGHTS.md`
       this.generateInsightsFile(insightsPath, this.isDryRun, maskedConfig, subscriptionFilters)
 
-      // 8. Write all output files
+      // 9. Write all output files
       await this.writeOutputFiles(outputDir, {
         config: maskedConfig,
         tags,
@@ -158,27 +178,44 @@ export class StepFunctionsFlareCommand extends Command {
         logs,
       })
 
-      // 9. Create zip archive
-      this.context.stdout.write('\nCreating flare archive...\n')
+      // 10. Create zip archive
       const zipPath = `${outputDir}.zip`
       await zipContents(outputDir, zipPath)
 
-      // 10. Send to Datadog or show dry-run message
+      // 11. Send to Datadog or show dry-run message
       if (this.isDryRun) {
         this.context.stdout.write(
           '\n🚫 The flare files were not sent because the command was executed in dry run mode.\n'
         )
         this.context.stdout.write(`\nℹ️ Your output files are located at: ${outputDir}\n`)
         this.context.stdout.write(`ℹ️ Zip file created at: ${zipPath}\n`)
-      } else {
-        // TODO: Implement actual sending to Datadog when sendToDatadog is available
-        this.context.stdout.write(`\nFlare created successfully: ${zipPath}\n`)
-        this.context.stdout.write('⚠️ Note: Sending to Datadog is not yet implemented.\n')
+
+        return 0
       }
 
-      this.context.stdout.write('\nFlare data collection complete!\n')
-      this.context.stdout.write(`Case ID: ${this.caseId}\n`)
-      this.context.stdout.write(`Email: ${this.email}\n`)
+      // Confirm before sending
+      this.context.stdout.write('\n')
+      const confirmSendFiles = await requestConfirmation(
+        'Are you sure you want to send the flare file to Datadog Support?',
+        false
+      )
+
+      if (!confirmSendFiles) {
+        this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
+        this.context.stdout.write(`\nℹ️ Your output files are located at: ${outputDir}\n`)
+        this.context.stdout.write(`ℹ️ Zip file created at: ${zipPath}\n`)
+
+        return 0
+      }
+
+      // Send to Datadog
+      this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, outputDir)
+      this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
+
+      // Delete contents
+      deleteFolder(outputDir)
+      fs.unlinkSync(zipPath)
 
       return 0
     } catch (error) {
@@ -195,40 +232,54 @@ export class StepFunctionsFlareCommand extends Command {
    * @returns 0 if all inputs are valid, 1 otherwise
    */
   private async validateInputs(): Promise<0 | 1> {
+    const errorMessages: string[] = []
+
     // Validate state machine ARN
     if (this.stateMachineArn === undefined) {
-      return 1
-    }
-
-    // Validate ARN format
-    const arnPattern = /^arn:aws:states:[a-z0-9-]+:\d{12}:stateMachine:[a-zA-Z0-9-_]+$/
-    if (!arnPattern.test(this.stateMachineArn)) {
-      return 1
-    }
-
-    // Extract and set region from ARN if not provided
-    if (this.region === undefined && this.stateMachineArn) {
-      try {
-        const parsed = this.parseStateMachineArn(this.stateMachineArn)
-        this.region = parsed.region
-      } catch {
-        return 1
+      errorMessages.push(helpersRenderer.renderError('No state machine ARN specified. [-s,--state-machine]'))
+    } else {
+      // Validate ARN format
+      const arnPattern = /^arn:aws:states:[a-z0-9-]+:\d{12}:stateMachine:[a-zA-Z0-9-_]+$/
+      if (!arnPattern.test(this.stateMachineArn)) {
+        errorMessages.push(helpersRenderer.renderError('Invalid state machine ARN format.'))
+      } else {
+        // Extract and set region from ARN if not provided
+        if (this.region === undefined) {
+          try {
+            const parsed = this.parseStateMachineArn(this.stateMachineArn)
+            this.region = parsed.region
+          } catch {
+            errorMessages.push(helpersRenderer.renderError('Unable to parse state machine ARN.'))
+          }
+        }
       }
     }
 
     // Validate case ID
     if (this.caseId === undefined) {
-      return 1
+      errorMessages.push(helpersRenderer.renderError('No case ID specified. [-c,--case-id]'))
     }
 
     // Validate email
     if (this.email === undefined) {
-      return 1
+      errorMessages.push(helpersRenderer.renderError('No email specified. [-e,--email]'))
     }
 
     // Validate API key
     this.apiKey = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
     if (this.apiKey === undefined) {
+      errorMessages.push(
+        helpersRenderer.renderError(
+          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
+        )
+      )
+    }
+
+    if (errorMessages.length > 0) {
+      for (const message of errorMessages) {
+        this.context.stderr.write(message)
+      }
+
       return 1
     }
 
@@ -617,13 +668,29 @@ export class StepFunctionsFlareCommand extends Command {
     const timestamp = Date.now()
     const stateMachineName = this.parseStateMachineArn(this.stateMachineArn!).name
     const outputDirName = `stepfunctions-${stateMachineName}-${timestamp}`
-    const rootDir = '.datadog-ci'
+    const rootDir = FLARE_OUTPUT_DIRECTORY
     const outputDir = `${rootDir}/${outputDirName}`
 
-    // Create the directory structure
+    // Create root directory if it doesn't exist
     if (!fs.existsSync(rootDir)) {
       fs.mkdirSync(rootDir)
     }
+
+    // Clean up old stepfunctions flare directories and zip files
+    const files = fs.readdirSync(rootDir)
+    for (const file of files) {
+      if (file.startsWith('stepfunctions-')) {
+        const filePath = `${rootDir}/${file}`
+        const stat = fs.statSync(filePath)
+        if (stat.isDirectory()) {
+          deleteFolder(filePath)
+        } else if (file.endsWith('.zip')) {
+          fs.unlinkSync(filePath)
+        }
+      }
+    }
+
+    // Create the new directory
     createDirectories(outputDir, [])
 
     return outputDir
