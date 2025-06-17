@@ -1,4 +1,4 @@
 import {CloudRunFlareCommand} from './flare'
+import {InstrumentCommand} from './instrument'
 
-// TODO add instrument command
-module.exports = [CloudRunFlareCommand]
+module.exports = [CloudRunFlareCommand, InstrumentCommand]
