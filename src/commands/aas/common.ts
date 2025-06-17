@@ -28,6 +28,24 @@ const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 // The profiler binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
+export const AAS_DD_SETTING_NAMES = [
+  'DD_API_KEY',
+  'DD_SITE',
+  'DD_AAS_INSTANCE_LOGGING_ENABLED',
+  'DD_SERVICE',
+  'DD_ENV',
+  'DD_SERVERLESS_LOG_PATH',
+  'DD_DOTNET_TRACER_HOME',
+  'DD_TRACE_LOG_DIRECTORY',
+  'CORECLR_ENABLE_PROFILING',
+  'CORECLR_PROFILER',
+  'CORECLR_PROFILER_PATH',
+] as const
+
+export type AasDatadogSettingName = typeof AAS_DD_SETTING_NAMES[number]
+
+type AasDatadogConfig = Partial<Record<AasDatadogSettingName, string>>
+
 export abstract class AasCommand extends Command {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
@@ -43,11 +61,6 @@ export abstract class AasCommand extends Command {
   })
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file',
-  })
-
-  private isDotnet = Option.Boolean('--dotnet', false, {
-    description:
-      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
 
   private fips = Option.Boolean('--fips', false)
@@ -77,7 +90,6 @@ export abstract class AasCommand extends Command {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
             aasName: this.aasName,
-            isDotnet: this.isDotnet,
             ...this.additionalConfig,
           },
         },
@@ -142,8 +154,8 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   }
 }
 
-export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
-  let envVars: Record<string, string> = {
+export const getEnvVars = (config: AasConfigOptions): AasDatadogConfig => {
+  let envVars: AasDatadogConfig = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),

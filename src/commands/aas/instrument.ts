@@ -46,6 +46,11 @@ export class InstrumentCommand extends AasCommand {
     description: 'Do not restart the App Service after applying instrumentation.',
   })
 
+  private isDotnet = Option.Boolean('--dotnet', false, {
+    description:
+      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -53,6 +58,7 @@ export class InstrumentCommand extends AasCommand {
       isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
       logPath: this.logPath,
       shouldNotRestart: this.shouldNotRestart,
+      isDotnet: this.isDotnet,
     }
   }
 

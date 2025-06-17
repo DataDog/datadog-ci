@@ -10,7 +10,7 @@ export interface AasConfigOptions {
   environment?: string
   isInstanceLoggingEnabled?: boolean
   logPath?: string
-  isDotnet: boolean
+  isDotnet?: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   shouldNotRestart?: boolean
 }
