@@ -53,7 +53,6 @@ export class StepFunctionsFlareCommand extends Command {
   private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private withLogs = Option.Boolean('--with-logs', false)
   private stateMachineArn = Option.String('-s,--state-machine')
-  private region = Option.String('-r,--region')
   private caseId = Option.String('-c,--case-id')
   private email = Option.String('-e,--email')
   private start = Option.String('--start')
@@ -242,16 +241,6 @@ export class StepFunctionsFlareCommand extends Command {
       const arnPattern = /^arn:aws:states:[a-z0-9-]+:\d{12}:stateMachine:[a-zA-Z0-9-_]+$/
       if (!arnPattern.test(this.stateMachineArn)) {
         errorMessages.push(helpersRenderer.renderError('Invalid state machine ARN format.'))
-      } else {
-        // Extract and set region from ARN if not provided
-        if (this.region === undefined) {
-          try {
-            const parsed = this.parseStateMachineArn(this.stateMachineArn)
-            this.region = parsed.region
-          } catch {
-            errorMessages.push(helpersRenderer.renderError('Unable to parse state machine ARN.'))
-          }
-        }
       }
     }
 
@@ -596,7 +585,8 @@ export class StepFunctionsFlareCommand extends Command {
 
     // Command Options
     lines.push('\n## Command Options')
-    lines.push(`**Region**: \`${this.region || 'Not specified'}\`  `)
+    const {region} = this.parseStateMachineArn(this.stateMachineArn!)
+    lines.push(`**Region**: \`${region}\`  `)
     lines.push(`**Max Executions**: \`${typeof this.maxExecutions === 'string' ? this.maxExecutions : '10'}\`  `)
     lines.push(`**With Logs**: \`${this.withLogs ? 'Yes' : 'No'}\`  `)
     if (this.start || this.end) {

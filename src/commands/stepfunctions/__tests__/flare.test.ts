@@ -329,6 +329,11 @@ describe('StepFunctionsFlareCommand', () => {
         fs.mkdirSync(MOCK_OUTPUT_DIR, {recursive: true})
       }
 
+      // Set up command with state machine ARN for region extraction
+      command = setupCommand({
+        stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',
+      })
+
       command['generateInsightsFile'](filePath, false, mockConfig, undefined)
 
       // Read the file and check its content
