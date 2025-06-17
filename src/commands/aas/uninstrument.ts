@@ -85,7 +85,7 @@ export class UninstrumentCommand extends AasCommand {
         aasName
       )
     } catch (error) {
-      this.context.stdout.write(renderError(`Failed to uninstrument ${aasName}: ${formatError(error)}`))
+      this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(aasName)}: ${formatError(error)}`))
 
       return false
     }
@@ -100,15 +100,15 @@ export class UninstrumentCommand extends AasCommand {
     aasName: string
   ) {
     this.context.stdout.write(
-      `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} (if it exists)\n`
+      `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${chalk.bold(aasName)} (if it exists)\n`
     )
     if (!this.dryRun) {
       await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
     }
-    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
     const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
     if (currentEnvVars !== undefined && AAS_DD_SETTING_NAMES.some((key) => key in currentEnvVars)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
           properties: Object.fromEntries(
@@ -117,7 +117,7 @@ export class UninstrumentCommand extends AasCommand {
         })
       }
     } else {
-      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`)
     }
   }
 }

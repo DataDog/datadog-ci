@@ -152,12 +152,12 @@ export class InstrumentCommand extends AasCommand {
     }
 
     if (!config.shouldNotRestart) {
-      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
           await client.webApps.restart(resourceGroup, aasName)
         } catch (error) {
-          this.context.stdout.write(renderError(`Failed to restart Azure App Service ${aasName}: ${error}`))
+          this.context.stdout.write(renderError(`Failed to restart Azure App Service ${chalk.bold(aasName)}: ${error}`))
 
           return false
         }
@@ -189,7 +189,7 @@ export class InstrumentCommand extends AasCommand {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME
-        )}\n`
+        )} on ${chalk.bold(aasName)}\n`
       )
       if (!this.dryRun) {
         await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
@@ -209,12 +209,12 @@ export class InstrumentCommand extends AasCommand {
     const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
     if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
       }
     } else {
-      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`)
     }
   }
 }
