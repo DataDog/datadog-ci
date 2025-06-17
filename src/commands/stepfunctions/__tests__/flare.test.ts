@@ -329,24 +329,13 @@ describe('StepFunctionsFlareCommand', () => {
       const mockConfig = stateMachineConfigFixture()
       const filePath = upath.join(MOCK_OUTPUT_DIR, 'INSIGHTS.md')
 
-      command['generateInsightsFile'](filePath, false, mockConfig)
+      command['generateInsightsFile'](filePath, false, mockConfig, undefined)
 
       expect(writeFile).toHaveBeenCalledWith(filePath, expect.stringContaining('Step Functions Flare Insights'))
       expect(writeFile).toHaveBeenCalledWith(filePath, expect.stringContaining('MyWorkflow'))
     })
   })
 
-  describe('summarizeConfig', () => {
-    it('should create a summary of state machine configuration', () => {
-      const mockConfig = stateMachineConfigFixture()
-      const summary = command['summarizeConfig'](mockConfig)
-
-      expect(summary).toHaveProperty('stateMachineArn', MOCK_STATE_MACHINE_ARN)
-      expect(summary).toHaveProperty('name', 'MyWorkflow')
-      expect(summary).toHaveProperty('type', 'STANDARD')
-      expect(summary).toHaveProperty('status', 'ACTIVE')
-    })
-  })
 
   describe('getFramework', () => {
     it('should detect Serverless Framework', () => {

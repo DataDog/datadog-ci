@@ -58,6 +58,12 @@ export class StepFunctionsFlareCommand extends Command {
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
+  /**
+   * Entry point for the `stepfunctions flare` command.
+   * Gathers state machine configuration, execution history, logs, and project files
+   * for Datadog support troubleshooting.
+   * @returns 0 if the command ran successfully, 1 otherwise.
+   */
   public async execute(): Promise<0 | 1> {
     // Enable FIPS if configured
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
@@ -141,7 +147,7 @@ export class StepFunctionsFlareCommand extends Command {
 
       // 7. Generate insights file
       const insightsPath = `${outputDir}/INSIGHTS.md`
-      this.generateInsightsFile(insightsPath, this.isDryRun, maskedConfig)
+      this.generateInsightsFile(insightsPath, this.isDryRun, maskedConfig, subscriptionFilters)
 
       // 8. Write all output files
       await this.writeOutputFiles(outputDir, {
@@ -184,6 +190,10 @@ export class StepFunctionsFlareCommand extends Command {
     }
   }
 
+  /**
+   * Validates required inputs for the flare command
+   * @returns 0 if all inputs are valid, 1 otherwise
+   */
   private async validateInputs(): Promise<0 | 1> {
     // Validate state machine ARN
     if (this.stateMachineArn === undefined) {
@@ -225,6 +235,12 @@ export class StepFunctionsFlareCommand extends Command {
     return 0
   }
 
+  /**
+   * Fetches the state machine configuration from AWS
+   * @param sfnClient Step Functions client
+   * @param stateMachineArn ARN of the state machine
+   * @returns State machine configuration
+   */
   private async getStateMachineConfiguration(
     sfnClient: SFNClient,
     stateMachineArn: string
@@ -237,6 +253,12 @@ export class StepFunctionsFlareCommand extends Command {
     return sfnClient.send(command)
   }
 
+  /**
+   * Fetches tags associated with the state machine
+   * @param sfnClient Step Functions client
+   * @param stateMachineArn ARN of the state machine
+   * @returns Map of tag keys to values
+   */
   private async getStateMachineTags(sfnClient: SFNClient, stateMachineArn: string): Promise<Record<string, string>> {
     const command = new ListTagsForResourceCommand({
       resourceArn: stateMachineArn,
@@ -254,6 +276,12 @@ export class StepFunctionsFlareCommand extends Command {
     return tags
   }
 
+  /**
+   * Fetches recent executions of the state machine
+   * @param sfnClient Step Functions client
+   * @param stateMachineArn ARN of the state machine
+   * @returns List of recent executions
+   */
   private async getRecentExecutions(sfnClient: SFNClient, stateMachineArn: string): Promise<ExecutionListItem[]> {
     // Handle both direct string values (from tests) and Option objects (from CLI)
     const maxExecutionsValue = typeof this.maxExecutions === 'string' ? this.maxExecutions : '10'
@@ -267,6 +295,12 @@ export class StepFunctionsFlareCommand extends Command {
     return response.executions ?? []
   }
 
+  /**
+   * Fetches the execution history for a specific execution
+   * @param sfnClient Step Functions client
+   * @param executionArn ARN of the execution
+   * @returns List of history events
+   */
   private async getExecutionHistory(sfnClient: SFNClient, executionArn: string): Promise<HistoryEvent[]> {
     const command = new GetExecutionHistoryCommand({
       executionArn,
@@ -278,6 +312,12 @@ export class StepFunctionsFlareCommand extends Command {
     return response.events ?? []
   }
 
+  /**
+   * Fetches CloudWatch log subscription filters for a log group
+   * @param cloudWatchLogsClient CloudWatch Logs client
+   * @param logGroupName Name of the log group
+   * @returns List of subscription filters
+   */
   private async getLogSubscriptions(
     cloudWatchLogsClient: CloudWatchLogsClient,
     logGroupName: string
@@ -298,6 +338,14 @@ export class StepFunctionsFlareCommand extends Command {
     }
   }
 
+  /**
+   * Fetches CloudWatch logs from a log group
+   * @param cloudWatchLogsClient CloudWatch Logs client
+   * @param logGroupName Name of the log group
+   * @param startTime Start time in milliseconds (optional)
+   * @param endTime End time in milliseconds (optional)
+   * @returns Map of log stream names to their log events
+   */
   private async getCloudWatchLogs(
     cloudWatchLogsClient: CloudWatchLogsClient,
     logGroupName: string,
@@ -339,6 +387,11 @@ export class StepFunctionsFlareCommand extends Command {
     return logs
   }
 
+  /**
+   * Masks sensitive data in state machine configuration
+   * @param config State machine configuration
+   * @returns Configuration with sensitive data masked
+   */
   private maskStateMachineConfig(config: DescribeStateMachineCommandOutput): DescribeStateMachineCommandOutput {
     const maskedConfig = {...config}
 
@@ -349,6 +402,11 @@ export class StepFunctionsFlareCommand extends Command {
     return maskedConfig
   }
 
+  /**
+   * Masks sensitive data in execution data
+   * @param execution Execution data object
+   * @returns Execution data with sensitive fields masked
+   */
   private maskExecutionData(execution: any): any {
     const maskedExecution = {...execution}
 
@@ -416,16 +474,28 @@ export class StepFunctionsFlareCommand extends Command {
     return masked
   }
 
-  private generateInsightsFile(filePath: string, isDryRun: boolean, config: DescribeStateMachineCommandOutput): void {
+  /**
+   * Generates the insights markdown file with state machine information
+   * @param filePath Path to write the insights file
+   * @param isDryRun Whether this is a dry run
+   * @param config State machine configuration
+   * @param subscriptionFilters CloudWatch log subscription filters (optional)
+   */
+  private generateInsightsFile(
+    filePath: string,
+    isDryRun: boolean,
+    config: DescribeStateMachineCommandOutput,
+    subscriptionFilters?: SubscriptionFilter[]
+  ): void {
     const lines: string[] = []
-    
+
     // Header
     lines.push('# Step Functions Flare Insights')
     lines.push('\n_Autogenerated file from `stepfunctions flare`_  ')
     if (isDryRun) {
       lines.push('_This command was run in dry mode._')
     }
-    
+
     // State Machine Configuration
     lines.push('\n## State Machine Configuration')
     lines.push(`**Name**: \`${config.name || 'Unknown'}\`  `)
@@ -434,7 +504,7 @@ export class StepFunctionsFlareCommand extends Command {
     lines.push(`**Status**: \`${config.status || 'Unknown'}\`  `)
     lines.push(`**Role ARN**: \`${config.roleArn || 'Not specified'}\`  `)
     lines.push(`**Creation Date**: \`${config.creationDate?.toISOString() || 'Unknown'}\`  `)
-    
+
     // Logging Configuration
     lines.push('\n**Logging Configuration**:')
     if (config.loggingConfiguration) {
@@ -451,11 +521,11 @@ export class StepFunctionsFlareCommand extends Command {
     } else {
       lines.push('- Logging not configured')
     }
-    
+
     // Tracing Configuration
     lines.push('\n**Tracing Configuration**:')
     lines.push(`- X-Ray Tracing: \`${config.tracingConfiguration?.enabled ? 'Enabled' : 'Disabled'}\``)
-    
+
     // Encryption Configuration
     if (config.encryptionConfiguration) {
       lines.push('\n**Encryption Configuration**:')
@@ -464,7 +534,7 @@ export class StepFunctionsFlareCommand extends Command {
         lines.push(`- KMS Key ID: \`${config.encryptionConfiguration.kmsKeyId}\``)
       }
     }
-    
+
     // CLI Information
     lines.push('\n## CLI Information')
     lines.push(`**Run Location**: \`${process.cwd()}\`  `)
@@ -472,7 +542,7 @@ export class StepFunctionsFlareCommand extends Command {
     const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
     lines.push(`**Timestamp**: \`${timeString}\`  `)
     lines.push(`**Framework**: \`${this.getFramework()}\``)
-    
+
     // Command Options
     lines.push('\n## Command Options')
     lines.push(`**Region**: \`${this.region || 'Not specified'}\`  `)
@@ -482,26 +552,37 @@ export class StepFunctionsFlareCommand extends Command {
       lines.push(`**Time Range**: \`${this.start || 'Any'}\` to \`${this.end || 'Now'}\`  `)
     }
 
+    // Log Subscription Filters
+    if (subscriptionFilters && subscriptionFilters.length > 0) {
+      lines.push('\n## Log Subscription Filters')
+      lines.push(`**Total Filters**: ${subscriptionFilters.length}`)
+      lines.push('')
+
+      for (const filter of subscriptionFilters) {
+        lines.push(`### ${filter.filterName || 'Unnamed Filter'}`)
+        lines.push(`**Destination ARN**: \`${filter.destinationArn || 'Not specified'}\`  `)
+        lines.push(`**Filter Pattern**: \`${filter.filterPattern || 'No pattern (all logs)'}\`  `)
+
+        // Check if it might be a Datadog forwarder based on the destination ARN
+        if (filter.destinationArn && filter.destinationArn.includes('datadog')) {
+          lines.push('**Note**: This appears to be a Datadog forwarder')
+        }
+
+        if (filter.roleArn) {
+          lines.push(`**Role ARN**: \`${filter.roleArn}\`  `)
+        }
+
+        lines.push('')
+      }
+    }
+
     writeFile(filePath, lines.join('\n'))
   }
 
-  private summarizeConfig(config: DescribeStateMachineCommandOutput): any {
-    return {
-      stateMachineArn: config.stateMachineArn,
-      name: config.name,
-      type: config.type,
-      status: config.status,
-      creationDate: config.creationDate,
-      loggingConfiguration: config.loggingConfiguration
-        ? {
-            level: config.loggingConfiguration.level,
-            includeExecutionData: config.loggingConfiguration.includeExecutionData,
-          }
-        : undefined,
-      roleArn: config.roleArn,
-    }
-  }
-
+  /**
+   * Detects the deployment framework used in the current directory
+   * @returns Framework name or 'Unknown'
+   */
   private getFramework(): string {
     const files = fs.readdirSync(process.cwd())
 
@@ -528,6 +609,10 @@ export class StepFunctionsFlareCommand extends Command {
     return 'Unknown'
   }
 
+  /**
+   * Creates the output directory structure for flare files
+   * @returns Path to the created output directory
+   */
   private async createOutputDirectory(): Promise<string> {
     const timestamp = Date.now()
     const stateMachineName = this.parseStateMachineArn(this.stateMachineArn!).name
@@ -544,6 +629,11 @@ export class StepFunctionsFlareCommand extends Command {
     return outputDir
   }
 
+  /**
+   * Writes all collected data to output files
+   * @param outputDir Directory to write files to
+   * @param data Collected data to write
+   */
   private async writeOutputFiles(
     outputDir: string,
     data: {
@@ -585,6 +675,12 @@ export class StepFunctionsFlareCommand extends Command {
     }
   }
 
+  /**
+   * Parses a state machine ARN to extract region and name
+   * @param arn State machine ARN
+   * @returns Object with region and name
+   * @throws Error if ARN format is invalid
+   */
   private parseStateMachineArn(arn: string): {region: string; name: string} {
     // ARN format: arn:aws:states:region:account:stateMachine:name
     const parts = arn.split(':')
@@ -598,6 +694,11 @@ export class StepFunctionsFlareCommand extends Command {
     }
   }
 
+  /**
+   * Extracts CloudWatch log group name from state machine configuration
+   * @param config State machine configuration
+   * @returns Log group name or undefined if not configured
+   */
   private getLogGroupName(config: DescribeStateMachineCommandOutput): string | undefined {
     if (!config.loggingConfiguration || !config.loggingConfiguration.destinations) {
       return undefined
@@ -617,6 +718,11 @@ export class StepFunctionsFlareCommand extends Command {
     return undefined
   }
 
+  /**
+   * Masks sensitive data in Amazon States Language definition
+   * @param definition ASL definition as JSON string
+   * @returns Masked ASL definition
+   */
   private maskAslDefinition(definition: string): string {
     try {
       const asl = JSON.parse(definition)
@@ -659,6 +765,12 @@ export class StepFunctionsFlareCommand extends Command {
     return masked
   }
 
+  /**
+   * Fetches detailed information about a specific execution
+   * @param sfnClient Step Functions client
+   * @param executionArn ARN of the execution
+   * @returns Execution details
+   */
   private async getExecutionDetails(sfnClient: SFNClient, executionArn: string): Promise<any> {
     const command = new DescribeExecutionCommand({
       executionArn,
