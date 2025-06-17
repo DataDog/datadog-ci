@@ -54,12 +54,12 @@ export class UninstrumentCommand extends AasCommand {
   ): Promise<boolean> {
     const client = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
     const results = await Promise.all(
-      Object.entries(resourceGroupToNames).map(([resourceGroup, aasNames]) =>
-        Promise.all(aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName)))
+      Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
+        aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName))
       )
     )
 
-    return results.every((result) => result.every((r) => r))
+    return results.every((result) => result)
   }
 
   /**
