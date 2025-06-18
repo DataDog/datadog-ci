@@ -145,10 +145,13 @@ export class StepFunctionsFlareCommand extends Command {
 
       // 5. Get log subscription filters (always collected)
       let subscriptionFilters: SubscriptionFilter[] | undefined
+      let logGroupExists = true
       const logGroupName = this.getLogGroupName(stateMachineConfig)
       if (logGroupName) {
         this.context.stdout.write('🔍 Getting log subscription filters...\n')
-        subscriptionFilters = await this.getLogSubscriptions(cloudWatchLogsClient, logGroupName)
+        const result = await this.getLogSubscriptions(cloudWatchLogsClient, logGroupName)
+        subscriptionFilters = result.filters
+        logGroupExists = result.exists
       }
 
       // 6. Get CloudWatch logs if enabled
@@ -171,7 +174,7 @@ export class StepFunctionsFlareCommand extends Command {
 
       // 8. Generate insights file
       const insightsPath = `${outputDir}/INSIGHTS.md`
-      this.generateInsightsFile(insightsPath, this.isDryRun, maskedConfig, tags, subscriptionFilters)
+      this.generateInsightsFile(insightsPath, this.isDryRun, maskedConfig, tags, subscriptionFilters, logGroupExists)
 
       // 9. Write all output files
       await this.writeOutputFiles(outputDir, {
@@ -361,25 +364,33 @@ export class StepFunctionsFlareCommand extends Command {
    * Fetches CloudWatch log subscription filters for a log group
    * @param cloudWatchLogsClient CloudWatch Logs client
    * @param logGroupName Name of the log group
-   * @returns List of subscription filters
+   * @returns Object with subscription filters and whether the log group exists
    */
   private async getLogSubscriptions(
     cloudWatchLogsClient: CloudWatchLogsClient,
     logGroupName: string
-  ): Promise<SubscriptionFilter[]> {
+  ): Promise<{filters: SubscriptionFilter[]; exists: boolean}> {
     try {
       const command = new DescribeSubscriptionFiltersCommand({
         logGroupName,
       })
       const response = await cloudWatchLogsClient.send(command)
 
-      return response.subscriptionFilters ?? []
+      return {
+        filters: response.subscriptionFilters ?? [],
+        exists: true,
+      }
     } catch (error) {
-      // If log group doesn't exist, return empty array
-      if (error instanceof Error && 
-          (error.message.includes('ResourceNotFoundException') || 
-           error.message.includes('specified log group does not exist'))) {
-        return []
+      // If log group doesn't exist, return empty array with exists=false
+      if (
+        error instanceof Error &&
+        (error.message.includes('ResourceNotFoundException') ||
+          error.message.includes('specified log group does not exist'))
+      ) {
+        return {
+          filters: [],
+          exists: false,
+        }
       }
       throw error
     }
@@ -412,32 +423,34 @@ export class StepFunctionsFlareCommand extends Command {
       const streamsResponse = await cloudWatchLogsClient.send(describeStreamsCommand)
       const logStreams = streamsResponse.logStreams ?? []
 
-    // Get logs from each stream
-    for (const stream of logStreams) {
-      if (!stream.logStreamName) {
-        continue
+      // Get logs from each stream
+      for (const stream of logStreams) {
+        if (!stream.logStreamName) {
+          continue
+        }
+
+        const getLogsCommand = new GetLogEventsCommand({
+          logGroupName,
+          logStreamName: stream.logStreamName,
+          startTime,
+          endTime,
+          limit: 1000,
+        })
+
+        const logsResponse = await cloudWatchLogsClient.send(getLogsCommand)
+        if (logsResponse.events && logsResponse.events.length > 0) {
+          logs.set(stream.logStreamName, logsResponse.events)
+        }
       }
 
-      const getLogsCommand = new GetLogEventsCommand({
-        logGroupName,
-        logStreamName: stream.logStreamName,
-        startTime,
-        endTime,
-        limit: 1000,
-      })
-
-      const logsResponse = await cloudWatchLogsClient.send(getLogsCommand)
-      if (logsResponse.events && logsResponse.events.length > 0) {
-        logs.set(stream.logStreamName, logsResponse.events)
-      }
-    }
-
-    return logs
+      return logs
     } catch (error) {
       // If log group doesn't exist, return empty map
-      if (error instanceof Error && 
-          (error.message.includes('ResourceNotFoundException') || 
-           error.message.includes('specified log group does not exist'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('ResourceNotFoundException') ||
+          error.message.includes('specified log group does not exist'))
+      ) {
         return logs
       }
       throw error
@@ -544,7 +557,8 @@ export class StepFunctionsFlareCommand extends Command {
     isDryRun: boolean,
     config: DescribeStateMachineCommandOutput,
     tags: Record<string, string>,
-    subscriptionFilters?: SubscriptionFilter[]
+    subscriptionFilters?: SubscriptionFilter[],
+    logGroupExists = true
   ): void {
     const lines: string[] = []
 
@@ -577,32 +591,39 @@ export class StepFunctionsFlareCommand extends Command {
     }
 
     // Check log subscriptions
-    let hasDatadogIntegration = false
-    if (subscriptionFilters && subscriptionFilters.length > 0) {
-      for (const filter of subscriptionFilters) {
-        if (filter.destinationArn) {
-          // Check for Lambda forwarder
-          if (
-            filter.destinationArn.includes(':lambda:') &&
-            (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
-          ) {
-            hasDatadogIntegration = true
-          }
-          // Check for Kinesis Firehose
-          if (
-            filter.destinationArn.includes(':firehose:') &&
-            (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
-          ) {
-            hasDatadogIntegration = true
+    const logGroupName = this.getLogGroupName(config)
+    if (logGroupName && !logGroupExists) {
+      issues.push(
+        `**Log group does not exist** - The configured log group \`${logGroupName}\` was not found. Create the log group or update the state machine logging configuration.`
+      )
+    } else {
+      let hasDatadogIntegration = false
+      if (subscriptionFilters && subscriptionFilters.length > 0) {
+        for (const filter of subscriptionFilters) {
+          if (filter.destinationArn) {
+            // Check for Lambda forwarder
+            if (
+              filter.destinationArn.includes(':lambda:') &&
+              (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
+            ) {
+              hasDatadogIntegration = true
+            }
+            // Check for Kinesis Firehose
+            if (
+              filter.destinationArn.includes(':firehose:') &&
+              (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
+            ) {
+              hasDatadogIntegration = true
+            }
           }
         }
       }
-    }
 
-    if (!hasDatadogIntegration) {
-      issues.push(
-        '**Missing Datadog log integration** - No log subscription filter found for Datadog Lambda forwarder or Kinesis Firehose'
-      )
+      if (logGroupExists && !hasDatadogIntegration) {
+        issues.push(
+          '**Missing Datadog log integration** - No log subscription filter found for Datadog Lambda forwarder or Kinesis Firehose'
+        )
+      }
     }
 
     // Check Datadog tags

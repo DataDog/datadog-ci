@@ -259,7 +259,7 @@ describe('StepFunctionsFlareCommand', () => {
       const logGroupName = '/aws/vendedlogs/states/MyWorkflow-Logs'
       const result = await command['getLogSubscriptions'](cwClient, logGroupName)
 
-      expect(result).toEqual(mockFilters)
+      expect(result).toEqual({filters: mockFilters, exists: true})
       expect(cloudWatchLogsClientMock).toHaveReceivedCommandWith(DescribeSubscriptionFiltersCommand, {
         logGroupName,
       })
@@ -272,7 +272,7 @@ describe('StepFunctionsFlareCommand', () => {
       const logGroupName = '/aws/vendedlogs/states/MyWorkflow-Logs'
       const result = await command['getLogSubscriptions'](cwClient, logGroupName)
 
-      expect(result).toEqual([])
+      expect(result).toEqual({filters: [], exists: false})
     })
   })
 
@@ -341,7 +341,7 @@ describe('StepFunctionsFlareCommand', () => {
         Team: 'platform',
       }
 
-      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, undefined)
+      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, undefined, true)
 
       // Read the file and check its content
       const content = fs.readFileSync(filePath, 'utf8')
@@ -382,7 +382,7 @@ describe('StepFunctionsFlareCommand', () => {
         stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',
       })
 
-      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, [])
+      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, [], true)
 
       const content = fs.readFileSync(filePath, 'utf8')
 
@@ -398,6 +398,51 @@ describe('StepFunctionsFlareCommand', () => {
       expect(content).toContain('Warnings')
       expect(content).toContain('X-Ray tracing is enabled')
       expect(content).toContain('DD_TRACE_SAMPLE_RATE has invalid value')
+
+      // Clean up
+      deleteFolder(MOCK_OUTPUT_DIR)
+    })
+
+    it('should detect when log group does not exist', () => {
+      const mockConfig = {
+        ...stateMachineConfigFixture(),
+        loggingConfiguration: {
+          level: 'ALL' as any,
+          includeExecutionData: true,
+          destinations: [
+            {
+              cloudWatchLogsLogGroup: {
+                logGroupArn: 'arn:aws:logs:us-east-1:123456789012:log-group:/aws/vendedlogs/states/TestStateMachine:*',
+              },
+            },
+          ],
+        },
+      }
+
+      const mockTags = {
+        DD_TRACE_ENABLED: 'true',
+      }
+
+      const filePath = upath.join(MOCK_OUTPUT_DIR, 'INSIGHTS_NO_LOG_GROUP.md')
+
+      if (!fs.existsSync(MOCK_OUTPUT_DIR)) {
+        fs.mkdirSync(MOCK_OUTPUT_DIR, {recursive: true})
+      }
+
+      command = setupCommand({
+        stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',
+      })
+
+      // Call with logGroupExists = false
+      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, [], false)
+
+      const content = fs.readFileSync(filePath, 'utf8')
+
+      // Check for log group not found issue
+      expect(content).toContain('Configuration Issues')
+      expect(content).toContain('Log group does not exist')
+      expect(content).toContain('/aws/vendedlogs/states/TestStateMachine')
+      expect(content).not.toContain('Missing Datadog log integration')
 
       // Clean up
       deleteFolder(MOCK_OUTPUT_DIR)
