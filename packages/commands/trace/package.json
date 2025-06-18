@@ -1,0 +1,10 @@
+{
+  "name": "@datadog/datadog-ci-command-trace",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "private": true,
+  "dependencies": {
+    "@datadog/datadog-ci-helpers": "*"
+  }
+}
