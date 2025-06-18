@@ -565,21 +565,27 @@ export class StepFunctionsFlareCommand extends Command {
       for (const filter of subscriptionFilters) {
         if (filter.destinationArn) {
           // Check for Lambda forwarder
-          if (filter.destinationArn.includes(':lambda:') && 
-              (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))) {
+          if (
+            filter.destinationArn.includes(':lambda:') &&
+            (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
+          ) {
             hasDatadogIntegration = true
           }
           // Check for Kinesis Firehose
-          if (filter.destinationArn.includes(':firehose:') && 
-              (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))) {
+          if (
+            filter.destinationArn.includes(':firehose:') &&
+            (filter.destinationArn.includes('datadog') || filter.destinationArn.includes('Datadog'))
+          ) {
             hasDatadogIntegration = true
           }
         }
       }
     }
-    
+
     if (!hasDatadogIntegration) {
-      issues.push('**Missing Datadog log integration** - No log subscription filter found for Datadog Lambda forwarder or Kinesis Firehose')
+      issues.push(
+        '**Missing Datadog log integration** - No log subscription filter found for Datadog Lambda forwarder or Kinesis Firehose'
+      )
     }
 
     // Check Datadog tags
@@ -593,9 +599,13 @@ export class StepFunctionsFlareCommand extends Command {
     if (ddTraceSampleRate) {
       const sampleRate = parseFloat(ddTraceSampleRate)
       if (isNaN(sampleRate) || sampleRate < 0 || sampleRate > 1) {
-        warnings.push(`**DD_TRACE_SAMPLE_RATE has invalid value: "${ddTraceSampleRate}"** - Must be a decimal between 0 and 1`)
+        warnings.push(
+          `**DD_TRACE_SAMPLE_RATE has invalid value: "${ddTraceSampleRate}"** - Must be a decimal between 0 and 1`
+        )
       } else if (sampleRate < 1) {
-        recommendations.push(`**Consider setting DD_TRACE_SAMPLE_RATE to 1** for troubleshooting (current: ${sampleRate})`)
+        recommendations.push(
+          `**Consider setting DD_TRACE_SAMPLE_RATE to 1** for troubleshooting (current: ${sampleRate})`
+        )
       }
     }
     // Note: Not mentioning DD_TRACE_SAMPLE_RATE if absent since default is 1
@@ -662,18 +672,18 @@ export class StepFunctionsFlareCommand extends Command {
     if (tagKeys.length > 0) {
       lines.push(`**Total Tags**: ${tagKeys.length}`)
       lines.push('')
-      
+
       // Separate Datadog tags from other tags
-      const ddTags = tagKeys.filter(key => key.toUpperCase().startsWith('DD_'))
-      const otherTags = tagKeys.filter(key => !key.toUpperCase().startsWith('DD_'))
-      
+      const ddTags = tagKeys.filter((key) => key.toUpperCase().startsWith('DD_'))
+      const otherTags = tagKeys.filter((key) => !key.toUpperCase().startsWith('DD_'))
+
       if (ddTags.length > 0) {
         lines.push('### Datadog Tags')
         for (const key of ddTags) {
           lines.push(`- **${key}**: \`${tags[key]}\``)
         }
       }
-      
+
       if (otherTags.length > 0) {
         lines.push(ddTags.length > 0 ? '\n### Other Tags' : '### All Tags')
         for (const key of otherTags) {

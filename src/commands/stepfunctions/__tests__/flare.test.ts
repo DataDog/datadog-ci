@@ -335,12 +335,12 @@ describe('StepFunctionsFlareCommand', () => {
       })
 
       const mockTags = {
-        'DD_TRACE_ENABLED': 'true',
-        'DD_TRACE_SAMPLE_RATE': '1',
-        'Environment': 'production',
-        'Team': 'platform'
+        DD_TRACE_ENABLED: 'true',
+        DD_TRACE_SAMPLE_RATE: '1',
+        Environment: 'production',
+        Team: 'platform',
       }
-      
+
       command['generateInsightsFile'](filePath, false, mockConfig, mockTags, undefined)
 
       // Read the file and check its content
@@ -359,16 +359,16 @@ describe('StepFunctionsFlareCommand', () => {
         loggingConfiguration: {
           level: 'ERROR' as any, // Should be 'ALL'
           includeExecutionData: false, // Should be true
-          destinations: []
+          destinations: [],
         },
         tracingConfiguration: {
-          enabled: true // X-Ray is duplicative
-        }
+          enabled: true, // X-Ray is duplicative
+        },
       }
 
       const mockTags = {
-        'DD_TRACE_ENABLED': 'false', // Should be 'true'
-        'DD_TRACE_SAMPLE_RATE': '2.5', // Invalid - should be 0-1
+        DD_TRACE_ENABLED: 'false', // Should be 'true'
+        DD_TRACE_SAMPLE_RATE: '2.5', // Invalid - should be 0-1
       }
 
       const filePath = upath.join(MOCK_OUTPUT_DIR, 'INSIGHTS_ISSUES.md')
@@ -385,7 +385,7 @@ describe('StepFunctionsFlareCommand', () => {
       command['generateInsightsFile'](filePath, false, mockConfig, mockTags, [])
 
       const content = fs.readFileSync(filePath, 'utf8')
-      
+
       // Check for configuration issues
       expect(content).toContain('Configuration Analysis')
       expect(content).toContain('Configuration Issues')
@@ -393,7 +393,7 @@ describe('StepFunctionsFlareCommand', () => {
       expect(content).toContain('Include Execution Data must be enabled')
       expect(content).toContain('Missing Datadog log integration')
       expect(content).toContain('DD_TRACE_ENABLED must be set to true')
-      
+
       // Check for warnings
       expect(content).toContain('Warnings')
       expect(content).toContain('X-Ray tracing is enabled')
