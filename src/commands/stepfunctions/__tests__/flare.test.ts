@@ -334,12 +334,70 @@ describe('StepFunctionsFlareCommand', () => {
         stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',
       })
 
-      command['generateInsightsFile'](filePath, false, mockConfig, undefined)
+      const mockTags = {
+        'DD_TRACE_ENABLED': 'true',
+        'DD_TRACE_SAMPLE_RATE': '1',
+        'Environment': 'production',
+        'Team': 'platform'
+      }
+      
+      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, undefined)
 
       // Read the file and check its content
       const content = fs.readFileSync(filePath, 'utf8')
       expect(content).toContain('Step Functions Flare Insights')
       expect(content).toContain('MyWorkflow')
+
+      // Clean up
+      deleteFolder(MOCK_OUTPUT_DIR)
+    })
+
+    it('should detect configuration issues', () => {
+      // Create a config with issues
+      const mockConfig = {
+        ...stateMachineConfigFixture(),
+        loggingConfiguration: {
+          level: 'ERROR' as any, // Should be 'ALL'
+          includeExecutionData: false, // Should be true
+          destinations: []
+        },
+        tracingConfiguration: {
+          enabled: true // X-Ray is duplicative
+        }
+      }
+
+      const mockTags = {
+        'DD_TRACE_ENABLED': 'false', // Should be 'true'
+        'DD_TRACE_SAMPLE_RATE': '2.5', // Invalid - should be 0-1
+      }
+
+      const filePath = upath.join(MOCK_OUTPUT_DIR, 'INSIGHTS_ISSUES.md')
+
+      // Create the directory if it doesn't exist
+      if (!fs.existsSync(MOCK_OUTPUT_DIR)) {
+        fs.mkdirSync(MOCK_OUTPUT_DIR, {recursive: true})
+      }
+
+      command = setupCommand({
+        stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',
+      })
+
+      command['generateInsightsFile'](filePath, false, mockConfig, mockTags, [])
+
+      const content = fs.readFileSync(filePath, 'utf8')
+      
+      // Check for configuration issues
+      expect(content).toContain('Configuration Analysis')
+      expect(content).toContain('Configuration Issues')
+      expect(content).toContain('Log level must be set to "ALL"')
+      expect(content).toContain('Include Execution Data must be enabled')
+      expect(content).toContain('Missing Datadog log integration')
+      expect(content).toContain('DD_TRACE_ENABLED must be set to true')
+      
+      // Check for warnings
+      expect(content).toContain('Warnings')
+      expect(content).toContain('X-Ray tracing is enabled')
+      expect(content).toContain('DD_TRACE_SAMPLE_RATE has invalid value')
 
       // Clean up
       deleteFolder(MOCK_OUTPUT_DIR)
