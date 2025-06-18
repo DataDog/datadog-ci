@@ -27,8 +27,8 @@ Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Servi
 
 ```bash
 # Instrument a function by subscription ID, resource group, and app service name
-datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -w <app-service-name>
+datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -n <app-service-name>
 
 # Dry run of all updates
-datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -w <app-service-name> --dry-run
+datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -n <app-service-name> --dry-run
 ```
