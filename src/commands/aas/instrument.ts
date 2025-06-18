@@ -214,7 +214,9 @@ export class InstrumentCommand extends AasCommand {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
       }
     } else {
-      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`)
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
+      )
     }
   }
 }

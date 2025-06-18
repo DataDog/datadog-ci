@@ -43,7 +43,6 @@ import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import {InstrumentCommand} from '../instrument'
 
 import {CONTAINER_WEB_APP, DEFAULT_ARGS, DEFAULT_CONFIG} from './common'
-import exp from 'constants'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
@@ -249,16 +248,19 @@ Creating sidecar container datadog-sidecar on my-web-app
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
+
     test('Errors if no Azure App Service is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toEqual('[Error] No App Services specified to instrument\n')
     })
+
     test('Errors if the resource ID is invalid', async () => {
       const {code, context} = await runCLI(['-r', 'not-a-valid-resource-id'])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toEqual('[Error] Invalid AAS resource ID: not-a-valid-resource-id\n')
     })
+
     test('Errors include all resource IDs that are invalid', async () => {
       const {code, context} = await runCLI([
         '-r',

@@ -209,16 +209,19 @@ Checking Application Settings on my-web-app
       // the last operations never get called due to the above failure
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })
+
     test('Errors if no Azure App Service is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toEqual('[Error] No App Services specified to instrument\n')
     })
+
     test('Errors if the resource ID is invalid', async () => {
       const {code, context} = await runCLI(['-r', 'not-a-valid-resource-id'])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toEqual('[Error] Invalid AAS resource ID: not-a-valid-resource-id\n')
     })
+
     test('Errors include all resource IDs that are invalid', async () => {
       const {code, context} = await runCLI([
         '-r',

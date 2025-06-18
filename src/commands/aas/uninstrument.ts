@@ -100,7 +100,9 @@ export class UninstrumentCommand extends AasCommand {
     aasName: string
   ) {
     this.context.stdout.write(
-      `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${chalk.bold(aasName)} (if it exists)\n`
+      `${this.dryRunPrefix}Removing sidecar container ${chalk.bold(SIDECAR_CONTAINER_NAME)} from ${chalk.bold(
+        aasName
+      )} (if it exists)\n`
     )
     if (!this.dryRun) {
       await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
@@ -117,7 +119,9 @@ export class UninstrumentCommand extends AasCommand {
         })
       }
     } else {
-      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`)
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
+      )
     }
   }
 }

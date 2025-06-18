@@ -141,6 +141,7 @@ export abstract class AasCommand extends Command {
     if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
       errors.push('No App Services specified to instrument')
     }
+
     return [appServices, config, errors]
   }
 
