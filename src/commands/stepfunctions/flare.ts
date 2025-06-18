@@ -89,7 +89,7 @@ export class StepFunctionsFlareCommand extends Command {
 
     try {
       // Get AWS credentials
-      this.context.stdout.write(chalk.bold('\n🔑\tGetting AWS credentials...\n'))
+      this.context.stdout.write(chalk.bold('\n🔑 Getting AWS credentials...\n'))
       try {
         this.credentials = await getAWSCredentials()
       } catch (err) {
@@ -107,19 +107,19 @@ export class StepFunctionsFlareCommand extends Command {
       const sfnClient = new SFNClient({region, credentials: this.credentials})
       const cloudWatchLogsClient = new CloudWatchLogsClient({region, credentials: this.credentials})
 
-      this.context.stdout.write(chalk.bold('\n🔍\tCollecting Step Functions flare data...\n'))
+      this.context.stdout.write(chalk.bold('\n🔍 Collecting Step Functions flare data...\n'))
 
       // 1. Get state machine configuration
-      this.context.stdout.write('📋\tFetching state machine configuration...\n')
+      this.context.stdout.write('📋 Fetching state machine configuration...\n')
       const stateMachineConfig = await this.getStateMachineConfiguration(sfnClient, this.stateMachineArn!)
       const maskedConfig = this.maskStateMachineConfig(stateMachineConfig)
 
       // 2. Get state machine tags
-      this.context.stdout.write('🔖\tGetting resource tags...\n')
+      this.context.stdout.write('🔖 Getting resource tags...\n')
       const tags = await this.getStateMachineTags(sfnClient, this.stateMachineArn!)
 
       // 3. Get recent executions
-      this.context.stdout.write('📊\tFetching recent executions...\n')
+      this.context.stdout.write('📊 Fetching recent executions...\n')
 
       const executions = await this.getRecentExecutions(sfnClient, this.stateMachineArn!)
 
@@ -127,7 +127,7 @@ export class StepFunctionsFlareCommand extends Command {
       const maskedExecutions = executions.map((exec) => this.maskExecutionData(exec))
 
       // 4. Get execution details and history for each execution
-      this.context.stdout.write('📜\tFetching execution details and history...\n')
+      this.context.stdout.write('📜 Fetching execution details and history...\n')
 
       for (const execution of executions.slice(0, 5)) {
         // Limit to 5 most recent
@@ -147,21 +147,21 @@ export class StepFunctionsFlareCommand extends Command {
       let subscriptionFilters: SubscriptionFilter[] | undefined
       const logGroupName = this.getLogGroupName(stateMachineConfig)
       if (logGroupName) {
-        this.context.stdout.write('🔍\tGetting log subscription filters...\n')
+        this.context.stdout.write('🔍 Getting log subscription filters...\n')
         subscriptionFilters = await this.getLogSubscriptions(cloudWatchLogsClient, logGroupName)
       }
 
       // 6. Get CloudWatch logs if enabled
       let logs: Map<string, OutputLogEvent[]> | undefined
       if (this.withLogs && logGroupName) {
-        this.context.stdout.write('🌧️\tGetting CloudWatch logs...\n')
+        this.context.stdout.write('🌧️ Getting CloudWatch logs...\n')
         const startTime = this.start ? new Date(this.start).getTime() : undefined
         const endTime = this.end ? new Date(this.end).getTime() : undefined
         logs = await this.getCloudWatchLogs(cloudWatchLogsClient, logGroupName, startTime, endTime)
       }
 
       // 7. Create output directory
-      this.context.stdout.write(chalk.bold('\n💾\tSaving files...\n'))
+      this.context.stdout.write(chalk.bold('\n💾 Saving files...\n'))
       const outputDir = await this.createOutputDirectory()
 
       // 8. Generate insights file
@@ -186,8 +186,8 @@ export class StepFunctionsFlareCommand extends Command {
         this.context.stdout.write(
           '\n🚫 The flare files were not sent because the command was executed in dry run mode.\n'
         )
-        this.context.stdout.write(`\nℹ️\tYour output files are located at: ${outputDir}\n`)
-        this.context.stdout.write(`ℹ️\tZip file created at: ${zipPath}\n`)
+        this.context.stdout.write(`\n📁 Your output files are located at: ${outputDir}\n`)
+        this.context.stdout.write(`📦 Zip file created at: ${zipPath}\n`)
 
         return 0
       }
@@ -200,17 +200,17 @@ export class StepFunctionsFlareCommand extends Command {
       )
 
       if (!confirmSendFiles) {
-        this.context.stdout.write('\n🚫\tThe flare files were not sent based on your selection.')
-        this.context.stdout.write(`\nℹ️\tYour output files are located at: ${outputDir}\n`)
-        this.context.stdout.write(`ℹ️\tZip file created at: ${zipPath}\n`)
+        this.context.stdout.write('\n🚫 The flare files were not sent based on your selection.')
+        this.context.stdout.write(`\n📁 Your output files are located at: ${outputDir}\n`)
+        this.context.stdout.write(`📦 Zip file created at: ${zipPath}\n`)
 
         return 0
       }
 
       // Send to Datadog
-      this.context.stdout.write(chalk.bold('\n🚀\tSending to Datadog Support...\n'))
+      this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
       await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, outputDir)
-      this.context.stdout.write(chalk.bold('\n✅\tSuccessfully sent flare file to Datadog Support!\n'))
+      this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
       deleteFolder(outputDir)
