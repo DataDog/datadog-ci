@@ -158,6 +158,11 @@ export class StepFunctionsFlareCommand extends Command {
         const startTime = this.start ? new Date(this.start).getTime() : undefined
         const endTime = this.end ? new Date(this.end).getTime() : undefined
         logs = await this.getCloudWatchLogs(cloudWatchLogsClient, logGroupName, startTime, endTime)
+        if (!logs || logs.size === 0) {
+          this.context.stdout.write('   No logs found in the specified time range\n')
+        } else {
+          this.context.stdout.write(`   Found logs from ${logs.size} log streams\n`)
+        }
       }
 
       // 7. Create output directory
@@ -883,9 +888,10 @@ export class StepFunctionsFlareCommand extends Command {
     for (const destination of config.loggingConfiguration.destinations) {
       if (destination.cloudWatchLogsLogGroup && destination.cloudWatchLogsLogGroup.logGroupArn) {
         // Extract log group name from ARN
-        // ARN format: arn:aws:logs:region:account:log-group:name
+        // ARN format: arn:aws:logs:region:account:log-group:name:*
         const arnParts = destination.cloudWatchLogsLogGroup.logGroupArn.split(':')
-        if (arnParts.length >= 6) {
+        if (arnParts.length >= 7) {
+          // The log group name is at index 6, and index 7 might be '*'
           return arnParts[6]
         }
       }
