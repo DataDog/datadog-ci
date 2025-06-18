@@ -15,5 +15,10 @@
     "esModuleInterop": true, // Allows default imports from modules with no default export
     "resolveJsonModule": true // Used for SBOM json schemas
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "references": [
+    {"path": "packages/commands/git-metadata"},
+    {"path": "packages/commands/synthetics"},
+    {"path": "packages/core"}
+  ]
 }

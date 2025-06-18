@@ -5,7 +5,8 @@
   "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/commands/*"
   ],
   "bin": "dist/cli.js",
   "engines": {
@@ -37,8 +38,8 @@
     ]
   },
   "scripts": {
-    "build": "yarn clean; tsc",
-    "build:win": "tsc",
+    "build": "yarn clean; tsc --build",
+    "build:win": "tsc --build",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
     "clean:win": "rm dist -r",
@@ -73,6 +74,9 @@
     "@aws-sdk/credential-providers": "^3.709.0",
     "@azure/arm-appservice": "^16.0.0",
     "@azure/identity": "^4.10.0",
+    "@datadog/datadog-ci-command-git-metadata": "workspace:^",
+    "@datadog/datadog-ci-command-synthetics": "workspace:^",
+    "@datadog/datadog-ci-core": "workspace:^",
     "@google-cloud/logging": "^11.1.0",
     "@google-cloud/run": "^1.4.0",
     "@smithy/property-provider": "^2.0.12",

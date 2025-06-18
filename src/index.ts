@@ -1,4 +1,4 @@
-export * as gitMetadata from './commands/git-metadata'
-export * as synthetics from './commands/synthetics'
-export * as utils from './helpers/utils'
-export {version} from './helpers/version'
+export * as gitMetadata from '@datadog/datadog-ci-command-git-metadata'
+export * as synthetics from '@datadog/datadog-ci-command-synthetics'
+export * as utils from '@datadog/datadog-ci-core'
+export {version} from '@datadog/datadog-ci-core'

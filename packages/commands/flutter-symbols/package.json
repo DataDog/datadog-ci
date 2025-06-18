@@ -5,6 +5,6 @@
   "types": "dist/index.d.ts",
   "private": true,
   "dependencies": {
-    "@datadog/datadog-ci-helpers": "*"
+    "@datadog/datadog-ci-core": "*"
   }
 }

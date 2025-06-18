@@ -2022,6 +2022,212 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@datadog/datadog-ci-command-aas@workspace:packages/commands/aas":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-aas@workspace:packages/commands/aas"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-cloud-run@workspace:packages/commands/cloud-run":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-cloud-run@workspace:packages/commands/cloud-run"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-coverage@workspace:packages/commands/coverage":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-coverage@workspace:packages/commands/coverage"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-deployment@workspace:packages/commands/deployment":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-deployment@workspace:packages/commands/deployment"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-dora@workspace:packages/commands/dora":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-dora@workspace:packages/commands/dora"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-dsyms@workspace:packages/commands/dsyms":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-dsyms@workspace:packages/commands/dsyms"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-elf-symbols@workspace:packages/commands/elf-symbols":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-elf-symbols@workspace:packages/commands/elf-symbols"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-flutter-symbols@workspace:packages/commands/flutter-symbols":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-flutter-symbols@workspace:packages/commands/flutter-symbols"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-gate@workspace:packages/commands/gate":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-gate@workspace:packages/commands/gate"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-git-metadata@workspace:^, @datadog/datadog-ci-command-git-metadata@workspace:packages/commands/git-metadata":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-git-metadata@workspace:packages/commands/git-metadata"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-junit@workspace:packages/commands/junit":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-junit@workspace:packages/commands/junit"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-lambda@workspace:packages/commands/lambda":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-lambda@workspace:packages/commands/lambda"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-measure@workspace:packages/commands/measure":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-measure@workspace:packages/commands/measure"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-pe-symbols@workspace:packages/commands/pe-symbols":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-pe-symbols@workspace:packages/commands/pe-symbols"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-react-native@workspace:packages/commands/react-native":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-react-native@workspace:packages/commands/react-native"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-sarif@workspace:packages/commands/sarif":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-sarif@workspace:packages/commands/sarif"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-sbom@workspace:packages/commands/sbom":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-sbom@workspace:packages/commands/sbom"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-sourcemaps@workspace:packages/commands/sourcemaps":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-sourcemaps@workspace:packages/commands/sourcemaps"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-span@workspace:packages/commands/span":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-span@workspace:packages/commands/span"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-stepfunctions@workspace:packages/commands/stepfunctions":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-stepfunctions@workspace:packages/commands/stepfunctions"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-synthetics@workspace:^, @datadog/datadog-ci-command-synthetics@workspace:packages/commands/synthetics":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-synthetics@workspace:packages/commands/synthetics"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-tag@workspace:packages/commands/tag":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-tag@workspace:packages/commands/tag"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-trace@workspace:packages/commands/trace":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-trace@workspace:packages/commands/trace"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-unity-symbols@workspace:packages/commands/unity-symbols":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-unity-symbols@workspace:packages/commands/unity-symbols"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-command-version@workspace:packages/commands/version":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-command-version@workspace:packages/commands/version"
+  dependencies:
+    "@datadog/datadog-ci-core": "*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-core@*, @datadog/datadog-ci-core@workspace:^, @datadog/datadog-ci-core@workspace:packages/core":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-core@workspace:packages/core"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci@workspace:.":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:."
@@ -2039,6 +2245,9 @@ __metadata:
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
+    "@datadog/datadog-ci-command-git-metadata": "workspace:^"
+    "@datadog/datadog-ci-command-synthetics": "workspace:^"
+    "@datadog/datadog-ci-core": "workspace:^"
     "@google-cloud/logging": ^11.1.0
     "@google-cloud/run": ^1.4.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
