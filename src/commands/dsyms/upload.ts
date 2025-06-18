@@ -268,8 +268,14 @@ export class UploadCommand extends Command {
           await promises.mkdir(upath.dirname(object), {recursive: true})
 
           try {
+            // Attempt to extract the single arch object file.
+            // We could use the `lipo -archs` command to get the list of archs,
+            // but it's more straightforward to just attempt to extract
+            // the single arch.
             await executeLipo(dwarf.object, dwarf.arch, object)
           } catch {
+            // The thinning using `lipo` failed, meaning the dSYM is already
+            // a single arch dSYM. Copy the object file to the new dSYM.
             await promises.copyFile(dwarf.object, object)
           }
 
