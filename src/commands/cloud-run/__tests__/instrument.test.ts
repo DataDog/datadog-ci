@@ -5,7 +5,7 @@ import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 
 import {SERVICE_ENV_VAR} from '../../../constants'
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI, createCommand} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
 
 import {InstrumentCommand} from '../instrument'
@@ -145,13 +145,7 @@ describe('InstrumentCommand', () => {
     const mockServicePath = 'projects/project/locations/region/services/service'
 
     beforeEach(() => {
-      command = new InstrumentCommand()
-      // inject a fake context so we can spy on writes
-      command.context = {
-        stdout: {write: jest.fn()},
-        stderr: {write: jest.fn()},
-      } as any
-
+      command = createCommand(InstrumentCommand)
       mockClient = {
         servicePath: jest.fn().mockReturnValue(mockServicePath),
         getService: jest.fn().mockResolvedValue([{template: {}, containers: [], volumes: []}]),
