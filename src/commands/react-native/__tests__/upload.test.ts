@@ -3,6 +3,7 @@ import {Cli} from 'clipanion'
 
 import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '../../../helpers/apikey'
+import {MultipartStringValue} from '../../../helpers/upload'
 
 import {RNSourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'
@@ -16,6 +17,32 @@ describe('upload', () => {
       expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
       )
+    })
+  })
+
+  describe('extractAndAddDebugIdToPayload', () => {
+    test('debug ID is extracted from sourcemaps and added to multipart payload', async () => {
+      // GIVEN
+      const sourcemap = new RNSourcemap(
+        'bundle.min.js',
+        'src/commands/react-native/__tests__/fixtures/sourcemap-with-debug-id/bundle.min.js.map'
+      )
+
+      // WHEN
+      const payload = sourcemap.asMultipartPayload(
+        'cli-version',
+        'service',
+        'version',
+        'projectPath',
+        'android',
+        'build',
+        createMockContext()
+      )
+
+      // THEN
+      const event = payload.content.get('event') as MultipartStringValue
+      const eventValue = JSON.parse(event['value']) as {debug_id: string}
+      expect(eventValue['debug_id']).toBe('a422b269-0dba-4341-93c2-73e1bcf71fbb')
     })
   })
 

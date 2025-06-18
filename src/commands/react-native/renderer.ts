@@ -1,10 +1,10 @@
 import chalk from 'chalk'
 
-import { ICONS } from '../../helpers/formatting'
-import { UploadStatus } from '../../helpers/upload'
-import { pluralize } from '../../helpers/utils'
+import {ICONS} from '../../helpers/formatting'
+import {UploadStatus} from '../../helpers/upload'
+import {pluralize} from '../../helpers/utils'
 
-import { RNSourcemap } from './interfaces'
+import {RNSourcemap} from './interfaces'
 
 export const renderGitWarning = (errorMessage: string) =>
   chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
@@ -127,7 +127,6 @@ export const renderCommandInfo = (
   dryRun: boolean,
   projectPath: string,
   buildVersion: string,
-  debugId: string | undefined,
   bundleName: string
 ) => {
   let fullStr = ''
@@ -146,7 +145,7 @@ export const renderCommandInfo = (
   )
 
   const serviceVersionProjectPathStr = chalk.green(
-    `version: ${releaseVersion} build: ${buildVersion} service: ${service} ${debugId && `debugId: ${debugId}`}\n`
+    `version: ${releaseVersion} build: ${buildVersion} service: ${service}\n`
   )
 
   fullStr += serviceVersionProjectPathStr

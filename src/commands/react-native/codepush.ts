@@ -1,15 +1,15 @@
-import { exec } from 'child_process'
+import {exec} from 'child_process'
 
-import { Cli, Command, Option } from 'clipanion'
+import {Cli, Command, Option} from 'clipanion'
 
-import { FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR } from '../../constants'
-import { toBoolean } from '../../helpers/env'
-import { enableFips } from '../../helpers/fips'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 
-import { CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError } from './errors'
-import { RNPlatform, RN_SUPPORTED_PLATFORMS } from './interfaces'
-import { UploadCommand } from './upload'
-import { sanitizeReleaseVersion } from './utils'
+import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
+import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
+import {UploadCommand} from './upload'
+import {sanitizeReleaseVersion} from './utils'
 
 export class CodepushCommand extends Command {
   public static paths = [['react-native', 'codepush']]

@@ -1,23 +1,23 @@
 import chalk from 'chalk'
-import { Command, Option } from 'clipanion'
+import {Command, Option} from 'clipanion'
 
-import { FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR } from '../../constants'
-import { ApiKeyValidator, newApiKeyValidator } from '../../helpers/apikey'
-import { getBaseSourcemapIntakeUrl } from '../../helpers/base-intake-url'
-import { doWithMaxConcurrency } from '../../helpers/concurrency'
-import { toBoolean } from '../../helpers/env'
-import { InvalidConfigurationError } from '../../helpers/errors'
-import { enableFips } from '../../helpers/fips'
-import { getRepositoryData, newSimpleGit, RepositoryData } from '../../helpers/git/format-git-sourcemaps-data'
-import { RequestBuilder } from '../../helpers/interfaces'
-import { getMetricsLogger, MetricsLogger } from '../../helpers/metrics'
-import { upload, UploadStatus } from '../../helpers/upload'
-import { getRequestBuilder, resolveConfigFromFileAndEnvironment } from '../../helpers/utils'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
+import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
+import {doWithMaxConcurrency} from '../../helpers/concurrency'
+import {toBoolean} from '../../helpers/env'
+import {InvalidConfigurationError} from '../../helpers/errors'
+import {enableFips} from '../../helpers/fips'
+import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
+import {RequestBuilder} from '../../helpers/interfaces'
+import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
+import {upload, UploadStatus} from '../../helpers/upload'
+import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
-import { checkAPIKeyOverride } from '../../helpers/validation'
-import { version } from '../../helpers/version'
+import {checkAPIKeyOverride} from '../../helpers/validation'
+import {version} from '../../helpers/version'
 
-import { RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS } from './interfaces'
+import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
   renderCommandInfo,
   renderConfigurationError,
@@ -31,8 +31,8 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import { getBundleName } from './utils'
-import { InvalidPayload, validatePayload } from './validation'
+import {getBundleName} from './utils'
+import {InvalidPayload, validatePayload} from './validation'
 
 export class UploadCommand extends Command {
   public static paths = [['react-native', 'upload']]
@@ -61,7 +61,7 @@ export class UploadCommand extends Command {
   private configPath = Option.String('--config')
   private disableGit = Option.Boolean('--disable-git')
   private dryRun = Option.Boolean('--dry-run', false)
-  private maxConcurrency = Option.String('--max-concurrency', '20', { validator: validation.isInteger() })
+  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
   private platform?: RNPlatform = Option.String('--platform')
   private projectPath = Option.String('--project-path', process.cwd() || '')
   private releaseVersion = Option.String('--release-version')
@@ -69,7 +69,6 @@ export class UploadCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
   private sourcemap = Option.String('--sourcemap')
-  private debugId = Option.String('--debug-id') // TODO: remove this once we have a way to get the debug id from the sourcemap
 
   private cliVersion = version
   private config: Record<string, string> = {
@@ -136,7 +135,6 @@ export class UploadCommand extends Command {
         this.dryRun,
         this.projectPath,
         this.buildVersion,
-        this.debugId,
         bundleName
       )
     )
@@ -326,7 +324,7 @@ export class UploadCommand extends Command {
         this.projectPath,
         this.platform!,
         this.buildVersion!,
-        this.debugId
+        this.context
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
