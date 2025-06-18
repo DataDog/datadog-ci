@@ -4,7 +4,20 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "private": true,
+  "exports": {
+    "./custom-span-command": {
+      "types": "./dist/custom-span-command.d.ts",
+      "require": "./dist/custom-span-command.js"
+    },
+    "./__tests__/test-utils": {
+      "types": "./dist/__tests__/test-utils.d.ts",
+      "require": "./dist/__tests__/test-utils.js"
+    }
+  },
   "dependencies": {
     "@datadog/datadog-ci-core": "*"
+  },
+  "scripts": {
+    "build": "yarn package:build"
   }
 }

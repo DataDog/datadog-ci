@@ -2,7 +2,13 @@ import type {Runtime} from '@aws-sdk/client-lambda'
 
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
-import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
+import {
+  ENVIRONMENT_ENV_VAR,
+  FLARE_PROJECT_FILES,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '@datadog/datadog-ci-core/constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'

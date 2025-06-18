@@ -5,8 +5,8 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import FormData from 'form-data'
 
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {getRequestBuilder} from '../../helpers/utils'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-core/helpers/concurrency'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {Payload} from './interfaces'
 

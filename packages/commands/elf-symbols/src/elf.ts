@@ -1,8 +1,8 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
-import {createReadFunctions, FileReader} from '../../helpers/filereader'
-import {execute} from '../../helpers/utils'
+import {createReadFunctions, FileReader} from '@datadog/datadog-ci-core/helpers/filereader'
+import {execute} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {
   MACHINE_TYPES_DESCRIPTION,

@@ -1,4 +1,4 @@
-import {createCommand, getAxiosError, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {createCommand, getAxiosError, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import {DeploymentCorrelateCommand} from '../correlate'
 

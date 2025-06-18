@@ -8,7 +8,7 @@ import {
   failCrossTag,
   renderError,
   renderSoftWarning,
-} from '../../../helpers/renderer'
+} from '@datadog/datadog-ci-core/helpers/renderer'
 
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'

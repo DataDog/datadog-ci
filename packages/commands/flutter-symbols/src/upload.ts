@@ -1,31 +1,28 @@
 import fs from 'fs'
 
-import {Command, Option} from 'clipanion'
-import yaml from 'js-yaml'
-import semver from 'semver'
+// XXX: Factorize all `simpleGit` usages
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {globSync} from '../../helpers/glob'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {MultipartValue, UploadStatus} from '../../helpers/upload'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-core/helpers/apikey'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-core/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-core/helpers/git/format-git-sourcemaps-data'
+import {newSimpleGit} from '@datadog/datadog-ci-core/helpers/git/simple-git'
+import {globSync} from '@datadog/datadog-ci-core/helpers/glob'
+import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-core/helpers/metrics'
+import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-core/helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
-  performSubCommand,
   resolveConfigFromFileAndEnvironment,
-} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
-
-import * as dsyms from '../dsyms/upload'
-import {newSimpleGit} from '../git-metadata/git'
-import * as sourcemaps from '../sourcemaps/upload'
+} from '@datadog/datadog-ci-core/helpers/utils'
+import * as validation from '@datadog/datadog-ci-core/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-core/helpers/validation'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
+import {Command, Option} from 'clipanion'
+import yaml from 'js-yaml'
+import semver from 'semver'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -462,7 +459,7 @@ export class UploadCommand extends Command {
       dsymUploadCommand.push('--dry-run')
     }
 
-    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
+    const exitCode = await this.cli.run(dsymUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }
@@ -483,7 +480,7 @@ export class UploadCommand extends Command {
       sourceMapUploadCommand.push('--dry-run')
     }
 
-    const exitCode = await performSubCommand(sourcemaps.UploadCommand, sourceMapUploadCommand, this.context)
+    const exitCode = await this.cli.run(sourceMapUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }

@@ -1,8 +1,8 @@
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {ICONS} from '../../helpers/formatting'
-import {UploadStatus} from '../../helpers/upload'
+import {ICONS} from '@datadog/datadog-ci-core/helpers/formatting'
+import {UploadStatus} from '@datadog/datadog-ci-core/helpers/upload'
 
 import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
 import {pluralize} from './utils'

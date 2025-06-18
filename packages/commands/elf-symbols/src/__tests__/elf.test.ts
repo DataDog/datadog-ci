@@ -1,6 +1,6 @@
 import upath from 'upath'
 
-import {createReaderFromFile} from '../../../helpers/filereader'
+import {createReaderFromFile} from '@datadog/datadog-ci-core/helpers/filereader'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 

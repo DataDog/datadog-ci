@@ -3,16 +3,15 @@ jest.mock('../../renderers/instrument-uninstrument-renderer')
 
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListFunctionsCommand, Runtime} from '@aws-sdk/client-lambda'
-import {mockClient} from 'aws-sdk-client-mock'
-
-import 'aws-sdk-client-mock-jest'
 import {
   API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../../../constants'
+} from '@datadog/datadog-ci-core/constants'
+import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,

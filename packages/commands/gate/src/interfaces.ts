@@ -1,7 +1,7 @@
 import type {AxiosPromise} from 'axios'
 import type {Writable} from 'stream'
 
-import type {SpanTags} from '../../helpers/interfaces'
+import type {SpanTags} from '@datadog/datadog-ci-core/helpers/interfaces'
 
 export interface Payload {
   requestId: string

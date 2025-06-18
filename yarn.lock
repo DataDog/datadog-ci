@@ -2198,7 +2198,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-command-trace@workspace:packages/commands/trace":
+"@datadog/datadog-ci-command-trace@workspace:^, @datadog/datadog-ci-command-trace@workspace:packages/commands/trace":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-command-trace@workspace:packages/commands/trace"
   dependencies:
@@ -2247,6 +2247,7 @@ __metadata:
     "@babel/preset-typescript": 7.3.3
     "@datadog/datadog-ci-command-git-metadata": "workspace:^"
     "@datadog/datadog-ci-command-synthetics": "workspace:^"
+    "@datadog/datadog-ci-command-trace": "workspace:^"
     "@datadog/datadog-ci-core": "workspace:^"
     "@google-cloud/logging": ^11.1.0
     "@google-cloud/run": ^1.4.0

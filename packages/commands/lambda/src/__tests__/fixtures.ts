@@ -31,7 +31,7 @@ import {
 } from '@aws-sdk/client-lambda'
 import {AwsStub} from 'aws-sdk-client-mock'
 
-import {MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
+import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 export const mockLambdaClientCommands = (lambdaClientMock: AwsStub<LServiceInputTypes, LServiceOutputTypes, any>) => {
   lambdaClientMock.on(UpdateFunctionConfigurationCommand).resolves({})

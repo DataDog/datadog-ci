@@ -2,13 +2,13 @@ import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCIEnv} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {retryRequest} from '../../helpers/retry'
-import {parseTags, parseTagsFile} from '../../helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {getCIEnv} from '@datadog/datadog-ci-core/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {retryRequest} from '@datadog/datadog-ci-core/helpers/retry'
+import {parseTags, parseTagsFile} from '@datadog/datadog-ci-core/helpers/tags'
+import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 export class TagCommand extends Command {
   public static paths = [['tag']]

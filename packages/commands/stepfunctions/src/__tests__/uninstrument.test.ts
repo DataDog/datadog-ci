@@ -1,6 +1,6 @@
 import {LogLevel} from '@aws-sdk/client-sfn'
 
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import * as aws from '../awsCommands'
 import {UninstrumentStepFunctionsCommand} from '../uninstrument'

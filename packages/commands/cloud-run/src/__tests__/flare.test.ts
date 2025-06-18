@@ -2,19 +2,18 @@ import fs from 'fs'
 import process from 'process'
 import stream from 'stream'
 
-import {Logging} from '@google-cloud/logging'
-import {GoogleAuth} from 'google-auth-library'
-
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-core/constants'
 import {
   makeRunCLI,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
-} from '../../../helpers/__tests__/testing-tools'
-import * as helpersFlareModule from '../../../helpers/flare'
-import * as fsModule from '../../../helpers/fs'
-import * as helpersPromptModule from '../../../helpers/prompt'
+} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import * as helpersFlareModule from '@datadog/datadog-ci-core/helpers/flare'
+import * as fsModule from '@datadog/datadog-ci-core/helpers/fs'
+import * as helpersPromptModule from '@datadog/datadog-ci-core/helpers/prompt'
+import {Logging} from '@google-cloud/logging'
+import {GoogleAuth} from 'google-auth-library'
 
 import * as flareModule from '../flare'
 import {

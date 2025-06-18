@@ -1,8 +1,8 @@
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
 
 import {TagCommand} from '../tag/tag'
 

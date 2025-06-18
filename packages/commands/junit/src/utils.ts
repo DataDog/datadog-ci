@@ -1,6 +1,12 @@
-import {getCommonAppBaseURL} from '../../helpers/app'
-import {SpanTags} from '../../helpers/interfaces'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-core/helpers/app'
+import {SpanTags} from '@datadog/datadog-ci-core/helpers/interfaces'
+import {
+  CI_JOB_URL,
+  CI_PIPELINE_URL,
+  GIT_BRANCH,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+} from '@datadog/datadog-ci-core/helpers/tags'
 
 export const getBaseUrl = () => {
   const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'

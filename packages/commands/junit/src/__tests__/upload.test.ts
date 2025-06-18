@@ -2,9 +2,9 @@ import os from 'os'
 
 import upath from 'upath'
 
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import id from '../../../helpers/id'
-import {SpanTags} from '../../../helpers/interfaces'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import id from '@datadog/datadog-ci-core/helpers/id'
+import {SpanTags} from '@datadog/datadog-ci-core/helpers/interfaces'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'

@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {SpanTags} from '../../helpers/interfaces'
+import {SpanTags} from '@datadog/datadog-ci-core/helpers/interfaces'
 
 import {Payload} from './interfaces'
 import {getTestCommitRedirectURL, getTestRunsUrl} from './utils'

@@ -6,7 +6,6 @@ import type {SpanTag, SpanTags} from './interfaces'
 import type {AxiosRequestConfig} from 'axios'
 
 import {create as axiosCreate} from 'axios'
-import {BaseContext, CommandClass, Cli} from 'clipanion'
 import deepExtend from 'deep-extend'
 import {ProxyAgent} from 'proxy-agent'
 import terminalLink from 'terminal-link'
@@ -307,13 +306,6 @@ export const pluralize = (nb: number, singular: string, plural: string) => {
   }
 
   return `${nb} ${singular}`
-}
-
-export const performSubCommand = (command: CommandClass<BaseContext>, commandArgs: string[], context: BaseContext) => {
-  const cli = new Cli()
-  cli.register(command)
-
-  return cli.run(commandArgs, context)
 }
 
 export const filterSensitiveInfoFromRepository = (repositoryUrl: string | undefined) => {

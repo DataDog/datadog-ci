@@ -1,8 +1,8 @@
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {createCommand} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '../../../helpers/upload'
-import {performSubCommand} from '../../../helpers/utils'
-import {version} from '../../../helpers/version'
+import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-core/helpers/upload'
+import {performSubCommand} from '@datadog/datadog-ci-core/helpers/utils'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 
 import * as dsyms from '../../dsyms/upload'
 import * as sourcemaps from '../../sourcemaps/upload'

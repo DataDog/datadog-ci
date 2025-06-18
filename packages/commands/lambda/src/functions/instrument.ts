@@ -14,8 +14,8 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../../constants'
-import {isValidDatadogSite} from '../../../helpers/validation'
+} from '@datadog/datadog-ci-core/constants'
+import {isValidDatadogSite} from '@datadog/datadog-ci-core/helpers/validation'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,

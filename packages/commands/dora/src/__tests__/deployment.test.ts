@@ -1,5 +1,5 @@
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import * as gitFunctions from '../../../helpers/git/get-git-data'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import * as gitFunctions from '@datadog/datadog-ci-core/helpers/git/get-git-data'
 
 import {SendDeploymentEvent} from '../deployment'
 import {DeploymentEvent} from '../interfaces'

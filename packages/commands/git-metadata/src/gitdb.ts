@@ -5,15 +5,14 @@ import os from 'os'
 
 import type {AxiosResponse} from 'axios'
 
+import {getDefaultRemoteName, gitRemote as getRepoURL} from '@datadog/datadog-ci-core/helpers/git/get-git-data'
+import {RequestBuilder} from '@datadog/datadog-ci-core/helpers/interfaces'
+import {Logger} from '@datadog/datadog-ci-core/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-core/helpers/retry'
 import FormData from 'form-data'
 import {lte} from 'semver'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
-
-import {getDefaultRemoteName, gitRemote as getRepoURL} from '../../helpers/git/get-git-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {Logger} from '../../helpers/logger'
-import {retryRequest} from '../../helpers/retry'
 
 const API_TIMEOUT = 15000
 

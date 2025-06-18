@@ -6,7 +6,13 @@ import {
   UpdateFunctionConfigurationRequest,
 } from '@aws-sdk/client-lambda'
 
-import {API_KEY_ENV_VAR, ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../constants'
+import {
+  API_KEY_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '@datadog/datadog-ci-core/constants'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,

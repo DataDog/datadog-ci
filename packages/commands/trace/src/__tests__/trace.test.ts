@@ -1,12 +1,12 @@
 /* eslint-disable no-null/no-null */
 import {PassThrough} from 'stream'
 
+import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
 
-import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
-
-import {makeCIProviderTests} from '../test-utils'
 import {TraceCommand} from '../trace'
+
+import {makeCIProviderTests} from './test-utils'
 
 describe('trace', () => {
   const runCLI = async (extraArgs: string[], extraEnv?: Record<string, string>) => {

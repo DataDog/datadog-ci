@@ -10,10 +10,6 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
-
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -24,16 +20,25 @@ import {
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
-} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
-import * as helpersRenderer from '../../helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
-import {formatBytes} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {getUniqueFileNames} from '@datadog/datadog-ci-core/helpers/filenames'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {
+  getProjectFiles,
+  sendToDatadog,
+  validateFilePath,
+  validateStartEndFlags,
+} from '@datadog/datadog-ci-core/helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-core/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-core/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-core/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-core/helpers/renderer'
+import {formatBytes} from '@datadog/datadog-ci-core/helpers/utils'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -614,41 +619,6 @@ export const getTags = async (
     }
     throw Error(`Unable to get resource tags: ${message}`)
   }
-}
-
-/**
- * Generate unique file names
- * If the original file name is unique, keep it as is
- * Otherwise, replace separators in the file path with dashes
- * @param filePaths the list of file paths
- * @returns a mapping of file paths to new file names
- */
-export const getUniqueFileNames = (filePaths: Set<string>): Map<string, string> => {
-  // Count occurrences of each filename
-  const fileNameCount: {[fileName: string]: number} = {}
-  filePaths.forEach((filePath) => {
-    const fileName = upath.basename(filePath)
-    const count = fileNameCount[fileName] || 0
-    fileNameCount[fileName] = count + 1
-  })
-
-  // Create new filenames
-  const filePathsToNewFileNames = new Map<string, string>()
-  filePaths.forEach((filePath) => {
-    const fileName = upath.basename(filePath)
-    if (fileNameCount[fileName] > 1) {
-      // Trim leading and trailing '/'s and '\'s
-      const trimRegex = /^\/+|\/+$/g
-      const filePathTrimmed = filePath.replace(trimRegex, '')
-      // Replace '/'s and '\'s with '-'s
-      const newFileName = filePathTrimmed.split('/').join('-')
-      filePathsToNewFileNames.set(filePath, newFileName)
-    } else {
-      filePathsToNewFileNames.set(filePath, fileName)
-    }
-  })
-
-  return filePathsToNewFileNames
 }
 
 /**

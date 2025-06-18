@@ -6,5 +6,8 @@
   "private": true,
   "dependencies": {
     "@datadog/datadog-ci-core": "*"
+  },
+  "scripts": {
+    "build": "yarn package:build"
   }
 }

@@ -19,9 +19,9 @@ import {
 import {fromIni} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../constants'
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import {requestConfirmation} from '../../../helpers/prompt'
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import {requestConfirmation} from '@datadog/datadog-ci-core/helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'
 

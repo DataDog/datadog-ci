@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-core/helpers/upload'
 
 export class RNSourcemap {
   public bundleName: string

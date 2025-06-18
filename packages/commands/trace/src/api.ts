@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {Payload} from './interfaces'
 

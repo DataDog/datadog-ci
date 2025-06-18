@@ -1,7 +1,7 @@
 import upath from 'upath'
 
-import {createCommand, createMockContext, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import {SpanTags} from '../../../helpers/interfaces'
+import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import {SpanTags} from '@datadog/datadog-ci-core/helpers/interfaces'
 
 import {UploadCodeCoverageReportCommand} from '../upload'
 import {jacocoFormat} from '../utils'

@@ -10,12 +10,16 @@ import {
   FIPS_IGNORE_ERROR_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {requestConfirmation} from '../../helpers/prompt'
-import * as helperRenderer from '../../helpers/renderer'
-import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
+} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {requestConfirmation} from '@datadog/datadog-ci-core/helpers/prompt'
+import * as helperRenderer from '@datadog/datadog-ci-core/helpers/renderer'
+import {
+  resolveConfigFromFile,
+  filterAndFormatGithubRemote,
+  DEFAULT_CONFIG_PATHS,
+} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'

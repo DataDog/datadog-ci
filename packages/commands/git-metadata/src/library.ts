@@ -1,11 +1,11 @@
 import {SimpleGit} from 'simple-git'
 
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {newApiKeyValidator} from '@datadog/datadog-ci-core/helpers/apikey'
+import {RequestBuilder} from '@datadog/datadog-ci-core/helpers/interfaces'
+import {Logger, LogLevel} from '@datadog/datadog-ci-core/helpers/logger'
+import {upload, UploadOptions, UploadStatus} from '@datadog/datadog-ci-core/helpers/upload'
+import {getRequestBuilder, filterAndFormatGithubRemote} from '@datadog/datadog-ci-core/helpers/utils'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'

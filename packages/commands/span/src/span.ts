@@ -1,8 +1,6 @@
+import {CustomSpanCommand} from '@datadog/datadog-ci-command-trace/custom-span-command'
+import * as validation from '@datadog/datadog-ci-core/helpers/validation'
 import {Command, Option} from 'clipanion'
-
-import * as validation from '../../helpers/validation'
-
-import {CustomSpanCommand} from '../trace/helper'
 
 export class SpanCommand extends CustomSpanCommand {
   public static paths = [['trace', 'span']]

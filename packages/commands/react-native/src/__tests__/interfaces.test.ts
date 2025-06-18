@@ -1,6 +1,6 @@
 import fs from 'fs/promises'
 
-import {MultipartFileValue} from '../../../helpers/upload'
+import {MultipartFileValue} from '@datadog/datadog-ci-core/helpers/upload'
 
 import {RNSourcemap} from '../interfaces'
 

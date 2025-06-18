@@ -4,13 +4,6 @@ import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
-import {Logging} from '@google-cloud/logging'
-import {RevisionsClient, ServicesClient} from '@google-cloud/run'
-import {google} from '@google-cloud/run/build/protos/protos'
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
-
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -22,18 +15,28 @@ import {
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
-} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
-import * as helpersRenderer from '../../helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
-import {formatBytes, maskString} from '../../helpers/utils'
-import {version} from '../../helpers/version'
-
-import {getUniqueFileNames} from '../lambda/flare'
+} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {getUniqueFileNames} from '@datadog/datadog-ci-core/helpers/filenames'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {
+  getProjectFiles,
+  sendToDatadog,
+  validateFilePath,
+  validateStartEndFlags,
+} from '@datadog/datadog-ci-core/helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-core/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-core/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-core/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-core/helpers/renderer'
+import {formatBytes, maskString} from '@datadog/datadog-ci-core/helpers/utils'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
+import {Logging} from '@google-cloud/logging'
+import {RevisionsClient, ServicesClient} from '@google-cloud/run'
+import {google} from '@google-cloud/run/build/protos/protos'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'

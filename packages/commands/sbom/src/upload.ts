@@ -5,10 +5,16 @@ import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {GIT_SHA, GIT_REPOSITORY_URL, getSpanTags, getMissingRequiredGitTags, GIT_BRANCH} from '../../helpers/tags'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {
+  GIT_SHA,
+  GIT_REPOSITORY_URL,
+  getSpanTags,
+  getMissingRequiredGitTags,
+  GIT_BRANCH,
+} from '@datadog/datadog-ci-core/helpers/tags'
 
 import {renderMissingTags} from '../sarif/renderer'
 

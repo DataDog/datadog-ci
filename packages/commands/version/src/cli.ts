@@ -1,6 +1,6 @@
 import {Command} from 'clipanion'
 
-import {version} from '../../helpers/version'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 
 class VersionCommand extends Command {
   public static paths = [['version']]

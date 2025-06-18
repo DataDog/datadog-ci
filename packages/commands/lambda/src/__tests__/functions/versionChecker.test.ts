@@ -1,4 +1,4 @@
-import {RuntimeType} from '../../constants'
+import {RuntimeType} from '@datadog/datadog-ci-core/constants'
 import {
   isExtensionCompatibleWithUniversalInstrumentation,
   isTracerCompatibleWithExtension,

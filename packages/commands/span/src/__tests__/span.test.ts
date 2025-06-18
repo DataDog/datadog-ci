@@ -1,8 +1,7 @@
 /* eslint-disable no-null/no-null */
 
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-
-import {makeCIProviderTests} from '../../trace/test-utils'
+import {makeCIProviderTests} from '@datadog/datadog-ci-command-trace/__tests__/test-utils'
+import {makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import {SpanCommand} from '../span'
 

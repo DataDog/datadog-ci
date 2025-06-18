@@ -1,8 +1,12 @@
 import chalk from 'chalk'
 import {Cli} from 'clipanion'
 
-import {createCommand, createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
-import * as APIKeyHelpers from '../../../helpers/apikey'
+import {
+  createCommand,
+  createMockContext,
+  getEnvVarPlaceholders,
+} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import * as APIKeyHelpers from '@datadog/datadog-ci-core/helpers/apikey'
 
 import {RNSourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'

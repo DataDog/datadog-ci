@@ -4,12 +4,12 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {requestConfirmation} from '../../helpers/prompt'
-import * as helperRenderer from '../../helpers/renderer'
-import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {requestConfirmation} from '@datadog/datadog-ci-core/helpers/prompt'
+import * as helperRenderer from '@datadog/datadog-ci-core/helpers/renderer'
+import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {

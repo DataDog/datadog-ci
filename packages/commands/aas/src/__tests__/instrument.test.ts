@@ -38,7 +38,7 @@ jest.mock('@azure/arm-appservice', () => ({
 import {Site, WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 import {AasConfigOptions} from '../interfaces'

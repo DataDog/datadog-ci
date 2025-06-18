@@ -7,9 +7,8 @@ import {
   ListFunctionsCommand,
   Runtime,
 } from '@aws-sdk/client-lambda'
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '@datadog/datadog-ci-core/constants'
 import {mockClient} from 'aws-sdk-client-mock'
-
-import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../../../constants'
 
 import {
   DD_LLMOBS_ENABLED_ENV_VAR,

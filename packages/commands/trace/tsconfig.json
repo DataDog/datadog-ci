@@ -6,5 +6,5 @@
     "rootDir": "src"
   },
   "include": ["src/**/*"],
-  "references": [{"path": "../../helpers"}]
+  "references": [{"path": "../../core"}]
 }

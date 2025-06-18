@@ -4,10 +4,10 @@ import {existsSync, readFileSync} from 'fs'
 
 import {Cli, Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {parsePlist} from '../../helpers/plist'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {parsePlist} from '@datadog/datadog-ci-core/helpers/plist'
 
 import {UploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'

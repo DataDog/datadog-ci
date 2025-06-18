@@ -8,7 +8,7 @@ import {
   ListTagsCommand,
 } from '@aws-sdk/client-lambda'
 
-import {version} from '../../helpers/version'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'

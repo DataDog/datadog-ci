@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosResponse} from 'axios'
 
-import {CI_ENGINES} from '../../helpers/ci'
+import {CI_ENGINES} from '@datadog/datadog-ci-core/helpers/ci'
 
 export const SUPPORTED_PROVIDERS = [
   CI_ENGINES.GITHUB,

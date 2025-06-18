@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {FileReader, Reader} from '../../helpers/filereader'
+import {FileReader, Reader} from '@datadog/datadog-ci-core/helpers/filereader'
 
 import {
   CV_INFO_AGE_OFFSET,

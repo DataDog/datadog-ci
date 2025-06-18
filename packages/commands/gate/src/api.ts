@@ -2,7 +2,7 @@ import {Writable} from 'stream'
 
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {EvaluationResponsePayload, Payload} from './interfaces'
 

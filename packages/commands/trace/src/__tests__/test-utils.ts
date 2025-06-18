@@ -1,6 +1,6 @@
 // Only the function is exported, not the test such that there is no test duplication
 
-import {makeRunCLI} from '../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 type RunCLIType = ReturnType<typeof makeRunCLI>
 

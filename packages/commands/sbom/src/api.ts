@@ -1,7 +1,7 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
-import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '../../constants'
-import {getRequestBuilder} from '../../helpers/utils'
+import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '@datadog/datadog-ci-core/constants'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {getBaseUrl} from '../junit/utils'
 

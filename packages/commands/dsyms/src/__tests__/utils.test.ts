@@ -1,7 +1,7 @@
 import fs, {promises} from 'fs'
 
-import {globSync} from '../../../helpers/glob'
-import {buildPath} from '../../../helpers/utils'
+import {globSync} from '@datadog/datadog-ci-core/helpers/glob'
+import {buildPath} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {
   createUniqueTmpDirectory,

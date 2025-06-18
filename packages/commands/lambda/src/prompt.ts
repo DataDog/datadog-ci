@@ -9,8 +9,8 @@ import {
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../constants'
-import {isValidDatadogSite} from '../../helpers/validation'
+} from '@datadog/datadog-ci-core/constants'
+import {isValidDatadogSite} from '@datadog/datadog-ci-core/helpers/validation'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,

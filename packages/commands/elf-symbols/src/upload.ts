@@ -1,21 +1,29 @@
 import fs from 'fs'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-core/helpers/apikey'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-core/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {
+  RepositoryData,
+  getRepositoryData,
+  newSimpleGit,
+} from '@datadog/datadog-ci-core/helpers/git/format-git-sourcemaps-data'
+import {globAsync} from '@datadog/datadog-ci-core/helpers/glob'
+import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-core/helpers/metrics'
+import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-core/helpers/upload'
+import {
+  buildPath,
+  DEFAULT_CONFIG_PATHS,
+  execute,
+  resolveConfigFromFileAndEnvironment,
+} from '@datadog/datadog-ci-core/helpers/utils'
+import * as validation from '@datadog/datadog-ci-core/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-core/helpers/validation'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
-import {globAsync} from '../../helpers/glob'
-import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
-import {MultipartValue, UploadStatus} from '../../helpers/upload'
-import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 

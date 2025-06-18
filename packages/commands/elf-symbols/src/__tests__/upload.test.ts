@@ -3,10 +3,15 @@ import os from 'os'
 
 import upath from 'upath'
 
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {createCommand} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartFileValue, MultipartPayload, MultipartStringValue, UploadStatus} from '../../../helpers/upload'
-import {version} from '../../../helpers/version'
+import {
+  MultipartFileValue,
+  MultipartPayload,
+  MultipartStringValue,
+  UploadStatus,
+} from '@datadog/datadog-ci-core/helpers/upload'
+import {version} from '@datadog/datadog-ci-core/helpers/version'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'

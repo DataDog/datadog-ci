@@ -1,5 +1,5 @@
-import * as helpersRenderer from '../../helpers/renderer'
-import {dryRunTag} from '../../helpers/renderer'
+import * as helpersRenderer from '@datadog/datadog-ci-core/helpers/renderer'
+import {dryRunTag} from '@datadog/datadog-ci-core/helpers/renderer'
 
 import {InstrumentCommand} from './instrument'
 

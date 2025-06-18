@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import {Sourcemap} from '../interfaces'
 import {UploadCommand} from '../upload'

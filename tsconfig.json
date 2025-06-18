@@ -12,8 +12,7 @@
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
     "useUnknownInCatchVariables": false,
-    "esModuleInterop": true, // Allows default imports from modules with no default export
-    "resolveJsonModule": true // Used for SBOM json schemas
+    "esModuleInterop": true // Allows default imports from modules with no default export
   },
   "include": ["src/**/*"],
   "references": [

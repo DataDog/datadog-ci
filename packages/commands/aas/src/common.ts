@@ -1,13 +1,12 @@
 import type {PagedAsyncIterableIterator} from '@azure/core-paging'
 
 import {Site} from '@azure/arm-appservice'
+import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-core/constants'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-core/helpers/fips'
+import {dryRunTag} from '@datadog/datadog-ci-core/helpers/renderer'
+import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '@datadog/datadog-ci-core/helpers/utils'
 import {Command, Option} from 'clipanion'
-
-import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {dryRunTag} from '../../helpers/renderer'
-import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {AasConfigOptions, ValueOptional} from './interfaces'
 

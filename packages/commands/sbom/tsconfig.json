@@ -3,8 +3,9 @@
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "src",
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
-  "references": [{"path": "../../helpers"}]
+  "include": ["src/**/*", "src/json-schema/**/*.json"],
+  "references": [{"path": "../../core"}]
 }

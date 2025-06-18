@@ -7,7 +7,7 @@ import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
 
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {Payload} from './interfaces'
 import {renderUpload} from './renderer'

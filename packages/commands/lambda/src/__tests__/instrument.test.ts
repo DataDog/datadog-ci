@@ -12,19 +12,18 @@ import * as fs from 'fs'
 
 import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromIni} from '@aws-sdk/credential-providers'
-import {mockClient} from 'aws-sdk-client-mock'
-import 'aws-sdk-client-mock-jest'
-import {Cli} from 'clipanion'
-
 import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../../constants'
-import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
-import {requestConfirmation} from '../../../helpers/prompt'
+} from '@datadog/datadog-ci-core/constants'
+import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import {requestConfirmation} from '@datadog/datadog-ci-core/helpers/prompt'
+import {mockClient} from 'aws-sdk-client-mock'
+import 'aws-sdk-client-mock-jest'
+import {Cli} from 'clipanion'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
