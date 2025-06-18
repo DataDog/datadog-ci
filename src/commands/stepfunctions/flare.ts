@@ -154,7 +154,7 @@ export class StepFunctionsFlareCommand extends Command {
       // 6. Get CloudWatch logs if enabled
       let logs: Map<string, OutputLogEvent[]> | undefined
       if (this.withLogs && logGroupName) {
-        this.context.stdout.write('🌧️ Getting CloudWatch logs...\n')
+        this.context.stdout.write('☁️ Getting CloudWatch logs...\n')
         const startTime = this.start ? new Date(this.start).getTime() : undefined
         const endTime = this.end ? new Date(this.end).getTime() : undefined
         logs = await this.getCloudWatchLogs(cloudWatchLogsClient, logGroupName, startTime, endTime)
