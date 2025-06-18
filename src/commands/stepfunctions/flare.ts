@@ -376,7 +376,9 @@ export class StepFunctionsFlareCommand extends Command {
       return response.subscriptionFilters ?? []
     } catch (error) {
       // If log group doesn't exist, return empty array
-      if (error instanceof Error && error.message.includes('ResourceNotFoundException')) {
+      if (error instanceof Error && 
+          (error.message.includes('ResourceNotFoundException') || 
+           error.message.includes('specified log group does not exist'))) {
         return []
       }
       throw error
@@ -399,15 +401,16 @@ export class StepFunctionsFlareCommand extends Command {
   ): Promise<Map<string, OutputLogEvent[]>> {
     const logs = new Map<string, OutputLogEvent[]>()
 
-    // Get log streams
-    const describeStreamsCommand = new DescribeLogStreamsCommand({
-      logGroupName,
-      orderBy: 'LastEventTime',
-      descending: true,
-      limit: 50,
-    })
-    const streamsResponse = await cloudWatchLogsClient.send(describeStreamsCommand)
-    const logStreams = streamsResponse.logStreams ?? []
+    try {
+      // Get log streams
+      const describeStreamsCommand = new DescribeLogStreamsCommand({
+        logGroupName,
+        orderBy: 'LastEventTime',
+        descending: true,
+        limit: 50,
+      })
+      const streamsResponse = await cloudWatchLogsClient.send(describeStreamsCommand)
+      const logStreams = streamsResponse.logStreams ?? []
 
     // Get logs from each stream
     for (const stream of logStreams) {
@@ -430,6 +433,15 @@ export class StepFunctionsFlareCommand extends Command {
     }
 
     return logs
+    } catch (error) {
+      // If log group doesn't exist, return empty map
+      if (error instanceof Error && 
+          (error.message.includes('ResourceNotFoundException') || 
+           error.message.includes('specified log group does not exist'))) {
+        return logs
+      }
+      throw error
+    }
   }
 
   /**
