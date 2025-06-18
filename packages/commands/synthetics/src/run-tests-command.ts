@@ -1,10 +1,8 @@
+import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-core/helpers/env'
+import {makeTerminalLink, removeUndefinedValues} from '@datadog/datadog-ci-core/helpers/utils'
+import * as validation from '@datadog/datadog-ci-core/helpers/validation'
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-
-import {toBoolean, toNumber, toStringMap} from '../../helpers/env'
-import {makeTerminalLink, removeUndefinedValues} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {isValidDatadogSite} from '../../helpers/validation'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {buildAssets} from './build-and-test'
@@ -334,7 +332,7 @@ export class RunTestsCommand extends BaseCommand {
   }
 
   protected validateConfig() {
-    if (!isValidDatadogSite(this.config.datadogSite)) {
+    if (!validation.isValidDatadogSite(this.config.datadogSite)) {
       throw new CiError(
         'INVALID_CONFIG',
         `The \`datadogSite\` config property (${JSON.stringify(

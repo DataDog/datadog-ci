@@ -11,7 +11,7 @@ Object.defineProperty(process, 'platform', {
 
 import {BaseContext} from 'clipanion'
 
-import {MOCK_BASE_URL} from '../../../../helpers/__tests__/testing-tools'
+import {MOCK_BASE_URL} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
 
 import {
   ExecutionRule,

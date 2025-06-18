@@ -4,7 +4,7 @@ import {URL} from 'url'
 
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
-import {ProxyConfiguration} from '../../../helpers/utils'
+import {ProxyConfiguration} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'
 import {

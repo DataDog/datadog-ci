@@ -1,7 +1,7 @@
 import deepExtend from 'deep-extend'
 
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+import {getCIMetadata} from '@datadog/datadog-ci-core/helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-core/helpers/tags'
 
 import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError} from './errors'

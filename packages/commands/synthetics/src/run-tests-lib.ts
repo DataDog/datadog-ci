@@ -1,4 +1,4 @@
-import {getProxyAgent} from '../../helpers/utils'
+import {getProxyAgent} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {BaseCommand} from './base-command'

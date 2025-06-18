@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {toBoolean} from '../../helpers/env'
+import {toBoolean} from '@datadog/datadog-ci-core/helpers/env'
 
 import {EndpointError} from './api'
 import {BaseCommand, RecursivePartial} from './base-command'

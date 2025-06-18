@@ -1,8 +1,8 @@
 import {Cli} from 'clipanion'
 
-import {createCommand, getAxiosError} from '../../../helpers/__tests__/testing-tools'
-import {toBoolean, toNumber, toStringMap} from '../../../helpers/env'
-import * as ciUtils from '../../../helpers/utils'
+import {createCommand, getAxiosError} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-core/helpers/env'
+import * as ciUtils from '@datadog/datadog-ci-core/helpers/utils'
 
 import * as api from '../api'
 import {DeployTestsCommand} from '../deploy-tests-command'

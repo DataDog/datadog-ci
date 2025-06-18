@@ -6,8 +6,8 @@ import {promisify} from 'util'
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {getCommonAppBaseURL} from '../../../helpers/app'
-import {globSync} from '../../../helpers/glob'
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-core/helpers/app'
+import {globSync} from '@datadog/datadog-ci-core/helpers/glob'
 
 import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'

@@ -1,8 +1,8 @@
 import fs from 'fs'
 import os from 'os'
 
-import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
-import * as ciUtils from '../../../helpers/utils'
+import {getAxiosError} from '@datadog/datadog-ci-core/helpers/__tests__/testing-tools'
+import * as ciUtils from '@datadog/datadog-ci-core/helpers/utils'
 
 import * as api from '../api'
 import * as batchUtils from '../batch'

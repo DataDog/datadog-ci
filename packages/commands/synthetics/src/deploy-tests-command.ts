@@ -1,6 +1,6 @@
 import {Command, Option} from 'clipanion'
 
-import {makeTerminalLink} from '../../helpers/utils'
+import {makeTerminalLink} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {deployTests} from './deploy-tests-lib'

@@ -1,8 +1,8 @@
 jest.mock('fs/promises')
 import * as fsPromises from 'fs/promises'
 
-import * as ci from '../../../helpers/ci'
-import * as prompt from '../../../helpers/prompt'
+import * as ci from '@datadog/datadog-ci-core/helpers/ci'
+import * as prompt from '@datadog/datadog-ci-core/helpers/prompt'
 
 import {ImportTestsCommandConfig, Result, LocalTestDefinition} from '../interfaces'
 import {updateLTDMultiLocators} from '../multilocator'

@@ -4,7 +4,7 @@ import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import {isAxiosError} from 'axios'
 
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {CriticalError} from './errors'
 import {

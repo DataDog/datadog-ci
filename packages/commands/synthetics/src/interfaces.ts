@@ -1,5 +1,5 @@
-import {Metadata} from '../../helpers/interfaces'
-import {ProxyConfiguration} from '../../helpers/utils'
+import {Metadata} from '@datadog/datadog-ci-core/helpers/interfaces'
+import {ProxyConfiguration} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {RecursivePartial} from './base-command'
 import {TunnelInfo} from './tunnel'

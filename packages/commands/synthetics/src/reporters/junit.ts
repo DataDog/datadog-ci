@@ -6,7 +6,7 @@ import c from 'chalk'
 import upath from 'upath'
 import {Builder} from 'xml2js'
 
-import type {CommandContext} from '../../../helpers/interfaces'
+import type {CommandContext} from '@datadog/datadog-ci-core/helpers/interfaces'
 
 import {
   ApiServerResult,

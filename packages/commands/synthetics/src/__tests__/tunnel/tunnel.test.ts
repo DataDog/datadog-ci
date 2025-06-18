@@ -1,6 +1,6 @@
 import {PassThrough} from 'stream'
 
-import {getProxyAgent} from '../../../../../src/helpers/utils'
+import {getProxyAgent} from '@datadog/datadog-ci-core/helpers/utils'
 
 import {getTunnelReporter} from '../../reporters/default'
 import {Tunnel} from '../../tunnel'
