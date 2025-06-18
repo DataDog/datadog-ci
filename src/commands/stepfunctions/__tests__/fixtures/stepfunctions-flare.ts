@@ -80,7 +80,18 @@ export const executionsFixture = (): ExecutionListItem[] => {
   ]
 }
 
-export const sensitiveExecutionFixture = (): any => {
+interface SensitiveExecution {
+  executionArn: string
+  stateMachineArn: string
+  name: string
+  status: string
+  startDate: Date
+  stopDate: Date
+  input: string
+  output: string
+}
+
+export const sensitiveExecutionFixture = (): SensitiveExecution => {
   return {
     executionArn: 'arn:aws:states:us-east-1:123456789012:execution:MyWorkflow:execution1',
     stateMachineArn: 'arn:aws:states:us-east-1:123456789012:stateMachine:MyWorkflow',

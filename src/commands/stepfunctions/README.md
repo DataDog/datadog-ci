@@ -31,7 +31,32 @@ datadog-ci stepfunctions uninstrument --step-function <step-function-arn> --forw
 Run the `flare` command to gather state machine configuration, execution history, logs, and project files for Datadog support troubleshooting. This command collects diagnostic information about your Step Functions and creates a flare file that can be shared with Datadog support.
 
 ```bash
-datadog-ci stepfunctions flare --state-machine <state-machine-arn> --case-id <case-id> --email <email> [--region] [--with-logs] [--start] [--end] [--max-executions] [--dry-run]
+datadog-ci stepfunctions flare --state-machine <state-machine-arn> --case-id <case-id> --email <email> [--with-logs] [--start] [--end] [--max-executions] [--dry-run]
+```
+
+Example:
+```bash
+# Basic flare collection
+datadog-ci stepfunctions flare \
+  --state-machine arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine \
+  --case-id 12345 \
+  --email support@example.com
+
+# Include logs from the last 7 days
+datadog-ci stepfunctions flare \
+  --state-machine arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine \
+  --case-id 12345 \
+  --email support@example.com \
+  --with-logs \
+  --start "2025-06-11" \
+  --end "2025-06-18"
+
+# Dry run to preview without sending
+datadog-ci stepfunctions flare \
+  --state-machine arn:aws:states:us-east-1:123456789012:stateMachine:MyStateMachine \
+  --case-id 12345 \
+  --email support@example.com \
+  --dry-run
 ```
 
 ## Arguments
