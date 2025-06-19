@@ -27,7 +27,7 @@ datadog-ci deployment mark --env prod --service payment-service --revision v1.1.
 - `--tags` is an array of key value pairs in the format `key:value`. These tags are added to the deployment event shown in Datadog.
 - `--no-fail` (default: `false`) prevents the deployment command from failing if there are issues submitting the data.
 
-### `correlate` (deprecated)
+### `correlate`
 **Note**: If you are using `datadog-ci deployment mark`, then you do not need to use this command, as the correlation is made automatically.
 
 The `correlate` command connects a GitOps deployment with the CI pipeline of the application repository. Once they are connected, you can see in Datadog's UI which pipeline
