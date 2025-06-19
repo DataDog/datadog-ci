@@ -1,15 +1,17 @@
 import type {PagedAsyncIterableIterator} from '@azure/core-paging'
 
 import {Site} from '@azure/arm-appservice'
+import {DefaultAzureCredential} from '@azure/identity'
+import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {dryRunTag} from '../../helpers/renderer'
+import {dryRunTag, renderSoftWarning} from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
-import {AasConfigOptions, ValueOptional} from './interfaces'
+import {AasConfigOptions} from './interfaces'
 
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
@@ -25,6 +27,24 @@ const CORECLR_ENABLE_PROFILING = '1'
 const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 // The profiler binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
+
+export const AAS_DD_SETTING_NAMES = [
+  'DD_API_KEY',
+  'DD_SITE',
+  'DD_AAS_INSTANCE_LOGGING_ENABLED',
+  'DD_SERVICE',
+  'DD_ENV',
+  'DD_SERVERLESS_LOG_PATH',
+  'DD_DOTNET_TRACER_HOME',
+  'DD_TRACE_LOG_DIRECTORY',
+  'CORECLR_ENABLE_PROFILING',
+  'CORECLR_PROFILER',
+  'CORECLR_PROFILER_PATH',
+] as const
+
+export type AasDatadogSettingName = typeof AAS_DD_SETTING_NAMES[number]
+
+type AasDatadogConfig = Partial<Record<AasDatadogSettingName, string>>
 
 export abstract class AasCommand extends Command {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
@@ -42,24 +62,6 @@ export abstract class AasCommand extends Command {
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file',
   })
-  private service = Option.String('--service', {
-    description: 'How you want to tag your service. For example, `my-service`',
-  })
-  private environment = Option.String('--env,--environment', {
-    description: 'How you want to tag your env. For example, `prod`',
-  })
-  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
-    description:
-      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
-  })
-  private logPath = Option.String('--log-path', {
-    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
-  })
-
-  private isDotnet = Option.Boolean('--dotnet', false, {
-    description:
-      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
-  })
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -72,23 +74,23 @@ export abstract class AasCommand extends Command {
     return this.dryRun ? dryRunTag + ' ' : ''
   }
 
+  public get additionalConfig(): Partial<AasConfigOptions> {
+    return {}
+  }
+
   public enableFips(): void {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
   }
 
   public async ensureConfig(): Promise<[AasConfigOptions, string[]]> {
     const config = (
-      await resolveConfigFromFile<{aas: ValueOptional<AasConfigOptions>}>(
+      await resolveConfigFromFile<{aas: Partial<AasConfigOptions>}>(
         {
           aas: {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
             aasName: this.aasName,
-            service: this.service,
-            environment: this.environment,
-            isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
-            logPath: this.logPath,
-            isDotnet: this.isDotnet,
+            ...this.additionalConfig,
           },
         },
         {
@@ -101,25 +103,62 @@ export abstract class AasCommand extends Command {
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
     }
-    if (!this.subscriptionId) {
+    if (!config.subscriptionId) {
       errors.push('--subscription-id is required')
     }
-    if (!this.resourceGroup) {
+    if (!config.resourceGroup) {
       errors.push('--resource-group is required')
     }
-    if (!this.aasName) {
+    if (!config.aasName) {
       errors.push('App Service (--name) is required')
     }
 
     return [config as AasConfigOptions, errors]
   }
+
+  public async ensureAzureAuth(cred: DefaultAzureCredential): Promise<boolean> {
+    try {
+      await cred.getToken('https://management.azure.com/.default')
+    } catch (error) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Failed to authenticate with Azure: ${
+            error.name
+          }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
+            'az login'
+          )} to authenticate.\n`
+        )
+      )
+
+      return false
+    }
+
+    return true
+  }
+
+  public ensureLinux(site: Site): boolean {
+    if (isWindows(site)) {
+      this.context.stdout.write(
+        renderSoftWarning(
+          `Only Linux-based Azure App Services are currently supported.
+Please see the documentation for information on
+how to instrument Windows-based App Services:
+https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
+        )
+      )
+
+      return false
+    }
+
+    return true
+  }
 }
 
-export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
-  let envVars: Record<string, string> = {
+export const getEnvVars = (config: AasConfigOptions): AasDatadogConfig => {
+  let envVars: AasDatadogConfig = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
-    DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
+    DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
   }
   if (config.service) {
     envVars.DD_SERVICE = config.service
@@ -159,6 +198,7 @@ export const isDotnet = (site: Site): boolean => {
     (!!site.siteConfig?.windowsFxVersion && site.siteConfig.windowsFxVersion.toLowerCase().startsWith('dotnet'))
   )
 }
+
 export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
@@ -166,4 +206,15 @@ export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>)
   }
 
   return arr
+}
+
+/**
+ * Formats an error (usually an Azure RestError) object into a string for display.
+ */
+// no-dd-sa:typescript-best-practices/no-explicit-any
+export const formatError = (error: any): string => {
+  const errorType = error.code ?? error.name
+  const errorMessage = error.details?.message ?? error.message
+
+  return `${errorType}: ${errorMessage}`
 }
