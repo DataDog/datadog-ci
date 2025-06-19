@@ -323,7 +323,8 @@ export class UploadCommand extends Command {
         this.releaseVersion!,
         this.projectPath,
         this.platform!,
-        this.buildVersion!
+        this.buildVersion!,
+        this.context
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)
