@@ -46,6 +46,11 @@ export type AasDatadogSettingName = typeof AAS_DD_SETTING_NAMES[number]
 
 type AasDatadogConfig = Partial<Record<AasDatadogSettingName, string>>
 
+/**
+ * Maps Subscription ID to Resource Group to App Service names.
+ */
+export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+
 export abstract class AasCommand extends Command {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
@@ -59,6 +64,11 @@ export abstract class AasCommand extends Command {
   private aasName = Option.String('-n,--name', {
     description: 'Name of the Azure App Service to instrument',
   })
+  private resourceIds = Option.Array('-r,--resource-id', {
+    description:
+      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
+  })
+
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file',
   })
@@ -82,9 +92,9 @@ export abstract class AasCommand extends Command {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
   }
 
-  public async ensureConfig(): Promise<[AasConfigOptions, string[]]> {
+  public async ensureConfig(): Promise<[AasBySubscriptionAndGroup, AasConfigOptions, string[]]> {
     const config = (
-      await resolveConfigFromFile<{aas: Partial<AasConfigOptions>}>(
+      await resolveConfigFromFile<{aas: AasConfigOptions}>(
         {
           aas: {
             subscriptionId: this.subscriptionId,
@@ -99,21 +109,40 @@ export abstract class AasCommand extends Command {
         }
       )
     ).aas
+    const appServices: AasBySubscriptionAndGroup = {}
     const errors: string[] = []
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
     }
-    if (!config.subscriptionId) {
-      errors.push('--subscription-id is required')
+    const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
+    // all or none of the site args should be specified
+    if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
+      errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
+    } else if (specifiedSiteArgs.every((arg) => arg)) {
+      appServices[config.subscriptionId!] = {[config.resourceGroup!]: [config.aasName!]}
     }
-    if (!config.resourceGroup) {
-      errors.push('--resource-group is required')
+    if (this.resourceIds?.length) {
+      for (const resourceId of this.resourceIds) {
+        const parsed = parseResourceId(resourceId)
+        if (parsed) {
+          const {subscriptionId, resourceGroup, name} = parsed
+          if (!appServices[subscriptionId]) {
+            appServices[subscriptionId] = {}
+          }
+          if (!appServices[subscriptionId][resourceGroup]) {
+            appServices[subscriptionId][resourceGroup] = []
+          }
+          appServices[subscriptionId][resourceGroup].push(name)
+        } else {
+          errors.push(`Invalid AAS resource ID: ${resourceId}`)
+        }
+      }
     }
-    if (!config.aasName) {
-      errors.push('App Service (--name) is required')
+    if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
+      errors.push('No App Services specified to instrument')
     }
 
-    return [config as AasConfigOptions, errors]
+    return [appServices, config, errors]
   }
 
   public async ensureAzureAuth(cred: DefaultAzureCredential): Promise<boolean> {
@@ -140,7 +169,7 @@ export abstract class AasCommand extends Command {
     if (isWindows(site)) {
       this.context.stdout.write(
         renderSoftWarning(
-          `Only Linux-based Azure App Services are currently supported.
+          `Unable to instrument ${site.name}. Only Linux-based Azure App Services are currently supported.
 Please see the documentation for information on
 how to instrument Windows-based App Services:
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
@@ -217,4 +246,21 @@ export const formatError = (error: any): string => {
   const errorMessage = error.details?.message ?? error.message
 
   return `${errorType}: ${errorMessage}`
+}
+
+interface Resource {
+  subscriptionId: string
+  resourceGroup: string
+  name: string
+}
+
+export const parseResourceId = (resourceId: string): Resource | undefined => {
+  const match = resourceId.match(
+    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.Web\/sites\/([^/]+)$/i
+  )
+  if (match) {
+    const [, subscriptionId, resourceGroup, name] = match
+
+    return {subscriptionId, resourceGroup, name}
+  }
 }
