@@ -184,15 +184,15 @@ export interface Summary {
   passed: number
   /** The number of results that already passed in previous CI batches on the same commit. */
   previouslyPassed: number
-  /** The number of tests that were skipped during the CI batch. */
+  /** The number of tests that were skipped when starting the CI batch. */
   skipped: number
   /** The public IDs of tests that could not be found when starting the CI batch. */
   testsNotFound: Set<string>
-  /** The number of results that timed out during the CI batch. */
-  timedOut: number
+  /** The number of results that failed due to the CI batch timing out. */
+  timedOut: number // XXX: When a batch times out, all the results that were in progress are timed out.
 }
 
-// Note: This is exposed in CI integrations as a raw JSON string in the `rawResults` output.
+// Note: This is exposed in CI integrations as a JSON-encoded string in the `rawResults` output.
 export interface BaseResult {
   /** The device used in this test run. */
   device?: Device
