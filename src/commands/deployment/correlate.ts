@@ -59,7 +59,6 @@ export class DeploymentCorrelateCommand extends Command {
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    this.logger.warn('This command is deprecated. Please use `datadog-ci deployment correlate-image` instead.')
 
     if (!this.config.apiKey) {
       this.logger.error(
