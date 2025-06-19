@@ -43,6 +43,10 @@ The following values are available for each `<command>` and (optionally) `<subco
 
 See each command's linked README for more details, or click on [📚](https://docs.datadoghq.com/) to see the related documentation page.
 
+#### `aas`
+- `instrument`: Apply Datadog instrumentation to the given [Azure App Services](src/commands/aas).
+- `uninstrument`: Revert Datadog instrumentation from the given [Azure App Services](src/commands/aas).
+
 #### `cloud-run`
 - `flare`: Troubleshoot your issues with [Cloud Run service](src/commands/cloud-run) configuration. [📚](https://docs.datadoghq.com/serverless/google_cloud_run)
 
