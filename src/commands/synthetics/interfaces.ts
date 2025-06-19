@@ -160,6 +160,39 @@ export type SelectiveRerunDecision =
       linked_result_id: string
     }
 
+// Note: We derive this summary into outputs in CI integrations.
+// - The `batchId` is transformed into a `batchUrl` (which is more useful for users)
+// - The `skipped` property is renamed to `testsSkippedCount`.
+// - The `testsNotFound` is transformed into a `testsNotFoundCount`.
+// - All properties are suffixed with `Count`.
+//
+// See:
+// - https://github.com/DataDog/synthetics-ci-github-action#outputs
+// - https://github.com/DataDog/datadog-ci-azure-devops#outputs
+export interface Summary {
+  /** The ID of the CI batch that was started by this datadog-ci execution. */
+  batchId: string
+  /** The number of critical errors that occurred during the CI batch. */
+  criticalErrors: number
+  /** The number of results expected by datadog-ci, prior to any selective rerun. */
+  expected: number
+  /** The number of results that failed during the CI batch. */
+  failed: number
+  /** The number of results that failed during the CI batch without blocking the CI. */
+  failedNonBlocking: number
+  /** The number of results that passed during the CI batch. */
+  passed: number
+  /** The number of results that already passed in previous CI batches on the same commit. */
+  previouslyPassed: number
+  /** The number of tests that were skipped during the CI batch. */
+  skipped: number
+  /** The public IDs of tests that could not be found when starting the CI batch. */
+  testsNotFound: Set<string>
+  /** The number of results that timed out during the CI batch. */
+  timedOut: number
+}
+
+// Note: This is exposed in CI integrations as a raw JSON string in the `rawResults` output.
 export interface BaseResult {
   /** The device used in this test run. */
   device?: Device
@@ -545,29 +578,6 @@ export interface Suite {
 
 export interface TestConfig {
   tests: TriggerConfig[]
-}
-
-export interface Summary {
-  /** The ID of the CI batch that was started by this datadog-ci execution. */
-  batchId: string
-  /** The number of critical errors that occurred during the CI batch. */
-  criticalErrors: number
-  /** The number of results expected by datadog-ci, prior to any selective rerun. */
-  expected: number
-  /** The number of results that failed during the CI batch. */
-  failed: number
-  /** The number of results that failed during the CI batch without blocking the CI. */
-  failedNonBlocking: number
-  /** The number of results that passed during the CI batch. */
-  passed: number
-  /** The number of results that already passed in previous CI batches on the same commit. */
-  previouslyPassed: number
-  /** The number of results that were skipped during the CI batch. */
-  skipped: number
-  /** The public IDs of tests that could not be found when starting the CI batch. */
-  testsNotFound: Set<string>
-  /** The number of results that timed out during the CI batch. */
-  timedOut: number
 }
 
 export interface TestSearchResult {
