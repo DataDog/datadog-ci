@@ -36,23 +36,29 @@ export const createMockContext = (opts?: MockContextOptions): CommandContext => 
   let out = ''
   let err = ''
 
-  return {
-    env: opts?.env,
-    stdout: {
-      toString: () => out,
-      write: (chunk: string) => {
+  const stdout = new Writable({
+    write: (chunk: string, _, cb: () => void) => {
+      out += chunk
+      cb()
+    },
+  })
+  stdout.toString = () => out
+
+  const stderr = new Writable({
+    write: (chunk: string, _, cb: () => void) => {
+      err += chunk
+      if (opts?.appendStdoutWithStderr) {
         out += chunk
-      },
-    } as Writable,
-    stderr: {
-      toString: () => err,
-      write: (chunk: string) => {
-        err += chunk
-        if (opts?.appendStdoutWithStderr) {
-          out += chunk
-        }
-      },
-    } as Writable,
+      }
+      cb()
+    },
+  })
+  stderr.toString = () => err
+
+  return {
+    env: opts?.env ?? {},
+    stdout,
+    stderr,
   }
 }
 

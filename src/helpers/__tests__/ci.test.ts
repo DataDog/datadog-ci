@@ -352,11 +352,11 @@ describe('getCIEnv', () => {
 
 describe('isInteractive', () => {
   let originalEnv: NodeJS.ProcessEnv
-  let mockStream: Partial<NodeJS.WriteStream>
+  let mockStream: NodeJS.WriteStream
 
   beforeEach(() => {
     originalEnv = {...process.env}
-    mockStream = {isTTY: true}
+    mockStream = {isTTY: true} as NodeJS.WriteStream
   })
 
   afterEach(() => {
@@ -367,21 +367,21 @@ describe('isInteractive', () => {
     delete process.env.CI
     process.env.TERM = 'xterm'
 
-    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(true)
+    expect(isInteractive(mockStream)).toBe(true)
   })
 
   test('returns false when in CI', () => {
     process.env.CI = 'true'
     process.env.TERM = 'xterm'
 
-    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+    expect(isInteractive(mockStream)).toBe(false)
   })
 
   test('returns false when TERM is "dumb"', () => {
     delete process.env.CI
     process.env.TERM = 'dumb'
 
-    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
+    expect(isInteractive(mockStream)).toBe(false)
   })
 
   test('returns false when stream is not a TTY', () => {
@@ -389,14 +389,7 @@ describe('isInteractive', () => {
     process.env.TERM = 'xterm'
     mockStream.isTTY = false
 
-    expect(isInteractive({stream: mockStream as NodeJS.WriteStream})).toBe(false)
-  })
-
-  test('returns false when stream is undefined', () => {
-    delete process.env.CI
-    process.env.TERM = 'xterm'
-
-    expect(isInteractive({stream: undefined})).toBe(false)
+    expect(isInteractive(mockStream)).toBe(false)
   })
 
   test('uses default process.stdout when no stream is provided', () => {

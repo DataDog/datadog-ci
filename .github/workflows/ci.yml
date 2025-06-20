@@ -40,6 +40,7 @@ jobs:
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
+          DD_TEST_SESSION_NAME: node-${{ matrix.version }}
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
@@ -81,6 +82,7 @@ jobs:
         env:
           CI: true
           DD_SERVICE: datadog-ci-tests
+          DD_TEST_SESSION_NAME: node-${{ matrix.version }}
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}

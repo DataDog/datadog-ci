@@ -144,7 +144,7 @@ export class RunTestsCommand extends BaseCommand {
         return 1
       }
 
-      const {builds, devServerUrl, stop} = await buildAssets(this.config.buildCommand, this.reporter)
+      const {builds, devServerUrl, stop} = await buildAssets(this.config.buildCommand, this.context)
       this.tearDowns.push(stop)
 
       const resourceUrlSubstitutionRegexes = builds.map(

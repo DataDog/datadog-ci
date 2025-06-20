@@ -4,6 +4,7 @@ import {Builtins, CommandClass} from 'clipanion'
 process.env.DD_BETA_COMMANDS_ENABLED = '1'
 
 import {cli, BETA_COMMANDS} from '../cli'
+import {createMockContext} from '../helpers/__tests__/testing-tools'
 import {enableFips} from '../helpers/fips'
 
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
@@ -55,6 +56,8 @@ describe('cli', () => {
     const mockedEnableFips = enableFips as jest.MockedFunction<typeof enableFips>
     mockedEnableFips.mockImplementation(() => true)
 
+    const context = createMockContext()
+
     // Without the required options, the commands are not executed at all
     const requiredOptions: Record<string, string[]> = {
       'coverage upload': ['.', '--dry-run'],
@@ -78,7 +81,7 @@ describe('cli', () => {
 
       test('supports the --fips option', async () => {
         // When running the command with the --fips option
-        const exitCode = await cli.run([...command, '--fips'])
+        const exitCode = await cli.run([...command, '--fips'], context)
 
         // The command calls the enableFips function with the right parameters
         expect([0, 1]).toContain(exitCode)
@@ -87,7 +90,7 @@ describe('cli', () => {
 
       test('supports the --fips-ignore-error option', async () => {
         // When running the command with the --fips and --fips-ignore-error options
-        const exitCode = await cli.run([...command, '--fips', '--fips-ignore-error'])
+        const exitCode = await cli.run([...command, '--fips', '--fips-ignore-error'], context)
 
         // The command calls the enableFips function with the right parameters
         expect([0, 1]).toContain(exitCode)

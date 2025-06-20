@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 import {DatadogCiConfig} from '../../../helpers/config'
 import {getSpanTags} from '../../../helpers/tags'
 
@@ -15,81 +16,104 @@ import {
 
 const validator = getValidator()
 
+const logOptions = {
+  context: createMockContext(),
+  debug: false,
+}
+
 describe('validation of sbom file', () => {
   test('should succeed when called on a valid CycloneDX 1.4 SBOM file', () => {
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json', validator, false)
-    ).toBeTruthy()
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json', validator, logOptions)
+    ).toBe(true)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', false)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', logOptions)
+    ).toBe(true)
   })
 
   test('should succeed when called on a valid CycloneDX 1.6 SBOM file', () => {
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json', validator, false)
-    ).toBeTruthy()
+      validateSbomFileAgainstSchema(
+        './src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json',
+        validator,
+        logOptions
+      )
+    ).toBe(true)
   })
 
   test('should succeed when called on a valid CycloneDX 1.5 SBOM file', () => {
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', validator, false)
-    ).toBeTruthy()
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', validator, logOptions)
+    ).toBe(true)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', false)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json', logOptions)
+    ).toBe(true)
   })
 
   test('should fail on files that do not exist', () => {
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.4.do.not.exists', validator, false)
-    ).toBeFalsy()
+      validateSbomFileAgainstSchema(
+        './src/commands/sbom/__tests__/fixtures/sbom.1.4.do.not.exists',
+        validator,
+        logOptions
+      )
+    ).toBe(false)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.4.do.not.exists', false)
-    ).toBeFalsy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.4.do.not.exists', logOptions)
+    ).toBe(false)
   })
 
   test('should fail on files that do not satisfy the schema', () => {
     // type and name of the "component" have been removed from the valid file.
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/sbom.1.4.invalid.json', validator, false)
-    ).toBeFalsy()
+      validateSbomFileAgainstSchema(
+        './src/commands/sbom/__tests__/fixtures/sbom.1.4.invalid.json',
+        validator,
+        logOptions
+      )
+    ).toBe(false)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.4.invalid.json', false)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom.1.4.invalid.json', logOptions)
+    ).toBe(true)
   })
 
   test('should validate SBOM file from trivy 4.9', () => {
     // type and name of the "component" have been removed from the valid file.
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', validator, true)
-    ).toBeTruthy()
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', validator, logOptions)
+    ).toBe(true)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', true)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/trivy-4.9.json', logOptions)
+    ).toBe(true)
   })
 
   test('should validate SBOM file osv scanner - version 1.5', () => {
     // type and name of the "component" have been removed from the valid file.
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/osv-scanner-files.json', validator, true)
-    ).toBeTruthy()
+      validateSbomFileAgainstSchema(
+        './src/commands/sbom/__tests__/fixtures/osv-scanner-files.json',
+        validator,
+        logOptions
+      )
+    ).toBe(true)
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/osv-scanner-files.json', true)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/osv-scanner-files.json', logOptions)
+    ).toBe(true)
   })
 
   test('SBOM with no components is valid', () => {
     expect(
-      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-no-components.json', true)
-    ).toBeTruthy()
+      validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/sbom-no-components.json', logOptions)
+    ).toBe(true)
   })
 
   test('does not validate random data', () => {
     expect(
-      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/random-data', validator, true)
-    ).toBeFalsy()
-    expect(validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/random-data', true)).toBeFalsy()
+      validateSbomFileAgainstSchema('./src/commands/sbom/__tests__/fixtures/random-data', validator, logOptions)
+    ).toBe(false)
+    expect(validateFileAgainstToolRequirements('./src/commands/sbom/__tests__/fixtures/random-data', logOptions)).toBe(
+      false
+    )
   })
 
   test('should have valid package name', () => {
@@ -108,7 +132,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
       })
-    ).toBeFalsy()
+    ).toBe(false)
     expect(
       validateDependencyName({
         name: 'foobar',
@@ -124,7 +148,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
       })
-    ).toBeTruthy()
+    ).toBe(true)
     expect(
       validateDependencyName({
         name: 'py',
@@ -140,7 +164,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
       })
-    ).toBeTruthy()
+    ).toBe(true)
     expect(
       validateDependencyName({
         name: 'rx',
@@ -156,7 +180,7 @@ describe('validation of sbom file', () => {
         reachable_symbol_properties: undefined,
         exclusions: undefined,
       })
-    ).toBeTruthy()
+    ).toBe(true)
   })
 
   test('should not filter purl if all are correct', async () => {
@@ -173,7 +197,7 @@ describe('validation of sbom file', () => {
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
 
-    const filteredDependencies = filterInvalidDependencies(payload!.dependencies)
+    const filteredDependencies = filterInvalidDependencies(payload!.dependencies, logOptions)
     expect(filteredDependencies).toHaveLength(payload!.dependencies.length)
   })
 
@@ -191,7 +215,7 @@ describe('validation of sbom file', () => {
     expect(payload).not.toBeNull()
     expect(payload?.id).toStrictEqual(expect.any(String))
 
-    const filteredDependencies = filterInvalidDependencies(payload!.dependencies)
+    const filteredDependencies = filterInvalidDependencies(payload!.dependencies, logOptions)
     expect(filteredDependencies).toHaveLength(1)
     expect(filteredDependencies[0].purl).toEqual('pkg:pypi/jinja2@3.1.5')
   })

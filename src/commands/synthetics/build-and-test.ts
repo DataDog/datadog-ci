@@ -5,7 +5,7 @@ import http from 'http'
 
 import upath from 'upath'
 
-import {MainReporter} from './interfaces'
+import {CommandContext} from '../../helpers/interfaces'
 
 interface ReportedBuild {
   outputDirectory: string // the path to the assets directory, absolute or relative to the CWD
@@ -198,7 +198,7 @@ const spawnDevServer = async (): Promise<{builds: ReportedBuild[]; server: http.
 
 export const buildAssets = async (
   buildCommand: string,
-  reporter: MainReporter
+  context: CommandContext
 ): Promise<{
   builds: ReportedBuild[]
   devServerUrl: string
@@ -213,10 +213,11 @@ export const buildAssets = async (
       ...process.env,
     },
     shell: process.env.SHELL ?? process.env.ComSpec ?? true,
+    stdio: ['inherit', 'pipe', 'pipe'],
   })
 
-  buildCommandProcess.stdout?.pipe(process.stdout)
-  buildCommandProcess.stderr?.pipe(process.stderr)
+  buildCommandProcess.stdout.pipe(context.stdout, {end: false})
+  buildCommandProcess.stderr.pipe(context.stderr, {end: false})
 
   // Wait for the build command to finish
   await once(buildCommandProcess, 'close')

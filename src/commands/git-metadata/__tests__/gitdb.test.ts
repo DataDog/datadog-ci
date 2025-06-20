@@ -30,10 +30,18 @@ describe('gitdb', () => {
     jest.spyOn(fspromises, 'mkdtemp').mockResolvedValue(tmpdir)
     fs.writeFileSync(temporaryPackFile, '')
     fs.writeFileSync(secondTemporaryPackFile, '')
+    jest.useFakeTimers()
+    jest.spyOn(global, 'setTimeout').mockImplementation((callback, ms) => {
+      jest.advanceTimersByTime(ms ?? 0)
+      callback()
+
+      return {} as NodeJS.Timeout
+    })
   })
 
   afterEach(() => {
     jest.spyOn(fspromises, 'mkdtemp').mockRestore()
+    jest.useRealTimers()
   })
 
   afterAll(() => {
@@ -1217,6 +1225,8 @@ describe('gitdb', () => {
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
+    expect(global.setTimeout).toHaveBeenCalledTimes(1)
+    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 1100)
   })
 
   test('fails after 3 http requests', async () => {
@@ -1322,6 +1332,9 @@ describe('gitdb', () => {
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow('http error')
     mocks.expectCalls()
+    expect(global.setTimeout).toHaveBeenCalledTimes(2)
+    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 1100)
+    expect(global.setTimeout).toHaveBeenCalledWith(expect.any(Function), 2200)
   })
 
   test('fail immediately if returned format is incorrect', async () => {
@@ -1396,6 +1409,7 @@ describe('gitdb', () => {
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).rejects.toThrow('Invalid commit type response')
     mocks.expectCalls()
+    expect(global.setTimeout).toHaveBeenCalledTimes(0)
   })
 
   test('all commits are known, no packfile upload', async () => {
@@ -1472,5 +1486,6 @@ describe('gitdb', () => {
     const upload = uploadToGitDB(logger, request, mocks.simpleGit as any, false)
     await expect(upload).resolves.toBe(undefined)
     mocks.expectCalls()
+    expect(global.setTimeout).toHaveBeenCalledTimes(0)
   })
 })

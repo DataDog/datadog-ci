@@ -1,6 +1,5 @@
-import fs from 'fs'
-
-import {FileReader, Reader} from '../../helpers/filereader'
+import type {FileReader} from '../../helpers/file-reader'
+import {createReaderFromFile} from '../../helpers/file-reader'
 
 import {
   CV_INFO_AGE_OFFSET,
@@ -96,7 +95,7 @@ const getArchitecture = (machine: number): MachineArchitecture => {
   return architecture
 }
 
-const readPEHeader = async (reader: Reader): Promise<PEResult> => {
+const readPEHeader = async (reader: FileReader): Promise<PEResult> => {
   const result: PEResult = {
     isPE: false,
   }
@@ -173,7 +172,7 @@ type SectionHeader = {
   pointerToRawData: number
 }
 
-const getSectionHeaders = async (reader: Reader, peHeader: PEHeader): Promise<SectionHeader[]> => {
+const getSectionHeaders = async (reader: FileReader, peHeader: PEHeader): Promise<SectionHeader[]> => {
   const sections = new Array<SectionHeader>(peHeader.numberOfSections)
   const sectionHeadersOffset: number = peHeader.peHeaderOffset + peHeader.sectionHeadersOffset
   const sectionsBuffer = await reader.read(peHeader.numberOfSections * IMAGE_SECTION_HEADER_SIZE, sectionHeadersOffset)
@@ -234,10 +233,10 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
     pdbFilename: '',
   }
 
-  let fileHandle: fs.promises.FileHandle | undefined
+  let reader: FileReader | undefined
   try {
-    fileHandle = await fs.promises.open(filename, 'r')
-    const reader = new FileReader(fileHandle)
+    reader = await createReaderFromFile(filename)
+
     const peHeaderResult = await readPEHeader(reader)
     if (!peHeaderResult.isPE || peHeaderResult.peHeader === undefined) {
       throw peHeaderResult.error
@@ -265,7 +264,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
       return metadata
     }
 
-    // The "virtual address"  needs to be converted into an offset from the begining of the PE file (like peHeaderOffset).
+    // The "virtual address"  needs to be converted into an offset from the beginning of the PE file (like peHeaderOffset).
     // To be able to do that, we need to load the array of IMAGE_SECTION_HEADER that follows the optional header;
     // their count is given by the IMAGE_SECTION_HEADER.NumberOfSections field
     const sectionHeaders = await getSectionHeaders(reader, peHeaderResult.peHeader)
@@ -285,7 +284,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
           entryOffset + IMAGE_DEBUG_DIRECTORY_ADDRESSOFRAWDATA_OFFSET
         )
         const pdbInfoOffset: number = rvaToOffset(pdbInfoAddress, sectionHeaders)
-        // we are insterested in the .pdb filename that goes beyond the CV_INFO_PDB70 structure
+        // we are interested in the .pdb filename that goes beyond the CV_INFO_PDB70 structure
         const pdbInfoBuffer = await reader.read(pdbInfoSizeOfData, pdbInfoOffset)
         const pdbSignature: number = pdbInfoBuffer.readUInt32LE(CV_INFO_SIGNATURE_OFFSET)
         if (pdbSignature === PDB70_SIGNATURE) {
@@ -329,16 +328,13 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
       entryOffset += IMAGE_DEBUG_DIRECTORY_SIZE
     }
   } catch (error) {
-    // console.log(error)
     if (error instanceof Error) {
       metadata.error = error
     } else {
       throw error
     }
   } finally {
-    if (fileHandle) {
-      await fileHandle.close()
-    }
+    await reader?.close()
   }
 
   return metadata

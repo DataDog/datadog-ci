@@ -1,7 +1,8 @@
 import {createHash} from 'crypto'
 import fs from 'fs'
 
-import {createReadFunctions, FileReader} from '../../helpers/filereader'
+import type {FileReader} from '../../helpers/file-reader'
+import {createReaderFromFile, createReadFunctions} from '../../helpers/file-reader'
 import {execute} from '../../helpers/utils'
 
 import {
@@ -80,11 +81,6 @@ export type SectionHeader = {
   sh_entsize: bigint
 }
 
-export interface Reader {
-  read(length: number, position?: number): Promise<Buffer>
-  close(): Promise<void>
-}
-
 export interface StringTable {
   [index: number]: string
 }
@@ -124,7 +120,7 @@ const getElfHeaderStart = async (filename: string): Promise<Buffer> => {
   return buffer
 }
 
-export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
+export const readElfHeader = async (reader: FileReader): Promise<ElfResult> => {
   const result: ElfResult = {isElf: false}
 
   try {
@@ -222,7 +218,7 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
 }
 
 export const readElfSectionHeader = async (
-  reader: Reader,
+  reader: FileReader,
   elfHeader: ElfHeader,
   index: number
 ): Promise<SectionHeader> => {
@@ -249,7 +245,7 @@ export const readElfSectionHeader = async (
   }
 }
 
-export const readElfSectionHeaderTable = async (reader: Reader, elfHeader: ElfHeader): Promise<SectionHeader[]> => {
+export const readElfSectionHeaderTable = async (reader: FileReader, elfHeader: ElfHeader): Promise<SectionHeader[]> => {
   if (elfHeader.e_shnum === 0) {
     return []
   }
@@ -279,7 +275,7 @@ export const readElfSectionHeaderTable = async (reader: Reader, elfHeader: ElfHe
 }
 
 export const readElfProgramHeader = async (
-  reader: Reader,
+  reader: FileReader,
   elfHeader: ElfHeader,
   index: number
 ): Promise<ProgramHeader> => {
@@ -316,7 +312,7 @@ export const readElfProgramHeader = async (
   }
 }
 
-export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHeader): Promise<ProgramHeader[]> => {
+export const readElfProgramHeaderTable = async (reader: FileReader, elfHeader: ElfHeader): Promise<ProgramHeader[]> => {
   if (elfHeader.e_phnum === 0) {
     return []
   }
@@ -329,7 +325,7 @@ export const readElfProgramHeaderTable = async (reader: Reader, elfHeader: ElfHe
   return programHeaders
 }
 
-const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
+const readElfNote = async (reader: FileReader, sectionHeader: SectionHeader, elfHeader: ElfHeader) => {
   const buf = await reader.read(Number(sectionHeader.sh_size), Number(sectionHeader.sh_offset))
   // read elf note header
   const {readUInt32} = createReadFunctions(buf, elfHeader.littleEndian, elfHeader.elfClass === ElfClass.ELFCLASS32)
@@ -347,7 +343,7 @@ const readElfNote = async (reader: Reader, sectionHeader: SectionHeader, elfHead
 }
 
 export const getBuildIds = async (
-  reader: Reader,
+  reader: FileReader,
   sectionHeaders: SectionHeader[],
   elfHeader: ElfHeader
 ): Promise<{gnuBuildId: string; goBuildId: string}> => {
@@ -417,10 +413,10 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
     hasCode: false,
   }
 
-  let fileHandle: fs.promises.FileHandle | undefined
+  let reader: FileReader | undefined
   try {
-    fileHandle = await fs.promises.open(filename, 'r')
-    const reader = new FileReader(fileHandle)
+    reader = await createReaderFromFile(filename)
+
     const {isElf, elfHeader, error} = await readElfHeader(reader)
 
     if (isElf) {
@@ -457,9 +453,7 @@ export const getElfFileMetadata = async (filename: string): Promise<ElfFileMetad
   } catch (error) {
     metadata.error = error
   } finally {
-    if (fileHandle) {
-      await fileHandle.close()
-    }
+    await reader?.close()
   }
 
   return metadata
