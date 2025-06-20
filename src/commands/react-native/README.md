@@ -204,6 +204,22 @@ The following optional parameters are available:
 | `--remove-sources-content` | False   | Removes the `"sourcesContent"` part of the source map files. This reduces the size of your files while retaining the unminification, but it also removes the code snippet next to the unminified error in Datadog.                   |
 | `--config`                 | Empty   | The path to your `datadog-ci.json` file, if it is not at the root of your project.                                                                                                                                                   |
 
+### `inject-debug-id`
+
+The inject-debug-id command adds a debug ID to your JavaScript bundle and its sourcemap.
+
+A debug ID allows Datadog to reliably match error stack traces from your application to the correct uploaded debug symbols (sourcemaps), ensuring accurate error resolution.
+
+To inject the debug ID, run the following command:
+
+```bash
+datadog-ci react-native inject-debug-id ./dist
+```
+
+The expected path is a folder containing both the JS bundle and the sourcemap for your build (for example, index.android.bundle and index.android.bundle.map).
+
+The `--dry-run` optional parameter is also available, to run the command without actually injecting the debug ID in your files.
+
 ## End-to-end testing process
 
 ### `upload`

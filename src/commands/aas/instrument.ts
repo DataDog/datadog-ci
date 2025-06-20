@@ -9,7 +9,16 @@ import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
-import {AasCommand, collectAsyncIterator, SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT} from './common'
+import {
+  AasCommand,
+  collectAsyncIterator,
+  formatError,
+  getEnvVars,
+  isDotnet,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+  SIDECAR_PORT,
+} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class InstrumentCommand extends AasCommand {
@@ -19,13 +28,43 @@ export class InstrumentCommand extends AasCommand {
     description: 'Apply Datadog instrumentation to an Azure App Service.',
   })
 
+  private service = Option.String('--service', {
+    description: 'How you want to tag your service. For example, `my-service`',
+  })
+  private environment = Option.String('--env,--environment', {
+    description: 'How you want to tag your env. For example, `prod`',
+  })
+  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
+    description:
+      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
+  })
+  private logPath = Option.String('--log-path', {
+    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
+  })
+
   private shouldNotRestart = Option.Boolean('--no-restart', false, {
     description: 'Do not restart the App Service after applying instrumentation.',
   })
 
+  private isDotnet = Option.Boolean('--dotnet', false, {
+    description:
+      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
+  })
+
+  public get additionalConfig(): Partial<AasConfigOptions> {
+    return {
+      service: this.service,
+      environment: this.environment,
+      isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
+      logPath: this.logPath,
+      shouldNotRestart: this.shouldNotRestart,
+      isDotnet: this.isDotnet,
+    }
+  }
+
   public async execute(): Promise<0 | 1> {
     this.enableFips()
-    const [config, errors] = await this.ensureConfig()
+    const [appServicesToInstrument, config, errors] = await this.ensureConfig()
     if (errors.length > 0) {
       for (const error of errors) {
         this.context.stdout.write(renderError(error))
@@ -49,80 +88,83 @@ export class InstrumentCommand extends AasCommand {
       return 1
     }
     const cred = new DefaultAzureCredential()
-    try {
-      await cred.getToken('https://management.azure.com/.default')
-    } catch (error) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Failed to authenticate with Azure: ${
-            error.name
-          }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
-            'az login'
-          )} to authenticate.\n`
-        )
+    if (!(await this.ensureAzureAuth(cred))) {
+      return 1
+    }
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
+    const results = await Promise.all(
+      Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>
+        this.processSubscription(cred, subscriptionId, resourceGroupToNames, config)
       )
+    )
+    const success = results.every((result) => result)
+    this.context.stdout.write(
+      `${this.dryRunPrefix}🐶 Instrumentation completed ${
+        success ? 'successfully!' : 'with errors, see above for details.'
+      }\n`
+    )
 
-      return 1
-    }
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumenting Azure App Service\n`)
-    const client = new WebSiteManagementClient(cred, config.subscriptionId)
+    return success ? 0 : 1
+  }
 
-    const siteConfig = await client.webApps.getConfiguration(config.resourceGroup, config.aasName)
-    if (siteConfig.kind && !siteConfig.kind.toLowerCase().includes('linux')) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-        )
+  public async processSubscription(
+    cred: DefaultAzureCredential,
+    subscriptionId: string,
+    resourceGroupToNames: Record<string, string[]>,
+    config: AasConfigOptions
+  ): Promise<boolean> {
+    const client = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
+    const results = await Promise.all(
+      Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
+        aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName))
       )
+    )
 
-      return 1
-    }
+    return results.every((result) => result)
+  }
+
+  /**
+   * Process an Azure App Service for instrumentation.
+   * @returns A promise that resolves to a boolean indicating success or failure.
+   */
+  public async processAas(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    aasName: string
+  ): Promise<boolean> {
     try {
-      await this.instrumentSidecar(client, config, config.resourceGroup, config.aasName)
-    } catch (error) {
-      this.context.stdout.write(renderError(`Failed to instrument sidecar: ${error}`))
+      const site = await client.webApps.get(resourceGroup, aasName)
+      if (!this.ensureLinux(site)) {
+        return false
+      }
 
-      return 1
+      await this.instrumentSidecar(
+        client,
+        {...config, isDotnet: config.isDotnet || isDotnet(site)},
+        resourceGroup,
+        aasName
+      )
+    } catch (error) {
+      this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
+
+      return false
     }
 
-    if (!this.shouldNotRestart) {
-      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service\n`)
+    if (!config.shouldNotRestart) {
+      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
-          await client.webApps.restart(config.resourceGroup, config.aasName)
+          await client.webApps.restart(resourceGroup, aasName)
         } catch (error) {
-          this.context.stdout.write(renderError(`Failed to restart Azure App Service: ${error}`))
+          this.context.stdout.write(renderError(`Failed to restart Azure App Service ${chalk.bold(aasName)}: ${error}`))
 
-          return 1
+          return false
         }
       }
     }
 
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Instrumentation complete!\n`)
-
-    return 0
-  }
-
-  public getEnvVars(config: AasConfigOptions): Record<string, string> {
-    const envVars: Record<string, string> = {
-      DD_API_KEY: process.env.DD_API_KEY!,
-      DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
-      DD_AAS_INSTANCE_LOGGING_ENABLED: config.isInstanceLoggingEnabled.toString(),
-    }
-    if (config.service) {
-      envVars.DD_SERVICE = config.service
-    }
-    if (config.environment) {
-      envVars.DD_ENV = config.environment
-    }
-    if (config.logPath) {
-      envVars.DD_SERVERLESS_LOG_PATH = config.logPath
-    }
-
-    return envVars
+    return true
   }
 
   public async instrumentSidecar(
@@ -133,7 +175,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   ) {
     const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = this.getEnvVars(config)
+    const envVars = getEnvVars(config)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
@@ -147,7 +189,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME
-        )}\n`
+        )} on ${chalk.bold(aasName)}\n`
       )
       if (!this.dryRun) {
         await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
@@ -167,12 +209,14 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
     const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
     if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
       }
     } else {
-      this.context.stdout.write(`${this.dryRunPrefix}No Application Settings changes needed.\n`)
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
+      )
     }
   }
 }

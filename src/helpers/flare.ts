@@ -4,7 +4,7 @@
 
 import fs from 'fs'
 
-import axios from 'axios'
+import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
@@ -53,12 +53,12 @@ export const sendToDatadog = async (
   }
 
   try {
-    await axios.post(endpointUrl, form, headerConfig)
+    await axiosPost(endpointUrl, form, headerConfig)
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
 
-    if (axios.isAxiosError(err)) {
+    if (isAxiosError(err)) {
       const errResponse: string = (err.response?.data.error as string) ?? ''
       const errorMessage = err.message ?? ''
 

@@ -3,15 +3,18 @@
  * the CLI in order to instrument properly.
  */
 export interface AasConfigOptions {
-  subscriptionId: string
-  resourceGroup: string
-  aasName: string
-  service: string | undefined
-  environment: string | undefined
-  isInstanceLoggingEnabled: boolean
-  logPath: string | undefined
-}
+  // AAS Targeting options
+  subscriptionId?: string
+  resourceGroup?: string
+  aasName?: string
+  resourceIds?: string[]
 
-export type ValueOptional<T> = {
-  [K in keyof T]: T[K] | undefined
+  // Configuration options
+  service?: string
+  environment?: string
+  isInstanceLoggingEnabled?: boolean
+  logPath?: string
+  isDotnet?: boolean
+  // no-dd-sa:typescript-best-practices/boolean-prop-naming
+  shouldNotRestart?: boolean
 }

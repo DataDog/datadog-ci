@@ -45,6 +45,25 @@ datadog-ci deployment correlate --provider argocd
 - `--config-shas`: a list of the Git commit SHAs of the configuration repository. If empty, the command tries to get all local commits using a `git log` command.
 - `--dry-run` (default: `false`): prevents the command from sending any data to Datadog. All the other checks are still performed.
 
+
+### `correlate-image`
+**Note**: This command replaces `datadog-ci deployment correlate`.
+
+The `correlate-image` command connects an image generated on CI with a commit of the application repository. Then, when Datadog receives a deployment that deploys your image,
+the deployment is correlated to the application commit. This allows for correlation between configuration and application repositories in GitOps scenarios.
+
+**Important**: This command does not work for every setup. Refer to the [documentation][3] for more details.
+
+For example:
+```bash
+datadog-ci deployment correlate-image --commit-sha c9c4e93346652f426c91a2c41364679698bc492f --repository-url https://github.com/DataDog/datadog-ci --image datadog-ci:sha@038d890a9c01bc90a634fafedbd1c2fcd05cd95f
+```
+
+- `--commit-sha` (**required**): Commit SHA to correlate with an image. Should be from the application repository.
+- `--repository-url` (**required**): Repository URL for the commit SHA being correlated.
+- `--image` (**required**): Image to correlate with the commit SHA.
+
+
 ### Environment variables
 
 - `DD_API_KEY` (**required**): API key used to authenticate the requests.
