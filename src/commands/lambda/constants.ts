@@ -2,7 +2,14 @@ import type {Runtime} from '@aws-sdk/client-lambda'
 
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
-import {ENVIRONMENT_ENV_VAR, FLARE_PROJECT_FILES, SERVICE_ENV_VAR, SITE_ENV_VAR, VERSION_ENV_VAR} from '../../constants'
+import {
+  ENVIRONMENT_ENV_VAR,
+  FLARE_PROJECT_FILES,
+  LOG_LEVEL_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '../../constants'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
@@ -102,7 +109,6 @@ export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
 export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
 export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
-export const LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
 export const LOG_ENABLED_ENV_VAR = 'DD_SERVERLESS_LOGS_ENABLED'
 export const LAMBDA_HANDLER_ENV_VAR = 'DD_LAMBDA_HANDLER'
 export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'

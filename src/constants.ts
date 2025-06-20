@@ -39,6 +39,7 @@ export const SITE_ENV_VAR = 'DD_SITE'
 export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
 export const LOGS_PATH_ENV_VAR = 'DD_SERVERLESS_LOG_PATH'
 export const HEALTH_PORT_ENV_VAR = 'DD_HEALTH_PORT'
+export const LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
 
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
