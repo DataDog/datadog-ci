@@ -333,7 +333,14 @@ export const calculateUpdateRequest = async (
     if (settings.interactive && !settings.extensionVersion) {
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
-    fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
+
+    let extensionLayerName = DD_LAMBDA_EXTENSION_LAYER_NAME
+    let extensionLayerArn = lambdaExtensionLayerArn
+    if (settings.fips) {
+      extensionLayerName = `${DD_LAMBDA_EXTENSION_LAYER_NAME}-FIPS`
+      extensionLayerArn = lambdaExtensionLayerArn.replace(DD_LAMBDA_EXTENSION_LAYER_NAME, extensionLayerName)
+    }
+    fullExtensionLayerARN = `${extensionLayerArn}:${extensionVersion}`
   }
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 
