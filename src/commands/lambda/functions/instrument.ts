@@ -10,6 +10,7 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DATADOG_SITE_GOV,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
@@ -338,7 +339,7 @@ export const calculateUpdateRequest = async (
     let extensionLayerArn = lambdaExtensionLayerArn
     if (settings.fips) {
       const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
-      if (currentSite !== 'ddog-gov.com') {
+      if (currentSite !== DATADOG_SITE_GOV) {
         console.warn('DD_SITE is not set to ddog-gov.com, FIPS will not be fully compliant')
       }
 
