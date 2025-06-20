@@ -20,6 +20,9 @@ import {
   VERSION_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
@@ -57,7 +60,7 @@ export class InstrumentCommand extends Command {
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true) // todo
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
-  private llmobs = Option.String('--llmobs') // todo
+  private llmobs = Option.String('--llmobs')
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort') // todo
 
   private config: CloudRunConfigOptions = {
@@ -269,10 +272,22 @@ export class InstrumentCommand extends Command {
       {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
       {name: SERVICE_ENV_VAR, value: ddService},
       {name: TRACE_ENABLED_ENV_VAR, value: tracingEnabled.toString()},
-      ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
-      ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
-      ...(this.logLevel ? [{name: LOG_LEVEL_ENV_VAR, value: this.logLevel}] : []),
     ]
+    if (this.environment) {
+      defaultEnvs.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
+    }
+    if (this.version) {
+      defaultEnvs.push({name: VERSION_ENV_VAR, value: this.version})
+    }
+    if (this.logLevel) {
+      defaultEnvs.push({name: LOG_LEVEL_ENV_VAR, value: this.logLevel})
+    }
+    if (this.llmobs) {
+      defaultEnvs.push({name: DD_LLMOBS_ENABLED_ENV_VAR, value: 'true'})
+      defaultEnvs.push({name: DD_LLMOBS_ML_APP_ENV_VAR, value: this.llmobs})
+      // serverless-init is installed, so agentless mode should be false
+      defaultEnvs.push({name: DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, value: 'false'})
+    }
 
     const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
     for (const defaultEnvVar of defaultEnvs) {
