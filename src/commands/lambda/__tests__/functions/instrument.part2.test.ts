@@ -728,6 +728,83 @@ describe('instrument', () => {
       })
     })
 
+    test('calculates an update request with extension layer', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+          ],
+        }
+      `)
+    })
+
+    test('calculates an update request with extension layer with FIPS flag enabled', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        fips: true,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension-FIPS:6",
+          ],
+        }
+      `)
+    })
+
     describe('sets handlers correctly', () => {
       const lambdaClientMock = mockClient(LambdaClient)
 

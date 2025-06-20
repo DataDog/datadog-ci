@@ -444,6 +444,7 @@ export class InstrumentCommand extends Command {
       environment,
       extensionVersion,
       extraTags,
+      fips: this.fips || this.fipsConfig.fips,
       flushMetricsToLogs,
       forwarderARN,
       interactive,
