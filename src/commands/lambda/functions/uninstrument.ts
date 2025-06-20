@@ -13,6 +13,10 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
 } from '../../../constants'
 
 import {
@@ -35,14 +39,10 @@ import {
   PYTHON_HANDLER_LOCATION,
   RuntimeType,
   RUNTIME_LOOKUP,
-  TRACE_ENABLED_ENV_VAR,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'

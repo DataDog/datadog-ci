@@ -16,15 +16,11 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
-} from '../../../../constants'
-
-import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-  FLUSH_TO_LOG_ENV_VAR,
-  LAMBDA_HANDLER_ENV_VAR,
-  MERGE_XRAY_TRACES_ENV_VAR,
-} from '../../constants'
+} from '../../../../constants'
+
+import {FLUSH_TO_LOG_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR} from '../../constants'
 import {
   getInstrumentedFunctionConfig,
   getInstrumentedFunctionConfigs,

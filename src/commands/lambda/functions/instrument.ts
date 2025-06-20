@@ -10,6 +10,9 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
@@ -51,9 +54,6 @@ import {
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
