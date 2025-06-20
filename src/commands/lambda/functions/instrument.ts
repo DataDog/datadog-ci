@@ -337,6 +337,15 @@ export const calculateUpdateRequest = async (
     let extensionLayerName = DD_LAMBDA_EXTENSION_LAYER_NAME
     let extensionLayerArn = lambdaExtensionLayerArn
     if (settings.fips) {
+      const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
+      if (currentSite !== 'ddog-gov.com') {
+        console.warn('DD_SITE is not set to ddog-gov.com, FIPS will not be fully compliant')
+      }
+
+      if (oldEnvVars['DD_LAMBDA_FIPS_MODE'] !== 'true') {
+        needsUpdate = true
+        newEnvVars['DD_LAMBDA_FIPS_MODE'] = 'true'
+      }
       extensionLayerName = `${DD_LAMBDA_EXTENSION_LAYER_NAME}-FIPS`
       extensionLayerArn = lambdaExtensionLayerArn.replace(DD_LAMBDA_EXTENSION_LAYER_NAME, extensionLayerName)
     }
