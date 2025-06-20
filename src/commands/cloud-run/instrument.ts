@@ -132,12 +132,14 @@ export class InstrumentCommand extends Command {
 
       return 1
     }
-    this.context.stdout.write('GCP credentials verified!\n')
+    this.context.stdout.write(chalk.green('✔ GCP credentials verified!\n'))
 
     // Instrument services with sidecar
     try {
       await this.instrumentSidecar(project, services, region, ddService)
     } catch (error) {
+      this.context.stderr.write(chalk.red(`\nInstrumentation failed: ${error}`))
+
       return 1
     }
 
@@ -149,13 +151,38 @@ export class InstrumentCommand extends Command {
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
     const client = new ServicesClient()
 
-    this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
+    this.context.stdout.write(chalk.bold('\n⬇️ Fetching existing service configurations from Cloud Run...\n'))
 
-    for (const service of services) {
+    const existingServiceConfigs: IService[] = []
+    for (const serviceName of services) {
+      const servicePath = client.servicePath(project, region, serviceName)
+
+      const existingService = await withSpinner(
+        `Fetching configuration for ${chalk.bold(serviceName)}...`,
+        async () => {
+          try {
+            const [serv] = await client.getService({name: servicePath})
+
+            return serv
+          } catch (error) {
+            throw new Error(
+              `Service ${serviceName} not found in project ${project}, region ${region}.\n\nNo services were instrumented.\n`
+            )
+          }
+        },
+        `Fetched service configuration for ${chalk.bold(serviceName)}`
+      )
+      existingServiceConfigs.push(existingService)
+    }
+
+    this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
+    for (let i = 0; i < existingServiceConfigs.length; i++) {
+      const serviceConfig = existingServiceConfigs[i]
+      const serviceName = services[i]
       try {
-        await this.instrumentService(client, project, service, region, ddService)
+        await this.instrumentService(client, serviceConfig, serviceName, ddService)
       } catch (error) {
-        this.context.stderr.write(chalk.red(`Failed to instrument service ${service}: ${error}\n`))
+        this.context.stderr.write(chalk.red(`Failed to instrument service ${serviceName}: ${error}\n`))
         throw error
       }
     }
@@ -163,40 +190,21 @@ export class InstrumentCommand extends Command {
 
   public async instrumentService(
     client: ServicesClient,
-    project: string,
+    existingService: IService,
     serviceName: string,
-    region: string,
     ddService: string
   ) {
-    this.context.stdout.write(`Instrumenting service: ${chalk.bold(serviceName)}\n`)
-
-    const servicePath = client.servicePath(project, region, serviceName)
-
-    const service = await withSpinner(
-      `Fetching service configuration...`,
-      async () => {
-        try {
-          const [existingService] = await client.getService({name: servicePath})
-
-          return existingService
-        } catch (error) {
-          throw new Error(`Service ${serviceName} not found in project ${project}, region ${region}`)
-        }
-      },
-      `Fetched service configuration`
-    )
-
-    const updatedService = this.createInstrumentedServiceConfig(service, ddService)
+    const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
 
     await withSpinner(
-      `Updating service ${serviceName}...`,
+      `Instrumenting service ${serviceName}...`,
       async () => {
         const [operation] = await client.updateService({
           service: updatedService,
         })
         await operation.promise()
       },
-      `Updated service ${serviceName}`
+      `Instrumented service ${serviceName}`
     )
   }
 

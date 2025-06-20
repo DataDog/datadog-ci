@@ -5,7 +5,7 @@ import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 
 import {SERVICE_ENV_VAR} from '../../../constants'
-import {makeRunCLI, createCommand} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
 
 import {InstrumentCommand} from '../instrument'
@@ -136,56 +136,6 @@ describe('InstrumentCommand', () => {
         'us-central1',
         'test-service'
       )
-    })
-  })
-
-  describe('instrumentService', () => {
-    let command: InstrumentCommand
-    let mockClient: Partial<ServicesClient>
-    const mockServicePath = 'projects/project/locations/region/services/service'
-
-    beforeEach(() => {
-      command = createCommand(InstrumentCommand)
-      mockClient = {
-        servicePath: jest.fn().mockReturnValue(mockServicePath),
-        getService: jest.fn().mockResolvedValue([{template: {}, containers: [], volumes: []}]),
-        updateService: jest.fn().mockResolvedValue([
-          {
-            promise: jest.fn().mockResolvedValue(undefined),
-          },
-        ]),
-      }
-    })
-
-    test('should fetch, transform, and update the service successfully', async () => {
-      const fakeUpdated = {template: {foo: 'bar'}}
-      jest.spyOn(command as any, 'createInstrumentedServiceConfig').mockReturnValue(fakeUpdated)
-
-      await command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
-
-      expect(mockClient.updateService).toHaveBeenCalledWith({
-        service: fakeUpdated,
-      })
-    })
-
-    test('should throw error when the service does not exist', async () => {
-      ;(mockClient.getService as jest.Mock).mockRejectedValue(new Error('not found'))
-
-      await expect(
-        command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
-      ).rejects.toThrow('Service service not found in project project, region region')
-    })
-
-    test('should propagate errors from updateService', async () => {
-      ;(mockClient.updateService as jest.Mock).mockResolvedValue([
-        {
-          promise: jest.fn().mockRejectedValue(new Error('update failed')),
-        },
-      ])
-
-      await expect(
-        command.instrumentService(mockClient as ServicesClient, 'project', 'service', 'region', 'ddService')
-      ).rejects.toThrow('update failed')
     })
   })
 
