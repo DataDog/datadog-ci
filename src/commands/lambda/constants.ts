@@ -106,7 +106,6 @@ export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
 // Environment variables used in the Lambda environment
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
-export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
 export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
 export const LOG_ENABLED_ENV_VAR = 'DD_SERVERLESS_LOGS_ENABLED'

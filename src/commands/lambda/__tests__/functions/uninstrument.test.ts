@@ -13,6 +13,7 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
 } from '../../../../constants'
 
 import {
@@ -30,7 +31,6 @@ import {
   PROFILER_ENV_VAR,
   PROFILER_PATH_ENV_VAR,
   SUBSCRIPTION_FILTER_NAME,
-  TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {getLambdaFunctionConfig} from '../../functions/commons'
 import {

@@ -10,7 +10,7 @@ import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR, TRACE_ENABLED_ENV_VAR} from '../../../../constants'
 import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 
 import {
@@ -25,7 +25,6 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
   addLayerArn,
