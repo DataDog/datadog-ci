@@ -1,9 +1,5 @@
-import IService = google.cloud.run.v2.IService
-import IContainer = google.cloud.run.v2.IContainer
-import IVolume = google.cloud.run.v2.IVolume
+import type {IService, IContainer, IVolume, IVolumeMount, ServicesClient as IServicesClient} from './types'
 
-import {ServicesClient} from '@google-cloud/run'
-import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -25,6 +21,12 @@ import {maskString} from '../../helpers/utils'
 import {CloudRunConfigOptions} from './interfaces'
 import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader, withSpinner} from './renderer'
 import {checkAuthentication} from './utils'
+
+// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
+const {ServicesClient} = require('@google-cloud/run')
+
+// equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
+const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
 const SIDECAR_NAME = 'datadog-sidecar'
 const VOLUME_NAME = 'shared-volume'
@@ -150,7 +152,7 @@ export class InstrumentCommand extends Command {
   }
 
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
-    const client = new ServicesClient()
+    const client: IServicesClient = new ServicesClient()
 
     this.context.stdout.write(chalk.bold('\n⬇️ Fetching existing service configurations from Cloud Run...\n'))
 
@@ -190,7 +192,7 @@ export class InstrumentCommand extends Command {
   }
 
   public async instrumentService(
-    client: ServicesClient,
+    client: IServicesClient,
     existingService: IService,
     serviceName: string,
     ddService: string
@@ -262,7 +264,7 @@ export class InstrumentCommand extends Command {
 
       // Add volume mount to main containers if not already present
       const existingVolumeMounts = container.volumeMounts || []
-      const hasSharedVolumeMount = existingVolumeMounts.some((mount) => mount.name === VOLUME_NAME)
+      const hasSharedVolumeMount = existingVolumeMounts.some((mount: IVolumeMount) => mount.name === VOLUME_NAME)
       const existingEnvVars = container.env || []
 
       const updatedContainer = {...container}
@@ -312,7 +314,7 @@ export class InstrumentCommand extends Command {
           {
             name: VOLUME_NAME,
             emptyDir: {
-              medium: google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY,
+              medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
             },
           },
         ]

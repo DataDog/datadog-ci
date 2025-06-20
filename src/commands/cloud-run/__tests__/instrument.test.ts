@@ -1,7 +1,5 @@
-import IContainer = google.cloud.run.v2.IContainer
-import IVolumeMount = google.cloud.run.v2.IVolumeMount
-
-import {google} from '@google-cloud/run/build/protos/protos'
+// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
+import type {IContainer, IVolumeMount} from '../types'
 
 import {SERVICE_ENV_VAR} from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
@@ -160,7 +158,7 @@ describe('InstrumentCommand', () => {
       expect(result.template?.containers?.map((c: IContainer) => c.name)).toEqual(['main', 'datadog-sidecar'])
 
       // main container should get the shared volume mount
-      const main = result.template?.containers?.find((c) => c.name === 'main')
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
       expect(main?.volumeMounts?.some((vm: IVolumeMount) => vm.mountPath === '/shared-volume')).toBe(true)
 
       // should add the shared-volume
