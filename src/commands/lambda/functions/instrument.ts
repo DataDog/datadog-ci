@@ -54,6 +54,10 @@ import {
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -342,9 +346,9 @@ export const calculateUpdateRequest = async (
         console.warn('DD_SITE is not set to ddog-gov.com, FIPS will not be fully compliant')
       }
 
-      if (oldEnvVars['DD_LAMBDA_FIPS_MODE'] !== 'true') {
+      if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
         needsUpdate = true
-        newEnvVars['DD_LAMBDA_FIPS_MODE'] = 'true'
+        newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'
       }
       extensionLayerName += '-FIPS'
       extensionLayerArn = lambdaExtensionLayerArn.replace(DD_LAMBDA_EXTENSION_LAYER_NAME, extensionLayerName)
