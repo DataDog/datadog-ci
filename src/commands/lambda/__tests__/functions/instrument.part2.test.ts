@@ -102,7 +102,10 @@ describe('instrument', () => {
           "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
           "Handler": "datadog_lambda.handler.handler",
           "Layers": [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:`)
+            "arn:aws:lambda:sa-east-1:123456789012:layer:${layer}:71",
+          ],
+        }
+      `)
     })
 
     test.each([
@@ -145,7 +148,10 @@ describe('instrument', () => {
                     "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
                     "Handler": "datadog_lambda.handler.handler",
                     "Layers": [
-                    "arn:aws:lambda:sa-east-1:123456789012:layer:`)
+            "arn:aws:lambda:sa-east-1:123456789012:layer:${layer}:11",
+          ],
+        }
+      `)
       }
     )
 
