@@ -56,6 +56,7 @@ export class InstrumentCommand extends Command {
   private tracing = Option.String('--tracing') // todo
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs') // todo
+  private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort') // todo
 
   private config: CloudRunConfigOptions = {
     services: [],
