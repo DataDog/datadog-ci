@@ -1,7 +1,6 @@
 import IContainer = google.cloud.run.v2.IContainer
 import IVolumeMount = google.cloud.run.v2.IVolumeMount
 
-import {ServicesClient} from '@google-cloud/run'
 import {google} from '@google-cloud/run/build/protos/protos'
 
 import {SERVICE_ENV_VAR} from '../../../constants'
