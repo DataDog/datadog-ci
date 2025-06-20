@@ -6,6 +6,7 @@ import {Cli, Command, Option} from 'clipanion'
 
 import {
   ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
   FIPS_ENV_VAR,
   FIPS_IGNORE_ERROR_ENV_VAR,
   SERVICE_ENV_VAR,
@@ -20,7 +21,7 @@ import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS
 import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
 import {UploadCommand} from '../git-metadata/upload'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXTRA_TAGS_REG_EXP, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
