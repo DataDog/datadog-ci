@@ -18,6 +18,7 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderSoftWarning} from '../../helpers/renderer'
@@ -47,7 +48,7 @@ export class InstrumentCommand extends Command {
   private project = Option.String('-p,--project')
   private services = Option.Array('-s,--service,--services', [])
   private interactive = Option.Boolean('-i,--interactive', false) // todo
-  private logLevel = Option.String('--log-level,--logLevel') // todo
+  private logLevel = Option.String('--log-level,--logLevel')
   private regExPattern = Option.String('--services-regex,--servicesRegex') // todo
   private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
@@ -266,6 +267,7 @@ export class InstrumentCommand extends Command {
       {name: SERVICE_ENV_VAR, value: ddService},
       ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
       ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
+      ...(this.logLevel ? [{name: LOG_LEVEL_ENV_VAR, value: this.logLevel}] : []),
     ]
 
     const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
