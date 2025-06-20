@@ -346,7 +346,7 @@ export const calculateUpdateRequest = async (
         needsUpdate = true
         newEnvVars['DD_LAMBDA_FIPS_MODE'] = 'true'
       }
-      extensionLayerName = `${DD_LAMBDA_EXTENSION_LAYER_NAME}-FIPS`
+      extensionLayerName += '-FIPS'
       extensionLayerArn = lambdaExtensionLayerArn.replace(DD_LAMBDA_EXTENSION_LAYER_NAME, extensionLayerName)
     }
     fullExtensionLayerARN = `${extensionLayerArn}:${extensionVersion}`
