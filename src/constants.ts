@@ -36,6 +36,9 @@ export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const SITE_ENV_VAR = 'DD_SITE'
+export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
+export const LOGS_PATH_ENV_VAR = 'DD_SERVERLESS_LOG_PATH'
+export const HEALTH_PORT_ENV_VAR = 'DD_HEALTH_PORT'
 
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
