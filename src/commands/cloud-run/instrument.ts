@@ -14,9 +14,10 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
+  TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
-import {renderSoftWarning} from '../../helpers/renderer'
+import {toBoolean} from '../../helpers/env'
 import {maskString} from '../../helpers/utils'
 
 import {CloudRunConfigOptions} from './interfaces'
@@ -54,7 +55,7 @@ export class InstrumentCommand extends Command {
   private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true) // todo
-  private tracing = Option.String('--tracing') // todo
+  private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs') // todo
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort') // todo
@@ -259,6 +260,7 @@ export class InstrumentCommand extends Command {
 
   private buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
     // Don't overwrite any existing env vars with the default env vars
+    const tracingEnabled = toBoolean(this.tracing) ?? false
     const defaultEnvs: IEnvVar[] = [
       {name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1},
       {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
@@ -266,6 +268,7 @@ export class InstrumentCommand extends Command {
       {name: HEALTH_PORT_ENV_VAR, value: '5555'},
       {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
       {name: SERVICE_ENV_VAR, value: ddService},
+      {name: TRACE_ENABLED_ENV_VAR, value: tracingEnabled.toString()},
     ]
     if (this.environment) {
       defaultEnvs.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
