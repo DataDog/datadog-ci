@@ -42,7 +42,6 @@ export class InstrumentCommand extends Command {
   })
 
   private configPath = Option.String('--config') // todo
-  private ddService = Option.String('--dd-service, --ddservice')
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false) // todo
   private environment = Option.String('--env')
   private extraTags = Option.String('--extra-tags,--extraTags') // todo
@@ -114,15 +113,13 @@ export class InstrumentCommand extends Command {
         chalk.yellow('No region specified for instrumentation. Please use the --region flag.\n')
       )
     }
-    const ddService = this.ddService ?? process.env[SERVICE_ENV_VAR]
+
+    const ddService = process.env[SERVICE_ENV_VAR]
     if (!ddService) {
-      this.context.stdout.write(
-        chalk.yellow(
-          'No DD_SERVICE specified for instrumentation. Please use the DD_SERVICE env var or the --dd-service flag.\n'
-        )
-      )
+      this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
-    if (!project || !services || !services.length || !region || !ddService) {
+
+    if (!project || !services || !services.length || !region) {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
@@ -151,7 +148,7 @@ export class InstrumentCommand extends Command {
     return 0
   }
 
-  public async instrumentSidecar(project: string, services: string[], region: string, ddService: string) {
+  public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
     const client: IServicesClient = new ServicesClient()
 
     this.context.stdout.write(chalk.bold('\n⬇️ Fetching existing service configurations from Cloud Run...\n'))
@@ -183,7 +180,8 @@ export class InstrumentCommand extends Command {
       const serviceConfig = existingServiceConfigs[i]
       const serviceName = services[i]
       try {
-        await this.instrumentService(client, serviceConfig, serviceName, ddService)
+        const actualDDService = ddService ?? serviceName
+        await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
       } catch (error) {
         this.context.stderr.write(chalk.red(`Failed to instrument service ${serviceName}: ${error}\n`))
         throw error
