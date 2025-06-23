@@ -22,7 +22,6 @@ import {
   EXTRA_TAGS_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
-import {toBoolean} from '../../helpers/env'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
@@ -39,6 +38,7 @@ const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 const SIDECAR_NAME = 'datadog-sidecar'
 const VOLUME_NAME = 'shared-volume'
 const VOLUME_MOUNT_PATH = '/shared-volume'
+const DEFAULT_HEALTH_CHECK_PORT = 5555
 
 export class InstrumentCommand extends Command {
   // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
@@ -270,40 +270,73 @@ export class InstrumentCommand extends Command {
     }
   }
 
-  private buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
-    // Don't overwrite any existing env vars with the default env vars
-    const tracingEnabled = toBoolean(this.tracing) ?? false
-    const healthCheckPort = Number(this.healthCheckPort) ?? 5555
-    const defaultEnvs: IEnvVar[] = [
-      {name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1},
+  public buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
+    // Add these env vars to the container if they don't already exist,
+    // but leave them unchanged if they already exist on the container.
+    const defaultEnvVars: IEnvVar[] = [
+      {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
       {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
-      {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
-      {name: HEALTH_PORT_ENV_VAR, value: healthCheckPort.toString()},
       {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-      {name: SERVICE_ENV_VAR, value: ddService},
-      {name: TRACE_ENABLED_ENV_VAR, value: tracingEnabled.toString()},
+      {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
+      {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
     ]
+
+    // Overwrite existing env vars with these if they already exist,
+    // and add them to the container if they don't exist yet.
+    const replacedEnvVars: IEnvVar[] = [
+      {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
+      {name: SERVICE_ENV_VAR, value: ddService},
+    ]
+    if (process.env.DD_SITE) {
+      replacedEnvVars.push({name: SITE_ENV_VAR, value: process.env.DD_SITE})
+    }
+    if (this.tracing) {
+      replacedEnvVars.push({name: TRACE_ENABLED_ENV_VAR, value: this.tracing})
+    }
     if (this.environment) {
-      defaultEnvs.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
+      replacedEnvVars.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
     }
     if (this.version) {
-      defaultEnvs.push({name: VERSION_ENV_VAR, value: this.version})
+      replacedEnvVars.push({name: VERSION_ENV_VAR, value: this.version})
     }
     if (this.logLevel) {
-      defaultEnvs.push({name: LOG_LEVEL_ENV_VAR, value: this.logLevel})
+      replacedEnvVars.push({name: LOG_LEVEL_ENV_VAR, value: this.logLevel})
     }
     if (this.llmobs) {
-      defaultEnvs.push({name: DD_LLMOBS_ENABLED_ENV_VAR, value: 'true'})
-      defaultEnvs.push({name: DD_LLMOBS_ML_APP_ENV_VAR, value: this.llmobs})
+      replacedEnvVars.push({name: DD_LLMOBS_ENABLED_ENV_VAR, value: 'true'})
+      replacedEnvVars.push({name: DD_LLMOBS_ML_APP_ENV_VAR, value: this.llmobs})
       // serverless-init is installed, so agentless mode should be false
-      defaultEnvs.push({name: DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, value: 'false'})
+      replacedEnvVars.push({name: DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, value: 'false'})
     }
     if (this.extraTags) {
-      defaultEnvs.push({name: EXTRA_TAGS_ENV_VAR, value: this.extraTags})
+      replacedEnvVars.push({name: EXTRA_TAGS_ENV_VAR, value: this.extraTags})
+    }
+
+    // If port is specified, overwrite any existing value
+    // If port is not specified but already exists, leave existing value unchanged
+    // If port is not specified and does not exist, default to 5555
+    let healthCheckPort =
+      existingSidecarContainer?.env?.find((envVar) => envVar.name === HEALTH_PORT_ENV_VAR) ?? DEFAULT_HEALTH_CHECK_PORT
+    if (this.healthCheckPort) {
+      const newHealthCheckPort = Number(this.healthCheckPort)
+      if (!Number.isNaN(newHealthCheckPort)) {
+        healthCheckPort = newHealthCheckPort
+        replacedEnvVars.push({name: HEALTH_PORT_ENV_VAR, value: healthCheckPort.toString()})
+      }
     }
 
     const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
-    for (const defaultEnvVar of defaultEnvs) {
+    // Overwrite all replacedEnvVars, or add if they don't exist yet
+    for (const replacedEnvVar of replacedEnvVars) {
+      const existingEnvVar = newEnv.find((c) => c.name === replacedEnvVar.name)
+      if (existingEnvVar) {
+        existingEnvVar.value = replacedEnvVar.value
+      } else {
+        newEnv.push(replacedEnvVar)
+      }
+    }
+    // Add all defaultEnvVars if they don't exist yet, but don't overwrite existing values
+    for (const defaultEnvVar of defaultEnvVars) {
       if (newEnv.some((envVar) => envVar.name === defaultEnvVar.name)) {
         continue
       }
