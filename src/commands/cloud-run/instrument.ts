@@ -1,4 +1,4 @@
-import type {IService, IContainer, IVolume, IVolumeMount, ServicesClient as IServicesClient} from './types'
+import type {IService, IContainer, IVolume, IVolumeMount, ServicesClient as IServicesClient, IEnvVar} from './types'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -200,14 +200,14 @@ export class InstrumentCommand extends Command {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
 
     await withSpinner(
-      `Instrumenting service ${serviceName}...`,
+      `Instrumenting service ${chalk.bold(serviceName)}...`,
       async () => {
         const [operation] = await client.updateService({
           service: updatedService,
         })
         await operation.promise()
       },
-      `Instrumented service ${serviceName}`
+      `Instrumented service ${chalk.bold(serviceName)}`
     )
   }
 
@@ -216,93 +216,21 @@ export class InstrumentCommand extends Command {
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
 
-    // Check if sidecar already exists
-    const existingSidecarIndex = containers.findIndex((c) => c.name === SIDECAR_NAME)
+    const existingSidecarContainer = containers.find((c) => c.name === SIDECAR_NAME)
+    const newSidecarContainer = this.buildSidecarContainer(existingSidecarContainer, ddService)
 
-    // Create sidecar container with volume mount and environment variables
-    const sidecarContainer: IContainer = {
-      name: SIDECAR_NAME,
-      image: 'gcr.io/datadoghq/serverless-init:latest',
-      volumeMounts: [
-        {
-          name: VOLUME_NAME,
-          mountPath: VOLUME_MOUNT_PATH,
-        },
-      ],
-      env: [
-        {name: SITE_ENV_VAR, value: process.env.DD_SITE || DATADOG_SITE_US1},
-        {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`},
-        {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
-        {name: HEALTH_PORT_ENV_VAR, value: '12345'},
-        {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-        {name: SERVICE_ENV_VAR, value: ddService},
-        ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
-        ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
-      ],
-      startupProbe: {
-        tcpSocket: {
-          port: 12345,
-        },
-        initialDelaySeconds: 0,
-        periodSeconds: 10,
-        failureThreshold: 3,
-        timeoutSeconds: 1,
-      },
-      resources: {
-        limits: {
-          memory: '512Mi',
-          cpu: '1',
-        },
-      },
-    }
-
-    // Update all containers to add volume mounts if they don't have them
+    // Update all app containers to add volume mounts and env vars if they don't have them
     const updatedContainers = containers.map((container) => {
       if (container.name === SIDECAR_NAME) {
-        return sidecarContainer
+        return newSidecarContainer
       }
 
-      // Add volume mount to main containers if not already present
-      const existingVolumeMounts = container.volumeMounts || []
-      const hasSharedVolumeMount = existingVolumeMounts.some((mount: IVolumeMount) => mount.name === VOLUME_NAME)
-      const existingEnvVars = container.env || []
-
-      const updatedContainer = {...container}
-      if (!hasSharedVolumeMount) {
-        updatedContainer.volumeMounts = [
-          ...existingVolumeMounts,
-          {
-            name: VOLUME_NAME,
-            mountPath: VOLUME_MOUNT_PATH,
-          },
-        ]
-      }
-
-      // Update environment variables
-      const updatedEnvVars = [...existingEnvVars]
-
-      // Replace DD_SERVICE with new value
-      const serviceEnvIndex = updatedEnvVars.findIndex((envVar) => envVar.name === SERVICE_ENV_VAR)
-      if (serviceEnvIndex >= 0) {
-        updatedEnvVars[serviceEnvIndex] = {name: SERVICE_ENV_VAR, value: ddService}
-      } else {
-        updatedEnvVars.push({name: SERVICE_ENV_VAR, value: ddService})
-      }
-
-      // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
-      const hasLogsInjection = updatedEnvVars.some((envVar) => envVar.name === LOGS_INJECTION_ENV_VAR)
-      if (!hasLogsInjection) {
-        updatedEnvVars.push({name: LOGS_INJECTION_ENV_VAR, value: 'true'})
-      }
-
-      updatedContainer.env = updatedEnvVars
-
-      return updatedContainer
+      return this.updateAppContainer(container, ddService)
     })
 
     // Add sidecar if it doesn't exist
-    if (existingSidecarIndex < 0) {
-      updatedContainers.push(sidecarContainer)
+    if (!existingSidecarContainer) {
+      updatedContainers.push(newSidecarContainer)
     }
 
     // Add shared volume if it doesn't exist
@@ -325,7 +253,96 @@ export class InstrumentCommand extends Command {
         ...template,
         containers: updatedContainers,
         volumes: updatedVolumes,
+        // Let GCR generate the next revision name
+        revision: undefined,
       },
     }
+  }
+
+  private buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
+    // Don't overwrite any existing env vars with the default env vars
+    const defaultEnvs: IEnvVar[] = [
+      { name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1 },
+      { name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log` }, // TODO make configurable
+      { name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY },
+      { name: HEALTH_PORT_ENV_VAR, value: '5555' },
+      { name: LOGS_INJECTION_ENV_VAR, value: 'true' },
+      { name: SERVICE_ENV_VAR, value: ddService },
+      ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
+      ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
+    const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
+    for (const defaultEnvVar of defaultEnvs) {
+      if (newEnv.some((envVar) => envVar.name === defaultEnvVar.name)) {
+        continue
+      }
+      newEnv.push(defaultEnvVar)
+    }
+
+    // Create sidecar container with volume mount and environment variables
+    return {
+      name: SIDECAR_NAME,
+      image: 'gcr.io/datadoghq/serverless-init:latest', // TODO make configurable
+      volumeMounts: [
+        {
+          name: VOLUME_NAME,
+          mountPath: VOLUME_MOUNT_PATH,
+        },
+      ],
+      env: newEnv,
+      startupProbe: {
+        tcpSocket: {
+          port: 5555, // TODO make configurable
+        },
+        initialDelaySeconds: 0,
+        periodSeconds: 10,
+        failureThreshold: 3,
+        timeoutSeconds: 1,
+      },
+      resources: {
+        limits: {
+          memory: '512Mi',
+          cpu: '1',
+        },
+      },
+    }
+  }
+
+  // Add volume mount and update required env vars
+  private updateAppContainer(appContainer: IContainer, ddService: string) {
+    const existingVolumeMounts = appContainer.volumeMounts || []
+    const hasSharedVolumeMount = existingVolumeMounts.some((mount: IVolumeMount) => mount.name === VOLUME_NAME)
+    const existingEnvVars = appContainer.env || []
+
+    const updatedContainer = {...appContainer}
+    if (!hasSharedVolumeMount) {
+      updatedContainer.volumeMounts = [
+        ...existingVolumeMounts,
+        {
+          name: VOLUME_NAME,
+          mountPath: VOLUME_MOUNT_PATH,
+        },
+      ]
+    }
+
+    // Update environment variables
+    const updatedEnvVars = [...existingEnvVars]
+
+    // Replace DD_SERVICE with new value
+    const serviceEnvIndex = updatedEnvVars.findIndex((envVar) => envVar.name === SERVICE_ENV_VAR)
+    if (serviceEnvIndex >= 0) {
+      updatedEnvVars[serviceEnvIndex] = {name: SERVICE_ENV_VAR, value: ddService}
+    } else {
+      updatedEnvVars.push({name: SERVICE_ENV_VAR, value: ddService})
+    }
+
+    // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
+    const hasLogsInjection = updatedEnvVars.some((envVar) => envVar.name === LOGS_INJECTION_ENV_VAR)
+    if (!hasLogsInjection) {
+      updatedEnvVars.push({name: LOGS_INJECTION_ENV_VAR, value: 'true'})
+    }
+
+    updatedContainer.env = updatedEnvVars
+
+    return updatedContainer
   }
 }

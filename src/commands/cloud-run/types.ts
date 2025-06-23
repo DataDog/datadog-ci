@@ -30,6 +30,7 @@ export interface IVolume {
 export interface IServiceTemplate {
   containers?: IContainer[]
   volumes?: IVolume[]
+  revision?: string | undefined
 }
 
 export interface IService {
