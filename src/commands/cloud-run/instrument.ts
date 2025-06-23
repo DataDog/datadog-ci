@@ -64,7 +64,7 @@ export class InstrumentCommand extends Command {
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
-  private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort') // todo
+  private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
 
   private config: CloudRunConfigOptions = {
     services: [],
@@ -273,11 +273,12 @@ export class InstrumentCommand extends Command {
   private buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
     // Don't overwrite any existing env vars with the default env vars
     const tracingEnabled = toBoolean(this.tracing) ?? false
+    const healthCheckPort = Number(this.healthCheckPort) ?? 5555
     const defaultEnvs: IEnvVar[] = [
       {name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1},
       {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
       {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
-      {name: HEALTH_PORT_ENV_VAR, value: '5555'},
+      {name: HEALTH_PORT_ENV_VAR, value: healthCheckPort.toString()},
       {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
       {name: SERVICE_ENV_VAR, value: ddService},
       {name: TRACE_ENABLED_ENV_VAR, value: tracingEnabled.toString()},
@@ -322,7 +323,7 @@ export class InstrumentCommand extends Command {
       env: newEnv,
       startupProbe: {
         tcpSocket: {
-          port: 5555, // TODO make configurable
+          port: healthCheckPort,
         },
         initialDelaySeconds: 0,
         periodSeconds: 10,
