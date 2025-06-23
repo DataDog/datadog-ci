@@ -18,9 +18,12 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
+  EXTRA_TAGS_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
+import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
 import {CloudRunConfigOptions} from './interfaces'
@@ -49,7 +52,7 @@ export class InstrumentCommand extends Command {
   private configPath = Option.String('--config') // todo
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false) // todo
   private environment = Option.String('--env')
-  private extraTags = Option.String('--extra-tags,--extraTags') // todo
+  private extraTags = Option.String('--extra-tags,--extraTags')
   private project = Option.String('-p,--project')
   private services = Option.Array('-s,--service,--services', [])
   private interactive = Option.Boolean('-i,--interactive', false) // todo
@@ -121,6 +124,12 @@ export class InstrumentCommand extends Command {
     const ddService = process.env[SERVICE_ENV_VAR]
     if (!ddService) {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
+    }
+
+    if (this.extraTags && !this.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
+
+      return 1
     }
 
     if (!project || !services || !services.length || !region) {
@@ -287,6 +296,9 @@ export class InstrumentCommand extends Command {
       defaultEnvs.push({name: DD_LLMOBS_ML_APP_ENV_VAR, value: this.llmobs})
       // serverless-init is installed, so agentless mode should be false
       defaultEnvs.push({name: DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, value: 'false'})
+    }
+    if (this.extraTags) {
+      defaultEnvs.push({name: EXTRA_TAGS_ENV_VAR, value: this.extraTags})
     }
 
     const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
