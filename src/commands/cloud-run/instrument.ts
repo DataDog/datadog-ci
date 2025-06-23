@@ -13,6 +13,7 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderSoftWarning} from '../../helpers/renderer'
@@ -48,8 +49,7 @@ export class InstrumentCommand extends Command {
   private project = Option.String('-p,--project')
   private services = Option.Array('-s,--service,--services', [])
   private interactive = Option.Boolean('-i,--interactive', false) // todo
-  private logging = Option.String('--logging') // todo
-  private logLevel = Option.String('--log-level,--logLevel') // todo
+  private logLevel = Option.String('--log-level,--logLevel')
   private regExPattern = Option.String('--services-regex,--servicesRegex') // todo
   private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
@@ -260,14 +260,23 @@ export class InstrumentCommand extends Command {
   private buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
     // Don't overwrite any existing env vars with the default env vars
     const defaultEnvs: IEnvVar[] = [
-      { name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1 },
-      { name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log` }, // TODO make configurable
-      { name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY },
-      { name: HEALTH_PORT_ENV_VAR, value: '5555' },
-      { name: LOGS_INJECTION_ENV_VAR, value: 'true' },
-      { name: SERVICE_ENV_VAR, value: ddService },
-      ...(this.environment ? [{name: ENVIRONMENT_ENV_VAR, value: this.environment}] : []),
-      ...(this.version ? [{name: VERSION_ENV_VAR, value: this.version}] : []),
+      {name: SITE_ENV_VAR, value: process.env.DD_SITE ?? DATADOG_SITE_US1},
+      {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
+      {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
+      {name: HEALTH_PORT_ENV_VAR, value: '5555'},
+      {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+      {name: SERVICE_ENV_VAR, value: ddService},
+    ]
+    if (this.environment) {
+      defaultEnvs.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
+    }
+    if (this.version) {
+      defaultEnvs.push({name: VERSION_ENV_VAR, value: this.version})
+    }
+    if (this.logLevel) {
+      defaultEnvs.push({name: LOG_LEVEL_ENV_VAR, value: this.logLevel})
+    }
+
     const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
     for (const defaultEnvVar of defaultEnvs) {
       if (newEnv.some((envVar) => envVar.name === defaultEnvVar.name)) {
