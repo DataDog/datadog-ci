@@ -26,55 +26,21 @@ describe('InstrumentCommand', () => {
 
   describe('validates required variables', () => {
     test('should fail if project is missing', async () => {
-      const {code, context} = await runCLI([
-        '--services',
-        'test-service',
-        '--region',
-        'us-central1',
-        '--dd-service',
-        'test-service',
-      ])
+      const {code, context} = await runCLI(['--services', 'test-service', '--region', 'us-central1'])
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('No project specified')
     })
 
     test('should fail if services are missing', async () => {
-      const {code, context} = await runCLI([
-        '--project',
-        'test-project',
-        '--region',
-        'us-central1',
-        '--dd-service',
-        'test-service',
-      ])
+      const {code, context} = await runCLI(['--project', 'test-project', '--region', 'us-central1'])
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('No services specified')
     })
 
     test('should fail if region is missing', async () => {
-      const {code, context} = await runCLI([
-        '--project',
-        'test-project',
-        '--services',
-        'test-service',
-        '--dd-service',
-        'test-service',
-      ])
+      const {code, context} = await runCLI(['--project', 'test-project', '--services', 'test-service'])
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain('No region specified')
-    })
-
-    test('should fail if DD_SERVICE is missing', async () => {
-      const {code, context} = await runCLI([
-        '--project',
-        'test-project',
-        '--services',
-        'test-service',
-        '--region',
-        'us-central1',
-      ])
-      expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No DD_SERVICE specified')
     })
   })
 
@@ -88,8 +54,6 @@ describe('InstrumentCommand', () => {
         'test-service',
         '--region',
         'us-central1',
-        '--dd-service',
-        'test-service',
       ])
       expect(code).toBe(1)
       expect(context.stderr.toString()).toContain('Unable to authenticate with GCP')
@@ -106,8 +70,6 @@ describe('InstrumentCommand', () => {
         'test-service',
         '--region',
         'us-central1',
-        '--dd-service',
-        'test-service',
       ])
       expect(code).toBe(1)
     })
@@ -123,16 +85,9 @@ describe('InstrumentCommand', () => {
         'test-service',
         '--region',
         'us-central1',
-        '--dd-service',
-        'test-service',
       ])
       expect(code).toBe(0)
-      expect(mockInstrumentSidecar).toHaveBeenCalledWith(
-        'test-project',
-        ['test-service'],
-        'us-central1',
-        'test-service'
-      )
+      expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
     })
   })
 
@@ -141,6 +96,7 @@ describe('InstrumentCommand', () => {
 
     beforeEach(() => {
       command = new InstrumentCommand()
+      ;(command as any).tracing = undefined
     })
 
     test('adds sidecar and shared volume when missing', () => {
