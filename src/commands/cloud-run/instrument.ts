@@ -1,4 +1,4 @@
-import type {IService, IContainer, IVolume, IVolumeMount, ServicesClient as IServicesClient, IEnvVar} from './types'
+import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from './types'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -6,20 +6,20 @@ import {Command, Option} from 'clipanion'
 import {
   API_KEY_ENV_VAR,
   DATADOG_SITE_US1,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
+  EXTRA_TAGS_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
+  LOG_LEVEL_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
   LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  VERSION_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
   TRACE_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
-  EXTRA_TAGS_REG_EXP,
-  EXTRA_TAGS_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
@@ -279,58 +279,55 @@ export class InstrumentCommand extends Command {
   }
 
   public buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
-    const newEnvVars: Map<string, string> = new Map()
+    const newEnvVars: Record<string, string> = {}
     for (const envVar of existingSidecarContainer?.env ?? []) {
-      newEnvVars.set(envVar.name, envVar.value)
+      newEnvVars[envVar.name] = envVar.value
     }
 
     // Add these env vars to the container if they don't already exist,
     // but leave them unchanged if they already exist in the container.
-    for (const defaultEnvVar of DEFAULT_ENV_VARS) {
-      if (!newEnvVars.has(defaultEnvVar.name)) {
-        newEnvVars.set(defaultEnvVar.name, defaultEnvVar.value)
+    for (const {name, value} of DEFAULT_ENV_VARS) {
+      if (!(name in newEnvVars)) {
+        newEnvVars[name] = value
       }
     }
 
     // Overwrite existing env vars with these if they already exist
     // and add them to the container if they don't exist yet.
-    newEnvVars.set(API_KEY_ENV_VAR, process.env.DD_API_KEY ?? '')
-    newEnvVars.set(SERVICE_ENV_VAR, ddService)
+    newEnvVars[API_KEY_ENV_VAR] = process.env[API_KEY_ENV_VAR] ?? ''
+    newEnvVars[SERVICE_ENV_VAR] = ddService
     if (process.env[SITE_ENV_VAR]) {
-      newEnvVars.set(SITE_ENV_VAR, process.env[SITE_ENV_VAR])
+      newEnvVars[SITE_ENV_VAR] = process.env[SITE_ENV_VAR]
     }
     if (this.tracing) {
-      newEnvVars.set(TRACE_ENABLED_ENV_VAR, this.tracing)
+      newEnvVars[TRACE_ENABLED_ENV_VAR] = this.tracing
     }
     if (this.environment) {
-      newEnvVars.set(ENVIRONMENT_ENV_VAR, this.environment)
+      newEnvVars[ENVIRONMENT_ENV_VAR] = this.environment
     }
     if (this.version) {
-      newEnvVars.set(VERSION_ENV_VAR, this.version)
+      newEnvVars[VERSION_ENV_VAR] = this.version
     }
     if (this.logLevel) {
-      newEnvVars.set(LOG_LEVEL_ENV_VAR, this.logLevel)
+      newEnvVars[LOG_LEVEL_ENV_VAR] = this.logLevel
     }
     if (this.extraTags) {
-      newEnvVars.set(EXTRA_TAGS_ENV_VAR, this.extraTags)
+      newEnvVars[EXTRA_TAGS_ENV_VAR] = this.extraTags
     }
 
     // If port is specified, overwrite any existing value
     // If port is not specified but already exists, leave the existing value unchanged
     // If port is not specified and does not exist, default to 5555
-    let healthCheckPort = newEnvVars.get(HEALTH_PORT_ENV_VAR) ?? DEFAULT_HEALTH_CHECK_PORT
+    let healthCheckPort = newEnvVars[HEALTH_PORT_ENV_VAR] ?? DEFAULT_HEALTH_CHECK_PORT.toString()
     if (this.healthCheckPort) {
       const newHealthCheckPort = Number(this.healthCheckPort)
       if (!Number.isNaN(newHealthCheckPort)) {
-        healthCheckPort = newHealthCheckPort
-        newEnvVars.set(HEALTH_PORT_ENV_VAR, healthCheckPort.toString())
+        healthCheckPort = newHealthCheckPort.toString()
+        newEnvVars[HEALTH_PORT_ENV_VAR] = healthCheckPort
       }
     }
 
-    const newEnv: IEnvVar[] = []
-    for (const [name, value] of newEnvVars) {
-      newEnv.push({name, value})
-    }
+    const newEnv: IEnvVar[] = Object.entries(newEnvVars).map(([name, value]) => ({name, value}))
 
     // Create sidecar container with volume mount and environment variables
     return {
@@ -379,34 +376,27 @@ export class InstrumentCommand extends Command {
     }
 
     // Update environment variables
-    const newEnvVars: Map<string, string> = new Map()
-    for (const envVar of existingEnvVars) {
-      newEnvVars.set(envVar.name, envVar.value)
+    const newEnvVars: Record<string, string> = {}
+    for (const {name, value} of existingEnvVars) {
+      newEnvVars[name] = value
     }
 
     // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
-    if (!newEnvVars.has(LOGS_INJECTION_ENV_VAR)) {
-      newEnvVars.set(LOGS_INJECTION_ENV_VAR, 'true')
+    if (!(LOGS_INJECTION_ENV_VAR in newEnvVars)) {
+      newEnvVars[LOGS_INJECTION_ENV_VAR] = 'true'
     }
 
     // Replace or add other env vars
-    newEnvVars.set(SERVICE_ENV_VAR, ddService)
-    if (process.env[API_KEY_ENV_VAR]) {
-      newEnvVars.set(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
-    }
+    newEnvVars[SERVICE_ENV_VAR] = ddService
+    newEnvVars[API_KEY_ENV_VAR] = process.env[API_KEY_ENV_VAR] ?? ''
     if (this.llmobs) {
-      newEnvVars.set(DD_LLMOBS_ENABLED_ENV_VAR, 'true')
-      newEnvVars.set(DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs)
+      newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
+      newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = this.llmobs
       // serverless-init is installed, so agentless mode should be false
-      newEnvVars.set(DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false')
+      newEnvVars[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
     }
 
-    const newEnv: IEnvVar[] = []
-    for (const [name, value] of newEnvVars) {
-      newEnv.push({name, value})
-    }
-
-    updatedContainer.env = newEnv
+    updatedContainer.env = Object.entries(newEnvVars).map(([name, value]) => ({name, value}))
 
     return updatedContainer
   }
