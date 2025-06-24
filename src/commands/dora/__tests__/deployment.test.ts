@@ -43,7 +43,8 @@ describe('execute', () => {
         '--git-commit-sha', '2186e1b0ab2a87e312a8c831d5bc947fa081d4f9',
         '--version', '1.0.0',
         '--team', 'test-team',
-        '--custom-tags', 'key1:value1,key2:value2',
+        '--custom-tags', 'key1:value1',
+        '--custom-tags', 'key2:value2',
       ])
       /* eslint-enable prettier/prettier */
       expect(code).toBe(0)
