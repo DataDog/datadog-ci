@@ -80,6 +80,14 @@ export class SendDeploymentEvent extends Command {
     description: 'The version of the service being deployed',
   })
 
+  private team = Option.String('--team', {
+    description: 'The team responsible for the deployment',
+  })
+
+  private customTags = Option.Array('--custom-tags', {
+    description: 'Custom tags to add to the deployment event in the format key:value. Max 100 tags per deployment event.',
+  })
+
   private gitInfo?: GitInfo
   private gitRepoURL = Option.String('--git-repository-url', {
     description: 'Example: https://github.com/DataDog/datadog-ci.git',
@@ -179,6 +187,12 @@ export class SendDeploymentEvent extends Command {
     }
     if (this.version) {
       deployment.version = this.version
+    }
+    if (this.team) {
+      deployment.team = this.team
+    }
+    if (this.customTags) {
+      deployment.customTags = this.customTags
     }
 
     return deployment
