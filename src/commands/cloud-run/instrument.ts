@@ -379,39 +379,35 @@ export class InstrumentCommand extends Command {
     }
 
     // Update environment variables
-    const updatedEnvVars = [...existingEnvVars]
+    const newEnvVars: Map<string, string> = new Map()
+    for (const envVar of existingEnvVars) {
+      newEnvVars.set(envVar.name, envVar.value)
+    }
 
     // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
-    const hasLogsInjection = updatedEnvVars.some((envVar) => envVar.name === LOGS_INJECTION_ENV_VAR)
-    if (!hasLogsInjection) {
-      updatedEnvVars.push({name: LOGS_INJECTION_ENV_VAR, value: 'true'})
+    if (!newEnvVars.has(LOGS_INJECTION_ENV_VAR)) {
+      newEnvVars.set(LOGS_INJECTION_ENV_VAR, 'true')
     }
 
-    // Replace DD_SERVICE
-    this.addOrReplaceEnvVar(updatedEnvVars, SERVICE_ENV_VAR, ddService)
-
-    // Replace DD_API_KEY
-    this.addOrReplaceEnvVar(updatedEnvVars, API_KEY_ENV_VAR, process.env.DD_API_KEY ?? '')
-
-    // Replace LLMOBS env vars
+    // Replace or add other env vars
+    newEnvVars.set(SERVICE_ENV_VAR, ddService)
+    if (process.env[API_KEY_ENV_VAR]) {
+      newEnvVars.set(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
+    }
     if (this.llmobs) {
-      this.addOrReplaceEnvVar(updatedEnvVars, DD_LLMOBS_ENABLED_ENV_VAR, 'true')
-      this.addOrReplaceEnvVar(updatedEnvVars, DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs)
+      newEnvVars.set(DD_LLMOBS_ENABLED_ENV_VAR, 'true')
+      newEnvVars.set(DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs)
       // serverless-init is installed, so agentless mode should be false
-      this.addOrReplaceEnvVar(updatedEnvVars, DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false')
+      newEnvVars.set(DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false')
     }
 
-    updatedContainer.env = updatedEnvVars
+    const newEnv: IEnvVar[] = []
+    for (const [name, value] of newEnvVars) {
+      newEnv.push({name, value})
+    }
+
+    updatedContainer.env = newEnv
 
     return updatedContainer
-  }
-
-  private addOrReplaceEnvVar(envVars: IEnvVar[], name: string, value: string) {
-    const envVarIndex = envVars.findIndex((envVar) => envVar.name === name)
-    if (envVarIndex >= 0) {
-      envVars[envVarIndex] = {name, value}
-    } else {
-      envVars.push({name, value})
-    }
   }
 }
