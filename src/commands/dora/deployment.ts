@@ -80,15 +80,6 @@ export class SendDeploymentEvent extends Command {
     description: 'The version of the service being deployed',
   })
 
-  private team = Option.String('--team', {
-    description: 'The team responsible for the deployment',
-  })
-
-  private customTags = Option.String('--custom-tags', {
-    description:
-      'Custom tags to add to the deployment event in the format key:value, max 100 tags per deployment event',
-  })
-
   private gitInfo?: GitInfo
   private gitRepoURL = Option.String('--git-repository-url', {
     description: 'Example: https://github.com/DataDog/datadog-ci.git',
@@ -98,6 +89,15 @@ export class SendDeploymentEvent extends Command {
   })
   private skipGit = Option.Boolean('--skip-git', false, {
     description: 'Disables sending git URL and SHA. Change Lead Time will not be available',
+  })
+
+  private team = Option.String('--team', {
+    description: 'The team responsible for the deployment',
+  })
+
+  private customTags = Option.Array('--custom-tags', {
+    description:
+      'Custom tags to add to the deployment event in the format key:value, max 100 tags per deployment event',
   })
 
   private fips = Option.Boolean('--fips', false)
