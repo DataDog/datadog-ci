@@ -338,8 +338,6 @@ export const calculateUpdateRequest = async (
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
 
-    let extensionLayerName = DD_LAMBDA_EXTENSION_LAYER_NAME
-    let extensionLayerArn = lambdaExtensionLayerArn
     if (settings.fips) {
       const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
       if (currentSite !== DATADOG_SITE_GOV) {
@@ -350,10 +348,8 @@ export const calculateUpdateRequest = async (
         needsUpdate = true
         newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'
       }
-      extensionLayerName += '-FIPS'
-      extensionLayerArn = lambdaExtensionLayerArn.replace(DD_LAMBDA_EXTENSION_LAYER_NAME, extensionLayerName)
     }
-    fullExtensionLayerARN = `${extensionLayerArn}:${extensionVersion}`
+    fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
   layerARNs = addLayerArn(fullExtensionLayerARN, DD_LAMBDA_EXTENSION_LAYER_NAME, layerARNs)
 

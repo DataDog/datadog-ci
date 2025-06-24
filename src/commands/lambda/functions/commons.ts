@@ -343,11 +343,17 @@ export const getLayerArn = (
   }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
+  let arnBuilt
   if (isGovCloud) {
-    return `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+    arnBuilt = `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+  } else {
+    arnBuilt = `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+  }
+  if (settings?.fips) {
+    arnBuilt += '-FIPS'
   }
 
-  return `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+  return arnBuilt
 }
 
 export const getLayerNameWithVersion = (layerArn: string): string | undefined => {
