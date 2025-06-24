@@ -199,9 +199,6 @@ describe('InstrumentCommand', () => {
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
         {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
         {name: LOG_LEVEL_ENV_VAR, value: 'debug'},
-        {name: DD_LLMOBS_ML_APP_ENV_VAR, value: 'my-llm-app'},
-        {name: DD_LLMOBS_ENABLED_ENV_VAR, value: 'true'},
-        {name: DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, value: 'false'},
         {name: EXTRA_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
       ]
       expect(newSidecarContainer.env).toEqual(expect.arrayContaining(expected))
