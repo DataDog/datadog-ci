@@ -22,7 +22,7 @@ $ DD_BETA_COMMANDS_ENABLED=1 datadog-ci dora deployment [--service #0] [--env #0
   --git-repository-url #0    Example: https://github.com/DataDog/datadog-ci.git
   --git-commit-sha #0        Example: 102836a25f5477e571c73d489b3f0f183687068e
   --team #0                  Example: my-team
-  --custom-tags #0           Example: department:engineering,deployment-type:hotfix
+  --custom-tags #0           Example: department:engineering
   --skip-git                 Disables sending git URL and SHA. Change Lead Time will not be available
 ```
 
