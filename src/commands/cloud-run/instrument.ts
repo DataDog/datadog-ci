@@ -40,6 +40,14 @@ const VOLUME_NAME = 'shared-volume'
 const VOLUME_MOUNT_PATH = '/shared-volume'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
 
+const DEFAULT_ENV_VARS: IEnvVar[] = [
+  {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
+  {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
+  {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+  {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
+  {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
+]
+
 export class InstrumentCommand extends Command {
   // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   public static paths = [['cloud-run', 'instrument']]
@@ -271,70 +279,57 @@ export class InstrumentCommand extends Command {
   }
 
   public buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
-    // Add these env vars to the container if they don't already exist,
-    // but leave them unchanged if they already exist on the container.
-    const defaultEnvVars: IEnvVar[] = [
-      {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
-      {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
-      {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-      {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
-      {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
-    ]
+    const newEnvVars: Map<string, string> = new Map()
+    for (const envVar of existingSidecarContainer?.env ?? []) {
+      newEnvVars.set(envVar.name, envVar.value)
+    }
 
-    // Overwrite existing env vars with these if they already exist,
+    // Add these env vars to the container if they don't already exist,
+    // but leave them unchanged if they already exist in the container.
+    for (const defaultEnvVar of DEFAULT_ENV_VARS) {
+      if (!newEnvVars.has(defaultEnvVar.name)) {
+        newEnvVars.set(defaultEnvVar.name, defaultEnvVar.value)
+      }
+    }
+
+    // Overwrite existing env vars with these if they already exist
     // and add them to the container if they don't exist yet.
-    const replacedEnvVars: IEnvVar[] = [
-      {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
-      {name: SERVICE_ENV_VAR, value: ddService},
-    ]
-    if (process.env.DD_SITE) {
-      replacedEnvVars.push({name: SITE_ENV_VAR, value: process.env.DD_SITE})
+    newEnvVars.set(API_KEY_ENV_VAR, process.env.DD_API_KEY ?? '')
+    newEnvVars.set(SERVICE_ENV_VAR, ddService)
+    if (process.env[SITE_ENV_VAR]) {
+      newEnvVars.set(SITE_ENV_VAR, process.env[SITE_ENV_VAR])
     }
     if (this.tracing) {
-      replacedEnvVars.push({name: TRACE_ENABLED_ENV_VAR, value: this.tracing})
+      newEnvVars.set(TRACE_ENABLED_ENV_VAR, this.tracing)
     }
     if (this.environment) {
-      replacedEnvVars.push({name: ENVIRONMENT_ENV_VAR, value: this.environment})
+      newEnvVars.set(ENVIRONMENT_ENV_VAR, this.environment)
     }
     if (this.version) {
-      replacedEnvVars.push({name: VERSION_ENV_VAR, value: this.version})
+      newEnvVars.set(VERSION_ENV_VAR, this.version)
     }
     if (this.logLevel) {
-      replacedEnvVars.push({name: LOG_LEVEL_ENV_VAR, value: this.logLevel})
+      newEnvVars.set(LOG_LEVEL_ENV_VAR, this.logLevel)
     }
     if (this.extraTags) {
-      replacedEnvVars.push({name: EXTRA_TAGS_ENV_VAR, value: this.extraTags})
+      newEnvVars.set(EXTRA_TAGS_ENV_VAR, this.extraTags)
     }
 
     // If port is specified, overwrite any existing value
-    // If port is not specified but already exists, leave existing value unchanged
+    // If port is not specified but already exists, leave the existing value unchanged
     // If port is not specified and does not exist, default to 5555
-    let healthCheckPort =
-      existingSidecarContainer?.env?.find((envVar) => envVar.name === HEALTH_PORT_ENV_VAR) ?? DEFAULT_HEALTH_CHECK_PORT
+    let healthCheckPort = newEnvVars.get(HEALTH_PORT_ENV_VAR) ?? DEFAULT_HEALTH_CHECK_PORT
     if (this.healthCheckPort) {
       const newHealthCheckPort = Number(this.healthCheckPort)
       if (!Number.isNaN(newHealthCheckPort)) {
         healthCheckPort = newHealthCheckPort
-        replacedEnvVars.push({name: HEALTH_PORT_ENV_VAR, value: healthCheckPort.toString()})
+        newEnvVars.set(HEALTH_PORT_ENV_VAR, healthCheckPort.toString())
       }
     }
 
-    const newEnv: IEnvVar[] = existingSidecarContainer?.env ?? []
-    // Overwrite all replacedEnvVars, or add if they don't exist yet
-    for (const replacedEnvVar of replacedEnvVars) {
-      const existingEnvVar = newEnv.find((c) => c.name === replacedEnvVar.name)
-      if (existingEnvVar) {
-        existingEnvVar.value = replacedEnvVar.value
-      } else {
-        newEnv.push(replacedEnvVar)
-      }
-    }
-    // Add all defaultEnvVars if they don't exist yet, but don't overwrite existing values
-    for (const defaultEnvVar of defaultEnvVars) {
-      if (newEnv.some((envVar) => envVar.name === defaultEnvVar.name)) {
-        continue
-      }
-      newEnv.push(defaultEnvVar)
+    const newEnv: IEnvVar[] = []
+    for (const [name, value] of newEnvVars) {
+      newEnv.push({name, value})
     }
 
     // Create sidecar container with volume mount and environment variables

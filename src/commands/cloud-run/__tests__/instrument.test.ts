@@ -4,9 +4,6 @@ import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 import {
   API_KEY_ENV_VAR,
   DATADOG_SITE_EU1,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_ENV_VAR,
   HEALTH_PORT_ENV_VAR,
@@ -194,7 +191,7 @@ describe('InstrumentCommand', () => {
         {name: VERSION_ENV_VAR, value: 'v123.456'},
         {name: SITE_ENV_VAR, value: 'datadoghq.com'},
         {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
-        {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY},
+        {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY ?? ''},
         {name: HEALTH_PORT_ENV_VAR, value: '5555'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
         {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
