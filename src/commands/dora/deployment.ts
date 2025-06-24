@@ -84,8 +84,9 @@ export class SendDeploymentEvent extends Command {
     description: 'The team responsible for the deployment',
   })
 
-  private customTags = Option.Array('--custom-tags', {
-    description: 'Custom tags to add to the deployment event in the format key:value. Max 100 tags per deployment event.',
+  private customTags = Option.String('--custom-tags', {
+    description:
+      'Custom tags to add to the deployment event in the format key:value, max 100 tags per deployment event',
   })
 
   private gitInfo?: GitInfo
