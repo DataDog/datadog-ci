@@ -78,11 +78,6 @@ export const renderFailedUpload = (sbomReport: string, error: any, debug: boolea
   if (debug && Array.isArray(errors)) {
     fullStr += chalk.red(`API full error response:\n${JSON.stringify(error?.response?.data, undefined, 2)}\n`)
   }
-  if (debug) {
-    if (error?.response?.data && error.response.data.errors) {
-      fullStr += chalk.red(`API error response:\n${JSON.stringify(error?.response?.data, undefined, 2)}\n`)
-    }
-  }
 
   return fullStr
 }
