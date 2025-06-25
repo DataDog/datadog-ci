@@ -2,8 +2,8 @@
 // TODO remove this when google-auth-library ESM/CJS issues are fixed
 
 export interface IEnvVar {
-  name?: string
-  value?: string
+  name: string
+  value: string
 }
 
 export interface IVolumeMount {
@@ -30,6 +30,7 @@ export interface IVolume {
 export interface IServiceTemplate {
   containers?: IContainer[]
   volumes?: IVolume[]
+  revision?: string | undefined
 }
 
 export interface IService {
