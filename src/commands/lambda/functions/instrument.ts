@@ -341,7 +341,7 @@ export const calculateUpdateRequest = async (
     if (settings.fips) {
       const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
       if (currentSite !== DATADOG_SITE_GOV) {
-        console.warn('DD_SITE is not set to ddog-gov.com, FIPS will not be fully compliant')
+        context.stderr.write('FIPS mode was enabled on the extension layer, but DD_SITE is not set to ddog-gov.com\n')
       }
 
       if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
