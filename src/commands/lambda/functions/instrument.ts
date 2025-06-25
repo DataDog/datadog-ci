@@ -10,6 +10,7 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DATADOG_SITE_GOV,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
@@ -54,6 +55,7 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -332,6 +334,18 @@ export const calculateUpdateRequest = async (
     extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
+    }
+
+    if (settings.fips) {
+      const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
+      if (currentSite !== DATADOG_SITE_GOV) {
+        context.stderr.write('FIPS mode was enabled on the extension layer, but DD_SITE is not set to ddog-gov.com\n')
+      }
+
+      if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
+        needsUpdate = true
+        newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'
+      }
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }
