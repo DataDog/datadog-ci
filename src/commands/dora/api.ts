@@ -27,6 +27,12 @@ export const sendDeploymentEvent = (request: (args: AxiosRequestConfig) => Axios
       commit_sha: deployment.git.commitSHA,
     }
   }
+  if (deployment.team) {
+    attrs.team = deployment.team
+  }
+  if (deployment.customTags) {
+    attrs.custom_tags = deployment.customTags
+  }
 
   return request({
     method: 'POST',

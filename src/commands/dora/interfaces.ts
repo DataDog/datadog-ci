@@ -7,6 +7,8 @@ export interface DeploymentEvent {
   finishedAt: Date
   git?: GitInfo
   version?: string
+  team?: string
+  customTags?: string[]
 }
 
 export interface GitInfo {
