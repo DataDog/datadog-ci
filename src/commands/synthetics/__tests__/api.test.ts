@@ -10,7 +10,7 @@ import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {RecursivePartial} from '../base-command'
 import {CriticalError} from '../errors'
-import {ExecutionRule, PollResult, RawPollResult, ServerResult, Test, TestPayload, Trigger} from '../interfaces'
+import {ExecutionRule, PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
 import * as internalUtils from '../utils/internal'
 
@@ -21,7 +21,7 @@ import {
   MOBILE_PRESIGNED_URLS_PAYLOAD,
   MOBILE_PRESIGNED_UPLOAD_PARTS,
   mockSearchResponse,
-  mockTestTriggerResponse,
+  mockServerTriggerResponse,
   APP_UPLOAD_POLL_RESULTS,
   getMockApiConfiguration,
 } from './fixtures'
@@ -100,7 +100,7 @@ describe('dd-api', () => {
     ],
   }
   const TRIGGERED_TEST_ID = 'fakeId'
-  const TRIGGER_RESULTS: Trigger = {
+  const TRIGGER_RESULTS: ServerTrigger = {
     batch_id: BATCH_ID,
     locations: [LOCATION],
   }
@@ -475,7 +475,7 @@ describe('dd-api', () => {
         expect(calls.get).toHaveBeenCalled()
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(triggerOutput).toEqual(mockServerTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()
@@ -494,7 +494,7 @@ describe('dd-api', () => {
         expect(calls.search).toHaveBeenCalled()
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(triggerOutput).toEqual(mockServerTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()
@@ -513,7 +513,7 @@ describe('dd-api', () => {
         const api = apiConstructor(proxyApiConfiguration)
 
         const triggerOutput = await api.triggerTests({tests})
-        expect(triggerOutput).toEqual(mockTestTriggerResponse)
+        expect(triggerOutput).toEqual(mockServerTriggerResponse)
         expect(calls.trigger).toHaveBeenCalledWith({tests})
       } finally {
         await proxyClose()

@@ -26,7 +26,7 @@ import {
   Suite,
   Summary,
   TestPayload,
-  Trigger,
+  ServerTrigger,
   UploadApplicationCommandConfig,
   MobileAppUploadResult,
   MobileApplicationUploadPartResponse,
@@ -38,6 +38,7 @@ import {
   APIConfiguration,
   ServerTest,
   LocalTestDefinition,
+  TriggerInfo,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -403,9 +404,16 @@ export const mockLocation: Location = {
 
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
-export const mockTestTriggerResponse: Trigger = {
+export const mockServerTriggerResponse: ServerTrigger = {
   batch_id: 'bid',
   locations: [mockLocation],
+}
+
+export const mockTriggerInfo: TriggerInfo = {
+  batchId: 'bid',
+  locations: [mockLocation],
+  selectiveRerunRateLimited: undefined,
+  testsNotAuthorized: new Set(),
 }
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
@@ -447,7 +455,7 @@ export const getSyntheticsProxy = () => {
       return mockResponse(calls.search, mockSearchResponse)
     }
     if (/\/synthetics\/tests\/trigger\/ci/.test(request.url)) {
-      return mockResponse(calls.trigger, mockTestTriggerResponse)
+      return mockResponse(calls.trigger, mockServerTriggerResponse)
     }
     if (/\/synthetics\/ci\/tunnel/.test(request.url)) {
       return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})

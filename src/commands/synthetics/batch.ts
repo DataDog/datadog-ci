@@ -1,9 +1,16 @@
+import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 
 import {getCIMetadata} from '../../helpers/ci'
 import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 
-import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
+import {
+  APIHelper,
+  EndpointError,
+  extractUnauthorizedTestPublicIds,
+  formatBackendErrors,
+  getErrorHttpStatus,
+} from './api'
 import {BatchTimeoutRunawayError} from './errors'
 import {
   BaseResultInBatch,
@@ -18,7 +25,7 @@ import {
   ServerResult,
   Test,
   TestPayload,
-  Trigger,
+  TriggerInfo,
 } from './interfaces'
 import {Tunnel} from './tunnel'
 import {
@@ -39,9 +46,10 @@ const POLLING_INTERVAL = 5000 // In ms
 export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
+  reporter: MainReporter,
   selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
-): Promise<Trigger> => {
+): Promise<TriggerInfo> => {
   const payload: Payload = {
     tests: testsToTrigger,
     options: {
@@ -59,18 +67,46 @@ export const runTests = async (
   }
 
   try {
-    return await api.triggerTests(payload)
+    const response = await api.triggerTests(payload)
+
+    return {
+      batchId: response.batch_id,
+      locations: response.locations,
+      selectiveRerunRateLimited: response.selective_rerun_rate_limited,
+      testsNotAuthorized: new Set(),
+    }
   } catch (e) {
     const errorMessage = formatBackendErrors(e)
-    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
+    const unauthorizedTestPublicIds = extractUnauthorizedTestPublicIds(e)
+
+    if (unauthorizedTestPublicIds?.size) {
+      reporter.error(
+        `${chalk.red.bold(
+          'Some tests were not authorized to be triggered, retrying without them…'
+        )}\n  Error: ${errorMessage}\n\n`
+      )
+
+      const newTestsToTrigger = testsToTrigger.filter(
+        (t) => !unauthorizedTestPublicIds.has(getPublicIdOrPlaceholder(t))
+      )
+
+      const trigger = await runTests(api, newTestsToTrigger, reporter, selectiveRerun, batchTimeout)
+
+      return {
+        ...trigger,
+        testsNotAuthorized: new Set([...unauthorizedTestPublicIds, ...trigger.testsNotAuthorized]),
+      }
+    }
+
     // Rewrite error message
+    const testIds = testsToTrigger.map((t) => getPublicIdOrPlaceholder(t)).join(',')
     throw new EndpointError(`[${testIds}] Failed to trigger tests: ${errorMessage}\n`, e.response?.status)
   }
 }
 
 export const waitForResults = async (
   api: APIHelper,
-  trigger: Trigger,
+  trigger: TriggerInfo,
   tests: Test[],
   options: ResultDisplayInfo['options'],
   reporter: MainReporter,
@@ -84,7 +120,7 @@ export const waitForResults = async (
       .catch(() => (isTunnelConnected = false))
   }
 
-  reporter.testsWait(tests, getAppBaseURL(options), trigger.batch_id)
+  reporter.testsWait(tests, getAppBaseURL(options), trigger.batchId)
 
   const locationNames = trigger.locations.reduce<LocationsMapping>((mapping, location) => {
     mapping[location.name] = location.display_name
@@ -104,7 +140,7 @@ export const waitForResults = async (
     tests,
   }
 
-  const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
+  const results = await waitForBatchToFinish(api, trigger.batchId, options.batchTimeout, resultDisplayInfo, reporter)
 
   if (tunnel && !isTunnelConnected) {
     reporter.error('The tunnel has stopped working, this may have affected the results.')

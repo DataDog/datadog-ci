@@ -158,6 +158,7 @@ exports[`Default reporter resultEnd Retryable test - Usual case: passes after ma
 
 exports[`Default reporter runEnd Case where some outcomes are empty or missing 1`] = `
 "[33m[1m1[22m test not found[39m [90m(bbb-bbb-bbb)[39m
+
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa[39m[22m
 
 [1mContinuous Testing Summary:[22m
@@ -178,6 +179,7 @@ exports[`Default reporter runEnd Case with 2 passed results, of which 1 comes fr
 
 exports[`Default reporter runEnd Complex case with all the tests and results outcomes possible 1`] = `
 "[33m[1m2[22m tests not found[39m [90m(ccc-ccc-ccc, ddd-ddd-ddd)[39m
+
 View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/explorer/ci?batchResultId=batch-id[39m[22m
 
 [1mContinuous Testing Summary:[22m

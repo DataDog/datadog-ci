@@ -448,6 +448,7 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
+      testsNotAuthorized: new Set(),
       testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
       expected: 6, // `.failed` + `.failedNonBlocking` + `.passed`
       failed: 1,

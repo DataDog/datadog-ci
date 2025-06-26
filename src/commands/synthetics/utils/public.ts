@@ -216,6 +216,7 @@ export const isResultSkippedBySelectiveRerun = (result: Result): result is Resul
   return result.selectiveRerun?.decision === 'skip'
 }
 
+// XXX: Could be called something like "SummaryWithoutBatchId"
 export type InitialSummary = Omit<Summary, 'batchId'>
 
 export const createInitialSummary = (): InitialSummary => ({
@@ -227,6 +228,7 @@ export const createInitialSummary = (): InitialSummary => ({
   previouslyPassed: 0,
   skipped: 0,
   testsNotFound: new Set(),
+  testsNotAuthorized: new Set(),
   timedOut: 0,
 })
 
@@ -526,6 +528,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       break
     case 'MISSING_TESTS':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
+      break
+    case 'UNAUTHORIZED_TESTS':
+      reporter.error(`\n${chalk.bgRed.bold(' ERROR: missing read/write access to some tests ')}\n${error.message}\n\n`)
       break
 
     // Critical command errors

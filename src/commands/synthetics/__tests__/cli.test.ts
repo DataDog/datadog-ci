@@ -26,7 +26,7 @@ import {UploadApplicationCommand} from '../upload-application-command'
 import {toExecutionRule} from '../utils/internal'
 import * as utils from '../utils/public'
 
-import {getApiTest, getTestSuite, mockApi, mockTestTriggerResponse} from './fixtures'
+import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from './fixtures'
 
 test('all option flags are supported', async () => {
   const options = [
@@ -1140,7 +1140,7 @@ describe('run-tests', () => {
     })
 
     describe.each([false, true])('%s', (failOnCriticalErrors: boolean) => {
-      const cases: [string, number?][] = [['HTTP 4xx error', 403], ['HTTP 5xx error', 502], ['Unknown error']]
+      const cases: [string, number?][] = [['HTTP 4xx error', 400], ['HTTP 5xx error', 502], ['Unknown error']]
       const expectedExit = failOnCriticalErrors ? 1 : 0
 
       describe.each(cases)('%s', (_, errorCode) => {
@@ -1206,7 +1206,7 @@ describe('run-tests', () => {
             pollResults: jest.fn(() => {
               throw errorCode ? getAxiosError(errorCode, {message: 'Error'}) : new Error('Unknown error')
             }),
-            triggerTests: async () => mockTestTriggerResponse,
+            triggerTests: async () => mockServerTriggerResponse,
           })
           jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
           jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
@@ -1276,6 +1276,9 @@ describe('run-tests', () => {
 
           return {name: testId} as ServerTest
         }),
+        triggerTests: async () => {
+          throw Error('Not implemented')
+        },
       })
       jest.spyOn(ciUtils, 'resolveConfigFromFile').mockImplementation(async (config, __) => config)
       jest.spyOn(api, 'getApiHelper').mockReturnValue(apiHelper)
@@ -1296,13 +1299,11 @@ describe('run-tests', () => {
       expect(apiHelper.getTest).toHaveBeenCalledTimes(3)
 
       expect(writeMock).toHaveBeenCalledTimes(4)
-      expect(writeMock).toHaveBeenCalledWith('[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
-      expect(writeMock).toHaveBeenCalledWith('[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 test override)\n')
-      expect(writeMock).toHaveBeenCalledWith(
-        '\n ERROR: authorization error \nFailed to get test: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n\n'
-      )
-      expect(writeMock).toHaveBeenCalledWith(
-        'Credentials refused, make sure `apiKey`, `appKey` and `datadogSite` are correct.\n'
+      expect(writeMock).toHaveBeenNthCalledWith(1, '[aaa-aaa-aaa] Found test "aaa-aaa-aaa"\n')
+      expect(writeMock).toHaveBeenNthCalledWith(2, '[bbb-bbb-bbb] Found test "bbb-bbb-bbb" (1 test override)\n')
+      expect(writeMock).toHaveBeenNthCalledWith(
+        3,
+        '[for-bid-den] Test not authorized: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n'
       )
     })
   })

@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError} from './api'
+import {APIHelper, EndpointError, formatBackendErrors, isNotFoundError, isForbiddenError} from './api'
 import {CiError, CriticalError} from './errors'
 import {
   RemoteTriggerConfig,
@@ -155,8 +155,13 @@ export const getTestsToTrigger = async (
   reporter.initErrors(errorMessages)
 
   if (failOnMissingTests && initialSummary.testsNotFound.size > 0) {
-    const testsNotFoundListStr = [...initialSummary.testsNotFound].join(', ')
+    const testsNotFoundListStr = `Public IDs: ${[...initialSummary.testsNotFound].join(', ')}`
     throw new CiError('MISSING_TESTS', testsNotFoundListStr)
+  }
+
+  if (failOnMissingTests && initialSummary.testsNotAuthorized.size > 0) {
+    const testsNotAuthorizedListStr = `Public IDs: ${[...initialSummary.testsNotAuthorized].join(', ')}`
+    throw new CiError('UNAUTHORIZED_TESTS', testsNotAuthorizedListStr)
   }
 
   if (!overriddenTestsToTrigger.length) {
@@ -186,7 +191,11 @@ export const getTestAndOverrideConfig = async (
 
   const testResult = await getTest(api, triggerConfig)
   if ('errorMessage' in testResult) {
-    summary.testsNotFound.add(normalizedId)
+    if (testResult.errorMessage.includes('Test not found')) {
+      summary.testsNotFound.add(normalizedId)
+    } else if (testResult.errorMessage.includes('Test not authorized')) {
+      summary.testsNotAuthorized.add(normalizedId)
+    }
 
     return {errorMessage: testResult.errorMessage}
   }
@@ -255,6 +264,12 @@ const getTest = async (
       const errorMessage = formatBackendErrors(error)
 
       return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.yellow.bold('Test not found')}: ${errorMessage}`}
+    }
+
+    if (isForbiddenError(error)) {
+      const errorMessage = formatBackendErrors(error)
+
+      return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.red.bold('Test not authorized')}: ${errorMessage}`}
     }
 
     throw new EndpointError(`Failed to get test: ${formatBackendErrors(error)}\n`, error.response?.status)
