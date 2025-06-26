@@ -559,19 +559,10 @@ export const copyElfDebugInfo = async (
 
   if (keepDynamicSymbolTable) {
     // If the file has only a dynamic symbol table, preserve it
-    // `objcopy --only-keep-debug` would remove it, so we need to dump it separately with `objcopy --dump-section` and then merge it back with `objcopy --add-section`
-    await execute(
-      `objcopy ${bfdTargetOption} --dump-section .dynsym=${outputFile}.dynsym --dump-section .dynstr=${outputFile}.dynstr ${filename} ${outputFile}`
-    )
-    options = `--remove-section .dynsym --remove-section .dynstr ${options} --add-section .dynsym=${outputFile}.dynsym --add-section .dynstr=${outputFile}.dynstr`
+    options = `${options} --set-section-flags .dynsym=alloc,readonly,contents --set-section-flags .dynstr=alloc,readonly,contents`
   }
 
-  await execute(`objcopy ${options} ${filename} ${outputFile}`).finally(() => {
-    if (keepDynamicSymbolTable) {
-      fs.unlinkSync(`${outputFile}.dynsym`)
-      fs.unlinkSync(`${outputFile}.dynstr`)
-    }
-  })
+  await execute(`objcopy ${options} ${filename} ${outputFile}`)
 
   if (bfdTargetOption) {
     // Replace the ELF header in the extracted debug info file with the one from the initial file to keep the original architecture
