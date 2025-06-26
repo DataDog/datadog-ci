@@ -558,8 +558,9 @@ export const copyElfDebugInfo = async (
   let options = `${bfdTargetOption} --only-keep-debug ${compressDebugSectionsOption} --remove-section=.gdb_index`
 
   if (keepDynamicSymbolTable) {
-    // If the file has only a dynamic symbol table, preserve it
-    options = `${options} --set-section-flags .dynsym=alloc,readonly,contents --set-section-flags .dynstr=alloc,readonly,contents`
+    // If the file has only a dynamic symbol table, preserve the sections needed by symbolic to create a symcache
+    const sectionsToKeep = ['.dynsym', '.dynstr']
+    options += ' ' + sectionsToKeep.map((section) => `--set-section-flags ${section}=alloc,readonly,contents`).join(' ')
   }
 
   await execute(`objcopy ${options} ${filename} ${outputFile}`)
