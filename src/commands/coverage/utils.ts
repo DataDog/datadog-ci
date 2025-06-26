@@ -3,6 +3,10 @@ import fs from 'fs'
 import {XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 
+import {getBaseUrl} from '../../helpers/app'
+import {SpanTags} from '../../helpers/interfaces'
+import {CI_JOB_URL, CI_PIPELINE_URL, GIT_REPOSITORY_URL, PR_NUMBER} from '../../helpers/tags'
+
 import {renderFileReadError} from './renderer'
 
 const ROOT_TAG_REGEX = /<([^?!\s/>]+)/
@@ -135,4 +139,21 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
   }
 
   return undefined
+}
+
+export const getCoverageDetailsUrl = (spanTags: SpanTags): string => {
+  const repoUrl = spanTags[GIT_REPOSITORY_URL]
+  if (!repoUrl) {
+    return ''
+  }
+
+  const prNumber = spanTags[PR_NUMBER]
+  if (!prNumber) {
+    return ''
+  }
+
+  const escapedPrNumber = encodeURIComponent(prNumber)
+  const escapedRepoUrl = encodeURIComponent(repoUrl)
+
+  return `${getBaseUrl()}api/ui/code-coverage/redirect/pull-requests/${escapedPrNumber}?repository_url=${escapedRepoUrl}`
 }
