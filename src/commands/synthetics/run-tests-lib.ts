@@ -77,7 +77,6 @@ export const executeTests = async (
   }
 
   try {
-    // May throw `AUTHORIZATION_ERROR` when searching tests with a `testSearchQuery`.
     triggerConfigs = await getTriggerConfigs(api, config, reporter, suites)
   } catch (error) {
     throw new CriticalError(isForbiddenError(error) ? 'AUTHORIZATION_ERROR' : 'UNAVAILABLE_TEST_CONFIG', error.message)
@@ -102,7 +101,6 @@ export const executeTests = async (
   }
 
   try {
-    // May throw `AUTHORIZATION_ERROR` when fetching each test config.
     const triggerFromSearch = !!config.testSearchQuery
     testsToTriggerResult = await getTestsToTrigger(
       api,
@@ -157,8 +155,10 @@ export const executeTests = async (
   try {
     trigger = await runTests(api, overriddenTestsToTrigger, reporter, config.selectiveRerun, config.batchTimeout)
 
-    // Merge tests without read permission and those without write permission.
-    initialSummary.testsNotAuthorized = new Set([...initialSummary.testsNotAuthorized, ...trigger.testsNotAuthorized])
+    // Update summary with tests that could not be triggered.
+    const cannotRead = initialSummary.testsNotAuthorized
+    const cannotWrite = trigger.testsNotAuthorized
+    initialSummary.testsNotAuthorized = new Set([...cannotRead, ...cannotWrite])
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)

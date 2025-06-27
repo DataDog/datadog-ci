@@ -678,8 +678,10 @@ describe('utils', () => {
     test.each([
       {failOnMissingTests: true, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'missing-tests'},
       {failOnMissingTests: true, errorCode: 'MISSING_TESTS', expectedExitReason: 'missing-tests'},
+      {failOnMissingTests: true, errorCode: 'UNAUTHORIZED_TESTS', expectedExitReason: 'missing-tests'},
       {failOnMissingTests: false, errorCode: 'NO_TESTS_TO_RUN', expectedExitReason: 'passed'},
       {failOnMissingTests: false, errorCode: 'MISSING_TESTS', expectedExitReason: 'passed'},
+      {failOnMissingTests: false, errorCode: 'UNAUTHORIZED_TESTS', expectedExitReason: 'passed'},
     ] as const)(
       'should return $expectedExitReason when $errorCode if failOnMissingTests flag is $failOnMissingTests',
       ({failOnMissingTests, errorCode, expectedExitReason: exitReason}) => {

@@ -1220,11 +1220,25 @@ describe('run-tests', () => {
   })
 
   describe('exit code respects `failOnMissingTests`', () => {
-    const cases: [string, boolean, number, string[]][] = [
+    const cases: [name: string, failOnMissingTests: boolean, exitCode: number, tests: string[]][] = [
+      // missing
       ['only missing tests', false, 0, ['mis-sin-ggg']],
       ['only missing tests', true, 1, ['mis-sin-ggg']],
+      // unauthorized
+      ['only unauthorized tests', false, 0, ['una-uth-rzd']],
+      ['only unauthorized tests', true, 1, ['una-uth-rzd']],
+      // missing + available
       ['both missing and available tests', false, 0, ['mis-sin-ggg', 'abc-def-ghi']],
       ['both missing and available tests', true, 1, ['mis-sin-ggg', 'abc-def-ghi']],
+      // unauthorized + available
+      ['both unauthorized and available tests', false, 0, ['una-uth-rzd', 'abc-def-ghi']],
+      ['both unauthorized and available tests', true, 1, ['una-uth-rzd', 'abc-def-ghi']],
+      // both missing and unauthorized
+      ['both missing and unauthorized tests', false, 0, ['mis-sin-ggg', 'una-uth-rzd']],
+      ['both missing and unauthorized tests', true, 1, ['mis-sin-ggg', 'una-uth-rzd']],
+      // all together
+      ['missing + unauthorized + available', false, 0, ['mis-sin-ggg', 'una-uth-rzd', 'abc-def-ghi']],
+      ['missing + unauthorized + available', true, 1, ['mis-sin-ggg', 'una-uth-rzd', 'abc-def-ghi']],
     ]
 
     test.each(cases)(
@@ -1236,7 +1250,10 @@ describe('run-tests', () => {
         const apiHelper = mockApi({
           getTest: jest.fn(async (testId: string) => {
             if (testId === 'mis-sin-ggg') {
-              throw getAxiosError(404, {errors: ['Test not found']})
+              throw getAxiosError(404, {errors: ['Any message']})
+            }
+            if (testId === 'una-uth-rzd') {
+              throw getAxiosError(403, {errors: ['Any message']})
             }
 
             return {} as ServerTest
@@ -1305,6 +1322,7 @@ describe('run-tests', () => {
         3,
         '[for-bid-den] Test not authorized: query on https://app.datadoghq.com/tests/for-bid-den returned: "Forbidden"\n\n'
       )
+      expect(writeMock).toHaveBeenNthCalledWith(4, expect.stringContaining('Not implemented'))
     })
   })
 })

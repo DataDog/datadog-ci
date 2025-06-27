@@ -466,8 +466,11 @@ export const getExitReason = (
   }
 
   if (error instanceof CiError) {
-    // Ensure the command fails if search query starts returning no results
-    if (config.failOnMissingTests && ['MISSING_TESTS', 'NO_TESTS_TO_RUN'].includes(error.code)) {
+    // Make the CI fail if something outside was changed, leading to missing tests. For example:
+    // - a search query starts returning no results because somebody changed some tags
+    // - an explicitly listed test was deleted
+    // - some tests can't be read or written to because of permissions
+    if (config.failOnMissingTests && ['NO_TESTS_TO_RUN', 'MISSING_TESTS', 'UNAUTHORIZED_TESTS'].includes(error.code)) {
       return 'missing-tests'
     }
 
