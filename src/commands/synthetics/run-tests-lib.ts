@@ -1,3 +1,5 @@
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
@@ -151,9 +153,15 @@ export const executeTests = async (
     }
   }
 
+  const metadata = getCIMetadata({
+    [GIT_COMMIT_MESSAGE]: 500,
+  })
+
   let trigger: Trigger
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
+    trigger = await runTests(api, overriddenTestsToTrigger, metadata, config.selectiveRerun, config.batchTimeout)
+
+    initialSummary.metadata = metadata
   } catch (error) {
     await stopTunnel()
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)

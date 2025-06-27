@@ -4,6 +4,7 @@ import {URL} from 'url'
 
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
+import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'
@@ -166,6 +167,11 @@ export const getMultiStep = (): MultiStep => ({
 })
 
 export const getTestSuite = (): Suite => ({content: {tests: [{testOverrides: {}, id: '123-456-789'}]}, name: 'Suite 1'})
+
+export const getMetadata = (): Metadata => ({
+  ci: {job: {url: 'job-url'}, pipeline: {url: ''}, provider: {}, stage: {}},
+  git: {commit: {author: {}, committer: {}, message: ''}},
+})
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({

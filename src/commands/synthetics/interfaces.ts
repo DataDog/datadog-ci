@@ -180,6 +180,8 @@ export interface Summary {
   failed: number
   /** The number of results that failed during the CI batch without blocking the CI. */
   failedNonBlocking: number
+  /** The metadata collected for the CI batch. */
+  metadata?: Metadata
   /** The number of results that passed during the CI batch. */
   passed: number
   /** The number of results that already passed in previous CI batches on the same commit. */
