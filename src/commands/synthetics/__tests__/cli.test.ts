@@ -1117,7 +1117,7 @@ describe('run-tests', () => {
       command['configPath'] = 'non-existing-config-file.json'
 
       await expect(command.execute()).resolves.toBe(1)
-      expect(writeMock).toHaveBeenCalledWith(expect.stringMatching('ERROR: invalid config \nConfig file not found'))
+      expect(writeMock).toHaveBeenCalledWith('\n ERROR: invalid config \nConfig file not found\n\n')
     })
   })
 
