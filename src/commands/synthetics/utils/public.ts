@@ -533,7 +533,9 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
       break
     case 'UNAUTHORIZED_TESTS':
-      reporter.error(`\n${chalk.bgRed.bold(' ERROR: missing read/write access to some tests ')}\n${error.message}\n\n`)
+      reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: missing read or write access to some tests ')}\n${error.message}\n\n`
+      )
       break
 
     // Critical command errors
