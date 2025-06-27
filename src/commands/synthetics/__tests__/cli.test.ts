@@ -1220,7 +1220,7 @@ describe('run-tests', () => {
   })
 
   describe('exit code respects `failOnMissingTests`', () => {
-    const cases: [name: string, failOnMissingTests: boolean, exitCode: number, tests: string[]][] = [
+    const cases: [string, boolean, number, string[]][] = [
       // missing
       ['only missing tests', false, 0, ['mis-sin-ggg']],
       ['only missing tests', true, 1, ['mis-sin-ggg']],
