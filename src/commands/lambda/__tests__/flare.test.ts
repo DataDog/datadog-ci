@@ -99,8 +99,9 @@ jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 // Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('../../../../package.json', () => ({
+jest.mock('../../../helpers/version', () => ({
   version: '1.0-mock-version',
+  getLatestVersion: jest.fn().mockResolvedValue('1.0-mock-version'),
 }))
 
 describe('lambda flare', () => {

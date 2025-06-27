@@ -95,3 +95,8 @@ export const renderAdditionalFiles = (additionalFilePaths: Set<string>) => {
 
   return msg
 }
+
+
+export const renderVersionWarning = (version: string, latestVersion: string) => {
+    return renderSoftWarning(`You are using an outdated version of datadog-ci (${version}). The latest version is ${latestVersion}. Please update for better support.`)
+}
