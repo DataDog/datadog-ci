@@ -407,7 +407,16 @@ export class DefaultReporter implements MainReporter {
       lines.push(
         `${yellow(
           `${b(summary.testsNotFound.size)} ${pluralize('test', summary.testsNotFound.size)} not found`
-        )} ${testsNotFoundListStr}`
+        )} ${testsNotFoundListStr}\n`
+      )
+    }
+
+    if (summary.testsNotAuthorized.size > 0) {
+      const testsNotAuthorizedListStr = gray(`(${[...summary.testsNotAuthorized].join(', ')})`)
+      lines.push(
+        `${red(
+          `${b(summary.testsNotAuthorized.size)} ${pluralize('test', summary.testsNotAuthorized.size)} not authorized`
+        )} ${testsNotAuthorizedListStr}\n`
       )
     }
 

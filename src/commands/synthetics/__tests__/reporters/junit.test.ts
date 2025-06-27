@@ -130,6 +130,7 @@ describe('Junit reporter', () => {
         tests_critical_error: 1,
         tests_failed: 2,
         tests_failed_non_blocking: 3,
+        tests_not_authorized: 0,
         tests_not_found: 3,
         tests_passed: 4,
         tests_skipped: 5,

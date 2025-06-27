@@ -101,6 +101,7 @@ export interface XMLJSON {
       tests_critical_error: number
       tests_failed: number
       tests_failed_non_blocking: number
+      tests_not_authorized: number
       tests_not_found: number
       tests_passed: number
       tests_skipped: number
@@ -204,6 +205,7 @@ export class JUnitReporter implements Reporter {
           tests_critical_error: 0,
           tests_failed: 0,
           tests_failed_non_blocking: 0,
+          tests_not_authorized: 0,
           tests_not_found: 0,
           tests_passed: 0,
           tests_skipped: 0,
@@ -283,6 +285,7 @@ export class JUnitReporter implements Reporter {
       tests_critical_error: summary.criticalErrors,
       tests_failed: summary.failed,
       tests_failed_non_blocking: summary.failedNonBlocking,
+      tests_not_authorized: summary.testsNotAuthorized.size,
       tests_not_found: summary.testsNotFound.size,
       tests_passed: summary.passed,
       tests_skipped: summary.skipped,
