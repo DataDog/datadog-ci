@@ -559,7 +559,7 @@ export const copyElfDebugInfo = async (
 
   if (keepDynamicSymbolTable) {
     // If the file has only a dynamic symbol table, preserve the sections needed by symbolic to create a symcache
-    const sectionsToKeep = ['.dynsym', '.dynstr']
+    const sectionsToKeep = ['.dynsym', '.dynstr', '.dynamic', '.hash', '.gnu.hash', '.gnu.version*', '.rel*']
     options += ' ' + sectionsToKeep.map((section) => `--set-section-flags ${section}=alloc,readonly,contents`).join(' ')
   }
 
