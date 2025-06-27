@@ -150,8 +150,9 @@ jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
-jest.mock('../../../../package.json', () => ({
+jest.mock('../../../helpers/version', () => ({
   version: '1.0-mock-version',
+  getLatestVersion: jest.fn().mockResolvedValue('1.0-mock-version'),
 }))
 
 // File system mocks

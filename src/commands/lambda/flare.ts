@@ -33,7 +33,7 @@ import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {getLatestVersion, version} from '../../helpers/version'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -96,7 +96,10 @@ export class LambdaFlareCommand extends Command {
    */
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-
+    const latestCliVersion = await getLatestVersion()
+    if (latestCliVersion !== version) {
+      this.context.stdout.write(helpersRenderer.renderVersionWarning(latestCliVersion, version))
+    }
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
