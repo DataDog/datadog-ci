@@ -12,7 +12,7 @@ import {
   LocalTestDefinition,
   ImportTestsCommandConfig,
   ExecutionRule,
-  TestNotFound,
+  TestMissing,
   TestSkipped,
   TestWithOverride,
   TestPayload,
@@ -155,12 +155,12 @@ export const getTestsToTrigger = async (
   reporter.initErrors(errorMessages)
 
   if (failOnMissingTests && initialSummary.testsNotFound.size > 0) {
-    const testsNotFoundListStr = `Public IDs: ${[...initialSummary.testsNotFound].join(', ')}`
+    const testsNotFoundListStr = chalk.gray([...initialSummary.testsNotFound].join(', '))
     throw new CiError('MISSING_TESTS', testsNotFoundListStr)
   }
 
   if (failOnMissingTests && initialSummary.testsNotAuthorized.size > 0) {
-    const testsNotAuthorizedListStr = `Public IDs: ${[...initialSummary.testsNotAuthorized].join(', ')}`
+    const testsNotAuthorizedListStr = chalk.gray([...initialSummary.testsNotAuthorized].join(', '))
     throw new CiError('UNAUTHORIZED_TESTS', testsNotAuthorizedListStr)
   }
 
@@ -182,7 +182,7 @@ export const getTestAndOverrideConfig = async (
   reporter: MainReporter,
   summary: InitialSummary,
   isTunnelEnabled?: boolean
-): Promise<TestNotFound | TestSkipped | TestWithOverride> => {
+): Promise<TestMissing | TestSkipped | TestWithOverride> => {
   const publicIdOrPlaceholder = getPublicIdOrPlaceholder({public_id: getTriggerConfigPublicId(triggerConfig)})
   const normalizedId = normalizePublicId(publicIdOrPlaceholder)
   if (!normalizedId) {

@@ -11,7 +11,7 @@ import {
   formatBackendErrors,
   getErrorHttpStatus,
 } from './api'
-import {BatchTimeoutRunawayError} from './errors'
+import {BatchTimeoutRunawayError, CiError} from './errors'
 import {
   BaseResultInBatch,
   Batch,
@@ -47,6 +47,7 @@ export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
   reporter: MainReporter,
+  failOnMissingTests?: boolean,
   selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<TriggerInfo> => {
@@ -80,17 +81,28 @@ export const runTests = async (
     const unauthorizedTestPublicIds = extractUnauthorizedTestPublicIds(e)
 
     if (unauthorizedTestPublicIds?.size) {
+      // Abort if `failOnMissingTests` is true.
+      if (failOnMissingTests) {
+        reporter.error(
+          `${chalk.red.bold(
+            'Some tests were not authorized to be triggered. Aborting due to `failOnCriticalErrors: true`.'
+          )}\n  Error: ${errorMessage}\n\n`
+        )
+
+        const testsNotAuthorizedListStr = chalk.gray([...unauthorizedTestPublicIds].join(', '))
+        throw new CiError('UNAUTHORIZED_TESTS', testsNotAuthorizedListStr)
+      }
+
+      // Retry without unauthorized tests.
       reporter.error(
         `${chalk.red.bold(
           'Some tests were not authorized to be triggered, retrying without them…'
         )}\n  Error: ${errorMessage}\n\n`
       )
-
       const newTestsToTrigger = testsToTrigger.filter(
         (t) => !unauthorizedTestPublicIds.has(getPublicIdOrPlaceholder(t))
       )
-
-      const trigger = await runTests(api, newTestsToTrigger, reporter, selectiveRerun, batchTimeout)
+      const trigger = await runTests(api, newTestsToTrigger, reporter, failOnMissingTests, selectiveRerun, batchTimeout)
 
       return {
         ...trigger,

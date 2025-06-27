@@ -533,7 +533,8 @@ export interface RemoteTestPayload extends ServerConfigOverride {
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 
-export interface TestNotFound {
+/** Missing test, either because it's not found, or because it could not be read. */
+export interface TestMissing {
   errorMessage: string
 }
 

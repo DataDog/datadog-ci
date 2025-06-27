@@ -153,7 +153,14 @@ export const executeTests = async (
 
   let trigger: TriggerInfo
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, reporter, config.selectiveRerun, config.batchTimeout)
+    trigger = await runTests(
+      api,
+      overriddenTestsToTrigger,
+      reporter,
+      config.failOnMissingTests,
+      config.selectiveRerun,
+      config.batchTimeout
+    )
 
     // Update summary with tests that could not be triggered.
     const cannotRead = initialSummary.testsNotAuthorized
@@ -161,6 +168,11 @@ export const executeTests = async (
     initialSummary.testsNotAuthorized = new Set([...cannotRead, ...cannotWrite])
   } catch (error) {
     await stopTunnel()
+
+    if (error instanceof CiError) {
+      throw error
+    }
+
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
