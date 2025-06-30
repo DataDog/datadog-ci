@@ -23,7 +23,13 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateCliVersion, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
+import {
+  getProjectFiles,
+  sendToDatadog,
+  validateCliVersion,
+  validateFilePath,
+  validateStartEndFlags,
+} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'

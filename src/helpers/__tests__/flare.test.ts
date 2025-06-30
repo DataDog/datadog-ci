@@ -1,5 +1,6 @@
 import fs from 'fs'
 import process from 'process'
+import {Writable} from 'stream'
 
 import axios from 'axios'
 import FormData from 'form-data'
@@ -10,7 +11,7 @@ import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constant
 const getLatestVersion = jest.fn()
 jest.mock('../../helpers/version', () => ({
   version: '1.0.0',
-  getLatestVersion: getLatestVersion,
+  getLatestVersion,
 }))
 
 import {
@@ -24,7 +25,6 @@ import {
 import * as flareModule from '../flare'
 
 import {MOCK_CWD} from './testing-tools'
-import {Writable} from 'stream'
 
 // Mocks
 jest.mock('fs')
