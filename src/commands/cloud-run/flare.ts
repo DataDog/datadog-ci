@@ -23,13 +23,13 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
+import {getProjectFiles, sendToDatadog, validateCliVersion, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes, maskString} from '../../helpers/utils'
-import {getLatestVersion, version} from '../../helpers/version'
+import {version} from '../../helpers/version'
 
 import {getUniqueFileNames} from '../lambda/flare'
 
@@ -98,10 +98,7 @@ export class CloudRunFlareCommand extends Command {
    */
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    const latestCliVersion = await getLatestVersion()
-    if (latestCliVersion !== version) {
-      this.context.stdout.write(helpersRenderer.renderVersionWarning(latestCliVersion, version))
-    }
+    await validateCliVersion(this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []

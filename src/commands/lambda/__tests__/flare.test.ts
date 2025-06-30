@@ -69,6 +69,7 @@ jest.mock('../prompt')
 jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
+jest.spyOn(helpersFlareModule, 'validateCliVersion').mockResolvedValue()
 
 // File system mocks
 jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
@@ -88,8 +89,8 @@ fs.createReadStream = jest.fn().mockImplementation(
     })
 )
 fs.readdirSync = jest.fn().mockReturnValue([])
-;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
-  isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
+;(fs.statSync as jest.Mock).mockImplementation((path: string) => ({
+  isDirectory: () => path === MOCK_FLARE_FOLDER_PATH || path === MOCK_CWD,
 }))
 
 // Date
@@ -99,10 +100,7 @@ jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 // Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('../../../helpers/version', () => ({
-  version: '1.0-mock-version',
-  getLatestVersion: jest.fn().mockResolvedValue('1.0-mock-version'),
-}))
+jest.mock('../../../helpers/version', () => ({version: '1.0-mock-version'}))
 
 describe('lambda flare', () => {
   const runCLI = makeRunCLI(LambdaFlareCommand, ['lambda', 'flare'], {appendStdoutWithStderr: true, skipResetEnv: true})

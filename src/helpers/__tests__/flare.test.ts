@@ -7,10 +7,24 @@ import upath from 'upath'
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
-import {getEndpointUrl, getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../flare'
+const getLatestVersion = jest.fn()
+jest.mock('../../helpers/version', () => ({
+  version: '1.0.0',
+  getLatestVersion: getLatestVersion,
+}))
+
+import {
+  getEndpointUrl,
+  getProjectFiles,
+  sendToDatadog,
+  validateCliVersion,
+  validateFilePath,
+  validateStartEndFlags,
+} from '../flare'
 import * as flareModule from '../flare'
 
 import {MOCK_CWD} from './testing-tools'
+import {Writable} from 'stream'
 
 // Mocks
 jest.mock('fs')
@@ -240,6 +254,33 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
       expect(start).toBe(0)
       expect(end).toBeLessThan(9999999999999)
       expect(end).toStrictEqual(now)
+    })
+  })
+  describe('validateCliVersion', () => {
+    let stdout: Pick<Writable, 'write'>
+    beforeEach(() => {
+      stdout = {write: jest.fn()}
+      getLatestVersion.mockReset()
+    })
+
+    it('should print nothing if the CLI version is the latest', async () => {
+      getLatestVersion.mockResolvedValue('1.0.0')
+      await validateCliVersion(stdout)
+      expect(stdout.write).not.toHaveBeenCalled()
+    })
+
+    it('should print a warning if the CLI version is outdated', async () => {
+      getLatestVersion.mockResolvedValue('1.1.0')
+      await validateCliVersion(stdout)
+      expect(stdout.write).toHaveBeenCalledWith(
+        '[!] You are using an outdated version of datadog-ci (1.0.0). The latest version is 1.1.0. Please update for better support.\n'
+      )
+    })
+
+    it('should not error if unable to fetch the latest version info', async () => {
+      getLatestVersion.mockRejectedValue(new Error('Network error'))
+      await validateCliVersion(stdout)
+      expect(stdout.write).not.toHaveBeenCalled()
     })
   })
 })

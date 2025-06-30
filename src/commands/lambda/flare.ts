@@ -27,7 +27,7 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
+import {getProjectFiles, sendToDatadog, validateCliVersion, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -96,10 +96,7 @@ export class LambdaFlareCommand extends Command {
    */
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    const latestCliVersion = await getLatestVersion()
-    if (latestCliVersion !== version) {
-      this.context.stdout.write(helpersRenderer.renderVersionWarning(latestCliVersion, version))
-    }
+    await validateCliVersion(this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
