@@ -69,6 +69,7 @@ export interface InstrumentationSettings extends InstrumentationTags {
   appsecEnabled?: boolean
   captureLambdaPayload?: boolean
   extensionVersion?: number
+  fips?: boolean
   flushMetricsToLogs: boolean
   forwarderARN?: string
   interactive?: boolean
