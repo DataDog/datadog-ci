@@ -5,7 +5,7 @@ import {
   API_KEY_ENV_VAR,
   DATADOG_SITE_EU1,
   ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_ENV_VAR,
+  DD_TAGS_ENV_VAR,
   HEALTH_PORT_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
@@ -196,7 +196,7 @@ describe('InstrumentCommand', () => {
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
         {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
         {name: LOG_LEVEL_ENV_VAR, value: 'debug'},
-        {name: EXTRA_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
+        {name: DD_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
       ]
       expect(newSidecarContainer.env).toEqual(expect.arrayContaining(expected))
       expect(newSidecarContainer.env).toHaveLength(expected.length)

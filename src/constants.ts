@@ -44,7 +44,7 @@ export const TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
 export const DD_LLMOBS_ENABLED_ENV_VAR = 'DD_LLMOBS_ENABLED'
 export const DD_LLMOBS_ML_APP_ENV_VAR = 'DD_LLMOBS_ML_APP'
 export const DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR = 'DD_LLMOBS_AGENTLESS_ENABLED'
-export const EXTRA_TAGS_ENV_VAR = 'DD_TAGS'
+export const DD_TAGS_ENV_VAR = 'DD_TAGS'
 // DD_TAGS Regular Expression
 // This RegExp ensures that the --extra-tags string
 // matches a list of <key>:<value> separated by commas

@@ -10,7 +10,7 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
-  EXTRA_TAGS_ENV_VAR,
+  DD_TAGS_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
   LOG_LEVEL_ENV_VAR,
@@ -312,7 +312,7 @@ export class InstrumentCommand extends Command {
       newEnvVars[LOG_LEVEL_ENV_VAR] = this.logLevel
     }
     if (this.extraTags) {
-      newEnvVars[EXTRA_TAGS_ENV_VAR] = this.extraTags
+      newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags
     }
 
     // If port is specified, overwrite any existing value
