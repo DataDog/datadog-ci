@@ -11,11 +11,11 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import {
   ENVIRONMENT_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
 } from '../../../../constants'
@@ -151,10 +151,10 @@ describe('instrument', () => {
           Variables: {
             [FLUSH_TO_LOG_ENV_VAR]: 'false',
             [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
-            [LOG_LEVEL_ENV_VAR]: 'debug',
+            [DD_LOG_LEVEL_ENV_VAR]: 'debug',
             [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
             [SITE_ENV_VAR]: 'datadoghq.com',
-            [TRACE_ENABLED_ENV_VAR]: 'false',
+            [DD_TRACE_ENABLED_ENV_VAR]: 'false',
             [DD_LLMOBS_ENABLED_ENV_VAR]: 'true',
             [DD_LLMOBS_ML_APP_ENV_VAR]: 'my-ml-app',
           },
@@ -338,10 +338,10 @@ describe('instrument', () => {
               Variables: {
                 [FLUSH_TO_LOG_ENV_VAR]: 'false',
                 [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
-                [LOG_LEVEL_ENV_VAR]: 'debug',
+                [DD_LOG_LEVEL_ENV_VAR]: 'debug',
                 [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
                 [SITE_ENV_VAR]: 'datadoghq.com',
-                [TRACE_ENABLED_ENV_VAR]: 'false',
+                [DD_TRACE_ENABLED_ENV_VAR]: 'false',
                 [SERVICE_ENV_VAR]: 'middletier',
                 [ENVIRONMENT_ENV_VAR]: 'staging',
                 [VERSION_ENV_VAR]: '0.2',

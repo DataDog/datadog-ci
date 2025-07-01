@@ -15,7 +15,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
-  TRACE_ENABLED_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
 } from '../../../../constants'
 import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 
@@ -690,7 +690,7 @@ describe('commons', () => {
               Variables: {
                 [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                 [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                [TRACE_ENABLED_ENV_VAR]: 'false',
+                [DD_TRACE_ENABLED_ENV_VAR]: 'false',
               },
             },
             FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -710,7 +710,7 @@ describe('commons', () => {
           Variables: {
             [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
             [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-            [TRACE_ENABLED_ENV_VAR]: 'false',
+            [DD_TRACE_ENABLED_ENV_VAR]: 'false',
           },
         },
         FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -751,7 +751,7 @@ describe('commons', () => {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                   [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                  [DD_TRACE_ENABLED_ENV_VAR]: 'false',
                 },
               },
               FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -779,7 +779,7 @@ describe('commons', () => {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                   [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                  [DD_TRACE_ENABLED_ENV_VAR]: 'false',
                 },
               },
               FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',

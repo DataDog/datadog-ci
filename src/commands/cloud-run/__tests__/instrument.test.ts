@@ -7,12 +7,12 @@ import {
   ENVIRONMENT_ENV_VAR,
   DD_TAGS_ENV_VAR,
   HEALTH_PORT_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
   LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
@@ -194,8 +194,8 @@ describe('InstrumentCommand', () => {
         {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY ?? ''},
         {name: HEALTH_PORT_ENV_VAR, value: '5555'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-        {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
-        {name: LOG_LEVEL_ENV_VAR, value: 'debug'},
+        {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+        {name: DD_LOG_LEVEL_ENV_VAR, value: 'debug'},
         {name: DD_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
       ]
       expect(newSidecarContainer.env).toEqual(expect.arrayContaining(expected))
@@ -211,7 +211,7 @@ describe('InstrumentCommand', () => {
           {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
           {name: LOGS_PATH_ENV_VAR, value: 'some-log-path'},
           {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
-          {name: TRACE_ENABLED_ENV_VAR, value: 'false'},
+          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
           {name: HEALTH_PORT_ENV_VAR, value: '12345'},
           {name: 'CUSTOM_ENV_VAR', value: 'some-value'},
           // Following env vars should be overwritten
@@ -225,7 +225,7 @@ describe('InstrumentCommand', () => {
         {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
         {name: LOGS_PATH_ENV_VAR, value: 'some-log-path'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
-        {name: TRACE_ENABLED_ENV_VAR, value: 'false'},
+        {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
         {name: HEALTH_PORT_ENV_VAR, value: '12345'},
         {name: 'CUSTOM_ENV_VAR', value: 'some-value'},
         {name: API_KEY_ENV_VAR, value: 'mock-api-key'},

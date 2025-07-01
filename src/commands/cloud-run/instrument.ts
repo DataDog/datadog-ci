@@ -13,12 +13,12 @@ import {
   DD_TAGS_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
   LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
@@ -44,7 +44,7 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
   {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
   {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
   {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-  {name: TRACE_ENABLED_ENV_VAR, value: 'true'},
+  {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
   {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
 ]
 
@@ -300,7 +300,7 @@ export class InstrumentCommand extends Command {
       newEnvVars[SITE_ENV_VAR] = process.env[SITE_ENV_VAR]
     }
     if (this.tracing) {
-      newEnvVars[TRACE_ENABLED_ENV_VAR] = this.tracing
+      newEnvVars[DD_TRACE_ENABLED_ENV_VAR] = this.tracing
     }
     if (this.environment) {
       newEnvVars[ENVIRONMENT_ENV_VAR] = this.environment
@@ -309,7 +309,7 @@ export class InstrumentCommand extends Command {
       newEnvVars[VERSION_ENV_VAR] = this.version
     }
     if (this.logLevel) {
-      newEnvVars[LOG_LEVEL_ENV_VAR] = this.logLevel
+      newEnvVars[DD_LOG_LEVEL_ENV_VAR] = this.logLevel
     }
     if (this.extraTags) {
       newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags

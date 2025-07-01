@@ -15,10 +15,10 @@ import {
   DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   DD_TAGS_ENV_VAR,
-  LOG_LEVEL_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
 import {isValidDatadogSite} from '../../../helpers/validation'
@@ -257,7 +257,7 @@ export const calculateUpdateRequest = async (
     ['loggingEnabled', LOG_ENABLED_ENV_VAR],
     ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
     ['service', SERVICE_ENV_VAR],
-    ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
+    ['tracingEnabled', DD_TRACE_ENABLED_ENV_VAR],
     ['version', VERSION_ENV_VAR],
     ['llmobsMlApp', DD_LLMOBS_ML_APP_ENV_VAR],
   ]
@@ -282,12 +282,12 @@ export const calculateUpdateRequest = async (
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
 
-  if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
+  if (newEnvVars[DD_LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true
     if (settings.logLevel) {
-      newEnvVars[LOG_LEVEL_ENV_VAR] = settings.logLevel
+      newEnvVars[DD_LOG_LEVEL_ENV_VAR] = settings.logLevel
     } else {
-      delete newEnvVars[LOG_LEVEL_ENV_VAR]
+      delete newEnvVars[DD_LOG_LEVEL_ENV_VAR]
     }
   }
 
