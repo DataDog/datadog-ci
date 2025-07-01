@@ -10,7 +10,13 @@ import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../../constants'
+import {
+  API_KEY_ENV_VAR,
+  CI_API_KEY_ENV_VAR,
+  CI_SITE_ENV_VAR,
+  EXTRA_TAGS_REG_EXP,
+  DD_TRACE_ENABLED_ENV_VAR,
+} from '../../../../constants'
 import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 
 import {
@@ -19,13 +25,11 @@ import {
   DD_LAMBDA_EXTENSION_LAYER_NAME,
   DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
-  EXTRA_TAGS_REG_EXP,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
   LayerKey,
   LAYER_LOOKUP,
   MERGE_XRAY_TRACES_ENV_VAR,
-  TRACE_ENABLED_ENV_VAR,
 } from '../../constants'
 import {
   addLayerArn,
@@ -686,7 +690,7 @@ describe('commons', () => {
               Variables: {
                 [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                 [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                [TRACE_ENABLED_ENV_VAR]: 'false',
+                [DD_TRACE_ENABLED_ENV_VAR]: 'false',
               },
             },
             FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -706,7 +710,7 @@ describe('commons', () => {
           Variables: {
             [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
             [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-            [TRACE_ENABLED_ENV_VAR]: 'false',
+            [DD_TRACE_ENABLED_ENV_VAR]: 'false',
           },
         },
         FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -747,7 +751,7 @@ describe('commons', () => {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                   [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                  [DD_TRACE_ENABLED_ENV_VAR]: 'false',
                 },
               },
               FunctionName: 'arn:aws:lambda:us-east-1:000000000000:function:autoinstrument',
@@ -775,7 +779,7 @@ describe('commons', () => {
                 Variables: {
                   [LAMBDA_HANDLER_ENV_VAR]: 'index.handler',
                   [MERGE_XRAY_TRACES_ENV_VAR]: 'false',
-                  [TRACE_ENABLED_ENV_VAR]: 'false',
+                  [DD_TRACE_ENABLED_ENV_VAR]: 'false',
                 },
               },
               FunctionName: 'arn:aws:lambda:us-east-2:000000000000:function:autoinstrument',
