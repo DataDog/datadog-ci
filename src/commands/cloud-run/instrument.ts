@@ -40,6 +40,7 @@ const SIDECAR_NAME = 'datadog-sidecar'
 const VOLUME_NAME = 'shared-volume'
 const VOLUME_MOUNT_PATH = '/shared-volume'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
+const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
 const DEFAULT_ENV_VARS: IEnvVar[] = [
   {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
@@ -74,6 +75,9 @@ export class InstrumentCommand extends Command {
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
+  private sidecarImage = Option.String('--image,--sidecar-image', {
+    description: "The image to use for the sidecar container. Defaults to 'gcr.io/datadoghq/serverless-init:latest'",
+  })
 
   private config: CloudRunConfigOptions = {
     services: [],
@@ -352,7 +356,7 @@ export class InstrumentCommand extends Command {
     // Create sidecar container with volume mount and environment variables
     return {
       name: SIDECAR_NAME,
-      image: 'gcr.io/datadoghq/serverless-init:latest', // TODO make configurable
+      image: this.sidecarImage ?? DEFAULT_SIDECAR_IMAGE,
       volumeMounts: [
         {
           name: VOLUME_NAME,
