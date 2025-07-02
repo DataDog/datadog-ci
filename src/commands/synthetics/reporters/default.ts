@@ -5,6 +5,9 @@ import chalk from 'chalk'
 import ora from 'ora'
 
 import type {CommandContext} from '../../../helpers/interfaces'
+import {CI_JOB_URL, CI_PIPELINE_URL} from '../../../helpers/tags'
+
+import {getTestRunsUrlPath} from '../../junit/utils'
 
 import {
   Assertion,
@@ -383,7 +386,6 @@ export class DefaultReporter implements MainReporter {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
-
     const runSummary = []
 
     if (summary.previouslyPassed) {
@@ -449,11 +451,22 @@ export class DefaultReporter implements MainReporter {
       )
     }
 
+    const testRunsUrlPath = getTestRunsUrlPath(
+      {
+        [CI_JOB_URL]: summary.metadata?.ci.job?.url,
+        [CI_PIPELINE_URL]: summary.metadata?.ci.pipeline?.url,
+      },
+      '@test.framework:synthetics'
+    )
+    if (testRunsUrlPath) {
+      lines.push(`\nView test runs in Test Optimization: ${chalk.dim.cyan(baseUrl + testRunsUrlPath)}`)
+    }
+
     if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `\nIncrease your parallelization to reduce the test batch duration: ${chalk.dim.cyan(
+        `\nIncrease your parallelization to reduce the CI batch duration: ${chalk.dim.cyan(
           baseUrl + 'synthetics/settings/continuous-testing'
-        )}\n`
+        )}`
       )
     }
 

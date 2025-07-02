@@ -1,7 +1,6 @@
 import deepExtend from 'deep-extend'
 
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+import {Metadata} from '../../helpers/interfaces'
 
 import {APIHelper, EndpointError, formatBackendErrors, getErrorHttpStatus} from './api'
 import {BatchTimeoutRunawayError} from './errors'
@@ -39,23 +38,17 @@ const POLLING_INTERVAL = 5000 // In ms
 export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
+  metadata?: Metadata,
   selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<Trigger> => {
   const payload: Payload = {
     tests: testsToTrigger,
+    metadata,
     options: {
       batch_timeout: batchTimeout,
       selective_rerun: selectiveRerun,
     },
-  }
-  const tagsToLimit = {
-    [GIT_COMMIT_MESSAGE]: 500,
-  }
-  const ciMetadata = getCIMetadata(tagsToLimit)
-
-  if (ciMetadata) {
-    payload.metadata = ciMetadata
   }
 
   try {
