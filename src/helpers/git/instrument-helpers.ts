@@ -27,7 +27,7 @@ export const getGitData = async () => {
   return {commitSha: currentStatus.hash, gitRemote}
 }
 
-const getCurrentGitStatus = async () => {
+export const getCurrentGitStatus = async () => {
   const simpleGit = await newSimpleGit()
   const gitCommitInfo = await getCommitInfo(simpleGit)
   if (gitCommitInfo === undefined) {

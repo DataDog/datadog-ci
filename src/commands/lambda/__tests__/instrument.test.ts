@@ -24,6 +24,7 @@ import {
   VERSION_ENV_VAR,
 } from '../../../constants'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
+import * as instrumentHelpers from '../../../helpers/git/instrument-helpers'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import {
@@ -257,7 +258,7 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
           ahead: 0,
           isClean: false,
@@ -294,21 +295,21 @@ describe('lambda', () => {
           },
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
-        const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
-        mockGitStatus.mockImplementation(() => ({
+        const mockGitStatus = jest.spyOn(instrumentHelpers, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(async () => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
+          files: [],
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
-        mockUploadFunction.mockImplementation(() => {
+        const mockUploadFunction = jest.spyOn(instrumentHelpers, 'uploadGitData')
+        mockUploadFunction.mockImplementation(async () => {
           return
         })
 
         const cli = new Cli()
-        cli.register(instrumentCommand)
+        cli.register(InstrumentCommand)
 
         const {context} = await runCLI([
           '--function',
@@ -340,15 +341,16 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
-        mockGitStatus.mockImplementation(() => ({
+        const mockGitStatus = jest.spyOn(instrumentHelpers, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(async () => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
+          files: [],
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
-        mockUploadFunction.mockImplementation(() => {
+        const mockUploadFunction = jest.spyOn(instrumentHelpers, 'uploadGitData')
+        mockUploadFunction.mockImplementation(async () => {
           return
         })
 
@@ -385,10 +387,13 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
-        mockGitStatus.mockImplementation(() => ({
+        const mockGitStatus = jest.spyOn(instrumentHelpers, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(async () => ({
           ahead: 1,
           isClean: true,
+          files: [],
+          hash: '',
+          remote: '',
         }))
 
         const cli = new Cli()

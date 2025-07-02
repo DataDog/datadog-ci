@@ -41,19 +41,19 @@ describe('InstrumentCommand', () => {
     test('should fail if project is missing', async () => {
       const {code, context} = await runCLI(['--services', 'test-service', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No project specified')
+      expect(context.stdout.toString()).toContain('missing project')
     })
 
     test('should fail if services are missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No services specified')
+      expect(context.stdout.toString()).toContain('missing service(s)')
     })
 
     test('should fail if region is missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--services', 'test-service'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No region specified')
+      expect(context.stdout.toString()).toContain('missing region')
     })
   })
 
@@ -110,6 +110,9 @@ describe('InstrumentCommand', () => {
     beforeEach(() => {
       command = new InstrumentCommand()
       ;(command as any).tracing = undefined
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
     })
 
     test('adds sidecar and shared volume when missing', () => {
@@ -175,6 +178,10 @@ describe('InstrumentCommand', () => {
     beforeEach(() => {
       command = new InstrumentCommand()
       ;(command as any).tracing = undefined
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
+      ;(command as any).logsPath = '/shared-volume/logs/*.log'
     })
 
     test('custom flags set correct env vars', () => {
@@ -223,13 +230,13 @@ describe('InstrumentCommand', () => {
       const newSidecarContainer = command.buildSidecarContainer(existingSidecarContainer, 'new-service')
       const expected: IEnvVar[] = [
         {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
-        {name: LOGS_PATH_ENV_VAR, value: 'some-log-path'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
         {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
         {name: HEALTH_PORT_ENV_VAR, value: '12345'},
         {name: 'CUSTOM_ENV_VAR', value: 'some-value'},
         {name: API_KEY_ENV_VAR, value: 'mock-api-key'},
         {name: SERVICE_ENV_VAR, value: 'new-service'},
+        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
       ]
       for (const expectedEnv of expected) {
         const actual = newSidecarContainer.env?.find((value) => value.name === expectedEnv.name)
