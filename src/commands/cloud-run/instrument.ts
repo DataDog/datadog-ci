@@ -22,6 +22,7 @@ import {
   SITE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  CI_SITE_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
@@ -29,8 +30,9 @@ import {enableFips} from '../../helpers/fips'
 import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
+import {isValidDatadogSite} from '../../helpers/validation'
 
-import {requestConfirmation, requestGCPProject, requestGCPRegion, requestServiceName, requestSite} from './prompt'
+import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, generateConfigDiff} from './utils'
 
@@ -80,19 +82,19 @@ export class InstrumentCommand extends Command {
   private llmobs = Option.String('--llmobs')
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
   private sidecarImage = Option.String('--image,--sidecar-image', {
-    description: "The image to use for the sidecar container. Defaults to 'gcr.io/datadoghq/serverless-init:latest'",
+    description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
   })
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
-    description: `The name to use for the sidecar container. Defaults to ${DEFAULT_SIDECAR_NAME}`,
+    description: `The name to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
   })
   private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
-    description: `The name to use for the shared volume. Defaults to ${DEFAULT_VOLUME_NAME}`,
+    description: `The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
   private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
-    description: `The path to use for the shared volume. Defaults to ${DEFAULT_VOLUME_PATH}`,
+    description: `The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
   })
   private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
-    description: `The path to use for the logs. Defaults to ${DEFAULT_LOGS_PATH}. Must begin with the shared volume path.`,
+    description: `The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -144,7 +146,10 @@ export class InstrumentCommand extends Command {
       }
 
       // Prompt for site if missing
-      await requestSite()
+      const envSite = process.env[CI_SITE_ENV_VAR]
+      if (!isValidDatadogSite(envSite)) {
+        process.env[CI_SITE_ENV_VAR] = await requestSite()
+      }
     }
 
     // Validate required variables
