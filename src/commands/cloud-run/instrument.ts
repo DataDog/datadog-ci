@@ -36,15 +36,15 @@ const {ServicesClient} = require('@google-cloud/run')
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
-const SIDECAR_NAME = 'datadog-sidecar'
-const VOLUME_NAME = 'shared-volume'
-const VOLUME_MOUNT_PATH = '/shared-volume'
+const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
+const DEFAULT_VOLUME_NAME = 'shared-volume'
+const DEFAULT_VOLUME_PATH = '/shared-volume'
+const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
 const DEFAULT_ENV_VARS: IEnvVar[] = [
   {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
-  {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
   {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
   {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
   {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
@@ -77,6 +77,18 @@ export class InstrumentCommand extends Command {
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
   private sidecarImage = Option.String('--image,--sidecar-image', {
     description: "The image to use for the sidecar container. Defaults to 'gcr.io/datadoghq/serverless-init:latest'",
+  })
+  private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
+    description: `The name to use for the sidecar container. Defaults to ${DEFAULT_SIDECAR_NAME}`,
+  })
+  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
+    description: `The name to use for the shared volume. Defaults to ${DEFAULT_VOLUME_NAME}`,
+  })
+  private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
+    description: `The path to use for the shared volume. Defaults to ${DEFAULT_VOLUME_PATH}`,
+  })
+  private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
+    description: `The path to use for the logs. Defaults to ${DEFAULT_LOGS_PATH}. Must begin with the shared volume path.`,
   })
 
   public async execute(): Promise<0 | 1> {
@@ -282,12 +294,12 @@ export class InstrumentCommand extends Command {
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
 
-    const existingSidecarContainer = containers.find((c) => c.name === SIDECAR_NAME)
+    const existingSidecarContainer = containers.find((c) => c.name === this.sidecarName)
     const newSidecarContainer = this.buildSidecarContainer(existingSidecarContainer, ddService)
 
     // Update all app containers to add volume mounts and env vars if they don't have them
     const updatedContainers = containers.map((container) => {
-      if (container.name === SIDECAR_NAME) {
+      if (container.name === this.sidecarName) {
         return newSidecarContainer
       }
 
@@ -300,13 +312,13 @@ export class InstrumentCommand extends Command {
     }
 
     // Add shared volume if it doesn't exist
-    const hasSharedVolume = volumes.some((volume) => volume.name === VOLUME_NAME)
+    const hasSharedVolume = volumes.some((volume) => volume.name === this.sharedVolumeName)
     const updatedVolumes = hasSharedVolume
       ? volumes
       : [
           ...volumes,
           {
-            name: VOLUME_NAME,
+            name: this.sharedVolumeName,
             emptyDir: {
               medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
             },
@@ -361,6 +373,7 @@ export class InstrumentCommand extends Command {
     if (this.extraTags) {
       newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags
     }
+    newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
 
     // If port is specified, overwrite any existing value
     // If port is not specified but already exists, leave the existing value unchanged
@@ -378,12 +391,12 @@ export class InstrumentCommand extends Command {
 
     // Create sidecar container with volume mount and environment variables
     return {
-      name: SIDECAR_NAME,
+      name: this.sidecarName,
       image: this.sidecarImage ?? DEFAULT_SIDECAR_IMAGE,
       volumeMounts: [
         {
-          name: VOLUME_NAME,
-          mountPath: VOLUME_MOUNT_PATH,
+          name: this.sharedVolumeName,
+          mountPath: this.sharedVolumePath,
         },
       ],
       env: newEnv,
@@ -408,7 +421,9 @@ export class InstrumentCommand extends Command {
   // Add volume mount and update required env vars
   private updateAppContainer(appContainer: IContainer, ddService: string) {
     const existingVolumeMounts = appContainer.volumeMounts || []
-    const hasSharedVolumeMount = existingVolumeMounts.some((mount: IVolumeMount) => mount.name === VOLUME_NAME)
+    const hasSharedVolumeMount = existingVolumeMounts.some(
+      (mount: IVolumeMount) => mount.name === this.sharedVolumeName
+    )
     const existingEnvVars = appContainer.env || []
 
     const updatedContainer = {...appContainer}
@@ -416,8 +431,8 @@ export class InstrumentCommand extends Command {
       updatedContainer.volumeMounts = [
         ...existingVolumeMounts,
         {
-          name: VOLUME_NAME,
-          mountPath: VOLUME_MOUNT_PATH,
+          name: this.sharedVolumeName,
+          mountPath: this.sharedVolumePath,
         },
       ]
     }
