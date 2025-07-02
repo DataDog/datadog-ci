@@ -81,7 +81,7 @@ export class InstrumentCommand extends Command {
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
-  private sidecarImage = Option.String('--image,--sidecar-image', {
+  private sidecarImage = Option.String('--image,--sidecar-image', DEFAULT_SIDECAR_IMAGE, {
     description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
   })
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
@@ -408,7 +408,7 @@ export class InstrumentCommand extends Command {
     // Create sidecar container with volume mount and environment variables
     return {
       name: this.sidecarName,
-      image: this.sidecarImage ?? DEFAULT_SIDECAR_IMAGE,
+      image: this.sidecarImage,
       volumeMounts: [
         {
           name: this.sharedVolumeName,
