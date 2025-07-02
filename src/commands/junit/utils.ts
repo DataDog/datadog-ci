@@ -1,13 +1,6 @@
-import {getCommonAppBaseURL} from '../../helpers/app'
+import {getBaseUrl} from '../../helpers/app'
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
-
-export const getBaseUrl = () => {
-  const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-  const subdomain = process.env.DD_SUBDOMAIN || ''
-
-  return getCommonAppBaseURL(site, subdomain)
-}
 
 export const getTestRunsUrl = (spanTags: SpanTags): string => {
   if (!spanTags[CI_PIPELINE_URL] && !spanTags[CI_JOB_URL]) {

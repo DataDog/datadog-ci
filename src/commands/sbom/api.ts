@@ -1,9 +1,8 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '../../constants'
+import {getBaseUrl} from '../../helpers/app'
 import {getRequestBuilder} from '../../helpers/utils'
-
-import {getBaseUrl} from '../junit/utils'
 
 import {API_ENDPOINT} from './constants'
 import {ScaRequest} from './types'
