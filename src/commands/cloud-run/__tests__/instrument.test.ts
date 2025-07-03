@@ -41,19 +41,19 @@ describe('InstrumentCommand', () => {
     test('should fail if project is missing', async () => {
       const {code, context} = await runCLI(['--services', 'test-service', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No project specified')
+      expect(context.stdout.toString()).toContain('missing project')
     })
 
     test('should fail if services are missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No services specified')
+      expect(context.stdout.toString()).toContain('missing service(s)')
     })
 
     test('should fail if region is missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--services', 'test-service'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No region specified')
+      expect(context.stdout.toString()).toContain('missing region')
     })
   })
 
