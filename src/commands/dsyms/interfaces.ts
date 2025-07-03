@@ -1,14 +1,13 @@
 import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export interface Dsym {
-  bundlePath: string
-  slices: ArchSlice[]
+  bundle: string
+  dwarf: DWARF[]
 }
-
-export interface ArchSlice {
-  arch: string
-  objectPath: string
+export interface DWARF {
+  object: string
   uuid: string
+  arch: string
 }
 
 export class CompressedDsym {
@@ -32,7 +31,7 @@ export class CompressedDsym {
   }
 
   private getMetadataPayload(): MultipartValue {
-    const concatUUIDs = this.dsym.slices.map((slice) => slice.uuid).join()
+    const concatUUIDs = this.dsym.dwarf.map((d) => d.uuid).join()
 
     return {
       type: 'string',

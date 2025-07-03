@@ -55,6 +55,7 @@
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
     "test:lambda": "jest src/commands/lambda --colors",
     "test:cloud-run": "jest src/commands/cloud-run --colors",
+    "test:dsyms": "jest src/commands/dsyms --colors",
     "test:helpers": "jest src/helpers --colors",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",

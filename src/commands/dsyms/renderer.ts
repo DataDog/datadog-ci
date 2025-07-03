@@ -4,7 +4,7 @@ import upath from 'upath'
 import {ICONS} from '../../helpers/formatting'
 import {UploadStatus} from '../../helpers/upload'
 
-import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
+import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {pluralize} from './utils'
 
 export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAILED} Configuration error: ${error}.\n`)
@@ -12,17 +12,17 @@ export const renderConfigurationError = (error: Error) => chalk.red(`${ICONS.FAI
 export const renderInvalidDsymWarning = (dSYMPath: string) =>
   chalk.yellow(`${ICONS.WARNING} Invalid dSYM file, will be skipped: ${dSYMPath}\n`)
 
-export const renderDSYMSlimmingFailure = (dSYM: Dsym, slice: ArchSlice) =>
-  chalk.yellow(`${ICONS.WARNING} Failed to export '${slice.arch}' arch (${slice.uuid}) from ${dSYM.bundlePath}\n`)
+export const renderDSYMSlimmingFailure = (dSYM: Dsym, dwarf: DWARF, error: Error) =>
+  chalk.yellow(`${ICONS.WARNING} Failed to export '${dwarf.arch}' arch (${dwarf.uuid}) from ${dSYM.bundle}: ${error}\n`)
 
 export const renderFailedUpload = (dSYM: CompressedDsym, errorMessage: string) => {
-  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundlePath)}]`
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundle)}]`
 
   return chalk.red(`${ICONS.FAILED} Failed upload dSYM for ${dSYMPathBold}: ${errorMessage}\n`)
 }
 
 export const renderRetriedUpload = (dSYM: CompressedDsym, errorMessage: string, attempt: number) => {
-  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundlePath)}]`
+  const dSYMPathBold = `[${chalk.bold.dim(dSYM.dsym.bundle)}]`
 
   return chalk.yellow(`[attempt ${attempt}] Retrying dSYM upload ${dSYMPathBold}: ${errorMessage}\n`)
 }
@@ -108,9 +108,9 @@ export const renderCommandDetail = (intermediateDirectory: string, uploadDirecto
 
 export const renderUpload = (dSYM: CompressedDsym): string => {
   const archiveName = upath.basename(dSYM.archivePath)
-  const objectName = dSYM.dsym.slices.map((slice) => upath.basename(slice.objectPath))[0]
-  const archs = dSYM.dsym.slices.map((slice) => slice.arch).join()
-  const uuids = dSYM.dsym.slices.map((slice) => slice.uuid).join()
+  const objectName = dSYM.dsym.dwarf.map((dwarf) => upath.basename(dwarf.object))[0]
+  const archs = dSYM.dsym.dwarf.map((dwarf) => dwarf.arch).join()
+  const uuids = dSYM.dsym.dwarf.map((dwarf) => dwarf.uuid).join()
 
   return `Uploading ${archiveName} (${objectName}, arch: ${archs}, UUID: ${uuids})\n`
 }
