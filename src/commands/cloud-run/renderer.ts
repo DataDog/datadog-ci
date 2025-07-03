@@ -4,8 +4,6 @@ import ora from 'ora'
 import * as helpersRenderer from '../../helpers/renderer'
 import {dryRunTag} from '../../helpers/renderer'
 
-import {InstrumentCommand} from './instrument'
-
 const AUTHENTICATION_INSTRUCTIONS = [
   '\n' + helpersRenderer.renderError('Unable to authenticate with GCP.'),
   'To authenticate with GCP, please follow these steps:',

@@ -20,12 +20,15 @@ import {
   SITE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  CI_SITE_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
+import {isValidDatadogSite} from '../../helpers/validation'
 
 import {CloudRunConfigOptions} from './interfaces'
+import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, generateConfigDiff} from './utils'
 
@@ -63,7 +66,7 @@ export class InstrumentCommand extends Command {
   private extraTags = Option.String('--extra-tags,--extraTags')
   private project = Option.String('-p,--project')
   private services = Option.Array('-s,--service,--services', [])
-  private interactive = Option.Boolean('-i,--interactive', false) // todo
+  private interactive = Option.Boolean('-i,--interactive', false)
   private logLevel = Option.String('--log-level,--logLevel')
   private regExPattern = Option.String('--services-regex,--servicesRegex') // todo
   private region = Option.String('-r,--region')
@@ -106,6 +109,30 @@ export class InstrumentCommand extends Command {
       )
 
       return 1
+    }
+
+    if (this.interactive) {
+      // Prompt for project if missing
+      if (!this.project) {
+        this.project = await requestGCPProject()
+      }
+
+      // Prompt for region if missing
+      if (!this.region) {
+        this.region = await requestGCPRegion()
+      }
+
+      // Prompt for service if missing
+      if (this.services.length === 0) {
+        const serviceName = await requestServiceName()
+        this.services = [serviceName]
+      }
+
+      // Prompt for site if missing
+      const envSite = process.env[CI_SITE_ENV_VAR]
+      if (!isValidDatadogSite(envSite)) {
+        process.env[CI_SITE_ENV_VAR] = await requestSite()
+      }
     }
 
     // Validate required variables
@@ -232,6 +259,11 @@ export class InstrumentCommand extends Command {
       )
 
       return
+    } else if (this.interactive) {
+      const confirmed = await requestConfirmation('Do you want to apply the changes?')
+      if (!confirmed) {
+        throw new Error('Instrumentation cancelled by user.')
+      }
     }
 
     await withSpinner(
