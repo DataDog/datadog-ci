@@ -27,7 +27,7 @@ import {maskString} from '../../helpers/utils'
 
 import {CloudRunConfigOptions} from './interfaces'
 import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader, withSpinner} from './renderer'
-import {checkAuthentication} from './utils'
+import {checkAuthentication, generateConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')
@@ -217,6 +217,7 @@ export class InstrumentCommand extends Command {
     ddService: string
   ) {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
+    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
 
     await withSpinner(
       `Instrumenting service ${chalk.bold(serviceName)}...`,
