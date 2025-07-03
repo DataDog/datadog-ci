@@ -20,17 +20,7 @@ export const renderAuthenticationInstructions = () => {
   return AUTHENTICATION_INSTRUCTIONS.join('\n')
 }
 
-export const renderCloudRunInstrumentUninstrumentHeader = (commandType: InstrumentCommand, isDryRun: boolean) => {
-  const prefix = isDryRun ? `${dryRunTag} ` : ''
-
-  const commandVerb = 'Instrumenting'
-  // TODO
-  // if (commandType === UninstrumentCommand.prototype) {
-  //   commandVerb = 'Uninstrumenting'
-  // }
-
-  return `\n${prefix}🐶 ${commandVerb} Cloud Run service\n`
-}
+export const dryRunPrefix = (isDryRun: boolean) => (isDryRun ? `${dryRunTag} ` : '')
 
 /**
  * Executes an async operation with a spinner

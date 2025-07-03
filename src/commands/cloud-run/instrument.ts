@@ -26,7 +26,7 @@ import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
 import {CloudRunConfigOptions} from './interfaces'
-import {renderAuthenticationInstructions, renderCloudRunInstrumentUninstrumentHeader, withSpinner} from './renderer'
+import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, generateConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
@@ -58,7 +58,7 @@ export class InstrumentCommand extends Command {
   })
 
   private configPath = Option.String('--config') // todo
-  private dryRun = Option.Boolean('-d,--dry,--dry-run', false) // todo
+  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private environment = Option.String('--env')
   private extraTags = Option.String('--extra-tags,--extraTags')
   private project = Option.String('-p,--project')
@@ -84,7 +84,7 @@ export class InstrumentCommand extends Command {
     // TODO FIPS
 
     this.context.stdout.write(
-      chalk.bold(renderCloudRunInstrumentUninstrumentHeader(Object.getPrototypeOf(this), this.dryRun))
+      `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
     )
 
     // TODO resolve config from file
@@ -159,12 +159,14 @@ export class InstrumentCommand extends Command {
     try {
       await this.instrumentSidecar(project, services, region, ddService)
     } catch (error) {
-      this.context.stderr.write(chalk.red(`\nInstrumentation failed: ${error}`))
+      this.context.stderr.write(chalk.red(`\n${dryRunPrefix(this.dryRun)}Instrumentation failed: ${error}\n`))
 
       return 1
     }
 
-    this.context.stdout.write('\n✅ Cloud Run instrumentation completed successfully!\n')
+    if (!this.dryRun) {
+      this.context.stdout.write('\n✅ Cloud Run instrumentation completed successfully!\n')
+    }
 
     return 0
   }
@@ -172,7 +174,9 @@ export class InstrumentCommand extends Command {
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
     const client: IServicesClient = new ServicesClient()
 
-    this.context.stdout.write(chalk.bold('\n⬇️ Fetching existing service configurations from Cloud Run...\n'))
+    this.context.stdout.write(
+      chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
+    )
 
     const existingServiceConfigs: IService[] = []
     for (const serviceName of services) {
@@ -196,7 +200,9 @@ export class InstrumentCommand extends Command {
       existingServiceConfigs.push(existingService)
     }
 
-    this.context.stdout.write(chalk.bold('\n🚀 Instrumenting Cloud Run services with sidecar...\n'))
+    this.context.stdout.write(
+      chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Instrumenting Cloud Run services with sidecar...\n`)
+    )
     for (let i = 0; i < existingServiceConfigs.length; i++) {
       const serviceConfig = existingServiceConfigs[i]
       const serviceName = services[i]
@@ -204,7 +210,9 @@ export class InstrumentCommand extends Command {
         const actualDDService = ddService ?? serviceName
         await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
       } catch (error) {
-        this.context.stderr.write(chalk.red(`Failed to instrument service ${serviceName}: ${error}\n`))
+        this.context.stderr.write(
+          chalk.red(`${dryRunPrefix(this.dryRun)}Failed to instrument service ${serviceName}: ${error}\n`)
+        )
         throw error
       }
     }
@@ -218,6 +226,13 @@ export class InstrumentCommand extends Command {
   ) {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
     this.context.stdout.write(generateConfigDiff(existingService, updatedService))
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(serviceName)} with the above changes.\n`
+      )
+
+      return
+    }
 
     await withSpinner(
       `Instrumenting service ${chalk.bold(serviceName)}...`,
