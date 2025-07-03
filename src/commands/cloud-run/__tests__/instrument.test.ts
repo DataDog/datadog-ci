@@ -19,10 +19,24 @@ import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
 
 import {InstrumentCommand} from '../instrument'
+import * as cloudRunPromptModule from '../prompt'
 import * as utils from '../utils'
 
 jest.mock('../../../helpers/apikey')
-jest.mock('../utils')
+jest.mock('../utils', () => ({
+  ...jest.requireActual('../utils'),
+  checkAuthentication: jest.fn(),
+}))
+
+const mockServicesClient = {
+  servicePath: jest.fn(),
+  getService: jest.fn(),
+  updateService: jest.fn(),
+}
+
+jest.mock('@google-cloud/run', () => ({
+  ServicesClient: jest.fn(() => mockServicesClient),
+}))
 
 describe('InstrumentCommand', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['cloud-run', 'instrument'])
@@ -35,25 +49,30 @@ describe('InstrumentCommand', () => {
     }
     ;(apikey.newApiKeyValidator as jest.Mock).mockReturnValue(mockValidator)
     ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
+
+    // Reset mock client
+    mockServicesClient.servicePath.mockImplementation(
+      (project, region, service) => `projects/${project}/locations/${region}/services/${service}`
+    )
   })
 
   describe('validates required variables', () => {
     test('should fail if project is missing', async () => {
       const {code, context} = await runCLI(['--services', 'test-service', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No project specified')
+      expect(context.stdout.toString()).toContain('missing project')
     })
 
     test('should fail if services are missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--region', 'us-central1'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No services specified')
+      expect(context.stdout.toString()).toContain('missing service(s)')
     })
 
     test('should fail if region is missing', async () => {
       const {code, context} = await runCLI(['--project', 'test-project', '--services', 'test-service'])
       expect(code).toBe(1)
-      expect(context.stdout.toString()).toContain('No region specified')
+      expect(context.stdout.toString()).toContain('missing region')
     })
   })
 
@@ -101,6 +120,87 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
+    })
+  })
+
+  describe('snapshot tests', () => {
+    const mockService = {
+      name: 'projects/test-project/locations/us-central1/services/test-service',
+      template: {
+        containers: [
+          {
+            name: 'main-app',
+            image: 'gcr.io/test-project/test-app:latest',
+            env: [{name: 'NODE_ENV', value: 'production'}],
+            volumeMounts: [],
+          },
+        ],
+        volumes: [],
+        revision: 'test-service-v1',
+      },
+    }
+
+    beforeEach(() => {
+      process.env[API_KEY_ENV_VAR] = 'test-api-key'
+      process.env[SERVICE_ENV_VAR] = 'test-service'
+
+      mockServicesClient.getService.mockResolvedValue([mockService])
+
+      const mockOperation = {
+        promise: jest.fn().mockResolvedValue([]),
+      }
+      mockServicesClient.updateService.mockResolvedValue([mockOperation])
+
+      jest.restoreAllMocks()
+
+      const mockValidator = {
+        validateApiKey: jest.fn().mockResolvedValue(true),
+        verifyApiKey: jest.fn().mockResolvedValue(undefined),
+      }
+      ;(apikey.newApiKeyValidator as jest.Mock).mockReturnValue(mockValidator)
+      ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
+    })
+
+    test('prints dry run data with basic flags', async () => {
+      const {code, context} = await runCLI([
+        '--project',
+        'test-project',
+        '--services',
+        'test-service',
+        '--region',
+        'us-central1',
+        '--dry-run',
+        '--env',
+        'staging',
+        '--version',
+        '1.0.0',
+        '--extra-tags',
+        'team:backend,service:api',
+      ])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+
+    test('interactive mode', async () => {
+      // Mock the prompts to return values
+      jest.spyOn(cloudRunPromptModule, 'requestGCPProject').mockResolvedValue('interactive-project')
+      jest.spyOn(cloudRunPromptModule, 'requestGCPRegion').mockResolvedValue('us-west1')
+      jest.spyOn(cloudRunPromptModule, 'requestServiceName').mockResolvedValue('interactive-service')
+      jest.spyOn(cloudRunPromptModule, 'requestSite').mockResolvedValue('datadoghq.com')
+      jest.spyOn(cloudRunPromptModule, 'requestConfirmation').mockResolvedValue(true)
+
+      // Mock the service for interactive mode
+      const interactiveService = {
+        ...mockService,
+        name: 'projects/interactive-project/locations/us-west1/services/interactive-service',
+      }
+      mockServicesClient.getService.mockResolvedValue([interactiveService])
+
+      const {code, context} = await runCLI(['--interactive'])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
   })
 
