@@ -16,7 +16,7 @@ import {
   ServerConfigOverride,
   ServerResult,
   Test,
-  TestNotFound,
+  TestMissing,
   TestPayload,
   TestSkipped,
   TestWithOverride,
@@ -122,7 +122,7 @@ export const isResultInBatchSkippedBySelectiveRerun = (
 }
 
 export const isMobileTestWithOverride = (
-  item: TestNotFound | TestSkipped | TestWithOverride
+  item: TestMissing | TestSkipped | TestWithOverride
 ): item is MobileTestWithOverride =>
   'test' in item && item.test.type === 'mobile' && !!item.test.options && !!item.test.options.mobileApplication
 

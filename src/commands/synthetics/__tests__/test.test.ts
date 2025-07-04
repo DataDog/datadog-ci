@@ -109,6 +109,7 @@ describe('getTestsToTrigger', () => {
       passed: 0,
       previouslyPassed: 0,
       skipped: 1,
+      testsNotAuthorized: new Set(),
       testsNotFound: new Set(['987-654-321']),
       timedOut: 0,
     }
@@ -189,9 +190,9 @@ describe('getTestAndOverrideConfig', () => {
 
     const triggerConfig = {suite: 'Suite 1', id: '123-456-789'}
 
-    await expect(() => getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
-      'Failed to get test: could not query https://app.datadoghq.com/example\nForbidden\n'
-    )
+    expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toStrictEqual({
+      errorMessage: '[123-456-789] Test not authorized: could not query https://app.datadoghq.com/example\nForbidden',
+    })
   })
 
   test('Passes when public ID is valid', async () => {

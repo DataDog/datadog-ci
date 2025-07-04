@@ -186,6 +186,8 @@ export interface Summary {
   previouslyPassed: number
   /** The number of tests that were skipped when starting the CI batch. */
   skipped: number
+  /** The public IDs of tests that could not be accessed due to permissions when starting the CI batch. */
+  testsNotAuthorized: Set<string>
   /** The public IDs of tests that could not be found when starting the CI batch. */
   testsNotFound: Set<string>
   /** The number of results that failed due to the CI batch timing out. */
@@ -450,10 +452,17 @@ export interface LocationsMapping {
   [key: string]: string
 }
 
-export interface Trigger {
+export interface ServerTrigger {
   batch_id: string
   locations: Location[]
   selective_rerun_rate_limited?: boolean
+}
+
+export interface TriggerInfo {
+  batchId: string
+  locations: Location[]
+  selectiveRerunRateLimited?: boolean
+  testsNotAuthorized: Set<string>
 }
 
 export interface RetryConfig {
@@ -524,7 +533,8 @@ export interface RemoteTestPayload extends ServerConfigOverride {
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 
-export interface TestNotFound {
+/** Missing test, either because it's not found, or because it could not be read. */
+export interface TestMissing {
   errorMessage: string
 }
 
