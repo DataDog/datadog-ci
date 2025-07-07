@@ -21,8 +21,12 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -91,9 +95,16 @@ export class InstrumentCommand extends Command {
   private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
     description: `The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
 
   public async execute(): Promise<0 | 1> {
-    // TODO FIPS
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     this.context.stdout.write(
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
