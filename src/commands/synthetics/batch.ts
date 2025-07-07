@@ -1,8 +1,7 @@
 import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
+import {Metadata} from '../../helpers/interfaces'
 
 import {
   APIHelper,
@@ -47,24 +46,18 @@ export const runTests = async (
   api: APIHelper,
   testsToTrigger: TestPayload[],
   reporter: MainReporter,
+  metadata?: Metadata,
   failOnMissingTests?: boolean,
   selectiveRerun?: boolean,
   batchTimeout = DEFAULT_BATCH_TIMEOUT
 ): Promise<TriggerInfo> => {
   const payload: Payload = {
     tests: testsToTrigger,
+    metadata,
     options: {
       batch_timeout: batchTimeout,
       selective_rerun: selectiveRerun,
     },
-  }
-  const tagsToLimit = {
-    [GIT_COMMIT_MESSAGE]: 500,
-  }
-  const ciMetadata = getCIMetadata(tagsToLimit)
-
-  if (ciMetadata) {
-    payload.metadata = ciMetadata
   }
 
   try {
@@ -102,7 +95,15 @@ export const runTests = async (
       const newTestsToTrigger = testsToTrigger.filter(
         (t) => !unauthorizedTestPublicIds.has(getPublicIdOrPlaceholder(t))
       )
-      const trigger = await runTests(api, newTestsToTrigger, reporter, failOnMissingTests, selectiveRerun, batchTimeout)
+      const trigger = await runTests(
+        api,
+        newTestsToTrigger,
+        reporter,
+        metadata,
+        failOnMissingTests,
+        selectiveRerun,
+        batchTimeout
+      )
 
       return {
         ...trigger,

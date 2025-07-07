@@ -91,6 +91,15 @@ export class SendDeploymentEvent extends Command {
     description: 'Disables sending git URL and SHA. Change Lead Time will not be available',
   })
 
+  private team = Option.String('--team', {
+    description: 'The team responsible for the deployment',
+  })
+
+  private customTags = Option.Array('--custom-tags', {
+    description:
+      'Custom tags to add to the deployment event in the format key:value, max 100 tags per deployment event',
+  })
+
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
@@ -179,6 +188,12 @@ export class SendDeploymentEvent extends Command {
     }
     if (this.version) {
       deployment.version = this.version
+    }
+    if (this.team) {
+      deployment.team = this.team
+    }
+    if (this.customTags) {
+      deployment.customTags = this.customTags
     }
 
     return deployment

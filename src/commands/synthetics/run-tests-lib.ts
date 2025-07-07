@@ -1,3 +1,5 @@
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
@@ -151,21 +153,27 @@ export const executeTests = async (
     }
   }
 
+  const metadata = getCIMetadata({
+    [GIT_COMMIT_MESSAGE]: 500,
+  })
+
   let trigger: TriggerInfo
   try {
     trigger = await runTests(
       api,
       overriddenTestsToTrigger,
       reporter,
+      metadata,
       config.failOnMissingTests,
       config.selectiveRerun,
       config.batchTimeout
     )
 
-    // Update summary with tests that could not be triggered.
+    // Update summary
     const cannotRead = initialSummary.testsNotAuthorized
     const cannotWrite = trigger.testsNotAuthorized
     initialSummary.testsNotAuthorized = new Set([...cannotRead, ...cannotWrite])
+    initialSummary.metadata = metadata
   } catch (error) {
     await stopTunnel()
 

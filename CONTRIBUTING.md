@@ -8,6 +8,9 @@ and discuss your ideas or propose the changes you wish to make. After a resoluti
 When developing the tool, it is possible to run commands using `yarn launch`. It relies on `ts-node`, so does not require building the project for every new change.
 
 ```bash
+# Install dependencies (run once)
+yarn install
+
 yarn launch synthetics run-tests --config dev/global.config.json
 ```
 
