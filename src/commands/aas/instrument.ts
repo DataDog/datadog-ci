@@ -1,4 +1,5 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -20,7 +21,6 @@ import {
   SIDECAR_PORT,
 } from './common'
 import {AasConfigOptions} from './interfaces'
-import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 
 export class InstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
