@@ -4,21 +4,21 @@ To un-minify errors, upload your React Native source maps to Datadog.
 
 ## Setup
 
-You need to have `DATADOG_API_KEY` in your environment.
+You need to have `DD_API_KEY` in your environment.
 
 ```bash
 # Environment setup
-export DATADOG_API_KEY="<API KEY>"
+export DD_API_KEY="<API KEY>"
 ```
 
-You can configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
+You can configure the tool to use Datadog EU by defining the `DD_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
 
 To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
 
 ```json
 {
-  "apiKey": "<DATADOG_API_KEY>",
-  "datadogSite": "<DATADOG_SITE>"
+  "apiKey": "<DD_API_KEY>",
+  "datadogSite": "<DD_SITE>"
 }
 ```
 
@@ -144,8 +144,8 @@ You can use the same environment variables as the `upload` command:
 
 | Environment Variable           | Description                                                                                                                                                     |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `DATADOG_API_KEY`              | Your Datadog API key. (REQUIRED)
-| `DATADOG_SITE`                 | Optional Datadog site (datadoghq.com, [us3, us5].datadoghq.com, datadoghq.eu, ddog-gov.com, ap1.datadoghq.com, ap2.datadoghq.com). By default, the requests are sent to Datadog US.
+| `DD_API_KEY`                   | Your Datadog API key. (REQUIRED)
+| `DD_SITE`                      | Optional Datadog site (datadoghq.com, [us3, us5].datadoghq.com, datadoghq.eu, ddog-gov.com, ap1.datadoghq.com, ap2.datadoghq.com). By default, the requests are sent to Datadog US.
 | `DATADOG_SOURCEMAP_INTAKE_URL` | Optional variable to override the full URL for the intake endpoint.
 | `DATADOG_RELEASE_VERSION`      | Optional variable to override the version name for sourcemaps upload
 
@@ -227,7 +227,7 @@ The `--dry-run` optional parameter is also available, to run the command without
 To verify this command works as expected, you can trigger a test run and verify that it returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 
 TEMP_DIR=$(mktemp -d)
 echo '{}' > $TEMP_DIR/fake.js

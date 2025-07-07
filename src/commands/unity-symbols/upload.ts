@@ -102,14 +102,18 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
+        apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
         datadogSite: process.env.DATADOG_SITE,
       },
       {
         configPath: this.configPath,
         defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         configFromFileCallback: (configFromFile: any) => {
-          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(
+            process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+            configFromFile.apiKey,
+            this.context.stdout,
+          )
         },
       }
     )

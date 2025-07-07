@@ -45,8 +45,8 @@ To setup the client, your Datadog API and application keys need to be configured
 2. Defined as environment variables:
 
     ```bash
-    export DATADOG_API_KEY="<API_KEY>"
-    export DATADOG_APP_KEY="<APPLICATION_KEY>"
+    export DD_API_KEY="<API_KEY>"
+    export DD_APP_KEY="<APPLICATION_KEY>"
     ```
 
 3. Passed to the CLI when running your tests:
@@ -65,7 +65,7 @@ Example:
 
 ```jsonc
 {
-  "apiKey": "<DATADOG_API_KEY>",
+  "apiKey": "<DD_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "batchTimeout": 1800000,
   "datadogSite": "datadoghq.com",
@@ -265,7 +265,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 **Configuration options**
 
 * Global Config: `"apiKey": "<API_KEY>"`
-* ENV variable: `DATADOG_API_KEY="<API_KEY>"`
+* ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
 #### `appKey` (Required)
@@ -275,7 +275,7 @@ Your Datadog application key. This key is [created in your Datadog organization]
 **Configuration options**
 
 * Global Config: `"appKey": "<APPLICATION_KEY>"`
-* ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
+* ENV variable: `DD_APP_KEY="<APPLICATION_KEY>"`
 * CLI param: `--appKey "<APPLICATION_KEY>"`
 
 #### `batchTimeout`
@@ -849,7 +849,7 @@ Your Datadog API key. This key is [created in your Datadog organization][15] and
 **Configuration options**
 
 * Global Config: `"apiKey": "<API_KEY>"`
-* ENV variable: `DATADOG_API_KEY="<API_KEY>"`
+* ENV variable: `DD_API_KEY="<API_KEY>"`
 * CLI param: `--apiKey "<API_KEY>"`
 
 #### `appKey` (Required)
@@ -859,7 +859,7 @@ Your Datadog application key. This key is [created in your Datadog organization]
 **Configuration options**
 
 * Global Config: `"appKey": "<APPLICATION_KEY>"`
-* ENV variable: `DATADOG_APP_KEY="<APPLICATION_KEY>"`
+* ENV variable: `DD_APP_KEY="<APPLICATION_KEY>"`
 * CLI param: `--appKey "<APPLICATION_KEY>"`
 
 #### `configPath`
@@ -953,7 +953,7 @@ You can also pass these options in a configuration file:
 
 ```json
 {
-  "apiKey": "<DATADOG_API_KEY>",
+  "apiKey": "<DD_API_KEY>",
   "appKey": "<DATADOG_APPLICATION_KEY>",
   "mobileApplicationVersionFilePath": "example_path/example_app.apk",
   "mobileApplicationId": "example-abc",
@@ -983,8 +983,8 @@ This allows you to run tests with end-to-end encryption at every stage of your s
 To verify the Synthetics command works as expected, trigger a test run and verify it returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API_KEY>'
-export DATADOG_APP_KEY='<APPLICATION_KEY>'
+export DD_API_KEY='<API_KEY>'
+export DD_APP_KEY='<APPLICATION_KEY>'
 
 yarn datadog-ci synthetics run-tests --public-id abc-def-ghi
 ```

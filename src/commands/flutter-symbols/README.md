@@ -4,26 +4,26 @@ To deobfuscate and symbolicate errors and crashes, upload your Flutter Symbols, 
 
 ## Setup
 
-You need to have `DATADOG_API_KEY` in your environment.
+You need to have `DD_API_KEY` in your environment.
 
 ```bash
 # Environment setup
-export DATADOG_API_KEY="<API KEY>"
+export DD_API_KEY="<API KEY>"
 ```
 
-By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
+By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DD_SITE` environment variable to the corresponding [site parameter][2].
 
 ```bash
 # Example environment setup for US5
-export DATADOG_SITE="us5.datadoghq.com"
+export DD_SITE="us5.datadoghq.com"
 ```
 
 To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
 
 ```json
 {
-  "apiKey": "<DATADOG_API_KEY>",
-  "datadogSite": "<DATADOG_SITE>"
+  "apiKey": "<DD_API_KEY>",
+  "datadogSite": "<DD_SITE>"
 }
 ```
 

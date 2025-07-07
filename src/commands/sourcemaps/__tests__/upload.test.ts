@@ -97,7 +97,7 @@ describe('upload', () => {
       const command = createCommand(UploadCommand)
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
-        `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
+        `Missing ${chalk.bold('DD_API_KEY')} in your environment.`
       )
     })
   })

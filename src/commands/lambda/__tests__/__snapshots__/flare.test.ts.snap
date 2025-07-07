@@ -838,7 +838,7 @@ exports[`lambda flare validates required flags prints error when end time is spe
 exports[`lambda flare validates required flags prints error when no API key in env variables 1`] = `
 "
 🐶 Generating Lambda flare to send your configuration to Datadog...
-[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+[Error] No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.
 "
 `;
 

@@ -84,7 +84,7 @@ export class UploadCommand extends Command {
     if (!this.config.apiKey) {
       this.logger.error(
         renderConfigurationError(
-          new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment`)
+          new InvalidConfigurationError(`Missing ${chalk.bold('DD_API_KEY')} in your environment`)
         )
       )
 

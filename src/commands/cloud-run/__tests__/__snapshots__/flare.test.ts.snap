@@ -333,6 +333,7 @@ exports[`cloud-run flare prints correct headers prints dry-run header 1`] = `
 [Error] No service specified. [-s,--service]
 [Error] No project specified. [-p,--project]
 [Error] No region specified. [-r,--region]
+[Error] No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.
 [Error] No case ID specified. [-c,--case-id]
 [Error] No email specified. [-e,--email]
 "
@@ -344,6 +345,7 @@ exports[`cloud-run flare prints correct headers prints non-dry-run header 1`] = 
 [Error] No service specified. [-s,--service]
 [Error] No project specified. [-p,--project]
 [Error] No region specified. [-r,--region]
+[Error] No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.
 [Error] No case ID specified. [-c,--case-id]
 [Error] No email specified. [-e,--email]
 "
@@ -480,7 +482,7 @@ exports[`cloud-run flare summarizeConfig 1`] = `
 exports[`cloud-run flare validates required flags prints error when no API key in env variables 1`] = `
 "
 🐶 Generating Cloud Run flare to send your configuration to Datadog...
-[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+[Error] No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.
 "
 `;
 

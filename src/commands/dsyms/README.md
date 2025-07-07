@@ -8,18 +8,18 @@ Upload dSYM files to Datadog to symbolicate your crash reports.
 
 ### Setup
 
-You need to have `DATADOG_API_KEY` in your environment.
+You need to have `DD_API_KEY` in your environment.
 
 ```bash
 # Environment setup
-export DATADOG_API_KEY="<API KEY>"
+export DD_API_KEY="<API KEY>"
 ```
 
-By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DATADOG_SITE` environment variable to the corresponding [site parameter][2].
+By default, requests are sent to Datadog US1. It is possible to configure the tool to use a different site by setting the `DD_SITE` environment variable to the corresponding [site parameter][2].
 
 ```bash
 # Example environment setup for US5
-export DATADOG_SITE="us5.datadoghq.com"
+export DD_SITE="us5.datadoghq.com"
 ```
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_DSYM_INTAKE_URL` environment variable.
@@ -56,7 +56,7 @@ datadog-ci dsyms upload ~/Downloads/appDsyms.zip
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 
 // at this point, build any project in Xcode so that it produces dSYM files in Derived Data path
 // assuming your Derived Data path is ~/Library/Developer/Xcode/DerivedData/

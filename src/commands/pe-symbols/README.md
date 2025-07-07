@@ -5,21 +5,21 @@ Upload Windows PE debug info files to Datadog to symbolicate your profiles.
 
 ## Setup
 
-You need to have `DATADOG_API_KEY` in your environment.
+You need to have `DD_API_KEY` in your environment.
 
 ```bash
 # Environment setup
-export DATADOG_API_KEY="<API KEY>"
+export DD_API_KEY="<API KEY>"
 ```
 
-You can configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
+You can configure the tool to use Datadog EU by defining the `DD_SITE` environment variable as `datadoghq.eu`. By default, the requests are sent to Datadog US.
 
 To make these variables available, Datadog recommends setting them in an encrypted `datadog-ci.json` file at the root of your project:
 
 ```json
 {
-  "apiKey": "<DATADOG_API_KEY>",
-  "datadogSite": "<DATADOG_SITE>"
+  "apiKey": "<DD_API_KEY>",
+  "datadogSite": "<DD_SITE>"
 }
 ```
 
