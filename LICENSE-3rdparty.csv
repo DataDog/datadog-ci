@@ -9,6 +9,7 @@ Component,Origin,Licence,Copyright
 @aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @azure/identity,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
+@azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
