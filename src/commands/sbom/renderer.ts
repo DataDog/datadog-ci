@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {getBaseUrl} from '../junit/utils'
+import {getBaseUrl} from '../../helpers/app'
 
 import {Dependency, ScaRequest} from './types'
 import {validateDependencyName} from './validation'

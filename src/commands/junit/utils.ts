@@ -1,4 +1,4 @@
-import {getCommonAppBaseURL} from '../../helpers/app'
+import {getBaseUrl} from '../../helpers/app'
 import {SpanTags} from '../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
 

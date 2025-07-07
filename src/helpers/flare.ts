@@ -3,6 +3,7 @@
  */
 
 import fs from 'fs'
+import {Writable} from 'stream'
 
 import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'
@@ -21,7 +22,7 @@ import {
 import {deleteFolder} from './fs'
 import * as helpersRenderer from './renderer'
 import {isValidDatadogSite} from './validation'
-import {version} from './version'
+import {getLatestVersion, version} from './version'
 
 /**
  * Send the zip file to Datadog support
@@ -183,4 +184,19 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
+}
+
+export const validateCliVersion = async (stdout: Pick<Writable, 'write'>): Promise<void> => {
+  try {
+    const latestVersion = await getLatestVersion()
+    if (latestVersion !== version) {
+      stdout.write(
+        helpersRenderer.renderSoftWarning(
+          `You are using an outdated version of datadog-ci (${version}). The latest version is ${latestVersion}. Please update for better support.`
+        )
+      )
+    }
+  } catch {
+    // Ignore Errors
+  }
 }

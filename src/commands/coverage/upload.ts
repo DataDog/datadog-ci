@@ -182,10 +182,6 @@ export class UploadCodeCoverageReportCommand extends Command {
     }
 
     await this.uploadCodeCoverageReports()
-
-    if (!this.dryRun) {
-      this.context.stdout.write(renderSuccessfulUploadCommand())
-    }
   }
 
   private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
@@ -202,8 +198,9 @@ export class UploadCodeCoverageReportCommand extends Command {
 
     this.logger.info(renderCommandInfo(this.basePaths, this.dryRun))
 
+    const spanTags = await this.getSpanTags()
     const api = this.getApiHelper()
-    const payloads = await this.generatePayloads()
+    const payloads = await this.generatePayloads(spanTags)
 
     let fileCount = 0
 
@@ -215,6 +212,10 @@ export class UploadCodeCoverageReportCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
 
     this.logger.info(renderSuccessfulUpload(this.dryRun, fileCount, totalTimeSeconds))
+
+    if (!this.dryRun) {
+      this.context.stdout.write(renderSuccessfulUploadCommand(spanTags))
+    }
   }
 
   private getApiHelper(): APIHelper {
@@ -228,8 +229,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     return apiConstructor(intakeUrl, this.config.apiKey)
   }
 
-  private async generatePayloads(): Promise<Payload[]> {
-    const spanTags = await this.getSpanTags()
+  private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
 

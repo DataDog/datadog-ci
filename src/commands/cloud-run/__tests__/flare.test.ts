@@ -144,22 +144,21 @@ jest.mock('@google-cloud/run', () => {
 jest.spyOn(helpersPromptModule, 'requestFilePath').mockResolvedValue('')
 jest.spyOn(helpersPromptModule, 'requestConfirmation').mockResolvedValue(true)
 jest.spyOn(helpersFlareModule, 'getProjectFiles').mockResolvedValue(new Set())
+jest.spyOn(helpersFlareModule, 'validateCliVersion').mockResolvedValue()
 
 // Misc
 jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
-jest.mock('../../../../package.json', () => ({
-  version: '1.0-mock-version',
-}))
+jest.mock('../../../helpers/version', () => ({version: '1.0-mock-version'}))
 
 // File system mocks
 jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.mock('fs')
 fs.existsSync = jest.fn().mockReturnValue(true)
-;(fs.statSync as jest.Mock).mockImplementation((file_path: string) => ({
-  isDirectory: () => file_path === MOCK_FLARE_FOLDER_PATH || file_path === MOCK_CWD,
+;(fs.statSync as jest.Mock).mockImplementation((path: string) => ({
+  isDirectory: () => path === MOCK_FLARE_FOLDER_PATH || path === MOCK_CWD,
 }))
 fs.readdirSync = jest.fn().mockReturnValue([])
 fs.createReadStream = jest.fn().mockReturnValue(MOCK_READ_STREAM)

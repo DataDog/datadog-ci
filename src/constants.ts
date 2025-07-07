@@ -39,6 +39,19 @@ export const SITE_ENV_VAR = 'DD_SITE'
 export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
 export const LOGS_PATH_ENV_VAR = 'DD_SERVERLESS_LOG_PATH'
 export const HEALTH_PORT_ENV_VAR = 'DD_HEALTH_PORT'
+export const DD_LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
+export const DD_TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
+export const DD_LLMOBS_ENABLED_ENV_VAR = 'DD_LLMOBS_ENABLED'
+export const DD_LLMOBS_ML_APP_ENV_VAR = 'DD_LLMOBS_ML_APP'
+export const DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR = 'DD_LLMOBS_AGENTLESS_ENABLED'
+export const DD_TAGS_ENV_VAR = 'DD_TAGS'
+/*
+ * DD_TAGS Regular Expression
+ * This RegExp ensures that the --extra-tags string
+ * matches a list of <key>:<value> separated by commas
+ * such as layer:api,team:intake
+ */
+export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)[\w\-/\.]*:[^,]+)+((\,)([a-zA-Z]+)[\w\-/\.]*:[^,]+)*$/g
 
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'
