@@ -12,7 +12,9 @@ export interface AasConfigOptions {
   // Configuration options
   service?: string
   environment?: string
+  version?: string
   isInstanceLoggingEnabled?: boolean
+  isProfilingEnabled?: boolean
   logPath?: string
   isDotnet?: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming

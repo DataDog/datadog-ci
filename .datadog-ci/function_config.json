@@ -1,0 +1,69 @@
+{
+  "Description": "",
+  "TracingConfig": {
+    "Mode": "PassThrough"
+  },
+  "SnapStart": {
+    "OptimizationStatus": "Off",
+    "ApplyOn": "None"
+  },
+  "RevisionId": "579aea17-9582-45c7-9151-0df553f2a53e",
+  "LastModified": "2025-07-02T18:38:48.972+0000",
+  "FunctionName": "terraform-example-python-ava-function",
+  "Runtime": "python3.13",
+  "Version": "$LATEST",
+  "PackageType": "Zip",
+  "LastUpdateStatus": "Successful",
+  "Layers": [
+    {
+      "SigningProfileVersionArn": "arn:aws:signer:us-east-1:464622532012:/signing-profiles/DatadogLambdaSigningProfile/9vMI9ZAGLc",
+      "CodeSize": 4535576,
+      "UncompressedCodeSize": 12295857,
+      "SigningJobArn": "arn:aws:signer:us-east-1:464622532012:/signing-jobs/4454edb8-d584-482a-92dd-cfb99a22235d",
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Python313-ARM:110"
+    },
+    {
+      "SigningProfileVersionArn": "arn:aws:signer:us-east-1:464622532012:/signing-profiles/DatadogLambdaSigningProfile/9vMI9ZAGLc",
+      "CodeSize": 22180784,
+      "UncompressedCodeSize": 28236333,
+      "SigningJobArn": "arn:aws:signer:us-east-1:464622532012:/signing-jobs/cc3e5044-8b40-44e6-863a-892ab86c21eb",
+      "Arn": "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:81"
+    }
+  ],
+  "FunctionArn": "arn:aws:lambda:us-east-1:425362996713:function:terraform-example-python-ava-function",
+  "MemorySize": 256,
+  "Timeout": 3,
+  "Handler": "datadog_lambda.handler.handler",
+  "CodeSha256": "3SWD13Zalsj+No+K3e86GCAzbVb2oNQmkMXRRh+bE3c=",
+  "Role": "arn:aws:iam::425362996713:role/terraform-example-python-ava-role",
+  "RuntimeVersionConfig": {
+    "RuntimeVersionArn": "arn:aws:lambda:us-east-1::runtime:f09abd85a435886f125032c6a5106856ae32ac04b285b1d6da3cdf6ef22b9299"
+  },
+  "CodeSize": 201,
+  "State": "Active",
+  "LoggingConfig": {
+    "LogFormat": "Text",
+    "LogGroup": "/aws/lambda/terraform-example-python-ava-function"
+  },
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "e0**********5c7d",
+      "DD_SITE": "datadoghq.com",
+      "DD_LAMBDA_HANDLER": "app.lambda_handler",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_VERSION": "1.0.0",
+      "DD_SERVICE": "ava",
+      "DD_TRACE_ENABLED": "true",
+      "DD_LOGS_INJECTION": "false",
+      "DD_ENV": "dev",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
+      "DD_MERGE_XRAY_TRACES": "false"
+    }
+  },
+  "EphemeralStorage": {
+    "Size": 512
+  },
+  "Architectures": [
+    "arm64"
+  ]
+}
