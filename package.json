@@ -98,6 +98,7 @@
     "jszip": "^3.10.1",
     "ora": "5.4.1",
     "packageurl-js": "^2.0.1",
+    "print-diff": "^2.0.0",
     "proxy-agent": "^6.4.0",
     "semver": "^7.5.3",
     "set-value": "^4.1.0",

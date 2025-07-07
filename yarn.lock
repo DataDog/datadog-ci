@@ -2101,6 +2101,7 @@ __metadata:
     packageurl-js: ^2.0.1
     pkg: 5.8.1
     prettier: 2.0.5
+    print-diff: ^2.0.0
     proxy: ^2.1.1
     proxy-agent: ^6.4.0
     rimraf: ^5.0.0
@@ -5509,7 +5510,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"diff@npm:^5.2.0":
+"diff@npm:^5.1.0, diff@npm:^5.2.0":
   version: 5.2.0
   resolution: "diff@npm:5.2.0"
   checksum: 12b63ca9c36c72bafa3effa77121f0581b4015df18bc16bac1f8e263597735649f1a173c26f7eba17fb4162b073fee61788abe49610e6c70a2641fe1895443fd
@@ -9656,6 +9657,15 @@ jschardet@latest:
     ansi-styles: ^5.0.0
     react-is: ^18.0.0
   checksum: 032c1602383e71e9c0c02a01bbd25d6759d60e9c7cf21937dde8357aa753da348fcec5def5d1002c9678a8524d5fe099ad98861286550ef44de8808cc61e43b6
+  languageName: node
+  linkType: hard
+
+"print-diff@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "print-diff@npm:2.0.0"
+  dependencies:
+    diff: ^5.1.0
+  checksum: 41394adb1ba63387d5dbaff259d0e3787b20281c8f7762129575d72d96812e1b0826061f7d257576da9dc5dc41482051bb3164a5d5213d7ffc72651afa796c52
   languageName: node
   linkType: hard
 
