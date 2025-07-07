@@ -1,0 +1,202 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript",
+    "jest"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "env": {
+    "builtin": true
+  },
+  "rules": {
+    "@typescript-eslint/adjacent-overload-signatures": "error",
+    "@typescript-eslint/array-type": [
+      "error",
+      {
+        "default": "array"
+      }
+    ],
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        "types": {
+          "Object": {
+            "message": "Avoid using the `Object` type. Did you mean `object`?"
+          },
+          "Function": {
+            "message": "Avoid using the `Function` type. Prefer a specific function type, like `() => void`."
+          },
+          "Boolean": {
+            "message": "Avoid using the `Boolean` type. Did you mean `boolean`?"
+          },
+          "Number": {
+            "message": "Avoid using the `Number` type. Did you mean `number`?"
+          },
+          "String": {
+            "message": "Avoid using the `String` type. Did you mean `string`?"
+          },
+          "Symbol": {
+            "message": "Avoid using the `Symbol` type. Did you mean `symbol`?"
+          }
+        }
+      }
+    ],
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/no-empty-interface": "error",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-inferrable-types": "error",
+    "@typescript-eslint/no-misused-new": "error",
+    "@typescript-eslint/no-namespace": "error",
+    "@typescript-eslint/no-var-requires": "warn",
+    "@typescript-eslint/prefer-for-of": "error",
+    "@typescript-eslint/prefer-function-type": "error",
+    "@typescript-eslint/prefer-namespace-keyword": "error",
+    "@typescript-eslint/triple-slash-reference": [
+      "error",
+      {
+        "path": "always",
+        "types": "prefer-import",
+        "lib": "always"
+      }
+    ],
+    "curly": "error",
+    "eqeqeq": [
+      "error",
+      "smart"
+    ],
+    "guard-for-in": "error",
+    "max-classes-per-file": [
+      "error",
+      3
+    ],
+    "no-bitwise": "error",
+    "no-caller": "error",
+    "no-cond-assign": "error",
+    "no-console": "off",
+    "no-debugger": "error",
+    "no-empty": "error",
+    "no-empty-function": "off",
+    "no-eval": "error",
+    "no-fallthrough": "off",
+    "no-irregular-whitespace": "error",
+    "no-new-wrappers": "error",
+    "no-throw-literal": "error",
+    "no-unsafe-finally": "error",
+    "no-unused-expressions": "error",
+    "no-unused-labels": "error",
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none",
+        "ignoreRestSiblings": true,
+        "varsIgnorePattern": "_"
+      }
+    ],
+    "no-var": "error",
+    "prefer-object-spread": "error",
+    "radix": "error",
+    "use-isnan": "error",
+    "valid-typeof": "off",
+    "jest/no-interpolation-in-snapshots": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "chalk",
+            "importNames": [
+              "Instance",
+              "level",
+              "hex",
+              "keyword",
+              "rgb",
+              "hsl",
+              "hsv",
+              "hwb",
+              "ansi",
+              "ansi256",
+              "bgHex",
+              "bgKeyword",
+              "bgRgb",
+              "bgHsl",
+              "bgHsv",
+              "bgHwb",
+              "bgAnsi",
+              "bgAnsi256",
+              "reset",
+              "bold",
+              "dim",
+              "italic",
+              "underline",
+              "inverse",
+              "hidden",
+              "strikethrough",
+              "visible",
+              "black",
+              "red",
+              "green",
+              "yellow",
+              "blue",
+              "magenta",
+              "cyan",
+              "white",
+              "gray",
+              "grey",
+              "blackBright",
+              "redBright",
+              "greenBright",
+              "yellowBright",
+              "blueBright",
+              "magentaBright",
+              "cyanBright",
+              "whiteBright",
+              "bgBlack",
+              "bgRed",
+              "bgGreen",
+              "bgYellow",
+              "bgBlue",
+              "bgMagenta",
+              "bgCyan",
+              "bgWhite",
+              "bgGray",
+              "bgGrey",
+              "bgBlackBright",
+              "bgRedBright",
+              "bgGreenBright",
+              "bgYellowBright",
+              "bgBlueBright",
+              "bgMagentaBright",
+              "bgCyanBright",
+              "bgWhiteBright"
+            ],
+            "message": "Please use a default import instead, e.g. `import chalk from 'chalk'`"
+          },
+          {
+            "name": "path",
+            "message": "Please use `upath` instead of `path` to support Windows. This is a drop-in replacement."
+          },
+          {
+            "name": "glob",
+            "message": "Please use our glob helpers (`globSync` or `globAsync`) which support Windows out-of-the-box instead of using the `glob` package directly."
+          },
+          {
+            "name": "os",
+            "importNames": [
+              "EOL"
+            ],
+            "message": "Please use `\\n` instead of `os.EOL` when splitting the `stdout`/`stderr` into lines."
+          },
+          {
+            "name": "axios",
+            "importNames": [
+              "default"
+            ],
+            "message": "Please only import what you need from axios, e.g. `import {isAxiosError} from \"axios\"`"
+          }
+        ]
+      }
+    ]
+  }
+}
