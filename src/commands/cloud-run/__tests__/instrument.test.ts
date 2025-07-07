@@ -17,6 +17,7 @@ import {
 } from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
+import * as instrumentHelpers from '../../../helpers/git/instrument-helpers'
 
 import {InstrumentCommand} from '../instrument'
 import * as cloudRunPromptModule from '../prompt'
@@ -159,6 +160,16 @@ describe('InstrumentCommand', () => {
       }
       ;(apikey.newApiKeyValidator as jest.Mock).mockReturnValue(mockValidator)
       ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
+
+      // Re-apply git status mock after restoreAllMocks
+      const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
+      mockGitStatus.mockImplementation(async () => ({
+        ahead: 0,
+        hash: '1be168ff837f043bde17c0314341c84271047b31',
+        remote: 'git.repository_url:git@github.com:datadog/test.git',
+        isClean: true,
+        files: [],
+      }))
     })
 
     test('prints dry run data with basic flags', async () => {
@@ -176,6 +187,7 @@ describe('InstrumentCommand', () => {
         '1.0.0',
         '--extra-tags',
         'team:backend,service:api',
+        '--no-upload-git-metadata',
       ])
 
       expect(code).toBe(0)
@@ -197,7 +209,7 @@ describe('InstrumentCommand', () => {
       }
       mockServicesClient.getService.mockResolvedValue([interactiveService])
 
-      const {code, context} = await runCLI(['--interactive'])
+      const {code, context} = await runCLI(['--interactive', '--no-upload-git-metadata'])
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toMatchSnapshot()
