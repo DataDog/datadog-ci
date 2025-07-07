@@ -2,8 +2,6 @@ import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
 
 import {MOCK_BASE_URL, getAxiosError} from '../../../helpers/__tests__/testing-tools'
-import * as ciHelpers from '../../../helpers/ci'
-import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
@@ -34,6 +32,7 @@ import {
   getFailedResultInBatch,
   getInProgressResultInBatch,
   getIncompleteServerResult,
+  getMetadata,
   getPassedResultInBatch,
   getSkippedResultInBatch,
   mockLocation,
@@ -71,8 +70,6 @@ describe('runTests', () => {
   })
 
   test('runTests sends batch metadata', async () => {
-    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
     const payloadMetadataSpy = jest.fn()
     jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
       payloadMetadataSpy(request.data.metadata)
@@ -81,22 +78,15 @@ describe('runTests', () => {
       }
     }) as any)
 
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], undefined)
     expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
 
-    const metadata: Metadata = {
-      ci: {job: {name: 'job'}, pipeline: {}, provider: {name: 'jest'}, stage: {}},
-      git: {commit: {author: {}, committer: {}, message: 'test'}},
-    }
-    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => metadata)
-
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    const metadata = getMetadata()
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], metadata)
     expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
   })
 
   test('runTests api call has the right payload and trigger app header', async () => {
-    jest.spyOn(ciHelpers, 'getCIMetadata').mockImplementation(() => undefined)
-
     const testsPayloadSpy = jest.fn()
     const headersMetadataSpy = jest.fn()
     jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {

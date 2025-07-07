@@ -184,6 +184,8 @@ View full summary in Datadog: [2m[36mhttps://app.datadoghq.com/synthetics/expl
 • Test Results: [32m[1m2[22m passed ([1m1[22m in a previous CI batch)[39m, [31m[1m1[22m failed[39m, [33m[1m3[22m failed (non-blocking)[39m, [1m1[22m skipped ([33m[1m1[22m timed out[39m, [31m[1m2[22m critical errors[39m)
 • Selective rerun: ran 5 out of 6 tests
 • Total Duration: 9m 28s
+
+View test runs in Test Optimization: [2m[36mhttps://app.datadoghq.com/ci/test-runs?query=%40test.framework%3Asynthetics%20%40ci.job.url%3A%22job-url%22[39m[22m
 "
 `;
 
@@ -204,8 +206,9 @@ exports[`Default reporter runEnd communicates 2 tests parallelization 1`] = `
 • Max parallelization configured: 2 tests running at the same time
 • Total Duration: 9m 28s
 
-Increase your parallelization to reduce the test batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
+View test runs in Test Optimization: [2m[36mhttps://app.datadoghq.com/ci/test-runs?query=%40test.framework%3Asynthetics%20%40ci.job.url%3A%22job-url%22[39m[22m
 
+Increase your parallelization to reduce the CI batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
 `;
 
@@ -217,8 +220,9 @@ exports[`Default reporter runEnd communicates no parallelization (1 test at a ti
 • Max parallelization configured: 1 test running at the same time
 • Total Duration: 9m 28s
 
-Increase your parallelization to reduce the test batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
+View test runs in Test Optimization: [2m[36mhttps://app.datadoghq.com/ci/test-runs?query=%40test.framework%3Asynthetics%20%40ci.job.url%3A%22job-url%22[39m[22m
 
+Increase your parallelization to reduce the CI batch duration: [2m[36mhttps://app.datadoghq.com/synthetics/settings/continuous-testing[39m[22m
 "
 `;
 
@@ -228,6 +232,8 @@ exports[`Default reporter runEnd does not communicate for uncapped orgs 1`] = `
 [1mContinuous Testing Summary:[22m
 • Test Results: [32m[1m1[22m passed[39m, [31m[1m0[22m failed[39m
 • Total Duration: 9m 28s
+
+View test runs in Test Optimization: [2m[36mhttps://app.datadoghq.com/ci/test-runs?query=%40test.framework%3Asynthetics%20%40ci.job.url%3A%22job-url%22[39m[22m
 "
 `;
 
