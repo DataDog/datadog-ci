@@ -35,6 +35,14 @@ jest.mock('@azure/arm-appservice', () => ({
   })),
 }))
 
+const updateTags = jest.fn().mockResolvedValue({})
+
+jest.mock('@azure/arm-resources', () => ({
+  ResourceManagementClient: jest.fn().mockImplementation(() => ({
+    tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+  })),
+}))
+
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 
@@ -42,7 +50,7 @@ import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_ARGS, DEFAULT_CONFIG} from './common'
+import {CONTAINER_WEB_APP, DEFAULT_ARGS, DEFAULT_CONFIG, WEB_APP_ID} from './common'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
@@ -63,6 +71,7 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
+      updateTags.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
     })
 
@@ -103,6 +112,7 @@ Restarting Azure App Service my-web-app
           DD_PROFILING_ENABLED: 'true',
         },
       })
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -121,6 +131,7 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -160,6 +171,7 @@ Updating Application Settings for my-web-app
           DD_SITE: 'datadoghq.com',
         },
       })
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -198,6 +210,7 @@ Ensure you copied the value and not the Key ID.
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -218,6 +231,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -251,6 +265,7 @@ Creating sidecar container datadog-sidecar on my-web-app
       // the last operations never get called due to the above failure
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -273,7 +288,7 @@ Creating sidecar container datadog-sidecar on my-web-app
         '-r',
         'another-invalid-id',
         '-r',
-        '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',
+        WEB_APP_ID,
       ])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toEqual(`[Error] Invalid AAS resource ID: not-a-valid-resource-id
@@ -284,7 +299,7 @@ Creating sidecar container datadog-sidecar on my-web-app
     test('Instruments multiple App Services in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
-        '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',
+        WEB_APP_ID,
         '-r',
         '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app2',
       ])
@@ -358,6 +373,7 @@ Restarting Azure App Service my-web-app2
           DD_SITE: 'datadoghq.com',
         },
       })
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalledTimes(2)
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
@@ -377,6 +393,7 @@ Restarting Azure App Service my-web-app2
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 Restarting Azure App Service my-web-app
 🐶 Instrumentation completed successfully!
 `)
@@ -414,6 +431,15 @@ Restarting Azure App Service my-web-app
           DD_VERSION: '1.0.0',
         },
       })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
+        properties: {
+          tags: {
+            service: 'my-service',
+            env: 'my-env',
+            version: '1.0.0',
+          },
+        },
+      })
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -448,6 +474,7 @@ Restarting Azure App Service my-web-app
           DD_SITE: 'datadoghq.com',
         },
       })
+      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
   })
@@ -472,6 +499,7 @@ Restarting Azure App Service my-web-app
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
+      updateTags.mockClear().mockResolvedValue({})
     })
 
     test('creates sidecar if not present and updates app settings', async () => {
