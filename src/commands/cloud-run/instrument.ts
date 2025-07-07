@@ -34,7 +34,7 @@ import {isValidDatadogSite} from '../../helpers/validation'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
-import {checkAuthentication, generateConfigDiff} from './utils'
+import {checkAuthentication, printConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')
@@ -279,7 +279,7 @@ export class InstrumentCommand extends Command {
     ddService: string
   ) {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
-    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
+    await printConfigDiff(existingService, updatedService)
     if (this.dryRun) {
       this.context.stdout.write(
         `\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(serviceName)} with the above changes.\n`
