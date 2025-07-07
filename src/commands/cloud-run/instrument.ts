@@ -85,16 +85,16 @@ export class InstrumentCommand extends Command {
     description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
   })
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
-    description: `The name to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
+    description: `(Not recommended) The name to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
   })
   private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
-    description: `The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
+    description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
   private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
-    description: `The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
+    description: `(Not recommended) The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
   })
   private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
-    description: `The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
+    description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
   private sidecarCpus = Option.String('--sidecar-cpus', '1', {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to 1.`,
