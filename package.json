@@ -94,6 +94,7 @@
     "google-auth-library": "^9.12.0",
     "inquirer": "^8.2.5",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
+    "jest-diff": "^30.0.4",
     "js-yaml": "3.13.1",
     "jszip": "^3.10.1",
     "ora": "5.4.1",

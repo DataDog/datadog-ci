@@ -2095,6 +2095,7 @@ __metadata:
     inquirer: ^8.2.5
     inquirer-checkbox-plus-prompt: ^1.4.2
     jest: 29.6.2
+    jest-diff: ^30.0.4
     js-yaml: 3.13.1
     jszip: ^3.10.1
     ora: 5.4.1
@@ -2494,6 +2495,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jest/diff-sequences@npm:30.0.1":
+  version: 30.0.1
+  resolution: "@jest/diff-sequences@npm:30.0.1"
+  checksum: e5f931ca69c15a9b3a9b23b723f51ffc97f031b2f3ca37f901333dab99bd4dfa1ad4192a5cd893cd1272f7602eb09b9cfb5fc6bb62a0232c96fb8b5e96094970
+  languageName: node
+  linkType: hard
+
 "@jest/environment@npm:^29.7.0":
   version: 29.7.0
   resolution: "@jest/environment@npm:29.7.0"
@@ -2536,6 +2544,13 @@ __metadata:
     jest-mock: ^29.7.0
     jest-util: ^29.7.0
   checksum: caf2bbd11f71c9241b458d1b5a66cbe95debc5a15d96442444b5d5c7ba774f523c76627c6931cca5e10e76f0d08761f6f1f01a608898f4751a0eee54fc3d8d00
+  languageName: node
+  linkType: hard
+
+"@jest/get-type@npm:30.0.1":
+  version: 30.0.1
+  resolution: "@jest/get-type@npm:30.0.1"
+  checksum: bd6cb2fe1661b652f06e5c6f7ef5aa37247a5b4bf04aad8ce6a8a8ba659efaf983bab9d52755be8cf92478f8d894c024de2fbddf4c3f6be804b808a20dfc347b
   languageName: node
   linkType: hard
 
@@ -2585,6 +2600,15 @@ __metadata:
     node-notifier:
       optional: true
   checksum: 7eadabd62cc344f629024b8a268ecc8367dba756152b761bdcb7b7e570a3864fc51b2a9810cd310d85e0a0173ef002ba4528d5ea0329fbf66ee2a3ada9c40455
+  languageName: node
+  linkType: hard
+
+"@jest/schemas@npm:30.0.1":
+  version: 30.0.1
+  resolution: "@jest/schemas@npm:30.0.1"
+  dependencies:
+    "@sinclair/typebox": ^0.34.0
+  checksum: 766936b48d65586c0e118ea010221822b5256098ea930b3feada5111fe1dcd0636ee6eca27a24ab7e69143c56721bb8074a6ead83fd5e31327da2abd4da982a7
   languageName: node
   linkType: hard
 
@@ -2904,6 +2928,13 @@ __metadata:
   version: 0.27.8
   resolution: "@sinclair/typebox@npm:0.27.8"
   checksum: 00bd7362a3439021aa1ea51b0e0d0a0e8ca1351a3d54c606b115fdcc49b51b16db6e5f43b4fe7a28c38688523e22a94d49dd31168868b655f0d4d50f032d07a1
+  languageName: node
+  linkType: hard
+
+"@sinclair/typebox@npm:^0.34.0":
+  version: 0.34.37
+  resolution: "@sinclair/typebox@npm:0.34.37"
+  checksum: dbfef02bb40b286a40a140a94a3ce5b1f176df7ca1109849748a02533d1163bf0b2663cc098578af8f4e183af0c98add180c3e5e0d17c7ebc2a5b2265b4a8ad8
   languageName: node
   linkType: hard
 
@@ -4331,7 +4362,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ansi-styles@npm:^5.0.0":
+"ansi-styles@npm:^5.0.0, ansi-styles@npm:^5.2.0":
   version: 5.2.0
   resolution: "ansi-styles@npm:5.2.0"
   checksum: d7f4e97ce0623aea6bc0d90dcd28881ee04cba06c570b97fd3391bd7a268eedfd9d5e2dd4fdcbdd82b8105df5faf6f24aaedc08eaf3da898e702db5948f63469
@@ -7888,6 +7919,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jest-diff@npm:^30.0.4":
+  version: 30.0.4
+  resolution: "jest-diff@npm:30.0.4"
+  dependencies:
+    "@jest/diff-sequences": 30.0.1
+    "@jest/get-type": 30.0.1
+    chalk: ^4.1.2
+    pretty-format: 30.0.2
+  checksum: bd4769b9c2695ac201e5dc29385ba9dfdf8860151a8e9cc38cc96405a7ca97595ff7812752dca63304e6a9f2880b6567428e76476bf601305e653e9606e9037a
+  languageName: node
+  linkType: hard
+
 "jest-docblock@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-docblock@npm:29.7.0"
@@ -9648,6 +9691,17 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
+"pretty-format@npm:30.0.2":
+  version: 30.0.2
+  resolution: "pretty-format@npm:30.0.2"
+  dependencies:
+    "@jest/schemas": 30.0.1
+    ansi-styles: ^5.2.0
+    react-is: ^18.3.1
+  checksum: 28888a4ccd13d85f6b6738c2678b5bcff95ff46ebdb4a02098d0a390adbdfac9e70020f9425d8e58d0c5f39181532c0cd323a19bf9492d44b33d4cc987515b6a
+  languageName: node
+  linkType: hard
+
 "pretty-format@npm:^29.0.0, pretty-format@npm:^29.7.0":
   version: 29.7.0
   resolution: "pretty-format@npm:29.7.0"
@@ -9850,7 +9904,7 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"react-is@npm:^18.0.0":
+"react-is@npm:^18.0.0, react-is@npm:^18.3.1":
   version: 18.3.1
   resolution: "react-is@npm:18.3.1"
   checksum: e20fe84c86ff172fc8d898251b7cc2c43645d108bf96d0b8edf39b98f9a2cae97b40520ee7ed8ee0085ccc94736c4886294456033304151c3f94978cec03df21
