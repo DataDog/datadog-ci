@@ -235,7 +235,9 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(generateConfigDiff(existingService, updatedService))
     if (this.dryRun) {
       this.context.stdout.write(
-        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(serviceName)} with the above changes.\n`
+        `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
+          serviceName
+        )} with the above changes.\n`
       )
 
       return
