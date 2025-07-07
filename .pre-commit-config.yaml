@@ -15,3 +15,9 @@ repos:
         language: system
         types: [ts]
         entry: yarn format
+      - id: license-check
+        name: Check 3rd Party Licenses
+        language: system
+        types_or: [json, csv]
+        always_run: true
+        entry: yarn check-licenses
