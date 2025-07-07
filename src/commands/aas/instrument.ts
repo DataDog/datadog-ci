@@ -42,7 +42,8 @@ export class InstrumentCommand extends AasCommand {
       'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
   })
   private isProfilingEnabled = Option.Boolean('--profiling', true, {
-    description: 'Adds the `DD_PROFILING_ENABLED` env var for automatic profiling support. Defaults to enabled. Specify `--no-profiling` to disable.',
+    description:
+      'Adds the `DD_PROFILING_ENABLED` env var for automatic profiling support. Defaults to enabled. Specify `--no-profiling` to disable.',
   })
   private logPath = Option.String('--log-path', {
     description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',

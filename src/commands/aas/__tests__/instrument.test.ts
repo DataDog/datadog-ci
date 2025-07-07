@@ -416,6 +416,7 @@ Restarting Azure App Service my-web-app
       })
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
+
     test('Sets DD_PROFILING_ENABLED to false when profiling is disabled', async () => {
       const {code} = await runCLI([...DEFAULT_ARGS, '--no-profiling'])
       expect(code).toEqual(0)
