@@ -2,7 +2,7 @@ import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
-import {Cli, Command, Option} from 'clipanion'
+import {Command, Option} from 'clipanion'
 
 import {
   ENVIRONMENT_ENV_VAR,
@@ -14,12 +14,10 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
+import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
-import {resolveConfigFromFile, filterAndFormatGithubRemote, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
-
-import {getCommitInfo, newSimpleGit} from '../git-metadata/git'
-import {UploadCommand} from '../git-metadata/upload'
+import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {
@@ -221,10 +219,10 @@ export class InstrumentCommand extends Command {
 
     if (this.sourceCodeIntegration) {
       try {
-        const gitData = await this.getGitData()
+        const gitData = await getGitData()
         if (this.uploadGitMetadata) {
           try {
-            await this.uploadGitData()
+            await uploadGitData(this.context)
           } catch (err) {
             throw Error(`Error uploading git data: ${err}\n`)
           }
@@ -372,55 +370,6 @@ export class InstrumentCommand extends Command {
     }
 
     return 0
-  }
-
-  private async getCurrentGitStatus() {
-    const simpleGit = await newSimpleGit()
-    const gitCommitInfo = await getCommitInfo(simpleGit)
-    if (gitCommitInfo === undefined) {
-      throw new Error('Git commit info is not defined')
-    }
-    const status = await simpleGit.status()
-
-    return {
-      isClean: status.isClean(),
-      ahead: status.ahead,
-      files: status.files,
-      hash: gitCommitInfo?.hash,
-      remote: gitCommitInfo?.remote,
-    }
-  }
-
-  private async getGitData() {
-    let currentStatus
-
-    try {
-      currentStatus = await this.getCurrentGitStatus()
-    } catch (err) {
-      throw Error("Couldn't get local git status")
-    }
-
-    if (!currentStatus.isClean) {
-      throw Error('Local git repository is dirty')
-    }
-
-    if (currentStatus.ahead > 0) {
-      throw Error('Local changes have not been pushed remotely. Aborting git data tagging.')
-    }
-
-    const gitRemote = filterAndFormatGithubRemote(currentStatus.remote)
-
-    return {commitSha: currentStatus.hash, gitRemote}
-  }
-
-  private async uploadGitData(): Promise<void> {
-    const cli = new Cli()
-    cli.register(UploadCommand)
-    if ((await cli.run(['git-metadata', 'upload'], this.context)) !== 0) {
-      throw Error("Couldn't upload git metadata")
-    }
-
-    return
   }
 
   private getSettings(): InstrumentationSettings | undefined {
