@@ -71,10 +71,13 @@ export const generateConfigDiff = (original: any, updated: any): string => {
   const obfuscatedOriginal = originalJson.split('\n').map(obfuscateSensitiveValues).join('\n')
   const obfuscatedUpdated = updatedJson.split('\n').map(obfuscateSensitiveValues).join('\n')
 
-  return (
-    diff(obfuscatedOriginal, obfuscatedUpdated, {
-      aColor: chalk.red,
-      bColor: chalk.green,
-    }) || chalk.gray('No changes detected.')
-  )
+  const configDiff = diff(obfuscatedOriginal, obfuscatedUpdated, {
+    aColor: chalk.red,
+    bColor: chalk.green,
+  })
+  if (!configDiff || configDiff.includes('no visual difference')) {
+    return chalk.gray('No changes detected.')
+  }
+
+  return configDiff
 }
