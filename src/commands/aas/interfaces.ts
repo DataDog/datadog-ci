@@ -16,6 +16,7 @@ export interface AasConfigOptions {
   isInstanceLoggingEnabled?: boolean
   isProfilingEnabled?: boolean
   logPath?: string
+  envVars?: string[]
   isDotnet?: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   shouldNotRestart?: boolean

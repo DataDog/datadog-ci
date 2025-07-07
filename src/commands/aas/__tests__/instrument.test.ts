@@ -477,6 +477,57 @@ Restarting Azure App Service my-web-app
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
+
+    test('Sets additional environment variables from config', async () => {
+      const {code, context} = await runCLI([
+        ...DEFAULT_ARGS,
+        '--env-vars',
+        'CUSTOM_VAR1=value1',
+        '--env-vars',
+        'CUSTOM_VAR2=value2',
+      ])
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+`)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar',
+        {
+          environmentVariables: [
+            {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
+            {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
+          ],
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          isMain: false,
+          targetPort: '8126',
+        }
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'true',
+          DD_API_KEY: 'PLACEHOLDER',
+          DD_SITE: 'datadoghq.com',
+          CUSTOM_VAR1: 'value1',
+          CUSTOM_VAR2: 'value2',
+        },
+      })
+      expect(updateTags).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
   })
 
   describe('instrumentSidecar', () => {

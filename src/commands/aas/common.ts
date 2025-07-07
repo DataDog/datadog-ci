@@ -28,6 +28,8 @@ const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 // The profiler binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
+const ENV_VAR_REGEX = /^(\w+)=(.*)$/
+
 export const AAS_DD_SETTING_NAMES = [
   'DD_API_KEY',
   'DD_SITE',
@@ -43,10 +45,6 @@ export const AAS_DD_SETTING_NAMES = [
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
 ] as const
-
-export type AasDatadogSettingName = typeof AAS_DD_SETTING_NAMES[number]
-
-type AasDatadogConfig = Partial<Record<AasDatadogSettingName, string>>
 
 /**
  * Maps Subscription ID to Resource Group to App Service names.
@@ -115,6 +113,10 @@ export abstract class AasCommand extends Command {
     const errors: string[] = []
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
+    }
+    // Validate that envVars, if provided, are in the format 'key=value'
+    if (config.envVars?.some((e) => !ENV_VAR_REGEX.test(e))) {
+      errors.push('All envVars must be in the format `KEY=VALUE`')
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified
@@ -185,8 +187,22 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   }
 }
 
-export const getEnvVars = (config: AasConfigOptions): AasDatadogConfig => {
-  let envVars: AasDatadogConfig = {
+export const parseEnvVars = (envVars: string[] | undefined): Record<string, string> => {
+  const result: Record<string, string> = {}
+  envVars?.forEach((e) => {
+    const match = e.match(ENV_VAR_REGEX)
+    if (match) {
+      const [, key, value] = match
+      result[key] = value
+    }
+  })
+
+  return result
+}
+
+export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
+  let envVars: Record<string, string> = {
+    ...parseEnvVars(config.envVars),
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
