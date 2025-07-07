@@ -1,6 +1,6 @@
 {
   "recommendations": [
-    "dbaeumer.vscode-eslint",
+    "oxc.oxc-vscode",
     "esbenp.prettier-vscode",
     "yzhang.markdown-all-in-one",
     "iliazeus.vscode-ansi" // The "ANSI Text: Open Preview to the Side" command is really useful for Jest snapshots containing ANSI escape codes.

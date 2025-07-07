@@ -79,7 +79,7 @@ ws,import,MIT,Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 yamux-js,import,MIT,Copyright (c) 2020 th-ch
 @typescript-eslint/eslint-plugin,dev,BSD 2-Clause,Copyright JS Foundation and other contributors
 @typescript-eslint/parser,dev,BSD-2-Clause,Copyright JS Foundation and other contributors
-eslint,dev,MIT,Copyright OpenJS Foundation and other contributors
+oxlint,dev,MIT,Copyright (c) 2024-present VoidZero Inc. & Contributors
 eslint-config-prettier,dev,MIT,Copyright (c) 2017-2022 Simon Lydell and contributors
 eslint-import-resolver-typescript,dev,ISC,Copyright 2021 Alex Gorbatchev <alex.gorbatchev@gmail.com>
 eslint-plugin-import,dev,MIT,Copyright (c) 2015 Ben Mosher

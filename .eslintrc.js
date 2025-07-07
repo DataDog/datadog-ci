@@ -1,3 +1,4 @@
+// This file has been migrated to .oxlintrc.json. Please use that file instead.
 const restrictedImports = [
   {
     // forbid using named imports for chalk
