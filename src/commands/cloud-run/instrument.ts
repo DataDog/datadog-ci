@@ -96,6 +96,12 @@ export class InstrumentCommand extends Command {
   private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
     description: `The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
+  private sidecarCpus = Option.String('--sidecar-cpus', '1', {
+    description: `The number of CPUs to allocate to the sidecar container. Defaults to 1.`,
+  })
+  private sidecarMemory = Option.String('--sidecar-memory', '512Mi', {
+    description: `The number of CPUs to allocate to the sidecar container. Defaults to '512Mi'.`,
+  })
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
@@ -429,8 +435,8 @@ export class InstrumentCommand extends Command {
       },
       resources: {
         limits: {
-          memory: '512Mi',
-          cpu: '1',
+          memory: this.sidecarMemory,
+          cpu: this.sidecarCpus,
         },
       },
     }
