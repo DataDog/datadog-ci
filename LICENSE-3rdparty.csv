@@ -94,3 +94,4 @@ jszip,import,MIT,Copyright (c) 2009-2016 Stuart Knightley and other contributors
 @google-cloud/run,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 google-auth-library,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 @google-cloud/logging,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
+jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"
