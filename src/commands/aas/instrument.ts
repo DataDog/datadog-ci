@@ -29,13 +29,13 @@ export class InstrumentCommand extends AasCommand {
   })
 
   private service = Option.String('--service', {
-    description: 'How you want to tag your service. For example, `my-service`',
+    description: 'The value for the service tag. For example, `my-service`',
   })
   private environment = Option.String('--env,--environment', {
-    description: 'How you want to tag your env. For example, `prod`',
+    description: 'The value for the env tag. For example, `prod`',
   })
   private version = Option.String('--version', {
-    description: 'How you want to tag your AAS code version. For example, `1.0.0`',
+    description: 'The value for the version tag. For example, `1.0.0`',
   })
   private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
     description:
