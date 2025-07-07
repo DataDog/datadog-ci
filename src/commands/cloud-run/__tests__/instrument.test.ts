@@ -291,6 +291,8 @@ describe('InstrumentCommand', () => {
       ;(command as any).sharedVolumeName = 'custom-volume'
       ;(command as any).sharedVolumePath = '/custom/path'
       ;(command as any).logsPath = '/custom/path/logs/*.log'
+      ;(command as any).sidecarCpus = '2'
+      ;(command as any).sidecarMemory = '256Mi'
 
       const service = {
         template: {
@@ -311,6 +313,8 @@ describe('InstrumentCommand', () => {
       expect(sidecarContainer?.env?.find((e: IEnvVar) => e.name === 'DD_SERVERLESS_LOG_PATH')?.value).toBe(
         '/custom/path/logs/*.log'
       )
+      expect(sidecarContainer?.resources?.limits?.cpu).toBe('2')
+      expect(sidecarContainer?.resources?.limits?.memory).toBe('256Mi')
 
       // Check main container has custom volume mount
       const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
