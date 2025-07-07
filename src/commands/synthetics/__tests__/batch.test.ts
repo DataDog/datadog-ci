@@ -19,7 +19,7 @@ import {
   ResultInBatch,
   ServerResult,
   Test,
-  Trigger,
+  TriggerInfo,
 } from '../interfaces'
 import {getDefaultConfig} from '../run-tests-lib'
 import * as internalUtils from '../utils/internal'
@@ -37,6 +37,8 @@ import {
   getSkippedResultInBatch,
   mockLocation,
   mockReporter,
+  mockServerTriggerResponse,
+  mockTriggerInfo,
 } from './fixtures'
 
 const apiConfiguration = {
@@ -58,15 +60,11 @@ describe('runTests', () => {
   })
 
   const fakeId = '123-456-789'
-  const fakeTrigger: Trigger = {
-    batch_id: 'bid',
-    locations: [],
-  }
 
   test('should run test', async () => {
-    jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-    const output = await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
-    expect(output).toEqual(fakeTrigger)
+    jest.spyOn(api, 'triggerTests').mockImplementation(async () => mockServerTriggerResponse)
+    const output = await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter)
+    expect(output).toStrictEqual(mockTriggerInfo)
   })
 
   test('runTests sends batch metadata', async () => {
@@ -74,15 +72,15 @@ describe('runTests', () => {
     jest.spyOn(axios, 'create').mockImplementation((() => (request: any) => {
       payloadMetadataSpy(request.data.metadata)
       if (request.url === '/synthetics/tests/trigger/ci') {
-        return {data: fakeTrigger}
+        return {data: mockServerTriggerResponse}
       }
     }) as any)
 
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], undefined)
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter, undefined)
     expect(payloadMetadataSpy).toHaveBeenCalledWith(undefined)
 
     const metadata = getMetadata()
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], metadata)
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter, metadata)
     expect(payloadMetadataSpy).toHaveBeenCalledWith(metadata)
   })
 
@@ -93,11 +91,11 @@ describe('runTests', () => {
       testsPayloadSpy(request.data.tests)
       headersMetadataSpy(request.headers)
       if (request.url === '/synthetics/tests/trigger/ci') {
-        return {data: fakeTrigger}
+        return {data: mockServerTriggerResponse}
       }
     }) as any)
 
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter)
     expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'env_default'}))
     expect(testsPayloadSpy).toHaveBeenCalledWith([
       {
@@ -107,7 +105,7 @@ describe('runTests', () => {
     ])
 
     utils.setCiTriggerApp('unit_test')
-    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])
+    await runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter)
     expect(headersMetadataSpy).toHaveBeenCalledWith(expect.objectContaining({'X-Trigger-App': 'unit_test'}))
     expect(testsPayloadSpy).toHaveBeenCalledWith([
       {
@@ -118,14 +116,18 @@ describe('runTests', () => {
   })
 
   test('should run test with publicId from url', async () => {
-    jest.spyOn(api, 'triggerTests').mockImplementation(async () => fakeTrigger)
-    const output = await runTests(api, [
-      {
-        executionRule: ExecutionRule.NON_BLOCKING,
-        public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
-      },
-    ])
-    expect(output).toEqual(fakeTrigger)
+    jest.spyOn(api, 'triggerTests').mockImplementation(async () => mockServerTriggerResponse)
+    const output = await runTests(
+      api,
+      [
+        {
+          executionRule: ExecutionRule.NON_BLOCKING,
+          public_id: `http://localhost/synthetics/tests/details/${fakeId}`,
+        },
+      ],
+      mockReporter
+    )
+    expect(output).toStrictEqual(mockTriggerInfo)
   })
 
   test('triggerTests throws', async () => {
@@ -133,9 +135,9 @@ describe('runTests', () => {
       throw getAxiosError(502, {message: 'Server Error'})
     })
 
-    await expect(runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}])).rejects.toThrow(
-      /Failed to trigger tests:/
-    )
+    await expect(
+      runTests(api, [{public_id: fakeId, executionRule: ExecutionRule.NON_BLOCKING}], mockReporter)
+    ).rejects.toThrow(/Failed to trigger tests:/)
   })
 })
 
@@ -178,7 +180,11 @@ describe('waitForResults', () => {
     },
     resultID: result.resultId,
   }
-  const trigger = {batch_id: 'bid', locations: [mockLocation]}
+  const trigger: TriggerInfo = {
+    batchId: 'bid',
+    locations: [mockLocation],
+    testsNotAuthorized: new Set(),
+  }
 
   const mockApi = ({
     getBatchImplementation,
@@ -264,7 +270,7 @@ describe('waitForResults', () => {
     )
 
     // Wait for the 2 tests (initial)
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId)
 
     await waiter.promise
 
@@ -272,7 +278,7 @@ describe('waitForResults', () => {
     expect(mockReporter.resultReceived).not.toHaveBeenCalled()
     expect(mockReporter.resultEnd).not.toHaveBeenCalled()
     // Still waiting for the 2 tests
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 2 === (batch 'in_progress')
     waiter.start()
@@ -316,7 +322,7 @@ describe('waitForResults', () => {
       'bid'
     )
     // Still waiting for 2 tests
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 3 === (batch 'in_progress')
     waiter.start()
@@ -347,7 +353,7 @@ describe('waitForResults', () => {
     })
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(2, result, MOCK_BASE_URL, 'bid')
     // Now waiting for 1 test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(4, [tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 4 === (batch 'in_progress')
     waiter.start()
@@ -402,7 +408,7 @@ describe('waitForResults', () => {
       'bid'
     )
     // Now waiting for 1 test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(5, [tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 5 === (batch 'passed')
     mockApi({
@@ -481,7 +487,7 @@ describe('waitForResults', () => {
     )
 
     // Wait for the 2 tests (initial)
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId)
 
     await waiter.promise
 
@@ -500,7 +506,7 @@ describe('waitForResults', () => {
     }
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, skippedResult, MOCK_BASE_URL, 'bid')
     // Now waiting for the remaining test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 1)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[1]], MOCK_BASE_URL, trigger.batchId, 1)
 
     // === STEP 2 === (batch 'passed')
     mockApi({
@@ -572,7 +578,7 @@ describe('waitForResults', () => {
     )
 
     // Wait for the 2 tests (initial)
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId)
 
     await waiter.promise
 
@@ -585,7 +591,7 @@ describe('waitForResults', () => {
     // But the data from `/poll_results` data is not available yet, so we should wait more before reporting
     expect(mockReporter.resultEnd).not.toHaveBeenCalled()
     // Still waiting for 2 tests
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 2 === (batch 'in_progress')
     waiter.start()
@@ -616,7 +622,7 @@ describe('waitForResults', () => {
     // Result 2 just became available, so it should be reported
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, {...result, resultId: 'rid-2'}, MOCK_BASE_URL, 'bid')
     // Now waiting for 1 test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 3 === (batch 'failed')
     mockApi({
@@ -702,12 +708,12 @@ describe('waitForResults', () => {
     )
 
     // Wait for the 2 tests (initial)
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(1, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId)
 
     await waiter.promise
 
     // Still waiting for 2 tests
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(2, [tests[0], tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 2 === (batch 'in_progress')
     waiter.start()
@@ -736,7 +742,7 @@ describe('waitForResults', () => {
     // But not available
     expect(mockReporter.resultEnd).not.toHaveBeenCalled()
     // Now waiting for 1 test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     // === STEP 3 === (batch 'in_progress')
     waiter.start()
@@ -760,7 +766,7 @@ describe('waitForResults', () => {
     // Result 1 just became available, so it should be reported
     expect(mockReporter.resultEnd).toHaveBeenNthCalledWith(1, result, MOCK_BASE_URL, 'bid')
     // Still waiting for 1 test
-    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batch_id, 0)
+    expect(mockReporter.testsWait).toHaveBeenNthCalledWith(3, [tests[1]], MOCK_BASE_URL, trigger.batchId, 0)
 
     mockApi({
       getBatchImplementation: async () => ({
@@ -1236,7 +1242,7 @@ describe('waitForResults', () => {
       'Failed to get batch: could not query https://app.datadoghq.com/example\nGet batch server error\n'
     )
 
-    expect(getBatchMock).toHaveBeenCalledWith(trigger.batch_id)
+    expect(getBatchMock).toHaveBeenCalledWith(trigger.batchId)
   })
 })
 
