@@ -20,6 +20,7 @@ import {
   SIDECAR_PORT,
 } from './common'
 import {AasConfigOptions} from './interfaces'
+import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 
 export class InstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -100,10 +101,11 @@ export class InstrumentCommand extends AasCommand {
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
     }
+    const tagClient = new ResourceManagementClient(cred).tagsOperations
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>
-        this.processSubscription(cred, subscriptionId, resourceGroupToNames, config)
+        this.processSubscription(cred, tagClient, subscriptionId, resourceGroupToNames, config)
       )
     )
     const success = results.every((result) => result)
@@ -118,14 +120,15 @@ export class InstrumentCommand extends AasCommand {
 
   public async processSubscription(
     cred: DefaultAzureCredential,
+    tagClient: TagsOperations,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
     config: AasConfigOptions
   ): Promise<boolean> {
-    const client = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
+    const aasClient = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
     const results = await Promise.all(
       Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
-        aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName))
+        aasNames.map((aasName) => this.processAas(aasClient, tagClient, config, subscriptionId, resourceGroup, aasName))
       )
     )
 
@@ -137,23 +140,26 @@ export class InstrumentCommand extends AasCommand {
    * @returns A promise that resolves to a boolean indicating success or failure.
    */
   public async processAas(
-    client: WebSiteManagementClient,
+    aasClient: WebSiteManagementClient,
+    tagClient: TagsOperations,
     config: AasConfigOptions,
+    subscriptionId: string,
     resourceGroup: string,
     aasName: string
   ): Promise<boolean> {
     try {
-      const site = await client.webApps.get(resourceGroup, aasName)
+      const site = await aasClient.webApps.get(resourceGroup, aasName)
       if (!this.ensureLinux(site)) {
         return false
       }
 
       await this.instrumentSidecar(
-        client,
+        aasClient,
         {...config, isDotnet: config.isDotnet || isDotnet(site)},
         resourceGroup,
         aasName
       )
+      await this.addTags(tagClient, config, subscriptionId, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
 
@@ -164,7 +170,7 @@ export class InstrumentCommand extends AasCommand {
       this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
-          await client.webApps.restart(resourceGroup, aasName)
+          await aasClient.webApps.restart(resourceGroup, aasName)
         } catch (error) {
           this.context.stdout.write(renderError(`Failed to restart Azure App Service ${chalk.bold(aasName)}: ${error}`))
 
@@ -174,6 +180,40 @@ export class InstrumentCommand extends AasCommand {
     }
 
     return true
+  }
+  public async addTags(
+    tagClient: TagsOperations,
+    config: AasConfigOptions,
+    subscriptionId: string,
+    resourceGroup: string,
+    aasName: string,
+    tags: Record<string, string>
+  ): Promise<void> {
+    const updatedTags = {...tags}
+    if (config.service) {
+      updatedTags.service = config.service
+    }
+    if (config.environment) {
+      updatedTags.env = config.environment
+    }
+    if (config.version) {
+      updatedTags.version = config.version
+    }
+    if (!equal(tags, updatedTags)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
+      if (!this.dryRun) {
+        try {
+          await tagClient.beginCreateOrUpdateAtScopeAndWait(
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
+            {properties: {tags: updatedTags}}
+          )
+        } catch (error) {
+          this.context.stdout.write(
+            renderError(`Failed to update tags for ${chalk.bold(aasName)}: ${formatError(error)}`)
+          )
+        }
+      }
+    }
   }
 
   public async instrumentSidecar(
