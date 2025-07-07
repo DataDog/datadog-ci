@@ -1,0 +1,262 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
+"
+🐶 Instrumenting Cloud Run service(s)
+
+
+🔍 Verifying command flags...
+[!] No DD_SERVICE env var found. Will default to the service name.
+✔ Required flags verified
+
+🔑 Verifying GCP credentials...
+✔ GCP credentials verified!
+
+
+⬇️ Fetching existing service configurations from Cloud Run...
+
+🚀 Instrumenting Cloud Run services with sidecar...
+- Expected
++ Received
+
+  {
+    "name": "projects/interactive-project/locations/us-west1/services/interactive-service",
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+              "name": "NODE_ENV",
+              "value": "production"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "interactive-service"
++           },
++           {
++             "name": "DD_API_KEY",
++             "value": "PLACEHOLDER"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
+-         "volumeMounts": []
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "name": "shared-volume"
++           }
++         ]
++       },
++       {
++         "env": [
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_API_KEY",
++             "value": "PLACEHOLDER"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "interactive-service"
++           }
++         ],
++         "image": "gcr.io/datadoghq/serverless-init:latest",
++         "name": "datadog-sidecar",
++         "resources": {
++           "limits": {
++             "cpu": "1",
++             "memory": "512Mi"
++           }
++         },
++         "startupProbe": {
++           "failureThreshold": 3,
++           "initialDelaySeconds": 0,
++           "periodSeconds": 10,
++           "tcpSocket": {
++             "port": "5555"
++           },
++           "timeoutSeconds": 1
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "name": "shared-volume"
++           }
++         ]
+        }
+      ],
+-     "revision": "test-service-v1",
+-     "volumes": []
++     "volumes": [
++       {
++         "emptyDir": {
++           "medium": 1
++         },
++         "name": "shared-volume"
++       }
++     ]
+    }
+  }
+✅ Cloud Run instrumentation completed successfully!
+"
+`;
+
+exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1`] = `
+"
+[Dry Run] 🐶 Instrumenting Cloud Run service(s)
+
+
+🔍 Verifying command flags...
+[!] No DD_SERVICE env var found. Will default to the service name.
+✔ Required flags verified
+
+🔑 Verifying GCP credentials...
+✔ GCP credentials verified!
+
+
+[Dry Run] ⬇️ Fetching existing service configurations from Cloud Run...
+
+[Dry Run] 🚀 Instrumenting Cloud Run services with sidecar...
+- Expected
++ Received
+
+  {
+    "name": "projects/test-project/locations/us-central1/services/test-service",
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+              "name": "NODE_ENV",
+              "value": "production"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "test-service"
++           },
++           {
++             "name": "DD_API_KEY",
++             "value": "PLACEHOLDER"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
+-         "volumeMounts": []
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "name": "shared-volume"
++           }
++         ]
++       },
++       {
++         "env": [
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_API_KEY",
++             "value": "PLACEHOLDER"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "test-service"
++           },
++           {
++             "name": "DD_ENV",
++             "value": "staging"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
++           },
++           {
++             "name": "DD_TAGS",
++             "value": "team:backend,service:api"
++           }
++         ],
++         "image": "gcr.io/datadoghq/serverless-init:latest",
++         "name": "datadog-sidecar",
++         "resources": {
++           "limits": {
++             "cpu": "1",
++             "memory": "512Mi"
++           }
++         },
++         "startupProbe": {
++           "failureThreshold": 3,
++           "initialDelaySeconds": 0,
++           "periodSeconds": 10,
++           "tcpSocket": {
++             "port": "5555"
++           },
++           "timeoutSeconds": 1
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "name": "shared-volume"
++           }
++         ]
+        }
+      ],
+-     "revision": "test-service-v1",
+-     "volumes": []
++     "volumes": [
++       {
++         "emptyDir": {
++           "medium": 1
++         },
++         "name": "shared-volume"
++       }
++     ]
+    }
+  }
+
+[Dry Run] Would have updated service test-service with the above changes.
+"
+`;
