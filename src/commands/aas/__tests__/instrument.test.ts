@@ -502,12 +502,12 @@ Restarting Azure App Service my-web-app
         'datadog-sidecar',
         {
           environmentVariables: [
-            {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
-            {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
+            {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
+            {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -523,6 +523,49 @@ Restarting Azure App Service my-web-app
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
           CUSTOM_VAR2: 'value2',
+        },
+      })
+      expect(updateTags).not.toHaveBeenCalled()
+      expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
+
+    test('Overrides existing environment variables with additional', async () => {
+      const {code} = await runCLI([
+        ...DEFAULT_ARGS,
+        '--env-vars',
+        'CUSTOM_VAR1=value1',
+        '--env-vars',
+        'DD_PROFILING_ENABLED=false',
+      ])
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar',
+        {
+          environmentVariables: [
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
+            {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
+          ],
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          isMain: false,
+          targetPort: '8126',
+        }
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'false',
+          DD_API_KEY: 'PLACEHOLDER',
+          DD_SITE: 'datadoghq.com',
+          CUSTOM_VAR1: 'value1',
         },
       })
       expect(updateTags).not.toHaveBeenCalled()
