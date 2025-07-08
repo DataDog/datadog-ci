@@ -29,14 +29,21 @@ export class InstrumentCommand extends AasCommand {
   })
 
   private service = Option.String('--service', {
-    description: 'How you want to tag your service. For example, `my-service`',
+    description: 'The value for the service tag. For example, `my-service`',
   })
   private environment = Option.String('--env,--environment', {
-    description: 'How you want to tag your env. For example, `prod`',
+    description: 'The value for the env tag. For example, `prod`',
+  })
+  private version = Option.String('--version', {
+    description: 'The value for the version tag. For example, `1.0.0`',
   })
   private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
     description:
       'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
+  })
+  private isProfilingEnabled = Option.Boolean('--profiling', true, {
+    description:
+      'Adds the `DD_PROFILING_ENABLED` env var for automatic profiling support. Defaults to enabled. Specify `--no-profiling` to disable.',
   })
   private logPath = Option.String('--log-path', {
     description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
@@ -55,7 +62,9 @@ export class InstrumentCommand extends AasCommand {
     return {
       service: this.service,
       environment: this.environment,
+      version: this.version,
       isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
+      isProfilingEnabled: this.isProfilingEnabled,
       logPath: this.logPath,
       shouldNotRestart: this.shouldNotRestart,
       isDotnet: this.isDotnet,

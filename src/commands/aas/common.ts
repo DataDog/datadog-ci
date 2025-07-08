@@ -32,8 +32,10 @@ export const AAS_DD_SETTING_NAMES = [
   'DD_API_KEY',
   'DD_SITE',
   'DD_AAS_INSTANCE_LOGGING_ENABLED',
+  'DD_PROFILING_ENABLED',
   'DD_SERVICE',
   'DD_ENV',
+  'DD_VERSION',
   'DD_SERVERLESS_LOG_PATH',
   'DD_DOTNET_TRACER_HOME',
   'DD_TRACE_LOG_DIRECTORY',
@@ -188,12 +190,16 @@ export const getEnvVars = (config: AasConfigOptions): AasDatadogConfig => {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
+    DD_PROFILING_ENABLED: (config.isProfilingEnabled ?? true).toString(),
   }
   if (config.service) {
     envVars.DD_SERVICE = config.service
   }
   if (config.environment) {
     envVars.DD_ENV = config.environment
+  }
+  if (config.version) {
+    envVars.DD_VERSION = config.version
   }
   if (config.logPath) {
     envVars.DD_SERVERLESS_LOG_PATH = config.logPath

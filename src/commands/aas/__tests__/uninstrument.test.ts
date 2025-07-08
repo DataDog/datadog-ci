@@ -92,6 +92,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'false',
           hello: 'world', // existing setting to ensure we don't remove it
         },
       })
@@ -124,6 +125,7 @@ Updating Application Settings for my-web-app
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'true',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
