@@ -34,7 +34,7 @@ import {isValidDatadogSite} from '../../helpers/validation'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
-import {checkAuthentication, generateConfigDiff} from './utils'
+import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')
@@ -42,8 +42,8 @@ const {ServicesClient} = require('@google-cloud/run')
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
-const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
-const DEFAULT_VOLUME_NAME = 'shared-volume'
+export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
+export const DEFAULT_VOLUME_NAME = 'shared-volume'
 const DEFAULT_VOLUME_PATH = '/shared-volume'
 const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
@@ -237,28 +237,7 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
     )
-
-    const existingServiceConfigs: IService[] = []
-    for (const serviceName of services) {
-      const servicePath = client.servicePath(project, region, serviceName)
-
-      const existingService = await withSpinner(
-        `Fetching configuration for ${chalk.bold(serviceName)}...`,
-        async () => {
-          try {
-            const [serv] = await client.getService({name: servicePath})
-
-            return serv
-          } catch (error) {
-            throw new Error(
-              `Service ${serviceName} not found in project ${project}, region ${region}.\n\nNo services were instrumented.\n`
-            )
-          }
-        },
-        `Fetched service configuration for ${chalk.bold(serviceName)}`
-      )
-      existingServiceConfigs.push(existingService)
-    }
+    const existingServiceConfigs = await fetchServiceConfigs(client, project, region, services)
 
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Instrumenting Cloud Run services with sidecar...\n`)
