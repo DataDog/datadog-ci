@@ -21,8 +21,13 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
 } from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
+import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -37,14 +42,15 @@ const {ServicesClient} = require('@google-cloud/run')
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
-const SIDECAR_NAME = 'datadog-sidecar'
-const VOLUME_NAME = 'shared-volume'
-const VOLUME_MOUNT_PATH = '/shared-volume'
+const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
+const DEFAULT_VOLUME_NAME = 'shared-volume'
+const DEFAULT_VOLUME_PATH = '/shared-volume'
+const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
+const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
 const DEFAULT_ENV_VARS: IEnvVar[] = [
   {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
-  {name: LOGS_PATH_ENV_VAR, value: `${VOLUME_MOUNT_PATH}/logs/*.log`}, // TODO make configurable
   {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
   {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
   {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
@@ -69,15 +75,43 @@ export class InstrumentCommand extends Command {
   private logLevel = Option.String('--log-level,--logLevel')
   // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
   private region = Option.String('-r,--region')
-  private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true) // todo
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true) // todo
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
+  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
   private healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
+  private sidecarImage = Option.String('--image,--sidecar-image', DEFAULT_SIDECAR_IMAGE, {
+    description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,
+  })
+  private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
+    description: `(Not recommended) The name to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
+  })
+  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
+    description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
+  })
+  private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
+    description: `(Not recommended) The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
+  })
+  private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
+    description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
+  })
+  private sidecarCpus = Option.String('--sidecar-cpus', '1', {
+    description: `The number of CPUs to allocate to the sidecar container. Defaults to 1.`,
+  })
+  private sidecarMemory = Option.String('--sidecar-memory', '512Mi', {
+    description: `The number of CPUs to allocate to the sidecar container. Defaults to '512Mi'.`,
+  })
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  private fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
 
   public async execute(): Promise<0 | 1> {
-    // TODO FIPS
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
     this.context.stdout.write(
       `\n${dryRunPrefix(this.dryRun)}🐶 ${chalk.bold('Instrumenting Cloud Run service(s)')}\n\n`
@@ -161,6 +195,25 @@ export class InstrumentCommand extends Command {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ GCP credentials verified!\n\n'))
+
+    // Source code integration
+    if (this.sourceCodeIntegration) {
+      try {
+        const gitData = await getGitData()
+        if (this.uploadGitMetadata) {
+          await uploadGitData(this.context)
+        }
+        if (this.extraTags) {
+          this.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        } else {
+          this.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        }
+      } catch (err) {
+        this.context.stdout.write(
+          renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`)
+        )
+      }
+    }
 
     // Instrument services with sidecar
     try {
@@ -265,12 +318,12 @@ export class InstrumentCommand extends Command {
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
 
-    const existingSidecarContainer = containers.find((c) => c.name === SIDECAR_NAME)
+    const existingSidecarContainer = containers.find((c) => c.name === this.sidecarName)
     const newSidecarContainer = this.buildSidecarContainer(existingSidecarContainer, ddService)
 
     // Update all app containers to add volume mounts and env vars if they don't have them
     const updatedContainers = containers.map((container) => {
-      if (container.name === SIDECAR_NAME) {
+      if (container.name === this.sidecarName) {
         return newSidecarContainer
       }
 
@@ -283,13 +336,13 @@ export class InstrumentCommand extends Command {
     }
 
     // Add shared volume if it doesn't exist
-    const hasSharedVolume = volumes.some((volume) => volume.name === VOLUME_NAME)
+    const hasSharedVolume = volumes.some((volume) => volume.name === this.sharedVolumeName)
     const updatedVolumes = hasSharedVolume
       ? volumes
       : [
           ...volumes,
           {
-            name: VOLUME_NAME,
+            name: this.sharedVolumeName,
             emptyDir: {
               medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
             },
@@ -344,6 +397,7 @@ export class InstrumentCommand extends Command {
     if (this.extraTags) {
       newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags
     }
+    newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
 
     // If port is specified, overwrite any existing value
     // If port is not specified but already exists, leave the existing value unchanged
@@ -361,12 +415,12 @@ export class InstrumentCommand extends Command {
 
     // Create sidecar container with volume mount and environment variables
     return {
-      name: SIDECAR_NAME,
-      image: 'gcr.io/datadoghq/serverless-init:latest', // TODO make configurable
+      name: this.sidecarName,
+      image: this.sidecarImage,
       volumeMounts: [
         {
-          name: VOLUME_NAME,
-          mountPath: VOLUME_MOUNT_PATH,
+          name: this.sharedVolumeName,
+          mountPath: this.sharedVolumePath,
         },
       ],
       env: newEnv,
@@ -381,8 +435,8 @@ export class InstrumentCommand extends Command {
       },
       resources: {
         limits: {
-          memory: '512Mi',
-          cpu: '1',
+          memory: this.sidecarMemory,
+          cpu: this.sidecarCpus,
         },
       },
     }
@@ -391,7 +445,9 @@ export class InstrumentCommand extends Command {
   // Add volume mount and update required env vars
   private updateAppContainer(appContainer: IContainer, ddService: string) {
     const existingVolumeMounts = appContainer.volumeMounts || []
-    const hasSharedVolumeMount = existingVolumeMounts.some((mount: IVolumeMount) => mount.name === VOLUME_NAME)
+    const hasSharedVolumeMount = existingVolumeMounts.some(
+      (mount: IVolumeMount) => mount.name === this.sharedVolumeName
+    )
     const existingEnvVars = appContainer.env || []
 
     const updatedContainer = {...appContainer}
@@ -399,8 +455,8 @@ export class InstrumentCommand extends Command {
       updatedContainer.volumeMounts = [
         ...existingVolumeMounts,
         {
-          name: VOLUME_NAME,
-          mountPath: VOLUME_MOUNT_PATH,
+          name: this.sharedVolumeName,
+          mountPath: this.sharedVolumePath,
         },
       ]
     }

@@ -17,6 +17,7 @@ import {
 } from '../../../constants'
 import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import * as apikey from '../../../helpers/apikey'
+import * as instrumentHelpers from '../../../helpers/git/instrument-helpers'
 
 import {InstrumentCommand} from '../instrument'
 import * as cloudRunPromptModule from '../prompt'
@@ -159,6 +160,16 @@ describe('InstrumentCommand', () => {
       }
       ;(apikey.newApiKeyValidator as jest.Mock).mockReturnValue(mockValidator)
       ;(utils.checkAuthentication as jest.Mock).mockResolvedValue(true)
+
+      // Re-apply git status mock after restoreAllMocks
+      const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
+      mockGitStatus.mockImplementation(async () => ({
+        ahead: 0,
+        hash: '1be168ff837f043bde17c0314341c84271047b31',
+        remote: 'git.repository_url:git@github.com:datadog/test.git',
+        isClean: true,
+        files: [],
+      }))
     })
 
     test('prints dry run data with basic flags', async () => {
@@ -176,6 +187,7 @@ describe('InstrumentCommand', () => {
         '1.0.0',
         '--extra-tags',
         'team:backend,service:api',
+        '--no-upload-git-metadata',
       ])
 
       expect(code).toBe(0)
@@ -197,7 +209,7 @@ describe('InstrumentCommand', () => {
       }
       mockServicesClient.getService.mockResolvedValue([interactiveService])
 
-      const {code, context} = await runCLI(['--interactive'])
+      const {code, context} = await runCLI(['--interactive', '--no-upload-git-metadata'])
 
       expect(code).toBe(0)
       expect(context.stdout.toString()).toMatchSnapshot()
@@ -210,6 +222,11 @@ describe('InstrumentCommand', () => {
     beforeEach(() => {
       command = new InstrumentCommand()
       ;(command as any).tracing = undefined
+      ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
+      ;(command as any).logsPath = '/shared-volume/logs/*.log'
     })
 
     test('adds sidecar and shared volume when missing', () => {
@@ -267,6 +284,46 @@ describe('InstrumentCommand', () => {
       expect(result.template?.volumes).toHaveLength(1)
       expect(result.template?.volumes?.[0].name).toBe('shared-volume')
     })
+
+    test('uses custom configuration values', () => {
+      ;(command as any).sidecarImage = 'custom-image:v1.0'
+      ;(command as any).sidecarName = 'custom-sidecar'
+      ;(command as any).sharedVolumeName = 'custom-volume'
+      ;(command as any).sharedVolumePath = '/custom/path'
+      ;(command as any).logsPath = '/custom/path/logs/*.log'
+      ;(command as any).sidecarCpus = '2'
+      ;(command as any).sidecarMemory = '256Mi'
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'test-service')
+
+      // Check sidecar container has custom values
+      const sidecarContainer = result.template?.containers?.find((c: IContainer) => c.name === 'custom-sidecar')
+      expect(sidecarContainer).toBeDefined()
+      expect(sidecarContainer?.image).toBe('custom-image:v1.0')
+      expect(sidecarContainer?.name).toBe('custom-sidecar')
+      expect(sidecarContainer?.volumeMounts?.[0]?.name).toBe('custom-volume')
+      expect(sidecarContainer?.volumeMounts?.[0]?.mountPath).toBe('/custom/path')
+      expect(sidecarContainer?.env?.find((e: IEnvVar) => e.name === 'DD_SERVERLESS_LOG_PATH')?.value).toBe(
+        '/custom/path/logs/*.log'
+      )
+      expect(sidecarContainer?.resources?.limits?.cpu).toBe('2')
+      expect(sidecarContainer?.resources?.limits?.memory).toBe('256Mi')
+
+      // Check main container has custom volume mount
+      const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(mainContainer?.volumeMounts?.[0]?.name).toBe('custom-volume')
+      expect(mainContainer?.volumeMounts?.[0]?.mountPath).toBe('/custom/path')
+
+      // Check custom volume is created
+      expect(result.template?.volumes?.[0]?.name).toBe('custom-volume')
+    })
   })
 
   describe('buildSidecarContainer', () => {
@@ -275,6 +332,11 @@ describe('InstrumentCommand', () => {
     beforeEach(() => {
       command = new InstrumentCommand()
       ;(command as any).tracing = undefined
+      ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).sharedVolumePath = '/shared-volume'
+      ;(command as any).logsPath = '/shared-volume/logs/*.log'
     })
 
     test('custom flags set correct env vars', () => {
@@ -290,7 +352,7 @@ describe('InstrumentCommand', () => {
         {name: ENVIRONMENT_ENV_VAR, value: 'dev'},
         {name: VERSION_ENV_VAR, value: 'v123.456'},
         {name: SITE_ENV_VAR, value: 'datadoghq.com'},
-        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
+        {name: LOGS_PATH_ENV_VAR, value: (command as any).logsPath as string},
         {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY ?? ''},
         {name: HEALTH_PORT_ENV_VAR, value: '5555'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
@@ -323,7 +385,7 @@ describe('InstrumentCommand', () => {
       const newSidecarContainer = command.buildSidecarContainer(existingSidecarContainer, 'new-service')
       const expected: IEnvVar[] = [
         {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
-        {name: LOGS_PATH_ENV_VAR, value: 'some-log-path'},
+        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
         {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
         {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
         {name: HEALTH_PORT_ENV_VAR, value: '12345'},

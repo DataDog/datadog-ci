@@ -59,10 +59,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "value": "datadoghq.com"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
-+           },
-+           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
@@ -81,6 +77,14 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +           {
 +             "name": "DD_SERVICE",
 +             "value": "interactive-service"
++           },
++           {
++             "name": "DD_TAGS",
++             "value": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
 +           }
 +         ],
 +         "image": "gcr.io/datadoghq/serverless-init:latest",
@@ -183,10 +187,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "value": "datadoghq.com"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
-+           },
-+           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
@@ -216,7 +216,11 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +           },
 +           {
 +             "name": "DD_TAGS",
-+             "value": "team:backend,service:api"
++             "value": "team:backend,service:api,git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
 +           }
 +         ],
 +         "image": "gcr.io/datadoghq/serverless-init:latest",
