@@ -14,9 +14,11 @@ export const DEFAULT_CONFIG: AasConfigOptions = {
   shouldNotRestart: false,
 }
 
+export const WEB_APP_ID =
+  '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app'
+
 export const CONTAINER_WEB_APP: Site = {
-  id:
-    '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',
+  id: WEB_APP_ID,
   name: 'my-web-app',
   kind: 'app,linux',
   location: 'East US',

@@ -758,6 +758,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/arm-resources@npm:^6.1.0":
+  version: 6.1.0
+  resolution: "@azure/arm-resources@npm:6.1.0"
+  dependencies:
+    "@azure/abort-controller": ^2.1.2
+    "@azure/core-auth": ^1.9.0
+    "@azure/core-client": ^1.9.2
+    "@azure/core-lro": ^2.5.4
+    "@azure/core-paging": ^1.6.2
+    "@azure/core-rest-pipeline": ^1.19.0
+    tslib: ^2.8.1
+  checksum: 7799f0c28afab03a299d562b764748b752b3c8f678c0ab314c9381e5eef38f5e5cf2cb891cbdf9fa9db792deab140d1af5fe1dc5a3e75a4a6e478f8384561ba2
+  languageName: node
+  linkType: hard
+
 "@azure/core-auth@npm:^1.4.0, @azure/core-auth@npm:^1.8.0, @azure/core-auth@npm:^1.9.0":
   version: 1.9.0
   resolution: "@azure/core-auth@npm:1.9.0"
@@ -2035,6 +2050,7 @@ __metadata:
     "@aws-sdk/credential-providers": ^3.709.0
     "@aws-sdk/types": ^3.709.0
     "@azure/arm-appservice": ^16.0.0
+    "@azure/arm-resources": ^6.1.0
     "@azure/identity": ^4.10.0
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
