@@ -529,7 +529,7 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
-    test('Overrides existing environment variables with additional', async () => {
+    test('Overrides default env vars with additional env vars', async () => {
       const {code} = await runCLI([
         ...DEFAULT_ARGS,
         '--env-vars',
