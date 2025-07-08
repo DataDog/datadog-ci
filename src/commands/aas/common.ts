@@ -28,7 +28,7 @@ const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 // The profiler binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
-const ENV_VAR_REGEX = /^(\w+)=(.*)$/
+const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
 export const AAS_DD_SETTING_NAMES = [
   'DD_API_KEY',
