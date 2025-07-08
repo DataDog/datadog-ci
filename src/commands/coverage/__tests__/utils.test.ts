@@ -1,4 +1,5 @@
 import {
+  cloverFormat,
   coberturaFormat,
   detectFormat,
   jacocoFormat,
@@ -85,6 +86,16 @@ describe('utils', () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/.resultset.json'
       expect(validateCoverageReport(filePath, simplecovInternalFormat)).toBeUndefined()
     })
+
+    test('Returns undefined for a valid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover.xml'
+      expect(validateCoverageReport(filePath, cloverFormat)).toBeUndefined()
+    })
+
+    test('Returns error message for an invalid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover-invalid.xml'
+      expect(validateCoverageReport(filePath, cloverFormat)).toMatch(/.+/)
+    })
   })
 
   describe('detectFormat', () => {
@@ -116,6 +127,11 @@ describe('utils', () => {
     test('Detects simplecov-internal format for a valid internal simplecov report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/.resultset.json'
       expect(detectFormat(filePath)).toEqual(simplecovInternalFormat)
+    })
+
+    test('Detects clover format for a valid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover.xml'
+      expect(detectFormat(filePath)).toEqual(cloverFormat)
     })
 
     test('Returns undefined for an XML file that is not a coverage report', async () => {

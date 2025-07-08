@@ -17,6 +17,7 @@ export const opencoverFormat = 'opencover' as const
 export const coberturaFormat = 'cobertura' as const
 export const simplecovFormat = 'simplecov' as const
 export const simplecovInternalFormat = 'simplecov-internal' as const
+export const cloverFormat = 'clover' as const
 
 export const coverageFormats = [
   jacocoFormat,
@@ -25,6 +26,7 @@ export const coverageFormats = [
   coberturaFormat,
   simplecovFormat,
   simplecovInternalFormat,
+  cloverFormat,
 ] as const
 export type CoverageFormat = typeof coverageFormats[number]
 
@@ -53,7 +55,10 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
 
   if (
     extension === '.xml' &&
-    (filename.includes('coverage') || filename.includes('jacoco') || filename.includes('cobertura'))
+    (filename.includes('coverage') ||
+      filename.includes('jacoco') ||
+      filename.includes('cobertura') ||
+      filename.includes('clover'))
   ) {
     return readFirstKb(filePath, (data) => {
       if (data.includes('<CoverageSession')) {
@@ -68,6 +73,8 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
         data.includes('<report')
       ) {
         return jacocoFormat
+      } else if (data.includes('<coverage') && data.includes('clover=')) {
+        return cloverFormat
       }
     })
   } else if (extension === '.json' && filename.includes('coverage')) {
@@ -164,6 +171,20 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
     const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
     if (!rootTagMatch || rootTagMatch[1] !== 'coverage') {
       return 'Invalid Cobertura report: root element must be <coverage>'
+    }
+  }
+
+  if (format === cloverFormat) {
+    const xmlFileContentString = String(fs.readFileSync(filePath))
+    const validationOutput = XMLValidator.validate(xmlFileContentString)
+    if (validationOutput !== true) {
+      return validationOutput.err.msg
+    }
+
+    // Check that the root element is 'coverage'
+    const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
+    if (!rootTagMatch || rootTagMatch[1] !== 'coverage') {
+      return 'Invalid Clover report: root element must be <coverage>'
     }
   }
 
