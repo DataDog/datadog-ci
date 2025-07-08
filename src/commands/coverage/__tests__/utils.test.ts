@@ -1,4 +1,11 @@
-import {detectFormat, jacocoFormat, lcovFormat, opencoverFormat, validateCoverageReport} from '../utils'
+import {
+  coberturaFormat,
+  detectFormat,
+  jacocoFormat,
+  lcovFormat,
+  opencoverFormat,
+  validateCoverageReport,
+} from '../utils'
 
 describe('utils', () => {
   describe('validateCoverageReport', () => {
@@ -46,6 +53,16 @@ describe('utils', () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/opencover-coverage-malformed.xml'
       expect(validateCoverageReport(filePath, opencoverFormat)).toMatch(/.+/)
     })
+
+    test('Returns undefined for a valid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura.xml'
+      expect(validateCoverageReport(filePath, coberturaFormat)).toBeUndefined()
+    })
+
+    test('Returns error message for an invalid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura-invalid.xml'
+      expect(validateCoverageReport(filePath, coberturaFormat)).toMatch(/.+/)
+    })
   })
 
   describe('detectFormat', () => {
@@ -62,6 +79,11 @@ describe('utils', () => {
     test('Detects opencover format for a valid opencover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/opencover-coverage.xml'
       expect(detectFormat(filePath)).toEqual(opencoverFormat)
+    })
+
+    test('Detects cobertura format for a valid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura.xml'
+      expect(detectFormat(filePath)).toEqual(coberturaFormat)
     })
 
     test('Returns undefined for an XML file that is not a coverage report', async () => {
