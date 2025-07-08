@@ -16,9 +16,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 ⬇️ Fetching existing service configurations from Cloud Run...
 
 🚀 Instrumenting Cloud Run services with sidecar...
-- Expected
-+ Received
-
   {
     "name": "projects/interactive-project/locations/us-west1/services/interactive-service",
     "template": {
@@ -144,9 +141,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 [Dry Run] ⬇️ Fetching existing service configurations from Cloud Run...
 
 [Dry Run] 🚀 Instrumenting Cloud Run services with sidecar...
-- Expected
-+ Received
-
   {
     "name": "projects/test-project/locations/us-central1/services/test-service",
     "template": {

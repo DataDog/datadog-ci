@@ -1,0 +1,152 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
+"
+🐶 Uninstrumenting Cloud Run service(s)
+
+
+🔍 Verifying command flags...
+✔ Required flags verified
+
+🔑 Verifying GCP credentials...
+✔ GCP credentials verified!
+
+
+⬇️ Fetching existing service configurations from Cloud Run...
+
+🚀 Uninstrumenting Cloud Run services with sidecar...
+  {
+    "name": "projects/test-project/locations/us-central1/services/test-service",
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+              "name": "NODE_ENV",
+              "value": "production"
+-           },
+-           {
+-             "name": "DD_TRACE_ENABLED",
+-             "value": "true"
+-           },
+-           {
+-             "name": "DD_SERVICE",
+-             "value": "test-service"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "name": "shared-volume"
+-           }
+-         ]
+-       },
+-       {
+-         "env": [
+-           {
+-             "name": "DD_API_KEY",
+-             "value": "test-api-key"
+-           }
+-         ],
+-         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "name": "datadog-sidecar",
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "name": "shared-volume"
+-           }
+-         ]
++         "volumeMounts": []
+        }
+      ],
+-     "revision": "test-service-v1",
+-     "volumes": [
+-       {
+-         "emptyDir": {},
+-         "name": "shared-volume"
+-       }
+-     ]
++     "volumes": []
+    }
+  }
+✅ Cloud Run uninstrumentation completed successfully!
+"
+`;
+
+exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
+"
+[Dry Run] 🐶 Uninstrumenting Cloud Run service(s)
+
+
+🔍 Verifying command flags...
+✔ Required flags verified
+
+🔑 Verifying GCP credentials...
+✔ GCP credentials verified!
+
+
+[Dry Run] ⬇️ Fetching existing service configurations from Cloud Run...
+
+[Dry Run] 🚀 Uninstrumenting Cloud Run services with sidecar...
+  {
+    "name": "projects/test-project/locations/us-central1/services/test-service",
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+              "name": "NODE_ENV",
+              "value": "production"
+-           },
+-           {
+-             "name": "DD_TRACE_ENABLED",
+-             "value": "true"
+-           },
+-           {
+-             "name": "DD_SERVICE",
+-             "value": "test-service"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "name": "shared-volume"
+-           }
+-         ]
+-       },
+-       {
+-         "env": [
+-           {
+-             "name": "DD_API_KEY",
+-             "value": "test-api-key"
+-           }
+-         ],
+-         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "name": "datadog-sidecar",
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "name": "shared-volume"
+-           }
+-         ]
++         "volumeMounts": []
+        }
+      ],
+-     "revision": "test-service-v1",
+-     "volumes": [
+-       {
+-         "emptyDir": {},
+-         "name": "shared-volume"
+-       }
+-     ]
++     "volumes": []
+    }
+  }
+
+[Dry Run] Would have updated service test-service with the above changes.
+"
+`;
