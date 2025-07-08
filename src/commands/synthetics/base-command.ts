@@ -52,7 +52,7 @@ export abstract class BaseCommand extends Command {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
+  /** This method can be overloaded by the child class. Use `super.getDefaultConfig()` to add more config. */
   public static getDefaultConfig(): DatadogCIConfig {
     return {
       apiKey: '',
@@ -63,24 +63,19 @@ export abstract class BaseCommand extends Command {
     }
   }
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
-    return {
-      apiKey: process.env.DATADOG_API_KEY,
-      appKey: process.env.DATADOG_APP_KEY,
-      configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
-      datadogSite: process.env.DATADOG_SITE,
-    }
-  }
+  protected async setup() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
-    return {
-      apiKey: this.apiKey,
-      appKey: this.appKey,
-      configPath: this.configPath,
-      datadogSite: this.datadogSite,
-    }
+    // Bootstrap reporter
+    this.reporter = getReporter([new DefaultReporter(this)])
+
+    // Load config
+    await this.resolveConfig()
+    this.normalizeConfig()
+    this.validateConfig()
+
+    // Update reporter
+    this.reporter = getReporter([new DefaultReporter(this), ...this.getReporters()])
   }
 
   protected async resolveConfig() {
@@ -107,25 +102,33 @@ export abstract class BaseCommand extends Command {
     this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromCli()))
   }
 
-  protected async setup() {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-
-    const reporters: Reporter[] = [new DefaultReporter(this), ...this.getReporters()]
-    this.reporter = getReporter(reporters)
-
-    await this.resolveConfig()
-    this.normalizeConfig()
-    this.validateConfig()
+  /** This method can be overloaded by the child class. Use `super.resolveConfigFromEnv()` to add more config. */
+  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
+    return {
+      apiKey: process.env.DATADOG_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY,
+      configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
+      datadogSite: process.env.DATADOG_SITE,
+    }
   }
 
-  protected normalizeConfig() {
-    // Normalize the config here
+  /** This method can be overloaded by the child class. Use `super.resolveConfigFromCli()` to add more config. */
+  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
+    return {
+      apiKey: this.apiKey,
+      appKey: this.appKey,
+      configPath: this.configPath,
+      datadogSite: this.datadogSite,
+    }
   }
 
-  protected validateConfig() {
-    // Validate the config here
-  }
+  /** This method can be overloaded by the child class. */
+  protected normalizeConfig(): void {}
 
+  /** This method can be overloaded by the child class. */
+  protected validateConfig(): void {}
+
+  /** This method can be overloaded by the child class. */
   protected getReporters(): Reporter[] {
     return []
   }
