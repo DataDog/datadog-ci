@@ -25,6 +25,7 @@ src/commands/sourcemaps       @DataDog/datadog-ci @DataDog/rum-browser
 src/commands/unity-symbols    @DataDog/datadog-ci @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
+src/commands/aas            @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 src/commands/cloud-run      @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 src/commands/lambda         @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
 src/commands/stepfunctions  @DataDog/datadog-ci @DataDog/serverless-onboarding-enablement
