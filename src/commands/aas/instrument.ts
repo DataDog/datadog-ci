@@ -49,7 +49,10 @@ export class InstrumentCommand extends AasCommand {
   private logPath = Option.String('--log-path', {
     description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
   })
-
+  private envVars = Option.Array('--env-vars', {
+    description:
+      'Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+  })
   private shouldNotRestart = Option.Boolean('--no-restart', false, {
     description: 'Do not restart the App Service after applying instrumentation.',
   })
@@ -67,6 +70,7 @@ export class InstrumentCommand extends AasCommand {
       isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
       isProfilingEnabled: this.isProfilingEnabled,
       logPath: this.logPath,
+      envVars: this.envVars,
       shouldNotRestart: this.shouldNotRestart,
       isDotnet: this.isDotnet,
     }
