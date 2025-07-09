@@ -2,6 +2,8 @@ import * as fs from 'fs'
 
 import {globSync, hasMagic} from './glob'
 import {buildPath, isFile} from './utils'
+import { lstatSync } from "fs";
+import { Stats } from "node:fs";
 
 const DEFAULT_IGNORED_FOLDERS = [
   '.circleci',
@@ -79,7 +81,14 @@ const partitionFilesRecursive = (
     return
   }
 
-  if (isFile(path)) {
+  let stats: Stats
+  try {
+    stats = lstatSync(path)
+  } catch (e) {
+    return
+  }
+
+  if (stats.isFile()) {
     // regular file
     const pathPartition = partition(path, strict)
     if (pathPartition) {
@@ -90,13 +99,15 @@ const partitionFilesRecursive = (
     return
   }
 
-  const entries = fs.readdirSync(path, {withFileTypes: true})
-  for (const entry of entries) {
-    const fullPath = buildPath(path, entry.name)
-    if (ignoredPaths.includes(fullPath) || DEFAULT_IGNORED_FOLDERS.includes(entry.name)) {
-      continue
+  if (stats.isDirectory()) {
+    const entries = fs.readdirSync(path, {withFileTypes: true})
+    for (const entry of entries) {
+      const fullPath = buildPath(path, entry.name)
+      if (ignoredPaths.includes(fullPath) || DEFAULT_IGNORED_FOLDERS.includes(entry.name)) {
+        continue
+      }
+      partitionFilesRecursive(fullPath, ignoredPaths, partition, results, false)
     }
-    partitionFilesRecursive(fullPath, ignoredPaths, partition, results, false)
   }
 }
 
