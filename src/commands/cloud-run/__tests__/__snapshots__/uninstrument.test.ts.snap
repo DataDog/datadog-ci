@@ -4,8 +4,6 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
 "
 🐶 Uninstrumenting Cloud Run service(s)
 
-
-🔍 Verifying command flags...
 ✔ Required flags verified
 
 🔑 Verifying GCP credentials...
@@ -79,8 +77,6 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
 "
 [Dry Run] 🐶 Uninstrumenting Cloud Run service(s)
 
-
-🔍 Verifying command flags...
 ✔ Required flags verified
 
 🔑 Verifying GCP credentials...
