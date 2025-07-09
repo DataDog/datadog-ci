@@ -32,6 +32,7 @@ import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
@@ -42,8 +43,6 @@ const {ServicesClient} = require('@google-cloud/run')
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
-export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
-export const DEFAULT_VOLUME_NAME = 'shared-volume'
 const DEFAULT_VOLUME_PATH = '/shared-volume'
 const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 const DEFAULT_HEALTH_CHECK_PORT = 5555

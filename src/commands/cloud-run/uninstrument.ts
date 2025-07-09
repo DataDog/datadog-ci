@@ -8,7 +8,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {renderSoftWarning} from '../../helpers/renderer'
 
-import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './instrument'
+import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
