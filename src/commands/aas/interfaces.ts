@@ -20,4 +20,7 @@ export interface AasConfigOptions {
   isDotnet?: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   shouldNotRestart?: boolean
+  sourceCodeIntegration?: boolean
+  uploadGitMetadata?: boolean
+  extraTags?: string
 }

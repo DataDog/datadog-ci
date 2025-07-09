@@ -5,8 +5,9 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {DATADOG_SITE_US1} from '../../constants'
+import {DATADOG_SITE_US1, EXTRA_TAGS_REG_EXP} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
@@ -62,6 +63,18 @@ export class InstrumentCommand extends AasCommand {
       'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
 
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
+    description: 'Enable source code integration to add git metadata as tags. Defaults to enabled.',
+  })
+
+  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true, {
+    description: 'Upload git metadata to Datadog. Defaults to enabled.',
+  })
+
+  private extraTags = Option.String('--extra-tags,--extraTags', {
+    description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -73,6 +86,9 @@ export class InstrumentCommand extends AasCommand {
       envVars: this.envVars,
       shouldNotRestart: this.shouldNotRestart,
       isDotnet: this.isDotnet,
+      sourceCodeIntegration: this.sourceCodeIntegration,
+      uploadGitMetadata: this.uploadGitMetadata,
+      extraTags: this.extraTags,
     }
   }
 
@@ -101,11 +117,38 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
+
+    if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
+
+      return 1
+    }
+
     const cred = new DefaultAzureCredential()
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
     }
     const tagClient = new ResourceManagementClient(cred).tagsOperations
+
+    // Source code integration
+    if (config.sourceCodeIntegration) {
+      try {
+        const gitData = await getGitData()
+        if (config.uploadGitMetadata) {
+          await uploadGitData(this.context)
+        }
+        if (config.extraTags) {
+          config.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        } else {
+          config.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+        }
+      } catch (err) {
+        this.context.stdout.write(
+          renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`)
+        )
+      }
+    }
+
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>

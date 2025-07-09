@@ -44,6 +44,7 @@ export const AAS_DD_SETTING_NAMES = [
   'CORECLR_ENABLE_PROFILING',
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
+  'DD_TAGS',
 ] as const
 
 /**
@@ -219,6 +220,9 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
   }
   if (config.logPath) {
     envVars.DD_SERVERLESS_LOG_PATH = config.logPath
+  }
+  if (config.extraTags) {
+    envVars.DD_TAGS = config.extraTags
   }
   if (config.isDotnet) {
     envVars = {
