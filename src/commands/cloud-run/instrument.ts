@@ -166,7 +166,6 @@ export class InstrumentCommand extends Command {
     }
 
     // Validate required variables
-    this.context.stdout.write(chalk.bold('\n🔍 Verifying command flags...\n'))
     if (!this.project) {
       this.context.stdout.write(chalk.yellow('Invalid or missing project. Please use the --project flag.\n'))
     }
@@ -226,7 +225,7 @@ export class InstrumentCommand extends Command {
     try {
       await this.instrumentSidecar(this.project, this.services, this.region, ddService)
     } catch (error) {
-      this.context.stderr.write(chalk.red(`\n${dryRunPrefix(this.dryRun)}Instrumentation failed: ${error}\n`))
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
 
       return 1
     }
@@ -257,7 +256,7 @@ export class InstrumentCommand extends Command {
         await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
       } catch (error) {
         this.context.stderr.write(
-          chalk.red(`${dryRunPrefix(this.dryRun)}Failed to instrument service ${serviceName}: ${error}\n`)
+          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
         )
         throw error
       }
@@ -281,7 +280,7 @@ export class InstrumentCommand extends Command {
 
       return
     } else if (this.interactive) {
-      const confirmed = await requestConfirmation('Do you want to apply the changes?')
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
       if (!confirmed) {
         throw new Error('Instrumentation cancelled by user.')
       }

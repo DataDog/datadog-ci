@@ -6,7 +6,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {renderSoftWarning} from '../../helpers/renderer'
+import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from './prompt'
@@ -79,7 +79,6 @@ export class UninstrumentCommand extends Command {
     }
 
     // Validate required variables
-    this.context.stdout.write(chalk.bold('\n🔍 Verifying command flags...\n'))
     if (!this.project) {
       this.context.stdout.write(chalk.yellow('Invalid or missing project. Please use the --project flag.\n'))
     }
@@ -109,7 +108,7 @@ export class UninstrumentCommand extends Command {
     try {
       await this.uninstrumentSidecar(this.project, this.services, this.region)
     } catch (error) {
-      this.context.stderr.write(chalk.red(`\n${dryRunPrefix(this.dryRun)}Uninstrumentation failed: ${error}\n`))
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
 
       return 1
     }
@@ -139,7 +138,7 @@ export class UninstrumentCommand extends Command {
         await this.uninstrumentService(client, serviceConfig, serviceName)
       } catch (error) {
         this.context.stderr.write(
-          chalk.red(`${dryRunPrefix(this.dryRun)}Failed to uninstrument service ${serviceName}: ${error}\n`)
+          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
         )
         throw error
       }
@@ -158,7 +157,7 @@ export class UninstrumentCommand extends Command {
 
       return
     } else if (this.interactive) {
-      const confirmed = await requestConfirmation('Do you want to apply the changes?')
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
       if (!confirmed) {
         throw new Error('Uninstrumentation cancelled by user.')
       }
