@@ -26,10 +26,18 @@ export class UninstrumentCommand extends Command {
   })
 
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private project = Option.String('-p,--project')
-  private services = Option.Array('-s,--service,--services', [])
-  private interactive = Option.Boolean('-i,--interactive', false)
-  private region = Option.String('-r,--region')
+  private project = Option.String('-p,--project', {
+    description: 'GCP project ID',
+  })
+  private services = Option.Array('-s,--service,--services', [], {
+    description: 'Cloud Run service(s) to instrument',
+  })
+  private interactive = Option.Boolean('-i,--interactive', false, {
+    description: 'Prompt for flags one at a time',
+  })
+  private region = Option.String('-r,--region', {
+    description: 'GCP region your service(s) are deployed in',
+  })
   // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
     description: `The name of the sidecar container to remove. Specify if you have a different sidecar name. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
