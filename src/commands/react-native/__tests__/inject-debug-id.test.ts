@@ -61,8 +61,8 @@ describe('inject-debug-id', () => {
     const tmpBundlePath = upath.join(tmpDir, 'test-2.js.bundle')
     const tmpSourcemapPath = upath.join(tmpDir, 'test-2.js.bundle.map')
 
-    await promises.copyFile(upath.join(fixturePath, 'main.js.bundle'), tmpBundlePath)
-    await promises.copyFile(upath.join(fixturePath, 'main.js.bundle.map'), tmpSourcemapPath)
+    await promises.copyFile(upath.join(fixturePath, 'main.jsbundle'), tmpBundlePath)
+    await promises.copyFile(upath.join(fixturePath, 'main.jsbundle.map'), tmpSourcemapPath)
 
     // WHEN
     const {context, code} = await runCLI([tmpDir])
@@ -96,8 +96,8 @@ describe('inject-debug-id', () => {
     const tmpBundlePath = upath.join(tmpDir, 'test-3.js.bundle')
     const tmpSourcemapPath = upath.join(tmpDir, 'test-3.js.bundle.map')
 
-    await promises.copyFile(upath.join(fixturePath, 'main.js.bundle'), tmpBundlePath)
-    await promises.copyFile(upath.join(fixturePath, 'main.js.bundle.map'), tmpSourcemapPath)
+    await promises.copyFile(upath.join(fixturePath, 'main.jsbundle'), tmpBundlePath)
+    await promises.copyFile(upath.join(fixturePath, 'main.jsbundle.map'), tmpSourcemapPath)
 
     // WHEN
     const {context, code} = await runCLI([tmpDir])

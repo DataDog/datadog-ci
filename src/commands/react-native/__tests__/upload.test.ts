@@ -256,7 +256,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
     `After upload is successful sourcemap files will be processed and ready to use within the next 5 minutes.`
   )
 
-  const uploadedFileLines = output.slice(6, -4)
+  const uploadedFileLines = output.slice(6, -4).filter((line) => !line.includes('Extracted Debug ID from sourcemap'))
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(
