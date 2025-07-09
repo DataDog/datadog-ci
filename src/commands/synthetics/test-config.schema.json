@@ -1,5 +1,4 @@
 {
-  "$ref": "#/definitions/TestConfig",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "Assertion": {
@@ -327,18 +326,6 @@
       "required": ["count", "interval"],
       "type": "object"
     },
-    "TestConfig": {
-      "properties": {
-        "tests": {
-          "items": {
-            "$ref": "#/definitions/TriggerConfig"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["tests"],
-      "type": "object"
-    },
     "TestStepWithUnsupportedFields": {
       "properties": {
         "params": {
@@ -486,5 +473,15 @@
       },
       "type": "object"
     }
-  }
+  },
+  "properties": {
+    "tests": {
+      "items": {
+        "$ref": "#/definitions/TriggerConfig"
+      },
+      "type": "array"
+    }
+  },
+  "required": ["tests"],
+  "type": "object"
 }
