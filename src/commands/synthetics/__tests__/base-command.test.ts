@@ -39,10 +39,11 @@ describe('base-command', () => {
 
     // Same as above (bootstrapped reporter)
     expect(write).toHaveBeenCalledTimes(2)
-    expect(write).toHaveBeenCalledWith('Resolving config...')
-    expect(write).toHaveBeenCalledWith('Executing...')
+    expect(write).toHaveBeenNthCalledWith(1, 'Resolving config...')
+    expect(write).toHaveBeenNthCalledWith(2, 'Executing...')
 
     // Mock reporter is also called
-    expect(mockReporter.log).toHaveBeenCalledWith('Executing...')
+    expect(mockReporter.log).toHaveBeenCalledTimes(1)
+    expect(mockReporter.log).toHaveBeenNthCalledWith(1, 'Executing...')
   })
 })
