@@ -1,0 +1,20 @@
+{
+  "RSpec": {
+    "coverage": {
+      "/builds/core-service/app/ddd/application/contract/contract_application.rb": {
+        "lines": [
+          1,
+          1,
+          1,
+          1,
+          null,
+          1,
+          54
+        ],
+        "branches": {
+        }
+      }
+    },
+    "timestamp": 1583150399
+  }
+}

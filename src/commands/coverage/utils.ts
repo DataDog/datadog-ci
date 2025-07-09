@@ -14,8 +14,20 @@ const ROOT_TAG_REGEX = /<([^?!\s/>]+)/
 export const jacocoFormat = 'jacoco' as const
 export const lcovFormat = 'lcov' as const
 export const opencoverFormat = 'opencover' as const
+export const coberturaFormat = 'cobertura' as const
+export const simplecovFormat = 'simplecov' as const
+export const simplecovInternalFormat = 'simplecov-internal' as const
+export const cloverFormat = 'clover' as const
 
-export const coverageFormats = [jacocoFormat, lcovFormat, opencoverFormat] as const
+export const coverageFormats = [
+  jacocoFormat,
+  lcovFormat,
+  opencoverFormat,
+  coberturaFormat,
+  simplecovFormat,
+  simplecovInternalFormat,
+  cloverFormat,
+] as const
 export type CoverageFormat = typeof coverageFormats[number]
 
 export const isCoverageFormat = (value: string): value is CoverageFormat => {
@@ -41,12 +53,40 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
   const filename = upath.basename(lowercaseFile)
   const extension = upath.extname(lowercaseFile)
 
-  if (extension === '.xml' && (filename.includes('coverage') || filename.includes('jacoco'))) {
+  if (
+    extension === '.xml' &&
+    (filename.includes('coverage') ||
+      filename.includes('jacoco') ||
+      filename.includes('cobertura') ||
+      filename.includes('clover'))
+  ) {
     return readFirstKb(filePath, (data) => {
       if (data.includes('<CoverageSession')) {
         return opencoverFormat
-      } else if (data.includes('<!DOCTYPE report PUBLIC "-//JACOCO//DTD Report 1.1//EN"') || data.includes('<report')) {
+      } else if (
+        (data.includes('<!DOCTYPE coverage') && data.includes('cobertura.sourceforge.net/xml/coverage')) ||
+        (data.includes('<coverage') && data.includes('line-rate='))
+      ) {
+        return coberturaFormat
+      } else if (
+        (data.includes('<!DOCTYPE report') && data.includes('-//JACOCO//DTD Report')) ||
+        data.includes('<report')
+      ) {
         return jacocoFormat
+      } else if (data.includes('<coverage') && data.includes('clover=')) {
+        return cloverFormat
+      }
+    })
+  } else if (extension === '.json' && filename.includes('coverage')) {
+    return readFirstKb(filePath, (data) => {
+      if (data.includes('simplecov_version')) {
+        return simplecovFormat
+      }
+    })
+  } else if (filename === '.resultset.json') {
+    return readFirstKb(filePath, (data) => {
+      if (data.includes('coverage') && data.includes('lines')) {
+        return simplecovInternalFormat
       }
     })
   } else if (
@@ -117,6 +157,71 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
     const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
     if (!rootTagMatch || rootTagMatch[1] !== 'CoverageSession') {
       return 'Invalid Opencover report: root element must be <CoverageSession>'
+    }
+  }
+
+  if (format === coberturaFormat) {
+    const xmlFileContentString = String(fs.readFileSync(filePath))
+    const validationOutput = XMLValidator.validate(xmlFileContentString)
+    if (validationOutput !== true) {
+      return validationOutput.err.msg
+    }
+
+    // Check that the root element is 'coverage'
+    const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
+    if (!rootTagMatch || rootTagMatch[1] !== 'coverage') {
+      return 'Invalid Cobertura report: root element must be <coverage>'
+    }
+  }
+
+  if (format === cloverFormat) {
+    const xmlFileContentString = String(fs.readFileSync(filePath))
+    const validationOutput = XMLValidator.validate(xmlFileContentString)
+    if (validationOutput !== true) {
+      return validationOutput.err.msg
+    }
+
+    // Check that the root element is 'coverage'
+    const rootTagMatch = xmlFileContentString.match(ROOT_TAG_REGEX)
+    if (!rootTagMatch || rootTagMatch[1] !== 'coverage') {
+      return 'Invalid Clover report: root element must be <coverage>'
+    }
+  }
+
+  if (format === simplecovFormat) {
+    try {
+      const jsonContent = String(fs.readFileSync(filePath))
+      const simplecovReport = JSON.parse(jsonContent) as Record<string, unknown>
+      if (!simplecovReport['coverage']) {
+        return `Invalid simplecov report: missing "meta" or "coverage" top-level fields`
+      }
+      for (const [fileName, fileCoverage] of Object.entries(simplecovReport['coverage'])) {
+        if (!fileCoverage['lines']) {
+          return `Invalid simplecov report: file ${fileName} is missing "lines" field`
+        }
+      }
+    } catch (err) {
+      return `Invalid simplecov report: could not parse JSON: ${err}`
+    }
+  }
+
+  if (format === simplecovInternalFormat) {
+    try {
+      const jsonContent = String(fs.readFileSync(filePath))
+      const simplecovInternalReport = JSON.parse(jsonContent) as Record<string, unknown>
+      for (const [specName, s] of Object.entries(simplecovInternalReport)) {
+        const spec = s as Record<string, unknown>
+        if (!spec['coverage']) {
+          return `Invalid internal simplecov report: spec ${specName} is missing "coverage" field`
+        }
+        for (const [fileName, fileCoverage] of Object.entries(spec['coverage'])) {
+          if (!fileCoverage['lines']) {
+            return `Invalid internal simplecov report: file ${fileName} is missing "lines" field`
+          }
+        }
+      }
+    } catch (err) {
+      return `Invalid internal simplecov report: could not parse JSON: ${err}`
     }
   }
 

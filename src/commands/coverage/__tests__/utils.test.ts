@@ -1,4 +1,14 @@
-import {detectFormat, jacocoFormat, lcovFormat, opencoverFormat, validateCoverageReport} from '../utils'
+import {
+  cloverFormat,
+  coberturaFormat,
+  detectFormat,
+  jacocoFormat,
+  lcovFormat,
+  opencoverFormat,
+  simplecovFormat,
+  simplecovInternalFormat,
+  validateCoverageReport,
+} from '../utils'
 
 describe('utils', () => {
   describe('validateCoverageReport', () => {
@@ -46,6 +56,46 @@ describe('utils', () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/opencover-coverage-malformed.xml'
       expect(validateCoverageReport(filePath, opencoverFormat)).toMatch(/.+/)
     })
+
+    test('Returns undefined for a valid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura.xml'
+      expect(validateCoverageReport(filePath, coberturaFormat)).toBeUndefined()
+    })
+
+    test('Returns error message for an invalid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura-invalid.xml'
+      expect(validateCoverageReport(filePath, coberturaFormat)).toMatch(/.+/)
+    })
+
+    test('Returns undefined for a valid simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage.json'
+      expect(validateCoverageReport(filePath, simplecovFormat)).toBeUndefined()
+    })
+
+    test('Returns error message for an invalid simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage-invalid.json'
+      expect(validateCoverageReport(filePath, simplecovFormat)).toMatch(/.+/)
+    })
+
+    test('Returns error message for an old simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage-old.json'
+      expect(validateCoverageReport(filePath, simplecovFormat)).toMatch(/.+/)
+    })
+
+    test('Returns undefined for a valid internal simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/.resultset.json'
+      expect(validateCoverageReport(filePath, simplecovInternalFormat)).toBeUndefined()
+    })
+
+    test('Returns undefined for a valid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover.xml'
+      expect(validateCoverageReport(filePath, cloverFormat)).toBeUndefined()
+    })
+
+    test('Returns error message for an invalid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover-invalid.xml'
+      expect(validateCoverageReport(filePath, cloverFormat)).toMatch(/.+/)
+    })
   })
 
   describe('detectFormat', () => {
@@ -62,6 +112,26 @@ describe('utils', () => {
     test('Detects opencover format for a valid opencover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/opencover-coverage.xml'
       expect(detectFormat(filePath)).toEqual(opencoverFormat)
+    })
+
+    test('Detects cobertura format for a valid cobertura report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/subfolder.xml/cobertura.xml'
+      expect(detectFormat(filePath)).toEqual(coberturaFormat)
+    })
+
+    test('Detects simplecov format for a valid simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage.json'
+      expect(detectFormat(filePath)).toEqual(simplecovFormat)
+    })
+
+    test('Detects simplecov-internal format for a valid internal simplecov report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/.resultset.json'
+      expect(detectFormat(filePath)).toEqual(simplecovInternalFormat)
+    })
+
+    test('Detects clover format for a valid clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover.xml'
+      expect(detectFormat(filePath)).toEqual(cloverFormat)
     })
 
     test('Returns undefined for an XML file that is not a coverage report', async () => {
