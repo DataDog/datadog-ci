@@ -38,7 +38,6 @@ export class UninstrumentCommand extends Command {
   private region = Option.String('-r,--region', {
     description: 'GCP region your service(s) are deployed in',
   })
-  // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
   private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
     description: `The name of the sidecar container to remove. Specify if you have a different sidecar name. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
   })
@@ -61,17 +60,14 @@ export class UninstrumentCommand extends Command {
     )
 
     if (this.interactive) {
-      // Prompt for project if missing
       if (!this.project) {
         this.project = await requestGCPProject()
       }
 
-      // Prompt for region if missing
       if (!this.region) {
         this.region = await requestGCPRegion()
       }
 
-      // Prompt for service if missing
       if (this.services.length === 0) {
         const serviceName = await requestServiceName()
         this.services = [serviceName]

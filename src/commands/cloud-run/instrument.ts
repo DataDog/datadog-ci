@@ -81,7 +81,6 @@ export class InstrumentCommand extends Command {
     description: 'GCP region your service(s) are deployed in',
   })
   private logLevel = Option.String('--log-level,--logLevel')
-  // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
   private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
   private tracing = Option.String('--tracing')
@@ -142,23 +141,19 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.interactive) {
-      // Prompt for project if missing
       if (!this.project) {
         this.project = await requestGCPProject()
       }
 
-      // Prompt for region if missing
       if (!this.region) {
         this.region = await requestGCPRegion()
       }
 
-      // Prompt for service if missing
       if (this.services.length === 0) {
         const serviceName = await requestServiceName()
         this.services = [serviceName]
       }
 
-      // Prompt for site if missing
       const envSite = process.env[CI_SITE_ENV_VAR]
       if (!isValidDatadogSite(envSite)) {
         process.env[CI_SITE_ENV_VAR] = await requestSite()
