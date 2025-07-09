@@ -3,7 +3,6 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
     "Assertion": {
-      "additionalProperties": false,
       "properties": {
         "actual": {
           "anyOf": [
@@ -59,7 +58,6 @@
       "type": "object"
     },
     "BasicAuthCredentials": {
-      "additionalProperties": false,
       "properties": {
         "password": {
           "type": "string"
@@ -72,7 +70,6 @@
       "type": "object"
     },
     "CookiesObject": {
-      "additionalProperties": false,
       "properties": {
         "append": {
           "description": "Whether to append or replace the original cookies.",
@@ -91,10 +88,8 @@
       "type": "string"
     },
     "LocalTestDefinition": {
-      "additionalProperties": false,
       "properties": {
         "config": {
-          "additionalProperties": false,
           "properties": {
             "assertions": {
               "items": {
@@ -103,7 +98,6 @@
               "type": "array"
             },
             "request": {
-              "additionalProperties": false,
               "properties": {
                 "dnsServer": {
                   "type": "string"
@@ -135,7 +129,6 @@
             },
             "steps": {
               "items": {
-                "additionalProperties": false,
                 "properties": {
                   "subtype": {
                     "type": "string"
@@ -190,7 +183,6 @@
       "type": "object"
     },
     "LocalTriggerConfig": {
-      "additionalProperties": false,
       "properties": {
         "localTestDefinition": {
           "$ref": "#/definitions/LocalTestDefinition"
@@ -208,7 +200,6 @@
       "type": "object"
     },
     "MobileApplication": {
-      "additionalProperties": false,
       "properties": {
         "applicationId": {
           "type": "string"
@@ -248,7 +239,6 @@
       "type": "string"
     },
     "OptionsWithUnsupportedFields": {
-      "additionalProperties": false,
       "properties": {
         "bindings": {
           "anyOf": [
@@ -262,7 +252,6 @@
           ]
         },
         "ci": {
-          "additionalProperties": false,
           "properties": {
             "executionRule": {
               "$ref": "#/definitions/ExecutionRule"
@@ -292,7 +281,6 @@
           "type": "number"
         },
         "retry": {
-          "additionalProperties": false,
           "properties": {
             "count": {
               "type": "number"
@@ -307,7 +295,6 @@
       "type": "object"
     },
     "RemoteTriggerConfig": {
-      "additionalProperties": false,
       "properties": {
         "id": {
           "description": "Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).",
@@ -327,7 +314,6 @@
       "type": "object"
     },
     "RetryConfig": {
-      "additionalProperties": false,
       "properties": {
         "count": {
           "description": "The number of attempts to perform in case of test failure.",
@@ -342,7 +328,6 @@
       "type": "object"
     },
     "TestConfig": {
-      "additionalProperties": false,
       "properties": {
         "tests": {
           "items": {
@@ -355,13 +340,10 @@
       "type": "object"
     },
     "TestStepWithUnsupportedFields": {
-      "additionalProperties": false,
       "properties": {
         "params": {
-          "additionalProperties": false,
           "properties": {
             "element": {
-              "additionalProperties": false,
               "properties": {
                 "multiLocator": {
                   "$ref": "#/definitions/MultiLocator"
@@ -391,7 +373,6 @@
       ]
     },
     "UserConfigOverride": {
-      "additionalProperties": false,
       "properties": {
         "allowInsecureCertificates": {
           "description": "Override the certificate checks in Synthetic API and Browser tests.",

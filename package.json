@@ -43,7 +43,7 @@
     "dist-standalone": "pkg --compress GZip .",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
     "format": "yarn eslint --fix",
-    "generate-json-schemas:synthetics": "ts-json-schema-generator --no-type-check --path src/commands/synthetics/interfaces.ts --type TestConfig > src/commands/synthetics/test-config.schema.json && prettier --write src/commands/synthetics/test-config.schema.json",
+    "generate-json-schemas:synthetics": "ts-json-schema-generator --no-type-check --additional-properties --path src/commands/synthetics/interfaces.ts --type TestConfig > src/commands/synthetics/test-config.schema.json && prettier --write src/commands/synthetics/test-config.schema.json",
     "launch": "ts-node --transpile-only src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
     "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
