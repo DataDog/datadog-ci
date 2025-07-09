@@ -1,0 +1,462 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Assertion": {
+      "properties": {
+        "actual": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            {
+              "type": ["string", "number"]
+            }
+          ]
+        },
+        "errorMessage": {
+          "type": "string"
+        },
+        "operator": {
+          "$ref": "#/definitions/Operator"
+        },
+        "property": {
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "additionalProperties": {},
+              "type": "object"
+            },
+            {
+              "type": ["string", "number"]
+            }
+          ]
+        },
+        "type": {
+          "type": "string"
+        },
+        "valid": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "BasicAuthCredentials": {
+      "properties": {
+        "password": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "CookiesObject": {
+      "properties": {
+        "append": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ExecutionRule": {
+      "enum": ["blocking", "non_blocking", "skipped"],
+      "type": "string"
+    },
+    "LocalTestDefinition": {
+      "properties": {
+        "config": {
+          "properties": {
+            "assertions": {
+              "items": {
+                "$ref": "#/definitions/Assertion"
+              },
+              "type": "array"
+            },
+            "request": {
+              "properties": {
+                "dnsServer": {
+                  "type": "string"
+                },
+                "headers": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                "host": {
+                  "type": "string"
+                },
+                "method": {
+                  "type": "string"
+                },
+                "port": {
+                  "type": "number"
+                },
+                "timeout": {
+                  "type": "number"
+                },
+                "url": {
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "steps": {
+              "items": {
+                "properties": {
+                  "subtype": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "variables": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "locations": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "options": {
+          "$ref": "#/definitions/OptionsWithUnsupportedFields"
+        },
+        "public_id": {
+          "description": "Can be used to link to an existing remote test.",
+          "type": "string",
+          "pattern": "^[a-z2-9]{3}-[a-z2-9]{3}-[a-z2-9]{3}$"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/definitions/TestStepWithUnsupportedFields"
+          },
+          "type": "array"
+        },
+        "subtype": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "LocalTriggerConfig": {
+      "properties": {
+        "localTestDefinition": {
+          "$ref": "#/definitions/LocalTestDefinition",
+          "description": "Some stuff"
+        },
+        "suite": {
+          "description": "Name of a test suite (for JUnit reports).",
+          "type": "string"
+        },
+        "testOverrides": {
+          "$ref": "#/definitions/UserConfigOverride",
+          "description": "Overrides for this Synthetic test only. This takes precedence over all other overrides."
+        }
+      },
+      "type": "object",
+      "required": ["localTestDefinition"]
+    },
+    "MobileApplication": {
+      "properties": {
+        "applicationId": {
+          "type": "string"
+        },
+        "referenceId": {
+          "type": "string"
+        },
+        "referenceType": {
+          "enum": ["latest", "temporary", "version"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "MultiLocator": {
+      "additionalProperties": {},
+      "type": "object"
+    },
+    "Operator": {
+      "enum": [
+        "contains",
+        "doesNotContain",
+        "is",
+        "isNot",
+        "isInLessThan",
+        "isInMoreThan",
+        "lessThan",
+        "lessThanOrEqual",
+        "moreThan",
+        "moreThanOrEqual",
+        "matches",
+        "doesNotMatch",
+        "validatesJSONPath",
+        "validatesXPath"
+      ],
+      "type": "string"
+    },
+    "OptionsWithUnsupportedFields": {
+      "properties": {
+        "bindings": {
+          "anyOf": [
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ci": {
+          "properties": {
+            "executionRule": {
+              "$ref": "#/definitions/ExecutionRule"
+            }
+          },
+          "type": "object"
+        },
+        "device_ids": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "min_failure_duration": {
+          "type": "number"
+        },
+        "min_location_failed": {},
+        "mobileApplication": {
+          "$ref": "#/definitions/MobileApplication"
+        },
+        "monitor_name": {
+          "type": "string"
+        },
+        "monitor_options": {},
+        "monitor_priority": {
+          "type": "number"
+        },
+        "retry": {
+          "properties": {
+            "count": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "tick_every": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "RetryConfig": {
+      "properties": {
+        "count": {
+          "description": "The number of attempts to perform in case of test failure.",
+          "type": "number"
+        },
+        "interval": {
+          "description": "The interval between attempts in milliseconds.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "TestStepWithUnsupportedFields": {
+      "properties": {
+        "params": {
+          "properties": {
+            "element": {
+              "properties": {
+                "multiLocator": {
+                  "$ref": "#/definitions/MultiLocator"
+                },
+                "userLocator": {}
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "public_id": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "TriggerConfig": {
+      "properties": {
+        "id": {
+          "description": "Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).",
+          "type": "string",
+          "pattern": "[a-z2-9]{3}-[a-z2-9]{3}-[a-z2-9]{3}"
+        },
+        "localTestDefinition": {
+          "$ref": "#/definitions/LocalTestDefinition",
+          "description": "Either this or `id` must be provided."
+        },
+        "suite": {
+          "description": "Name of a test suite (for JUnit reports).",
+          "type": "string"
+        },
+        "testOverrides": {
+          "$ref": "#/definitions/UserConfigOverride",
+          "description": "Overrides for this Synthetic test only. This takes precedence over all other overrides."
+        }
+      }
+    },
+    "UserConfigOverride": {
+      "properties": {
+        "allowInsecureCertificates": {
+          "description": "Disable certificate checks in Synthetic API tests.",
+          "type": "boolean"
+        },
+        "basicAuth": {
+          "$ref": "#/definitions/BasicAuthCredentials",
+          "description": "Credentials to provide if basic authentication is required."
+        },
+        "body": {
+          "description": "Data to send in an API test.",
+          "type": "string"
+        },
+        "bodyType": {
+          "description": "Content type for the data to send in an API test.",
+          "type": "string"
+        },
+        "cookies": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CookiesObject"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Use the provided string as a cookie header in an API or browser test (in addition or as a replacement).\n- If this is a string (e.g. `name1=value1;name2=value2;`), it is used to replace the original cookies.\n- If this is an object, it is used to either add to or replace the original cookies, depending on `append`."
+        },
+        "defaultStepTimeout": {
+          "description": "The maximum duration of steps in seconds for browser tests, which does not override individually set step timeouts.",
+          "type": "number"
+        },
+        "deviceIds": {
+          "description": "A list of devices to run the browser test on.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "executionRule": {
+          "description": "The execution rule for the test defines the behavior of the CLI in case of a failing test.\n- `blocking`: The CLI returns an error if the test fails.\n- `non_blocking`: The CLI only prints a warning if the test fails.\n- `skipped`: The test is not executed at all.",
+          "enum": ["blocking", "non_blocking", "skipped"],
+          "type": "string"
+        },
+        "followRedirects": {
+          "description": "Indicates whether or not to follow HTTP redirections in Synthetic API tests.",
+          "type": "boolean"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The headers to replace in the test. This object should contain keys as the name of the header to replace and values as the new value of the header to replace.",
+          "type": "object"
+        },
+        "locations": {
+          "description": "A list of locations to run the test from.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "mobileApplicationVersion": {
+          "description": "The ID of an application version to run a Synthetic mobile application test on.",
+          "type": "string"
+        },
+        "mobileApplicationVersionFilePath": {
+          "description": "Upload an application as a temporary version for a Synthetic mobile application test.",
+          "type": "string"
+        },
+        "resourceUrlSubstitutionRegexes": {
+          "description": "The maximum duration in milliseconds of a test. If the execution exceeds this value, it is considered failed.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "retry": {
+          "$ref": "#/definitions/RetryConfig",
+          "description": "The retry policy for the test."
+        },
+        "setCookies": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/CookiesObject"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "TODO"
+        },
+        "startUrl": {
+          "description": "The new start URL to provide to the test. Variables specified in brackets (for example, `{{ EXAMPLE }}`) found in environment variables are replaced.",
+          "type": "string"
+        },
+        "startUrlSubstitutionRegex": {
+          "description": "The regex to modify the starting URL of the test (for browser and HTTP tests only), whether it was given by the original test or the configuration override `startUrl`.",
+          "type": "string"
+        },
+        "testTimeout": {
+          "type": "number"
+        },
+        "variables": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "The variables to replace in the test. This object should contain key as the name of the variable to replace and values as the new value of the variable to replace.",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "properties": {
+    "tests": {
+      "items": {
+        "$ref": "#/definitions/TriggerConfig"
+      },
+      "type": "array"
+    }
+  },
+  "type": "object"
+}
