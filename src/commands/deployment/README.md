@@ -63,6 +63,29 @@ datadog-ci deployment correlate-image --commit-sha c9c4e93346652f426c91a2c413646
 - `--repository-url` (**required**): Repository URL for the commit SHA being correlated.
 - `--image` (**required**): Image to correlate with the commit SHA.
 
+### `gate`
+
+The `gate` command evaluates deployment gates in Datadog.
+
+```bash
+datadog-ci deployment gate --service --env [--identifier] [--version] [--apm-primary-tag] [--timeout] [--fail-on-error]
+```
+
+For example:
+
+```bash
+datadog-ci deployment gate --service payments-backend --env prod
+```
+
+- `--service` is the service name (e.g., payments-backend).
+- `--env` is the environment name (e.g., prod, staging).
+- `--identifier` is the deployment identifier (defaults to "default").
+- `--version` is the deployment version (required for gates with faulty deployment detection rules).
+- `--apm-primary-tag` is the APM primary tag (only for gates with faulty deployment detection rules).
+- `--timeout` is the maximum time to wait for the script execution in seconds (default: 10800 = 3 hours).
+- `--fail-on-error` when true, the script will consider the gate as failed when timeout is reached or errors occur.
+
+The command will exit with status 0 when the gate passes and status 1 otherwise.
 
 ### Environment variables
 
