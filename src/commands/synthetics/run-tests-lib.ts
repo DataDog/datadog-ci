@@ -18,6 +18,7 @@ import {
   TriggerConfig,
   WrapperConfig,
 } from './interfaces'
+import {logTelemetry} from './logging'
 import {updateLTDMultiLocators} from './multilocator'
 import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
@@ -69,6 +70,14 @@ export const executeTests = async (
   const api = getApiHelper(config)
   let tunnel: Tunnel | undefined
   let triggerConfigs: TriggerConfig[] = []
+
+  console.log('logTelemetry 1')
+  try {
+    logTelemetry()
+  } catch (e) {
+    console.error('Telemetry logging failed:', e)
+  }
+  console.log('logTelemetry 3')
 
   const stopTunnel = async () => {
     if (tunnel) {
