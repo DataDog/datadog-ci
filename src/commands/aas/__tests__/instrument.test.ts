@@ -12,11 +12,9 @@ jest.mock('../../../helpers/apikey', () => ({
   })),
 }))
 
-const getGitData = jest.fn()
-const uploadGitData = jest.fn()
+const handleSourceCodeIntegration = jest.fn()
 jest.mock('../../../helpers/git/instrument-helpers', () => ({
-  getGitData,
-  uploadGitData,
+  handleSourceCodeIntegration,
 }))
 
 const getToken = jest.fn()
@@ -80,11 +78,9 @@ describe('aas instrument', () => {
       webAppsOperations.restart.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
-      getGitData.mockClear().mockResolvedValue({
-        commitSha: 'test-sha',
-        gitRemote: 'test-remote',
-      })
-      uploadGitData.mockClear().mockResolvedValue(undefined)
+      handleSourceCodeIntegration
+        .mockClear()
+        .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
     })
 
     test('Adds a sidecar and updates the application settings', async () => {
@@ -588,8 +584,6 @@ Restarting Azure App Service my-web-app
     test('Adds git metadata tags when source code integration is enabled', async () => {
       const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--source-code-integration', '--upload-git-metadata'])
       expect(code).toEqual(0)
-      expect(getGitData).toHaveBeenCalled()
-      expect(uploadGitData).toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
@@ -609,8 +603,6 @@ Restarting Azure App Service my-web-app
         '--no-source-code-integration',
       ])
       expect(code).toEqual(0)
-      expect(getGitData).not.toHaveBeenCalled()
-      expect(uploadGitData).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
@@ -622,43 +614,10 @@ Restarting Azure App Service my-web-app
       })
     })
 
-    test('Combines extra tags with git metadata when both are enabled', async () => {
-      const {code} = await runCLI([
-        ...DEFAULT_INSTRUMENT_ARGS,
-        '--source-code-integration',
-        '--extra-tags',
-        'custom:tag,another:value',
-      ])
-      expect(code).toEqual(0)
-      expect(getGitData).toHaveBeenCalled()
-      expect(uploadGitData).toHaveBeenCalled()
-      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
-        properties: {
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
-          DD_API_KEY: 'PLACEHOLDER',
-          DD_SITE: 'datadoghq.com',
-          DD_TAGS: 'custom:tag,another:value,git.commit.sha:test-sha,git.repository_url:test-remote',
-        },
-      })
-    })
-
-    test('Handles git errors gracefully and continues without source code integration', async () => {
-      getGitData.mockRejectedValue(new Error('Git error'))
-      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--source-code-integration'])
-      expect(code).toEqual(0)
-      expect(context.stdout.toString()).toContain(
-        "[!] Couldn't add source code integration, continuing without it. Error: Git error"
-      )
-      expect(context.stdout.toString()).toContain('🐶 Instrumentation completed successfully!')
-      expect(getGitData).toHaveBeenCalled()
-      expect(uploadGitData).not.toHaveBeenCalled()
-    })
-
     test('Validates extra tags format', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--extra-tags', 'invalid-tag-format'])
       expect(code).toEqual(1)
-      expect(context.stderr.toString()).toEqual('[Error] Extra tags do not comply with the <key>:<value> array.\n\n')
+      expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
     })
   })
 

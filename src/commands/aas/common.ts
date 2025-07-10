@@ -5,7 +5,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {DATADOG_SITE_US1, EXTRA_TAGS_REG_EXP, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag, renderSoftWarning} from '../../helpers/renderer'
@@ -118,6 +118,10 @@ export abstract class AasCommand extends Command {
     // Validate that envVars, if provided, are in the format 'key=value'
     if (config.envVars?.some((e) => !ENV_VAR_REGEX.test(e))) {
       errors.push('All envVars must be in the format `KEY=VALUE`')
+    }
+    // Validate that extraTags, if provided, comply with the expected format
+    if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
+      errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified

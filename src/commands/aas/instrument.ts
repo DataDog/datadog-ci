@@ -5,7 +5,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {DATADOG_SITE_US1, EXTRA_TAGS_REG_EXP} from '../../constants'
+import {DATADOG_SITE_US1} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
@@ -118,12 +118,6 @@ export class InstrumentCommand extends AasCommand {
       return 1
     }
 
-    if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
-      this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
-
-      return 1
-    }
-
     const cred = new DefaultAzureCredential()
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
@@ -131,7 +125,7 @@ export class InstrumentCommand extends AasCommand {
     const tagClient = new ResourceManagementClient(cred).tagsOperations
 
     if (config.sourceCodeIntegration) {
-      this.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, this.extraTags)
+      config.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, config.extraTags)
     }
 
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
