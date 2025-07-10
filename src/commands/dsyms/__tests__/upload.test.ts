@@ -295,13 +295,6 @@ describe('execute', () => {
     mockDwarfdumpAndLipoIfNotMacOS()
   })
 
-  afterEach(() => {
-    delete process.env.DATADOG_API_KEY
-    delete process.env.DATADOG_SITE
-    delete process.env.DD_API_KEY
-    delete process.env.DD_SITE
-  })
-
   test('Should succeed with folder input', async () => {
     const {context, code} = await runCLI('src/commands/dsyms/__tests__/fixtures/')
     const outputString = context.stdout.toString()

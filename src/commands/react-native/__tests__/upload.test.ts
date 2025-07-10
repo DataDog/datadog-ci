@@ -95,7 +95,6 @@ describe('execute', () => {
     cli.register(UploadCommand)
 
     const context = createMockContext()
-    process.env = getEnvVarPlaceholders()
     const command = [
       'react-native',
       'upload',
@@ -111,13 +110,14 @@ describe('execute', () => {
       'android',
       '--dry-run',
     ]
-    if (options?.uploadBundle !== false) {
-      command.push('--bundle', bundle)
-    }
     if (options?.configPath) {
       command.push('--config', options.configPath)
-      delete process.env.DATADOG_API_KEY
-      delete process.env.DD_API_KEY
+      process.env = {}
+    } else {
+      process.env = getEnvVarPlaceholders()
+    }
+    if (options?.uploadBundle !== false) {
+      command.push('--bundle', bundle)
     }
     if (options?.env) {
       process.env = {
