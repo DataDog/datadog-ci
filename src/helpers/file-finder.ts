@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import {Stats, statSync} from 'fs'
 
 import {globSync, hasMagic} from './glob'
 import {buildPath, isFile} from './utils'
@@ -79,7 +80,14 @@ const partitionFilesRecursive = (
     return
   }
 
-  if (isFile(path)) {
+  let stats: Stats
+  try {
+    stats = statSync(path)
+  } catch {
+    return
+  }
+
+  if (stats.isFile()) {
     // regular file
     const pathPartition = partition(path, strict)
     if (pathPartition) {
@@ -90,14 +98,26 @@ const partitionFilesRecursive = (
     return
   }
 
-  const entries = fs.readdirSync(path, {withFileTypes: true})
-  for (const entry of entries) {
-    const fullPath = buildPath(path, entry.name)
-    if (ignoredPaths.includes(fullPath) || DEFAULT_IGNORED_FOLDERS.includes(entry.name)) {
-      continue
+  if (stats.isDirectory()) {
+    const entries = fs.readdirSync(path, {withFileTypes: true})
+    for (const entry of entries) {
+      const fullPath = buildPath(path, entry.name)
+      if (ignore(fullPath, ignoredPaths) || DEFAULT_IGNORED_FOLDERS.includes(entry.name)) {
+        continue
+      }
+      partitionFilesRecursive(fullPath, ignoredPaths, partition, results, false)
     }
-    partitionFilesRecursive(fullPath, ignoredPaths, partition, results, false)
   }
+}
+
+const ignore = (path: string, ignoredPaths: string[]): boolean => {
+  for (const ignoredPath of ignoredPaths) {
+    if (path.includes(ignoredPath)) {
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
