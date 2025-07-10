@@ -72,7 +72,10 @@ export const getTestConfigs = async (
           suite: suite.name,
           ...(isLocalTriggerConfig(test)
             ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
-            : {id: normalizePublicId(test.id) ?? ''}),
+            : {
+                id: normalizePublicId(test.id) ?? '',
+                version: test.version,
+              }),
         }
       })
     )

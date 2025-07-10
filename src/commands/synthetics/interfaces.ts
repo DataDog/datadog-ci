@@ -532,6 +532,7 @@ export interface LocalTestPayload extends ServerConfigOverride {
 }
 export interface RemoteTestPayload extends ServerConfigOverride {
   public_id: string
+  version?: number
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 
@@ -569,6 +570,7 @@ interface BaseTriggerConfig {
 }
 export interface RemoteTriggerConfig extends BaseTriggerConfig {
   id: string
+  version?: number
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
   localTestDefinition: LocalTestDefinition

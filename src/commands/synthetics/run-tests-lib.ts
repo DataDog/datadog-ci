@@ -30,6 +30,7 @@ import {
   getReporter,
   getOrgSettings,
   InitialSummary,
+  parsePublicIdWithVersion,
   renderResults,
   getExitReason,
   toExitCode,
@@ -255,20 +256,25 @@ export const getTriggerConfigs = async (
 
   // Create the overrides required for the list of tests to trigger
   const triggerConfigsWithId = testIdsToTrigger.map((id) => {
-    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => t.id === id)
+    // Parse public ID and version ID from the input
+    const parsedId = parsePublicIdWithVersion(id)
+    const publicId = parsedId?.publicId ?? id
+    const version = parsedId?.version
+
+    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => t.id === publicId)
     let testFromSearchQuery
     if (testIndexFromSearchQuery >= 0) {
       testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
     }
 
-    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => getTriggerConfigPublicId(t) === id)
+    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => getTriggerConfigPublicId(t) === publicId)
     let testFromTestConfigs
     if (testIndexFromTestConfigs >= 0) {
       testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
     }
 
     return {
-      ...(isLocalTriggerConfig(testFromTestConfigs) ? {} : {id}),
+      ...(isLocalTriggerConfig(testFromTestConfigs) ? {} : {id: publicId, version}),
       ...testFromSearchQuery,
       ...testFromTestConfigs,
       testOverrides: {
