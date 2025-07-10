@@ -171,7 +171,7 @@ describe('cloud-run flare', () => {
 
   describe('prints correct headers', () => {
     beforeEach(() => {
-      process.env = { [CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY }
+      process.env = {[CI_API_KEY_ENV_VAR]: MOCK_DATADOG_API_KEY}
     })
 
     it('prints non-dry-run header', async () => {

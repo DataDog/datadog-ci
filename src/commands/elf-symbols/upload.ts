@@ -102,7 +102,7 @@ export class UploadCommand extends Command {
           checkAPIKeyOverride(
             process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
             configFromFile.apiKey,
-            this.context.stdout,
+            this.context.stdout
           )
         },
       }

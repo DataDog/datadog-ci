@@ -152,7 +152,7 @@ export class UploadCommand extends Command {
           checkAPIKeyOverride(
             process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
             configFromFile.apiKey,
-            this.context.stdout,
+            this.context.stdout
           )
         },
       }
@@ -273,7 +273,9 @@ export class UploadCommand extends Command {
 
   private getRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(
+        `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
+      )
     }
 
     return getRequestBuilder({
