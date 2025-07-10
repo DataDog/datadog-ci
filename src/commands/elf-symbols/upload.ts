@@ -99,7 +99,11 @@ export class UploadCommand extends Command {
         configPath: this.configPath,
         defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         configFromFileCallback: (configFromFile: any) => {
-          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(
+            process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+            configFromFile.apiKey,
+            this.context.stdout,
+          )
         },
       }
     )
