@@ -76,7 +76,7 @@ export class InstrumentCommand extends Command {
   // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
   private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true)
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')

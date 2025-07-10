@@ -67,7 +67,7 @@ export class InstrumentCommand extends AasCommand {
     description: 'Enable source code integration to add git metadata as tags. Defaults to enabled.',
   })
 
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true, {
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
     description: 'Upload git metadata to Datadog. Defaults to enabled.',
   })
 
