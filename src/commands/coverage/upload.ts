@@ -138,8 +138,7 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
-    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-    this.context.stderr.write('Ignored paths: ' + parsePathsList(this.ignoredPaths) + '\n')
+    this.context.stderr.write(`Ignored paths: ${parsePathsList(this.ignoredPaths)}\n')
 
     if (this.format && !isCoverageFormat(this.format)) {
       this.context.stderr.write(

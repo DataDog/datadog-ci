@@ -83,7 +83,7 @@ const partitionFilesRecursive = (
   let stats: Stats
   try {
     stats = statSync(path)
-  } catch (e) {
+  } catch {
     return
   }
 
