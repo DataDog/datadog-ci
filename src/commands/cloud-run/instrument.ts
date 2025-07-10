@@ -27,7 +27,7 @@ import {
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
+import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -196,23 +196,8 @@ export class InstrumentCommand extends Command {
     }
     this.context.stdout.write(chalk.green('✔ GCP credentials verified!\n\n'))
 
-    // Source code integration
     if (this.sourceCodeIntegration) {
-      try {
-        const gitData = await getGitData()
-        if (this.uploadGitMetadata) {
-          await uploadGitData(this.context)
-        }
-        if (this.extraTags) {
-          this.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        } else {
-          this.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        }
-      } catch (err) {
-        this.context.stdout.write(
-          renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`)
-        )
-      }
+      this.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, this.extraTags)
     }
 
     // Instrument services with sidecar

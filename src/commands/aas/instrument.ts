@@ -7,7 +7,7 @@ import equal from 'fast-deep-equal/es6'
 
 import {DATADOG_SITE_US1, EXTRA_TAGS_REG_EXP} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
-import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
+import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
@@ -130,23 +130,8 @@ export class InstrumentCommand extends AasCommand {
     }
     const tagClient = new ResourceManagementClient(cred).tagsOperations
 
-    // Source code integration
     if (config.sourceCodeIntegration) {
-      try {
-        const gitData = await getGitData()
-        if (config.uploadGitMetadata) {
-          await uploadGitData(this.context)
-        }
-        if (config.extraTags) {
-          config.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        } else {
-          config.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        }
-      } catch (err) {
-        this.context.stdout.write(
-          renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`)
-        )
-      }
+      this.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, this.extraTags)
     }
 
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)

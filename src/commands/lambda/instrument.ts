@@ -14,7 +14,7 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
+import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
@@ -218,23 +218,7 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.sourceCodeIntegration) {
-      try {
-        const gitData = await getGitData()
-        if (this.uploadGitMetadata) {
-          try {
-            await uploadGitData(this.context)
-          } catch (err) {
-            throw Error(`Error uploading git data: ${err}\n`)
-          }
-        }
-        if (settings.extraTags) {
-          settings.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        } else {
-          settings.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        }
-      } catch (err) {
-        this.context.stdout.write(instrumentRenderer.renderSourceCodeIntegrationWarning(err))
-      }
+      settings.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, settings.extraTags)
     }
 
     const configGroups: InstrumentedConfigurationGroup[] = []

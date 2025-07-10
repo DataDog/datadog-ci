@@ -3,9 +3,10 @@ import {BaseContext, Cli} from 'clipanion'
 import {getCommitInfo, newSimpleGit} from '../../commands/git-metadata/git'
 import {UploadCommand} from '../../commands/git-metadata/upload'
 
+import {renderSoftWarning} from '../renderer'
 import {filterAndFormatGithubRemote} from '../utils'
 
-export const getGitData = async () => {
+const getGitData = async () => {
   let currentStatus
 
   try {
@@ -52,4 +53,26 @@ export const uploadGitData = async (context: BaseContext) => {
   }
 
   return
+}
+
+export const handleSourceCodeIntegration = async (
+  context: BaseContext,
+  uploadGitMetadata: boolean,
+  extraTags: string | undefined
+) => {
+  try {
+    const gitData = await getGitData()
+    if (uploadGitMetadata) {
+      await uploadGitData(context)
+    }
+    if (extraTags) {
+      extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+    } else {
+      extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
+    }
+  } catch (err) {
+    context.stdout.write(renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`))
+  }
+
+  return extraTags
 }
