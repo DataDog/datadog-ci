@@ -78,7 +78,7 @@ export const runTests = async (
       if (failOnMissingTests) {
         reporter.error(
           `${chalk.red.bold(
-            'Some tests were not authorized to be triggered. Aborting due to `failOnCriticalErrors: true`.'
+            'Some tests were not authorized to be triggered. Aborting due to `failOnMissingTests: true`.'
           )}\n  Error: ${errorMessage}\n\n`
         )
 
