@@ -13,6 +13,7 @@ beforeEach(() => {
   delete process.env.CONFIGURATION_BUILD_DIR
   delete process.env.CURRENT_PROJECT_VERSION
   delete process.env.DATADOG_API_KEY
+  delete process.env.DD_API_KEY
   delete process.env.EXTRA_PACKAGER_ARGS
   delete process.env.INFOPLIST_FILE
   delete process.env.MARKETING_VERSION

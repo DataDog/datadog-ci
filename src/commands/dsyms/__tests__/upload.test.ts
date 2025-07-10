@@ -298,6 +298,8 @@ describe('execute', () => {
   afterEach(() => {
     delete process.env.DATADOG_API_KEY
     delete process.env.DATADOG_SITE
+    delete process.env.DD_API_KEY
+    delete process.env.DD_SITE
   })
 
   test('Should succeed with folder input', async () => {

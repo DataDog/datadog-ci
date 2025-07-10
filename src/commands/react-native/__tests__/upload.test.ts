@@ -117,6 +117,7 @@ describe('execute', () => {
     if (options?.configPath) {
       command.push('--config', options.configPath)
       delete process.env.DATADOG_API_KEY
+      delete process.env.DD_API_KEY
     }
     if (options?.env) {
       process.env = {
