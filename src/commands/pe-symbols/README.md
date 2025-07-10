@@ -18,8 +18,8 @@ To make these variables available, Datadog recommends setting them in an encrypt
 
 ```json
 {
-  "apiKey": "<DD_API_KEY>",
-  "datadogSite": "<DD_SITE>"
+  "apiKey": "<API_KEY>",
+  "datadogSite": "<SITE>"
 }
 ```
 

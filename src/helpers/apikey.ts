@@ -51,7 +51,7 @@ class ApiKeyValidatorImplem {
         this.metricsLogger.increment('invalid_auth', 1)
       }
       throw new InvalidConfigurationError(
-        `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.datadogSite}`
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold('DD_API_KEY')} contains a valid API key for Datadog site ${this.datadogSite}`
       )
     }
   }

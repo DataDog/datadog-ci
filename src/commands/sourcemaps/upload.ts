@@ -122,7 +122,7 @@ export class UploadCommand extends Command {
       )
     )
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
       defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.sourcemaps.',
     })
@@ -245,7 +245,7 @@ export class UploadCommand extends Command {
 
   private getRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DD_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`)
     }
 
     return getRequestBuilder({

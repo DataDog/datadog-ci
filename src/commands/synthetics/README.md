@@ -65,8 +65,8 @@ Example:
 
 ```jsonc
 {
-  "apiKey": "<DD_API_KEY>",
-  "appKey": "<DATADOG_APPLICATION_KEY>",
+  "apiKey": "<API_KEY>",
+  "appKey": "<APPLICATION_KEY>",
   "batchTimeout": 1800000,
   "datadogSite": "datadoghq.com",
   "defaultTestOverrides": {
@@ -953,8 +953,8 @@ You can also pass these options in a configuration file:
 
 ```json
 {
-  "apiKey": "<DD_API_KEY>",
-  "appKey": "<DATADOG_APPLICATION_KEY>",
+  "apiKey": "<API_KEY>",
+  "appKey": "<APPLICATION_KEY>",
   "mobileApplicationVersionFilePath": "example_path/example_app.apk",
   "mobileApplicationId": "example-abc",
   "versionName": "example",

@@ -92,8 +92,8 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
+        apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+        datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
       },
       {
         configPath: this.configPath,

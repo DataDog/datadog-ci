@@ -44,7 +44,7 @@ exports[`utils reportCiError should report MISSING_API_KEY error 1`] = `
 [MockFunction] {
   "calls": [
     [
-      "Missing [31m[1mDATADOG_API_KEY[22m[39m in your environment.
+      "Missing [31m[1mDATADOG_API_KEY[22m[39m or [31m[1mDD_API_KEY[22m[39m in your environment.
 ",
     ],
   ],
@@ -61,7 +61,7 @@ exports[`utils reportCiError should report MISSING_APP_KEY error 1`] = `
 [MockFunction] {
   "calls": [
     [
-      "Missing [31m[1mDATADOG_APP_KEY[22m[39m in your environment.
+      "Missing [31m[1mDATADOG_APP_KEY[22m[39m or [31m[1mDD_APP_KEY[22m[39m in your environment.
 ",
     ],
   ],

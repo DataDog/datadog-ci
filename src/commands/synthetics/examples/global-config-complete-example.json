@@ -1,6 +1,6 @@
 {
-  "apiKey": "<DD_API_KEY>",
-  "appKey": "<DD_APPLICATION_KEY>",
+  "apiKey": "<API_KEY>",
+  "appKey": "<APPLICATION_KEY>",
   "batchTimeout": 1800000,
   "datadogSite": "datadoghq.com",
   "defaultTestOverrides": {

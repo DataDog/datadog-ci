@@ -325,7 +325,7 @@ export class UploadCommand extends Command {
 
   private createRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`)
     }
 
     return getRequestBuilder({
