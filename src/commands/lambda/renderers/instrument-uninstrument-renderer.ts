@@ -62,15 +62,6 @@ export const renderExtensionAndForwarderOptionsBothSetError = () =>
   renderError('"extensionVersion" and "forwarder" should not be used at the same time.')
 
 /**
- * @returns a message indicating that the environment variable `DATADOG_API_KEY` is missing.
- *
- * ```txt
- * [Error] Missing DATADOG_API_KEY in your environment.
- * ```
- */
-export const renderMissingDatadogApiKeyError = () => renderError('Missing DATADOG_API_KEY in your environment.')
-
-/**
  * @param functionsCommandUsed a boolean indicating which command was used for the specified functions.
  * @returns a message indicating that option `--functions-regex`
  * is being used along with either `--functions` or the parameter

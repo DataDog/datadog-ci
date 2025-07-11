@@ -15,7 +15,7 @@ describe('upload', () => {
       const command = new UploadCommand()
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
-        `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
+        `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
       )
     })
   })
@@ -95,7 +95,6 @@ describe('execute', () => {
     cli.register(UploadCommand)
 
     const context = createMockContext()
-    process.env = getEnvVarPlaceholders()
     const command = [
       'react-native',
       'upload',
@@ -111,12 +110,14 @@ describe('execute', () => {
       'android',
       '--dry-run',
     ]
-    if (options?.uploadBundle !== false) {
-      command.push('--bundle', bundle)
-    }
     if (options?.configPath) {
       command.push('--config', options.configPath)
-      delete process.env.DATADOG_API_KEY
+      process.env = {}
+    } else {
+      process.env = getEnvVarPlaceholders()
+    }
+    if (options?.uploadBundle !== false) {
+      command.push('--bundle', bundle)
     }
     if (options?.env) {
       process.env = {
@@ -256,7 +257,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
     `After upload is successful sourcemap files will be processed and ready to use within the next 5 minutes.`
   )
 
-  const uploadedFileLines = output.slice(6, -4)
+  const uploadedFileLines = output.slice(6, -4).filter((line) => !line.includes('Extracted Debug ID from sourcemap'))
   expect(uploadedFileLines.length).toEqual(expected.sourcemapsPaths.length) // Safety check
   uploadedFileLines.forEach((_, index) => {
     expect(uploadedFileLines[index]).toContain(

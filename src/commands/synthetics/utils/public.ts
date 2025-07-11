@@ -547,10 +547,14 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
       break
     case 'MISSING_APP_KEY':
-      reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+      reporter.error(
+        `Missing ${chalk.red.bold('DATADOG_APP_KEY')} or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
+      )
       break
     case 'MISSING_API_KEY':
-      reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+      reporter.error(
+        `Missing ${chalk.red.bold('DATADOG_API_KEY')} or ${chalk.red.bold('DD_API_KEY')} in your environment.\n`
+      )
       break
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)

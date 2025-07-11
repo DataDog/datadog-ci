@@ -74,6 +74,23 @@ describe('upload', () => {
       expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/clover.xml')
     })
 
+    test('should read all coverage report files excluding ignored paths specified partially', () => {
+      const command = createCommand(UploadCodeCoverageReportCommand)
+      command['ignoredPaths'] = 'subfolder.xml'
+      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+
+      const result = command['getMatchingCoverageReportFilesByFormat']()
+      const fileNames = Object.values(result).flatMap((paths) => paths)
+
+      expect(fileNames.length).toEqual(6)
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/other-Jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/jacoco-report.xml')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/lcov.info')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/coverage.json')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/.resultset.json')
+      expect(fileNames).toContain('src/commands/coverage/__tests__/fixtures/clover.xml')
+    })
+
     test('should allow specifying files directly', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['basePaths'] = [

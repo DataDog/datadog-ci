@@ -32,9 +32,10 @@ import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
 
+import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
-import {checkAuthentication, generateConfigDiff} from './utils'
+import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')
@@ -42,8 +43,6 @@ const {ServicesClient} = require('@google-cloud/run')
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
-const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
-const DEFAULT_VOLUME_NAME = 'shared-volume'
 const DEFAULT_VOLUME_PATH = '/shared-volume'
 const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 const DEFAULT_HEALTH_CHECK_PORT = 5555
@@ -69,12 +68,19 @@ export class InstrumentCommand extends Command {
   private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
   private environment = Option.String('--env')
   private extraTags = Option.String('--extra-tags,--extraTags')
-  private project = Option.String('-p,--project')
-  private services = Option.Array('-s,--service,--services', [])
-  private interactive = Option.Boolean('-i,--interactive', false)
+  private project = Option.String('-p,--project', {
+    description: 'GCP project ID',
+  })
+  private services = Option.Array('-s,--service,--services', [], {
+    description: 'Cloud Run service(s) to instrument',
+  })
+  private interactive = Option.Boolean('-i,--interactive', false, {
+    description: 'Prompt for flags one at a time',
+  })
+  private region = Option.String('-r,--region', {
+    description: 'GCP region your service(s) are deployed in',
+  })
   private logLevel = Option.String('--log-level,--logLevel')
-  // private regExPattern = Option.String('--services-regex,--servicesRegex') implement if requested by customers
-  private region = Option.String('-r,--region')
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
   private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true)
   private tracing = Option.String('--tracing')
@@ -135,23 +141,19 @@ export class InstrumentCommand extends Command {
     }
 
     if (this.interactive) {
-      // Prompt for project if missing
       if (!this.project) {
         this.project = await requestGCPProject()
       }
 
-      // Prompt for region if missing
       if (!this.region) {
         this.region = await requestGCPRegion()
       }
 
-      // Prompt for service if missing
       if (this.services.length === 0) {
         const serviceName = await requestServiceName()
         this.services = [serviceName]
       }
 
-      // Prompt for site if missing
       const envSite = process.env[CI_SITE_ENV_VAR]
       if (!isValidDatadogSite(envSite)) {
         process.env[CI_SITE_ENV_VAR] = await requestSite()
@@ -159,7 +161,6 @@ export class InstrumentCommand extends Command {
     }
 
     // Validate required variables
-    this.context.stdout.write(chalk.bold('\n🔍 Verifying command flags...\n'))
     if (!this.project) {
       this.context.stdout.write(chalk.yellow('Invalid or missing project. Please use the --project flag.\n'))
     }
@@ -204,7 +205,7 @@ export class InstrumentCommand extends Command {
     try {
       await this.instrumentSidecar(this.project, this.services, this.region, ddService)
     } catch (error) {
-      this.context.stderr.write(chalk.red(`\n${dryRunPrefix(this.dryRun)}Instrumentation failed: ${error}\n`))
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
 
       return 1
     }
@@ -222,28 +223,7 @@ export class InstrumentCommand extends Command {
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
     )
-
-    const existingServiceConfigs: IService[] = []
-    for (const serviceName of services) {
-      const servicePath = client.servicePath(project, region, serviceName)
-
-      const existingService = await withSpinner(
-        `Fetching configuration for ${chalk.bold(serviceName)}...`,
-        async () => {
-          try {
-            const [serv] = await client.getService({name: servicePath})
-
-            return serv
-          } catch (error) {
-            throw new Error(
-              `Service ${serviceName} not found in project ${project}, region ${region}.\n\nNo services were instrumented.\n`
-            )
-          }
-        },
-        `Fetched service configuration for ${chalk.bold(serviceName)}`
-      )
-      existingServiceConfigs.push(existingService)
-    }
+    const existingServiceConfigs = await fetchServiceConfigs(client, project, region, services)
 
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Instrumenting Cloud Run services with sidecar...\n`)
@@ -256,7 +236,7 @@ export class InstrumentCommand extends Command {
         await this.instrumentService(client, serviceConfig, serviceName, actualDDService)
       } catch (error) {
         this.context.stderr.write(
-          chalk.red(`${dryRunPrefix(this.dryRun)}Failed to instrument service ${serviceName}: ${error}\n`)
+          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
         )
         throw error
       }
@@ -280,7 +260,7 @@ export class InstrumentCommand extends Command {
 
       return
     } else if (this.interactive) {
-      const confirmed = await requestConfirmation('Do you want to apply the changes?')
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
       if (!confirmed) {
         throw new Error('Instrumentation cancelled by user.')
       }

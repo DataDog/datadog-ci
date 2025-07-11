@@ -1,3 +1,5 @@
+import {readFileSync, writeFileSync} from 'fs'
+
 import {Cli} from 'clipanion'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
@@ -10,7 +12,6 @@ beforeEach(() => {
   delete process.env.CONFIGURATION
   delete process.env.CONFIGURATION_BUILD_DIR
   delete process.env.CURRENT_PROJECT_VERSION
-  delete process.env.DATADOG_API_KEY
   delete process.env.EXTRA_PACKAGER_ARGS
   delete process.env.INFOPLIST_FILE
   delete process.env.MARKETING_VERSION
@@ -91,6 +92,20 @@ const runCLI = async (
 }
 
 describe('xcode', () => {
+  afterEach(() => {
+    // Remove debugId from sourcemap file to restore the original state after each test
+    const defaultSourcemap = readFileSync(
+      './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
+      'utf8'
+    )
+    const sourcemapJson = JSON.parse(defaultSourcemap) as {debugId?: string}
+    delete sourcemapJson.debugId
+    writeFileSync(
+      './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map',
+      JSON.stringify(sourcemapJson)
+    )
+  })
+
   describe('getBundleLocation', () => {
     test('should return the location from CONFIGURATION_BUILD_DIR', () => {
       process.env.CONFIGURATION_BUILD_DIR = './src/commands/react-native/__tests__/fixtures/basic-ios'
@@ -166,6 +181,123 @@ describe('xcode', () => {
 
       expect(code).toBe(0)
       const output = context.stdout.toString()
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should copy the debug ID from the bundle to the composed sourcemaps when hermes is enabled', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        // This ensures we point to an existing hermes bundle file
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/sourcemap-with-debug-id-in-bundle',
+        // This ensures we point to an existing file as the command is ran without any script path
+        DATADOG_CI_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/react-native',
+        // This ensures we point to an existing podfile with hermes enabled
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+      const {context, code} = await runCLI()
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+
+      expect(output).toContain('Found debug ID in bundle. Copying to sourcemap')
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not fail if the debug ID is not in bundle and show warning', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        // This ensures we point to an existing hermes bundle file
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        // This ensures we point to an existing file as the command is ran without any script path
+        DATADOG_CI_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/react-native',
+        // This ensures we point to an existing podfile with hermes enabled
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+      const {context, code} = await runCLI()
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+
+      expect(context.stderr.toString()).toContain('Debug ID not found in bundle')
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should fallback to temp file method if the debug ID is not in bundle', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        // This ensures we point to an existing hermes bundle file
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        // This ensures we point to an existing file as the command is ran without any script path
+        DATADOG_CI_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/react-native',
+        DATADOG_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/datadog-react-native-with-tmp',
+        // This ensures we point to an existing podfile with hermes enabled
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+      const expectedDebugId = '01c0b3f9-daf5-9cdb-fb12-2a3f2a3a288c'
+      writeFileSync(
+        './src/commands/react-native/__tests__/fixtures/datadog-react-native-with-tmp/.tmp/debug_id',
+        expectedDebugId
+      )
+      const {context, code} = await runCLI()
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+
+      expect(context.stderr.toString()).toContain('Debug ID not found in bundle')
+      expect(output).toContain(
+        `Adding debugId ${expectedDebugId} to the sourcemap at ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map`
+      )
+      expect(output).toContain(
+        'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
+      )
+      expect(output).toContain('version: 0.0.2 build: 000020 service: com.myapp.test')
+    })
+
+    test('should not exit if debug ID temp file method fails and show warning', async () => {
+      process.env = {
+        ...process.env,
+        ...basicEnvironment,
+        // This ensures we point to an existing hermes bundle file
+        CONFIGURATION_BUILD_DIR: './src/commands/react-native/__tests__/fixtures/compose-sourcemaps',
+        // This ensures we point to an existing file as the command is ran without any script path
+        DATADOG_CI_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/react-native',
+        DATADOG_REACT_NATIVE_PATH: './src/commands/react-native/__tests__/fixtures/datadog-react-native',
+        // This ensures we point to an existing podfile with hermes enabled
+        PODS_PODFILE_DIR_PATH: './src/commands/react-native/__tests__/fixtures/podfile-lock/with-hermes',
+      }
+      const {context, code} = await runCLI()
+      // Uncomment these lines for debugging failing script
+      // console.log(context.stdout.toString())
+      // console.log(context.stderr.toString())
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+
+      expect(context.stderr.toString()).toContain('Debug ID not found in bundle')
+      expect(context.stderr.toString()).toContain(
+        'Debug ID temporary file not found in ./src/commands/react-native/__tests__/fixtures/datadog-react-native/.tmp/debug_id'
+      )
       expect(output).toContain(
         'Upload of ./src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map for bundle main.jsbundle on platform ios'
       )

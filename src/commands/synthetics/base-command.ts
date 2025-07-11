@@ -105,10 +105,10 @@ export abstract class BaseCommand extends Command {
   /** This method can be overloaded by the child class. Use `super.resolveConfigFromEnv()` to add more config. */
   protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
     return {
-      apiKey: process.env.DATADOG_API_KEY,
-      appKey: process.env.DATADOG_APP_KEY,
+      apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
       configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
-      datadogSite: process.env.DATADOG_SITE,
+      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
     }
   }
 

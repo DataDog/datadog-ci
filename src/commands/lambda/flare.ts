@@ -124,7 +124,7 @@ export class LambdaFlareCommand extends Command {
     if (this.apiKey === undefined) {
       errorMessages.push(
         helpersRenderer.renderError(
-          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
+          'No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.'
         )
       )
     }

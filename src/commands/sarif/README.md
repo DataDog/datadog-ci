@@ -32,9 +32,9 @@ The positional arguments are the directories or file paths in which the SARIF re
 
 Additionally, you may configure the `sarif` command with environment variables:
 
-- `DATADOG_API_KEY` or `DD_API_KEY` (**required**): API key used to authenticate the requests.
+- `DD_API_KEY` (**required**): API key used to authenticate the requests.
 - `DD_TAGS`: Set global tags applied to all spans. The format must be `key1:value1,key2:value2`. The upload process merges the tags passed on the command line with the tags in the `--tags` parameter. If a key appears in both `--tags` and `DD_TAGS`, the value in `DD_TAGS` takes precedence.
-- `DATADOG_SITE` or `DD_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
+- `DD_SITE`: choose your Datadog site, for example, datadoghq.com or datadoghq.eu.
 
 ### Git context resolution
 

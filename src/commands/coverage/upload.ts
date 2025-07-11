@@ -138,6 +138,8 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
+    this.context.stderr.write(`Ignored paths: ${parsePathsList(this.ignoredPaths)}\n`)
+
     if (this.format && !isCoverageFormat(this.format)) {
       this.context.stderr.write(
         `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
@@ -287,12 +289,18 @@ export class UploadCodeCoverageReportCommand extends Command {
       return {}
     }
 
-    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
-    if (baseSha) {
-      return {headSha, baseSha}
-    }
     if (!this.git) {
       return {}
+    }
+
+    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    if (baseSha) {
+      // GitHub incorrectly reports base SHA as the head of the target branch
+      // doing a merge-base allows us to get the real base SHA
+      // (and if the base SHA was reported correctly, merge-base will not alter it)
+      const mergeBase = await getMergeBase(this.git, baseSha, headSha)
+
+      return {headSha, baseSha: mergeBase}
     }
 
     const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
