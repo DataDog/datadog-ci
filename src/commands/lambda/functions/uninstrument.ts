@@ -204,9 +204,6 @@ export const calculateUpdateRequest = (
     PROFILER_ENV_VAR,
     PROFILER_PATH_ENV_VAR,
     DOTNET_TRACER_HOME_ENV_VAR,
-    DD_LLMOBS_ENABLED_ENV_VAR,
-    DD_LLMOBS_ML_APP_ENV_VAR,
-    DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
     DD_LAMBDA_FIPS_MODE_ENV_VAR,
   ]
   // Remove Environment Variables

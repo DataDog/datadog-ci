@@ -54,9 +54,6 @@ import {
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
