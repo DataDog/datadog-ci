@@ -26,9 +26,6 @@ import {
   SITE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
 } from '../../../constants'
 import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 import {requestConfirmation} from '../../../helpers/prompt'
@@ -91,9 +88,6 @@ describe('lambda', () => {
                   [DD_TRACE_ENABLED_ENV_VAR]: 'true',
                   [VERSION_ENV_VAR]: '0.2',
                   [APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR]: '42',
-                  [DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR]: 'false',
-                  [DD_LLMOBS_ENABLED_ENV_VAR]: 'true',
-                  [DD_LLMOBS_ML_APP_ENV_VAR]: 'my-ml-app',
                   USER_VARIABLE: 'shouldnt be deleted by uninstrumentation',
                 },
               },
