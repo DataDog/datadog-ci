@@ -338,12 +338,7 @@ export const calculateUpdateRequest = async (
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
     }
 
-    if (settings.fips) {
-      const currentSite = site ?? oldEnvVars[SITE_ENV_VAR] ?? 'datadoghq.com'
-      if (currentSite !== DATADOG_SITE_GOV) {
-        context.stderr.write('FIPS mode was enabled on the extension layer, but DD_SITE is not set to ddog-gov.com\n')
-      }
-
+    if (settings.lambdaFips) {
       if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
         needsUpdate = true
         newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'

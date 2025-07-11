@@ -457,6 +457,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
       const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
@@ -472,6 +473,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
       const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
@@ -484,6 +486,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn({}, EXTENSION_LAYER_KEY as LayerKey, region, settings)
@@ -499,6 +502,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
@@ -550,6 +554,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
@@ -567,6 +572,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'us-gov-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
@@ -586,6 +592,7 @@ describe('commons', () => {
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'us-east-1'
       const layerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)

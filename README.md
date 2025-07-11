@@ -44,30 +44,38 @@ The following values are available for each `<command>` and (optionally) `<subco
 See each command's linked README for more details, or click on [📚](https://docs.datadoghq.com/) to see the related documentation page.
 
 #### `aas`
-- `instrument`: Apply Datadog instrumentation to the given [Azure App Services](src/commands/aas). [📚](https://docs.datadoghq.com/serverless/azure_app_services/)
+
+- `instrument`: Apply Datadog instrumentation to the given [Azure App Services](src/commands/aas).
 - `uninstrument`: Revert Datadog instrumentation from the given [Azure App Services](src/commands/aas).
 
 #### `cloud-run`
+
 - `flare`: Troubleshoot your issues with [Cloud Run service](src/commands/cloud-run) configuration. [📚](https://docs.datadoghq.com/serverless/google_cloud_run)
 - `instrument`: Apply Datadog instrumentation to the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
 - `uninstrument`: Revert Datadog instrumentation from the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
 
 #### `dsyms`
+
 - `upload`: Upload [iOS dSYM files](src/commands/dsyms) for Error Tracking (macOS only). [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)
 
 #### `flutter-symbols`
+
 - `upload`: Upload [Flutter symbols](src/commands/flutter-symbols) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)
 
 #### `unity-symbols`
+
 - `upload`: Upload [Unity symbols](src/commands/unity-symbols) for Error Tracking.
 
 #### `git-metadata`
+
 - `upload`: Upload [Git metadata](src/commands/git-metadata) for the Source Code Integration. [📚](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
 
 #### `junit`
+
 - `upload`: Upload [JUnit test reports](src/commands/junit) for Test Visibility. [📚](https://docs.datadoghq.com/tests/setup/junit_xml/)
 
 #### `lambda`
+
 - `flare`: Troubleshoot your issues with Datadog instrumentation on your [AWS Lambda functions](src/commands/lambda).
 - `instrument`: Apply Datadog instrumentation to the given [AWS Lambda functions](src/commands/lambda).
 - `uninstrument`: Revert Datadog instrumentation from the given [AWS Lambda functions](src/commands/lambda).
@@ -77,31 +85,39 @@ See each command's linked README for more details, or click on [📚](https://do
 - Add [measures](src/commands/measure) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `react-native`
+
 - `codepush`: Upload [React Native CodePush sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
 - `upload`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
 - `xcode`: Upload [React Native sourcemaps](src/commands/react-native) for Error Tracking from the XCode bundle build phase. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
 
 #### `sarif`
+
 - `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/code_analysis/static_analysis/)
 
 #### `sbom`
+
 - `upload`: Upload [Software Bill of Materials (SBOM)](src/commands/sbom) files to Datadog. [📚](https://docs.datadoghq.com/code_analysis/software_composition_analysis/)
 
 #### `sourcemaps`
+
 - `upload`: Upload [JavaScript sourcemaps](src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps)
 
 #### `stepfunctions`
+
 - `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
 - `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
 
 #### `synthetics`
+
 - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [📚](https://docs.datadoghq.com/continuous_testing/)
 - `upload-application`: Upload a new version to an [existing mobile application](src/commands/synthetics) in Datadog. [📚](https://docs.datadoghq.com/mobile_app_testing/)
 
 #### `tag`
+
 - Add [custom tags](src/commands/tag) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
 
 #### `trace`
+
 - Add [custom commands](src/commands/trace) to a CI Visibility pipeline in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
 
 ### Beta commands
@@ -109,25 +125,30 @@ See each command's linked README for more details, or click on [📚](https://do
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
 
 #### `coverage`
+
 - `upload`: Upload code coverage report files to Datadog. (📚: no public documentation page yet)
 
 #### `deployment`
+
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 - `correlate`: [Correlate](src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
 - `correlate-image`: [Correlate an image](src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 
 #### `dora`
+
 - `deployment`: Send a new deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
 
 #### `elf-symbols`
+
 - `upload`: Upload [Elf debug info files](src/commands/elf-symbols) for Profiling (requires binutils). [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
 
 #### `pe-symbols`
+
 - `upload`: Upload [Windows PE debug info files](src/commands/pe-symbols) for Profiling. [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
 
 #### `gate`
-- `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 
+- `evaluate`: Evaluate [Quality Gates](src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 
 ### FIPS support
 
@@ -141,6 +162,7 @@ The option `fips-ignore-error` ignores this error.
 The released `datadog-ci` binary now uses Node.js version 18 to be compatible with OpenSSL 3.
 
 #### `fips`
+
 Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
 If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
 
@@ -148,6 +170,7 @@ ENV variable: `DATADOG_FIPS=true`
 CLI param: `--fips`
 
 #### `fips-ignore-error`
+
 Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 **Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
@@ -155,6 +178,12 @@ Ignore Node.js errors if FIPS cannot be enabled on the host system.
 ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
 CLI param: `--fips-ignore-error`
 
+#### `lambda-fips`
+
+This option is used to enable FIPS support in the lambda functions deployed using this tool. Note that for full FIPS compliance, a FIPS endpoint such as `ddog-gov.com` is required.
+
+ENV variable: `DATADOG_LAMBDA_FIPS=true`
+CLI param: `--lambda-fips`
 
 ## More ways to install the CLI
 
