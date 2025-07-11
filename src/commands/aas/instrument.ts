@@ -7,6 +7,7 @@ import equal from 'fast-deep-equal/es6'
 
 import {DATADOG_SITE_US1} from '../../constants'
 import {newApiKeyValidator} from '../../helpers/apikey'
+import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 
@@ -62,6 +63,19 @@ export class InstrumentCommand extends AasCommand {
       'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
 
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
+    description:
+      'Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable.',
+  })
+
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
+    description: 'Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable.',
+  })
+
+  private extraTags = Option.String('--extra-tags,--extraTags', {
+    description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -73,6 +87,9 @@ export class InstrumentCommand extends AasCommand {
       envVars: this.envVars,
       shouldNotRestart: this.shouldNotRestart,
       isDotnet: this.isDotnet,
+      sourceCodeIntegration: this.sourceCodeIntegration,
+      uploadGitMetadata: this.uploadGitMetadata,
+      extraTags: this.extraTags,
     }
   }
 
@@ -101,11 +118,17 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
+
     const cred = new DefaultAzureCredential()
     if (!(await this.ensureAzureAuth(cred))) {
       return 1
     }
     const tagClient = new ResourceManagementClient(cred).tagsOperations
+
+    if (config.sourceCodeIntegration) {
+      config.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, config.extraTags)
+    }
+
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>

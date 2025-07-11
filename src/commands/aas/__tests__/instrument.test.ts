@@ -12,6 +12,11 @@ jest.mock('../../../helpers/apikey', () => ({
   })),
 }))
 
+const handleSourceCodeIntegration = jest.fn()
+jest.mock('../../../helpers/git/instrument-helpers', () => ({
+  handleSourceCodeIntegration,
+}))
+
 const getToken = jest.fn()
 
 jest.mock('@azure/identity', () => ({
@@ -50,7 +55,7 @@ import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_ARGS, DEFAULT_CONFIG, WEB_APP_ID} from './common'
+import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID} from './common'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
@@ -73,10 +78,13 @@ describe('aas instrument', () => {
       webAppsOperations.restart.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
+      handleSourceCodeIntegration
+        .mockClear()
+        .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
     })
 
     test('Adds a sidecar and updates the application settings', async () => {
-      const {code, context} = await runCLI(DEFAULT_ARGS)
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
@@ -117,7 +125,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('Performs no actions in dry run mode', async () => {
-      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
 [Dry Run] Creating sidecar container datadog-sidecar on my-web-app
 [Dry Run] Updating Application Settings for my-web-app
@@ -136,7 +144,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('Does not restart when specified', async () => {
-      const {code, context} = await runCLI([...DEFAULT_ARGS, '--no-restart'])
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--no-restart'])
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
@@ -178,7 +186,7 @@ Updating Application Settings for my-web-app
     test('Fails if not authenticated with Azure', async () => {
       getToken.mockClear().mockRejectedValue(new Error())
 
-      const {code, context} = await runCLI(DEFAULT_ARGS)
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`[!] Failed to authenticate with Azure: Error
 
 Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
@@ -197,7 +205,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
     test('Fails if datadog API key is invalid', async () => {
       validateApiKey.mockClear().mockResolvedValue(false)
 
-      const {code, context} = await runCLI(DEFAULT_ARGS)
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(
         `[!] Invalid API Key stored in the environment variable DD_API_KEY: ****************
 Ensure you copied the value and not the Key ID.
@@ -216,7 +224,7 @@ Ensure you copied the value and not the Key ID.
 
     test('Warns and exits if App Service is not Linux', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
-      const {code, context} = await runCLI(DEFAULT_ARGS)
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 [!] Unable to instrument my-web-app. Only Linux-based Azure App Services are currently supported.
 Please see the documentation for information on
@@ -237,7 +245,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 
     test('Handles errors during sidecar instrumentation', async () => {
       webAppsOperations.createOrUpdateSiteContainer.mockClear().mockRejectedValue(new Error('sidecar error'))
-      const {code, context} = await runCLI(DEFAULT_ARGS)
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 [Error] Failed to instrument my-web-app: Error: sidecar error
@@ -302,6 +310,7 @@ Creating sidecar container datadog-sidecar on my-web-app
         WEB_APP_ID,
         '-r',
         '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app2',
+        '--no-source-code-integration',
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
@@ -381,7 +390,7 @@ Restarting Azure App Service my-web-app2
 
     test('Adds core tags to the Azure App Service', async () => {
       const {code, context} = await runCLI([
-        ...DEFAULT_ARGS,
+        ...DEFAULT_INSTRUMENT_ARGS,
         '--service',
         'my-service',
         '--environment',
@@ -444,7 +453,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('Sets DD_PROFILING_ENABLED to false when profiling is disabled', async () => {
-      const {code} = await runCLI([...DEFAULT_ARGS, '--no-profiling'])
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--no-profiling'])
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -480,7 +489,7 @@ Restarting Azure App Service my-web-app
 
     test('Sets additional environment variables from config', async () => {
       const {code, context} = await runCLI([
-        ...DEFAULT_ARGS,
+        ...DEFAULT_INSTRUMENT_ARGS,
         '--env-vars',
         'CUSTOM_VAR1=value1',
         '--env-vars',
@@ -531,7 +540,7 @@ Restarting Azure App Service my-web-app
 
     test('Overrides default env vars with additional env vars', async () => {
       const {code} = await runCLI([
-        ...DEFAULT_ARGS,
+        ...DEFAULT_INSTRUMENT_ARGS,
         '--env-vars',
         'CUSTOM_VAR1=value1',
         '--env-vars',
@@ -570,6 +579,45 @@ Restarting Azure App Service my-web-app
       })
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalled()
+    })
+
+    test('Adds git metadata tags when source code integration is enabled', async () => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--source-code-integration', '--upload-git-metadata'])
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'true',
+          DD_API_KEY: 'PLACEHOLDER',
+          DD_SITE: 'datadoghq.com',
+          DD_TAGS: 'git.commit.sha:test-sha,git.repository_url:test-remote',
+        },
+      })
+    })
+
+    test('Adds extra tags when provided', async () => {
+      const {code} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--extra-tags',
+        'custom:tag,another:value',
+        '--no-source-code-integration',
+      ])
+      expect(code).toEqual(0)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_PROFILING_ENABLED: 'true',
+          DD_API_KEY: 'PLACEHOLDER',
+          DD_SITE: 'datadoghq.com',
+          DD_TAGS: 'custom:tag,another:value',
+        },
+      })
+    })
+
+    test('Validates extra tags format', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--extra-tags', 'invalid-tag-format'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
     })
   })
 

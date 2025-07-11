@@ -12,6 +12,9 @@ export const DEFAULT_CONFIG: AasConfigOptions = {
   logPath: undefined,
   isDotnet: false,
   shouldNotRestart: false,
+  sourceCodeIntegration: true,
+  uploadGitMetadata: true,
+  extraTags: undefined,
 }
 
 export const WEB_APP_ID =
@@ -74,3 +77,4 @@ export const DEFAULT_ARGS = [
   '-n',
   'my-web-app',
 ]
+export const DEFAULT_INSTRUMENT_ARGS = [...DEFAULT_ARGS, '--no-source-code-integration']

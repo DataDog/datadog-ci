@@ -184,6 +184,20 @@ describe('aas common', () => {
         CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
       })
     })
+
+    test('includes DD_TAGS when extraTags is provided', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        extraTags: 'custom:tag,another:value',
+      }
+      const envVars = getEnvVars(config)
+      expect(envVars.DD_TAGS).toEqual('custom:tag,another:value')
+    })
+
+    test('does not include DD_TAGS when extraTags is not provided', () => {
+      const envVars = getEnvVars(DEFAULT_CONFIG)
+      expect(envVars.DD_TAGS).toBeUndefined()
+    })
   })
 
   describe('isDotnet', () => {

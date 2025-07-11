@@ -27,7 +27,7 @@ import {
 import {newApiKeyValidator} from '../../helpers/apikey'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getGitData, uploadGitData} from '../../helpers/git/instrument-helpers'
+import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
 import {renderError, renderSoftWarning} from '../../helpers/renderer'
 import {maskString} from '../../helpers/utils'
 import {isValidDatadogSite} from '../../helpers/validation'
@@ -81,8 +81,13 @@ export class InstrumentCommand extends Command {
     description: 'GCP region your service(s) are deployed in',
   })
   private logLevel = Option.String('--log-level,--logLevel')
-  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
+    description:
+      'Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable.',
+  })
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
+    description: 'Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable.',
+  })
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
@@ -197,23 +202,8 @@ export class InstrumentCommand extends Command {
     }
     this.context.stdout.write(chalk.green('✔ GCP credentials verified!\n\n'))
 
-    // Source code integration
     if (this.sourceCodeIntegration) {
-      try {
-        const gitData = await getGitData()
-        if (this.uploadGitMetadata) {
-          await uploadGitData(this.context)
-        }
-        if (this.extraTags) {
-          this.extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        } else {
-          this.extraTags = `git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
-        }
-      } catch (err) {
-        this.context.stdout.write(
-          renderSoftWarning(`Couldn't add source code integration, continuing without it. ${err}`)
-        )
-      }
+      this.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, this.extraTags)
     }
 
     // Instrument services with sidecar

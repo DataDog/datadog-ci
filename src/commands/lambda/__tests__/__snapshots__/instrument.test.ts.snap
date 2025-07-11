@@ -5,8 +5,7 @@ exports[`lambda instrument execute aborts when every lambda function fails to up
 🐶 Instrumenting Lambda function
 
 [Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-
-[Warning] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging..
+[!] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging.
 
 [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
@@ -675,8 +674,7 @@ exports[`lambda instrument execute prints which functions failed to instrument w
 🐶 Instrumenting Lambda function
 
 [Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-
-[Warning] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging..
+[!] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging.
 
 [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
