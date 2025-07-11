@@ -43,7 +43,7 @@ datadog-ci cloud-run uninstrument -p <gcp-project> -r us-central1 -s <service-na
 
 ### GCP Credentials
 
-You must have valid [GCP credentials][1] configured with access to the Cloud Run services where you are running any `datadog-ci lambda` command. You can configure credentials by running `gcloud auth application-default login` and following the prompts in your browser.
+You must have valid [GCP credentials][1] configured with access to the Cloud Run services where you are running any `datadog-ci cloud-run` command. You can configure credentials by running `gcloud auth application-default login` and following the prompts in your browser.
 
 ### Environment variables
 
