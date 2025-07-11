@@ -81,8 +81,13 @@ export class InstrumentCommand extends Command {
     description: 'GCP region your service(s) are deployed in',
   })
   private logLevel = Option.String('--log-level,--logLevel')
-  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true)
-  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true)
+  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
+    description:
+      'Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable.',
+  })
+  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
+    description: 'Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable.',
+  })
   private tracing = Option.String('--tracing')
   private version = Option.String('--version')
   private llmobs = Option.String('--llmobs')
