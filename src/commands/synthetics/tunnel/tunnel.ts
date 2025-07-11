@@ -41,7 +41,11 @@ export class Tunnel {
   private privateKey: string
   private publicKey: ParsedKey
 
+  /** Used to catch SIGINT only once. */
+  private started = false
+  /** Used to log "Successfully connected" only once. */
   private connected = false
+
   private ws: WebSocket
   private multiplexer?: Multiplexer
   private forwardedSockets: Set<Socket> = new Set()
@@ -90,6 +94,7 @@ export class Tunnel {
    *   - establish a WebSocket connection to the tunnel service
    */
   public async start(): Promise<TunnelInfo> {
+    this.started = true
     process.addListener('SIGINT', this.handleSIGINT)
 
     this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
@@ -114,6 +119,7 @@ export class Tunnel {
    */
   public async stop(): Promise<void> {
     this.reporter?.log('Shutting down tunnel…')
+    this.started = false
     this.connected = false
 
     this.forwardedSockets.forEach((socket) => {
@@ -358,7 +364,7 @@ export class Tunnel {
   }
 
   private handleSIGINT = () => {
-    if (this.connected) {
+    if (this.started) {
       // The tunnel is connected, so we stop it gracefully – all tests will be aborted.
       this.reporter?.log('Closing tunnel and waiting for results... (press Ctrl+C again to force)')
       void this.stop()
