@@ -387,7 +387,6 @@ export interface OptionsWithUnsupportedFields extends Options {
 }
 
 // TODO SYNTH-17944 Remove unsupported fields
-// I think a bunch of these are front-end specific fields
 interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
   created_at?: any
   created_by?: any
@@ -468,7 +467,9 @@ export interface TriggerInfo {
 }
 
 export interface RetryConfig {
+  /** The number of attempts to perform in case of test failure. */
   count: number
+  /** The interval between attempts in milliseconds. */
   interval: number
 }
 
@@ -479,39 +480,119 @@ export interface MobileApplication {
 }
 
 export interface CookiesObject {
+  /** Whether to append or replace the original cookies. */
   append?: boolean
+  /** Cookie header to add or replace (e.g. `name1=value1;name2=value2;`). */
   value: string
 }
 
 export interface BaseConfigOverride {
+  /** Override the certificate checks in Synthetic API and Browser tests. */
   allowInsecureCertificates?: boolean
+  /** Override the credentials for basic authentication. */
   basicAuth?: BasicAuthCredentials
+  /** Override the data to send in API tests. */
   body?: string
+  /** Override the content type for the data to send in API tests. */
   bodyType?: string
+  /**
+   * Override the cookies for API and browser tests.
+   * - If this is a string, it is used to replace the original cookies.
+   * - If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies.
+   */
   cookies?: string | CookiesObject
+  /**
+   * Override the `Set-Cookie` headers in browser tests only.
+   * - If this is a string, it is used to replace the original `Set-Cookie` headers.
+   * - If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original `Set-Cookie` headers.
+   */
   setCookies?: string | CookiesObject
+  /**
+   * Override the maximum duration of steps in seconds for browser tests. This does not override individually set step timeouts.
+   */
   defaultStepTimeout?: number
+  /** Override the list of devices on which to run the Synthetic tests. */
   deviceIds?: string[]
+  /**
+   * Override the execution rule for Synthetic tests.
+   *
+   * The execution rule for the test defines the behavior of the CI batch in case of a failing test. It accepts one of the following values:
+   *
+   * - `blocking`: A failed test causes the CI batch to fail.
+   * - `non_blocking`: A failed test does not cause the CI batch to fail.
+   * - `skipped`: The test is not run at all.
+   */
   executionRule?: ExecutionRule
+  /** Override whether or not to follow HTTP redirections in API tests. */
   followRedirects?: boolean
+  /**
+   * Override the headers in the API and browser tests.
+   *
+   * This object specifies the headers to be replaced in the test. It should have keys representing the names of the headers to be replaced, and values indicating the new header values.
+   */
   headers?: {[key: string]: string}
+  /** Override the list of locations to run the test from. The possible values are listed [in this API response](https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true). */
   locations?: string[]
+  /**
+   * An array of regex patterns to modify resource URLs in the test. This can be useful for dynamically changing resource URLs during test execution.
+   *
+   * Each regex pattern should be in the format:
+   *
+   * - **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs.
+   *   - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
+   * - **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+   *   - For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
+   */
   resourceUrlSubstitutionRegexes?: string[]
+  /** Override the retry policy for the test. */
   retry?: RetryConfig
+  /**
+   * Override the start URL for API and browser tests.
+   *
+   * Local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) specified in the URL (for example, `{{ URL }}`) are replaced when the test is run.
+   *
+   * You can combine this with the `variables` override to override both the start URL and the variable values. For example:
+   *
+   * ```bash
+   * --override startUrl="{{ URL }}?static_hash={{ STATIC_HASH }}" --override variables.STATIC_HASH=abcdef
+   * ```
+   */
   startUrl?: string
+  /**
+   * A regex to modify the starting URL of browser and HTTP tests, whether it comes from the original test or the `startUrl` override.
+   *
+   * If the URL contains variables, this regex applies after the interpolation of the variables.
+   *
+   * There are two possible formats:
+   *
+   * - **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs.
+   *   - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
+   * - **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+   *   - For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
+   */
   startUrlSubstitutionRegex?: string
+  /** Override the maximum duration in seconds for browser tests. */
   testTimeout?: number
+  /**
+   * Override existing or inject new local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) in Synthetic tests.
+   *
+   * This object should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
+   */
   variables?: {[key: string]: string}
 }
 
 export interface UserConfigOverride extends BaseConfigOverride {
+  /** Override the mobile application version for Synthetic mobile application tests. The version must be uploaded and available within Datadog. */
   mobileApplicationVersion?: string
+  /** Override the application version for Synthetic mobile application tests. */
   mobileApplicationVersionFilePath?: string
 }
 
 export interface ServerConfigOverride extends BaseConfigOverride {
-  mobileApplication?: MobileApplication
+  // Programmatically set with `overrideMobileConfig()`.
   appExtractedMetadata?: MobileAppExtractedMetadata
+  mobileApplication?: MobileApplication
+  // Programmatically set with `tunnel.start()`.
   // XXX: This would be better passed as a batch option in the future since it's always the same for all tests.
   tunnel?: TunnelInfo
 }
@@ -564,10 +645,17 @@ export interface BasicAuthCredentials {
 }
 
 interface BaseTriggerConfig {
+  /** Overrides for this Synthetic test only. This takes precedence over all other overrides. */
   testOverrides?: UserConfigOverride
+  /** Name of a test suite (for JUnit reports). */
   suite?: string
 }
 export interface RemoteTriggerConfig extends BaseTriggerConfig {
+  /**
+   * Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
+   *
+   * @pattern ^(https://.*)?([a-z2-9]{3}-[a-z2-9]{3}-[a-z2-9]{3})$
+   */
   id: string
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
@@ -582,9 +670,7 @@ export enum ExecutionRule {
 }
 
 export interface Suite {
-  content: {
-    tests: TriggerConfig[]
-  }
+  content: TestConfig
   name?: string
 }
 

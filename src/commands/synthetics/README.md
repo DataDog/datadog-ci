@@ -653,8 +653,10 @@ An array of regex patterns to modify resource URLs in the test. This can be usef
 
 Each regex pattern should be in the format:
 
-* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
-* **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
+- **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs.
+  - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
+- **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+  - For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
 
 **Configuration options**
 
@@ -706,8 +708,10 @@ If the URL contains variables, this regex applies after the interpolation of the
 
 There are two possible formats:
 
-* **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs. For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
-* **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers. For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
+- **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs.
+  - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
+- **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+  - For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
 
 **Configuration options**
 
