@@ -56,7 +56,6 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
 ]
 
 export class InstrumentCommand extends Command {
-  // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({

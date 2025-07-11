@@ -17,7 +17,6 @@ import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './ut
 const {ServicesClient} = require('@google-cloud/run')
 
 export class UninstrumentCommand extends Command {
-  // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   public static paths = [['cloud-run', 'uninstrument']]
 
   public static usage = Command.Usage({
