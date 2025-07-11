@@ -38,6 +38,7 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
         llmobsMlApp: 'my-ml-app',
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
 
@@ -84,6 +85,7 @@ describe('instrument', () => {
         layerVersion: 71,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
 
@@ -130,6 +132,7 @@ describe('instrument', () => {
           layerVersion: 11,
           mergeXrayTraces: false,
           tracingEnabled: false,
+          lambdaFips: false,
         }
         const region = 'sa-east-1'
 
@@ -766,7 +769,7 @@ describe('instrument', () => {
       `)
     })
 
-    test('calculates an update request with extension layer with FIPS flag enabled', async () => {
+    test('calculates an update request with extension layer with lambda FIPS flag enabled', async () => {
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       const runtime = Runtime.nodejs20x
       const config = {
@@ -777,11 +780,12 @@ describe('instrument', () => {
       }
       const settings = {
         extensionVersion: 6,
-        fips: true,
+        fips: false,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: true,
       }
       const region = 'sa-east-1'
 

@@ -9,6 +9,7 @@ import {
   EXTRA_TAGS_REG_EXP,
   FIPS_ENV_VAR,
   FIPS_IGNORE_ERROR_ENV_VAR,
+  LAMBDA_FIPS_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
@@ -95,9 +96,11 @@ export class InstrumentCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private lambdaFips = Option.Boolean('--lambda-fips', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+    lambdaFips: toBoolean(process.env[LAMBDA_FIPS_ENV_VAR]) ?? false,
   }
 
   public async execute(): Promise<0 | 1> {
@@ -445,6 +448,7 @@ export class InstrumentCommand extends Command {
       extensionVersion,
       extraTags,
       fips: this.fips || this.fipsConfig.fips,
+      lambdaFips: this.lambdaFips || this.fipsConfig.lambdaFips,
       flushMetricsToLogs,
       forwarderARN,
       interactive,

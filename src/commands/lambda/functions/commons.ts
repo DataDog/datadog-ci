@@ -349,7 +349,7 @@ export const getLayerArn = (
   } else {
     arnBuilt = `arn:aws:lambda:${region}:${account}:layer:${layerName}`
   }
-  if (settings?.fips) {
+  if (settings?.lambdaFips) {
     arnBuilt += '-FIPS'
   }
 
