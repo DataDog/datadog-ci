@@ -15,7 +15,7 @@ describe('upload', () => {
       const command = new UploadCommand()
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
-        `Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`
+        `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
       )
     })
   })
@@ -95,7 +95,6 @@ describe('execute', () => {
     cli.register(UploadCommand)
 
     const context = createMockContext()
-    process.env = getEnvVarPlaceholders()
     const command = [
       'react-native',
       'upload',
@@ -111,12 +110,14 @@ describe('execute', () => {
       'android',
       '--dry-run',
     ]
-    if (options?.uploadBundle !== false) {
-      command.push('--bundle', bundle)
-    }
     if (options?.configPath) {
       command.push('--config', options.configPath)
-      delete process.env.DATADOG_API_KEY
+      process.env = {}
+    } else {
+      process.env = getEnvVarPlaceholders()
+    }
+    if (options?.uploadBundle !== false) {
+      command.push('--bundle', bundle)
     }
     if (options?.env) {
       process.env = {
