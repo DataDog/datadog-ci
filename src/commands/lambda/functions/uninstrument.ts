@@ -14,9 +14,6 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
   DD_TAGS_ENV_VAR,
 } from '../../../constants'
 
@@ -43,6 +40,7 @@ import {
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -200,9 +198,7 @@ export const calculateUpdateRequest = (
     PROFILER_ENV_VAR,
     PROFILER_PATH_ENV_VAR,
     DOTNET_TRACER_HOME_ENV_VAR,
-    DD_LLMOBS_ENABLED_ENV_VAR,
-    DD_LLMOBS_ML_APP_ENV_VAR,
-    DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+    DD_LAMBDA_FIPS_MODE_ENV_VAR,
   ]
   // Remove Environment Variables
   for (const environmentVar of environmentVarsArray) {
@@ -222,7 +218,10 @@ export const calculateUpdateRequest = (
   const originalLayerARNs = getLayers(config)
   const layerARNs = (config.Layers ?? [])
     .filter(
-      (layer) => !layer.Arn?.includes(lambdaLibraryLayerName) && !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)
+      (layer) =>
+        !layer.Arn?.includes(lambdaLibraryLayerName) &&
+        !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
+        !layer.Arn?.includes(`${DD_LAMBDA_EXTENSION_LAYER_NAME}-FIPS`)
     )
     .map((layer) => layer.Arn ?? '')
 

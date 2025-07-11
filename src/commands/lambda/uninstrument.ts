@@ -4,7 +4,7 @@ import {AwsCredentialIdentity} from '@aws-sdk/types'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR, LAMBDA_FIPS_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {requestConfirmation} from '../../helpers/prompt'
@@ -71,9 +71,11 @@ export class UninstrumentCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private lambdaFips = Option.Boolean('--lambda-fips', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+    lambdaFips: toBoolean(process.env[LAMBDA_FIPS_ENV_VAR]) ?? false,
   }
 
   public async execute(): Promise<0 | 1> {

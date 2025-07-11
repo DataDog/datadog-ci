@@ -65,6 +65,7 @@ describe('instrument', () => {
         // No layerVersion specified
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
 
       const result = await getInstrumentedFunctionConfig(
@@ -94,6 +95,7 @@ describe('instrument', () => {
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
 
       const instrumentedConfig = getInstrumentedFunctionConfig(
@@ -128,6 +130,7 @@ describe('instrument', () => {
         layerVersion: 23,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
 
       const result = await getInstrumentedFunctionConfig(

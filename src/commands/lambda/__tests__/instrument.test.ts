@@ -1330,6 +1330,8 @@ describe('lambda', () => {
           environment: undefined,
           extensionVersion: 6,
           extraTags: undefined,
+          fips: false,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           interactive: false,
@@ -1373,6 +1375,11 @@ describe('lambda', () => {
           appsecEnabled: false,
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
+          environment: undefined,
+          extensionVersion: undefined,
+          extraTags: undefined,
+          fips: false,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           interactive: false,
@@ -1381,7 +1388,9 @@ describe('lambda', () => {
           loggingEnabled: true,
           logLevel: 'debug',
           mergeXrayTraces: true,
+          service: undefined,
           tracingEnabled: true,
+          version: undefined,
           llmobsMlApp: 'my-ml-app',
         })
       })
@@ -1414,18 +1423,26 @@ describe('lambda', () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
+          apmFlushDeadline: undefined,
           appsecEnabled: false,
           captureLambdaPayload: true,
+          environment: undefined,
           extensionVersion: undefined,
+          extraTags: undefined,
+          fips: false,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: undefined,
           interactive: false,
           layerAWSAccount: undefined,
           layerVersion: undefined,
+          llmobsMlApp: undefined,
           loggingEnabled: true,
           logLevel: undefined,
           mergeXrayTraces: false,
+          service: undefined,
           tracingEnabled: true,
+          version: undefined,
         }
         command['config']['captureLambdaPayload'] = 'truE'
         command['config']['flushMetricsToLogs'] = 'False'
