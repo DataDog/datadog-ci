@@ -56,7 +56,6 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
 ]
 
 export class InstrumentCommand extends Command {
-  // TODO add to docs: https://github.com/DataDog/datadog-ci#cloud-run
   public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({
@@ -111,7 +110,7 @@ export class InstrumentCommand extends Command {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to 1.`,
   })
   private sidecarMemory = Option.String('--sidecar-memory', '512Mi', {
-    description: `The number of CPUs to allocate to the sidecar container. Defaults to '512Mi'.`,
+    description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
   })
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -129,16 +128,17 @@ export class InstrumentCommand extends Command {
     )
 
     // Verify DD API Key
+    const site = process.env.DD_SITE ?? DATADOG_SITE_US1
     const isApiKeyValid = await newApiKeyValidator({
       apiKey: process.env.DD_API_KEY,
-      datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+      datadogSite: site,
     }).validateApiKey()
     if (!isApiKeyValid) {
       this.context.stdout.write(
         renderSoftWarning(
           `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
             process.env.DD_API_KEY ?? ''
-          )}\nEnsure you copied the value and not the Key ID.`
+          )} and ${chalk.bold('DD_SITE')}: ${site}\nEnsure you've set both DD_API_KEY and DD_SITE.`
         )
       )
 
