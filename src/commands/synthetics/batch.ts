@@ -107,7 +107,7 @@ export const waitForResults = async (
   const results = await waitForBatchToFinish(api, trigger.batch_id, options.batchTimeout, resultDisplayInfo, reporter)
 
   if (tunnel && !isTunnelConnected) {
-    reporter.error('The tunnel has stopped working, this may have affected the results.')
+    reporter.error('The tunnel was closed during execution, this may have affected the results.\n')
   }
 
   return results

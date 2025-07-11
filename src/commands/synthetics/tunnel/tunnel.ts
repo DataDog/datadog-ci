@@ -118,10 +118,7 @@ export class Tunnel {
    * stop the tunnel
    */
   public async stop(): Promise<void> {
-    this.reporter?.log('Shutting down tunnel…')
-    this.started = false
     this.connected = false
-
     this.forwardedSockets.forEach((socket) => {
       if (!!socket) {
         socket.destroy()
@@ -129,6 +126,11 @@ export class Tunnel {
     })
 
     await this.ws.close()
+
+    if (this.started) {
+      this.reporter?.log('Tunnel closed.')
+      this.started = false
+    }
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
