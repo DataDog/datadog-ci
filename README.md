@@ -91,6 +91,7 @@ See each command's linked README for more details, or click on [📚](https://do
 #### `stepfunctions`
 - `instrument`: Instrument [AWS Step Function](src/commands/stepfunctions) with Datadog to get logs and traces. [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
 - `uninstrument`: Uninstrument [AWS Step Function](src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
+- `flare`: Gather [AWS Step Function](src/commands/stepfunctions) configuration, execution history, and logs for Datadog support. [📚](src/commands/stepfunctions/README.md#flare)
 
 #### `synthetics`
 - `run-tests`: Run [Continuous Testing tests](src/commands/synthetics) from the CI. [📚](https://docs.datadoghq.com/continuous_testing/)
