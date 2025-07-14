@@ -337,17 +337,17 @@ export const getLayerArn = (
   region: string,
   settings?: InstrumentationSettings
 ): string => {
-  let layerName = LAYER_LOOKUP[layer]
+  let layerNameSuffix = LAYER_LOOKUP[layer]
   if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
-    layerName += ARM_LAYER_SUFFIX
+    layerNameSuffix += ARM_LAYER_SUFFIX
   }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
   let arnBuilt
   if (isGovCloud) {
-    arnBuilt = `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerName}`
+    arnBuilt = `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerNameSuffix}`
   } else {
-    arnBuilt = `arn:aws:lambda:${region}:${account}:layer:${layerName}`
+    arnBuilt = `arn:aws:lambda:${region}:${account}:layer:${layerNameSuffix}`
   }
   if (settings?.lambdaFips) {
     arnBuilt += '-FIPS'
