@@ -1,4 +1,4 @@
-import type {IService, ServicesClient as IServicesClient} from './types'
+import type {IService, IJob, ServicesClient as IServicesClient, JobsClient as IJobsClient} from './types'
 
 import chalk from 'chalk'
 import {GoogleAuth} from 'google-auth-library'
@@ -116,4 +116,30 @@ export const fetchServiceConfigs = async (
   }
 
   return existingServiceConfigs
+}
+
+export const fetchJobConfigs = async (client: IJobsClient, project: string, region: string, jobs: string[]) => {
+  const existingJobConfigs: IJob[] = []
+  for (const jobName of jobs) {
+    const jobPath = client.jobPath(project, region, jobName)
+
+    const existingJob = await withSpinner(
+      `Fetching configuration for ${chalk.bold(jobName)}...`,
+      async () => {
+        try {
+          const [job] = await client.getJob({name: jobPath})
+
+          return job
+        } catch (error) {
+          throw new Error(
+            `Job ${jobName} not found in project ${project}, region ${region}.\n\nNo jobs were instrumented.\n`
+          )
+        }
+      },
+      `Fetched job configuration for ${chalk.bold(jobName)}`
+    )
+    existingJobConfigs.push(existingJob)
+  }
+
+  return existingJobConfigs
 }

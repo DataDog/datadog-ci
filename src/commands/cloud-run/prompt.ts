@@ -57,6 +57,23 @@ export const requestServiceName = async (): Promise<string> => {
   return answer.serviceName
 }
 
+export const requestJobName = async (): Promise<string> => {
+  const answer = await inquirer.prompt({
+    message: 'Enter Cloud Run job name:',
+    name: 'jobName',
+    type: 'input',
+    validate: (value: string) => {
+      if (!value || value.trim().length === 0) {
+        return 'Job name is required.'
+      }
+
+      return true
+    },
+  })
+
+  return answer.jobName
+}
+
 export const requestSite = async (): Promise<string> => {
   const answer = await inquirer.prompt({
     choices: DATADOG_SITES,

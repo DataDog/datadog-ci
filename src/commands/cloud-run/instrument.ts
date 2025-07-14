@@ -1,4 +1,14 @@
-import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from './types'
+import type {
+  IContainer,
+  IEnvVar,
+  IService,
+  IJob,
+  IJobTemplate,
+  IVolume,
+  IVolumeMount,
+  ServicesClient as IServicesClient,
+  JobsClient as IJobsClient,
+} from './types'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -35,10 +45,10 @@ import {isValidDatadogSite} from '../../helpers/validation'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
-import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
+import {checkAuthentication, fetchServiceConfigs, fetchJobConfigs, generateConfigDiff} from './utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
-const {ServicesClient} = require('@google-cloud/run')
+const {ServicesClient, JobsClient} = require('@google-cloud/run')
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
@@ -60,7 +70,7 @@ export class InstrumentCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Apply Datadog instrumentation to a Cloud Run app.',
+    description: 'Apply Datadog instrumentation to a Cloud Run service or job.',
   })
 
   // private configPath = Option.String('--config') implement if requested by customers
@@ -72,6 +82,9 @@ export class InstrumentCommand extends Command {
   })
   private services = Option.Array('-s,--service,--services', [], {
     description: 'Cloud Run service(s) to instrument',
+  })
+  private jobs = Option.Array('-j,--job,--jobs', [], {
+    description: 'Cloud Run job(s) to instrument',
   })
   private interactive = Option.Boolean('-i,--interactive', false, {
     description: 'Prompt for flags one at a time',
@@ -154,7 +167,7 @@ export class InstrumentCommand extends Command {
         this.region = await requestGCPRegion()
       }
 
-      if (this.services.length === 0) {
+      if (this.services.length === 0 && this.jobs.length === 0) {
         const serviceName = await requestServiceName()
         this.services = [serviceName]
       }
@@ -169,8 +182,15 @@ export class InstrumentCommand extends Command {
     if (!this.project) {
       this.context.stdout.write(chalk.yellow('Invalid or missing project. Please use the --project flag.\n'))
     }
-    if (this.services.length === 0) {
-      this.context.stdout.write(chalk.yellow('Invalid or missing service(s). Please use the --service flag.\n'))
+    if (this.services.length > 0 && this.jobs.length > 0) {
+      this.context.stdout.write(
+        chalk.yellow('Cannot specify both services and jobs. Please use either --service or --job flags, not both.\n')
+      )
+    }
+    if (this.services.length === 0 && this.jobs.length === 0) {
+      this.context.stdout.write(
+        chalk.yellow('Invalid or missing service(s) or job(s). Please use either the --service or --job flag.\n')
+      )
     }
     if (!this.region) {
       this.context.stdout.write(chalk.yellow('Invalid or missing region. Please use the --region flag.\n'))
@@ -187,7 +207,12 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    if (!this.project || !this.services || !this.services.length || !this.region) {
+    if (
+      !this.project ||
+      (this.services.length === 0 && this.jobs.length === 0) ||
+      !this.region ||
+      (this.services.length > 0 && this.jobs.length > 0)
+    ) {
       return 1
     }
     this.context.stdout.write(chalk.green('✔ Required flags verified\n'))
@@ -206,11 +231,15 @@ export class InstrumentCommand extends Command {
       this.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, this.extraTags)
     }
 
-    // Instrument services with sidecar
+    // Instrument services or jobs with sidecar
     try {
-      await this.instrumentSidecar(this.project, this.services, this.region, ddService)
+      if (this.services.length > 0) {
+        await this.instrumentSidecar(this.project, this.services, this.region, ddService)
+      } else {
+        await this.instrumentJobSidecar(this.project, this.jobs, this.region, ddService)
+      }
     } catch (error) {
-      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Uninstrumentation failed: ${error}\n`))
+      this.context.stderr.write(dryRunPrefix(this.dryRun) + renderError(`Instrumentation failed: ${error}\n`))
 
       return 1
     }
@@ -242,6 +271,32 @@ export class InstrumentCommand extends Command {
       } catch (error) {
         this.context.stderr.write(
           dryRunPrefix(this.dryRun) + renderError(`Failed to instrument service ${serviceName}: ${error}\n`)
+        )
+        throw error
+      }
+    }
+  }
+
+  public async instrumentJobSidecar(project: string, jobs: string[], region: string, ddService: string | undefined) {
+    const client: IJobsClient = new JobsClient()
+
+    this.context.stdout.write(
+      chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing job configurations from Cloud Run...\n`)
+    )
+    const existingJobConfigs = await fetchJobConfigs(client, project, region, jobs)
+
+    this.context.stdout.write(
+      chalk.bold(`\n${dryRunPrefix(this.dryRun)}🚀 Instrumenting Cloud Run jobs with sidecar...\n`)
+    )
+    for (let i = 0; i < existingJobConfigs.length; i++) {
+      const jobConfig = existingJobConfigs[i]
+      const jobName = jobs[i]
+      try {
+        const actualDDService = ddService ?? jobName
+        await this.instrumentJob(client, jobConfig, jobName, actualDDService)
+      } catch (error) {
+        this.context.stderr.write(
+          dryRunPrefix(this.dryRun) + renderError(`Failed to instrument job ${jobName}: ${error}\n`)
         )
         throw error
       }
@@ -280,6 +335,34 @@ export class InstrumentCommand extends Command {
         await operation.promise()
       },
       `Instrumented service ${chalk.bold(serviceName)}`
+    )
+  }
+
+  public async instrumentJob(client: IJobsClient, existingJob: IJob, jobName: string, ddService: string) {
+    const updatedJob = this.createInstrumentedJobConfig(existingJob, ddService)
+    this.context.stdout.write(generateConfigDiff(existingJob, updatedJob))
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `\n\n${dryRunPrefix(this.dryRun)}Would have updated job ${chalk.bold(jobName)} with the above changes.\n`
+      )
+
+      return
+    } else if (this.interactive) {
+      const confirmed = await requestConfirmation('\nDo you want to apply the changes?')
+      if (!confirmed) {
+        throw new Error('Instrumentation cancelled by user.')
+      }
+    }
+
+    await withSpinner(
+      `Instrumenting job ${chalk.bold(jobName)}...`,
+      async () => {
+        const [operation] = await client.updateJob({
+          job: updatedJob,
+        })
+        await operation.promise()
+      },
+      `Instrumented job ${chalk.bold(jobName)}`
     )
   }
 
@@ -328,6 +411,56 @@ export class InstrumentCommand extends Command {
         // Let GCR generate the next revision name
         revision: undefined,
       },
+    }
+  }
+
+  public createInstrumentedJobConfig(job: IJob, ddService: string): IJob {
+    const template: IJobTemplate = job.template || {}
+    const innerTemplate = template.template || {}
+    const containers: IContainer[] = innerTemplate.containers || []
+    const volumes: IVolume[] = innerTemplate.volumes || []
+
+    const existingSidecarContainer = containers.find((c) => c.name === this.sidecarName)
+    const newSidecarContainer = this.buildSidecarContainer(existingSidecarContainer, ddService)
+
+    // Update all app containers to add volume mounts and env vars if they don't have them
+    const updatedContainers = containers.map((container) => {
+      if (container.name === this.sidecarName) {
+        return newSidecarContainer
+      }
+
+      return this.updateAppContainer(container, ddService)
+    })
+
+    // Add sidecar if it doesn't exist
+    if (!existingSidecarContainer) {
+      updatedContainers.push(newSidecarContainer)
+    }
+
+    // Add shared volume if it doesn't exist
+    const hasSharedVolume = volumes.some((volume) => volume.name === this.sharedVolumeName)
+    const updatedVolumes = hasSharedVolume
+      ? volumes
+      : [
+          ...volumes,
+          {
+            name: this.sharedVolumeName,
+            emptyDir: {
+              medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
+            },
+          },
+        ]
+
+    return {
+      ...job,
+      template: {
+        ...template,
+        template: {
+          ...innerTemplate,
+          containers: updatedContainers,
+          volumes: updatedVolumes,
+        },
+      } as IJobTemplate,
     }
   }
 
