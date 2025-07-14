@@ -180,7 +180,7 @@ CLI param: `--fips-ignore-error`
 
 #### `lambda-fips`
 
-This option is used to enable FIPS support in the lambda functions deployed using this tool. Note that for full FIPS compliance, a FIPS endpoint such as `ddog-gov.com` is required.
+This option is used to enable FIPS support in the Lambda functions deployed using this tool. Note that for full FIPS compliance, a FIPS endpoint such as `ddog-gov.com` is required.
 
 ENV variable: `DATADOG_LAMBDA_FIPS=true`
 CLI param: `--lambda-fips`
