@@ -37,6 +37,11 @@ describe('utils', () => {
       expect(validateCoverageReport(filePath, lcovFormat)).toBeUndefined()
     })
 
+    test('Returns undefined for a valid lcov Bazel report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/lcov.info'
+      expect(validateCoverageReport(filePath, lcovFormat)).toBeUndefined()
+    })
+
     test('Returns error message for an invalid lcov report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/invalid.lcov'
       expect(validateCoverageReport(filePath, lcovFormat)).toMatch(/.+/)
