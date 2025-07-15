@@ -639,6 +639,38 @@ Restarting Azure App Service my-web-app
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
+          DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        },
+      })
+    })
+
+    test('adds musl .NET settings when the config options are specified', async () => {
+      await command.instrumentSidecar(client, {...DEFAULT_CONFIG, isDotnet: true, isMusl: true}, 'rg', 'app')
+
+      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
+        image: 'index.docker.io/datadog/serverless-init:latest',
+        targetPort: '8126',
+        isMain: false,
+        environmentVariables: expect.arrayContaining([
+          {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+          {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
+          {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
+          {name: 'CORECLR_ENABLE_PROFILING', value: 'CORECLR_ENABLE_PROFILING'},
+          {name: 'CORECLR_PROFILER', value: 'CORECLR_PROFILER'},
+          {name: 'CORECLR_PROFILER_PATH', value: 'CORECLR_PROFILER_PATH'},
+        ]),
+      })
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('rg', 'app', {
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          CORECLR_ENABLE_PROFILING: '1',
+          CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
           DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',

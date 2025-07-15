@@ -17,6 +17,7 @@ import {
   formatError,
   getEnvVars,
   isDotnet,
+  isLinuxContainer,
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
   SIDECAR_PORT,
@@ -54,6 +55,10 @@ export class InstrumentCommand extends AasCommand {
     description:
       'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
+  private isMusl = Option.Boolean('--musl', false, {
+    description:
+      'Add in required .NET-specific configuration options for musl-based .NET apps. This should be specified if you are using a containerized .NET app on a musl-based distribution like Alpine Linux.',
+  })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
@@ -77,6 +82,7 @@ export class InstrumentCommand extends AasCommand {
       logPath: this.logPath,
       shouldNotRestart: this.shouldNotRestart,
       isDotnet: this.isDotnet,
+      isMusl: this.isMusl,
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
@@ -172,7 +178,7 @@ export class InstrumentCommand extends AasCommand {
 
       await this.instrumentSidecar(
         aasClient,
-        {...config, isDotnet: config.isDotnet || isDotnet(site)},
+        {...config, isDotnet: config.isDotnet || isDotnet(site), isMusl: config.isMusl && isLinuxContainer(site)},
         resourceGroup,
         aasName
       )
