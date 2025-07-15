@@ -138,8 +138,6 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
-    this.context.stderr.write(`Ignored paths: ${parsePathsList(this.ignoredPaths)}\n`)
-
     if (this.format && !isCoverageFormat(this.format)) {
       this.context.stderr.write(
         `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
