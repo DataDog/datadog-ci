@@ -227,7 +227,7 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
 
   if (format === lcovFormat) {
     const content = fs.readFileSync(filePath, 'utf8')
-    if (!content.startsWith('TN:') || content.startsWith('SF:')) {
+    if (!content.startsWith('TN:') && !content.startsWith('SF:')) {
       return 'Invalid LCOV report: must start with TN: or SF:'
     }
 

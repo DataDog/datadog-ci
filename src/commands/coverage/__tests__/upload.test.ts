@@ -194,8 +194,9 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
       const fileNames = Object.values(result).flatMap((paths) => paths)
-      expect(fileNames.length).toEqual(1)
+      expect(fileNames.length).toEqual(2)
       expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/lcov.info')
+      expect(fileNames).toContain('./src/commands/coverage/__tests__/fixtures/lcov-bazel.info')
     })
 
     test('should fetch nested folders and ignore files that are not coverage reports', () => {
