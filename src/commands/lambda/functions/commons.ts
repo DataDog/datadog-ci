@@ -341,6 +341,9 @@ export const getLayerArn = (
   if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerNameSuffix += ARM_LAYER_SUFFIX
   }
+  if (settings?.lambdaFips) {
+    layerNameSuffix += '-FIPS'
+  }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
   let arnBuilt
@@ -348,9 +351,6 @@ export const getLayerArn = (
     arnBuilt = `arn:aws-us-gov:lambda:${region}:${GOVCLOUD_LAYER_AWS_ACCOUNT}:layer:${layerNameSuffix}`
   } else {
     arnBuilt = `arn:aws:lambda:${region}:${account}:layer:${layerNameSuffix}`
-  }
-  if (settings?.lambdaFips) {
-    arnBuilt += '-FIPS'
   }
 
   return arnBuilt
