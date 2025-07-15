@@ -210,7 +210,6 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
-    DD_PROFILING_ENABLED: (config.isProfilingEnabled ?? true).toString(),
     ...parseEnvVars(config.envVars),
   }
   if (config.service) {
