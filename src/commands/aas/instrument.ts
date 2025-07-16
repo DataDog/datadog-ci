@@ -187,7 +187,11 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       }
       await this.instrumentSidecar(
         aasClient,
-        {...config, isDotnet: config.isDotnet || isDotnet(site), isMusl: config.isMusl && isContainer},
+        {
+          ...config,
+          isDotnet: config.isDotnet || isDotnet(site),
+          isMusl: config.isMusl && config.isDotnet && isContainer,
+        },
         resourceGroup,
         aasName
       )

@@ -129,6 +129,12 @@ export abstract class AasCommand extends Command {
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
+    // Validate musl setting
+    if (config.isMusl && !config.isDotnet) {
+      errors.push(
+        '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
+      )
+    }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified
     if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
