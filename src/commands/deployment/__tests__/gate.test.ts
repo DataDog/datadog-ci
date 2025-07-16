@@ -89,19 +89,12 @@ describe('gate', () => {
           requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
           getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('pass')),
         }
-
         const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
         const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
         expect(code).toBe(0)
-        expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-        expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-        expect(context.stdout.toString()).toContain(
-          'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-        )
-        expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-        expect(context.stdout.toString()).toContain('Gate evaluation passed')
+        expect(context.stdout.toString()).toMatchSnapshot()
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -123,7 +116,6 @@ describe('gate', () => {
             .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress'))
             .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass')),
         }
-
         const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
         const runPromise = runCLI(['--service', 'test-service', '--env', 'prod'])
@@ -134,13 +126,7 @@ describe('gate', () => {
         const {context, code} = await runPromise
 
         expect(code).toBe(0)
-        expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-        expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-        expect(context.stdout.toString()).toContain(
-          'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-        )
-        expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-        expect(context.stdout.toString()).toContain('Gate evaluation passed')
+        expect(context.stdout.toString()).toMatchSnapshot()
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -160,19 +146,12 @@ describe('gate', () => {
           requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
           getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('fail')),
         }
-
         const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
         const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
         expect(code).toBe(1)
-        expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-        expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-        expect(context.stdout.toString()).toContain(
-          'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-        )
-        expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-        expect(context.stdout.toString()).toContain('Gate evaluation failed')
+        expect(context.stdout.toString()).toMatchSnapshot()
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -200,7 +179,6 @@ describe('gate', () => {
             requestGateEvaluation: jest.fn().mockRejectedValue(mockError),
             getGateEvaluationResult: jest.fn(),
           }
-
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
@@ -228,16 +206,12 @@ describe('gate', () => {
             requestGateEvaluation: jest.fn().mockRejectedValue(mockError),
             getGateEvaluationResult: jest.fn(),
           }
-
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
           expect(code).toBe(0)
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain('Deployment gate evaluation failed:')
-          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 0')
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -262,10 +236,7 @@ describe('gate', () => {
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod', '--fail-on-error'])
 
           expect(code).toBe(1)
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain('Deployment gate evaluation failed:')
-          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 1')
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -280,19 +251,12 @@ describe('gate', () => {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
             getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
           }
-
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
-          expect(code).toBe(0) // Default behavior when fail-on-error is false
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain(
-            'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-          )
-          expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-          expect(context.stdout.toString()).toContain('Error polling for gate evaluation results: API Error')
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -311,22 +275,12 @@ describe('gate', () => {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
             getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
           }
-
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod', '--fail-on-error'])
 
           expect(code).toBe(1)
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain(
-            'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-          )
-          expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-          expect(context.stdout.toString()).toContain(
-            'Error polling for gate evaluation results: Request failed with status code 500'
-          )
-          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 1')
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -338,19 +292,12 @@ describe('gate', () => {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
             getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('expired')),
           }
-
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
-          expect(code).toBe(0) // Default behavior when fail-on-error is false
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain(
-            'Gate evaluation started successfully. Evaluation ID: test-evaluation-id'
-          )
-          expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
-          expect(context.stdout.toString()).toContain('Unknown gate evaluation status: expired')
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
