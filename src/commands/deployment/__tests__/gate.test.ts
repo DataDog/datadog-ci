@@ -11,6 +11,7 @@ describe('gate', () => {
 
     beforeEach(() => {
       originalEnv = {...process.env}
+      process.env.DATADOG_SITE = 'datadoghq.com'
       process.env.DATADOG_API_KEY = 'test-api-key'
       process.env.DATADOG_APP_KEY = 'test-app-key'
 
@@ -94,7 +95,7 @@ describe('gate', () => {
       expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
       expect(context.stdout.toString()).toContain('Gate evaluation passed')
 
-      expect(apiConstructorSpy).toHaveBeenCalledWith('https://app.datad0g.com', 'test-api-key', 'test-app-key')
+      expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
       expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
       expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
         service: 'test-service',
@@ -156,7 +157,7 @@ describe('gate', () => {
       expect(context.stdout.toString()).toContain('Waiting for gate evaluation results...')
       expect(context.stdout.toString()).toContain('Gate evaluation failed')
 
-      expect(apiConstructorSpy).toHaveBeenCalledWith('https://app.datad0g.com', 'test-api-key', 'test-app-key')
+      expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
       expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
       expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
         service: 'test-service',
