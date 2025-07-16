@@ -13,16 +13,22 @@ const buildEvaluationRequestResponse = (evaluationId: string) => ({
   },
 })
 
-const buildGateEvaluationResultResponse = (status: string, rules: {status: string}[] = []) => ({
-  data: {
+const buildGateEvaluationResultResponse = (status: string, rules: {status: string}[] | undefined = undefined) => {
+  if (rules === undefined) {
+    rules = [{status: 'pass'}]
+  }
+
+  return {
     data: {
-      attributes: {
-        gate_status: status,
-        rules,
+      data: {
+        attributes: {
+          gate_status: status,
+          rules,
+        },
       },
     },
-  },
-})
+  }
+}
 
 describe('gate', () => {
   describe('execute', () => {

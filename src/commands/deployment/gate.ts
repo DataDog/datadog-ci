@@ -147,7 +147,7 @@ export class DeploymentGateCommand extends Command {
       this.logger.info(`\tAPM Primary Tag: ${this.apmPrimaryTag}`)
     }
     this.logger.info(`\tTimeout: ${timeoutSeconds} seconds`)
-    this.logger.info(`\tFail on error: ${this.failOnError ? 'true' : 'false'}`)
+    this.logger.info(`\tFail on error: ${this.failOnError ? 'true' : 'false'}\n`)
 
     try {
       const api = this.getApiHelper(this.config.apiKey, this.config.appKey)
@@ -202,7 +202,7 @@ export class DeploymentGateCommand extends Command {
     try {
       const response = await api.requestGateEvaluation(request)
       const evaluationId = response.data.data.attributes.evaluation_id
-      this.logger.info(chalk.green(`Gate evaluation started successfully. Evaluation ID: ${evaluationId}`))
+      this.logger.info(chalk.green(`Gate evaluation started successfully. Evaluation ID: ${evaluationId}\n`))
 
       return evaluationId
     } catch (error) {
@@ -268,7 +268,7 @@ export class DeploymentGateCommand extends Command {
             await new Promise((resolve) => setTimeout(resolve, waitTime))
             continue
           default:
-            throw new Error(`\t${ICONS.FAILED} Unknown gate evaluation status: ${status}`)
+            throw new Error(`Unknown gate evaluation status: ${status}`)
         }
       } catch (error) {
         this.logger.error(

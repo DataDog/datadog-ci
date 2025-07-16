@@ -7,6 +7,7 @@ exports[`gate execute evaluation errors on gate evaluation request should fail w
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: true
+
 Requesting gate evaluation...
 Request failed with client error: 500 Internal Server Error
 Deployment gate evaluation failed: Request failed with status code 500
@@ -21,6 +22,7 @@ exports[`gate execute evaluation errors on gate evaluation request should pass w
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Request failed with client error: 500 Internal Server Error
 Deployment gate evaluation failed: Request failed with status code 500
@@ -35,8 +37,10 @@ exports[`gate execute evaluation errors on gate evaluation result pass with a 50
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
 Error polling for gate evaluation results: API Error
 Unexpected error happened, exiting with status 0
@@ -50,8 +54,10 @@ exports[`gate execute evaluation errors on gate evaluation result should fail wi
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: true
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
 Error polling for gate evaluation results: Request failed with status code 500
 Unexpected error happened, exiting with status 1
@@ -65,10 +71,12 @@ exports[`gate execute evaluation errors on gate evaluation result should handle 
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
-Error polling for gate evaluation results: 	❌ Unknown gate evaluation status: expired
+Error polling for gate evaluation results: Unknown gate evaluation status: expired
 Unexpected error happened, exiting with status 0
 "
 `;
@@ -80,8 +88,10 @@ exports[`gate execute successful evaluation should fail when gate evaluation fai
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
 	❌ Gate evaluation failed
 "
@@ -94,11 +104,13 @@ exports[`gate execute successful evaluation should pass when gate evaluation pas
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
-	Gate evaluation in progress (0/0 rules completed). Retrying in 15s...
-	Gate evaluation in progress (0/0 rules completed). Retrying in 15s...
+	Gate evaluation in progress (1/1 rules completed). Retrying in 15s...
+	Gate evaluation in progress (1/1 rules completed). Retrying in 15s...
 	✅ Gate evaluation passed
 "
 `;
@@ -110,8 +122,10 @@ exports[`gate execute successful evaluation should succeed when gate evaluation 
 	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
+
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
 Waiting for gate evaluation results...
 	✅ Gate evaluation passed
 "
