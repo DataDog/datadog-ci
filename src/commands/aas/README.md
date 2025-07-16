@@ -45,6 +45,10 @@ datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-
 
 # Specify Unified Service Tagging
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --service <service-name> --env <environment-name> --version <version-name>
+
+# Ensure .NET settings are added for a containerized app
+# Note: .NET settings are automatically added for .NET runtime apps
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dotnet
 ```
 
 ### `uninstrument`
