@@ -13,11 +13,12 @@ const buildEvaluationRequestResponse = (evaluationId: string) => ({
   },
 })
 
-const buildGateEvaluationResultResponse = (status: string) => ({
+const buildGateEvaluationResultResponse = (status: string, rules: {status: string}[] = []) => ({
   data: {
     data: {
       attributes: {
         gate_status: status,
+        rules,
       },
     },
   },
@@ -188,14 +189,13 @@ describe('gate', () => {
     describe('evaluation errors', () => {
       describe('on gate evaluation request', () => {
         test('should fail when gate evaluation request fails with 400', async () => {
-          const mockError = {
+          const mockError = Object.assign(new Error('Request failed with status code 400'), {
             isAxiosError: true,
-            message: 'Request failed with status code 400',
             response: {
               status: 400,
               statusText: 'Bad Request',
             },
-          }
+          })
           const mockApi = {
             requestGateEvaluation: jest.fn().mockRejectedValue(mockError),
             getGateEvaluationResult: jest.fn(),
@@ -209,7 +209,7 @@ describe('gate', () => {
           expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
           expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
           expect(context.stdout.toString()).toContain('Request failed with client error: 400 Bad Request')
-          expect(context.stdout.toString()).toContain('Request failed with client error, failing with status 1 (fail)')
+          expect(context.stdout.toString()).toContain('Request failed with client error, exiting with status 1')
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -217,14 +217,13 @@ describe('gate', () => {
         })
 
         test('should pass when gate evaluation request fails with 500', async () => {
-          const mockError = {
+          const mockError = Object.assign(new Error('Request failed with status code 500'), {
             isAxiosError: true,
-            message: 'Request failed with status code 500',
             response: {
               status: 500,
               statusText: 'Internal Server Error',
             },
-          }
+          })
           const mockApi = {
             requestGateEvaluation: jest.fn().mockRejectedValue(mockError),
             getGateEvaluationResult: jest.fn(),
@@ -238,7 +237,7 @@ describe('gate', () => {
           expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
           expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
           expect(context.stdout.toString()).toContain('Deployment gate evaluation failed:')
-          expect(context.stdout.toString()).toContain('--fail-on-error is false, exiting with status 0 (pass)')
+          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 0')
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -246,14 +245,13 @@ describe('gate', () => {
         })
 
         test('should fail when gate evaluation request fails with 500 and fail-on-error is true', async () => {
-          const mockError = {
+          const mockError = Object.assign(new Error('Request failed with status code 500'), {
             isAxiosError: true,
-            message: 'Request failed with status code 500',
             response: {
               status: 500,
               statusText: 'Internal Server Error',
             },
-          }
+          })
           const mockApi = {
             requestGateEvaluation: jest.fn().mockRejectedValue(mockError),
             getGateEvaluationResult: jest.fn(),
@@ -267,7 +265,7 @@ describe('gate', () => {
           expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
           expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
           expect(context.stdout.toString()).toContain('Deployment gate evaluation failed:')
-          expect(context.stdout.toString()).toContain('--fail-on-error is true, failing with status 1 (fail)')
+          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 1')
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -328,7 +326,7 @@ describe('gate', () => {
           expect(context.stdout.toString()).toContain(
             'Error polling for gate evaluation results: Request failed with status code 500'
           )
-          expect(context.stdout.toString()).toContain('--fail-on-error is true, failing with status 1 (fail)')
+          expect(context.stdout.toString()).toContain('Unexpected error happened, exiting with status 1')
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)

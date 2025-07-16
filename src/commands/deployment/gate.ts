@@ -14,9 +14,9 @@ import {apiConstructor} from './api'
 import {APIHelper, GateEvaluationRequest} from './interfaces'
 
 /**
- * This command evaluates deployment gates in Datadog.
+ * This command allows to evaluate a deployment gate in Datadog.
  * It handles the entire process of requesting a gate evaluation and polling for results
- * with robust error handling and retry logic.
+ * The command will exit with status 0 when the gate passes and status 1 otherwise.
  */
 export class DeploymentGateCommand extends Command {
   public static paths = [['deployment', 'gate']]
@@ -25,9 +25,7 @@ export class DeploymentGateCommand extends Command {
     category: 'CI Visibility',
     description: 'Evaluate deployment gates in Datadog.',
     details: `
-      This command evaluates deployment gates in Datadog.\n
-      It handles the entire process of requesting a gate evaluation and polling for results
-      with robust error handling and retry logic.\n
+      This command allows to evaluate a deployment gate in Datadog.
       The command will exit with status 0 when the gate passes and status 1 otherwise.
     `,
     examples: [
@@ -40,7 +38,7 @@ export class DeploymentGateCommand extends Command {
         'datadog-ci deployment gate --service payments-backend --env prod --timeout 7200',
       ],
       [
-        'Evaluate a deployment gate that fails on errors',
+        'Evaluate a deployment gate and fail if an error occurs',
         'datadog-ci deployment gate --service payments-backend --env prod --fail-on-error',
       ],
       [
@@ -52,11 +50,11 @@ export class DeploymentGateCommand extends Command {
 
   // Required parameters
   private service = Option.String('--service', {
-    description: 'The service name (e.g., payments-backend)',
+    description: 'The service name (e.g. payments-backend)',
     validator: t.isString(),
   })
   private env = Option.String('--env', {
-    description: 'The environment name (e.g., prod, staging)',
+    description: 'The environment name (e.g. prod, staging)',
     validator: t.isString(),
   })
 
@@ -75,14 +73,13 @@ export class DeploymentGateCommand extends Command {
     validator: t.isString(),
   })
   private failOnError = Option.Boolean('--fail-on-error', false, {
-    description: 'When true, the script will consider the gate as failed when timeout is reached or errors occur',
+    description:
+      'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
   })
 
   // FIPS options
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-
-  private pollingInterval = 15000
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
@@ -92,6 +89,7 @@ export class DeploymentGateCommand extends Command {
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
+  private pollingInterval = 15000
   private startTime: number = Date.now()
 
   public async execute() {
@@ -138,7 +136,7 @@ export class DeploymentGateCommand extends Command {
       return 1
     }
 
-    this.logger.info('Starting deployment gate evaluation with params:')
+    this.logger.info('Starting deployment gate evaluation with parameters:')
     this.logger.info(`\tService: ${this.service}`)
     this.logger.info(`\tEnvironment: ${this.env}`)
     this.logger.info(`\tIdentifier: ${this.identifier}`)
@@ -155,17 +153,15 @@ export class DeploymentGateCommand extends Command {
       const api = this.getApiHelper(this.config.apiKey, this.config.appKey)
       const evaluationRequest = this.buildEvaluationRequest()
 
-      // Step 1: Request gate evaluation
       const evaluationId = await this.requestGateEvaluation(api, evaluationRequest)
 
-      // Step 2: Poll for evaluation results
       return await this.pollForEvaluationResults(api, evaluationId, timeoutSeconds)
     } catch (error) {
       this.logger.error(`Deployment gate evaluation failed: ${error instanceof Error ? error.message : String(error)}`)
 
       if (isAxiosError(error)) {
         if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
-          this.logger.error(`${ICONS.FAILED} Request failed with client error, failing with status 1 (fail)`)
+          this.logger.error(`${ICONS.FAILED} Request failed with client error, exiting with status 1`)
 
           return 1
         }
@@ -251,19 +247,28 @@ export class DeploymentGateCommand extends Command {
 
         switch (status) {
           case 'pass':
-            this.logger.info(chalk.green(`${ICONS.SUCCESS} Gate evaluation passed`))
+            this.logger.info(chalk.green(`\t${ICONS.SUCCESS} Gate evaluation passed`))
 
             return 0
           case 'fail':
-            this.logger.info(chalk.red(`${ICONS.FAILED} Gate evaluation failed`))
+            this.logger.info(chalk.red(`\t${ICONS.FAILED} Gate evaluation failed`))
 
             return 1
           case 'in_progress':
             const waitTime = Math.min(this.pollingInterval, remainingTime)
+            const waitTimeInSeconds = Math.floor(waitTime / 1000)
+            const rules = response.data.data.attributes.rules
+            const totalRules = rules.length
+            const completedRules = rules.filter((rule) => rule.status !== 'in_progress').length
+
+            this.logger.info(
+              `\tGate evaluation in progress (${completedRules}/${totalRules} rules completed). Retrying in ${waitTimeInSeconds}s...`
+            )
+
             await new Promise((resolve) => setTimeout(resolve, waitTime))
             continue
           default:
-            throw new Error(`Unknown gate evaluation status: ${status}`)
+            throw new Error(`\t${ICONS.FAILED} Unknown gate evaluation status: ${status}`)
         }
       } catch (error) {
         this.logger.error(
@@ -277,12 +282,12 @@ export class DeploymentGateCommand extends Command {
 
   private getExitCodeForDatadogError() {
     if (this.failOnError) {
-      this.logger.info('--fail-on-error is true, failing with status 1 (fail)')
+      this.logger.info('Unexpected error happened, exiting with status 1')
 
       return 1
     }
 
-    this.logger.info('--fail-on-error is false, exiting with status 0 (pass)')
+    this.logger.info('Unexpected error happened, exiting with status 0')
 
     return 0
   }
