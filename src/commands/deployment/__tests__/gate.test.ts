@@ -13,10 +13,8 @@ const buildEvaluationRequestResponse = (evaluationId: string) => ({
   },
 })
 
-const buildGateEvaluationResultResponse = (status: string, rules: {status: string}[] | undefined = undefined) => {
-  if (rules === undefined) {
-    rules = [{status: 'pass'}]
-  }
+const buildGateEvaluationResultResponse = (status: string, ruleStatuses: string[] | undefined = ['pass']) => {
+  const rules = ruleStatuses.map((ruleStatus) => ({status: ruleStatus}))
 
   return {
     data: {
@@ -118,9 +116,9 @@ describe('gate', () => {
           requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
           getGateEvaluationResult: jest
             .fn()
-            .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress'))
-            .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress'))
-            .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass')),
+            .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress', ['in_progress', 'in_progress']))
+            .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress', ['in_progress', 'pass']))
+            .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass', ['pass', 'pass'])),
         }
         const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
