@@ -126,12 +126,44 @@ Updating Application Settings for my-web-app
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
-          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+          CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
           DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
         },
       })
       const {code, context} = await runCLI([...DEFAULT_ARGS])
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+🐶 Uninstrumentation completed successfully!
+`)
+      expect(code).toEqual(0)
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.deleteSiteContainer).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world', foo: 'bar'},
+      })
+    })
+
+    test('Uninstrument sidecar and updates custom app settings from config', async () => {
+      webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
+        properties: {
+          hello: 'world',
+          foo: 'bar',
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SOME_FEATURE: 'true',
+        },
+      })
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '-e', 'DD_SOME_FEATURE=true'])
       expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure App Service(s)
 Removing sidecar container datadog-sidecar from my-web-app (if it exists)
 Checking Application Settings on my-web-app

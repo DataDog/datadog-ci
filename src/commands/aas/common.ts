@@ -68,6 +68,10 @@ export abstract class AasCommand extends Command {
     description:
       'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
   })
+  private envVars = Option.Array('-e,--env-vars', {
+    description:
+      'Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+  })
 
   private configPath = Option.String('--config', {
     description: 'Path to the configuration file',
@@ -100,6 +104,7 @@ export abstract class AasCommand extends Command {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
             aasName: this.aasName,
+            envVars: this.envVars,
             ...this.additionalConfig,
           },
         },
