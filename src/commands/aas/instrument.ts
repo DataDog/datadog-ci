@@ -176,9 +176,18 @@ export class InstrumentCommand extends AasCommand {
         return false
       }
 
+      const isContainer = isLinuxContainer(site)
+      if (config.isMusl && !isContainer) {
+        this.context.stdout.write(
+          renderSoftWarning(
+            `The --musl flag is set, but the App Service ${chalk.bold(aasName)} is not a containerized app. \
+This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.`
+          )
+        )
+      }
       await this.instrumentSidecar(
         aasClient,
-        {...config, isDotnet: config.isDotnet || isDotnet(site), isMusl: config.isMusl && isLinuxContainer(site)},
+        {...config, isDotnet: config.isDotnet || isDotnet(site), isMusl: config.isMusl && isContainer},
         resourceGroup,
         aasName
       )

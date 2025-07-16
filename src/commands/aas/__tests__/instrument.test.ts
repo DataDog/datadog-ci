@@ -567,6 +567,25 @@ Restarting Azure App Service my-web-app
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
     })
+
+    test('Ignores --musl flag and warns on non-containerized dotnet apps', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        siteConfig: {
+          linuxFxVersion: 'DOTNETCORE|9.0',
+        },
+      })
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--musl', '--dotnet'])
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
+[!] The --musl flag is set, but the App Service my-web-app is not a containerized app. \
+This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+`)
+    })
   })
 
   describe('instrumentSidecar', () => {
