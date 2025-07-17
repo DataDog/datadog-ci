@@ -26,9 +26,46 @@ To instrument your App Services using the `datadog-ci aas instrument` command, f
 Run `datadog-ci aas instrument` to apply Datadog instrumentation to an App Service. This command adds a sidecar to the App Service and modifies its configuration.
 
 ```bash
-# Instrument a function by subscription ID, resource group, and app service name
-datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -n <app-service-name>
+export DD_API_KEY=<your-datadog-api-key>
+export DD_SITE=<your-datadog-site>
 
-# Dry run of all updates
-datadog-ci aas instrument -s <subscription-id> -r <resource-group-name> -n <app-service-name> --dry-run
+# Instrument an app service/web app by subscription ID, resource group, and app service name
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name>
+
+# Dry run of instrumentation
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dry-run
+
+# Instrument specific web app resource IDs
+datadog-ci aas instrument \
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name> \
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>
+
+# Enable specific features via app settings/env vars 
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
+
+# Specify Unified Service Tagging
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --service <service-name> --env <environment-name> --version <version-name>
+
+# For containerized apps, ensure .NET settings are added. For .NET runtime apps, .NET settings are automatically added.
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dotnet
+```
+
+### `uninstrument`
+
+Run `datadog-ci aas uninstrument` to remove Datadog instrumentation to an App Service. This command removes the previously added sidecar to the App Service and modifies its configuration.
+
+```bash
+# Uninstrument an app service/web app by subscription ID, resource group, and app service name
+datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name>
+
+# Dry run of uninstrumentation
+datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dry-run
+
+# Uninstrument specific web app resource IDs
+datadog-ci aas uninstrument \
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name> \
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>
+
+# Remove previously set additional app settings/env vars 
+datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
 ```
