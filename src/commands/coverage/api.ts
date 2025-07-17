@@ -47,9 +47,8 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
   }
 
   await doWithMaxConcurrency(20, payload.paths, async (path) => {
-    const filename = path.split('/').pop() || path
     const gzip = fs.createReadStream(path).pipe(createGzip())
-    form.append(filename, gzip, {filename: `${filename}.gz`})
+    form.append('code_coverage_report_file', gzip, {filename: `${getReportFilename(path)}.gz`})
   })
 
   return request({
@@ -59,6 +58,13 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
     method: 'POST',
     url: 'api/v2/cicovreprt',
   })
+}
+
+const getReportFilename = (path: string) => {
+  const filename = path.split('/').pop() || path
+
+  // Remove leading dot if it exists, as the backend does not accept filenames starting with a dot
+  return filename.startsWith('.') ? filename.slice(1) : filename
 }
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
