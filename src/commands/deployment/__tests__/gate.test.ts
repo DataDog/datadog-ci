@@ -102,11 +102,7 @@ describe('gate', () => {
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
-          service: 'test-service',
-          env: 'prod',
-          identifier: 'default',
-        })
+        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledWith('test-evaluation-id')
       })
@@ -134,11 +130,7 @@ describe('gate', () => {
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
-          service: 'test-service',
-          env: 'prod',
-          identifier: 'default',
-        })
+        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(1, 'test-evaluation-id')
         expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(2, 'test-evaluation-id')
@@ -159,11 +151,7 @@ describe('gate', () => {
 
         expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
         expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({
-          service: 'test-service',
-          env: 'prod',
-          identifier: 'default',
-        })
+        expect(mockApi.requestGateEvaluation).toHaveBeenCalledWith({service: 'test-service', env: 'prod'})
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledWith('test-evaluation-id')
       })
@@ -316,13 +304,22 @@ describe('gate', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'
-      command['identifier'] = 'default'
+
+      const request = command['buildEvaluationRequest']()
+      expect(request).toEqual({service: 'test-service', env: 'prod'})
+    })
+
+    test('should include identifier when provided', () => {
+      const command = createCommand(DeploymentGateCommand)
+      command['service'] = 'test-service'
+      command['env'] = 'prod'
+      command['identifier'] = 'preprod'
 
       const request = command['buildEvaluationRequest']()
       expect(request).toEqual({
         service: 'test-service',
         env: 'prod',
-        identifier: 'default',
+        identifier: 'preprod',
       })
     })
 
@@ -330,14 +327,12 @@ describe('gate', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'
-      command['identifier'] = 'default'
       command['version'] = '1.2.3'
 
       const request = command['buildEvaluationRequest']()
       expect(request).toEqual({
         service: 'test-service',
         env: 'prod',
-        identifier: 'default',
         version: '1.2.3',
       })
     })
@@ -346,19 +341,17 @@ describe('gate', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'
-      command['identifier'] = 'default'
       command['apmPrimaryTag'] = 'team:backend'
 
       const request = command['buildEvaluationRequest']()
       expect(request).toEqual({
         service: 'test-service',
         env: 'prod',
-        identifier: 'default',
         apm_primary_tag: 'team:backend',
       })
     })
 
-    test('should include both version and apm_primary_tag when provided', () => {
+    test('should include all optional parameters when provided', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'

@@ -4,14 +4,13 @@ exports[`gate execute evaluation errors on gate evaluation request should fail w
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: true
 
 Requesting gate evaluation...
 Request failed with client error: 500 Internal Server Error
 Deployment gate evaluation failed: Request failed with status code 500
-Unexpected error happened, exiting with status 1
+Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
 "
 `;
 
@@ -19,7 +18,6 @@ exports[`gate execute evaluation errors on gate evaluation request should pass w
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 
@@ -34,7 +32,6 @@ exports[`gate execute evaluation errors on gate evaluation result pass with a 50
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 
@@ -51,7 +48,6 @@ exports[`gate execute evaluation errors on gate evaluation result should fail wi
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: true
 
@@ -60,7 +56,7 @@ Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
 Error polling for gate evaluation results: Request failed with status code 500
-Unexpected error happened, exiting with status 1
+Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
 "
 `;
 
@@ -68,7 +64,6 @@ exports[`gate execute evaluation errors on gate evaluation result should handle 
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 
@@ -85,7 +80,6 @@ exports[`gate execute successful evaluation should fail when gate evaluation fai
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 
@@ -101,7 +95,6 @@ exports[`gate execute successful evaluation should pass when gate evaluation pas
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 
@@ -119,7 +112,6 @@ exports[`gate execute successful evaluation should succeed when gate evaluation 
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Identifier: default
 	Timeout: 10800 seconds
 	Fail on error: false
 

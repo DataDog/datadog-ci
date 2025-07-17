@@ -3,7 +3,7 @@ import type {AxiosPromise} from 'axios'
 export interface GateEvaluationRequest {
   service: string
   env: string
-  identifier: string
+  identifier?: string
   version?: string
   apm_primary_tag?: string
 }

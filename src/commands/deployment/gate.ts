@@ -59,7 +59,7 @@ export class DeploymentGateCommand extends Command {
   })
 
   // Optional parameters
-  private identifier = Option.String('--identifier', 'default', {
+  private identifier = Option.String('--identifier', {
     description: 'The deployment identifier (defaults to "default")',
   })
   private version = Option.String('--version', {
@@ -139,7 +139,9 @@ export class DeploymentGateCommand extends Command {
     this.logger.info('Starting deployment gate evaluation with parameters:')
     this.logger.info(`\tService: ${this.service}`)
     this.logger.info(`\tEnvironment: ${this.env}`)
-    this.logger.info(`\tIdentifier: ${this.identifier}`)
+    if (this.identifier) {
+      this.logger.info(`\tIdentifier: ${this.identifier}`)
+    }
     if (this.version) {
       this.logger.info(`\tVersion: ${this.version}`)
     }
@@ -182,7 +184,10 @@ export class DeploymentGateCommand extends Command {
     const request: GateEvaluationRequest = {
       service: this.service || '',
       env: this.env || '',
-      identifier: this.identifier,
+    }
+
+    if (this.identifier) {
+      request.identifier = this.identifier
     }
 
     if (this.version) {
@@ -282,7 +287,7 @@ export class DeploymentGateCommand extends Command {
 
   private getExitCodeForDatadogError() {
     if (this.failOnError) {
-      this.logger.info('Unexpected error happened, exiting with status 1')
+      this.logger.info('Unexpected error happened, exiting with status 1 because --fail-on-error is enabled')
 
       return 1
     }
