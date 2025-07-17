@@ -233,22 +233,13 @@ export class DeploymentGateCommand extends Command {
     this.logger.info('Waiting for gate evaluation results...')
 
     const maxWaitTime = timeoutSeconds * 1000
+    let timePassed = Date.now() - this.startTime
 
-    while (true) {
-      const timePassed = Date.now() - this.startTime
-      const remainingTime = maxWaitTime - timePassed
-
-      if (remainingTime <= 0) {
-        this.logger.warn(
-          `${ICONS.WARNING} Timeout reached (${timeoutSeconds} seconds). Gate evaluation did not complete.`
-        )
-
-        return this.getExitCodeForDatadogError()
-      }
-
+    while (timePassed <= maxWaitTime) {
       try {
         const response = await api.getGateEvaluationResult(evaluationId)
         const status = response.data.data.attributes.gate_status
+        const remainingTime = maxWaitTime - timePassed
         const waitTime = Math.min(this.pollingInterval, remainingTime)
         const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
@@ -269,13 +260,14 @@ export class DeploymentGateCommand extends Command {
             this.logger.info(
               `\tGate evaluation in progress (${completedRules}/${totalRules} rules completed). Retrying in ${waitTimeInSeconds}s...`
             )
+            break
 
-            continue
           default:
             this.logger.warn(`Unknown gate evaluation status: ${status}, retrying in ${waitTimeInSeconds}s...`)
         }
 
         await new Promise((resolve) => setTimeout(resolve, waitTime))
+        timePassed = Date.now() - this.startTime
       } catch (error) {
         this.logger.error(
           `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
@@ -284,6 +276,10 @@ export class DeploymentGateCommand extends Command {
         return this.getExitCodeForDatadogError()
       }
     }
+
+    this.logger.warn(`${ICONS.WARNING} Timeout reached (${timeoutSeconds} seconds). Gate evaluation did not complete.`)
+
+    return this.getExitCodeForDatadogError()
   }
 
   private getExitCodeForDatadogError() {
