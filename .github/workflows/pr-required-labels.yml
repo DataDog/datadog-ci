@@ -25,6 +25,7 @@ jobs:
           mode: minimum
           count: 1
           labels: |
+            datadog-ci
             dependencies
             documentation
             chores
