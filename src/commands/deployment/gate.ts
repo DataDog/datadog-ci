@@ -13,6 +13,8 @@ import {getApiHostForSite} from '../../helpers/utils'
 import {apiConstructor} from './api'
 import {APIHelper, GateEvaluationRequest} from './interfaces'
 
+type CommandResult = 'PASS' | 'FAIL'
+
 /**
  * This command allows to evaluate a deployment gate in Datadog.
  * It handles the entire process of requesting a gate evaluation and polling for results
@@ -151,13 +153,15 @@ export class DeploymentGateCommand extends Command {
     this.logger.info(`\tTimeout: ${timeoutSeconds} seconds`)
     this.logger.info(`\tFail on error: ${this.failOnError ? 'true' : 'false'}\n`)
 
+    let result: CommandResult
+
     try {
       const api = this.getApiHelper(this.config.apiKey, this.config.appKey)
       const evaluationRequest = this.buildEvaluationRequest()
 
       const evaluationId = await this.requestGateEvaluation(api, evaluationRequest)
 
-      return await this.pollForEvaluationResults(api, evaluationId, timeoutSeconds)
+      result = await this.pollForEvaluationResults(api, evaluationId, timeoutSeconds)
     } catch (error) {
       this.logger.error(`Deployment gate evaluation failed: ${error instanceof Error ? error.message : String(error)}`)
 
@@ -169,8 +173,10 @@ export class DeploymentGateCommand extends Command {
         }
       }
 
-      return this.getExitCodeForDatadogError()
+      result = this.getResultForDatadogError()
     }
+
+    return result === 'PASS' ? 0 : 1
   }
 
   private getApiHelper(apiKey: string, appKey: string): APIHelper {
@@ -229,68 +235,85 @@ export class DeploymentGateCommand extends Command {
     api: APIHelper,
     evaluationId: string,
     timeoutSeconds: number
-  ): Promise<number> {
+  ): Promise<CommandResult> {
     this.logger.info('Waiting for gate evaluation results...')
 
     const maxWaitTime = timeoutSeconds * 1000
     let timePassed = Date.now() - this.startTime
+    let result: CommandResult | undefined
 
-    while (timePassed <= maxWaitTime) {
-      try {
-        const response = await api.getGateEvaluationResult(evaluationId)
-        const status = response.data.data.attributes.gate_status
-        const remainingTime = maxWaitTime - timePassed
-        const waitTime = Math.min(this.pollingInterval, remainingTime)
-        const waitTimeInSeconds = Math.floor(waitTime / 1000)
+    while (timePassed < maxWaitTime) {
+      const remainingTime = maxWaitTime - timePassed
+      const waitTime = Math.min(this.pollingInterval, remainingTime)
+      const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
-        switch (status) {
-          case 'pass':
-            this.logger.info(chalk.green(`\t${ICONS.SUCCESS} Gate evaluation passed`))
-
-            return 0
-          case 'fail':
-            this.logger.info(chalk.red(`\t${ICONS.FAILED} Gate evaluation failed`))
-
-            return 1
-          case 'in_progress':
-            const rules = response.data.data.attributes.rules
-            const totalRules = rules.length
-            const completedRules = rules.filter((rule) => rule.status !== 'in_progress').length
-
-            this.logger.info(
-              `\tGate evaluation in progress (${completedRules}/${totalRules} rules completed). Retrying in ${waitTimeInSeconds}s...`
-            )
-            break
-
-          default:
-            this.logger.warn(`Unknown gate evaluation status: ${status}, retrying in ${waitTimeInSeconds}s...`)
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, waitTime))
-        timePassed = Date.now() - this.startTime
-      } catch (error) {
-        this.logger.error(
-          `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
-        )
-
-        return this.getExitCodeForDatadogError()
+      result = await this.getEvaluationResult(api, evaluationId)
+      if (result === 'PASS' || result === 'FAIL') {
+        return result
       }
+
+      this.logger.info(`\tRetrying in ${waitTimeInSeconds}s...`)
+      await new Promise((resolve) => setTimeout(resolve, waitTime))
+
+      timePassed = Date.now() - this.startTime
     }
 
-    this.logger.warn(`${ICONS.WARNING} Timeout reached (${timeoutSeconds} seconds). Gate evaluation did not complete.`)
+    // The block above may not have run the last time, so we need to check again
+    result = await this.getEvaluationResult(api, evaluationId)
+    if (result) {
+      return result
+    }
 
-    return this.getExitCodeForDatadogError()
+    this.logger.warn(
+      `${ICONS.WARNING} Timeout reached (${timeoutSeconds} seconds). Gate evaluation did not complete in time.`
+    )
+
+    return this.getResultForDatadogError()
   }
 
-  private getExitCodeForDatadogError() {
-    if (this.failOnError) {
-      this.logger.info('Unexpected error happened, exiting with status 1 because --fail-on-error is enabled')
+  private async getEvaluationResult(api: APIHelper, evaluationId: string): Promise<CommandResult | undefined> {
+    try {
+      const response = await api.getGateEvaluationResult(evaluationId)
+      const status = response.data.data.attributes.gate_status
 
-      return 1
+      switch (status) {
+        case 'pass':
+          this.logger.info(chalk.green(`\t${ICONS.SUCCESS} Gate evaluation passed`))
+
+          return 'PASS'
+        case 'fail':
+          this.logger.info(chalk.red(`\t${ICONS.FAILED} Gate evaluation failed`))
+
+          return 'FAIL'
+        case 'in_progress':
+          const rules = response.data.data.attributes.rules
+          const totalRules = rules.length
+          const completedRules = rules.filter((rule) => rule.status !== 'in_progress').length
+
+          this.logger.info(`\tGate evaluation in progress (${completedRules}/${totalRules} rules completed)`)
+          break
+
+        default:
+          this.logger.warn(`Unknown gate evaluation status: ${status}`)
+      }
+    } catch (error) {
+      this.logger.error(
+        `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
+      )
+
+      return this.getResultForDatadogError()
+    }
+  }
+
+  private getResultForDatadogError(): CommandResult {
+    if (this.failOnError) {
+      this.logger.warn('Unexpected error happened, exiting with status 1 because --fail-on-error is enabled')
+
+      return 'FAIL'
     }
 
-    this.logger.info('Unexpected error happened, exiting with status 0')
+    this.logger.warn('Unexpected error happened, exiting with status 0')
 
-    return 0
+    return 'PASS'
   }
 }
