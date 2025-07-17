@@ -110,7 +110,7 @@ jobs:
           path: artifacts/
       - run: yarn add ./artifacts/datadog-ci-${{ matrix.version }}.tgz
       - name: Run synthetics test
-        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+        run: yarn datadog-ci synthetics run-tests --tunnel --config artifacts/e2e/global.config.json
         env:
           DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
           DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
