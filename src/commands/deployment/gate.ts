@@ -221,7 +221,7 @@ export class DeploymentGateCommand extends Command {
         )
       }
 
-      return Promise.reject(error)
+      throw error
     }
   }
 
