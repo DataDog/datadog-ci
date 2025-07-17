@@ -773,7 +773,7 @@ describe('instrument', () => {
       process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
       const runtime = Runtime.nodejs20x
       const config = {
-        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        FunctionArn: 'arn:aws:lambda:us-gov-east-1:123456789012:function:lambda-hello-world',
         Handler: 'index.handler',
         Layers: [],
         Runtime: runtime,
@@ -787,7 +787,7 @@ describe('instrument', () => {
         tracingEnabled: false,
         lambdaFips: true,
       }
-      const region = 'sa-east-1'
+      const region = 'us-gov-east-1'
 
       const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
@@ -802,9 +802,9 @@ describe('instrument', () => {
               "DD_TRACE_ENABLED": "false",
             },
           },
-          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "FunctionName": "arn:aws:lambda:us-gov-east-1:123456789012:function:lambda-hello-world",
           "Layers": [
-            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension-FIPS:6",
+            "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Extension-FIPS:6",
           ],
         }
       `)
