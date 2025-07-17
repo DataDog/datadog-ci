@@ -248,7 +248,7 @@ export class DeploymentGateCommand extends Command {
       const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
       result = await this.getEvaluationResult(api, evaluationId)
-      if (result === 'PASS' || result === 'FAIL') {
+      if (result) {
         return result
       }
 
