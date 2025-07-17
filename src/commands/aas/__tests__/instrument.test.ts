@@ -104,7 +104,6 @@ Restarting Azure App Service my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -117,7 +116,6 @@ Restarting Azure App Service my-web-app
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
-          DD_PROFILING_ENABLED: 'true',
         },
       })
       expect(updateTags).not.toHaveBeenCalled()
@@ -163,7 +161,6 @@ Updating Application Settings for my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -174,7 +171,6 @@ Updating Application Settings for my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
@@ -263,7 +259,6 @@ Creating sidecar container datadog-sidecar on my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -339,7 +334,6 @@ Restarting Azure App Service my-web-app2
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -355,7 +349,6 @@ Restarting Azure App Service my-web-app2
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
@@ -369,7 +362,6 @@ Restarting Azure App Service my-web-app2
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
@@ -377,7 +369,6 @@ Restarting Azure App Service my-web-app2
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app2', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
@@ -418,7 +409,6 @@ Restarting Azure App Service my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_ENV', value: 'DD_ENV'},
             {name: 'DD_VERSION', value: 'DD_VERSION'},
@@ -432,7 +422,6 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           DD_SERVICE: 'my-service',
@@ -449,41 +438,6 @@ Restarting Azure App Service my-web-app
           },
         },
       })
-      expect(webAppsOperations.restart).toHaveBeenCalled()
-    })
-
-    test('Sets DD_PROFILING_ENABLED to false when profiling is disabled', async () => {
-      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--no-profiling'])
-      expect(code).toEqual(0)
-      expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
-        'my-resource-group',
-        'my-web-app',
-        'datadog-sidecar',
-        {
-          environmentVariables: [
-            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
-            {name: 'DD_SITE', value: 'DD_SITE'},
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
-          ],
-          image: 'index.docker.io/datadog/serverless-init:latest',
-          isMain: false,
-          targetPort: '8126',
-        }
-      )
-      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
-        properties: {
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'false',
-          DD_API_KEY: 'PLACEHOLDER',
-          DD_SITE: 'datadoghq.com',
-        },
-      })
-      expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -514,7 +468,6 @@ Restarting Azure App Service my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
             {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
           ],
@@ -527,7 +480,6 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
@@ -544,7 +496,7 @@ Restarting Azure App Service my-web-app
         '--env-vars',
         'CUSTOM_VAR1=value1',
         '--env-vars',
-        'DD_PROFILING_ENABLED=false',
+        'DD_AAS_INSTANCE_LOGGING_ENABLED=true',
       ])
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -559,7 +511,6 @@ Restarting Azure App Service my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -570,8 +521,7 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'false',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
@@ -587,7 +537,6 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'git.commit.sha:test-sha,git.repository_url:test-remote',
@@ -606,7 +555,6 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'custom:tag,another:value',
@@ -655,7 +603,6 @@ Restarting Azure App Service my-web-app
           {name: 'DD_API_KEY', value: 'DD_API_KEY'},
           {name: 'DD_SITE', value: 'DD_SITE'},
           {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-          {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
         ]),
       })
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('rg', 'app', {
@@ -663,7 +610,6 @@ Restarting Azure App Service my-web-app
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
         },
       })
     })
@@ -691,7 +637,6 @@ Restarting Azure App Service my-web-app
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
@@ -734,7 +679,6 @@ Restarting Azure App Service my-web-app
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
-            {name: 'DD_PROFILING_ENABLED', value: 'DD_PROFILING_ENABLED'},
           ],
         })
       )
@@ -743,7 +687,6 @@ Restarting Azure App Service my-web-app
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
         },
       })
 
@@ -770,7 +713,6 @@ Restarting Azure App Service my-web-app
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          DD_PROFILING_ENABLED: 'true',
         },
       })
 

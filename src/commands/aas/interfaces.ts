@@ -14,7 +14,6 @@ export interface AasConfigOptions {
   environment?: string
   version?: string
   isInstanceLoggingEnabled?: boolean
-  isProfilingEnabled?: boolean
   logPath?: string
   envVars?: string[]
   isDotnet?: boolean

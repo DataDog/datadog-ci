@@ -5,7 +5,7 @@ import {Command} from 'clipanion'
 
 import {renderError} from '../../helpers/renderer'
 
-import {AAS_DD_SETTING_NAMES, AasCommand, formatError, isDotnet, SIDECAR_CONTAINER_NAME} from './common'
+import {AAS_DD_SETTING_NAMES, AasCommand, formatError, isDotnet, parseEnvVars, SIDECAR_CONTAINER_NAME} from './common'
 import {AasConfigOptions} from './interfaces'
 
 export class UninstrumentCommand extends AasCommand {
@@ -107,14 +107,15 @@ export class UninstrumentCommand extends AasCommand {
     if (!this.dryRun) {
       await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
     }
+    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
     this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
     const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
-    if (currentEnvVars !== undefined && AAS_DD_SETTING_NAMES.some((key) => key in currentEnvVars)) {
+    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
           properties: Object.fromEntries(
-            Object.entries(currentEnvVars).filter(([key]) => !(AAS_DD_SETTING_NAMES as readonly string[]).includes(key))
+            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
           ),
         })
       }
