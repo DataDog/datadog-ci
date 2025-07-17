@@ -249,6 +249,8 @@ export class DeploymentGateCommand extends Command {
       try {
         const response = await api.getGateEvaluationResult(evaluationId)
         const status = response.data.data.attributes.gate_status
+        const waitTime = Math.min(this.pollingInterval, remainingTime)
+        const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
         switch (status) {
           case 'pass':
@@ -260,8 +262,6 @@ export class DeploymentGateCommand extends Command {
 
             return 1
           case 'in_progress':
-            const waitTime = Math.min(this.pollingInterval, remainingTime)
-            const waitTimeInSeconds = Math.floor(waitTime / 1000)
             const rules = response.data.data.attributes.rules
             const totalRules = rules.length
             const completedRules = rules.filter((rule) => rule.status !== 'in_progress').length
@@ -270,11 +270,12 @@ export class DeploymentGateCommand extends Command {
               `\tGate evaluation in progress (${completedRules}/${totalRules} rules completed). Retrying in ${waitTimeInSeconds}s...`
             )
 
-            await new Promise((resolve) => setTimeout(resolve, waitTime))
             continue
           default:
-            throw new Error(`Unknown gate evaluation status: ${status}`)
+            this.logger.warn(`Unknown gate evaluation status: ${status}, retrying in ${waitTimeInSeconds}s...`)
         }
+
+        await new Promise((resolve) => setTimeout(resolve, waitTime))
       } catch (error) {
         this.logger.error(
           `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`

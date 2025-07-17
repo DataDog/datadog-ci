@@ -279,21 +279,29 @@ describe('gate', () => {
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
         })
 
-        test('should handle invalid evaluation status', async () => {
+        test('should not fail when gate evaluation result is invalid', async () => {
           const mockApi = {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
-            getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('expired')),
+            getGateEvaluationResult: jest
+              .fn()
+              .mockResolvedValueOnce(buildGateEvaluationResultResponse('unexpected'))
+              .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass')),
           }
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod'])
+
+          // Run all timers and wait for all pending promises to resolve
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
 
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(2)
         })
       })
     })
