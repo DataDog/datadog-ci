@@ -43,7 +43,7 @@ export class DeploymentGateCommand extends Command {
       ],
       [
         'Evaluate a deployment gate with version and APM primary tag',
-        'datadog-ci deployment gate --service payments-backend --env prod --version 1.2.3 --apm-primary-tag team:backend',
+        'datadog-ci deployment gate --service payments-backend --env prod --version 1.2.3 --apm-primary-tag region:us-central-1',
       ],
     ],
   })
@@ -69,7 +69,7 @@ export class DeploymentGateCommand extends Command {
     description: 'The APM primary tag (only for gates with faulty deployment detection rules)',
   })
   private timeout = Option.String('--timeout', '10800', {
-    description: 'Maximum time to wait for the script execution in seconds (default: 10800 = 3 hours)',
+    description: 'Maximum amount of seconds to wait for the script execution in seconds (default: 10800 = 3 hours)',
     validator: t.isString(),
   })
   private failOnError = Option.Boolean('--fail-on-error', false, {
