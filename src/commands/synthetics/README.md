@@ -454,6 +454,8 @@ Use the [Continuous Testing tunnel](https://docs.datadoghq.com/continuous_testin
 
 For more information, see [Using Local and Staging Environments](#using-local-and-staging-environments).
 
+To troubleshoot tests failing due to the tunnel, you may enable debug logs with `DEBUG=synthetics:tunnel`.
+
 **Configuration options**
 
 * Default: `false`
