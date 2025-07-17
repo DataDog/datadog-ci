@@ -157,7 +157,7 @@ describe('aas common', () => {
         DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
         CORECLR_ENABLE_PROFILING: '1',
         CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
-        CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
+        CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
       })
     })
 
@@ -165,6 +165,30 @@ describe('aas common', () => {
       const config: AasConfigOptions = {
         ...DEFAULT_CONFIG,
         isDotnet: true,
+        service: 'svc',
+        environment: 'qa',
+        logPath: '/dotnet/logs',
+        isInstanceLoggingEnabled: true,
+      }
+      const envVars = getEnvVars(config)
+      expect(envVars).toMatchObject({
+        DD_SERVICE: 'svc',
+        DD_ENV: 'qa',
+        DD_SERVERLESS_LOG_PATH: '/dotnet/logs',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
+        DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
+        DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+        CORECLR_ENABLE_PROFILING: '1',
+        CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
+        CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
+      })
+    })
+
+    test('.NET options sets musl path when specified', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        isDotnet: true,
+        isMusl: true,
         service: 'svc',
         environment: 'qa',
         logPath: '/dotnet/logs',

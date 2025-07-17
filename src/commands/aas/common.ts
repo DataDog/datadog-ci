@@ -25,8 +25,10 @@ const DD_TRACE_LOG_DIRECTORY = '/home/LogFiles/dotnet'
 const CORECLR_ENABLE_PROFILING = '1'
 // Profiler GUID
 const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
+
 // The profiler binary that the .NET CLR loads into memory, which contains the GUID
-const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
+const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
+const CORECLR_PROFILER_PATH_MUSL = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
 const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
@@ -126,6 +128,12 @@ export abstract class AasCommand extends Command {
     // Validate that extraTags, if provided, comply with the expected format
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
+    }
+    // Validate musl setting
+    if (config.isMusl && !config.isDotnet) {
+      errors.push(
+        '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
+      )
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified
@@ -238,7 +246,7 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
       DD_TRACE_LOG_DIRECTORY,
       CORECLR_ENABLE_PROFILING,
       CORECLR_PROFILER,
-      CORECLR_PROFILER_PATH,
+      CORECLR_PROFILER_PATH: config.isMusl ? CORECLR_PROFILER_PATH_MUSL : CORECLR_PROFILER_PATH,
     }
   }
 
@@ -261,6 +269,9 @@ export const isDotnet = (site: Site): boolean => {
   )
 }
 
+export const isLinuxContainer = (site: Site): boolean => {
+  return !!site.siteConfig?.linuxFxVersion && site.siteConfig.linuxFxVersion.toLowerCase() === 'sitecontainers'
+}
 export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
