@@ -151,6 +151,13 @@ Instead of supplying arguments, you can create a configuration file in your proj
 }
 ```
 
+### `lambda-fips`
+
+This option is used to enable FIPS support in the Lambda functions deployed using this tool. Note that for full FIPS compliance, a FIPS endpoint such as `ddog-gov.com` is required.
+
+ENV variable: `DATADOG_LAMBDA_FIPS=true`
+CLI param: `--lambda-fips`
+
 ## Troubleshooting Lambda Instrumentation
 
 To troubleshoot issues you encounter with Datadog monitoring on your Lambda functions, run the `datadog-ci lambda flare` command in the root of your project directory. This command collects important data about the Lambda function, such as environment variables and the config file. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
