@@ -110,11 +110,7 @@ export class InstrumentCommand extends Command {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to 1.`,
   })
   private sidecarMemory = Option.String('--sidecar-memory', '512Mi', {
-<<<<<<< HEAD
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
-=======
-    description: `The number of CPUs to allocate to the sidecar container. Defaults to '512Mi'.`,
->>>>>>> 67262a16 (remove diff from rebase conflict)
   })
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
