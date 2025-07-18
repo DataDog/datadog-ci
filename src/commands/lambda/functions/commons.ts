@@ -341,6 +341,9 @@ export const getLayerArn = (
   if (ARM_LAYERS.includes(layer) && config.Architectures?.includes(ARM64_ARCHITECTURE)) {
     layerName += ARM_LAYER_SUFFIX
   }
+  if (settings?.lambdaFips) {
+    layerName += '-FIPS'
+  }
   const account = settings?.layerAWSAccount ?? DEFAULT_LAYER_AWS_ACCOUNT
   const isGovCloud = region.startsWith('us-gov')
   if (isGovCloud) {
