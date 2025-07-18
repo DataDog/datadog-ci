@@ -1131,7 +1131,7 @@ describe('waitForResults', () => {
     )
 
     expect(mockReporter.error).toHaveBeenCalledWith(
-      'The tunnel has stopped working, this may have affected the results.'
+      'The tunnel was closed during execution, this may have affected the results.\n'
     )
   })
 
