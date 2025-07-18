@@ -2090,6 +2090,7 @@ __metadata:
     clipanion: ^3.2.1
     datadog-metrics: 0.9.3
     dd-trace: ^5.42.0
+    debug: ^4.3.4
     deep-extend: 0.6.0
     deep-object-diff: ^1.1.9
     eslint: ^8.57.1
