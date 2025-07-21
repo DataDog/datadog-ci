@@ -54,6 +54,7 @@ import {
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -332,6 +333,13 @@ export const calculateUpdateRequest = async (
     extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
+    }
+
+    if (settings.lambdaFips) {
+      if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
+        needsUpdate = true
+        newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'
+      }
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }

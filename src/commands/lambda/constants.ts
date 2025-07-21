@@ -3,14 +3,16 @@ import type {Runtime} from '@aws-sdk/client-lambda'
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 import {
-  ENVIRONMENT_ENV_VAR,
-  DD_TAGS_ENV_VAR,
-  FLARE_PROJECT_FILES,
   DD_LOG_LEVEL_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  FLARE_PROJECT_FILES,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
+
+export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
@@ -118,6 +120,7 @@ export const ENABLE_PROFILING_ENV_VAR = 'CORECLR_ENABLE_PROFILING'
 export const PROFILER_ENV_VAR = 'CORECLR_PROFILER'
 export const PROFILER_PATH_ENV_VAR = 'CORECLR_PROFILER_PATH'
 export const DOTNET_TRACER_HOME_ENV_VAR = 'DD_DOTNET_TRACER_HOME'
+export const DD_LAMBDA_FIPS_MODE_ENV_VAR = 'DD_LAMBDA_FIPS_MODE'
 
 // Environment variables used by Datadog CI
 export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'

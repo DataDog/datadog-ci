@@ -19,7 +19,7 @@ import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from './constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -95,6 +95,7 @@ export class InstrumentCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private lambdaFips = Option.Boolean('--lambda-fips', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
@@ -444,6 +445,7 @@ export class InstrumentCommand extends Command {
       environment,
       extensionVersion,
       extraTags,
+      lambdaFips: this.lambdaFips,
       flushMetricsToLogs,
       forwarderARN,
       interactive,
