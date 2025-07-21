@@ -71,11 +71,9 @@ export class UninstrumentCommand extends Command {
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private lambdaFips = Option.Boolean('--lambda-fips', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-    lambdaFips: toBoolean(process.env[LAMBDA_FIPS_ENV_VAR]) ?? false,
   }
 
   public async execute(): Promise<0 | 1> {
