@@ -46,7 +46,11 @@ export class Tunnel {
   private privateKey: string
   private publicKey: ParsedKey
 
+  /** Used to catch SIGINT only once. */
+  private started = false
+  /** Used to log "Successfully connected" only once. */
   private connected = false
+
   private ws: WebSocket
   private multiplexer?: Multiplexer
   private forwardedSockets: Set<Socket> = new Set()
@@ -95,8 +99,10 @@ export class Tunnel {
    *   - establish a WebSocket connection to the tunnel service
    */
   public async start(): Promise<TunnelInfo> {
-    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
+    this.started = true
+    process.addListener('SIGINT', this.handleSIGINT)
 
+    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
     this.reporter?.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
     try {
       // Establish a WebSocket connection to the tunnel service
@@ -117,8 +123,7 @@ export class Tunnel {
    * stop the tunnel
    */
   public async stop(): Promise<void> {
-    this.reporter?.log('Shutting down tunnel…')
-
+    this.connected = false
     this.forwardedSockets.forEach((socket) => {
       if (!!socket) {
         socket.destroy()
@@ -126,6 +131,11 @@ export class Tunnel {
     })
 
     await this.ws.close()
+
+    if (this.started) {
+      this.reporter?.log('Tunnel closed.')
+      this.started = false
+    }
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
@@ -358,5 +368,17 @@ export class Tunnel {
       .on('error', (err) => {
         debug(`SSH error in proxy: ${err.message}`)
       })
+  }
+
+  private handleSIGINT = () => {
+    if (this.started) {
+      // The tunnel is connected, so we stop it gracefully – all tests will be aborted.
+      this.reporter?.log('Closing tunnel and waiting for results... (press Ctrl+C again to force quit)')
+      void this.stop()
+    } else {
+      // The tunnel was already closed and we received a second Ctrl+C.
+      // Removing the listener automatically stops the process.
+      process.removeListener('SIGINT', this.handleSIGINT)
+    }
   }
 }
