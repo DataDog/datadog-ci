@@ -41,6 +41,7 @@ chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://s
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
+debug,import,MIT,Copyright (c) 2018-2021 Josh Junon
 deep-extend,import,MIT,"Copyright (c) 2013-2018, Viacheslav Lotsmanov"
 deep-object-diff,import,MIT,Copyright (c) 2016-present Matt Phillips
 fast-deep-equal,import,MIT,Copyright (c) 2017 Evgeny Poberezkin

@@ -17,6 +17,11 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
 
+/**
+ * Use `DEBUG=synthetics:tunnel` to enable debug logs.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call
+const debug = require('debug')('synthetics:tunnel') as (arg: string) => void
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
 const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
@@ -178,7 +183,7 @@ export class Tunnel {
         this.forwardedSockets.add(dest)
 
         dest.on('timeout', () => {
-          this.reporter?.warn(`Connection timeout (${destIP})`)
+          debug(`Connection timeout (${destIP})`)
           if (src) {
             src.destroy()
           } else {
@@ -206,7 +211,7 @@ export class Tunnel {
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
             if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
-              this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+              debug(`Error on opened connection (${destIP}): ${error.code}`)
             }
             src.close()
           } else {
@@ -257,7 +262,7 @@ export class Tunnel {
     }
     this.multiplexer = new Multiplexer((stream) => {
       stream.on('error', (error) => {
-        this.reporter?.warn(`Error in multiplexing: ${error}`)
+        debug(`Error in multiplexing: ${error}`)
       })
 
       void this.processSSHStream(stream)
@@ -265,17 +270,21 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
+    this.multiplexer.on('error', (error) => {
+      debug(`Multiplexer error: ${error.message}`)
+    })
+    duplex.on('error', (error) => {
+      debug(`Websocket error: ${error.message}`)
+    })
 
     pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on duplex connection close: ${err}`)
+        debug(`Error on duplex connection close: ${err}`)
       }
     })
     pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
+        debug(`Error on Multiplexer connection close: ${err}`)
       }
     })
 
@@ -347,7 +356,7 @@ export class Tunnel {
         server.close()
       })
       .on('error', (err) => {
-        this.reporter?.warn(`SSH error in proxy: ${err.message}`)
+        debug(`SSH error in proxy: ${err.message}`)
       })
   }
 }
