@@ -226,8 +226,7 @@ export const calculateUpdateRequest = (
     .filter(
       (layer) =>
         !layer.Arn?.includes(lambdaLibraryLayerName) &&
-        !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
-        !layer.Arn?.includes(`${DD_LAMBDA_EXTENSION_LAYER_NAME}-FIPS`)
+        !layer.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)
     )
     .map((layer) => layer.Arn ?? '')
 

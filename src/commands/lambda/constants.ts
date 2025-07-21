@@ -3,14 +3,16 @@ import type {Runtime} from '@aws-sdk/client-lambda'
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 import {
-  ENVIRONMENT_ENV_VAR,
-  DD_TAGS_ENV_VAR,
-  FLARE_PROJECT_FILES,
   DD_LOG_LEVEL_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  FLARE_PROJECT_FILES,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
+
+export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
 export const DD_LAMBDA_EXTENSION_LAYER_NAME = 'Datadog-Extension'
 export const EXTENSION_LAYER_KEY = 'extension'
@@ -135,6 +137,7 @@ export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
+
 
 // Environment Variables whose values don't need to be masked
 export const SKIP_MASKING_LAMBDA_ENV_VARS = new Set([
