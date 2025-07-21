@@ -364,7 +364,7 @@ export class Tunnel {
   private handleSIGINT = () => {
     if (this.started) {
       // The tunnel is connected, so we stop it gracefully – all tests will be aborted.
-      this.reporter?.log('Closing tunnel and waiting for results... (press Ctrl+C again to force)')
+      this.reporter?.log('Closing tunnel and waiting for results... (press Ctrl+C again to force quit)')
       void this.stop()
     } else {
       // The tunnel was already closed and we received a second Ctrl+C.
