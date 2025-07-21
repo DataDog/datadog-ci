@@ -70,6 +70,7 @@ sshpk,import,MIT,"Copyright (c) Joyent, Inc."
 terminal-link,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
+ts-json-schema-generator,dev,MIT,"Copyright (c) 2019, TypeScript JSON Schema Generator"
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
