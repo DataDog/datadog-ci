@@ -4,11 +4,11 @@ exports[`Default reporter renderApiRequestDescription dns result 1`] = `"Query f
 
 exports[`Default reporter renderApiRequestDescription dns result 2`] = `"Query for example.org on server 1.2.3.4"`;
 
-exports[`Default reporter renderApiRequestDescription dns result 3`] = `"Query for example.org on server 1.2.3.4"`;
+exports[`Default reporter renderApiRequestDescription dns result 3`] = `"Query for example.org on server 1.2.3.4:42"`;
 
 exports[`Default reporter renderApiRequestDescription fallback 1`] = `"[1munknown-subtype[22m test"`;
 
-exports[`Default reporter renderApiRequestDescription host + port, any subtype 1`] = `"[1mundefined[22m test"`;
+exports[`Default reporter renderApiRequestDescription host + port, any subtype 1`] = `"Host: example.org:80"`;
 
 exports[`Default reporter renderApiRequestDescription invalid dns result 1`] = `"Invalid DNS result"`;
 
@@ -18,15 +18,15 @@ exports[`Default reporter renderApiRequestDescription invalid http result 2`] = 
 
 exports[`Default reporter renderApiRequestDescription invalid http result 3`] = `"Invalid HTTP result"`;
 
-exports[`Default reporter renderApiRequestDescription invalid multistep result 1`] = `"[1mmulti[22m test"`;
+exports[`Default reporter renderApiRequestDescription invalid multistep result 1`] = `"Invalid multistep result"`;
 
-exports[`Default reporter renderApiRequestDescription invalid ssl result 1`] = `"Invalid SSL/TCP result"`;
+exports[`Default reporter renderApiRequestDescription invalid ssl result 1`] = `"Invalid SSL result"`;
 
-exports[`Default reporter renderApiRequestDescription invalid ssl result 2`] = `"Invalid SSL/TCP result"`;
+exports[`Default reporter renderApiRequestDescription invalid ssl result 2`] = `"Invalid SSL result"`;
 
-exports[`Default reporter renderApiRequestDescription invalid ssl result 3`] = `"Invalid SSL/TCP result"`;
+exports[`Default reporter renderApiRequestDescription invalid ssl result 3`] = `"Invalid SSL result"`;
 
-exports[`Default reporter renderApiRequestDescription method + url, any subtype 1`] = `"[1mundefined[22m test"`;
+exports[`Default reporter renderApiRequestDescription method + url, any subtype 1`] = `"[1mGET[22m - https://example.org"`;
 
 exports[`Default reporter renderApiRequestDescription multistep result 1`] = `"Multistep test containing 3 HTTP test"`;
 

@@ -175,6 +175,7 @@ export const renderApiRequestDescription = (
     steps?: Test['config']['steps']
   }
 ): string => {
+  // DNS result
   if (subType === 'dns') {
     if (!request?.host) {
       return 'Invalid DNS result'
@@ -182,21 +183,20 @@ export const renderApiRequestDescription = (
 
     const text = `Query for ${request.host}`
     if (request.dnsServer) {
-      return `${text} on server ${request.dnsServer}`
+      const dnsServerPort = request.dnsServerPort ? `:${request.dnsServerPort}` : ''
+
+      return `${text} on server ${request.dnsServer}${dnsServerPort}`
     }
 
     return text
   }
 
-  if (subType === 'ssl' || subType === 'tcp') {
-    if (!request?.host || !request?.port) {
-      return 'Invalid SSL/TCP result'
+  // Multistep result
+  if (subType === 'multi') {
+    if (!steps) {
+      return 'Invalid multistep result'
     }
 
-    return `Host: ${request.host}:${request.port}`
-  }
-
-  if (subType === 'multi' && steps) {
     const stepsDescription = Object.entries(
       steps
         .map((step) => step.subtype)
@@ -212,14 +212,23 @@ export const renderApiRequestDescription = (
     return `Multistep test containing ${stepsDescription}`
   }
 
-  if (subType === 'http') {
-    if (!request?.method || !request?.url) {
-      return 'Invalid HTTP result'
-    }
+  // Fallbacks by order of priority:
 
-    return `${chalk.bold(request.method)} - ${request.url}`
+  // - Any result with Host + Port
+  if (request?.host && request?.port) {
+    return `Host: ${request.host}:${request.port}`
+  } else if (subType === 'ssl' || subType === 'tcp') {
+    return `Invalid ${subType.toUpperCase()} result`
   }
 
+  // - Any result with Method + URL
+  if (request?.method && request?.url) {
+    return `${chalk.bold(request.method)} - ${request.url}`
+  } else if (subType === 'http') {
+    return 'Invalid HTTP result'
+  }
+
+  // - Result with any subtype
   return `${chalk.bold(subType)} test`
 }
 
