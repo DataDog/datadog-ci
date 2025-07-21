@@ -128,8 +128,8 @@ const renderResultOutcome = (
     ].join('\n')
   }
 
-  if (test.type === 'api') {
-    const requestDescription = renderApiRequestDescription(test.subtype ?? 'http', test.config)
+  if (test.type === 'api' && test.subtype) {
+    const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
     if (result?.failure) {
       return [
