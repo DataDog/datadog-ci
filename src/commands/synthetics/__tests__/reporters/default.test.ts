@@ -22,7 +22,7 @@ import {
   Summary,
   UserConfigOverride,
 } from '../../interfaces'
-import {DefaultReporter} from '../../reporters/default'
+import {DefaultReporter, renderApiRequestDescription} from '../../reporters/default'
 import {isTimedOutRetry} from '../../utils/internal'
 
 import {
@@ -80,6 +80,35 @@ describe('Default reporter', () => {
       expect(writeMock).toHaveBeenCalledTimes(calledTimes)
       writeMock.mockClear()
     }
+  })
+
+  describe('renderApiRequestDescription', () => {
+    test.each([
+      // DNS
+      ['dns result', 'dns', {request: {host: 'example.org'}}],
+      ['dns result', 'dns', {request: {host: 'example.org', dnsServer: '1.2.3.4'}}],
+      ['dns result', 'dns', {request: {host: 'example.org', dnsServer: '1.2.3.4', dnsServerPort: 42}}],
+      ['invalid dns result', 'dns', {request: {}}],
+      // Multistep
+      ['multistep result', 'multi', {steps: [{subtype: 'http'}, {subtype: 'http'}, {subtype: 'http'}]}],
+      ['multistep result', 'multi', {steps: [{subtype: 'http'}, {subtype: 'ssl'}, {subtype: 'dns'}]}],
+      ['invalid multistep result', 'multi', {}],
+      // Host + Port
+      ['host + port, any subtype', undefined, {request: {host: 'example.org', port: 80}}],
+      ['invalid ssl result', 'ssl', {request: {}}],
+      ['invalid ssl result', 'ssl', {request: {host: 'foo'}}],
+      ['invalid ssl result', 'ssl', {request: {port: 80}}],
+      // Method + URL
+      ['method + url, any subtype', undefined, {request: {method: 'GET', url: 'https://example.org'}}],
+      ['invalid http result', 'http', {request: {}}],
+      ['invalid http result', 'http', {request: {method: 'foo'}}],
+      ['invalid http result', 'http', {request: {url: 'foo'}}],
+      // Fallback
+      ['fallback', 'unknown-subtype', {}],
+    ])('%s', (_, subType, config) => {
+      const output = renderApiRequestDescription(subType, config)
+      expect(output).toMatchSnapshot()
+    })
   })
 
   describe('testTrigger', () => {

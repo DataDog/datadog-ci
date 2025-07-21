@@ -21,6 +21,7 @@ import {
   Test,
   UserConfigOverride,
   ResultInBatch,
+  TestRequest,
 } from '../interfaces'
 import {isBaseResult, isTimedOutRetry, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
@@ -128,7 +129,7 @@ const renderResultOutcome = (
     ].join('\n')
   }
 
-  if (test.type === 'api' && test.subtype) {
+  if (test.type === 'api') {
     const requestDescription = renderApiRequestDescription(test.subtype, test.config)
 
     if (result?.failure) {
@@ -164,9 +165,16 @@ const renderResultOutcome = (
   }
 }
 
-const renderApiRequestDescription = (subType: string, config: Test['config']): string => {
-  const {request, steps} = config
-
+export const renderApiRequestDescription = (
+  subType: string | undefined,
+  {
+    request,
+    steps,
+  }: {
+    request?: Partial<Omit<TestRequest, 'headers' | 'timeout'>>
+    steps?: Test['config']['steps']
+  }
+): string => {
   if (subType === 'dns') {
     if (!request?.host) {
       return 'Invalid DNS result'
