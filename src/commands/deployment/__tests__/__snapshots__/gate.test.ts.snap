@@ -1,5 +1,19 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`gate execute evaluation errors on gate evaluation request should fail when gate evaluation request fails with 400 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Request failed with error: 400 Bad Request
+Deployment gate evaluation failed: Request failed with status code 400
+❌ Request failed with client error, exiting with status 1
+"
+`;
+
 exports[`gate execute evaluation errors on gate evaluation request should fail when gate evaluation request fails with 500 and fail-on-error is true 1`] = `
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
@@ -8,7 +22,17 @@ exports[`gate execute evaluation errors on gate evaluation request should fail w
 	Fail on error: true
 
 Requesting gate evaluation...
-Request failed with client error: 500 Internal Server Error
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (1 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (2 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (3 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (4 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (5 attempts)...
+Request failed with error: 500 Internal Server Error
 Deployment gate evaluation failed: Request failed with status code 500
 Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
 "
@@ -22,7 +46,17 @@ exports[`gate execute evaluation errors on gate evaluation request should pass w
 	Fail on error: false
 
 Requesting gate evaluation...
-Request failed with client error: 500 Internal Server Error
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (1 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (2 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (3 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (4 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (5 attempts)...
+Request failed with error: 500 Internal Server Error
 Deployment gate evaluation failed: Request failed with status code 500
 Unexpected error happened, exiting with status 0
 "
@@ -32,13 +66,22 @@ exports[`gate execute evaluation errors on gate evaluation result pass with a 50
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Timeout: 10800 seconds
+	Timeout: 30 seconds
 	Fail on error: false
 
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
+Error polling for gate evaluation results: API Error
+Retrying gate evaluation result request (1 attempts)...
+Error polling for gate evaluation results: API Error
+Retrying gate evaluation result request (2 attempts)...
+Error polling for gate evaluation results: API Error
+Retrying gate evaluation result request (3 attempts)...
+Error polling for gate evaluation results: API Error
+Retrying gate evaluation result request (4 attempts)...
+Error polling for gate evaluation results: API Error
 Error polling for gate evaluation results: API Error
 Unexpected error happened, exiting with status 0
 "
@@ -48,13 +91,22 @@ exports[`gate execute evaluation errors on gate evaluation result should fail wi
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
 	Environment: prod
-	Timeout: 10800 seconds
+	Timeout: 30 seconds
 	Fail on error: true
 
 Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation result request (1 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation result request (2 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation result request (3 attempts)...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation result request (4 attempts)...
+Request failed with error: 500 Internal Server Error
 Error polling for gate evaluation results: Request failed with status code 500
 Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
 "
@@ -72,6 +124,25 @@ Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
 Unknown gate evaluation status: unexpected
+	Retrying in 15s...
+	✅ Gate evaluation passed
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation result should retry when gate evaluation result returns 404 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Request failed with error: 404 Not Found
+Retrying gate evaluation result request (1 attempts)...
+	Gate evaluation in progress (0/2 rules completed)
 	Retrying in 15s...
 	✅ Gate evaluation passed
 "
@@ -122,6 +193,25 @@ Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
+	✅ Gate evaluation passed
+"
+`;
+
+exports[`gate execute successful evaluation should succeed when requests fail but succeed on retry 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 30 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation request (1 attempts)...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Request failed with error: 500 Internal Server Error
+Retrying gate evaluation result request (1 attempts)...
 	✅ Gate evaluation passed
 "
 `;
