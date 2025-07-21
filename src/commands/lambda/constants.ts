@@ -138,7 +138,6 @@ export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secr
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 
-
 // Environment Variables whose values don't need to be masked
 export const SKIP_MASKING_LAMBDA_ENV_VARS = new Set([
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
