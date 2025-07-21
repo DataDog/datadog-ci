@@ -11,7 +11,7 @@ import {requestConfirmation} from '../../helpers/prompt'
 import * as helperRenderer from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
-import { AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR } from "./constants";
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
