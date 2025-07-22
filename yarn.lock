@@ -2136,7 +2136,7 @@ __metadata:
     typanion: ^3.14.0
     typescript: 5.1.6
     upath: ^2.0.1
-    uuid: ^9.0.0
+    uuid: ^11.1.0
     ws: ^7.5.10
     xml2js: 0.5.0
     yamux-js: 0.1.2
@@ -11526,6 +11526,15 @@ jschardet@latest:
   version: 1.0.2
   resolution: "util-deprecate@npm:1.0.2"
   checksum: 474acf1146cb2701fe3b074892217553dfcf9a031280919ba1b8d651a068c9b15d863b7303cb15bd00a862b498e6cf4ad7b4a08fb134edd5a6f7641681cb54a2
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^11.1.0":
+  version: 11.1.0
+  resolution: "uuid@npm:11.1.0"
+  bin:
+    uuid: dist/esm/bin/uuid
+  checksum: 840f19758543c4631e58a29439e51b5b669d5f34b4dd2700b6a1d15c5708c7a6e0c3e2c8c4a2eae761a3a7caa7e9884d00c86c02622ba91137bd3deade6b4b4a
   languageName: node
   linkType: hard
 
