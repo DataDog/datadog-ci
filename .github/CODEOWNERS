@@ -25,6 +25,7 @@ src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser
 src/commands/unity-symbols    @DataDog/datadog-ci-admins @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
+src/helpers/**/flare*.ts    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/aas            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/cloud-run      @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/lambda         @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
