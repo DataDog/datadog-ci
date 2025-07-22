@@ -743,9 +743,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/arm-appservice@npm:^16.0.0":
-  version: 16.0.0
-  resolution: "@azure/arm-appservice@npm:16.0.0"
+"@azure/arm-appservice@npm:^17.0.0":
+  version: 17.0.0
+  resolution: "@azure/arm-appservice@npm:17.0.0"
   dependencies:
     "@azure/abort-controller": ^2.1.2
     "@azure/core-auth": ^1.9.0
@@ -754,7 +754,7 @@ __metadata:
     "@azure/core-paging": ^1.6.2
     "@azure/core-rest-pipeline": ^1.19.0
     tslib: ^2.8.1
-  checksum: 1ff8289cc4ab0cdec35527d8ca60f57b01d06b1397975ec604e18bb2c5b5b48b045705aa54d254beacdb3f1ad8808234138b5e96d69175c926b6cb105904eac7
+  checksum: e81bf99e46e63aea40ccc29244e3f909787df871cb3a71f62966a10b9e83791dc35070f6677924208884e4feeb98111b620f4adb0cacae4b6cf8c10ce69fff2f
   languageName: node
   linkType: hard
 
@@ -2049,7 +2049,7 @@ __metadata:
     "@aws-sdk/credential-provider-ini": ^3.709.0
     "@aws-sdk/credential-providers": ^3.709.0
     "@aws-sdk/types": ^3.709.0
-    "@azure/arm-appservice": ^16.0.0
+    "@azure/arm-appservice": ^17.0.0
     "@azure/arm-resources": ^6.1.0
     "@azure/identity": ^4.10.0
     "@babel/core": 7.8.0
