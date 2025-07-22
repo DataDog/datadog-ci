@@ -1,14 +1,14 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/serverless/flare"`;
+exports[`flare getEndpointUrl should not throw error if the site is invalid and DD_CI_BYPASS_SITE_VALIDATION is set 1`] = `"https://datad0ge.com/api/ui/support/flare"`;
 
-exports[`flare getEndpointUrl should return correct endpoint url 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
+exports[`flare getEndpointUrl should return correct endpoint url 1`] = `"https://app.datadoghq.com/api/ui/support/flare"`;
 
 exports[`flare getEndpointUrl should throw error if the site is invalid 1`] = `"Invalid site: datad0ge.com. Must be one of: datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ap2.datadoghq.com, ddog-gov.com"`;
 
-exports[`flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/serverless/flare"`;
+exports[`flare getEndpointUrl should use DEFAULT_DD_SITE if CI_SITE_ENV_VAR and SITE_ENV_VAR are not set 1`] = `"https://app.datadoghq.com/api/ui/support/flare"`;
 
-exports[`flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/serverless/flare"`;
+exports[`flare getEndpointUrl should use SITE_ENV_VAR if CI_SITE_ENV_VAR is not set 1`] = `"https://us3.datadoghq.com/api/ui/support/flare"`;
 
 exports[`flare validateStartEndFlags throws error when end is invalid 1`] = `"End time must be a time in milliseconds since Unix Epoch. '234abc' is not a number."`;
 
