@@ -1,5 +1,37 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`Default reporter renderApiRequestDescription dns result 1`] = `"Query for example.org"`;
+
+exports[`Default reporter renderApiRequestDescription dns result 2`] = `"Query for example.org on server 1.2.3.4"`;
+
+exports[`Default reporter renderApiRequestDescription dns result 3`] = `"Query for example.org on server 1.2.3.4:42"`;
+
+exports[`Default reporter renderApiRequestDescription fallback 1`] = `"[1munknown-subtype[22m test"`;
+
+exports[`Default reporter renderApiRequestDescription host + port, any subtype 1`] = `"Host: example.org:80"`;
+
+exports[`Default reporter renderApiRequestDescription invalid dns result 1`] = `"Invalid DNS result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid http result 1`] = `"Invalid HTTP result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid http result 2`] = `"Invalid HTTP result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid http result 3`] = `"Invalid HTTP result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid multistep result 1`] = `"Invalid multistep result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid ssl result 1`] = `"Invalid SSL result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid ssl result 2`] = `"Invalid SSL result"`;
+
+exports[`Default reporter renderApiRequestDescription invalid ssl result 3`] = `"Invalid SSL result"`;
+
+exports[`Default reporter renderApiRequestDescription method + url, any subtype 1`] = `"[1mGET[22m - https://example.org"`;
+
+exports[`Default reporter renderApiRequestDescription multistep result 1`] = `"Multistep test containing 3 HTTP test"`;
+
+exports[`Default reporter renderApiRequestDescription multistep result 2`] = `"Multistep test containing 1 HTTP test, 1 SSL test, 1 DNS test"`;
+
 exports[`Default reporter resultEnd 1 API test, 1 location, 1 result: success 1`] = `
 "[1m[32m✓[39m[22m [[1m[2maaa-aaa-aaa[22m[22m] [1mTest name[22m - [1m[32mlocation: [1mFrankfurt (AWS)[22m[1m[39m[22m
   • Total duration: 1000 ms - View test run details:

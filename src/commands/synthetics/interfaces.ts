@@ -338,18 +338,21 @@ export interface TestStepWithUnsupportedFields {
   }
 }
 
+export interface TestRequest {
+  dnsServer?: string
+  dnsServerPort?: number
+  headers: {[key: string]: string}
+  host?: string
+  method: string
+  port?: number
+  timeout: number
+  url: string
+}
+
 export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
-    request?: {
-      dnsServer?: string
-      headers: {[key: string]: string}
-      host?: string
-      method: string
-      port?: number
-      timeout: number
-      url: string
-    }
+    request?: TestRequest
     steps?: {subtype: string}[] // For multistep API tests
     variables: string[]
   }
