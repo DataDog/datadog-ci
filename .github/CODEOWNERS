@@ -25,11 +25,11 @@ src/commands/sourcemaps       @DataDog/datadog-ci-admins @DataDog/rum-browser
 src/commands/unity-symbols    @DataDog/datadog-ci-admins @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
-src/helpers/**/flare*.ts    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/aas            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/cloud-run      @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/lambda         @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 src/commands/stepfunctions  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+src/helpers/**/flare*.ts    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
 src/commands/git-metadata  @DataDog/datadog-ci-admins @DataDog/source-code-integration
