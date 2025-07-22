@@ -6,11 +6,8 @@ export interface DatadogCiConfig {
   envVarTags: string | undefined
 }
 
+type OptionValueType = string | boolean | string[] | undefined
+
 export type ExtractCommandConfig<T extends Command> = Partial<
-  Omit<
-    {
-      [K in keyof T as T[K] extends string | boolean | string[] | undefined ? K : never]: T[K]
-    },
-    'help' | 'path' | 'paths'
-  >
+  Omit<{[K in keyof T as T[K] extends OptionValueType ? K : never]: T[K]}, 'help' | 'path' | 'paths'>
 >
