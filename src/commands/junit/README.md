@@ -21,7 +21,7 @@ datadog-ci junit upload --service my-service --tags key1:value1 --tags key2:valu
 ```
 
 - The positional arguments are the directories or file paths in which the jUnit XML reports are located. If you pass a folder, the CLI will look for all `.xml` files in it.
-- `--auto-discovery` (default: `false`) do a recursive search and automatic jUnit XML reports discovery in the folders provided in positional arguments.
+- `--auto-discovery` (default: `false`) enables recursive search in folders passed as positional arguments, automatically discovering jUnit XML reports with filenames matching `*junit*.xml`, `*test*.xml`, or `*TEST-*.xml`.
 - `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported
 - `--service` (default: `DD_SERVICE` env var) should be set as the name of the service you're uploading jUnit XML reports for.
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all spans.
