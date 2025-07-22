@@ -18,6 +18,17 @@ import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
+type ExtractCommandConfig<T extends Command> = Partial<
+  Omit<
+    {
+      [K in keyof T as T[K] extends string | boolean | string[] | undefined ? K : never]: T[K]
+    },
+    'help' | 'path' | 'paths'
+  >
+>
+
+export type RunTestsCommandConfig2 = ExtractCommandConfig<RunTestsCommand>
+
 const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
 const $2 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/settings/continuous-testing`)
 const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
@@ -67,51 +78,51 @@ export class RunTestsCommand extends BaseCommand {
 
   protected config: RunTestsCommandConfig = getDefaultConfig()
 
-  private batchTimeout = Option.String('--batchTimeout', {
+  public batchTimeout = Option.String('--batchTimeout', {
     description:
       'The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.',
     validator: validation.isInteger(),
   })
-  private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
+  public failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
     description:
       'Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.',
   })
-  private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
+  public failOnMissingTests = Option.Boolean('--failOnMissingTests', {
     description: `Fail the CI job if the list of tests to run is empty or if some explicitly listed tests are missing.`,
   })
-  private failOnTimeout = Option.Boolean('--failOnTimeout', {
+  public failOnTimeout = Option.Boolean('--failOnTimeout', {
     description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
   })
-  private files = Option.Array('-f,--files', {
+  public files = Option.Array('-f,--files', {
     description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
   })
-  private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
+  public mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
     description: `Override the mobile application version for ${$6`Synthetic mobile application tests`}. The version must be uploaded and available within Datadog.`,
   })
-  private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
+  public mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
     description: `Override the mobile application version for ${$6`Synthetic mobile application tests`} with a local or recently built application.`,
   })
-  private overrides = Option.Array('--override', {
+  public overrides = Option.Array('--override', {
     description: 'Override specific test properties.',
   })
-  private publicIds = Option.Array('-p,--public-id', {
+  public publicIds = Option.Array('-p,--public-id', {
     description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
   })
-  private selectiveRerun = Option.Boolean('--selectiveRerun', {
+  public selectiveRerun = Option.Boolean('--selectiveRerun', {
     description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$2`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
   })
-  private subdomain = Option.String('--subdomain', {
+  public subdomain = Option.String('--subdomain', {
     description:
       'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
   })
-  private testSearchQuery = Option.String('-s,--search', {
+  public testSearchQuery = Option.String('-s,--search', {
     description: `Use a ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
   })
-  private tunnel = Option.Boolean('-t,--tunnel', {
+  public tunnel = Option.Boolean('-t,--tunnel', {
     description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
   })
 
-  private buildCommand = Option.String('--buildCommand', {
+  public buildCommand = Option.String('--buildCommand', {
     description: 'The build command to generate the assets to run the tests against.',
   })
 
@@ -229,9 +240,8 @@ export class RunTestsCommand extends BaseCommand {
         headers: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
         locations: process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-        resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
-          ';'
-        ),
+        resourceUrlSubstitutionRegexes:
+          process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(';'),
         retry: Object.keys(envOverrideRetryConfig).length > 0 ? envOverrideRetryConfig : undefined,
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,

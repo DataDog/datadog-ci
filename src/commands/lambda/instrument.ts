@@ -34,12 +34,7 @@ import {
   maskConfig,
 } from './functions/commons'
 import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
-import {
-  FunctionConfiguration,
-  InstrumentationSettings,
-  InstrumentedConfigurationGroup,
-  LambdaConfigOptions,
-} from './interfaces'
+import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from './interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,
@@ -49,6 +44,7 @@ import {
 } from './prompt'
 import * as commonRenderer from './renderers/common-renderer'
 import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
+import {ExtractCommandConfig} from '../../helpers/config'
 
 export class InstrumentCommand extends Command {
   public static paths = [['lambda', 'instrument']]
@@ -58,37 +54,35 @@ export class InstrumentCommand extends Command {
     description: 'Apply Datadog instrumentation to a Lambda.',
   })
 
-  private apmFlushDeadline = Option.String('--apm-flush-deadline')
-  private appsecEnabled = Option.Boolean('--appsec', false)
-  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
-  private configPath = Option.String('--config')
-  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private environment = Option.String('--env')
-  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
-  private extraTags = Option.String('--extra-tags,--extraTags')
-  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs')
-  private forwarder = Option.String('--forwarder')
-  private functions = Option.Array('-f,--function', [])
-  private interactive = Option.Boolean('-i,--interactive', false)
-  private layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
-  private layerVersion = Option.String('-v,--layer-version,--layerVersion')
-  private logging = Option.String('--logging')
-  private logLevel = Option.String('--log-level,--logLevel')
-  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
-  private profile = Option.String('--profile')
-  private regExPattern = Option.String('--functions-regex,--functionsRegex')
-  private region = Option.String('-r,--region')
-  private service = Option.String('--service')
-  private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true)
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
-  private tracing = Option.String('--tracing')
-  private version = Option.String('--version')
-  private llmobs = Option.String('--llmobs')
+  public apmFlushDeadline = Option.String('--apm-flush-deadline')
+  public appsecEnabled = Option.Boolean('--appsec', false)
+  public captureLambdaPayload = Option.Boolean('--capture-lambda-payload,--captureLambdaPayload')
+  public configPath = Option.String('--config')
+  public dryRun = Option.Boolean('-d,--dry,--dry-run', false)
+  public environment = Option.String('--env')
+  public extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
+  public extraTags = Option.String('--extra-tags,--extraTags')
+  public flushMetricsToLogs = Option.Boolean('--flush-metrics-to-logs,--flushMetricsToLogs')
+  public forwarder = Option.String('--forwarder')
+  public functions = Option.Array('-f,--function', [])
+  public interactive = Option.Boolean('-i,--interactive', false)
+  public layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
+  public layerVersion = Option.String('-v,--layer-version,--layerVersion')
+  public logging = Option.Boolean('--logging')
+  public logLevel = Option.String('--log-level,--logLevel')
+  public mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
+  public profile = Option.String('--profile')
+  public regExPattern = Option.String('--functions-regex,--functionsRegex')
+  public region = Option.String('-r,--region')
+  public service = Option.String('--service')
+  public sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true)
+  public uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
+  public tracing = Option.Boolean('--tracing')
+  public version = Option.String('--version')
+  public llmobs = Option.String('--llmobs')
 
-  private config: LambdaConfigOptions = {
+  private config: ExtractCommandConfig<InstrumentCommand> = {
     functions: [],
-    tracing: 'true',
-    logging: 'true',
   }
 
   private credentials?: AwsCredentialIdentity
@@ -121,7 +115,7 @@ export class InstrumentCommand extends Command {
       }
     }
 
-    let hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
+    let hasSpecifiedFunctions = this.functions.length > 0 || (this.config.functions && this.config.functions.length > 0)
     if (this.interactive) {
       try {
         const credentials = await getAWSCredentials()
@@ -204,7 +198,7 @@ export class InstrumentCommand extends Command {
       return 1
     }
 
-    hasSpecifiedFunctions = this.functions.length !== 0 || this.config.functions.length !== 0
+    hasSpecifiedFunctions = this.functions.length > 0 || (this.config.functions && this.config.functions.length > 0)
     const hasSpecifiedRegExPattern = this.regExPattern !== undefined && this.regExPattern !== ''
     if (!hasSpecifiedFunctions && !hasSpecifiedRegExPattern) {
       this.context.stdout.write(instrumentRenderer.renderNoFunctionsSpecifiedError(Object.getPrototypeOf(this)))
@@ -296,7 +290,7 @@ export class InstrumentCommand extends Command {
       try {
         const region = this.region ?? this.config.region ?? process.env[AWS_DEFAULT_REGION_ENV_VAR]
         functionGroups = collectFunctionsByRegion(
-          this.functions.length !== 0 ? this.functions : this.config.functions,
+          this.functions.length > 0 ? this.functions : (this.config.functions ?? []),
           region
         )
       } catch (err) {
@@ -399,22 +393,7 @@ export class InstrumentCommand extends Command {
       return
     }
 
-    const stringBooleansMap: {[key: string]: string | undefined} = {
-      captureLambdaPayload: this.captureLambdaPayload ?? this.config.captureLambdaPayload,
-      flushMetricsToLogs: this.flushMetricsToLogs ?? this.config.flushMetricsToLogs,
-      logging: this.logging ?? this.config.logging,
-      mergeXrayTraces: this.mergeXrayTraces ?? this.config.mergeXrayTraces,
-      tracing: this.tracing ?? this.config.tracing,
-    }
-
-    for (const [stringBoolean, value] of Object.entries(stringBooleansMap)) {
-      if (!['true', 'false', undefined].includes(value?.toString().toLowerCase())) {
-        this.context.stdout.write(instrumentRenderer.renderInvalidStringBooleanSpecifiedError(stringBoolean))
-
-        return
-      }
-    }
-
+    // FIXME: make sure we keep the intended behavior here
     const captureLambdaPayload = coerceBoolean(false, this.captureLambdaPayload, this.config.captureLambdaPayload)
     const flushMetricsToLogs = coerceBoolean(true, this.flushMetricsToLogs, this.config.flushMetricsToLogs)
     const loggingEnabled = coerceBoolean(true, this.logging, this.config.logging)

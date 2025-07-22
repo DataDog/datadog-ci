@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "lambda": {
+      "$ref": "#/definitions/LambdaConfig"
+    },
+    "synthetics": {
+      "$ref": "#/definitions/SyntheticsConfig"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "LambdaConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apmFlushDeadline": {
+          "type": "string"
+        },
+        "appsecEnabled": {
+          "type": "boolean"
+        },
+        "captureLambdaPayload": {
+          "type": "boolean"
+        },
+        "configPath": {
+          "type": "string"
+        },
+        "dryRun": {
+          "type": "boolean"
+        },
+        "environment": {
+          "type": "string"
+        },
+        "extensionVersion": {
+          "type": "string"
+        },
+        "extraTags": {
+          "type": "string"
+        },
+        "flushMetricsToLogs": {
+          "type": "boolean"
+        },
+        "forwarder": {
+          "type": "string"
+        },
+        "functions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interactive": {
+          "type": "boolean"
+        },
+        "layerAWSAccount": {
+          "type": "string"
+        },
+        "layerVersion": {
+          "type": "string"
+        },
+        "logging": {
+          "type": "boolean"
+        },
+        "logLevel": {
+          "type": "string"
+        },
+        "mergeXrayTraces": {
+          "type": "string"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "regExPattern": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "service": {
+          "type": "string"
+        },
+        "sourceCodeIntegration": {
+          "type": "boolean"
+        },
+        "uploadGitMetadata": {
+          "type": "boolean"
+        },
+        "tracing": {
+          "type": "boolean"
+        },
+        "version": {
+          "type": "string"
+        },
+        "llmobs": {
+          "type": "string"
+        }
+      }
+    },
+    "SyntheticsConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "appKey": {
+          "type": "string"
+        },
+        "configPath": {
+          "type": "string"
+        },
+        "datadogSite": {
+          "type": "string"
+        },
+        "fips": {
+          "type": "boolean"
+        },
+        "fipsIgnoreError": {
+          "type": "boolean"
+        },
+        "jUnitReport": {
+          "type": "string"
+        },
+        "runName": {
+          "type": "string"
+        },
+        "failOnCriticalErrors": {
+          "type": "boolean"
+        },
+        "failOnMissingTests": {
+          "type": "boolean"
+        },
+        "failOnTimeout": {
+          "type": "boolean"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mobileApplicationVersion": {
+          "type": "string"
+        },
+        "mobileApplicationVersionFilePath": {
+          "type": "string"
+        },
+        "overrides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "publicIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "selectiveRerun": {
+          "type": "boolean"
+        },
+        "subdomain": {
+          "type": "string"
+        },
+        "testSearchQuery": {
+          "type": "string"
+        },
+        "tunnel": {
+          "type": "boolean"
+        },
+        "buildCommand": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

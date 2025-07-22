@@ -55,16 +55,16 @@ export abstract class AasCommand extends Command {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
   })
-  private subscriptionId = Option.String('-s,--subscription-id', {
+  public subscriptionId = Option.String('-s,--subscription-id', {
     description: 'Azure Subscription ID containing the App Service',
   })
-  private resourceGroup = Option.String('-g,--resource-group', {
+  public resourceGroup = Option.String('-g,--resource-group', {
     description: 'Name of the Azure Resource Group containing the App Service',
   })
-  private aasName = Option.String('-n,--name', {
+  public aasName = Option.String('-n,--name', {
     description: 'Name of the Azure App Service to instrument',
   })
-  private resourceIds = Option.Array('-r,--resource-id', {
+  public resourceIds = Option.Array('-r,--resource-id', {
     description:
       'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
   })

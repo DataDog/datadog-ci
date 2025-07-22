@@ -237,64 +237,10 @@ export const getTriggerConfigs = async (
   reporter: MainReporter,
   suites?: Suite[]
 ): Promise<TriggerConfig[]> => {
-  // Grab the test config overrides from all the sources: default test config overrides, test files containing specific test config override, env variable, and CLI params
-  const defaultTestConfigOverrides = config.defaultTestOverrides
   const testsFromTestConfigs = await getTestConfigs(config, reporter, suites)
 
-  // Grab the tests returned by the search query (or `[]` if not given).
-  const testsFromSearchQuery = await getTestsFromSearchQuery(api, config)
-
-  // Grab the list of publicIds of tests to trigger from config file/env variable/CLI params, search query or test config files
-  const testIdsFromCli = config.publicIds
-  const testIdsFromSearchQuery = testsFromSearchQuery.map(({id}) => id)
-  const testIdsFromTestConfigs = testsFromTestConfigs.map(getTriggerConfigPublicId).filter((p): p is string => !!p)
-
-  // Take the list of tests from the first source that defines it, by order of precedence
-  const testIdsToTrigger =
-    [testIdsFromCli, testIdsFromSearchQuery, testIdsFromTestConfigs].find((ids) => ids.length > 0) ?? []
-
-  // Create the overrides required for the list of tests to trigger
-  const triggerConfigsWithId = testIdsToTrigger.map((id) => {
-    const testIndexFromSearchQuery = testsFromSearchQuery.findIndex((t) => t.id === id)
-    let testFromSearchQuery
-    if (testIndexFromSearchQuery >= 0) {
-      testFromSearchQuery = testsFromSearchQuery.splice(testIndexFromSearchQuery, 1)[0]
-    }
-
-    const testIndexFromTestConfigs = testsFromTestConfigs.findIndex((t) => getTriggerConfigPublicId(t) === id)
-    let testFromTestConfigs
-    if (testIndexFromTestConfigs >= 0) {
-      testFromTestConfigs = testsFromTestConfigs.splice(testIndexFromTestConfigs, 1)[0]
-    }
-
-    return {
-      ...(isLocalTriggerConfig(testFromTestConfigs) ? {} : {id}),
-      ...testFromSearchQuery,
-      ...testFromTestConfigs,
-      testOverrides: {
-        ...defaultTestConfigOverrides,
-        ...testFromTestConfigs?.testOverrides,
-      },
-    } as TriggerConfig
-  })
-
-  const localTriggerConfigsWithoutId = testsFromTestConfigs.flatMap((testConfig) => {
-    if (!isLocalTriggerConfig(testConfig)) {
-      return []
-    }
-
-    return [
-      {
-        ...testConfig,
-        testOverrides: {
-          ...defaultTestConfigOverrides,
-          ...testConfig.testOverrides,
-        },
-      },
-    ]
-  })
-
-  return triggerConfigsWithId.concat(localTriggerConfigsWithoutId)
+  console.log(testsFromTestConfigs)
+  process.exit(0)
 }
 
 export const executeWithDetails = async (

@@ -13,34 +13,6 @@ import {
 } from '@aws-sdk/client-lambda'
 
 /**
- * Configuration options provided by the user through
- * the CLI in order to instrument properly.
- */
-export interface LambdaConfigOptions {
-  apmFlushDeadline?: string
-  appsecEnabled?: boolean
-  captureLambdaPayload?: string
-  environment?: string
-  extensionVersion?: string
-  extraTags?: string
-  flushMetricsToLogs?: string
-  forwarder?: string
-  functions: string[]
-  interactive?: boolean
-  layerAWSAccount?: string
-  layerVersion?: string
-  logging?: string
-  logLevel?: string
-  mergeXrayTraces?: string
-  profile?: string
-  region?: string
-  service?: string
-  tracing?: string
-  version?: string
-  llmobs?: string
-}
-
-/**
  * Configuration comprised by a Lambda Function ARN,
  * its configuration from AWS, its library layer ARN,
  * the changes in logs, tags, and the update request.

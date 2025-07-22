@@ -28,22 +28,22 @@ export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
-  protected apiKey = Option.String('--apiKey', {
+  public apiKey = Option.String('--apiKey', {
     description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
-  protected appKey = Option.String('--appKey', {
+  public appKey = Option.String('--appKey', {
     description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
-  protected configPath = Option.String('--config', {
+  public configPath = Option.String('--config', {
     description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
   })
-  protected datadogSite = Option.String('--datadogSite', {
+  public datadogSite = Option.String('--datadogSite', {
     description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
   })
 
-  protected fips = Option.Boolean('--fips', false)
-  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  protected fipsConfig = {
+  public fips = Option.Boolean('--fips', false)
+  public fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  public fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }

@@ -3,7 +3,10 @@ import * as fs from 'fs'
 import process from 'process'
 import {promisify} from 'util'
 
+import Ajv, {ErrorObject} from 'ajv'
+import addFormats from 'ajv-formats'
 import chalk from 'chalk'
+import {diff} from 'jest-diff'
 import upath from 'upath'
 
 import {getCommonAppBaseURL} from '../../../helpers/app'
@@ -25,10 +28,12 @@ import {
   SyntheticsCIConfig,
   SyntheticsOrgSettings,
   Test,
+  TestConfig,
   TestPayload,
   TriggerConfig,
   UserConfigOverride,
 } from '../interfaces'
+import testConfigSchema from '../test-config.schema.json'
 
 import {
   LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER,
@@ -154,6 +159,16 @@ export const getResultOutcome = (result: Result): ResultOutcome => {
   return ResultOutcome.Failed
 }
 
+const showValidationErrors = (path: string, errors: ErrorObject[]): void => {
+  console.error(`\nValidation errors in file: ${path}\n`, errors)
+
+  errors.forEach((message) => {
+    process.stderr.write(
+      `Error while validating file: ${path}, ${message.schemaPath}: ${message.instancePath} ${message.message}\n`
+    )
+  })
+}
+
 export const getSuites = async (pattern: string, reporter: MainReporter): Promise<Suite[]> => {
   reporter.log(`Finding files matching ${upath.resolve(process.cwd(), pattern)}\n`)
 
@@ -164,13 +179,38 @@ export const getSuites = async (pattern: string, reporter: MainReporter): Promis
     reporter.log('\nNo test files found.\n\n')
   }
 
+  const ajv = new Ajv({
+    strict: true,
+    strictSchema: false, // Allow unknown keywords in JSON schema, e.g. `markdownDescription`
+    removeAdditional: 'all',
+  })
+
+  addFormats(ajv, ['date-time'])
+
+  const validateFunction = ajv.compile<TestConfig>(testConfigSchema)
+
   return Promise.all(
     files.map(async (file) => {
       try {
         const content = await promisify(fs.readFile)(file, 'utf8')
         const suiteName = await getFilePathRelativeToRepo(file)
 
-        return {name: suiteName, content: JSON.parse(content)}
+        const originalFileContent = JSON.parse(content) as unknown
+        const fileContent = JSON.parse(content) as unknown
+        const isValid = validateFunction(fileContent)
+        if (!isValid) {
+          showValidationErrors(file, validateFunction.errors || [])
+          throw new Error(`Invalid test file: ${file}`)
+        }
+
+        const configDiff = diff(originalFileContent, fileContent, {
+          aColor: chalk.red,
+          bColor: chalk.green,
+        })
+
+        console.log(configDiff)
+
+        return {name: suiteName, content: fileContent}
       } catch (e) {
         throw new Error(`Unable to read and parse the test file ${file}`)
       }
