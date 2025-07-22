@@ -2071,7 +2071,7 @@ __metadata:
     "@types/node": ^18.19.76
     "@types/semver": ^7.3.12
     "@types/set-value": ^4.0.3
-    "@types/ssh2": 1.11.6
+    "@types/ssh2": 1.15.5
     "@types/ssh2-streams": 0.1.9
     "@types/sshpk": 1.10.5
     "@types/tiny-async-pool": ^2.0.3
@@ -2125,7 +2125,7 @@ __metadata:
     semver: ^7.5.3
     set-value: ^4.1.0
     simple-git: 3.16.0
-    ssh2: ^1.15.0
+    ssh2: ^1.16.0
     ssh2-streams: 0.4.10
     sshpk: 1.16.1
     terminal-link: 2.1.1
@@ -3834,6 +3834,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/node@npm:^18.11.18":
+  version: 18.19.120
+  resolution: "@types/node@npm:18.19.120"
+  dependencies:
+    undici-types: ~5.26.4
+  checksum: d38430484d1de03a754ae192b28e76588b69036a4ff0f134eefdaca40a2b423536ebdb2c6eb3b460b7d78061c459fc5a4d2d593c01e77f78d5391715b3d0c179
+  languageName: node
+  linkType: hard
+
 "@types/node@npm:^18.19.76":
   version: 18.19.76
   resolution: "@types/node@npm:18.19.76"
@@ -3901,12 +3910,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ssh2@npm:1.11.6":
-  version: 1.11.6
-  resolution: "@types/ssh2@npm:1.11.6"
+"@types/ssh2@npm:1.15.5":
+  version: 1.15.5
+  resolution: "@types/ssh2@npm:1.15.5"
   dependencies:
-    "@types/node": "*"
-  checksum: 4812694de5444802f7386da7882da9072a6d63b5b634eb59fdca39e8f7ad4964bcefe7844d375d594cb979a0804e24aea273098bdbb84e7e23a9d3b5698d3936
+    "@types/node": ^18.11.18
+  checksum: 158ce6644f6784b1f53d93f39d7b97291f97a45e756af6fd4e2d8b0f72800248137826e03b3218caadda5d769b882a06f2ab0981d57a55632658c54898fafc4a
   languageName: node
   linkType: hard
 
@@ -5228,7 +5237,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cpu-features@npm:~0.0.9":
+"cpu-features@npm:~0.0.10":
   version: 0.0.10
   resolution: "cpu-features@npm:0.0.10"
   dependencies:
@@ -9111,12 +9120,21 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"nan@npm:^2.18.0, nan@npm:^2.19.0":
+"nan@npm:^2.19.0":
   version: 2.20.0
   resolution: "nan@npm:2.20.0"
   dependencies:
     node-gyp: latest
   checksum: eb09286e6c238a3582db4d88c875db73e9b5ab35f60306090acd2f3acae21696c9b653368b4a0e32abcef64ee304a923d6223acaddd16169e5eaaf5c508fb533
+  languageName: node
+  linkType: hard
+
+"nan@npm:^2.20.0":
+  version: 2.23.0
+  resolution: "nan@npm:2.23.0"
+  dependencies:
+    node-gyp: latest
+  checksum: 2d1fd612d69d4cf4dd63c8ce61ee6aa36ace2caf5363c98b3232833fc24ab761fb96742682997716dea5fb9abf57e2fe7e94e76e0c4c302ed1fcde5b908f3e8f
   languageName: node
   linkType: hard
 
@@ -10645,20 +10663,20 @@ jschardet@latest:
   languageName: node
   linkType: hard
 
-"ssh2@npm:^1.15.0":
-  version: 1.15.0
-  resolution: "ssh2@npm:1.15.0"
+"ssh2@npm:^1.16.0":
+  version: 1.16.0
+  resolution: "ssh2@npm:1.16.0"
   dependencies:
     asn1: ^0.2.6
     bcrypt-pbkdf: ^1.0.2
-    cpu-features: ~0.0.9
-    nan: ^2.18.0
+    cpu-features: ~0.0.10
+    nan: ^2.20.0
   dependenciesMeta:
     cpu-features:
       optional: true
     nan:
       optional: true
-  checksum: 56baa07dc0dd8d97aefa05033b8a95d220a34b2f203aa9116173d7adc5e9fd46be22d7cfed99cdd9f5548862ae44abd1ec136e20ea856d5c470a0df0e5aea9d1
+  checksum: c024c4a432aae2457852037f31c0d9bec323fb062ace3a31e4a6dd6c55842246c80e7d20ff93ffed22dde1e523250d8438bc2f7d4a1450cf4fa4887818176f0e
   languageName: node
   linkType: hard
 
