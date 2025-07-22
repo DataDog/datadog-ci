@@ -1,5 +1,5 @@
 import fs from 'fs'
-import {createGzip} from 'zlib'
+import {createGzip, gzipSync} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
@@ -34,10 +34,21 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
 
   form.append('event', JSON.stringify(event), {filename: 'event.json'})
 
+  if (payload.prDiff) {
+    form.append('pr_diff', gzipSync(Buffer.from(JSON.stringify(payload.prDiff), 'utf8')), {
+      filename: 'pr_diff.json.gz',
+    })
+  }
+
+  if (payload.commitDiff) {
+    form.append('commit_diff', gzipSync(Buffer.from(JSON.stringify(payload.commitDiff), 'utf8')), {
+      filename: 'commit_diff.json.gz',
+    })
+  }
+
   await doWithMaxConcurrency(20, payload.paths, async (path) => {
-    const filename = path.split('/').pop() || path
     const gzip = fs.createReadStream(path).pipe(createGzip())
-    form.append(filename, gzip, {filename: `${filename}.gz`})
+    form.append('code_coverage_report_file', gzip, {filename: `${getReportFilename(path)}.gz`})
   })
 
   return request({
@@ -47,6 +58,13 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
     method: 'POST',
     url: 'api/v2/cicovreprt',
   })
+}
+
+const getReportFilename = (path: string) => {
+  const filename = path.split('/').pop() || path
+
+  // Remove leading dot if it exists, as the backend does not accept filenames starting with a dot
+  return filename.startsWith('.') ? filename.slice(1) : filename
 }
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {

@@ -16,9 +16,12 @@ import {
   GIT_COMMIT_COMMITTER_EMAIL,
   GIT_COMMIT_COMMITTER_NAME,
   GIT_COMMIT_MESSAGE,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   GIT_TAG,
+  GIT_HEAD_SHA,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
@@ -34,6 +37,9 @@ describe('getUserGitSpanTags', () => {
     DD_GIT_COMMIT_MESSAGE: 'DD_GIT_COMMIT_MESSAGE',
     DD_GIT_COMMIT_SHA: 'DD_GIT_COMMIT_SHA',
     DD_GIT_REPOSITORY_URL: 'DD_GIT_REPOSITORY_URL',
+    DD_GIT_PULL_REQUEST_BASE_BRANCH: 'DD_GIT_PULL_REQUEST_BASE_BRANCH',
+    DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA: 'DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA',
+    DD_GIT_COMMIT_HEAD_SHA: 'DD_GIT_COMMIT_HEAD_SHA',
   }
 
   it('reads user defined git metadata successfully', () => {
@@ -50,11 +56,20 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_DATE]: 'DD_GIT_COMMIT_AUTHOR_DATE',
       [GIT_COMMIT_AUTHOR_EMAIL]: 'DD_GIT_COMMIT_AUTHOR_EMAIL',
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
+      [GIT_PULL_REQUEST_BASE_BRANCH]: 'DD_GIT_PULL_REQUEST_BASE_BRANCH',
+      [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: 'DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA',
+      [GIT_HEAD_SHA]: 'DD_GIT_COMMIT_HEAD_SHA',
     })
   })
 
   it('does not include empty values', () => {
-    process.env = {...DD_GIT_METADATA, DD_GIT_COMMIT_SHA: undefined}
+    process.env = {
+      ...DD_GIT_METADATA,
+      DD_GIT_COMMIT_SHA: undefined,
+      DD_GIT_PULL_REQUEST_BASE_BRANCH: undefined,
+      DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA: undefined,
+      DD_GIT_COMMIT_HEAD_SHA: undefined,
+    }
     const result = getUserGitSpanTags()
     expect(result).toEqual({
       [GIT_REPOSITORY_URL]: 'DD_GIT_REPOSITORY_URL',
@@ -84,6 +99,9 @@ describe('getUserGitSpanTags', () => {
       [GIT_COMMIT_AUTHOR_DATE]: 'DD_GIT_COMMIT_AUTHOR_DATE',
       [GIT_COMMIT_AUTHOR_EMAIL]: 'DD_GIT_COMMIT_AUTHOR_EMAIL',
       [GIT_COMMIT_AUTHOR_NAME]: 'DD_GIT_COMMIT_AUTHOR_NAME',
+      [GIT_PULL_REQUEST_BASE_BRANCH]: 'DD_GIT_PULL_REQUEST_BASE_BRANCH',
+      [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: 'DD_GIT_PULL_REQUEST_BASE_BRANCH_SHA',
+      [GIT_HEAD_SHA]: 'DD_GIT_COMMIT_HEAD_SHA',
     })
   })
 

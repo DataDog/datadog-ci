@@ -20,8 +20,7 @@ For example:
 datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/coverage-reports acceptance-tests/coverage-reports e2e-tests/coverage-report.xml
 ```
 
-- The positional arguments are the directories or file paths in which the code coverage reports are located. If you pass a folder, the CLI will do a recursive search looking for supported coverage reports.
-- `--auto-discovery` (default: `true`) do a recursive search and automatic coverage reports discovery in the folders provided in positional arguments.
+- The positional arguments are directories, files, or glob patterns that will be used when looking for coverage report files. If you pass a folder, the CLI will do a recursive search looking for supported coverage reports.
 - `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported
 - `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all coverage reports.
   - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
@@ -29,6 +28,9 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
   - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
+- `--upload-git-diff` (default: `true`): if the command is run in a PR context, it will try to upload the PR git diff along with the coverage data.
+- `--skip-git-metadata-upload` (default: `false`): skip the upload of git metadata.
+- `--git-repository-url` is a string specifying the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
 
 #### Environment variables
 

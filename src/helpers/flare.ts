@@ -3,8 +3,9 @@
  */
 
 import fs from 'fs'
+import {Writable} from 'stream'
 
-import axios from 'axios'
+import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
@@ -21,7 +22,7 @@ import {
 import {deleteFolder} from './fs'
 import * as helpersRenderer from './renderer'
 import {isValidDatadogSite} from './validation'
-import {version} from './version'
+import {getLatestVersion, version} from './version'
 
 /**
  * Send the zip file to Datadog support
@@ -53,12 +54,12 @@ export const sendToDatadog = async (
   }
 
   try {
-    await axios.post(endpointUrl, form, headerConfig)
+    await axiosPost(endpointUrl, form, headerConfig)
   } catch (err) {
     // Ensure the root folder is deleted if the request fails
     deleteFolder(rootFolderPath)
 
-    if (axios.isAxiosError(err)) {
+    if (isAxiosError(err)) {
       const errResponse: string = (err.response?.data.error as string) ?? ''
       const errorMessage = err.message ?? ''
 
@@ -183,4 +184,19 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   }
 
   return [startMillis, endMillis]
+}
+
+export const validateCliVersion = async (stdout: Pick<Writable, 'write'>): Promise<void> => {
+  try {
+    const latestVersion = await getLatestVersion()
+    if (latestVersion !== version) {
+      stdout.write(
+        helpersRenderer.renderSoftWarning(
+          `You are using an outdated version of datadog-ci (${version}). The latest version is ${latestVersion}. Please update for better support.`
+        )
+      )
+    }
+  } catch {
+    // Ignore Errors
+  }
 }

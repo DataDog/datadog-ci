@@ -3,7 +3,6 @@ import {pick} from '../../../helpers/utils'
 
 import {
   BaseResult,
-  BaseTestPayload,
   BasicAuthCredentials,
   BrowserServerResult,
   CookiesObject,
@@ -14,9 +13,10 @@ import {
   ResultInBatch,
   ResultInBatchSkippedBySelectiveRerun,
   RetryConfig,
+  ServerConfigOverride,
   ServerResult,
   Test,
-  TestNotFound,
+  TestMissing,
   TestPayload,
   TestSkipped,
   TestWithOverride,
@@ -122,7 +122,7 @@ export const isResultInBatchSkippedBySelectiveRerun = (
 }
 
 export const isMobileTestWithOverride = (
-  item: TestNotFound | TestSkipped | TestWithOverride
+  item: TestMissing | TestSkipped | TestWithOverride
 ): item is MobileTestWithOverride =>
   'test' in item && item.test.type === 'mobile' && !!item.test.options && !!item.test.options.mobileApplication
 
@@ -148,14 +148,14 @@ export const toExecutionRule = (env: string | undefined): ExecutionRule | undefi
 
 type AccumulatorBaseConfigOverride = Omit<
   UserConfigOverride,
+  // Objects that are changed to partial.
   | 'retry'
   | 'basicAuth'
   | 'cookies'
   | 'setCookies'
-  // TODO SYNTH-12971: These options will be implemented later in separate PRs
+  // TODO SYNTH-12980: These options will be implemented later.
   | 'mobileApplicationVersion'
   | 'mobileApplicationVersionFilePath'
-  | 'tunnel'
 > & {
   retry?: Partial<RetryConfig>
   basicAuth?: Partial<BasicAuthCredentials>
@@ -338,8 +338,8 @@ const TEMPLATE_REGEX = /{{\s*([^{}]*?)\s*}}/g
 const template = (st: string, context: any): string =>
   st.replace(TEMPLATE_REGEX, (match: string, p1: string) => (p1 in context ? context[p1] : match))
 
-export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): BaseTestPayload => {
-  let overriddenConfig: BaseTestPayload = {}
+export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): ServerConfigOverride => {
+  let overriddenConfig: ServerConfigOverride = {}
 
   if (!testOverrides || !Object.keys(testOverrides).length) {
     return overriddenConfig
@@ -368,7 +368,6 @@ export const getBasePayload = (test: Test, testOverrides?: UserConfigOverride): 
       'retry',
       'startUrlSubstitutionRegex',
       'testTimeout',
-      'tunnel',
       'variables',
     ]),
   }

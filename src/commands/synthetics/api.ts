@@ -25,7 +25,7 @@ import {
   ServerTest,
   SyntheticsOrgSettings,
   TestSearchResult,
-  Trigger,
+  ServerTrigger,
 } from './interfaces'
 import {MAX_TESTS_TO_TRIGGER} from './test'
 import {ciTriggerApp, getDatadogHost, retry} from './utils/public'
@@ -45,6 +45,28 @@ export class EndpointError extends Error {
     super(message)
     Object.setPrototypeOf(this, EndpointError.prototype)
   }
+}
+
+const LOWER_UNAMBIGUOUS_CHARS = 'abcdefghijkmnpqrstuvwxyz23456789'
+const PUBLIC_ID_REGEX = `[${LOWER_UNAMBIGUOUS_CHARS}]{3}-[${LOWER_UNAMBIGUOUS_CHARS}]{3}-[${LOWER_UNAMBIGUOUS_CHARS}]{3}`
+
+/**
+ * Extracts the public IDs from an error message like `Cannot write tests or results (test ids: ['aaa-aaa-aaa', 'bbb-bbb-bbb'])`.
+ */
+export const extractUnauthorizedTestPublicIds = (requestError: AxiosError<BackendError>): Set<string> | undefined => {
+  const unauthorizedMessage = requestError.response?.data?.errors?.find((error) =>
+    error.includes('Cannot write tests or results (test ids:')
+  )
+  if (!unauthorizedMessage) {
+    return
+  }
+
+  const matchResult = unauthorizedMessage.match(new RegExp(PUBLIC_ID_REGEX, 'g'))
+  if (!matchResult) {
+    return
+  }
+
+  return new Set(matchResult)
 }
 
 export const formatBackendErrors = (requestError: AxiosError<BackendError>, scopeName?: string) => {
@@ -71,7 +93,7 @@ export const formatBackendErrors = (requestError: AxiosError<BackendError>, scop
   return `could not query ${requestError.config?.baseURL}${requestError.config?.url}\n${requestError.message}`
 }
 
-const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (data: Payload) => {
+const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTrigger>) => async (data: Payload) => {
   const resp = await retryRequest(
     {
       data,
@@ -119,11 +141,11 @@ const getLocalTestDefinition = (request: (args: AxiosRequestConfig) => AxiosProm
   return resp.data
 }
 
-const editTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) => async (
+const editTest = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
   testId: string,
   data: ServerTest
 ) => {
-  const resp = await retryRequest(
+  await retryRequest(
     {
       data,
       method: 'PUT',
@@ -132,8 +154,6 @@ const editTest = (request: (args: AxiosRequestConfig) => AxiosPromise<Trigger>) 
     request,
     {retryOn429: true}
   )
-
-  return resp.data
 }
 
 const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (
@@ -236,7 +256,7 @@ const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
       ...test.config,
       request: {
         ...test.config.request,
-        dnsServer: test.config.request.dns_server,
+        dnsServer: test.config.request?.dns_server,
       },
     },
   }

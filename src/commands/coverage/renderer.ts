@@ -1,7 +1,10 @@
 import chalk from 'chalk'
 import upath from 'upath'
 
+import {SpanTags} from '../../helpers/interfaces'
+
 import {Payload} from './interfaces'
+import {getCoverageDetailsUrl} from './utils'
 
 const ICONS = {
   FAILED: '❌',
@@ -37,18 +40,25 @@ export const renderSuccessfulUpload = (dryRun: boolean, fileCount: number, durat
   return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Uploaded ${fileCount} files in ${duration} seconds.`)
 }
 
-// TODO add some Datadog links to the output
-export const renderSuccessfulUploadCommand = () => {
-  let fullStr = ''
-  fullStr += chalk.green(
-    '=================================================================================================\n'
-  )
-  fullStr += chalk.green('* Code coverage report(s) upload successful\n')
-  fullStr += chalk.green(
-    '=================================================================================================\n'
-  )
+export const renderSuccessfulUploadCommand = (spanTags: SpanTags) => {
+  const coverageDetailsUrl = getCoverageDetailsUrl(spanTags)
+  if (coverageDetailsUrl) {
+    let fullStr = ''
+    fullStr += chalk.green(
+      '=================================================================================================\n'
+    )
+    fullStr += chalk.green(
+      '* View detailed coverage report in Datadog (it can take a few minutes to become available)\n'
+    )
+    fullStr += chalk.green(`* ${coverageDetailsUrl}\n`)
+    fullStr += chalk.green(
+      '=================================================================================================\n'
+    )
 
-  return fullStr
+    return fullStr
+  }
+
+  return ''
 }
 
 export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${renderUpload(payload)}`
@@ -76,4 +86,12 @@ export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
   }
 
   return fullStr
+}
+
+export const renderSuccessfulGitDBSync = (dryRun: boolean, elapsed: number) => {
+  return chalk.green(`${dryRun ? '[DRYRUN] ' : ''}${ICONS.SUCCESS} Synced git metadata in ${elapsed} seconds.`)
+}
+
+export const renderFailedGitDBSync = (err: any) => {
+  return chalk.red.bold(`${ICONS.FAILED} Could not sync git metadata: ${err}\n`)
 }

@@ -7,6 +7,9 @@ changelog:
     labels:
       - release # Exclude release PRs from changelog
   categories:
+    - title: datadog-ci
+      labels:
+        - datadog-ci # For PRs spanning multiple commands, and repo-wide changes
     - title: Dependencies
       labels:
         - dependencies # Generally about vulnerability fixes

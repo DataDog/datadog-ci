@@ -96,6 +96,21 @@ describe('evaluate', () => {
       )
     })
 
+    test('should render the rule URL for ap2.datadoghq.com', () => {
+      process.env = {DD_SITE: 'ap2.datadoghq.com'}
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}})
+
+      const response: EvaluationResponse = {
+        status: 'passed',
+        rule_evaluations: [ruleEvaluation],
+      }
+      expect(command['handleEvaluationSuccess'].bind(command).call({}, response)).toEqual(0)
+      expect(write.mock.calls[0][0]).toContain(
+        'Rule URL: https://ap2.datadoghq.com/ci/quality-gates/rule/943d0eb8-907e-48cf-8178-3498900fe493'
+      )
+    })
+
     test('should pass the command on empty evaluation status by default', () => {
       const write = jest.fn()
       const command = createCommand(GateEvaluateCommand, {stdout: {write}})

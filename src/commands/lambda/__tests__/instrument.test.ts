@@ -24,6 +24,7 @@ import {
   VERSION_ENV_VAR,
 } from '../../../constants'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '../../../helpers/__tests__/testing-tools'
+import * as instrumentHelpers from '../../../helpers/git/instrument-helpers'
 import {requestConfirmation} from '../../../helpers/prompt'
 
 import {
@@ -257,7 +258,7 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
           ahead: 0,
           isClean: false,
@@ -295,14 +296,15 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
-        mockGitStatus.mockImplementation(() => ({
+        const mockGitStatus = jest.spyOn(instrumentHelpers, 'getCurrentGitStatus')
+        mockGitStatus.mockImplementation(async () => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
+          files: [],
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
+        const mockUploadFunction = jest.spyOn(instrumentHelpers as any, 'uploadGitData')
         mockUploadFunction.mockImplementation(() => {
           return
         })
@@ -340,15 +342,16 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
           ahead: 0,
           hash: '1be168ff837f043bde17c0314341c84271047b31',
           remote: 'git.repository_url:git@github.com:datadog/test.git',
           isClean: true,
+          files: [],
         }))
-        const mockUploadFunction = jest.spyOn(instrumentCommand.prototype as any, 'uploadGitData')
-        mockUploadFunction.mockImplementation(() => {
+        const mockUploadFunction = jest.spyOn(instrumentHelpers as any, 'uploadGitData')
+        mockUploadFunction.mockImplementation(async () => {
           return
         })
 
@@ -385,10 +388,13 @@ describe('lambda', () => {
         })
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
         const instrumentCommand = InstrumentCommand
-        const mockGitStatus = jest.spyOn(instrumentCommand.prototype as any, 'getCurrentGitStatus')
+        const mockGitStatus = jest.spyOn(instrumentHelpers as any, 'getCurrentGitStatus')
         mockGitStatus.mockImplementation(() => ({
           ahead: 1,
           isClean: true,
+          files: [],
+          hash: '',
+          remote: '',
         }))
 
         const cli = new Cli()
@@ -1313,6 +1319,7 @@ describe('lambda', () => {
         command['config']['layerAWSAccount'] = 'another-account'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'false'
+        command['config']['logging'] = 'false'
         command['config']['logLevel'] = 'debug'
         command['config']['llmobs'] = 'my-ml-app'
 
@@ -1323,11 +1330,13 @@ describe('lambda', () => {
           environment: undefined,
           extensionVersion: 6,
           extraTags: undefined,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           interactive: false,
           layerAWSAccount: 'another-account',
           layerVersion: 2,
+          loggingEnabled: false,
           logLevel: 'debug',
           mergeXrayTraces: false,
           service: undefined,
@@ -1352,6 +1361,8 @@ describe('lambda', () => {
         command['config']['flushMetricsToLogs'] = 'true'
         command['tracing'] = 'true'
         command['config']['tracing'] = 'false'
+        command['logging'] = 'true'
+        command['config']['logging'] = 'false'
         command['logLevel'] = 'debug'
         command['config']['logLevel'] = 'info'
         command['apmFlushDeadline'] = '20'
@@ -1363,14 +1374,21 @@ describe('lambda', () => {
           appsecEnabled: false,
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
+          environment: undefined,
+          extensionVersion: undefined,
+          extraTags: undefined,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: 'my-forwarder',
           interactive: false,
           layerAWSAccount: 'my-account',
           layerVersion: 1,
+          loggingEnabled: true,
           logLevel: 'debug',
           mergeXrayTraces: true,
+          service: undefined,
           tracingEnabled: true,
+          version: undefined,
           llmobsMlApp: 'my-ml-app',
         })
       })
@@ -1403,20 +1421,29 @@ describe('lambda', () => {
         process.env = {}
         const command = createCommand(InstrumentCommand)
         const validSettings: InstrumentationSettings = {
+          apmFlushDeadline: undefined,
           appsecEnabled: false,
           captureLambdaPayload: true,
+          environment: undefined,
           extensionVersion: undefined,
+          extraTags: undefined,
+          lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: undefined,
           interactive: false,
           layerAWSAccount: undefined,
           layerVersion: undefined,
+          llmobsMlApp: undefined,
+          loggingEnabled: true,
           logLevel: undefined,
           mergeXrayTraces: false,
+          service: undefined,
           tracingEnabled: true,
+          version: undefined,
         }
         command['config']['captureLambdaPayload'] = 'truE'
         command['config']['flushMetricsToLogs'] = 'False'
+        command['config']['logging'] = 'trUe'
         command['config']['mergeXrayTraces'] = 'falSE'
         command['config']['tracing'] = 'TRUE'
 
@@ -1424,23 +1451,27 @@ describe('lambda', () => {
 
         command['config']['captureLambdaPayload'] = 'true'
         command['config']['flushMetricsToLogs'] = 'false'
+        command['config']['logging'] = 'true'
         command['config']['mergeXrayTraces'] = 'false'
         command['config']['tracing'] = 'true'
         expect(command['getSettings']()).toEqual(validSettings)
 
         validSettings.captureLambdaPayload = false
         validSettings.flushMetricsToLogs = true
+        validSettings.loggingEnabled = false
         validSettings.mergeXrayTraces = true
         validSettings.tracingEnabled = false
 
         command['captureLambdaPayload'] = 'faLSE'
         command['flushMetricsToLogs'] = 'truE'
+        command['logging'] = 'FALse'
         command['mergeXrayTraces'] = 'TRUe'
         command['tracing'] = 'FALSE'
         expect(command['getSettings']()).toEqual(validSettings)
 
         command['captureLambdaPayload'] = 'false'
         command['flushMetricsToLogs'] = 'true'
+        command['logging'] = 'false'
         command['mergeXrayTraces'] = 'true'
         command['tracing'] = 'false'
         expect(command['getSettings']()).toEqual(validSettings)
@@ -1450,6 +1481,7 @@ describe('lambda', () => {
         process.env = {}
         const stringBooleans: (keyof Omit<LambdaConfigOptions, 'functions' | 'interactive' | 'appsecEnabled'>)[] = [
           'flushMetricsToLogs',
+          'logging',
           'mergeXrayTraces',
           'tracing',
         ]

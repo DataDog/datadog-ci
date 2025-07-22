@@ -107,7 +107,7 @@ export interface RawPollResultTest {
   type: 'browser' | 'api' | 'mobile'
   subtype?: string
   config: {
-    request: {
+    request?: {
       dns_server?: string | undefined
     }
   }
@@ -160,26 +160,73 @@ export type SelectiveRerunDecision =
       linked_result_id: string
     }
 
+// Note: We derive this summary into outputs in CI integrations.
+// - The `batchId` is transformed into a `batchUrl` (which is more useful for users)
+// - The `skipped` property is renamed to `testsSkippedCount`.
+// - The `testsNotFound` is transformed into a `testsNotFoundCount`.
+// - All properties are suffixed with `Count`.
+//
+// See:
+// - https://github.com/DataDog/synthetics-ci-github-action#outputs
+// - https://github.com/DataDog/datadog-ci-azure-devops#outputs
+export interface Summary {
+  /** The ID of the CI batch that was started by this datadog-ci execution. */
+  batchId: string
+  /** The number of critical errors that occurred during the CI batch. */
+  criticalErrors: number
+  /** The number of results expected by datadog-ci, prior to any selective rerun. */
+  expected: number
+  /** The number of results that failed during the CI batch. */
+  failed: number
+  /** The number of results that failed during the CI batch without blocking the CI. */
+  failedNonBlocking: number
+  /** The metadata collected for the CI batch. */
+  metadata?: Metadata
+  /** The number of results that passed during the CI batch. */
+  passed: number
+  /** The number of results that already passed in previous CI batches on the same commit. */
+  previouslyPassed: number
+  /** The number of tests that were skipped when starting the CI batch. */
+  skipped: number
+  /** The public IDs of tests that could not be accessed due to permissions when starting the CI batch. */
+  testsNotAuthorized: Set<string>
+  /** The public IDs of tests that could not be found when starting the CI batch. */
+  testsNotFound: Set<string>
+  /** The number of results that failed due to the CI batch timing out. */
+  timedOut: number // XXX: When a batch times out, all the results that were in progress are timed out.
+}
+
+// Note: This is exposed in CI integrations as a JSON-encoded string in the `rawResults` output.
 export interface BaseResult {
+  /** The device used in this test run. */
   device?: Device
-  /** Duration of the result in milliseconds. */
+  /** Duration of this test run in milliseconds. */
   duration: number
+  /** The execution rule that was used for this test run. */
   executionRule: ExecutionRule
+  /** The ID of the initial attempt if this test run is a retry. */
   initialResultId?: string
-  /** Whether the result is an intermediary result that is expected to be retried. */
+  /** Whether this test run is intermediary and expected to be retried. */
   isNonFinal?: boolean
+  /** The location from which this test run was executed. */
   location: string
-  /** Whether the result is passed or not, according to `failOnCriticalErrors` and `failOnTimeout`. */
+  /** Whether this test run passed, taking into account `failOnCriticalErrors` and `failOnTimeout`. */
   passed: boolean
+  /** Raw information about the test run. May not always be present. */
   result?: ServerResult
+  /** The ID of this test run. */
   resultId: string
-  /** Number of retries, including this result. */
+  /** The number of retries, including this test run. */
   retries: number
+  /** The maximum number of retries for this test run. */
   maxRetries: number
+  /** Information about the selective rerun that was applied to this test run. */
   selectiveRerun?: SelectiveRerunDecision
-  /** Original test for this result, including overrides if any. */
+  /** The test that was run, including any overrides. */
   test: Test
+  /** Whether this test run timed out. */
   timedOut: boolean
+  /** The timestamp of this test run. */
   timestamp: number
 }
 
@@ -259,8 +306,8 @@ export interface Step {
   }
   public_id?: string
   status: string
-  step_id: number
-  step_element_updates?: {
+  id?: number // Navigation step has no id
+  element_updates?: {
     multi_locator?: MultiLocator
   }
   sub_test_public_id?: string
@@ -294,7 +341,7 @@ export interface TestStepWithUnsupportedFields {
 export interface LocalTestDefinition {
   config: {
     assertions: Assertion[]
-    request: {
+    request?: {
       dnsServer?: string
       headers: {[key: string]: string}
       host?: string
@@ -340,7 +387,6 @@ export interface OptionsWithUnsupportedFields extends Options {
 }
 
 // TODO SYNTH-17944 Remove unsupported fields
-// I think a bunch of these are front-end specific fields
 interface LocalTestDefinitionWithUnsupportedFields extends LocalTestDefinition {
   created_at?: any
   created_by?: any
@@ -407,14 +453,23 @@ export interface LocationsMapping {
   [key: string]: string
 }
 
-export interface Trigger {
+export interface ServerTrigger {
   batch_id: string
   locations: Location[]
   selective_rerun_rate_limited?: boolean
 }
 
+export interface TriggerInfo {
+  batchId: string
+  locations: Location[]
+  selectiveRerunRateLimited?: boolean
+  testsNotAuthorized: Set<string>
+}
+
 export interface RetryConfig {
+  /** The number of attempts to perform in case of test failure. */
   count: number
+  /** The interval between attempts in milliseconds. */
   interval: number
 }
 
@@ -425,40 +480,121 @@ export interface MobileApplication {
 }
 
 export interface CookiesObject {
+  /** Whether to append or replace the original cookies. */
   append?: boolean
+  /** Cookie header to add or replace (e.g. `name1=value1;name2=value2;`). */
   value: string
 }
 
 export interface BaseConfigOverride {
+  /** Override the certificate checks in Synthetic API and Browser tests. */
   allowInsecureCertificates?: boolean
+  /** Override the credentials for basic authentication. */
   basicAuth?: BasicAuthCredentials
+  /** Override the data to send in API tests. */
   body?: string
+  /** Override the content type for the data to send in API tests. */
   bodyType?: string
+  /**
+   * Override the cookies for API and browser tests.
+   * - If this is a string, it is used to replace the original cookies.
+   * - If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original cookies.
+   */
   cookies?: string | CookiesObject
+  /**
+   * Override the `Set-Cookie` headers in browser tests only.
+   * - If this is a string, it is used to replace the original `Set-Cookie` headers.
+   * - If this is an object, the format must be `{append?: boolean, value: string}`, and depending on the value of `append`, it is appended or replaces the original `Set-Cookie` headers.
+   */
   setCookies?: string | CookiesObject
+  /**
+   * Override the maximum duration of steps in seconds for browser tests. This does not override individually set step timeouts.
+   */
   defaultStepTimeout?: number
+  /** Override the list of devices on which to run the Synthetic tests. */
   deviceIds?: string[]
+  /**
+   * Override the execution rule for Synthetic tests.
+   *
+   * The execution rule for the test defines the behavior of the CI batch in case of a failing test. It accepts one of the following values:
+   *
+   * - `blocking`: A failed test causes the CI batch to fail.
+   * - `non_blocking`: A failed test does not cause the CI batch to fail.
+   * - `skipped`: The test is not run at all.
+   */
   executionRule?: ExecutionRule
+  /** Override whether or not to follow HTTP redirections in API tests. */
   followRedirects?: boolean
+  /**
+   * Override the headers in the API and browser tests.
+   *
+   * This object specifies the headers to be replaced in the test. It should have keys representing the names of the headers to be replaced, and values indicating the new header values.
+   */
   headers?: {[key: string]: string}
+  /** Override the list of locations to run the test from. The possible values are listed [in this API response](https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true). */
   locations?: string[]
+  /**
+   * An array of regex patterns to modify resource URLs in the test. This can be useful for dynamically changing resource URLs during test execution.
+   *
+   * Each regex pattern should be in the format:
+   *
+   * - **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with / characters in URLs.
+   *   - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/resource` to `http://subdomain.example.com/resource`.
+   * - **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+   *   - For example, `s/(https://www.)(.*)/$1staging-$2/` to transform `https://www.example.com/resource` into `https://www.staging-example.com/resource`.
+   */
   resourceUrlSubstitutionRegexes?: string[]
+  /** Override the retry policy for the test. */
   retry?: RetryConfig
+  /**
+   * Override the start URL for API and browser tests.
+   *
+   * Local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) specified in the URL (for example, `{{ URL }}`) are replaced when the test is run.
+   *
+   * You can combine this with the `variables` override to override both the start URL and the variable values. For example:
+   *
+   * ```bash
+   * --override startUrl="{{ URL }}?static_hash={{ STATIC_HASH }}" --override variables.STATIC_HASH=abcdef
+   * ```
+   */
   startUrl?: string
+  /**
+   * A regex to modify the starting URL of browser and HTTP tests, whether it comes from the original test or the `startUrl` override.
+   *
+   * If the URL contains variables, this regex applies after the interpolation of the variables.
+   *
+   * There are two possible formats:
+   *
+   * - **`your_regex|your_substitution`**: The pipe-based syntax, to avoid any conflicts with `/` characters in URLs.
+   *   - For example, `https://example.com(.*)|http://subdomain.example.com$1` to transform `https://example.com/test` to `http://subdomain.example.com/test`.
+   * - **`s/your_regex/your_substitution/modifiers`**: The slash syntax, which supports modifiers.
+   *   - For example, `s/(https://www.)(.*)/$1extra-$2/` to transform `https://www.example.com` into `https://www.extra-example.com`.
+   */
   startUrlSubstitutionRegex?: string
+  /** Override the maximum duration in seconds for browser tests. */
   testTimeout?: number
-  tunnel?: TunnelInfo
+  /**
+   * Override existing or inject new local and [global variables](https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables) in Synthetic tests.
+   *
+   * This object should include keys corresponding to the names of the variables to be replaced, and values representing the new values for these variables.
+   */
   variables?: {[key: string]: string}
 }
 
 export interface UserConfigOverride extends BaseConfigOverride {
+  /** Override the mobile application version for Synthetic mobile application tests. The version must be uploaded and available within Datadog. */
   mobileApplicationVersion?: string
+  /** Override the application version for Synthetic mobile application tests. */
   mobileApplicationVersionFilePath?: string
 }
 
 export interface ServerConfigOverride extends BaseConfigOverride {
-  mobileApplication?: MobileApplication
+  // Programmatically set with `overrideMobileConfig()`.
   appExtractedMetadata?: MobileAppExtractedMetadata
+  mobileApplication?: MobileApplication
+  // Programmatically set with `tunnel.start()`.
+  // XXX: This would be better passed as a batch option in the future since it's always the same for all tests.
+  tunnel?: TunnelInfo
 }
 
 export interface BatchOptions {
@@ -472,18 +608,16 @@ export interface Payload {
   options?: BatchOptions
 }
 
-export interface BaseTestPayload extends ServerConfigOverride {
-  executionRule?: ExecutionRule
-}
-export interface LocalTestPayload extends BaseTestPayload {
+export interface LocalTestPayload extends ServerConfigOverride {
   local_test_definition: LocalTestDefinition
 }
-export interface RemoteTestPayload extends BaseTestPayload {
+export interface RemoteTestPayload extends ServerConfigOverride {
   public_id: string
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 
-export interface TestNotFound {
+/** Missing test, either because it's not found, or because it could not be read. */
+export interface TestMissing {
   errorMessage: string
 }
 
@@ -511,10 +645,17 @@ export interface BasicAuthCredentials {
 }
 
 interface BaseTriggerConfig {
+  /** Overrides for this Synthetic test only. This takes precedence over all other overrides. */
   testOverrides?: UserConfigOverride
+  /** Name of a test suite (for JUnit reports). */
   suite?: string
 }
 export interface RemoteTriggerConfig extends BaseTriggerConfig {
+  /**
+   * Public ID of a test (e.g. `abc-def-ghi`), or its full URL (e.g. `https://app.datadoghq.com/synthetics/details/abc-def-ghi`).
+   *
+   * @pattern ^(https://.*)?([a-z2-9]{3}-[a-z2-9]{3}-[a-z2-9]{3})$
+   */
   id: string
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
@@ -529,29 +670,12 @@ export enum ExecutionRule {
 }
 
 export interface Suite {
-  content: {
-    tests: TriggerConfig[]
-  }
+  content: TestConfig
   name?: string
 }
 
 export interface TestConfig {
   tests: TriggerConfig[]
-}
-
-export interface Summary {
-  // The batchId is associated to a full run of datadog-ci: multiple suites will be in the same batch.
-  batchId: string
-  criticalErrors: number
-  // Number of results expected by datadog-ci, prior to any selective rerun.
-  expected: number
-  failed: number
-  failedNonBlocking: number
-  passed: number
-  previouslyPassed: number
-  skipped: number
-  testsNotFound: Set<string>
-  timedOut: number
 }
 
 export interface TestSearchResult {
@@ -695,6 +819,7 @@ export interface ImportTestsCommandConfig extends SyntheticsCIConfig {
 
 export interface DeployTestsCommandConfig extends SyntheticsCIConfig {
   configPath: string
+  excludeFields?: string[]
   files: string[]
   publicIds: string[]
   subdomain: string

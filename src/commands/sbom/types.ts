@@ -7,6 +7,7 @@ export enum DependencyLanguage {
   RUBY = 'ruby',
   GO = 'go',
   JVM = 'jvm',
+  C_CPP = 'c_cpp',
 }
 
 // List from https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/licensing-a-repository
@@ -97,6 +98,7 @@ export interface Dependency {
   is_dev: undefined | boolean
   package_manager: string
   reachable_symbol_properties: undefined | Property[]
+  exclusions: undefined | string[]
 }
 
 export interface ReachableSymbolLocationValue extends LocationFromFile {

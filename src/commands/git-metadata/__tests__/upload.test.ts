@@ -17,7 +17,7 @@ describe('execute', () => {
     const {code, context} = await runCLI([], {DATADOG_API_KEY: ''})
     const output = context.stdout.toString().split('\n')
     output.reverse()
-    expect(output[1]).toContain('Missing DATADOG_API_KEY in your environment')
+    expect(output[1]).toContain('Missing DD_API_KEY in your environment')
     expect(code).toBe(1)
   })
 })

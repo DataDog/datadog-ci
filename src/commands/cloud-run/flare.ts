@@ -1,15 +1,12 @@
-import IService = google.cloud.run.v2.IService
-import IContainer = google.cloud.run.v2.IContainer
 import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
+import type {IService, IContainer, ServicesClient as IServicesClient} from './types'
+
 import {Logging} from '@google-cloud/logging'
-import {RevisionsClient, ServicesClient} from '@google-cloud/run'
-import {google} from '@google-cloud/run/build/protos/protos'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import {GoogleAuth} from 'google-auth-library'
 import upath from 'upath'
 
 import {
@@ -26,7 +23,13 @@ import {
 } from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {getProjectFiles, sendToDatadog, validateFilePath, validateStartEndFlags} from '../../helpers/flare'
+import {
+  getProjectFiles,
+  sendToDatadog,
+  validateCliVersion,
+  validateFilePath,
+  validateStartEndFlags,
+} from '../../helpers/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
 import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
@@ -39,6 +42,10 @@ import {getUniqueFileNames} from '../lambda/flare'
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
 import {renderAuthenticationInstructions} from './renderer'
+import {checkAuthentication} from './utils'
+
+// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
+const {RevisionsClient, ServicesClient} = require('@google-cloud/run')
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
@@ -97,7 +104,7 @@ export class CloudRunFlareCommand extends Command {
    */
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-
+    await validateCliVersion(this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
@@ -121,7 +128,7 @@ export class CloudRunFlareCommand extends Command {
     if (this.apiKey === undefined) {
       errorMessages.push(
         helpersRenderer.renderError(
-          'No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.'
+          'No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.'
         )
       )
     }
@@ -168,7 +175,7 @@ export class CloudRunFlareCommand extends Command {
 
     // Get and print service configuration
     this.context.stdout.write(chalk.bold('\n🔍 Fetching service configuration...\n'))
-    const runClient = new ServicesClient()
+    const runClient: IServicesClient = new ServicesClient()
     let config: IService
     try {
       config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.region!)
@@ -399,21 +406,6 @@ export class CloudRunFlareCommand extends Command {
 }
 
 /**
- * Check if the user is authenticated with GCP.
- * @returns true if the user is authenticated, false otherwise
- */
-export const checkAuthentication = async () => {
-  const auth = new GoogleAuth()
-  try {
-    await auth.getApplicationDefault()
-
-    return true
-  } catch (_) {
-    return false
-  }
-}
-
-/**
  * Call the google-cloud run sdk to get the configuration
  * for the given service.
  * @param runClient the google-cloud run sdk client
@@ -423,7 +415,7 @@ export const checkAuthentication = async () => {
  * @returns the configuration for the given service
  */
 export const getCloudRunServiceConfig = async (
-  runClient: ServicesClient,
+  runClient: IServicesClient,
   serviceName: string,
   projectName: string,
   region: string
@@ -483,7 +475,7 @@ export const summarizeConfig = (config: IService) => {
   if (template) {
     const summarizedContainers: IContainer[] = []
     const containers = template.containers ?? []
-    containers.forEach((container) => {
+    containers.forEach((container: IContainer) => {
       const summarizedContainer: any = {}
       summarizedContainer.env = container.env
       summarizedContainer.image = container.image

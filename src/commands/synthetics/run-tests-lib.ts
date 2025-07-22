@@ -1,3 +1,5 @@
+import {getCIMetadata} from '../../helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
 import {getProxyAgent} from '../../helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
@@ -14,8 +16,8 @@ import {
   SupportedReporter,
   Test,
   TestPayload,
-  Trigger,
   TriggerConfig,
+  TriggerInfo,
   WrapperConfig,
 } from './interfaces'
 import {updateLTDMultiLocators} from './multilocator'
@@ -151,15 +153,38 @@ export const executeTests = async (
     }
   }
 
-  let trigger: Trigger
+  const metadata = getCIMetadata({
+    [GIT_COMMIT_MESSAGE]: 500,
+  })
+
+  let trigger: TriggerInfo
   try {
-    trigger = await runTests(api, overriddenTestsToTrigger, config.selectiveRerun, config.batchTimeout)
+    trigger = await runTests(
+      api,
+      overriddenTestsToTrigger,
+      reporter,
+      metadata,
+      config.failOnMissingTests,
+      config.selectiveRerun,
+      config.batchTimeout
+    )
+
+    // Update summary
+    const cannotRead = initialSummary.testsNotAuthorized
+    const cannotWrite = trigger.testsNotAuthorized
+    initialSummary.testsNotAuthorized = new Set([...cannotRead, ...cannotWrite])
+    initialSummary.metadata = metadata
   } catch (error) {
     await stopTunnel()
+
+    if (error instanceof CiError) {
+      throw error
+    }
+
     throw new CriticalError('TRIGGER_TESTS_FAILED', error.message)
   }
 
-  if (trigger.selective_rerun_rate_limited) {
+  if (trigger.selectiveRerunRateLimited) {
     reporter.error('The selective rerun feature was rate-limited. All tests will be re-run.\n\n')
   }
 
@@ -188,7 +213,7 @@ export const executeTests = async (
       results,
       summary: {
         ...initialSummary,
-        batchId: trigger.batch_id,
+        batchId: trigger.batchId,
       },
     }
   } catch (error) {
@@ -318,6 +343,7 @@ export const executeWithDetails = async (
 
   const orgSettings = await getOrgSettings(mainReporter, localConfig)
 
+  // XXX: Mutates the `summary` object.
   renderResults({
     config: localConfig,
     reporter: mainReporter,

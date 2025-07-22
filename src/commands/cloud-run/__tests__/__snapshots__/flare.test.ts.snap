@@ -480,7 +480,7 @@ exports[`cloud-run flare summarizeConfig 1`] = `
 exports[`cloud-run flare validates required flags prints error when no API key in env variables 1`] = `
 "
 🐶 Generating Cloud Run flare to send your configuration to Datadog...
-[Error] No Datadog API key specified. Set an API key with the DATADOG_API_KEY environment variable.
+[Error] No Datadog API key specified. Set an API key with the DD_API_KEY environment variable.
 "
 `;
 

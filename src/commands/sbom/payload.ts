@@ -15,6 +15,7 @@ import {
 } from '../../helpers/tags'
 
 import {
+  EXCLUSION_KEY,
   FILE_PACKAGE_PROPERTY_KEY,
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
@@ -160,13 +161,16 @@ export const generatePayload = (
           continue
         }
         const affects: Affect[] = []
-        for (const affected of vulnerability['affects']) {
-          if (!affected['ref']) {
-            continue
+        // Iterate over the affects of the vulnerability when it exists
+        if (vulnerability['affects']) {
+          for (const affected of vulnerability['affects']) {
+            if (!affected['ref']) {
+              continue
+            }
+            affects.push({
+              ref: affected['ref'],
+            })
           }
-          affects.push({
-            ref: affected['ref'],
-          })
         }
         vulnerabilities.push({
           id: vulnerability['id'],
@@ -243,6 +247,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
   let packageManager = ''
   let isDirect
   let isDev
+  const exclusions: string[] = []
   const reachableSymbolProperties: Property[] = []
   for (const property of component['properties'] ?? []) {
     if (property['name'] === PACKAGE_MANAGER_PROPERTY_KEY) {
@@ -251,6 +256,8 @@ const extractingDependency = (component: any): Dependency | undefined => {
       isDirect = property['value'].toLowerCase() === 'true' ? true : undefined
     } else if (property['name'] === IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
       isDev = property['value'].toLowerCase() === 'true' ? true : undefined
+    } else if (property['name'] === EXCLUSION_KEY) {
+      exclusions.push(property['value'])
     } else if (property['name'].startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)) {
       const missingKeys = validateReachableSymbolLocationValue(property['value'])
       if (missingKeys.length > 0) {
@@ -279,6 +286,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     is_dev: isDev,
     package_manager: packageManager,
     reachable_symbol_properties: reachableSymbolProperties,
+    exclusions,
   }
 
   return dependency

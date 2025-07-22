@@ -6,14 +6,14 @@ Upload the git commit details to Datadog.
 
 ### Setup
 
-You need to have `DATADOG_API_KEY` in your environment.
+You need to have `DD_API_KEY` in your environment.
 
 ```bash
 # Environment setup
-export DATADOG_API_KEY="<API KEY>"
+export DD_API_KEY="<API KEY>"
 ```
 
-It is possible to configure the tool to use Datadog EU by defining the `DATADOG_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
+It is possible to configure the tool to use Datadog EU by defining the `DD_SITE` environment variable to `datadoghq.eu`. By default the requests are sent to Datadog US.
 
 It is also possible to override the full URL for the intake endpoint by defining the `DATADOG_SOURCEMAP_INTAKE_URL` environment variable.
 
@@ -51,7 +51,7 @@ The only repository URLs supported are the ones whose host contains: `github`, `
 To verify this command works as expected, you can trigger a test run and verify it returns 0:
 
 ```bash
-export DATADOG_API_KEY='<API key>'
+export DD_API_KEY='<API key>'
 
 yarn launch git-metadata upload
 ```

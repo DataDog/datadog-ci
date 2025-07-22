@@ -142,14 +142,18 @@ export class UploadCommand extends Command {
     this.config = await resolveConfigFromFileAndEnvironment(
       this.config,
       {
-        apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
+        apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+        datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
       },
       {
         configPath: this.configPath,
         defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
         configFromFileCallback: (configFromFile: any) => {
-          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
+          checkAPIKeyOverride(
+            process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+            configFromFile.apiKey,
+            this.context.stdout
+          )
         },
       }
     )
@@ -269,7 +273,9 @@ export class UploadCommand extends Command {
 
   private getRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(
+        `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
+      )
     }
 
     return getRequestBuilder({
@@ -323,7 +329,8 @@ export class UploadCommand extends Command {
         this.releaseVersion!,
         this.projectPath,
         this.platform!,
-        this.buildVersion!
+        this.buildVersion!,
+        this.context
       )
       if (this.dryRun) {
         this.context.stdout.write(`[DRYRUN] ${renderUpload(sourcemap)}`)

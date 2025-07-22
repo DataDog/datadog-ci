@@ -29,6 +29,7 @@ export interface LambdaConfigOptions {
   interactive?: boolean
   layerAWSAccount?: string
   layerVersion?: string
+  logging?: string
   logLevel?: string
   mergeXrayTraces?: string
   profile?: string
@@ -68,11 +69,13 @@ export interface InstrumentationSettings extends InstrumentationTags {
   appsecEnabled?: boolean
   captureLambdaPayload?: boolean
   extensionVersion?: number
+  lambdaFips?: boolean
   flushMetricsToLogs: boolean
   forwarderARN?: string
   interactive?: boolean
   layerAWSAccount?: string
   layerVersion?: number
+  loggingEnabled?: boolean
   logLevel?: string
   mergeXrayTraces: boolean
   tracingEnabled: boolean

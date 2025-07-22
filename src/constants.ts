@@ -3,6 +3,7 @@ export const DATADOG_SITE_EU1 = 'datadoghq.eu'
 export const DATADOG_SITE_US3 = 'us3.datadoghq.com'
 export const DATADOG_SITE_US5 = 'us5.datadoghq.com'
 export const DATADOG_SITE_AP1 = 'ap1.datadoghq.com'
+export const DATADOG_SITE_AP2 = 'ap2.datadoghq.com'
 export const DATADOG_SITE_GOV = 'ddog-gov.com'
 
 export const DATADOG_SITES: string[] = [
@@ -11,6 +12,7 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_US3,
   DATADOG_SITE_US5,
   DATADOG_SITE_AP1,
+  DATADOG_SITE_AP2,
   DATADOG_SITE_GOV,
 ]
 
@@ -34,6 +36,22 @@ export const API_KEY_ENV_VAR = 'DD_API_KEY'
 export const CI_API_KEY_ENV_VAR = 'DATADOG_API_KEY'
 export const CI_SITE_ENV_VAR = 'DATADOG_SITE'
 export const SITE_ENV_VAR = 'DD_SITE'
+export const LOGS_INJECTION_ENV_VAR = 'DD_LOGS_INJECTION'
+export const LOGS_PATH_ENV_VAR = 'DD_SERVERLESS_LOG_PATH'
+export const HEALTH_PORT_ENV_VAR = 'DD_HEALTH_PORT'
+export const DD_LOG_LEVEL_ENV_VAR = 'DD_LOG_LEVEL'
+export const DD_TRACE_ENABLED_ENV_VAR = 'DD_TRACE_ENABLED'
+export const DD_LLMOBS_ENABLED_ENV_VAR = 'DD_LLMOBS_ENABLED'
+export const DD_LLMOBS_ML_APP_ENV_VAR = 'DD_LLMOBS_ML_APP'
+export const DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR = 'DD_LLMOBS_AGENTLESS_ENABLED'
+export const DD_TAGS_ENV_VAR = 'DD_TAGS'
+/*
+ * DD_TAGS Regular Expression
+ * This RegExp ensures that the --extra-tags string
+ * matches a list of <key>:<value> separated by commas
+ * such as layer:api,team:intake
+ */
+export const EXTRA_TAGS_REG_EXP = /^(([a-zA-Z]+)[\w\-/\.]*:[^,]+)+((\,)([a-zA-Z]+)[\w\-/\.]*:[^,]+)*$/g
 
 // Flare constants
 export const FLARE_OUTPUT_DIRECTORY = '.datadog-ci'

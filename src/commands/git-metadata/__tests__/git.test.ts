@@ -1,11 +1,15 @@
-import * as simpleGit from 'simple-git'
+import fs from 'fs'
 
-import {getCommitInfo, newSimpleGit, stripCredentials} from '../git'
+import * as simpleGit from 'simple-git'
+import path from 'upath'
+
+import {getCommitInfo, newSimpleGit, stripCredentials, parseGitDiff, getGitDiff} from '../git'
 
 interface MockConfig {
   hash?: string
   remotes?: any[]
   trackedFiles?: string[]
+  diff?: string
 }
 
 const createMockSimpleGit = (conf: MockConfig) => ({
@@ -30,6 +34,13 @@ const createMockSimpleGit = (conf: MockConfig) => ({
     }
 
     return conf.hash
+  },
+  diff: async (_: string) => {
+    if (conf.diff === undefined) {
+      throw Error('Unexpected call to diff')
+    }
+
+    return conf.diff
   },
 })
 
@@ -60,6 +71,22 @@ describe('git', () => {
       const input = 'https://token@gitlab.com/user/project.git'
 
       expect(stripCredentials(input)).toBe('https://gitlab.com/user/project.git')
+    })
+  })
+  describe('getDiff', () => {
+    test('should return git diff', async () => {
+      const mock = createMockSimpleGit({
+        hash: 'abcd',
+        diff: fs.readFileSync(path.join(__dirname, 'fixtures', 'modify_single_file.diff'), 'utf8'),
+      }) as any
+      const gitDiff = await getGitDiff(mock, 'HEAD^', 'HEAD')
+
+      expect(gitDiff.head_sha).toEqual('abcd')
+      expect(gitDiff.base_sha).toEqual('abcd')
+
+      const calc = gitDiff.files['src/Calculator.java']
+      expect(decode(calc.added_lines)).toEqual(new Set([11, 12]))
+      expect(decode(calc.removed_lines)).toEqual(new Set([11, 12]))
     })
   })
   describe('getCommitInfo', () => {
@@ -118,3 +145,50 @@ describe('git', () => {
     })
   })
 })
+
+describe('parseGitDiff – tree structure', () => {
+  const fixtures = (name: string) => fs.readFileSync(path.join(__dirname, 'fixtures', name), 'utf8')
+
+  test('modification of a single file', () => {
+    const diff = fixtures('modify_single_file.diff')
+    const tree = parseGitDiff(diff)
+
+    const calc = tree['src/Calculator.java']
+    expect(decode(calc.added_lines)).toEqual(new Set([11, 12]))
+    expect(decode(calc.removed_lines)).toEqual(new Set([11, 12]))
+  })
+
+  test('file add & delete in one patch', () => {
+    const diff = fixtures('add_delete.diff')
+    const tree = parseGitDiff(diff)
+
+    // deleted README.md
+    const readme = tree['README.md']
+    expect(readme.added_lines).toBe('')
+    expect(decode(readme.removed_lines)).toEqual(new Set([2, 3]))
+
+    // new Utils.java
+    const utils = tree['src/Utils.java']
+    expect(decode(utils.added_lines)).toEqual(new Set([2, 3, 4, 5]))
+    expect(utils.removed_lines).toBe('')
+  })
+})
+
+const decode = (base64: string | undefined): Set<number> => {
+  if (!base64) {
+    return new Set()
+  }
+  const bytes = Buffer.from(base64, 'base64')
+  const out = new Set<number>()
+  for (let i = 0; i < bytes.length; i++) {
+    const byte = bytes[i]
+    for (let bit = 0; bit < 8; bit++) {
+      // eslint-disable-next-line no-bitwise
+      if (byte & (1 << bit)) {
+        out.add(i * 8 + bit + 1) // 1-based
+      }
+    }
+  }
+
+  return out
+}

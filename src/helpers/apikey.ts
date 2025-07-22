@@ -1,4 +1,4 @@
-import {AxiosError, default as axios} from 'axios'
+import {AxiosError, get as axiosGet} from 'axios'
 import chalk from 'chalk'
 import {BufferedMetricsLogger} from 'datadog-metrics'
 
@@ -9,6 +9,7 @@ import {InvalidConfigurationError} from './errors'
  */
 export interface ApiKeyValidator {
   verifyApiKey(error: AxiosError): Promise<void>
+  validateApiKey(): Promise<boolean>
 }
 
 export interface ApiKeyValidatorParams {
@@ -50,8 +51,31 @@ class ApiKeyValidatorImplem {
         this.metricsLogger.increment('invalid_auth', 1)
       }
       throw new InvalidConfigurationError(
-        `${chalk.red.bold('DATADOG_API_KEY')} does not contain a valid API key for Datadog site ${this.datadogSite}`
+        `Neither ${chalk.red.bold('DATADOG_API_KEY')} nor ${chalk.red.bold(
+          'DD_API_KEY'
+        )} contains a valid API key for Datadog site ${this.datadogSite}`
       )
+    }
+  }
+
+  /**
+   * Check if the API key is valid by making a request to the Datadog validate API.
+   * @returns `true` if the API key is valid, `false` otherwise.
+   */
+  public async validateApiKey(): Promise<boolean> {
+    try {
+      const response = await axiosGet(this.getApiKeyValidationURL(), {
+        headers: {
+          'DD-API-KEY': this.apiKey,
+        },
+      })
+
+      return response.data.valid
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        return false
+      }
+      throw error
     }
   }
 
@@ -65,22 +89,5 @@ class ApiKeyValidatorImplem {
     }
 
     return this.isValid
-  }
-
-  private async validateApiKey(): Promise<boolean> {
-    try {
-      const response = await axios.get(this.getApiKeyValidationURL(), {
-        headers: {
-          'DD-API-KEY': this.apiKey,
-        },
-      })
-
-      return response.data.valid
-    } catch (error) {
-      if (error.response && error.response.status === 403) {
-        return false
-      }
-      throw error
-    }
   }
 }

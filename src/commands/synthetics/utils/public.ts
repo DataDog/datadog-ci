@@ -216,6 +216,7 @@ export const isResultSkippedBySelectiveRerun = (result: Result): result is Resul
   return result.selectiveRerun?.decision === 'skip'
 }
 
+// XXX: Could be called something like "SummaryWithoutBatchId"
 export type InitialSummary = Omit<Summary, 'batchId'>
 
 export const createInitialSummary = (): InitialSummary => ({
@@ -227,6 +228,7 @@ export const createInitialSummary = (): InitialSummary => ({
   previouslyPassed: 0,
   skipped: 0,
   testsNotFound: new Set(),
+  testsNotAuthorized: new Set(),
   timedOut: 0,
 })
 
@@ -464,8 +466,11 @@ export const getExitReason = (
   }
 
   if (error instanceof CiError) {
-    // Ensure the command fails if search query starts returning no results
-    if (config.failOnMissingTests && ['MISSING_TESTS', 'NO_TESTS_TO_RUN'].includes(error.code)) {
+    // Make the CI fail if something outside was changed, leading to missing tests. For example:
+    // - a search query starts returning no results because somebody changed some tags
+    // - an explicitly listed test was deleted
+    // - some tests can't be read or written to because of permissions
+    if (config.failOnMissingTests && ['NO_TESTS_TO_RUN', 'MISSING_TESTS', 'UNAUTHORIZED_TESTS'].includes(error.code)) {
       return 'missing-tests'
     }
 
@@ -527,6 +532,11 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
     case 'MISSING_TESTS':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: some tests are missing ')}\n${error.message}\n\n`)
       break
+    case 'UNAUTHORIZED_TESTS':
+      reporter.error(
+        `\n${chalk.bgRed.bold(' ERROR: missing read or write access to some tests ')}\n${error.message}\n\n`
+      )
+      break
 
     // Critical command errors
     case 'AUTHORIZATION_ERROR':
@@ -537,10 +547,14 @@ export const reportCiError = (error: CiError, reporter: MainReporter) => {
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: invalid config ')}\n${error.message}\n\n`)
       break
     case 'MISSING_APP_KEY':
-      reporter.error(`Missing ${chalk.red.bold('DATADOG_APP_KEY')} in your environment.\n`)
+      reporter.error(
+        `Missing ${chalk.red.bold('DATADOG_APP_KEY')} or ${chalk.red.bold('DD_APP_KEY')} in your environment.\n`
+      )
       break
     case 'MISSING_API_KEY':
-      reporter.error(`Missing ${chalk.red.bold('DATADOG_API_KEY')} in your environment.\n`)
+      reporter.error(
+        `Missing ${chalk.red.bold('DATADOG_API_KEY')} or ${chalk.red.bold('DD_API_KEY')} in your environment.\n`
+      )
       break
     case 'POLL_RESULTS_FAILED':
       reporter.error(`\n${chalk.bgRed.bold(' ERROR: unable to poll test results ')}\n${error.message}\n\n`)

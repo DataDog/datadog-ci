@@ -17,6 +17,11 @@ import {Config as MultiplexerConfig, Server as Multiplexer} from 'yamux-js'
 import {generateOpenSSHKeys, parseSSHKey} from './crypto'
 import {WebSocket} from './websocket'
 
+/**
+ * Use `DEBUG=synthetics:tunnel` to enable debug logs.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-call
+const debug = require('debug')('synthetics:tunnel') as (arg: string) => void
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
 const SSH_CONSTANTS = require('ssh2/lib/protocol/constants')
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-var-requires -- SW-1310
@@ -41,7 +46,11 @@ export class Tunnel {
   private privateKey: string
   private publicKey: ParsedKey
 
+  /** Used to catch SIGINT only once. */
+  private started = false
+  /** Used to log "Successfully connected" only once. */
   private connected = false
+
   private ws: WebSocket
   private multiplexer?: Multiplexer
   private forwardedSockets: Set<Socket> = new Set()
@@ -90,8 +99,10 @@ export class Tunnel {
    *   - establish a WebSocket connection to the tunnel service
    */
   public async start(): Promise<TunnelInfo> {
-    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
+    this.started = true
+    process.addListener('SIGINT', this.handleSIGINT)
 
+    this.reporter?.log(`Opening tunnel for ${this.testIDs.length} tests…`)
     this.reporter?.log('Generating encryption key, setting up SSH and opening WebSocket connection…')
     try {
       // Establish a WebSocket connection to the tunnel service
@@ -112,19 +123,19 @@ export class Tunnel {
    * stop the tunnel
    */
   public async stop(): Promise<void> {
-    this.reporter?.log('Shutting down tunnel…')
-
+    this.connected = false
     this.forwardedSockets.forEach((socket) => {
       if (!!socket) {
         socket.destroy()
       }
     })
 
-    if (this.multiplexer) {
-      this.multiplexer.close()
-    }
-
     await this.ws.close()
+
+    if (this.started) {
+      this.reporter?.log('Tunnel closed.')
+      this.started = false
+    }
   }
 
   // Authenticate SSH with key authentication - username should be the test ID
@@ -182,7 +193,7 @@ export class Tunnel {
         this.forwardedSockets.add(dest)
 
         dest.on('timeout', () => {
-          this.reporter?.warn(`Connection timeout (${destIP})`)
+          debug(`Connection timeout (${destIP})`)
           if (src) {
             src.destroy()
           } else {
@@ -209,7 +220,9 @@ export class Tunnel {
         })
         dest.on('error', (error: NodeJS.ErrnoException) => {
           if (src) {
-            this.reporter?.warn(`Error on opened connection (${destIP}): ${error.code}`)
+            if (error.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+              debug(`Error on opened connection (${destIP}): ${error.code}`)
+            }
             src.close()
           } else {
             if ('code' in error && error.code === 'ENOTFOUND') {
@@ -259,7 +272,7 @@ export class Tunnel {
     }
     this.multiplexer = new Multiplexer((stream) => {
       stream.on('error', (error) => {
-        this.reporter?.warn(`Error in multiplexing: ${error}`)
+        debug(`Error in multiplexing: ${error}`)
       })
 
       void this.processSSHStream(stream)
@@ -267,17 +280,21 @@ export class Tunnel {
 
     // Pipe WebSocket to multiplexing
     const duplex = this.ws.duplex()
-    this.multiplexer.on('error', (error) => this.reporter?.warn(`Multiplexer error: ${error.message}`))
-    duplex.on('error', (error) => this.reporter?.warn(`Websocket error: ${error.message}`))
+    this.multiplexer.on('error', (error) => {
+      debug(`Multiplexer error: ${error.message}`)
+    })
+    duplex.on('error', (error) => {
+      debug(`Websocket error: ${error.message}`)
+    })
 
     pipeline(duplex, this.multiplexer, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on duplex connection close: ${err}`)
+        debug(`Error on duplex connection close: ${err}`)
       }
     })
     pipeline(this.multiplexer, duplex, (err) => {
       if (err) {
-        this.reporter?.warn(`Error on Multiplexer connection close: ${err}`)
+        debug(`Error on Multiplexer connection close: ${err}`)
       }
     })
 
@@ -349,7 +366,19 @@ export class Tunnel {
         server.close()
       })
       .on('error', (err) => {
-        this.reporter?.warn(`SSH error in proxy: ${err.message}`)
+        debug(`SSH error in proxy: ${err.message}`)
       })
+  }
+
+  private handleSIGINT = () => {
+    if (this.started) {
+      // The tunnel is connected, so we stop it gracefully – all tests will be aborted.
+      this.reporter?.log('Closing tunnel and waiting for results... (press Ctrl+C again to force quit)')
+      void this.stop()
+    } else {
+      // The tunnel was already closed and we received a second Ctrl+C.
+      // Removing the listener automatically stops the process.
+      process.removeListener('SIGINT', this.handleSIGINT)
+    }
   }
 }

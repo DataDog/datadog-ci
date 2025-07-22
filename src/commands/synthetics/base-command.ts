@@ -1,12 +1,11 @@
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-import terminalLink from 'terminal-link'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {Logger, LogLevel} from '../../helpers/logger'
-import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
+import {makeTerminalLink, recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {CiError} from './errors'
 import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'
@@ -17,21 +16,29 @@ export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>
 }
 
-const configurationLink = 'https://docs.datadoghq.com/continuous_testing/cicd_integrations/configuration'
+const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
-const $1 = (text: string) => terminalLink(text, `${configurationLink}#global-configuration-file-options`)
+const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-keys`)
+const $2 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file`
+)
+const $3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
 
 export abstract class BaseCommand extends Command {
   protected config: DatadogCIConfig = BaseCommand.getDefaultConfig()
   protected reporter!: MainReporter
 
-  protected configPath = Option.String('--config', {
-    description: `Pass a path to a ${$1('global configuration file')}.`,
+  protected apiKey = Option.String('--apiKey', {
+    description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
-  protected apiKey = Option.String('--apiKey', {description: 'The API key used to query the Datadog API.'})
-  protected appKey = Option.String('--appKey', {description: 'The application key used to query the Datadog API.'})
+  protected appKey = Option.String('--appKey', {
+    description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
+  protected configPath = Option.String('--config', {
+    description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
+  })
   protected datadogSite = Option.String('--datadogSite', {
-    description: 'The Datadog instance to which request is sent.',
+    description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
   })
 
   protected fips = Option.Boolean('--fips', false)
@@ -45,7 +52,7 @@ export abstract class BaseCommand extends Command {
     this.context.stdout.write(s)
   }, LogLevel.INFO)
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
+  /** This method can be overloaded by the child class. Use `super.getDefaultConfig()` to add more config. */
   public static getDefaultConfig(): DatadogCIConfig {
     return {
       apiKey: '',
@@ -56,24 +63,19 @@ export abstract class BaseCommand extends Command {
     }
   }
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
-    return {
-      apiKey: process.env.DATADOG_API_KEY,
-      appKey: process.env.DATADOG_APP_KEY,
-      configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
-      datadogSite: process.env.DATADOG_SITE,
-    }
-  }
+  protected async setup() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-  // This method should be overloaded by the child class, and called as super.<method> in the child class, to add more config.
-  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
-    return {
-      apiKey: this.apiKey,
-      appKey: this.appKey,
-      configPath: this.configPath,
-      datadogSite: this.datadogSite,
-    }
+    // Bootstrap reporter
+    this.reporter = getReporter([new DefaultReporter(this)])
+
+    // Load config
+    await this.resolveConfig()
+    this.normalizeConfig()
+    this.validateConfig()
+
+    // Update reporter
+    this.reporter = getReporter([new DefaultReporter(this), ...this.getReporters()])
   }
 
   protected async resolveConfig() {
@@ -100,25 +102,33 @@ export abstract class BaseCommand extends Command {
     this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromCli()))
   }
 
-  protected async setup() {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-
-    const reporters: Reporter[] = [new DefaultReporter(this), ...this.getReporters()]
-    this.reporter = getReporter(reporters)
-
-    await this.resolveConfig()
-    this.normalizeConfig()
-    this.validateConfig()
+  /** This method can be overloaded by the child class. Use `super.resolveConfigFromEnv()` to add more config. */
+  protected resolveConfigFromEnv(): RecursivePartial<DatadogCIConfig> {
+    return {
+      apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
+      configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
+      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+    }
   }
 
-  protected normalizeConfig() {
-    // Normalize the config here
+  /** This method can be overloaded by the child class. Use `super.resolveConfigFromCli()` to add more config. */
+  protected resolveConfigFromCli(): RecursivePartial<DatadogCIConfig> {
+    return {
+      apiKey: this.apiKey,
+      appKey: this.appKey,
+      configPath: this.configPath,
+      datadogSite: this.datadogSite,
+    }
   }
 
-  protected validateConfig() {
-    // Validate the config here
-  }
+  /** This method can be overloaded by the child class. */
+  protected normalizeConfig(): void {}
 
+  /** This method can be overloaded by the child class. */
+  protected validateConfig(): void {}
+
+  /** This method can be overloaded by the child class. */
   protected getReporters(): Reporter[] {
     return []
   }

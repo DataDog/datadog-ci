@@ -1,4 +1,4 @@
-import type {SpanTags} from '../interfaces'
+import type {SpanTags, GitAuthorAndCommitterMetadata} from '../interfaces'
 
 import simpleGit from 'simple-git'
 
@@ -27,7 +27,7 @@ export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags>
       maxConcurrentProcesses: 5,
     })
 
-    const [commitSHA, branch, repositoryUrl, message, authorAndCommitter] = await Promise.all([
+    const [commitSHA, branch, repositoryUrl, message, authorAndCommitterJson] = await Promise.all([
       gitHash(git),
       gitBranch(git),
       gitRepositoryURL(git),
@@ -35,14 +35,9 @@ export const getGitMetadata = async (repositoryPath?: string): Promise<SpanTags>
       gitAuthorAndCommitter(git),
     ])
 
-    const [
-      authorName,
-      authorEmail,
-      authorDate,
-      committerName,
-      committerEmail,
-      committerDate,
-    ] = authorAndCommitter.split(',')
+    const {authorName, authorEmail, authorDate, committerName, committerEmail, committerDate} = JSON.parse(
+      authorAndCommitterJson
+    ) as GitAuthorAndCommitterMetadata
 
     return {
       [GIT_REPOSITORY_URL]: filterSensitiveInfoFromRepository(repositoryUrl.trim()),

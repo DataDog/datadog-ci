@@ -80,6 +80,10 @@
       "bom-ref": "GHSA-4wrc-f8pq-fpqp",
       "id": "GHSA-4wrc-f8pq-fpqp",
       "affects": [{ "ref": "pkg:maven/org.springframework/spring-web@5.3.30" }]
+    },
+    {
+      "bom-ref": "GHSA-4jrv-ppp4-jm57",
+      "id": "GHSA-4jrv-ppp4-jm57"
     }
   ]
 }

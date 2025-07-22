@@ -5,6 +5,9 @@ import chalk from 'chalk'
 import ora from 'ora'
 
 import type {CommandContext} from '../../../helpers/interfaces'
+import {CI_JOB_URL, CI_PIPELINE_URL} from '../../../helpers/tags'
+
+import {getTestRunsUrlPath} from '../../junit/utils'
 
 import {
   Assertion,
@@ -163,7 +166,12 @@ const renderResultOutcome = (
 
 const renderApiRequestDescription = (subType: string, config: Test['config']): string => {
   const {request, steps} = config
+
   if (subType === 'dns') {
+    if (!request?.host) {
+      return 'Invalid DNS result'
+    }
+
     const text = `Query for ${request.host}`
     if (request.dnsServer) {
       return `${text} on server ${request.dnsServer}`
@@ -173,6 +181,10 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   }
 
   if (subType === 'ssl' || subType === 'tcp') {
+    if (!request?.host || !request?.port) {
+      return 'Invalid SSL/TCP result'
+    }
+
     return `Host: ${request.host}:${request.port}`
   }
 
@@ -193,6 +205,10 @@ const renderApiRequestDescription = (subType: string, config: Test['config']): s
   }
 
   if (subType === 'http') {
+    if (!request?.method || !request?.url) {
+      return 'Invalid HTTP result'
+    }
+
     return `${chalk.bold(request.method)} - ${request.url}`
   }
 
@@ -370,7 +386,6 @@ export class DefaultReporter implements MainReporter {
     const {bold: b, gray, green, red, yellow} = chalk
 
     const lines: string[] = []
-
     const runSummary = []
 
     if (summary.previouslyPassed) {
@@ -394,7 +409,16 @@ export class DefaultReporter implements MainReporter {
       lines.push(
         `${yellow(
           `${b(summary.testsNotFound.size)} ${pluralize('test', summary.testsNotFound.size)} not found`
-        )} ${testsNotFoundListStr}`
+        )} ${testsNotFoundListStr}\n`
+      )
+    }
+
+    if (summary.testsNotAuthorized.size > 0) {
+      const testsNotAuthorizedListStr = gray(`(${[...summary.testsNotAuthorized].join(', ')})`)
+      lines.push(
+        `${red(
+          `${b(summary.testsNotAuthorized.size)} ${pluralize('test', summary.testsNotAuthorized.size)} not authorized`
+        )} ${testsNotAuthorizedListStr}\n`
       )
     }
 
@@ -436,11 +460,22 @@ export class DefaultReporter implements MainReporter {
       )
     }
 
+    const testRunsUrlPath = getTestRunsUrlPath(
+      {
+        [CI_JOB_URL]: summary.metadata?.ci.job?.url,
+        [CI_PIPELINE_URL]: summary.metadata?.ci.pipeline?.url,
+      },
+      '@test.framework:synthetics'
+    )
+    if (testRunsUrlPath) {
+      lines.push(`\nView test runs in Test Optimization: ${chalk.dim.cyan(baseUrl + testRunsUrlPath)}`)
+    }
+
     if (orgSettings && orgSettings.onDemandConcurrencyCap > 0) {
       lines.push(
-        `\nIncrease your parallelization to reduce the test batch duration: ${chalk.dim.cyan(
+        `\nIncrease your parallelization to reduce the CI batch duration: ${chalk.dim.cyan(
           baseUrl + 'synthetics/settings/continuous-testing'
-        )}\n`
+        )}`
       )
     }
 

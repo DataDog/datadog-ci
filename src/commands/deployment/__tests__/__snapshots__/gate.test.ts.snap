@@ -1,0 +1,127 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`gate execute evaluation errors on gate evaluation request should fail when gate evaluation request fails with 500 and fail-on-error is true 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: true
+
+Requesting gate evaluation...
+Request failed with client error: 500 Internal Server Error
+Deployment gate evaluation failed: Request failed with status code 500
+Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation request should pass when gate evaluation request fails with 500 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Request failed with client error: 500 Internal Server Error
+Deployment gate evaluation failed: Request failed with status code 500
+Unexpected error happened, exiting with status 0
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation result pass with a 500 error 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Error polling for gate evaluation results: API Error
+Unexpected error happened, exiting with status 0
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation result should fail with 500 error when fail-on-error is true 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: true
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Error polling for gate evaluation results: Request failed with status code 500
+Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation result should not fail when gate evaluation result is invalid 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Unknown gate evaluation status: unexpected
+	Retrying in 15s...
+	✅ Gate evaluation passed
+"
+`;
+
+exports[`gate execute successful evaluation should fail when gate evaluation fails 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+	❌ Gate evaluation failed
+"
+`;
+
+exports[`gate execute successful evaluation should pass when gate evaluation passes after multiple in_progress calls 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+	Gate evaluation in progress (0/2 rules completed)
+	Retrying in 15s...
+	Gate evaluation in progress (1/2 rules completed)
+	Retrying in 15s...
+	✅ Gate evaluation passed
+"
+`;
+
+exports[`gate execute successful evaluation should succeed when gate evaluation passes on first poll 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 10800 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+	✅ Gate evaluation passed
+"
+`;

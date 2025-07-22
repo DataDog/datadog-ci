@@ -10,9 +10,15 @@ import {
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
 import {isValidDatadogSite} from '../../../helpers/validation'
@@ -33,13 +39,12 @@ import {
   DOTNET_TRACER_HOME_ENV_VAR,
   ENABLE_PROFILING_ENV_VAR,
   EXTENSION_LAYER_KEY,
-  EXTRA_TAGS_ENV_VAR,
   FLUSH_TO_LOG_ENV_VAR,
   KMS_API_KEY_ENV_VAR,
   LAMBDA_HANDLER_ENV_VAR,
   LayerKey,
   LAYER_LOOKUP,
-  LOG_LEVEL_ENV_VAR,
+  LOG_ENABLED_ENV_VAR,
   MERGE_XRAY_TRACES_ENV_VAR,
   NODE_HANDLER_LOCATION,
   PROFILER_ENV_VAR,
@@ -47,12 +52,9 @@ import {
   PYTHON_HANDLER_LOCATION,
   RuntimeType,
   RUNTIME_LOOKUP,
-  TRACE_ENABLED_ENV_VAR,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -238,7 +240,7 @@ export const calculateUpdateRequest = async (
       changedEnvVars[SITE_ENV_VAR] = site
     } else {
       throw new Error(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ap2.datadoghq.com, or ddog-gov.com.'
       )
     }
   }
@@ -252,10 +254,11 @@ export const calculateUpdateRequest = async (
     ['appsecEnabled', APPSEC_ENABLED_ENV_VAR],
     ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
-    ['extraTags', EXTRA_TAGS_ENV_VAR],
+    ['extraTags', DD_TAGS_ENV_VAR],
+    ['loggingEnabled', LOG_ENABLED_ENV_VAR],
     ['mergeXrayTraces', MERGE_XRAY_TRACES_ENV_VAR],
     ['service', SERVICE_ENV_VAR],
-    ['tracingEnabled', TRACE_ENABLED_ENV_VAR],
+    ['tracingEnabled', DD_TRACE_ENABLED_ENV_VAR],
     ['version', VERSION_ENV_VAR],
     ['llmobsMlApp', DD_LLMOBS_ML_APP_ENV_VAR],
   ]
@@ -280,12 +283,12 @@ export const calculateUpdateRequest = async (
 
   const newEnvVars = {...oldEnvVars, ...changedEnvVars}
 
-  if (newEnvVars[LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
+  if (newEnvVars[DD_LOG_LEVEL_ENV_VAR] !== settings.logLevel) {
     needsUpdate = true
     if (settings.logLevel) {
-      newEnvVars[LOG_LEVEL_ENV_VAR] = settings.logLevel
+      newEnvVars[DD_LOG_LEVEL_ENV_VAR] = settings.logLevel
     } else {
-      delete newEnvVars[LOG_LEVEL_ENV_VAR]
+      delete newEnvVars[DD_LOG_LEVEL_ENV_VAR]
     }
   }
 
@@ -330,6 +333,13 @@ export const calculateUpdateRequest = async (
     extensionVersion = settings.extensionVersion
     if (settings.interactive && !settings.extensionVersion) {
       extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
+    }
+
+    if (settings.lambdaFips) {
+      if (oldEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] !== 'true') {
+        needsUpdate = true
+        newEnvVars[DD_LAMBDA_FIPS_MODE_ENV_VAR] = 'true'
+      }
     }
     fullExtensionLayerARN = `${lambdaExtensionLayerArn}:${extensionVersion}`
   }

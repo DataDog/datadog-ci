@@ -38,6 +38,7 @@ describe('instrument', () => {
         mergeXrayTraces: false,
         tracingEnabled: false,
         llmobsMlApp: 'my-ml-app',
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
 
@@ -84,6 +85,7 @@ describe('instrument', () => {
         layerVersion: 71,
         mergeXrayTraces: false,
         tracingEnabled: false,
+        lambdaFips: false,
       }
       const region = 'sa-east-1'
 
@@ -130,6 +132,7 @@ describe('instrument', () => {
           layerVersion: 11,
           mergeXrayTraces: false,
           tracingEnabled: false,
+          lambdaFips: false,
         }
         const region = 'sa-east-1'
 
@@ -475,7 +478,7 @@ describe('instrument', () => {
         }
       }
       expect(error?.message).toBe(
-        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, or ddog-gov.com.'
+        'Warning: Invalid site URL. Must be either datadoghq.com, datadoghq.eu, us3.datadoghq.com, us5.datadoghq.com, ap1.datadoghq.com, ap2.datadoghq.com, or ddog-gov.com.'
       )
     })
 
@@ -726,6 +729,85 @@ describe('instrument', () => {
           }
         )
       })
+    })
+
+    test('calculates an update request with extension layer', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Extension:6",
+          ],
+        }
+      `)
+    })
+
+    test('calculates an update request with extension layer with lambda FIPS flag enabled', async () => {
+      process.env[CI_API_KEY_ENV_VAR] = MOCK_DATADOG_API_KEY
+      const runtime = Runtime.nodejs20x
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-gov-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings = {
+        extensionVersion: 6,
+        fips: false,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+        lambdaFips: true,
+      }
+      const region = 'us-gov-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_API_KEY": "02aeb762fff59ac0d5ad1536cd9633bd",
+              "DD_LAMBDA_FIPS_MODE": "true",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-gov-east-1:123456789012:function:lambda-hello-world",
+          "Layers": [
+            "arn:aws-us-gov:lambda:us-gov-east-1:002406178527:layer:Datadog-Extension-FIPS:6",
+          ],
+        }
+      `)
     })
 
     describe('sets handlers correctly', () => {

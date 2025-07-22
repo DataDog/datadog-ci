@@ -2,60 +2,58 @@ import os from 'os'
 
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-import * as t from 'typanion'
+import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {getCISpanTags} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
-import {findFiles} from '../../helpers/file-finder'
+import {partitionFiles} from '../../helpers/file-finder'
 import {enableFips} from '../../helpers/fips'
 import {getGitMetadata} from '../../helpers/git/format-git-span-data'
 import {parsePathsList} from '../../helpers/glob'
-import {SpanTags} from '../../helpers/interfaces'
+import id from '../../helpers/id'
+import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
-import {GIT_REPOSITORY_URL, GIT_SHA, parseMetrics, parseTags} from '../../helpers/tags'
+import {
+  GIT_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+  parseMetrics,
+  parseTags,
+} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
+import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+
+import {isGitRepo} from '../git-metadata'
+import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '../git-metadata/git'
+import {uploadToGitDB} from '../git-metadata/gitdb'
+import {apiUrl} from '../junit/api'
 
 import {apiConstructor, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
+  renderFailedGitDBSync,
   renderFailedUpload,
   renderInvalidFile,
   renderRetriedUpload,
+  renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
 } from './renderer'
-import {detectFormat, validateCoverageReport} from './utils'
+import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from './utils'
 
+const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
+const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const MAX_REPORTS_PER_REQUEST = 10
-
-const isCoverageReport = (file: string): boolean => {
-  if (upath.extname(file) !== '.xml') {
-    return false
-  }
-
-  const filename = upath.basename(file)
-
-  return (
-    filename.startsWith('jacoco') || filename.includes('Jacoco') // jacoco*.xml, *Jacoco*.xml
-  )
-}
-
-const validateReport = (explicitFormat: string | undefined, file: string): string | undefined => {
-  const format = explicitFormat || detectFormat(file)
-  if (format === undefined) {
-    return `Could not detect format of ${file}, please specify the format manually using the --format option`
-  }
-
-  return validateCoverageReport(file, format)
-}
+const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
 
 export class UploadCodeCoverageReportCommand extends Command {
   public static paths = [['coverage', 'upload']]
@@ -76,6 +74,10 @@ export class UploadCodeCoverageReportCommand extends Command {
       [
         'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
         'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
+      ],
+      [
+        'Upload all XML code coverage report files in /coverage/ folders, ignoring src/ignored-module-a',
+        'datadog-ci coverage upload **/coverage/*.xml --ignored-paths src/ignored-module-a',
       ],
       [
         'Upload all code coverage report files in current directory and add extra tags globally',
@@ -102,11 +104,10 @@ export class UploadCodeCoverageReportCommand extends Command {
   private measures = Option.Array('--measures')
   private tags = Option.Array('--tags')
   private format = Option.String('--format')
+  private uploadGitDiff = Option.Boolean('--upload-git-diff', true)
+  private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', false)
+  private gitRepositoryURL = Option.String('--git-repository-url')
 
-  private automaticReportsDiscovery = Option.String('--auto-discovery', 'true', {
-    validator: t.isBoolean(),
-    tolerateBoolean: true,
-  })
   private ignoredPaths = Option.String('--ignored-paths')
 
   private fips = Option.Boolean('--fips', false)
@@ -123,6 +124,8 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
+  private git: simpleGit.SimpleGit | undefined = undefined
+
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
@@ -135,11 +138,58 @@ export class UploadCodeCoverageReportCommand extends Command {
       return 1
     }
 
-    await this.uploadCodeCoverageReports()
+    if (this.format && !isCoverageFormat(this.format)) {
+      this.context.stderr.write(
+        `Unsupported format: ${this.format}, supported values are [${coverageFormats.join(', ')}]\n`
+      )
 
-    if (!this.dryRun) {
-      this.context.stdout.write(renderSuccessfulUploadCommand())
+      return 1
     }
+
+    const isGitRepository = await isGitRepo()
+
+    if (isGitRepository) {
+      this.git = await newSimpleGit()
+    }
+
+    if (!this.skipGitMetadataUpload) {
+      if (isGitRepository) {
+        const traceId = id()
+
+        const requestBuilder = getRequestBuilder({
+          baseUrl: apiUrl,
+          apiKey: this.config.apiKey!,
+          headers: new Map([
+            [TRACE_ID_HTTP_HEADER, traceId],
+            [PARENT_ID_HTTP_HEADER, traceId],
+          ]),
+        })
+        try {
+          this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Syncing git metadata...`)
+          let elapsed = 0
+          if (!this.dryRun) {
+            elapsed = await timedExecAsync(this.uploadToGitDB.bind(this), {requestBuilder})
+          }
+          this.logger.info(renderSuccessfulGitDBSync(this.dryRun, elapsed))
+        } catch (err) {
+          this.logger.info(renderFailedGitDBSync(err))
+        }
+      } else {
+        this.logger.info(`${this.dryRun ? '[DRYRUN] ' : ''}Not syncing git metadata (not a git repo)`)
+      }
+    } else {
+      this.logger.debug('Not syncing git metadata (skip git upload flag detected)')
+    }
+
+    await this.uploadCodeCoverageReports()
+  }
+
+  private async uploadToGitDB(opts: {requestBuilder: RequestBuilder}) {
+    if (!this.git) {
+      return
+    }
+
+    await uploadToGitDB(this.logger, opts.requestBuilder, this.git, this.dryRun, this.gitRepositoryURL)
   }
 
   private async uploadCodeCoverageReports() {
@@ -148,8 +198,9 @@ export class UploadCodeCoverageReportCommand extends Command {
 
     this.logger.info(renderCommandInfo(this.basePaths, this.dryRun))
 
+    const spanTags = await this.getSpanTags()
     const api = this.getApiHelper()
-    const payloads = await this.generatePayloads()
+    const payloads = await this.generatePayloads(spanTags)
 
     let fileCount = 0
 
@@ -161,6 +212,10 @@ export class UploadCodeCoverageReportCommand extends Command {
     const totalTimeSeconds = (Date.now() - initialTime) / 1000
 
     this.logger.info(renderSuccessfulUpload(this.dryRun, fileCount, totalTimeSeconds))
+
+    if (!this.dryRun) {
+      this.context.stdout.write(renderSuccessfulUploadCommand(spanTags))
+    }
   }
 
   private getApiHelper(): APIHelper {
@@ -174,11 +229,16 @@ export class UploadCodeCoverageReportCommand extends Command {
     return apiConstructor(intakeUrl, this.config.apiKey)
   }
 
-  private async generatePayloads(): Promise<Payload[]> {
-    const spanTags = await this.getSpanTags()
+  private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
     const customTags = this.getCustomTags()
     const customMeasures = this.getCustomMeasures()
 
+    if (!!customTags['resolved']) {
+      throw new Error('"resolved" is a reserved tag name, please avoid using it in your custom tags')
+    }
+
+    const commitDiff = await this.getCommitDiff(spanTags)
+    const prDiff = await this.getPrDiff(spanTags)
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
     let payloads: Payload[] = []
@@ -193,11 +253,85 @@ export class UploadCodeCoverageReportCommand extends Command {
           customTags,
           customMeasures,
           hostname: os.hostname(),
+          commitDiff,
+          prDiff,
         }))
       })
     }
 
     return payloads
+  }
+
+  private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
+    if (!this.uploadGitDiff || !this.git) {
+      return undefined
+    }
+
+    try {
+      const pr = await this.getHeadAndBase(spanTags)
+      if (!pr.headSha || !pr.baseSha) {
+        return undefined
+      }
+
+      return await getGitDiff(this.git, pr.baseSha, pr.headSha)
+    } catch (e) {
+      this.logger.debug(`Error while trying to calculate PR diff: ${e}`)
+
+      return undefined
+    }
+  }
+
+  private async getHeadAndBase(spanTags: SpanTags): Promise<{headSha?: string; baseSha?: string}> {
+    const headSha = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!headSha) {
+      return {}
+    }
+
+    if (!this.git) {
+      return {}
+    }
+
+    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    if (baseSha) {
+      // GitHub incorrectly reports base SHA as the head of the target branch
+      // doing a merge-base allows us to get the real base SHA
+      // (and if the base SHA was reported correctly, merge-base will not alter it)
+      const mergeBase = await getMergeBase(this.git, baseSha, headSha)
+
+      return {headSha, baseSha: mergeBase}
+    }
+
+    const baseBranch = spanTags[GIT_PULL_REQUEST_BASE_BRANCH]
+    if (baseBranch) {
+      const mergeBase = await getMergeBase(this.git, baseBranch, headSha)
+
+      return {headSha, baseSha: mergeBase}
+    }
+
+    return {}
+  }
+
+  private async getCommitDiff(spanTags: SpanTags): Promise<DiffData | undefined> {
+    if (!this.uploadGitDiff) {
+      return undefined
+    }
+
+    const commit = spanTags[GIT_HEAD_SHA] || spanTags[GIT_SHA]
+    if (!commit) {
+      return undefined
+    }
+
+    if (!this.git) {
+      return undefined
+    }
+
+    try {
+      return await getGitDiff(this.git, commit + '^', commit)
+    } catch (e) {
+      this.logger.debug(`Error while trying to calculate commit diff: ${e}`)
+
+      return undefined
+    }
   }
 
   private async getSpanTags(): Promise<SpanTags> {
@@ -244,27 +378,31 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
-    const validUniqueFiles = findFiles(
+    return partitionFiles(
       this.basePaths || ['.'],
-      this.automaticReportsDiscovery,
       parsePathsList(this.ignoredPaths),
-      isCoverageReport,
-      (filePath: string) => validateReport(this.format, filePath),
-      (filePath: string, errorMessage: string) => this.context.stdout.write(renderInvalidFile(filePath, errorMessage))
+      this.getCoverageReportFormat.bind(this)
     )
+  }
 
-    const pathsByFormat: {[key: string]: string[]} = {}
-    for (const file of validUniqueFiles) {
-      const format = this.format || detectFormat(file)
-      if (format === undefined) {
-        // should not be possible, such files will fail validation
-        continue
+  private getCoverageReportFormat(filePath: string, strict: boolean): string | undefined {
+    const format = toCoverageFormat(this.format) || detectFormat(filePath)
+    if (!format) {
+      if (strict) {
+        this.context.stdout.write(renderInvalidFile(filePath, `format could not be detected`))
       }
-      pathsByFormat[format] = pathsByFormat[format] || []
-      pathsByFormat[format].push(file)
+
+      return undefined
     }
 
-    return pathsByFormat
+    const validationError = validateCoverageReport(filePath, format)
+    if (validationError) {
+      this.context.stdout.write(renderInvalidFile(filePath, validationError))
+
+      return undefined
+    }
+
+    return format
   }
 
   private async uploadCodeCoverageReport(api: APIHelper, codeCoverageReport: Payload) {

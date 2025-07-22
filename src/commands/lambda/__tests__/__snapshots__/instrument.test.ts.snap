@@ -5,8 +5,7 @@ exports[`lambda instrument execute aborts when every lambda function fails to up
 🐶 Instrumenting Lambda function
 
 [Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-
-[Warning] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging..
+[!] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging.
 
 [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
@@ -24,6 +23,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -43,6 +43,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -83,6 +84,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "dummy",
       "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "dummy",
       "DD_TRACE_ENABLED": "true",
@@ -126,6 +128,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "dummy",
       "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "dummy",
       "DD_TRACE_ENABLED": "true",
@@ -177,6 +180,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -202,6 +206,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -254,6 +259,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -279,6 +285,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -324,6 +331,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -350,6 +358,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -376,6 +385,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -402,6 +412,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -442,6 +453,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:pr
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -467,6 +479,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:pr
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -505,6 +518,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -549,6 +563,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -589,6 +604,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "true",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -630,6 +646,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
@@ -657,8 +674,7 @@ exports[`lambda instrument execute prints which functions failed to instrument w
 🐶 Instrumenting Lambda function
 
 [Warning] The environment, service and version tags have not been configured. Learn more about Datadog unified service tagging: https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/#serverless-environment.
-
-[Warning] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging..
+[!] Couldn't add source code integration, continuing without it. Error: Local changes have not been pushed remotely. Aborting git data tagging.
 
 [Warning] Instrument your Lambda functions in a dev or staging environment first. Should the instrumentation result be unsatisfactory, run \`uninstrument\` with the same arguments to revert the changes.
 
@@ -679,6 +695,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -698,6 +715,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -717,6 +735,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -736,6 +755,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -755,6 +775,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -802,6 +823,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SITE": "datadoghq.com",
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_TRACE_ENABLED": "true",
       "DD_FLUSH_TO_LOG": "true"
@@ -851,6 +873,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "sandbox",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "testServiceName",
       "DD_TRACE_ENABLED": "true",

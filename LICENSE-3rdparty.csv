@@ -7,6 +7,9 @@ Component,Origin,Licence,Copyright
 @aws-sdk/types,dev,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/core,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
+@azure/identity,import,MIT,Copyright (c) Microsoft Corporation
+@azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
+@azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
 @babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
@@ -16,12 +19,14 @@ Component,Origin,Licence,Copyright
 @types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
+@types/get-value,dev,MIT,Copyright Microsoft Corporation
 @types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
 @types/node,dev,MIT,Copyright Microsoft Corporation
 @types/semver,dev,MIT,Copyright Microsoft Corporation
+@types/set-value,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
@@ -36,12 +41,15 @@ chalk,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://s
 clipanion,import,MIT,Copyright (c) 2019 Mael Nison
 datadog-metrics,import,MIT,Copyright (c) 2014 Daniel Bader
 dd-trace,import,Apache-2.0,Copyright 2016-Present Datadog Inc.
+debug,import,MIT,Copyright (c) 2018-2021 Josh Junon
 deep-extend,import,MIT,"Copyright (c) 2013-2018, Viacheslav Lotsmanov"
 deep-object-diff,import,MIT,Copyright (c) 2016-present Matt Phillips
+fast-deep-equal,import,MIT,Copyright (c) 2017 Evgeny Poberezkin
 fast-levenshtein,import,MIT,Copyright (c) 2013 Ramesh Nair
 fast-xml-parser,import,MIT,Copyright (c) 2017 Amit Kumar Gupta
 form-data,import,MIT,Copyright (c) 2012 Felix Geisendörfer (felix@debuggable.com) and contributors
 fuzzy,import,MIT,Copyright (c) 2012 Matt York
+get-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 glob,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
@@ -55,6 +63,7 @@ proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 rimraf,dev,ISC,Copyright (c) 2011-2022 Isaac Z. Schlueter and Contributors
 semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
+set-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
 ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
@@ -62,6 +71,7 @@ sshpk,import,MIT,"Copyright (c) Joyent, Inc."
 terminal-link,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
+ts-json-schema-generator,dev,MIT,"Copyright (c) 2019, TypeScript JSON Schema Generator"
 ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
@@ -87,3 +97,4 @@ jszip,import,MIT,Copyright (c) 2009-2016 Stuart Knightley and other contributors
 @google-cloud/run,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 google-auth-library,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 @google-cloud/logging,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
+jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"

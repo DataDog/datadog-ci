@@ -32,6 +32,7 @@ import {
   getBrowserTest,
   getFailedBrowserResult,
   getIncompleteServerResult,
+  getMetadata,
   getSummary,
   getTimedOutBrowserResult,
 } from '../fixtures'
@@ -448,10 +449,12 @@ describe('Default reporter', () => {
 
     const complexSummary: Summary = {
       batchId: 'batch-id',
+      testsNotAuthorized: new Set(['aaa-aaa-aaa', 'bbb-bbb-bbb']),
       testsNotFound: new Set(['ccc-ccc-ccc', 'ddd-ddd-ddd']),
       expected: 6, // `.failed` + `.failedNonBlocking` + `.passed`
       failed: 1,
       failedNonBlocking: 3,
+      metadata: getMetadata(),
       passed: 2,
       // The following fields are additional information, so they do not add to `.expected`.
       criticalErrors: 2,
@@ -503,7 +506,15 @@ describe('Default reporter', () => {
     ]
 
     test.each(onDemandConcurrencyCaps)('$description', (testCase) => {
-      reporter.runEnd({...baseSummary, passed: 1}, MOCK_BASE_URL, {onDemandConcurrencyCap: testCase.cap})
+      reporter.runEnd(
+        {
+          ...baseSummary,
+          metadata: getMetadata(),
+          passed: 1,
+        },
+        MOCK_BASE_URL,
+        {onDemandConcurrencyCap: testCase.cap}
+      )
       const mostRecentOutput = writeMock.mock.calls[writeMock.mock.calls.length - 1][0]
       expect(mostRecentOutput).toMatchSnapshot()
     })

@@ -28,11 +28,11 @@ import {
   GIT_TAG,
   GIT_HEAD_SHA,
   SERVICE,
-  GIT_BASE_REF,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
+  PR_NUMBER,
 } from './tags'
 
 export interface Metadata {
@@ -76,6 +76,15 @@ export interface Metadata {
   }
 }
 
+export interface GitAuthorAndCommitterMetadata {
+  authorName: string
+  authorEmail: string
+  authorDate: string
+  committerName: string
+  committerEmail: string
+  committerDate: string
+}
+
 export type SpanTag =
   | typeof CI_JOB_NAME
   | typeof CI_JOB_URL
@@ -102,11 +111,11 @@ export type SpanTag =
   | typeof CI_NODE_LABELS
   | typeof SERVICE
   | typeof GIT_HEAD_SHA
-  | typeof GIT_BASE_REF
   | typeof GIT_PULL_REQUEST_BASE_BRANCH
   | typeof GIT_PULL_REQUEST_BASE_BRANCH_SHA
   | typeof SBOM_TOOL_GENERATOR_NAME
   | typeof SBOM_TOOL_GENERATOR_VERSION
+  | typeof PR_NUMBER
 
 export type SpanTags = Partial<Record<SpanTag, string>>
 

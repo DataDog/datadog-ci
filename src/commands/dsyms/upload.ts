@@ -19,7 +19,7 @@ import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
 import {version} from '../../helpers/version'
 
-import {ArchSlice, CompressedDsym, Dsym} from './interfaces'
+import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {
   renderCommandDetail,
   renderCommandInfo,
@@ -67,9 +67,9 @@ export class UploadCommand extends Command {
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
 
   private cliVersion = version
-
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
@@ -82,77 +82,36 @@ export class UploadCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    // Normalizing the basePath to resolve .. and .
     this.basePath = upath.normalize(this.basePath)
     this.context.stdout.write(renderCommandInfo(this.basePath, this.maxConcurrency, this.dryRun))
 
-    this.config = await resolveConfigFromFileAndEnvironment(
-      this.config,
-      {
-        apiKey: process.env.DATADOG_API_KEY,
-        datadogSite: process.env.DATADOG_SITE,
-      },
-      {
-        configPath: this.configPath,
-        defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
-        configFromFileCallback: (configFromFile: any) => {
-          checkAPIKeyOverride(process.env.DATADOG_API_KEY, configFromFile.apiKey, this.context.stdout)
-        },
-      }
-    )
+    await this.loadConfig()
 
-    const metricsLogger = getMetricsLogger({
-      apiKey: this.config.apiKey,
-      datadogSite: this.config.datadogSite,
-      defaultTags: [`cli_version:${this.cliVersion}`],
-      prefix: 'datadog.ci.dsyms.',
-    })
-    const apiKeyValidator = newApiKeyValidator({
-      apiKey: this.config.apiKey,
-      datadogSite: this.config.datadogSite,
-      metricsLogger: metricsLogger.logger,
-    })
+    const {metricsLogger, apiKeyValidator} = this.createServices()
     const initialTime = Date.now()
-    const tmpDirectory = await createUniqueTmpDirectory()
-    const intermediateDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'intermediate')
-    const uploadDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'upload')
 
-    this.context.stdout.write(renderCommandDetail(intermediateDirectory, uploadDirectory))
-
-    // The CLI input path can be a folder or `.zip` archive with `*.dSYM` files.
-    // In case of `.zip`, extract it to temporary location, so it can be handled the same way as folder.
-    let dSYMsSearchDirectory = this.basePath
-    if (await isZipFile(this.basePath)) {
-      await unzipArchiveToDirectory(this.basePath, tmpDirectory)
-      dSYMsSearchDirectory = tmpDirectory
-    }
-    const dsyms = await this.findDSYMsInDirectory(dSYMsSearchDirectory)
-
-    // Reduce dSYMs size by extracting arch slices from fat dSYMs to separate single-arch dSYMs in intermediate location.
-    // This is to avoid exceeding intake limit whenever possible.
-    const slimDSYMs = await this.thinDSYMs(dsyms, intermediateDirectory)
-    // Compress each dSYM into single `.zip` archive.
-    const compressedDSYMs = await this.compressDSYMsToDirectory(slimDSYMs, uploadDirectory)
-
-    const requestBuilder = this.getRequestBuilder()
-    const uploadDSYM = this.uploadDSYM(requestBuilder, metricsLogger, apiKeyValidator)
     try {
-      const results = await doWithMaxConcurrency(this.maxConcurrency, compressedDSYMs, uploadDSYM)
-      const totalTime = (Date.now() - initialTime) / 1000
-      this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
-      metricsLogger.logger.gauge('duration', totalTime)
+      const tmpDirectory = await createUniqueTmpDirectory()
 
-      return 0
+      try {
+        const results = await this.processAndUploadDsyms(tmpDirectory, metricsLogger, apiKeyValidator)
+        const totalTime = (Date.now() - initialTime) / 1000
+
+        this.context.stdout.write(renderSuccessfulCommand(results, totalTime, this.dryRun))
+        metricsLogger.logger.gauge('duration', totalTime)
+
+        return 0
+      } finally {
+        await deleteDirectory(tmpDirectory)
+      }
     } catch (error) {
       if (error instanceof InvalidConfigurationError) {
         this.context.stdout.write(renderConfigurationError(error))
 
         return 1
       }
-      // Otherwise unknown error, let's propagate the exception
       throw error
     } finally {
-      await deleteDirectory(tmpDirectory)
       try {
         await metricsLogger.flush()
       } catch (err) {
@@ -161,37 +120,214 @@ export class UploadCommand extends Command {
     }
   }
 
-  private compressDSYMsToDirectory = async (dsyms: Dsym[], directoryPath: string): Promise<CompressedDsym[]> => {
-    await promises.mkdir(directoryPath, {recursive: true})
+  private async loadConfig() {
+    this.config = await resolveConfigFromFileAndEnvironment(
+      this.config,
+      {
+        apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+        datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      },
+      {
+        configPath: this.configPath,
+        defaultConfigPaths: ['datadog-ci.json', '../datadog-ci.json'],
+        configFromFileCallback: (configFromFile: any) => {
+          checkAPIKeyOverride(
+            process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+            configFromFile.apiKey,
+            this.context.stdout
+          )
+        },
+      }
+    )
+  }
+
+  private createServices() {
+    const metricsLogger = getMetricsLogger({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      defaultTags: [`cli_version:${this.cliVersion}`],
+      prefix: 'datadog.ci.dsyms.',
+    })
+
+    const apiKeyValidator = newApiKeyValidator({
+      apiKey: this.config.apiKey,
+      datadogSite: this.config.datadogSite,
+      metricsLogger: metricsLogger.logger,
+    })
+
+    return {metricsLogger, apiKeyValidator}
+  }
+
+  private async processAndUploadDsyms(
+    tmpDirectory: string,
+    metricsLogger: MetricsLogger,
+    apiKeyValidator: ApiKeyValidator
+  ) {
+    const intermediateDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'intermediate')
+    const uploadDirectory = buildPath(tmpDirectory, 'datadog-ci', 'dsyms', 'upload')
+
+    this.context.stdout.write(renderCommandDetail(intermediateDirectory, uploadDirectory))
+
+    const searchDirectory = await this.prepareSearchDirectory(tmpDirectory)
+    const dsyms = await this.findDsyms(searchDirectory)
+
+    const thinDsyms = await this.processDsyms(dsyms, intermediateDirectory)
+    const compressedDsyms = await this.compressDsyms(thinDsyms, uploadDirectory)
+
+    const requestBuilder = this.createRequestBuilder()
+    const uploadFunction = this.createUploadFunction(requestBuilder, metricsLogger, apiKeyValidator)
+
+    return doWithMaxConcurrency(this.maxConcurrency, compressedDsyms, uploadFunction)
+  }
+
+  private async prepareSearchDirectory(tmpDirectory: string): Promise<string> {
+    if (await isZipFile(this.basePath)) {
+      await unzipArchiveToDirectory(this.basePath, tmpDirectory)
+
+      return tmpDirectory
+    }
+
+    return this.basePath
+  }
+
+  private async findDsyms(directoryPath: string): Promise<Dsym[]> {
+    const dsymPaths = globSync(buildPath(directoryPath, '**/*.dSYM'))
+
+    const results = await Promise.all(
+      dsymPaths.map(async (bundle) => {
+        try {
+          const {stdout} = await executeDwarfdump(bundle)
+          const dwarf = this.parseDwarfdumpOutput(stdout)
+
+          return [{bundle, dwarf}]
+        } catch {
+          this.context.stdout.write(renderInvalidDsymWarning(bundle))
+
+          return []
+        }
+      })
+    )
+
+    return results.flat()
+  }
+
+  /**
+   * Parses the output of `dwarfdump --uuid` command (ref.: https://www.unix.com/man-page/osx/1/dwarfdump/).
+   * It returns one or many DWARF UUID and arch read from the output.
+   *
+   * Example `dwarfdump --uuid` output:
+   * ```
+   * $ dwarfdump --uuid DDTest.framework.dSYM
+   * UUID: C8469F85-B060-3085-B69D-E46C645560EA (armv7) DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest
+   * UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E (arm64) DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest
+   * ```
+   */
+  private parseDwarfdumpOutput(output: string): DWARF[] {
+    const lineRegexp = /UUID: ([0-9A-F]{8}-(?:[0-9A-F]{4}-){3}[0-9A-F]{12}) \(([a-z0-9_]+)\) (.+)/
+
+    return output
+      .split('\n')
+      .map((line) => {
+        const match = line.match(lineRegexp)
+
+        return match ? [{uuid: match[1], arch: match[2], object: match[3]}] : []
+      })
+      .flat()
+  }
+
+  /**
+   * It takes `N` dSYMs and returns `N` or more dSYMs. If a dSYM includes more than one arch slice,
+   * it will be thinned by extracting each arch to a new dSYM in `output`.
+   */
+  private async processDsyms(dsyms: Dsym[], output: string): Promise<Dsym[]> {
+    await promises.mkdir(output, {recursive: true})
+
+    const results = await Promise.all(
+      dsyms.map(async (dsym) => {
+        // Reduce dSYMs size by extracting single UUIDs and arch slices from fat dSYMs to separate
+        // single-arch dSYMs in intermediate location. This is to avoid exceeding intake limit whenever possible.
+        return dsym.dwarf.length > 1 ? this.thinDsym(dsym, output) : [dsym]
+      })
+    )
+
+    return results.flat()
+  }
+
+  /**
+   * It takes fat dSYM as input and returns multiple dSYMs by extracting **each arch**
+   * to separate dSYM file. New files are saved to `output` and named by their object uuid (`<uuid>.dSYM`).
+   *
+   * For example, given `<source path>/Foo.dSYM/Contents/Resources/DWARF/Foo` dSYM with two arch slices: `arm64` (uuid1)
+   * and `x86_64` (uuid2), it will:
+   * - create `<intermediate path>/<uuid1>.dSYM/Contents/Resources/DWARF/Foo` for `arm64`,
+   * - create `<intermediate path>/<uuid2>.dSYM/Contents/Resources/DWARF/Foo` for `x86_64`.
+   */
+  private async thinDsym(dsym: Dsym, output: string): Promise<Dsym[]> {
+    const results = await Promise.all(
+      dsym.dwarf.map(async (dwarf) => {
+        try {
+          const bundle = buildPath(output, `${dwarf.uuid}.dSYM`)
+          const object = buildPath(bundle, upath.relative(dsym.bundle, dwarf.object))
+
+          await promises.mkdir(upath.dirname(object), {recursive: true})
+
+          try {
+            // Attempt to extract the single arch object file.
+            // We could use the `lipo -archs` command to get the list of archs,
+            // but it's more straightforward to just attempt to extract
+            // the single arch.
+            await executeLipo(dwarf.object, dwarf.arch, object)
+          } catch {
+            // The thinning using `lipo` failed, meaning the dSYM is already
+            // a single arch dSYM. Copy the object file to the new dSYM.
+            await promises.copyFile(dwarf.object, object)
+          }
+
+          await this.copyInfoPlist(dsym.bundle, bundle)
+
+          return [{bundle, dwarf: [{...dwarf, object}]}]
+        } catch (error) {
+          this.context.stdout.write(renderDSYMSlimmingFailure(dsym, dwarf, error))
+
+          return []
+        }
+      })
+    )
+
+    return results.flat()
+  }
+
+  private async copyInfoPlist(src: string, dst: string) {
+    const infoPlistPaths = globSync(buildPath(src, '**/Info.plist'))
+    if (infoPlistPaths.length === 0) {
+      return
+    }
+
+    const infoPlistPath = infoPlistPaths[0]
+    const newInfoPlistPath = buildPath(dst, upath.relative(src, infoPlistPath))
+
+    await promises.mkdir(upath.dirname(newInfoPlistPath), {recursive: true})
+    await promises.copyFile(infoPlistPath, newInfoPlistPath)
+  }
+
+  private async compressDsyms(dsyms: Dsym[], output: string): Promise<CompressedDsym[]> {
+    await promises.mkdir(output, {recursive: true})
 
     return Promise.all(
       dsyms.map(async (dsym) => {
-        const archivePath = buildPath(directoryPath, `${dsym.slices[0].uuid}.zip`)
-        await zipDirectoryToArchive(dsym.bundlePath, archivePath)
+        const archivePath = buildPath(output, `${dsym.dwarf[0].uuid}.zip`)
+        await zipDirectoryToArchive(dsym.bundle, archivePath)
 
         return new CompressedDsym(archivePath, dsym)
       })
     )
   }
 
-  private findDSYMsInDirectory = async (directoryPath: string): Promise<Dsym[]> => {
-    const dsyms: Dsym[] = []
-    for (const dSYMPath of globSync(buildPath(directoryPath, '**/*.dSYM'))) {
-      try {
-        const stdout = (await executeDwarfdump(dSYMPath)).stdout
-        const archSlices = this.parseDwarfdumpOutput(stdout)
-        dsyms.push({bundlePath: dSYMPath, slices: archSlices})
-      } catch {
-        this.context.stdout.write(renderInvalidDsymWarning(dSYMPath))
-      }
-    }
-
-    return Promise.all(dsyms)
-  }
-
-  private getRequestBuilder(): RequestBuilder {
+  private createRequestBuilder(): RequestBuilder {
     if (!this.config.apiKey) {
-      throw new InvalidConfigurationError(`Missing ${chalk.bold('DATADOG_API_KEY')} in your environment.`)
+      throw new InvalidConfigurationError(
+        `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
+      )
     }
 
     return getRequestBuilder({
@@ -205,100 +341,16 @@ export class UploadCommand extends Command {
     })
   }
 
-  /**
-   * Parses the output of `dwarfdump --uuid` command (ref.: https://www.unix.com/man-page/osx/1/dwarfdump/).
-   * It returns one or many arch slices read from the output.
-   *
-   * Example `dwarfdump --uuid` output:
-   * ```
-   * $ dwarfdump --uuid DDTest.framework.dSYM
-   * UUID: C8469F85-B060-3085-B69D-E46C645560EA (armv7) DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest
-   * UUID: 06EE3D68-D605-3E92-B92D-2F48C02A505E (arm64) DDTest.framework.dSYM/Contents/Resources/DWARF/DDTest
-   * ```
-   */
-  private parseDwarfdumpOutput = (output: string): ArchSlice[] => {
-    const lineRegexp = /UUID: ([0-9A-F]{8}-(?:[0-9A-F]{4}-){3}[0-9A-F]{12}) \(([a-z0-9_]+)\) (.+)/
-
-    return output
-      .split('\n')
-      .map((line) => {
-        const match = line.match(lineRegexp)
-
-        return match ? [{arch: match[2], objectPath: match[3], uuid: match[1]}] : []
-      })
-      .reduce((acc, nextSlice) => acc.concat(nextSlice), [])
-  }
-
-  /**
-   * It takes fat dSYM as input and returns multiple dSYMs by extracting **each arch**
-   * to separate dSYM file. New files are saved to `intermediatePath` and named by their object uuid (`<uuid>.dSYM`).
-   *
-   * For example, given `<source path>/Foo.dSYM/Contents/Resources/DWARF/Foo` dSYM with two arch slices: `arm64` (uuid1)
-   * and `x86_64` (uuid2), it will:
-   * - create `<intermediate path>/<uuid1>.dSYM/Contents/Resources/DWARF/Foo` for `arm64`,
-   * - create `<intermediate path>/<uuid2>.dSYM/Contents/Resources/DWARF/Foo` for `x86_64`.
-   */
-  private thinDSYM = async (dsym: Dsym, intermediatePath: string): Promise<Dsym[]> => {
-    const slimmedDSYMs: Dsym[] = []
-    for (const slice of dsym.slices) {
-      try {
-        const newDSYMBundleName = `${slice.uuid}.dSYM`
-        const newDSYMBundlePath = buildPath(intermediatePath, newDSYMBundleName)
-        const newObjectPath = buildPath(newDSYMBundlePath, upath.relative(dsym.bundlePath, slice.objectPath))
-
-        // Extract arch slice:
-        await promises.mkdir(upath.dirname(newObjectPath), {recursive: true})
-        await executeLipo(slice.objectPath, slice.arch, newObjectPath)
-
-        // The original dSYM bundle can also include `Info.plist` file, so copy it to the `<uuid>.dSYM` as well.
-        // Ref.: https://opensource.apple.com/source/lldb/lldb-179.1/www/symbols.html
-        const infoPlistPath = globSync(buildPath(dsym.bundlePath, '**/Info.plist'))[0]
-        if (infoPlistPath) {
-          const newInfoPlistPath = buildPath(newDSYMBundlePath, upath.relative(dsym.bundlePath, infoPlistPath))
-          await promises.mkdir(upath.dirname(newInfoPlistPath), {recursive: true})
-          await promises.copyFile(infoPlistPath, newInfoPlistPath)
-        }
-
-        slimmedDSYMs.push({
-          bundlePath: newDSYMBundlePath,
-          slices: [{arch: slice.arch, uuid: slice.uuid, objectPath: newObjectPath}],
-        })
-      } catch {
-        this.context.stdout.write(renderDSYMSlimmingFailure(dsym, slice))
-      }
-    }
-
-    return Promise.all(slimmedDSYMs)
-  }
-
-  /**
-   * It takes `N` dSYMs and returns `N` or more dSYMs. If a dSYM includes more than one arch slice,
-   * it will be thinned by extracting each arch to a new dSYM in `intermediatePath`.
-   */
-  private thinDSYMs = async (dsyms: Dsym[], intermediatePath: string): Promise<Dsym[]> => {
-    await promises.mkdir(intermediatePath, {recursive: true})
-    let slimDSYMs: Dsym[] = []
-
-    for (const dsym of dsyms) {
-      if (dsym.slices.length > 1) {
-        slimDSYMs = slimDSYMs.concat(await this.thinDSYM(dsym, intermediatePath))
-      } else {
-        slimDSYMs.push(dsym)
-      }
-    }
-
-    return Promise.all(slimDSYMs)
-  }
-
-  private uploadDSYM(
+  private createUploadFunction(
     requestBuilder: RequestBuilder,
     metricsLogger: MetricsLogger,
     apiKeyValidator: ApiKeyValidator
-  ): (dSYM: CompressedDsym) => Promise<UploadStatus> {
-    return async (dSYM: CompressedDsym) => {
-      const payload = dSYM.asMultipartPayload()
+  ): (dsym: CompressedDsym) => Promise<UploadStatus> {
+    return async (dsym: CompressedDsym) => {
+      const payload = dsym.asMultipartPayload()
+
       if (this.dryRun) {
-        this.context.stdout.write(`[DRYRUN] ${renderUpload(dSYM)}`)
+        this.context.stdout.write(`[DRYRUN] ${renderUpload(dsym)}`)
 
         return UploadStatus.Success
       }
@@ -306,15 +358,15 @@ export class UploadCommand extends Command {
       return upload(requestBuilder)(payload, {
         apiKeyValidator,
         onError: (e) => {
-          this.context.stdout.write(renderFailedUpload(dSYM, e.message))
+          this.context.stdout.write(renderFailedUpload(dsym, e.message))
           metricsLogger.logger.increment('failed', 1)
         },
         onRetry: (e, attempts) => {
-          this.context.stdout.write(renderRetriedUpload(dSYM, e.message, attempts))
+          this.context.stdout.write(renderRetriedUpload(dsym, e.message, attempts))
           metricsLogger.logger.increment('retries', 1)
         },
         onUpload: () => {
-          this.context.stdout.write(renderUpload(dSYM))
+          this.context.stdout.write(renderUpload(dsym))
         },
         retries: 5,
       })

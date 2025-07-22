@@ -43,8 +43,14 @@ The following values are available for each `<command>` and (optionally) `<subco
 
 See each command's linked README for more details, or click on [📚](https://docs.datadoghq.com/) to see the related documentation page.
 
+#### `aas`
+- `instrument`: Apply Datadog instrumentation to the given [Azure App Services](src/commands/aas). [📚](https://docs.datadoghq.com/serverless/azure_app_services/)
+- `uninstrument`: Revert Datadog instrumentation from the given [Azure App Services](src/commands/aas).
+
 #### `cloud-run`
 - `flare`: Troubleshoot your issues with [Cloud Run service](src/commands/cloud-run) configuration. [📚](https://docs.datadoghq.com/serverless/google_cloud_run)
+- `instrument`: Apply Datadog instrumentation to the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
+- `uninstrument`: Revert Datadog instrumentation from the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
 
 #### `dsyms`
 - `upload`: Upload [iOS dSYM files](src/commands/dsyms) for Error Tracking (macOS only). [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)
@@ -108,6 +114,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 #### `deployment`
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 - `correlate`: [Correlate](src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
+- `correlate-image`: [Correlate an image](src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 
 #### `dora`
 - `deployment`: Send a new deployment event for [DORA Metrics](src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
@@ -194,7 +201,7 @@ This example demonstrates how to run a command using the container and passing i
 ```shell
 export DD_API_KEY=$(cat /secret/dd_api_key)
 export DD_APP_KEY=$(cat /secret/dd_app_key)
-docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci synthetics run-tests -p pub-lic-id1
+docker run --rm -it -v $(pwd):/w -e DD_API_KEY -e DD_APP_KEY datadog/ci <command> [<subcommand>] [options]
 ```
 
 #### Building your own container image
@@ -209,7 +216,7 @@ docker build --tag datadog-ci .
 Optionally, you can use the `VERSION` build argument to build an image for a specific version:
 
 ```sh
-docker build --build-arg "VERSION=v1.14" --t datadog-ci .
+docker build --build-arg "VERSION=v3.9.0" --t datadog-ci .
 ```
 
 ## Migration guide

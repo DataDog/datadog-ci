@@ -4,6 +4,7 @@ import {URL} from 'url'
 
 import WebSocket, {Server as WebSocketServer} from 'ws'
 
+import {Metadata} from '../../../helpers/interfaces'
 import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'
@@ -26,7 +27,7 @@ import {
   Suite,
   Summary,
   TestPayload,
-  Trigger,
+  ServerTrigger,
   UploadApplicationCommandConfig,
   MobileAppUploadResult,
   MobileApplicationUploadPartResponse,
@@ -38,6 +39,7 @@ import {
   APIConfiguration,
   ServerTest,
   LocalTestDefinition,
+  TriggerInfo,
 } from '../interfaces'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {createInitialSummary} from '../utils/public'
@@ -139,7 +141,7 @@ export const getStep = (): Step => ({
   browser_errors: [],
   description: 'description',
   duration: 1000,
-  step_id: -1,
+  id: -1,
   type: 'type',
   status: 'passed',
   url: 'about:blank',
@@ -166,6 +168,11 @@ export const getMultiStep = (): MultiStep => ({
 })
 
 export const getTestSuite = (): Suite => ({content: {tests: [{testOverrides: {}, id: '123-456-789'}]}, name: 'Suite 1'})
+
+export const getMetadata = (): Metadata => ({
+  ci: {job: {url: 'job-url'}, pipeline: {url: ''}, provider: {}, stage: {}},
+  git: {commit: {author: {}, committer: {}, message: ''}},
+})
 
 export const BATCH_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
 export const getSummary = (): Summary => ({
@@ -265,7 +272,7 @@ export const getFailedBrowserResult = (): Result => ({
         description: 'Navigate to start URL',
         duration: 1000,
         status: 'passed',
-        step_id: -1,
+        id: -1,
         type: 'goToUrlAndMeasureTti',
         url: 'https://example.org/',
         value: 'https://example.org/',
@@ -278,7 +285,7 @@ export const getFailedBrowserResult = (): Result => ({
         duration: 1000,
         failure: {message: 'Navigation failure'},
         status: 'skipped',
-        step_id: 2,
+        id: 2,
         type: 'goToUrl',
         url: 'https://example.org/',
         value: 'https://example.org/',
@@ -290,7 +297,7 @@ export const getFailedBrowserResult = (): Result => ({
         duration: 20000,
         failure: {message: 'Step timeout'},
         public_id: 'abc-def-hij',
-        step_id: 3,
+        id: 3,
         type: 'assertElementContent',
         url: 'https://example.org/',
         vitals_metrics: [],
@@ -403,9 +410,16 @@ export const mockLocation: Location = {
 
 export const mockSearchResponse = {tests: [{public_id: '123-456-789'}]}
 
-export const mockTestTriggerResponse: Trigger = {
+export const mockServerTriggerResponse: ServerTrigger = {
   batch_id: 'bid',
   locations: [mockLocation],
+}
+
+export const mockTriggerInfo: TriggerInfo = {
+  batchId: 'bid',
+  locations: [mockLocation],
+  selectiveRerunRateLimited: undefined,
+  testsNotAuthorized: new Set(),
 }
 
 const mockTunnelConnectionFirstMessage = {host: 'host', id: 'tunnel-id'}
@@ -447,7 +461,7 @@ export const getSyntheticsProxy = () => {
       return mockResponse(calls.search, mockSearchResponse)
     }
     if (/\/synthetics\/tests\/trigger\/ci/.test(request.url)) {
-      return mockResponse(calls.trigger, mockTestTriggerResponse)
+      return mockResponse(calls.trigger, mockServerTriggerResponse)
     }
     if (/\/synthetics\/ci\/tunnel/.test(request.url)) {
       return mockResponse(calls.presignedUrl, {url: `ws://127.0.0.1:${port}`})

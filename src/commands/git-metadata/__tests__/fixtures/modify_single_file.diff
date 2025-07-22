@@ -1,0 +1,15 @@
+diff --git a/src/Calculator.java b/src/Calculator.java
+index 34e8512..a6ceb76 100644
+\--- a/src/Calculator.java
++++ b/src/Calculator.java
+@@ -10,2 +10,2 @@
+
+* public int divide(int a, int b) {
+* ```
+     return a / b;
+  ```
+
+- public int mod(int a, int b) {
+- ```
+     return a % b;
+  ```
