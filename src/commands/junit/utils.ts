@@ -18,7 +18,9 @@ export const getTestRunsUrlPath = (spanTags: SpanTags, queryPrefix = ''): string
 }
 
 export const getTestRunsUrl = (spanTags: SpanTags, queryPrefix = ''): string => {
-  return `${getBaseUrl()}/${getTestRunsUrlPath(spanTags, queryPrefix)}`
+  const path = getTestRunsUrlPath(spanTags, queryPrefix)
+
+  return path ? `${getBaseUrl()}${path}` : ''
 }
 
 export const getTestCommitRedirectURL = (spanTags: SpanTags, service?: string, env?: string): string => {
