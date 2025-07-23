@@ -312,12 +312,76 @@ describe('gate', () => {
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(5)
         })
 
+        test('pass with a 404 error', async () => {
+          const mockError = Object.assign(new Error('Gate evaluation not found'), {
+            isAxiosError: true,
+            response: {
+              status: 404,
+              statusText: 'Not Found',
+            },
+          })
+          const mockApi = {
+            requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+            getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
+          }
+          const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '30'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toMatchSnapshot()
+
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
+        })
+
         test('should fail with 500 error when fail-on-error is true', async () => {
           const mockError = Object.assign(new Error('Request failed with status code 500'), {
             isAxiosError: true,
             response: {
               status: 500,
               statusText: 'Internal Server Error',
+            },
+          })
+          const mockApi = {
+            requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+            getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
+          }
+          const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+          const runPromise = runCLI([
+            '--service',
+            'test-service',
+            '--env',
+            'prod',
+            '--timeout',
+            '30',
+            '--fail-on-error',
+          ])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
+
+          expect(code).toBe(1)
+          expect(context.stdout.toString()).toMatchSnapshot()
+
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
+        })
+
+        test('should fail with 404 error when fail-on-error is true', async () => {
+          const mockError = Object.assign(new Error('Gate evaluation not found'), {
+            isAxiosError: true,
+            response: {
+              status: 404,
+              statusText: 'Not Found',
             },
           })
           const mockApi = {

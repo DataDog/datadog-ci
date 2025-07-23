@@ -62,6 +62,27 @@ Unexpected error happened, exiting with status 0
 "
 `;
 
+exports[`gate execute evaluation errors on gate evaluation result pass with a 404 error 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 30 seconds
+	Fail on error: false
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Error polling for gate evaluation results: 404 Not Found
+	Retrying in 15s...
+Error polling for gate evaluation results: 404 Not Found
+	Retrying in 15s...
+Error polling for gate evaluation results: 404 Not Found
+⚠️ Timeout reached (30 seconds). Gate evaluation did not complete in time.
+Unexpected error happened, exiting with status 0
+"
+`;
+
 exports[`gate execute evaluation errors on gate evaluation result pass with a 500 error 1`] = `
 "Starting deployment gate evaluation with parameters:
 	Service: test-service
@@ -84,6 +105,27 @@ Error polling for gate evaluation results: 500 Internal Server Error
 Error polling for gate evaluation results: 500 Internal Server Error
 ⚠️ Timeout reached (60 seconds). Gate evaluation did not complete in time.
 Unexpected error happened, exiting with status 0
+"
+`;
+
+exports[`gate execute evaluation errors on gate evaluation result should fail with 404 error when fail-on-error is true 1`] = `
+"Starting deployment gate evaluation with parameters:
+	Service: test-service
+	Environment: prod
+	Timeout: 30 seconds
+	Fail on error: true
+
+Requesting gate evaluation...
+Gate evaluation started successfully. Evaluation ID: test-evaluation-id
+
+Waiting for gate evaluation results...
+Error polling for gate evaluation results: 404 Not Found
+	Retrying in 15s...
+Error polling for gate evaluation results: 404 Not Found
+	Retrying in 15s...
+Error polling for gate evaluation results: 404 Not Found
+⚠️ Timeout reached (30 seconds). Gate evaluation did not complete in time.
+Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
 "
 `;
 
