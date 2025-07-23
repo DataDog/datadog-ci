@@ -321,6 +321,7 @@ export class DeploymentGateCommand extends Command {
         if (status === 404 || status >= 500) {
           this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
 
+          // We want to retry in this case, so we return undefined to trigger the retry
           return
         } else {
           this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
