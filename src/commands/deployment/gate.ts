@@ -265,7 +265,7 @@ export class DeploymentGateCommand extends Command {
       const waitTime = Math.min(this.pollingInterval, remainingTime)
       const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
-      result = await this.getEvaluationResultWithRetry(api, evaluationId, timeout)
+      result = await this.getEvaluationResult(api, evaluationId)
       if (result) {
         return result
       }
@@ -277,7 +277,7 @@ export class DeploymentGateCommand extends Command {
     }
 
     // The block above may not have run the last time, so we need to check again
-    result = await this.getEvaluationResultWithRetry(api, evaluationId, timeout)
+    result = await this.getEvaluationResult(api, evaluationId)
     if (result) {
       return result
     }
@@ -287,31 +287,6 @@ export class DeploymentGateCommand extends Command {
     )
 
     return this.getResultForDatadogError()
-  }
-
-  private async getEvaluationResultWithRetry(
-    api: APIHelper,
-    evaluationId: string,
-    timeout: number
-  ): Promise<CommandResult | undefined> {
-    const doRequest = async () => this.getEvaluationResult(api, evaluationId)
-
-    try {
-      const result = await retryRequest(doRequest, {
-        ...this.getRetryOptions(timeout),
-        onRetry: (e, attempt) => {
-          this.logger.info(`Retrying gate evaluation result request (${attempt} attempts)...`)
-        },
-      })
-
-      return result
-    } catch (error) {
-      this.logger.error(
-        `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
-      )
-
-      return this.getResultForDatadogError()
-    }
   }
 
   private async getEvaluationResult(api: APIHelper, evaluationId: string): Promise<CommandResult | undefined> {
@@ -341,11 +316,18 @@ export class DeploymentGateCommand extends Command {
       }
     } catch (error) {
       if (isAxiosError(error) && error.response?.status) {
-        this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
+        const status = error.response.status
+        const statusText = error.response.statusText
+        if (status === 404 || status >= 500) {
+          this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
+
+          return
+        } else {
+          this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
+        }
       } else {
-        this.logger.error(
-          `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
-        )
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        this.logger.error(`Error polling for gate evaluation results: ${errorMessage}`)
       }
 
       throw error

@@ -285,14 +285,20 @@ describe('gate', () => {
 
       describe('on gate evaluation result', () => {
         test('pass with a 500 error', async () => {
-          const mockError = new Error('API Error')
+          const mockError = Object.assign(new Error('Request failed with status code 500'), {
+            isAxiosError: true,
+            response: {
+              status: 500,
+              statusText: 'Internal Server Error',
+            },
+          })
           const mockApi = {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
             getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
           }
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '30'])
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '60'])
 
           await jest.runAllTimersAsync()
 
@@ -339,7 +345,7 @@ describe('gate', () => {
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(5)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
 
         test('should not fail when gate evaluation result is invalid', async () => {
