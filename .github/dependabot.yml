@@ -5,5 +5,7 @@ updates:
     schedule:
       interval: daily
     commit-message:
-      prefix: '[deps] '
+      prefix: '[dep] '
+    # Only enable security updates (triggered by Dependabot alerts)
+    open-pull-requests-limit: 0
     versioning-strategy: increase
