@@ -119,7 +119,7 @@
     "yamux-js": "0.1.2"
   },
   "devDependencies": {
-    "@aws-sdk/types": "^3.709.0",
+    "@aws-sdk/types": "^3.840.0",
     "@babel/core": "7.8.0",
     "@babel/preset-env": "7.4.5",
     "@babel/preset-typescript": "7.3.3",

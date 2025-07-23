@@ -663,7 +663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/types@npm:3.734.0, @aws-sdk/types@npm:^3.709.0":
+"@aws-sdk/types@npm:3.734.0":
   version: 3.734.0
   resolution: "@aws-sdk/types@npm:3.734.0"
   dependencies:
@@ -680,6 +680,16 @@ __metadata:
     "@smithy/types": ^3.3.0
     tslib: ^2.6.2
   checksum: 522768d08f104065b0ff6a37eddaa7803186014acee1c0011b3dbd3ef841e47ae694e58f608aeec8a39d22d644d759ade996fe51d18b880617778dc2dbbe1ede
+  languageName: node
+  linkType: hard
+
+"@aws-sdk/types@npm:^3.840.0":
+  version: 3.840.0
+  resolution: "@aws-sdk/types@npm:3.840.0"
+  dependencies:
+    "@smithy/types": ^4.3.1
+    tslib: ^2.6.2
+  checksum: 01c30bb35090b8105a120ac10bfb5adb291e2b07b15813eebc45a25e8febe79bb4c363600f52abd5348e73b5171611f5e7da8d7f7aeafb7cb3c7b22ac83a1cf8
   languageName: node
   linkType: hard
 
@@ -2048,7 +2058,7 @@ __metadata:
     "@aws-sdk/core": ^3.709.0
     "@aws-sdk/credential-provider-ini": ^3.709.0
     "@aws-sdk/credential-providers": ^3.709.0
-    "@aws-sdk/types": ^3.709.0
+    "@aws-sdk/types": ^3.840.0
     "@azure/arm-appservice": ^16.0.0
     "@azure/arm-resources": ^6.1.0
     "@azure/identity": ^4.10.2
@@ -3409,6 +3419,15 @@ __metadata:
   dependencies:
     tslib: ^2.6.2
   checksum: ff7dcb7a72a2f5e984df95342ec7276cc3249e57de76d5013bf69314a4dbd081e193c5f849e8e5c3f54be222d861272a90ab15b437678e31958eb2c76f55c689
+  languageName: node
+  linkType: hard
+
+"@smithy/types@npm:^4.3.1":
+  version: 4.3.1
+  resolution: "@smithy/types@npm:4.3.1"
+  dependencies:
+    tslib: ^2.6.2
+  checksum: 45f2e15cec06eefb6a2470346c65ec927e56ab1757eee5ab1c431f703a9b350b331679e1f60105a1529ecb9cdb953104883942e655701fb4710bbaf566ec0bc6
   languageName: node
   linkType: hard
 
