@@ -167,10 +167,11 @@ export class DeploymentGateCommand extends Command {
 
       result = await this.pollForEvaluationResults(api, evaluationId, timeoutMilliseconds)
     } catch (error) {
-      this.logger.error(`Deployment gate evaluation failed: ${error instanceof Error ? error.message : String(error)}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      this.logger.error(`Deployment gate evaluation failed due to a non-retryable error: ${errorMessage}`)
 
-      if (isAxiosError(error)) {
-        if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+      if (isAxiosError(error) && error.response?.status) {
+        if (error.response.status >= 400 && error.response.status < 500) {
           this.logger.error(`${ICONS.FAILED} Request failed with client error, exiting with status 1`)
 
           return 1
@@ -229,11 +230,8 @@ export class DeploymentGateCommand extends Command {
         if (isAxiosError(error) && error.response?.status) {
           this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
         } else {
-          this.logger.error(
-            `Could not start gate evaluation with unknown error: ${
-              error instanceof Error ? error.message : String(error)
-            }`
-          )
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          this.logger.error(`Could not start gate evaluation with unknown error: ${errorMessage}`)
         }
 
         throw error
