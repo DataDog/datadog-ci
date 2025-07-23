@@ -71,7 +71,7 @@
     "@aws-sdk/credential-providers": "^3.709.0",
     "@azure/arm-appservice": "^16.0.0",
     "@azure/arm-resources": "^6.1.0",
-    "@azure/identity": "^4.10.0",
+    "@azure/identity": "^4.10.2",
     "@google-cloud/logging": "^11.1.0",
     "@google-cloud/run": "^2.1.0",
     "@smithy/property-provider": "^2.0.12",

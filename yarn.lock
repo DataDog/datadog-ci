@@ -855,9 +855,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/identity@npm:^4.10.0":
-  version: 4.10.0
-  resolution: "@azure/identity@npm:4.10.0"
+"@azure/identity@npm:^4.10.2":
+  version: 4.10.2
+  resolution: "@azure/identity@npm:4.10.2"
   dependencies:
     "@azure/abort-controller": ^2.0.0
     "@azure/core-auth": ^1.9.0
@@ -870,7 +870,7 @@ __metadata:
     "@azure/msal-node": ^3.5.0
     open: ^10.1.0
     tslib: ^2.2.0
-  checksum: 3d8a0766786720a190daa693b457919b9853d9d25150446cdae08f00233560cae6b9b6992d1cd79c04a99a30b72471240a4b23587b55d440be8e263eb6b0c7e6
+  checksum: 6b9459dbea35545a643c9df569f19ad2d455ca8a777074fc8f46b50cf53808132433da47cf05b884ddf85af54b46ae6f4fed8aa99d6ff4a36d032848994e21bd
   languageName: node
   linkType: hard
 
@@ -2051,7 +2051,7 @@ __metadata:
     "@aws-sdk/types": ^3.709.0
     "@azure/arm-appservice": ^16.0.0
     "@azure/arm-resources": ^6.1.0
-    "@azure/identity": ^4.10.0
+    "@azure/identity": ^4.10.2
     "@babel/core": 7.8.0
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
