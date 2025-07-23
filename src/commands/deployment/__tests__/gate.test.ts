@@ -36,9 +36,12 @@ describe('gate', () => {
 
     beforeEach(() => {
       originalEnv = {...process.env}
-      process.env.DATADOG_SITE = 'datadoghq.com'
-      process.env.DATADOG_API_KEY = 'test-api-key'
-      process.env.DATADOG_APP_KEY = 'test-app-key'
+      process.env.DATADOG_SITE = ''
+      process.env.DATADOG_API_KEY = ''
+      process.env.DATADOG_APP_KEY = ''
+      process.env.DD_SITE = 'datadoghq.com'
+      process.env.DD_API_KEY = 'test-api-key'
+      process.env.DD_APP_KEY = 'test-app-key'
 
       jest.useFakeTimers()
     })
@@ -155,6 +158,45 @@ describe('gate', () => {
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
         expect(mockApi.getGateEvaluationResult).toHaveBeenCalledWith('test-evaluation-id')
       })
+
+      test('should succeed when requests fail but succeed on retry', async () => {
+        const mockError = Object.assign(new Error('Request failed with status code 500'), {
+          isAxiosError: true,
+          response: {
+            status: 500,
+            statusText: 'Internal Server Error',
+          },
+        })
+
+        const mockApi = {
+          requestGateEvaluation: jest
+            .fn()
+            .mockRejectedValueOnce(mockError)
+            .mockResolvedValueOnce(buildEvaluationRequestResponse('test-evaluation-id')),
+          getGateEvaluationResult: jest
+            .fn()
+            .mockRejectedValueOnce(mockError)
+            .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass')),
+        }
+        const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+        const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '30'])
+
+        await jest.runAllTimersAsync()
+
+        const {context, code} = await runPromise
+
+        expect(code).toBe(0)
+        expect(context.stdout.toString()).toMatchSnapshot()
+
+        expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+        expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(2)
+        expect(mockApi.requestGateEvaluation).toHaveBeenNthCalledWith(1, {service: 'test-service', env: 'prod'})
+        expect(mockApi.requestGateEvaluation).toHaveBeenNthCalledWith(2, {service: 'test-service', env: 'prod'})
+        expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(2)
+        expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(1, 'test-evaluation-id')
+        expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(2, 'test-evaluation-id')
+      })
     })
 
     describe('evaluation errors', () => {
@@ -176,10 +218,7 @@ describe('gate', () => {
           const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
 
           expect(code).toBe(1)
-          expect(context.stdout.toString()).toContain('Starting deployment gate evaluation')
-          expect(context.stdout.toString()).toContain('Requesting gate evaluation...')
-          expect(context.stdout.toString()).toContain('Request failed with client error: 400 Bad Request')
-          expect(context.stdout.toString()).toContain('Request failed with client error, exiting with status 1')
+          expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
@@ -200,13 +239,17 @@ describe('gate', () => {
           }
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
 
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
-          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
 
@@ -225,34 +268,76 @@ describe('gate', () => {
 
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod', '--fail-on-error'])
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--fail-on-error'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
 
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
-          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(6)
           expect(mockApi.getGateEvaluationResult).not.toHaveBeenCalled()
         })
       })
 
       describe('on gate evaluation result', () => {
         test('pass with a 500 error', async () => {
-          const mockError = new Error('API Error')
+          const mockError = Object.assign(new Error('Request failed with status code 500'), {
+            isAxiosError: true,
+            response: {
+              status: 500,
+              statusText: 'Internal Server Error',
+            },
+          })
           const mockApi = {
             requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
             getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
           }
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod'])
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '60'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
 
           expect(code).toBe(0)
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(5)
+        })
+
+        test('pass with a 404 error', async () => {
+          const mockError = Object.assign(new Error('Gate evaluation not found'), {
+            isAxiosError: true,
+            response: {
+              status: 404,
+              statusText: 'Not Found',
+            },
+          })
+          const mockApi = {
+            requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+            getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
+          }
+          const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod', '--timeout', '30'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toMatchSnapshot()
+
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
 
         test('should fail with 500 error when fail-on-error is true', async () => {
@@ -269,14 +354,62 @@ describe('gate', () => {
           }
           const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
-          const {context, code} = await runCLI(['--service', 'test-service', '--env', 'prod', '--fail-on-error'])
+          const runPromise = runCLI([
+            '--service',
+            'test-service',
+            '--env',
+            'prod',
+            '--timeout',
+            '30',
+            '--fail-on-error',
+          ])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
 
           expect(code).toBe(1)
           expect(context.stdout.toString()).toMatchSnapshot()
 
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
-          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
+        })
+
+        test('should fail with 404 error when fail-on-error is true', async () => {
+          const mockError = Object.assign(new Error('Gate evaluation not found'), {
+            isAxiosError: true,
+            response: {
+              status: 404,
+              statusText: 'Not Found',
+            },
+          })
+          const mockApi = {
+            requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+            getGateEvaluationResult: jest.fn().mockRejectedValue(mockError),
+          }
+          const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+          const runPromise = runCLI([
+            '--service',
+            'test-service',
+            '--env',
+            'prod',
+            '--timeout',
+            '30',
+            '--fail-on-error',
+          ])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
+
+          expect(code).toBe(1)
+          expect(context.stdout.toString()).toMatchSnapshot()
+
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
         })
 
         test('should not fail when gate evaluation result is invalid', async () => {
@@ -302,6 +435,41 @@ describe('gate', () => {
           expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
           expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
           expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(2)
+        })
+
+        test('should retry when gate evaluation result returns 404', async () => {
+          const mock404Error = Object.assign(new Error('Gate evaluation not found'), {
+            isAxiosError: true,
+            response: {
+              status: 404,
+              statusText: 'Not Found',
+            },
+          })
+          const mockApi = {
+            requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
+            getGateEvaluationResult: jest
+              .fn()
+              .mockRejectedValueOnce(mock404Error)
+              .mockResolvedValueOnce(buildGateEvaluationResultResponse('in_progress', ['in_progress', 'in_progress']))
+              .mockResolvedValueOnce(buildGateEvaluationResultResponse('pass', ['pass', 'pass'])),
+          }
+          const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
+
+          const runPromise = runCLI(['--service', 'test-service', '--env', 'prod'])
+
+          await jest.runAllTimersAsync()
+
+          const {context, code} = await runPromise
+
+          expect(code).toBe(0)
+          expect(context.stdout.toString()).toMatchSnapshot()
+
+          expect(apiConstructorSpy).toHaveBeenCalledWith('https://api.datadoghq.com', 'test-api-key', 'test-app-key')
+          expect(mockApi.requestGateEvaluation).toHaveBeenCalledTimes(1)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenCalledTimes(3)
+          expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(1, 'test-evaluation-id')
+          expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(2, 'test-evaluation-id')
+          expect(mockApi.getGateEvaluationResult).toHaveBeenNthCalledWith(3, 'test-evaluation-id')
         })
       })
     })

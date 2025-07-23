@@ -1,3 +1,4 @@
+import retry from 'async-retry'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -8,6 +9,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {ICONS} from '../../helpers/formatting'
 import {Logger, LogLevel} from '../../helpers/logger'
+import {retryRequest} from '../../helpers/retry'
 import {getApiHostForSite} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
@@ -91,7 +93,8 @@ export class DeploymentGateCommand extends Command {
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
-  private pollingInterval = 15000
+  private evaluationRequestTimeout = 60000 // 1 minute
+  private pollingInterval = 15000 // 15 seconds
   private startTime: number = Date.now()
 
   public async execute() {
@@ -117,6 +120,7 @@ export class DeploymentGateCommand extends Command {
 
       return 1
     }
+    const timeoutMilliseconds = timeoutSeconds * 1000
 
     if (!this.config.apiKey) {
       this.logger.error(
@@ -159,14 +163,15 @@ export class DeploymentGateCommand extends Command {
       const api = this.getApiHelper(this.config.apiKey, this.config.appKey)
       const evaluationRequest = this.buildEvaluationRequest()
 
-      const evaluationId = await this.requestGateEvaluation(api, evaluationRequest)
+      const evaluationId = await this.requestGateEvaluation(api, evaluationRequest, this.evaluationRequestTimeout)
 
-      result = await this.pollForEvaluationResults(api, evaluationId, timeoutSeconds)
+      result = await this.pollForEvaluationResults(api, evaluationId, timeoutMilliseconds)
     } catch (error) {
-      this.logger.error(`Deployment gate evaluation failed: ${error instanceof Error ? error.message : String(error)}`)
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      this.logger.error(`Deployment gate evaluation failed due to a non-retryable error: ${errorMessage}`)
 
-      if (isAxiosError(error)) {
-        if (error.response?.status && error.response.status >= 400 && error.response.status < 500) {
+      if (isAxiosError(error) && error.response?.status) {
+        if (error.response.status >= 400 && error.response.status < 500) {
           this.logger.error(`${ICONS.FAILED} Request failed with client error, exiting with status 1`)
 
           return 1
@@ -207,43 +212,54 @@ export class DeploymentGateCommand extends Command {
     return request
   }
 
-  private async requestGateEvaluation(api: APIHelper, request: GateEvaluationRequest): Promise<string> {
+  private async requestGateEvaluation(
+    api: APIHelper,
+    request: GateEvaluationRequest,
+    timeout: number
+  ): Promise<string> {
     this.logger.info('Requesting gate evaluation...')
 
-    try {
-      const response = await api.requestGateEvaluation(request)
-      const evaluationId = response.data.data.attributes.evaluation_id
-      this.logger.info(chalk.green(`Gate evaluation started successfully. Evaluation ID: ${evaluationId}\n`))
+    const doRequest = async () => {
+      try {
+        const response = await api.requestGateEvaluation(request)
+        const id = response.data.data.attributes.evaluation_id
+        this.logger.info(chalk.green(`Gate evaluation started successfully. Evaluation ID: ${id}\n`))
 
-      return evaluationId
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status) {
-        this.logger.error(`Request failed with client error: ${error.response.status} ${error.response.statusText}`)
-      } else {
-        this.logger.error(
-          `Could not start gate evaluation with unknown error: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        )
+        return id
+      } catch (error) {
+        if (isAxiosError(error) && error.response?.status) {
+          this.logger.error(`Request failed with error: ${error.response.status} ${error.response.statusText}`)
+        } else {
+          const errorMessage = error instanceof Error ? error.message : String(error)
+          this.logger.error(`Could not start gate evaluation with unknown error: ${errorMessage}`)
+        }
+
+        throw error
       }
-
-      throw error
     }
+
+    const evaluationId = await retryRequest(doRequest, {
+      ...this.getRetryOptions(timeout),
+      onRetry: (e, attempt) => {
+        this.logger.info(`Retrying gate evaluation request (${attempt} attempts)...`)
+      },
+    })
+
+    return evaluationId
   }
 
   private async pollForEvaluationResults(
     api: APIHelper,
     evaluationId: string,
-    timeoutSeconds: number
+    timeout: number
   ): Promise<CommandResult> {
     this.logger.info('Waiting for gate evaluation results...')
 
-    const maxWaitTime = timeoutSeconds * 1000
     let timePassed = Date.now() - this.startTime
     let result: CommandResult | undefined
 
-    while (timePassed < maxWaitTime) {
-      const remainingTime = maxWaitTime - timePassed
+    while (timePassed < timeout) {
+      const remainingTime = timeout - timePassed
       const waitTime = Math.min(this.pollingInterval, remainingTime)
       const waitTimeInSeconds = Math.floor(waitTime / 1000)
 
@@ -265,7 +281,7 @@ export class DeploymentGateCommand extends Command {
     }
 
     this.logger.warn(
-      `${ICONS.WARNING} Timeout reached (${timeoutSeconds} seconds). Gate evaluation did not complete in time.`
+      `${ICONS.WARNING} Timeout reached (${timeout / 1000} seconds). Gate evaluation did not complete in time.`
     )
 
     return this.getResultForDatadogError()
@@ -297,11 +313,23 @@ export class DeploymentGateCommand extends Command {
           this.logger.warn(`Unknown gate evaluation status: ${status}`)
       }
     } catch (error) {
-      this.logger.error(
-        `Error polling for gate evaluation results: ${error instanceof Error ? error.message : String(error)}`
-      )
+      if (isAxiosError(error) && error.response?.status) {
+        const status = error.response.status
+        const statusText = error.response.statusText
+        if (status === 404 || status >= 500) {
+          this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
 
-      return this.getResultForDatadogError()
+          // We want to retry in this case, so we return undefined to trigger the retry
+          return
+        } else {
+          this.logger.error(`Error polling for gate evaluation results: ${status} ${statusText}`)
+        }
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        this.logger.error(`Error polling for gate evaluation results: ${errorMessage}`)
+      }
+
+      throw error
     }
   }
 
@@ -315,5 +343,19 @@ export class DeploymentGateCommand extends Command {
     this.logger.warn('Unexpected error happened, exiting with status 0')
 
     return 'PASS'
+  }
+
+  private getRetryOptions(timeout: number): retry.Options {
+    const timeElapsed = Date.now() - this.startTime
+    const maxRetryTime = timeout - timeElapsed
+
+    return {
+      forever: true,
+      randomize: false,
+      factor: 1.5,
+      minTimeout: 5000, // 5 seconds
+      maxTimeout: 30000, // 30 seconds
+      maxRetryTime,
+    }
   }
 }
