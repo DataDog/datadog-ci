@@ -18,13 +18,14 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {retryRequest} from '../../helpers/retry'
 import {
   GIT_HEAD_SHA,
-  GIT_PULL_REQUEST_BASE_BRANCH, GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
   parseMetrics,
-  parseTags
-} from "../../helpers/tags";
+  parseTags,
+} from '../../helpers/tags'
 import {getUserGitSpanTags} from '../../helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 
