@@ -10,6 +10,7 @@ import {
   CI_NODE_NAME,
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   PR_NUMBER,
 } from '../tags'
@@ -177,19 +178,19 @@ describe('ci spec', () => {
           process.env.GITHUB_EVENT_PATH = upath.join(__dirname, 'ci-fixtures', 'github_event_payload.json')
           const {
             [GIT_PULL_REQUEST_BASE_BRANCH]: pullRequestBaseBranch,
-            [GIT_PULL_REQUEST_BASE_BRANCH_SHA]: pullRequestBaseBranchSha,
+            [GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]: pullRequestBaseBranchHeadSha,
             [GIT_HEAD_SHA]: headCommitSha,
             [PR_NUMBER]: prNumber,
           } = getCISpanTags() as SpanTags
 
           expect({
             pullRequestBaseBranch,
-            pullRequestBaseBranchSha,
+            pullRequestBaseBranchHeadSha,
             headCommitSha,
             prNumber,
           }).toEqual({
             pullRequestBaseBranch: 'datadog:main',
-            pullRequestBaseBranchSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
+            pullRequestBaseBranchHeadSha: '52e0974c74d41160a03d59ddc73bb9f5adab054b',
             headCommitSha: 'df289512a51123083a8e6931dd6f57bb3883d4c4',
             prNumber: '1',
           })

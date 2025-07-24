@@ -19,6 +19,7 @@ import {retryRequest} from '../../helpers/retry'
 import {
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
+  GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
@@ -291,7 +292,7 @@ export class UploadCodeCoverageReportCommand extends Command {
       return {}
     }
 
-    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA]
+    const baseSha = spanTags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] || spanTags[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
     if (baseSha) {
       // GitHub incorrectly reports base SHA as the head of the target branch
       // doing a merge-base allows us to get the real base SHA
