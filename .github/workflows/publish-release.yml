@@ -250,7 +250,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        integration:
+        integration-repo:
           - synthetics-ci-github-action
           - datadog-ci-azure-devops
           - synthetics-test-automation-circleci-orb
@@ -265,6 +265,7 @@ jobs:
           app-id: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_ID }}
           private-key: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
+          repositories: ${{ matrix.integration-repo }}
       - name: Create bump datadog-ci PR
         uses: actions/github-script@v7
         with:
@@ -274,7 +275,7 @@ jobs:
 
             github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
-              repo: '${{ matrix.integration }}',
+              repo: '${{ matrix.integration-repo }}',
               workflow_id: 'bump-datadog-ci.yml',
               ref: 'main',
               inputs: {
