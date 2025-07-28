@@ -264,6 +264,7 @@ jobs:
         with:
           app-id: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_ID }}
           private-key: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
       - name: Create bump datadog-ci PR
         uses: actions/github-script@v7
         with:
