@@ -258,10 +258,16 @@ jobs:
           - synthetics-test-automation-bitrise-step-upload-application
           - synthetics-batch-smoke-tester
     steps:
+      - name: Get GitHub App token
+        id: get-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_ID }}
+          private-key: ${{ secrets.RELEASE_AUTOMATION_GITHUB_APP_PRIVATE_KEY }}
       - name: Create bump datadog-ci PR
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.CROSS_REPOSITORY_GITHUB_TOKEN }}
+          github-token: ${{ steps.get-token.outputs.token }}
           script: |
             const tagName = '${{ github.event.release.tag_name }}'.replace('v', '')
 
