@@ -73,7 +73,7 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
         data.includes('<report')
       ) {
         return jacocoFormat
-      } else if (data.includes('<coverage') && data.includes('clover=')) {
+      } else if (data.includes('<coverage') && data.includes('<project')) {
         return cloverFormat
       }
     })
