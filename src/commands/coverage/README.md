@@ -67,5 +67,8 @@ Will upload ode coverage report file src/commands/coverage/__tests__/fixtures/ja
 
 ## Further reading
 
-[//]: <> (TODO: Add link to the documentation page)
-[//]: <> (TODO: Add link to the documentation page in main README beta section)
+Additional helpful documentation, links, and articles:
+
+- [Learn about Datadog Code Coverage][1]
+
+[1]: https://docs.datadoghq.com/code_coverage/
