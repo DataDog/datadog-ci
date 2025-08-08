@@ -97,6 +97,11 @@ describe('utils', () => {
       expect(validateCoverageReport(filePath, cloverFormat)).toBeUndefined()
     })
 
+    test('Returns undefined for a valid clover PHP report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover-php.xml'
+      expect(validateCoverageReport(filePath, cloverFormat)).toBeUndefined()
+    })
+
     test('Returns error message for an invalid clover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/clover-invalid.xml'
       expect(validateCoverageReport(filePath, cloverFormat)).toMatch(/.+/)
@@ -136,6 +141,11 @@ describe('utils', () => {
 
     test('Detects clover format for a valid clover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/clover.xml'
+      expect(detectFormat(filePath)).toEqual(cloverFormat)
+    })
+
+    test('Detects clover format for a PHP clover report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/clover-php.xml'
       expect(detectFormat(filePath)).toEqual(cloverFormat)
     })
 

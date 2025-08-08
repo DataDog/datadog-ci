@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1754507264">
+  <project timestamp="1754507264">
+    <file name="/home/runner/work/MyFile.php">
+      <class name="MyClass" namespace="global">
+        <metrics complexity="3" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+      </class>
+      <line num="11" type="method" name="__construct" visibility="public" complexity="1" crap="2" count="0"/>
+      <line num="12" type="stmt" count="0"/>
+      <line num="42" type="stmt" count="0"/>
+      <metrics loc="36" ncloc="28" classes="1" methods="2" coveredmethods="0" conditionals="0" coveredconditionals="0" statements="6" coveredstatements="0" elements="8" coveredelements="0"/>
+    </file>
+    <metrics files="1234" loc="5678" ncloc="123" classes="456" methods="123" coveredmethods="690" conditionals="0" coveredconditionals="0" statements="223344" coveredstatements="567" elements="5645" coveredelements="1124"/>
+  </project>
+</coverage>
