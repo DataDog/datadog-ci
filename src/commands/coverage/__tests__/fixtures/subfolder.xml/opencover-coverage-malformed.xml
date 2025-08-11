@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Summary numSequencePoints="1657" visitedSequencePoints="1577" numBranchPoints="922" visitedBranchPoints="769" sequenceCoverage="95.17" branchCoverage="83.41" maxCyclomaticComplexity="31" minCyclomaticComplexity="1" />
+    <Modules>
+        <Module hash="B0-C2-FD-A1-3A-C9-E1-62-0F-2F-6D-EB-74-68-5A-20-27-5F-00-BC">
+            <Summary numSequencePoints="1657" visitedSequencePoints="1577" numBranchPoints="922" visitedBranchPoints="769" sequenceCoverage="95.17" branchCoverage="83.41" maxCyclomaticComplexity="31" minCyclomaticComplexity="1" />
+            <FullName>C:\Projects\opencover.git\working\main\bin\Debug\OpenCover.Framework.dll</FullName>
+            <ModuleName>OpenCover.Framework</ModuleName>
+            <Files>
+                <File uid="1" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\Bootstrapper.cs" />
+                <File uid="2" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\CommandLineParserBase.cs" />
+                <File uid="3" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\CommandLineParser.cs" />
+                <File uid="5" fullPath="c:\Projects\opencover.git\working\main\OpenCover.Framework\Communication\MarshalWapper.cs" />
+            </Files>

@@ -1,0 +1,12 @@
+<coverage generated="1625247600" clover="4.2.0">
+    <project timestamp="1625247600" name="MyProject">
+        <metrics statements="100" coveredstatements="80" conditionals="50" coveredconditionals="40" methods="20" coveredmethods="15" />
+        <package name="com.example">
+            <file name="Example.java" path="/src/com/example/Example.java">
+                <metrics statements="50" coveredstatements="40" conditionals="25" coveredconditionals="20" methods="10" coveredmethods="8" />
+                <line num="10" count="5" type="stmt"/>
+                <line num="12" count="0" type="stmt"/>
+            </file>
+        </package>
+    </project>
+</coverage>

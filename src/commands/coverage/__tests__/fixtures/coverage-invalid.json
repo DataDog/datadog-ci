@@ -1,0 +1,14 @@
+{
+  "meta": {
+    "simplecov_version": "0.21.2"
+  },
+  "coverage": {
+    "/path/to/file1.rb": {
+      "branches": []
+    },
+    "/path/to/file2.rb": {
+      "lines": [1, 1, null, 0, 1],
+      "branches": []
+    }
+  }
+}
