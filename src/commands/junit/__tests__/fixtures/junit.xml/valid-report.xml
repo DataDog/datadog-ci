@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites duration="50.5">
-    <testsuite failures="0" name="Untitled suite in agent.js" package="tests/suites/casper/agent" tests="3" time="0.256">
-        <testcase classname="tests/suites/casper/agent" name="Default user agent matches /CasperJS/" time="0.103"/>
-        <testcase classname="tests/suites/casper/agent" name="Default user agent matches /plop/" time="0.146"/>
-        <testcase classname="tests/suites/casper/agent" name="Default user agent matches /plop/" time="0.007"/>
-    </testsuite>
-</testsuites>

@@ -1,3 +1,0 @@
-{
-    "sources": ["webpack:///./src/commands/sourcemaps/__tests__/git.test.ts"]
-}
