@@ -7,8 +7,6 @@ import ora from 'ora'
 import type {CommandContext} from '../../../helpers/interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL} from '../../../helpers/tags'
 
-import {getTestRunsUrlPath} from '../../junit/utils'
-
 import {
   Assertion,
   ExecutionRule,
@@ -477,13 +475,7 @@ export class DefaultReporter implements MainReporter {
       )
     }
 
-    const testRunsUrlPath = getTestRunsUrlPath(
-      {
-        [CI_JOB_URL]: summary.metadata?.ci.job?.url,
-        [CI_PIPELINE_URL]: summary.metadata?.ci.pipeline?.url,
-      },
-      '@test.framework:synthetics'
-    )
+    const testRunsUrlPath = '@test.framework:synthetics'
     if (testRunsUrlPath) {
       lines.push(`\nView test runs in Test Optimization: ${chalk.dim.cyan(baseUrl + testRunsUrlPath)}`)
     }
