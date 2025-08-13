@@ -445,6 +445,7 @@ export class InstrumentCommand extends Command {
     // Replace or add other env vars
     newEnvVars[SERVICE_ENV_VAR] = ddService
     newEnvVars[API_KEY_ENV_VAR] = process.env[API_KEY_ENV_VAR] ?? ''
+    newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
     if (this.llmobs) {
       newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
       newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = this.llmobs
