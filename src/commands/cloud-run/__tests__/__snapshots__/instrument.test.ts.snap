@@ -35,6 +35,10 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +           {
 +             "name": "DD_API_KEY",
 +             "value": "PLACEHOLDER"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
@@ -158,6 +162,10 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +           {
 +             "name": "DD_API_KEY",
 +             "value": "PLACEHOLDER"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
