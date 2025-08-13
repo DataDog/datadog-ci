@@ -65,12 +65,15 @@ export class DeploymentGateCommand extends Command {
   // Optional parameters
   private identifier = Option.String('--identifier', {
     description: 'The deployment identifier (defaults to "default")',
+    validator: t.isString(),
   })
   private version = Option.String('--version', {
     description: 'The deployment version (required for gates with faulty deployment detection rules)',
+    validator: t.isString(),
   })
   private apmPrimaryTag = Option.String('--apm-primary-tag', {
     description: 'The APM primary tag (only for gates with faulty deployment detection rules)',
+    validator: t.isString(),
   })
   private timeout = Option.String('--timeout', '10800', {
     description: 'Maximum amount of seconds to wait for the script execution in seconds (default: 10800 = 3 hours)',
@@ -79,6 +82,11 @@ export class DeploymentGateCommand extends Command {
   private failOnError = Option.Boolean('--fail-on-error', false, {
     description:
       'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
+  })
+  // monitorVariable is hidden because it's not available yet
+  private monitorVariable = Option.String('--monitor-variable', '', {
+    validator: t.isString(),
+    hidden: true,
   })
 
   // FIPS options
@@ -207,6 +215,10 @@ export class DeploymentGateCommand extends Command {
 
     if (this.apmPrimaryTag) {
       request.apm_primary_tag = this.apmPrimaryTag
+    }
+
+    if (this.monitorVariable) {
+      request.monitor_variable = this.monitorVariable
     }
 
     return request
