@@ -129,11 +129,15 @@ export class InstrumentCommand extends Command {
 
     // Verify DD API Key
     const site = process.env.DD_SITE ?? DATADOG_SITE_US1
-    const isApiKeyValid = await newApiKeyValidator({
-      apiKey: process.env.DD_API_KEY,
-      datadogSite: site,
-    }).validateApiKey()
-    if (!isApiKeyValid) {
+    try {
+      const isApiKeyValid = await newApiKeyValidator({
+        apiKey: process.env.DD_API_KEY,
+        datadogSite: site,
+      }).validateApiKey()
+      if (!isApiKeyValid) {
+        throw Error()
+      }
+    } catch (e) {
       this.context.stdout.write(
         renderSoftWarning(
           `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(
