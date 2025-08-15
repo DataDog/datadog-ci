@@ -385,7 +385,13 @@ export const formatBytes = (bytes: number, decimals = 2) => {
 }
 
 // Mask a string to hide sensitive values
-export const maskString = (value: string) => {
+export const maskString = (value?: string) => {
+  if (value === undefined) {
+    return '<unset>'
+  } else if (value.length === 0) {
+    return '<empty>'
+  }
+
   // Don't mask booleans
   if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
     return value
