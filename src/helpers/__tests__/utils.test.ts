@@ -433,8 +433,8 @@ describe('utils', () => {
       expect(maskString(original)).toEqual(masked)
     })
 
-    it('should return empty string if input is empty', () => {
-      expect(maskString('')).toEqual('')
+    it('should return <empty> if input is empty', () => {
+      expect(maskString('')).toEqual('<empty>')
     })
 
     it('should not mask booleans', () => {
