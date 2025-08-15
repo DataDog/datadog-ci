@@ -99,11 +99,16 @@ export class InstrumentCommand extends AasCommand {
 
       return 1
     }
-    const isApiKeyValid = await newApiKeyValidator({
-      apiKey: process.env.DD_API_KEY,
-      datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
-    }).validateApiKey()
-    if (!isApiKeyValid) {
+
+    try {
+      const isApiKeyValid = await newApiKeyValidator({
+        apiKey: process.env.DD_API_KEY,
+        datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+      }).validateApiKey()
+      if (!isApiKeyValid) {
+        throw Error()
+      }
+    } catch (e) {
       this.context.stdout.write(
         renderSoftWarning(
           `Invalid API Key stored in the environment variable ${chalk.bold('DD_API_KEY')}: ${maskString(

@@ -63,6 +63,10 @@ class ApiKeyValidatorImplem {
    * @returns `true` if the API key is valid, `false` otherwise.
    */
   public async validateApiKey(): Promise<boolean> {
+    if (this.apiKey === undefined || this.apiKey.length === 0) {
+      return false
+    }
+
     try {
       const response = await axiosGet(this.getApiKeyValidationURL(), {
         headers: {
