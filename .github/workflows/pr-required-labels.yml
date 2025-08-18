@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: At least one label required
-        uses: mheap/github-action-required-labels@v5
+        uses: mheap/github-action-required-labels@8afbe8ae6ab7647d0c9f0cfa7c2f939650d22509 # v5.5.1
         with:
           # If a PR has multiple labels, its category in the release notes will be the first one
           # in the `categories` list in `.github/release.yml` to match any of the PR's labels.
