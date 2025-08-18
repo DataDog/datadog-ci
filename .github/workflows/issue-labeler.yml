@@ -10,12 +10,12 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Parse issue form
-        uses: stefanbuck/github-issue-parser@v3
+        uses: stefanbuck/github-issue-parser@2ea9b35a8c584529ed00891a8f7e41dc46d0441e # v3.2.1
         id: issue-parser
       - name: Set labels based on command
-        uses: redhat-plumbers-in-action/advanced-issue-labeler@v2
+        uses: redhat-plumbers-in-action/advanced-issue-labeler@9e55064634b67244f7deb4211452b4a7217b93de # v3.0.0
         with:
           issue-form: ${{ steps.issue-parser.outputs.jsonString }}
           token: ${{ secrets.GITHUB_TOKEN }}
