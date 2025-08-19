@@ -10,18 +10,17 @@ import {
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
-import {mockClient} from 'aws-sdk-client-mock'
-
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {
   makeRunCLI,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
-} from '../../../helpers/__tests__/testing-tools'
-import * as helpersFlareModule from '../../../helpers/flare'
-import * as fsModule from '../../../helpers/fs'
-import * as helpersPromptModule from '../../../helpers/prompt'
+} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
+import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
+import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
+import {mockClient} from 'aws-sdk-client-mock'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
 import {

@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosResponse} from 'axios'
 
-import {SpanTags} from '../../helpers/interfaces'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 export interface Payload {
   hostname: string

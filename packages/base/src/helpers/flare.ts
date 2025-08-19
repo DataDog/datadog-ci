@@ -5,10 +5,6 @@
 import fs from 'fs'
 import {Writable} from 'stream'
 
-import {post as axiosPost, isAxiosError} from 'axios'
-import FormData from 'form-data'
-import upath from 'upath'
-
 import {
   CI_SITE_ENV_VAR,
   DATADOG_SITE_EU1,
@@ -17,7 +13,10 @@ import {
   DATADOG_SITES,
   FLARE_ENDPOINT_PATH,
   SITE_ENV_VAR,
-} from '../constants'
+} from '@datadog/datadog-ci-base/constants'
+import {post as axiosPost, isAxiosError} from 'axios'
+import FormData from 'form-data'
+import upath from 'upath'
 
 import {deleteFolder} from './fs'
 import * as helpersRenderer from './renderer'

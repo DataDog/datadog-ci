@@ -1,9 +1,8 @@
 import {promises} from 'fs'
 import os from 'os'
 
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import upath from 'upath'
-
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {InjectDebugIdCommand} from '../injectDebugId'
 

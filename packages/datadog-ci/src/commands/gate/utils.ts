@@ -1,4 +1,4 @@
-import {getCommonAppBaseURL} from '../../helpers/app'
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
 
 export const getBaseUrl = () => {
   const site = process.env.DD_SITE || 'datadoghq.com'

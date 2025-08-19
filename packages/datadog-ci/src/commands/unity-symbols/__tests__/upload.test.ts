@@ -1,8 +1,13 @@
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartFileValue, MultipartPayload, MultipartStringValue, MultipartValue} from '../../../helpers/upload'
-import {performSubCommand} from '../../../helpers/utils'
-import {version} from '../../../helpers/version'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  MultipartFileValue,
+  MultipartPayload,
+  MultipartStringValue,
+  MultipartValue,
+} from '@datadog/datadog-ci-base/helpers/upload'
+import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
+import {version} from '@datadog/datadog-ci-base/helpers/version'
 
 import * as dsyms from '../../dsyms/upload'
 
@@ -19,19 +24,19 @@ import {UploadCommand} from '../upload'
 const cliVersion = version
 const fixtureDir = 'src/commands/unity-symbols/__tests__/fixtures'
 
-jest.mock('../../../helpers/utils', () => ({
-  ...jest.requireActual('../../../helpers/utils'),
+jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
   performSubCommand: jest.fn(),
+}))
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'),
+  getRepositoryData: jest.fn(),
 }))
 
 jest.mock('../helpers', () => ({
   ...jest.requireActual('../helpers'),
   uploadMultipartHelper: jest.fn(),
-}))
-
-jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
-  ...jest.requireActual('../../../helpers/git/format-git-sourcemaps-data'),
-  getRepositoryData: jest.fn(),
 }))
 
 describe('unity-symbols upload', () => {

@@ -1,7 +1,6 @@
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import chalk from 'chalk'
 import upath from 'upath'
-
-import {SpanTags} from '../../helpers/interfaces'
 
 import {Payload} from './interfaces'
 import {getCoverageDetailsUrl} from './utils'

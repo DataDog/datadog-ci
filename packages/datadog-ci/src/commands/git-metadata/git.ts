@@ -1,9 +1,8 @@
 import {URL} from 'url'
 
+import {gitRemote} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import * as simpleGit from 'simple-git'
 import {GitConfigScope} from 'simple-git'
-
-import {gitRemote} from '../../helpers/git/get-git-data'
 
 import {CommitInfo} from './interfaces'
 

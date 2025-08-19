@@ -1,6 +1,3 @@
-import chalk from 'chalk'
-import ora from 'ora'
-
 import {
   dryRunTag,
   warningTag,
@@ -8,7 +5,9 @@ import {
   failCrossTag,
   renderError,
   renderSoftWarning,
-} from '../../../helpers/renderer'
+} from '@datadog/datadog-ci-base/helpers/renderer'
+import chalk from 'chalk'
+import ora from 'ora'
 
 import {InstrumentCommand} from '../instrument'
 import {UninstrumentCommand} from '../uninstrument'

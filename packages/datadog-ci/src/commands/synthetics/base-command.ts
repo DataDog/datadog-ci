@@ -1,11 +1,14 @@
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {
+  makeTerminalLink,
+  recursivelyRemoveUndefinedValues,
+  resolveConfigFromFile,
+} from '@datadog/datadog-ci-base/helpers/utils'
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {makeTerminalLink, recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '../../helpers/utils'
 
 import {CiError} from './errors'
 import {DatadogCIConfig, MainReporter, Reporter} from './interfaces'

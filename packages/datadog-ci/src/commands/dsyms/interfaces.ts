@@ -1,4 +1,4 @@
-import {MultipartPayload, MultipartValue} from '../../helpers/upload'
+import {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
 
 export interface Dsym {
   bundle: string

@@ -1,10 +1,9 @@
 import fs from 'fs'
 import os from 'os'
 
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import simpleGit from 'simple-git'
 import upath from 'upath'
-
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadSarifReportCommand} from '../upload'

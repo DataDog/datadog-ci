@@ -1,8 +1,7 @@
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {dryRunTag} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 import ora from 'ora'
-
-import * as helpersRenderer from '../../helpers/renderer'
-import {dryRunTag} from '../../helpers/renderer'
 
 const AUTHENTICATION_INSTRUCTIONS = [
   '\n' + helpersRenderer.renderError('Unable to authenticate with GCP.'),

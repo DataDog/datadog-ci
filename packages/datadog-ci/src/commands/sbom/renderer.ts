@@ -1,6 +1,5 @@
+import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import chalk from 'chalk'
-
-import {getBaseUrl} from '../../helpers/app'
 
 import {Dependency, ScaRequest} from './types'
 import {validateDependencyName} from './validation'

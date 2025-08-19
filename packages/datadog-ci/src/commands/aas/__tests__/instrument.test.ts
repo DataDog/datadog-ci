@@ -6,14 +6,14 @@ jest.mock('fs', () => ({
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 const validateApiKey = jest.fn()
-jest.mock('../../../helpers/apikey', () => ({
+jest.mock('@datadog/datadog-ci-base/helpers/apikey', () => ({
   newApiKeyValidator: jest.fn().mockImplementation(() => ({
     validateApiKey,
   })),
 }))
 
 const handleSourceCodeIntegration = jest.fn()
-jest.mock('../../../helpers/git/instrument-helpers', () => ({
+jest.mock('../../../git-instrument-helpers', () => ({
   handleSourceCodeIntegration,
 }))
 
@@ -50,8 +50,7 @@ jest.mock('@azure/arm-resources', () => ({
 
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
-
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {InstrumentCommand} from '../instrument'
 

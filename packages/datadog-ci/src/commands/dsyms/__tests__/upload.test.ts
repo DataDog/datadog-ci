@@ -1,13 +1,12 @@
 import {existsSync, promises} from 'fs'
 import {platform} from 'os'
 
+import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import {Cli} from 'clipanion'
 import upath from 'upath'
-
-import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
-import * as APIKeyHelpers from '../../../helpers/apikey'
-import {globSync} from '../../../helpers/glob'
-import {buildPath} from '../../../helpers/utils'
 
 import {Dsym} from '../interfaces'
 import {UploadCommand} from '../upload'

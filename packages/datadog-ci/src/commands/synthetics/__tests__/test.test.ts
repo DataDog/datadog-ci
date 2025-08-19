@@ -1,7 +1,6 @@
+import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import {default as axios} from 'axios'
-
-import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
-import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'
 import {CiError} from '../errors'
