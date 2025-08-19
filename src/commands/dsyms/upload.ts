@@ -17,7 +17,7 @@ import {upload, UploadStatus} from '../../helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {
@@ -66,7 +66,7 @@ export class UploadCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 

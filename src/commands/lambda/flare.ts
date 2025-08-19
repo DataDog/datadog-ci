@@ -39,7 +39,7 @@ import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
 import * as helpersRenderer from '../../helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
 import {formatBytes} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -102,7 +102,7 @@ export class LambdaFlareCommand extends Command {
    */
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    await validateCliVersion(this.context.stdout)
+    await validateCliVersion(cliVersion, this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
@@ -422,7 +422,7 @@ export class LambdaFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, cliVersion)
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
@@ -762,7 +762,7 @@ export const generateInsightsFile = (
   // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
-  lines.push(`**CLI Version**: \`${version}\`  `)
+  lines.push(`**CLI Version**: \`${cliVersion}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
   lines.push(`**Timestamp**: \`${timeString}\`  `)
   lines.push(`**Framework**: \`${getFramework()}\``)

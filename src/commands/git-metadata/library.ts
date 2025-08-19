@@ -5,7 +5,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
@@ -77,12 +77,12 @@ const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload:
     baseUrl: 'https://sourcemap-intake.' + datadogSite,
     headers: new Map([
       ['DD-EVP-ORIGIN', 'datadog-ci_sci'],
-      ['DD-EVP-ORIGIN-VERSION', version],
+      ['DD-EVP-ORIGIN-VERSION', cliVersion],
     ]),
     overrideUrl: 'api/v2/srcmap',
   })
 
-  const status = await uploadRepository(requestBuilder, version)(payload, {
+  const status = await uploadRepository(requestBuilder, cliVersion)(payload, {
     apiKeyValidator,
     onError: (e) => {
       throw e

@@ -12,7 +12,7 @@ import {Logger, LogLevel} from '../../helpers/logger'
 import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
 import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
@@ -47,7 +47,7 @@ export class UploadCommand extends Command {
   private noGitSync = Option.Boolean('--no-gitsync', false)
   private directory = Option.String('--directory', '')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

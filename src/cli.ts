@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import {Builtins, Cli, CommandClass} from 'clipanion'
 
-import {version} from './helpers/version'
+import {cliVersion} from './version'
 
 export const BETA_COMMANDS = ['dora', 'deployment', 'elf-symbols']
 
@@ -17,7 +17,7 @@ process.on('unhandledRejection', onError)
 const cli = new Cli({
   binaryLabel: 'Datadog CI',
   binaryName: 'datadog-ci',
-  binaryVersion: version,
+  binaryVersion: cliVersion,
 })
 
 cli.register(Builtins.HelpCommand)

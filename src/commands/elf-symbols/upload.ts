@@ -15,7 +15,7 @@ import {MultipartValue, UploadStatus} from '../../helpers/upload'
 import {buildPath, DEFAULT_CONFIG_PATHS, execute, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 
@@ -65,7 +65,7 @@ export class UploadCommand extends Command {
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

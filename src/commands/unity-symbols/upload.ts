@@ -20,7 +20,7 @@ import {
 } from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import * as dsyms from '../dsyms/upload'
 import {createUniqueTmpDirectory} from '../dsyms/utils'
@@ -75,7 +75,7 @@ export class UploadCommand extends Command {
   private skipIl2Cpp = Option.Boolean('--skip-il2cpp', false)
 
   private buildId?: string
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

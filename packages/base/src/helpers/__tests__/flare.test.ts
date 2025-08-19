@@ -2,6 +2,7 @@ import fs from 'fs'
 import process from 'process'
 import {Writable} from 'stream'
 
+import {MOCK_CWD} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import axios from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
@@ -9,8 +10,7 @@ import upath from 'upath'
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
 const getLatestVersion = jest.fn()
-jest.mock('../../helpers/version', () => ({
-  version: '1.0.0',
+jest.mock('../../helpers/get-latest-version', () => ({
   getLatestVersion,
 }))
 
@@ -23,8 +23,6 @@ import {
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
-
-import {MOCK_CWD} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 // Mocks
 jest.mock('fs')
@@ -85,10 +83,18 @@ describe('flare', () => {
     const MOCK_EMAIL = 'test@example.com'
     const MOCK_API_KEY = 'api-key'
     const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
+    const MOCK_CLI_VERSION = '1.0.0'
     const MOCK_AXIOS = axios as jest.Mocked<typeof axios>
 
     it('should send data to the correct endpoint', async () => {
-      await sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      await sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
       expect(MOCK_AXIOS.post).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(FormData),
@@ -108,7 +114,14 @@ describe('flare', () => {
         response: {data: {error: 'Server error'}},
       })
 
-      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      const fn = sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
       await expect(fn).rejects.toThrow(`Failed to send flare file to Datadog Support: ${error.message}. Server error\n`)
     })
 
@@ -119,7 +132,14 @@ describe('flare', () => {
         response: {status: 500, data: {error: 'Server error'}},
       })
 
-      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      const fn = sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
       await expect(fn).rejects.toThrow(
         `Failed to send flare file to Datadog Support: Some error. Server error\nAre your case ID and email correct?\n`
       )
@@ -132,7 +152,14 @@ describe('flare', () => {
         response: {status: 403, data: {error: 'Another error'}},
       })
 
-      const fn = sendToDatadog(MOCK_ZIP_PATH, MOCK_CASE_ID, MOCK_EMAIL, MOCK_API_KEY, MOCK_ROOT_FOLDER_PATH)
+      const fn = sendToDatadog(
+        MOCK_ZIP_PATH,
+        MOCK_CASE_ID,
+        MOCK_EMAIL,
+        MOCK_API_KEY,
+        MOCK_ROOT_FOLDER_PATH,
+        MOCK_CLI_VERSION
+      )
       await expect(fn).rejects.toThrow(
         `Failed to send flare file to Datadog Support: Some error. Another error\nIs your Datadog API key correct? Please follow this doc to set your API key: 
 https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-variables\n`
@@ -265,13 +292,13 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
 
     it('should print nothing if the CLI version is the latest', async () => {
       getLatestVersion.mockResolvedValue('1.0.0')
-      await validateCliVersion(stdout)
+      await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })
 
     it('should print a warning if the CLI version is outdated', async () => {
       getLatestVersion.mockResolvedValue('1.1.0')
-      await validateCliVersion(stdout)
+      await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).toHaveBeenCalledWith(
         '[!] You are using an outdated version of datadog-ci (1.0.0). The latest version is 1.1.0. Please update for better support.\n'
       )
@@ -279,7 +306,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
 
     it('should not error if unable to fetch the latest version info', async () => {
       getLatestVersion.mockRejectedValue(new Error('Network error'))
-      await validateCliVersion(stdout)
+      await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })
   })

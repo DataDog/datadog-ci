@@ -6,7 +6,7 @@ import upath from 'upath'
 import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue, UploadStatus} from '../../../helpers/upload'
-import {version} from '../../../helpers/version'
+import {cliVersion} from '../../../version'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
@@ -29,7 +29,6 @@ jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
 }))
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
-const cliVersion = version
 const commonMetadata = {
   cli_version: cliVersion,
   origin: 'datadog-ci',

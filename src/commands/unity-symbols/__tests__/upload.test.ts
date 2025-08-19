@@ -2,7 +2,7 @@ import {createCommand} from '../../../helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '../../../helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue, MultipartValue} from '../../../helpers/upload'
 import {performSubCommand} from '../../../helpers/utils'
-import {version} from '../../../helpers/version'
+import {cliVersion} from '../../../version'
 
 import * as dsyms from '../../dsyms/upload'
 
@@ -16,7 +16,6 @@ import {
 } from '../renderer'
 import {UploadCommand} from '../upload'
 
-const cliVersion = version
 const fixtureDir = 'src/commands/unity-symbols/__tests__/fixtures'
 
 jest.mock('../../../helpers/utils', () => ({

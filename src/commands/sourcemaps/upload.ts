@@ -18,7 +18,7 @@ import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
 import {upload, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, buildPath} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {Sourcemap} from './interfaces'
 import {
@@ -69,7 +69,7 @@ export class UploadCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

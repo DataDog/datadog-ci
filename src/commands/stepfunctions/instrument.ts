@@ -6,7 +6,7 @@ import {Command, Option} from 'clipanion'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {
   createLogGroup,
@@ -28,8 +28,6 @@ import {
   getStepFunctionLogGroupArn,
   injectContextIntoTasks,
 } from './helpers'
-
-const cliVersion = version
 
 export class InstrumentStepFunctionsCommand extends Command {
   public static paths = [['stepfunctions', 'instrument']]
