@@ -3,10 +3,9 @@ import {createGzip, gzipSync} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
-
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
 

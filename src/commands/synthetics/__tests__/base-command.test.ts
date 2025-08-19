@@ -1,4 +1,4 @@
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {BaseCommand} from '../base-command'
 

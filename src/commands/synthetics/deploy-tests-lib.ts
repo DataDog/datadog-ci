@@ -1,7 +1,6 @@
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
 import get from 'get-value'
 import set from 'set-value'
-
-import {getCommonAppBaseURL} from '../../helpers/app'
 
 import {APIHelper, EndpointError, formatBackendErrors, getApiHelper} from './api'
 import {DeployTestsCommandConfig, LocalTriggerConfig, MainReporter, ServerTest} from './interfaces'

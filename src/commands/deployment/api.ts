@@ -1,6 +1,6 @@
 import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
-import {getRequestBuilder} from '../../helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {
   APIHelper,

@@ -1,5 +1,11 @@
 import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from './types'
 
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
@@ -24,13 +30,7 @@ import {
   FIPS_ENV_VAR,
   FIPS_IGNORE_ERROR_ENV_VAR,
 } from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
-import {renderError, renderSoftWarning} from '../../helpers/renderer'
-import {maskString} from '../../helpers/utils'
-import {isValidDatadogSite} from '../../helpers/validation'
+import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'

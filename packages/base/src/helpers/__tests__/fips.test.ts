@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {enableFips} from '../fips'
 
 jest.mock('crypto')
 

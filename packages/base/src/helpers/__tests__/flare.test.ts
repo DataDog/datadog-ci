@@ -2,7 +2,6 @@ import fs from 'fs'
 import process from 'process'
 import {Writable} from 'stream'
 
-import {MOCK_CWD} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import axios from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
@@ -23,6 +22,8 @@ import {
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
+
+import {MOCK_CWD} from './testing-tools'
 
 // Mocks
 jest.mock('fs')

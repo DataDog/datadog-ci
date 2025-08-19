@@ -3,11 +3,10 @@ import * as fs from 'fs'
 import process from 'process'
 import {promisify} from 'util'
 
+import {getCommonAppBaseURL} from '@datadog/datadog-ci-base/helpers/app'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import chalk from 'chalk'
 import upath from 'upath'
-
-import {getCommonAppBaseURL} from '../../../helpers/app'
-import {globSync} from '../../../helpers/glob'
 
 import {formatBackendErrors, getApiHelper} from '../api'
 import {CiError, CriticalError} from '../errors'

@@ -9,9 +9,8 @@ Object.defineProperty(process, 'platform', {
   writable: true,
 })
 
+import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {BaseContext} from 'clipanion'
-
-import {MOCK_BASE_URL} from '../../../../helpers/__tests__/testing-tools'
 
 import {
   ExecutionRule,

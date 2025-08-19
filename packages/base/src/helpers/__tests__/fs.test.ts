@@ -6,7 +6,7 @@ import upath from 'upath'
 
 import {createDirectories, deleteFolder, writeFile, zipContents} from '../fs'
 
-import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
 // Mock constants
 const MOCK_CWD = 'mock-cwd'

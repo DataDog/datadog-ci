@@ -10,6 +10,20 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {
+  getProjectFiles,
+  sendToDatadog,
+  validateCliVersion,
+  validateFilePath,
+  validateStartEndFlags,
+} from '@datadog/datadog-ci-base/helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
+import {formatBytes} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
@@ -25,20 +39,6 @@ import {
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {
-  getProjectFiles,
-  sendToDatadog,
-  validateCliVersion,
-  validateFilePath,
-  validateStartEndFlags,
-} from '../../helpers/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
-import * as helpersRenderer from '../../helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
-import {formatBytes} from '../../helpers/utils'
 import {cliVersion} from '../../version'
 
 import {

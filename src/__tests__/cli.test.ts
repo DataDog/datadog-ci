@@ -1,14 +1,14 @@
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Builtins, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
 process.env.DD_BETA_COMMANDS_ENABLED = '1'
 
 import {cli, BETA_COMMANDS} from '../cli'
-import {enableFips} from '../helpers/fips'
 
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
-jest.mock('../helpers/fips')
+jest.mock('@datadog/datadog-ci-base/helpers/fips')
 
 describe('cli', () => {
   const commands = Array.from(cli['registrations'].keys())

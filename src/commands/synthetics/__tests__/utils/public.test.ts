@@ -44,8 +44,8 @@ import process from 'process'
 
 import type * as path from 'upath'
 
-import {getAxiosError} from '../../../../helpers/__tests__/testing-tools'
-import * as glob from '../../../../helpers/glob'
+import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as glob from '@datadog/datadog-ci-base/helpers/glob'
 
 import * as api from '../../api'
 import {CiError, CiErrorCode, CriticalError} from '../../errors'

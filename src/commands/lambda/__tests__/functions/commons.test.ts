@@ -7,6 +7,7 @@ import * as fs from 'fs'
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {Architecture, LambdaClient, Runtime, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
@@ -17,7 +18,6 @@ import {
   EXTRA_TAGS_REG_EXP,
   DD_TRACE_ENABLED_ENV_VAR,
 } from '../../../../constants'
-import {createCommand} from '../../../../helpers/__tests__/testing-tools'
 
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,

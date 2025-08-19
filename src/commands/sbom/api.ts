@@ -1,8 +1,9 @@
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+
 import {CONTENT_TYPE_HEADER, CONTENT_TYPE_VALUE_JSON, METHOD_POST} from '../../constants'
-import {getBaseUrl} from '../../helpers/app'
-import {getRequestBuilder} from '../../helpers/utils'
 
 import {API_ENDPOINT} from './constants'
 import {ScaRequest} from './types'

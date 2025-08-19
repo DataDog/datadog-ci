@@ -5,6 +5,7 @@ import {
   Runtime,
   UpdateFunctionConfigurationCommandInput,
 } from '@aws-sdk/client-lambda'
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 
 import {
   API_KEY_ENV_VAR,
@@ -21,7 +22,6 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../../constants'
-import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,

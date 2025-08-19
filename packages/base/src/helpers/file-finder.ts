@@ -1,8 +1,8 @@
 import * as fs from 'fs'
 import {Stats, statSync} from 'fs'
 
-import {globSync, hasMagic} from '@datadog/datadog-ci-base/helpers/glob'
-import {buildPath, isFile} from '@datadog/datadog-ci-base/helpers/utils'
+import {globSync, hasMagic} from './glob'
+import {buildPath, isFile} from './utils'
 
 const DEFAULT_IGNORED_FOLDERS = [
   '.circleci',
