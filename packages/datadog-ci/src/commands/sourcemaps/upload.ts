@@ -18,10 +18,11 @@ import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/
 import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder, buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
+
+import {cliVersion} from '../../version'
 
 import {Sourcemap} from './interfaces'
 import {
@@ -72,7 +73,7 @@ export class UploadCommand extends Command {
   private repositoryURL = Option.String('--repository-url')
   private service = Option.String('--service')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

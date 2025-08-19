@@ -7,7 +7,8 @@ import {
   MultipartValue,
 } from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
+
+import {cliVersion} from '../../../version'
 
 import * as dsyms from '../../dsyms/upload'
 
@@ -21,7 +22,6 @@ import {
 } from '../renderer'
 import {UploadCommand} from '../upload'
 
-const cliVersion = version
 const fixtureDir = 'src/commands/unity-symbols/__tests__/fixtures'
 
 jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({

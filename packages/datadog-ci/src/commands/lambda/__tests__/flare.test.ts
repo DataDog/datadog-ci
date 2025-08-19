@@ -99,7 +99,7 @@ jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 // Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('../../../helpers/version', () => ({version: '1.0-mock-version'}))
+jest.mock('../../../version', () => ({cliVersion: '1.0-mock-version'}))
 
 describe('lambda flare', () => {
   const runCLI = makeRunCLI(LambdaFlareCommand, ['lambda', 'flare'], {appendStdoutWithStderr: true, skipResetEnv: true})

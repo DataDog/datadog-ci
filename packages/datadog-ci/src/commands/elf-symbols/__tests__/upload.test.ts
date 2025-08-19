@@ -9,8 +9,9 @@ import {
   MultipartStringValue,
   UploadStatus,
 } from '@datadog/datadog-ci-base/helpers/upload'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import upath from 'upath'
+
+import {cliVersion} from '../../../version'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
@@ -33,7 +34,6 @@ jest.mock('../helpers', () => ({
 }))
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
-const cliVersion = version
 const commonMetadata = {
   cli_version: cliVersion,
   origin: 'datadog-ci',

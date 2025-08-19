@@ -21,9 +21,10 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
+
+import {cliVersion} from '../../version'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 
@@ -73,7 +74,7 @@ export class UploadCommand extends Command {
   private replaceExisting = Option.Boolean('--replace-existing', false)
   private symbolsLocations = Option.Rest({required: 1})
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

@@ -8,7 +8,7 @@ import {
   ListTagsCommand,
 } from '@aws-sdk/client-lambda'
 
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
@@ -45,7 +45,7 @@ export const calculateTagUpdateRequest = async (
     config.tagResourceCommandInput = {
       Resource: functionARN,
       Tags: {
-        [TAG_VERSION_NAME]: `v${version}`,
+        [TAG_VERSION_NAME]: `v${cliVersion}`,
       },
     }
 
@@ -81,5 +81,5 @@ export const hasVersionTag = async (client: LambdaClient, functionARN: string): 
   const response = await client.send(command)
   const {Tags} = response
 
-  return Tags !== undefined && Tags[TAG_VERSION_NAME] === `v${version}`
+  return Tags !== undefined && Tags[TAG_VERSION_NAME] === `v${cliVersion}`
 }

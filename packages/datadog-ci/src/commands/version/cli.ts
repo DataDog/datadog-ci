@@ -1,6 +1,6 @@
 import {Command} from 'clipanion'
 
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 class VersionCommand extends Command {
   public static paths = [['version']]
@@ -13,7 +13,7 @@ class VersionCommand extends Command {
   })
 
   public async execute() {
-    this.context.stdout.write(`v${version}\n`)
+    this.context.stdout.write(`v${cliVersion}\n`)
 
     return 0
   }

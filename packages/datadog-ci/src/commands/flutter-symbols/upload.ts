@@ -17,10 +17,11 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
+
+import {cliVersion} from '../../version'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -94,7 +95,7 @@ export class UploadCommand extends Command {
   private serviceName = Option.String('--service-name')
   private version = Option.String('--version')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

@@ -9,9 +9,10 @@ import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+
+import {cliVersion} from '../../version'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
@@ -46,7 +47,7 @@ export class UploadCommand extends Command {
   private noGitSync = Option.Boolean('--no-gitsync', false)
   private directory = Option.String('--directory', '')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

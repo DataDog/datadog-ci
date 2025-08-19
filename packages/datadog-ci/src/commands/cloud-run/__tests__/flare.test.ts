@@ -151,7 +151,7 @@ jest.mock('util')
 jest.mock('jszip')
 jest.mock('@google-cloud/logging')
 jest.useFakeTimers({now: new Date(Date.UTC(2023, 0))})
-jest.mock('../../../helpers/version', () => ({version: '1.0-mock-version'}))
+jest.mock('../../../version', () => ({cliVersion: '1.0-mock-version'}))
 
 // File system mocks
 jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)

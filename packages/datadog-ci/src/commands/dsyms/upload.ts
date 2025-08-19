@@ -13,10 +13,11 @@ import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
+
+import {cliVersion} from '../../version'
 
 import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {
@@ -65,7 +66,7 @@ export class UploadCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 

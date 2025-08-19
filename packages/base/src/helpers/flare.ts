@@ -19,9 +19,9 @@ import FormData from 'form-data'
 import upath from 'upath'
 
 import {deleteFolder} from './fs'
+import {getLatestVersion} from './get-latest-version'
 import * as helpersRenderer from './renderer'
 import {isValidDatadogSite} from './validation'
-import {getLatestVersion, version} from './version'
 
 /**
  * Send the zip file to Datadog support
@@ -37,13 +37,14 @@ export const sendToDatadog = async (
   caseId: string,
   email: string,
   apiKey: string,
-  rootFolderPath: string
+  rootFolderPath: string,
+  cliVersion: string
 ) => {
   const endpointUrl = getEndpointUrl()
   const form = new FormData()
   form.append('case_id', caseId)
   form.append('flare_file', fs.createReadStream(zipPath))
-  form.append('datadog_ci_version', version)
+  form.append('datadog_ci_version', cliVersion)
   form.append('email', email)
   const headerConfig = {
     headers: {
@@ -185,13 +186,13 @@ export const validateStartEndFlags = (start: string | undefined, end: string | u
   return [startMillis, endMillis]
 }
 
-export const validateCliVersion = async (stdout: Pick<Writable, 'write'>): Promise<void> => {
+export const validateCliVersion = async (cliVersion: string, stdout: Pick<Writable, 'write'>): Promise<void> => {
   try {
     const latestVersion = await getLatestVersion()
-    if (latestVersion !== version) {
+    if (latestVersion !== cliVersion) {
       stdout.write(
         helpersRenderer.renderSoftWarning(
-          `You are using an outdated version of datadog-ci (${version}). The latest version is ${latestVersion}. Please update for better support.`
+          `You are using an outdated version of datadog-ci (${cliVersion}). The latest version is ${latestVersion}. Please update for better support.`
         )
       )
     }

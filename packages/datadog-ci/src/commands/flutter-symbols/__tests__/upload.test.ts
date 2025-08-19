@@ -2,7 +2,8 @@ import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-
 import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-import {version} from '@datadog/datadog-ci-base/helpers/version'
+
+import {cliVersion} from '../../../version'
 
 import * as dsyms from '../../dsyms/upload'
 import * as sourcemaps from '../../sourcemaps/upload'
@@ -35,7 +36,6 @@ jest.mock('../helpers', () => ({
   uploadMultipartHelper: jest.fn(),
 }))
 
-const cliVersion = version
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {

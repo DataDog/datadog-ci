@@ -104,7 +104,7 @@ export class CloudRunFlareCommand extends Command {
    */
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    await validateCliVersion(this.context.stdout)
+    await validateCliVersion(cliVersion, this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
@@ -390,7 +390,7 @@ export class CloudRunFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, cliVersion)
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
@@ -710,7 +710,7 @@ export const generateInsightsFile = (
   // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
-  lines.push(`**CLI Version**: \`${version}\`  `)
+  lines.push(`**CLI Version**: \`${cliVersion}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
   lines.push(`**Timestamp**: \`${timeString}\`  `)
 
