@@ -60,6 +60,7 @@ typings/
 
 # Custom paths
 dist
+*.tsbuildinfo
 
 #DS_Store
 **/.DS_Store
