@@ -24,7 +24,7 @@ import {
 } from '../flare'
 import * as flareModule from '../flare'
 
-import {MOCK_CWD} from './testing-tools'
+import {MOCK_CWD} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 // Mocks
 jest.mock('fs')

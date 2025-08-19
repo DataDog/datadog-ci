@@ -1,4 +1,4 @@
-import {toBoolean, toNumber, toStringMap} from '../env'
+import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 
 describe('toBoolean', () => {
   const cases: [string | undefined, boolean | undefined][] = [
