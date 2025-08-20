@@ -3,7 +3,6 @@ import process from 'process'
 import stream from 'stream'
 
 import {Logging} from '@google-cloud/logging'
-import {GoogleAuth} from 'google-auth-library'
 
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '../../../constants'
 import {
@@ -29,6 +28,8 @@ import {
   CloudRunFlareCommand,
 } from '../flare'
 import {checkAuthentication} from '../utils'
+
+const {GoogleAuth} = require('google-auth-library')
 
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'
@@ -273,7 +274,7 @@ describe('cloud-run flare', () => {
 
   describe('checkAuthentication', () => {
     it('should return true when authentication is successful', async () => {
-      ;(GoogleAuth as any).mockImplementationOnce(() => ({
+      GoogleAuth.mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.resolve(),
       }))
 
@@ -283,7 +284,7 @@ describe('cloud-run flare', () => {
     })
 
     it('should return false when authentication fails', async () => {
-      ;(GoogleAuth as any).mockImplementationOnce(() => ({
+      GoogleAuth.mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.reject(),
       }))
 
@@ -293,7 +294,7 @@ describe('cloud-run flare', () => {
     })
 
     it('prints instructions on how to authenticate when authentication fails', async () => {
-      ;(GoogleAuth as any).mockImplementationOnce(() => ({
+      GoogleAuth.mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.reject(),
       }))
 

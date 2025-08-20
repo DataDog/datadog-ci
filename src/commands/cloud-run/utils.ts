@@ -1,7 +1,6 @@
 import type {IService, ServicesClient as IServicesClient} from './types'
 
 import chalk from 'chalk'
-import {GoogleAuth} from 'google-auth-library'
 import {diff} from 'jest-diff'
 
 import {withSpinner} from './renderer'
@@ -11,6 +10,9 @@ import {withSpinner} from './renderer'
  * @returns true if the user is authenticated, false otherwise
  */
 export const checkAuthentication = async () => {
+  // TODO: remove this in favor of `await import()` when google-auth-library ESM/CJS issues are fixed
+  const {GoogleAuth} = require('google-auth-library')
+
   const auth = new GoogleAuth()
   try {
     await auth.getApplicationDefault()
