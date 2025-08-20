@@ -3,8 +3,8 @@ import process from 'process'
 import util from 'util'
 
 import type {IService, IContainer, ServicesClient as IServicesClient} from './types'
+import type {Logging} from '@google-cloud/logging'
 
-import {Logging} from '@google-cloud/logging'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
@@ -263,7 +263,9 @@ export class CloudRunFlareCommand extends Command {
     if (this.withLogs) {
       this.context.stdout.write(chalk.bold('\n📖 Getting logs...\n'))
 
+      const {Logging} = await import('@google-cloud/logging')
       const logClient = new Logging({projectId: this.project})
+
       for (const logConfig of LOG_CONFIGS) {
         try {
           const logs = await getLogs(
