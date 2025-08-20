@@ -99,7 +99,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     ],
   })
 
-  private basePaths = Option.Rest({required: 1})
+  private reportPaths = Option.Rest({required: 1})
   private verbose = Option.Boolean('--verbose', false)
   private dryRun = Option.Boolean('--dry-run', false)
   private measures = Option.Array('--measures')
@@ -108,6 +108,7 @@ export class UploadCodeCoverageReportCommand extends Command {
   private uploadGitDiff = Option.Boolean('--upload-git-diff', true)
   private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', false)
   private gitRepositoryURL = Option.String('--git-repository-url')
+  private basePath = Option.String('--base-path')
 
   private ignoredPaths = Option.String('--ignored-paths')
 
@@ -133,7 +134,7 @@ export class UploadCodeCoverageReportCommand extends Command {
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
-    if (!this.basePaths.length) {
+    if (!this.reportPaths.length) {
       this.context.stderr.write('Positional arguments must be provided\n')
 
       return 1
@@ -194,10 +195,10 @@ export class UploadCodeCoverageReportCommand extends Command {
   }
 
   private async uploadCodeCoverageReports() {
-    // Normalizing the basePath to resolve .. and .
-    this.basePaths = this.basePaths.map((basePath) => upath.normalize(basePath))
+    // Normalizing the report paths to resolve .. and .
+    this.reportPaths = this.reportPaths.map((reportPath) => upath.normalize(reportPath))
 
-    this.logger.info(renderCommandInfo(this.basePaths, this.dryRun))
+    this.logger.info(renderCommandInfo(this.reportPaths, this.dryRun))
 
     const spanTags = await this.getSpanTags()
     const api = this.getApiHelper()
@@ -249,6 +250,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
         return Array.from({length: numChunks}, (_, i) => ({
           format,
+          basePath: this.basePath,
           paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
           spanTags,
           customTags,
@@ -380,7 +382,7 @@ export class UploadCodeCoverageReportCommand extends Command {
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
     return partitionFiles(
-      this.basePaths || ['.'],
+      this.reportPaths || ['.'],
       parsePathsList(this.ignoredPaths),
       this.getCoverageReportFormat.bind(this)
     )
