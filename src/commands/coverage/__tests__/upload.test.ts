@@ -26,7 +26,7 @@ describe('upload', () => {
   describe('getMatchingCoverageReportFilesByFormat', () => {
     test('should read all coverage report files and reject invalid ones', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+      command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -47,7 +47,7 @@ describe('upload', () => {
     test('should filter by format', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = jacocoFormat
-      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+      command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -61,7 +61,7 @@ describe('upload', () => {
     test('should read all coverage report files excluding ignored paths', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['ignoredPaths'] = 'src/commands/coverage/__tests__/fixtures/subfolder.xml'
-      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+      command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -79,7 +79,7 @@ describe('upload', () => {
     test('should read all coverage report files excluding ignored paths specified partially', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['ignoredPaths'] = 'subfolder.xml'
-      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures']
+      command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
@@ -96,7 +96,7 @@ describe('upload', () => {
 
     test('should allow specifying files directly', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      command['basePaths'] = [
+      command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/lcov.info',
       ]
@@ -113,7 +113,7 @@ describe('upload', () => {
     test('should filter files by format if format is provided', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = 'lcov'
-      command['basePaths'] = [
+      command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/lcov.info',
       ]
@@ -128,7 +128,7 @@ describe('upload', () => {
 
     test('should not fail for invalid single files', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      command['basePaths'] = ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml']
+      command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
@@ -140,7 +140,7 @@ describe('upload', () => {
     test('should allow folder and single unit paths', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = jacocoFormat
-      command['basePaths'] = [
+      command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures',
         'src/commands/coverage/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml',
       ]
@@ -157,7 +157,7 @@ describe('upload', () => {
     test('should not have repeated files', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = jacocoFormat
-      command['basePaths'] = [
+      command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures',
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
       ]
@@ -174,7 +174,7 @@ describe('upload', () => {
 
     test('should fetch nested folders when using glob patterns', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
-      command['basePaths'] = ['**/coverage/**/*.xml']
+      command['reportPaths'] = ['**/coverage/**/*.xml']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
@@ -193,7 +193,7 @@ describe('upload', () => {
     test('should filter by format when using glob patterns', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = 'lcov'
-      command['basePaths'] = ['**/coverage/**']
+      command['reportPaths'] = ['**/coverage/**']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
@@ -206,7 +206,7 @@ describe('upload', () => {
     test('should fetch nested folders and ignore files that are not coverage reports', () => {
       const command = createCommand(UploadCodeCoverageReportCommand)
       command['format'] = jacocoFormat
-      command['basePaths'] = ['**/coverage/**']
+      command['reportPaths'] = ['**/coverage/**']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
 
@@ -326,7 +326,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/coverage/__tests__/fixtures'],
+      reportPaths: ['src/commands/coverage/__tests__/fixtures'],
     })
   })
 
@@ -335,7 +335,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/coverage/first/', 'src/commands/coverage/second/'],
+      reportPaths: ['src/commands/coverage/first/', 'src/commands/coverage/second/'],
     })
   })
 
@@ -344,7 +344,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${CWD}/src/commands/coverage/__tests__/fixtures`],
+      reportPaths: [`${CWD}/src/commands/coverage/__tests__/fixtures`],
     })
   })
 
@@ -362,7 +362,7 @@ describe('execute', () => {
 })
 
 interface ExpectedOutput {
-  basePaths: string[]
+  reportPaths: string[]
 }
 
 const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
@@ -370,5 +370,5 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
   // output[1] is "Synced git metadata in XXX seconds"
   expect(output[2]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
   expect(output[3]).toContain(`Starting upload`)
-  expect(output[4]).toContain(`Will look for code coverage report files in ${expected.basePaths.join(', ')}`)
+  expect(output[4]).toContain(`Will look for code coverage report files in ${expected.reportPaths.join(', ')}`)
 }
