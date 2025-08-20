@@ -1,5 +1,5 @@
-import {toBoolean, toNumber, StringMap} from '../../../helpers/env'
-import {pick} from '../../../helpers/utils'
+import {toBoolean, toNumber, StringMap} from '@datadog/datadog-ci-base/helpers/env'
+import {pick} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {
   BaseResult,

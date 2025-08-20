@@ -256,7 +256,8 @@ module.exports = {
     'guard-for-in': 'error',
     'id-denylist': 'error',
     'id-match': 'error',
-    'import/no-extraneous-dependencies': 'error',
+    'import/no-extraneous-dependencies': 'off', // TODO(packages-migration): re-enable this rule
+    'import/no-unresolved': 'off', // TODO(packages-migration): re-enable this rule
     'import/order': [
       'error',
       {

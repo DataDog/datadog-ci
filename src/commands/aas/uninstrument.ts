@@ -1,9 +1,8 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
+import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
-
-import {renderError} from '../../helpers/renderer'
 
 import {AAS_DD_SETTING_NAMES, AasCommand, formatError, isDotnet, parseEnvVars, SIDECAR_CONTAINER_NAME} from './common'
 import {AasConfigOptions} from './interfaces'

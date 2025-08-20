@@ -1,21 +1,31 @@
 import fs from 'fs'
 import os from 'os'
 
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {
+  MultipartFileValue,
+  MultipartPayload,
+  MultipartStringValue,
+  UploadStatus,
+} from '@datadog/datadog-ci-base/helpers/upload'
 import upath from 'upath'
 
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
-import {TrackedFilesMatcher} from '../../../helpers/git/format-git-sourcemaps-data'
-import {MultipartFileValue, MultipartPayload, MultipartStringValue, UploadStatus} from '../../../helpers/upload'
-import {version} from '../../../helpers/version'
+import {cliVersion} from '../../../version'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
 import {UploadCommand} from '../upload'
 
-jest.mock('../../../helpers/utils', () => ({
-  ...jest.requireActual('../../../helpers/utils'),
+jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
   performSubCommand: jest.fn(),
+}))
+
+jest.mock('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data', () => ({
+  ...jest.requireActual('@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'),
+  getRepositoryData: jest.fn(),
 }))
 
 jest.mock('../helpers', () => ({
@@ -23,13 +33,7 @@ jest.mock('../helpers', () => ({
   uploadMultipartHelper: jest.fn(() => Promise.resolve(UploadStatus.Success)),
 }))
 
-jest.mock('../../../helpers/git/format-git-sourcemaps-data', () => ({
-  ...jest.requireActual('../../../helpers/git/format-git-sourcemaps-data'),
-  getRepositoryData: jest.fn(),
-}))
-
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
-const cliVersion = version
 const commonMetadata = {
   cli_version: cliVersion,
   origin: 'datadog-ci',

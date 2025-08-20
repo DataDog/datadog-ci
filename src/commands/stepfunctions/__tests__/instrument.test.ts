@@ -1,6 +1,5 @@
 import {LogLevel} from '@aws-sdk/client-sfn'
-
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import * as aws from '../awsCommands'
 import * as helpers from '../helpers'

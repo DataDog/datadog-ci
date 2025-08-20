@@ -1,8 +1,6 @@
-/**
- * @file Functions used to prompt the user for input.
- */
-
 import inquirer from 'inquirer'
+
+// TODO(packages-migration): Drop `inquirer` from base package.
 
 export const confirmationQuestion = (
   message: string,

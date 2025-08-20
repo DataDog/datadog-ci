@@ -18,6 +18,9 @@
     "README",
     "LICENSE"
   ],
+  "workspaces": [
+    "packages/*"
+  ],
   "main": "dist/index.js",
   "publishConfig": {
     "access": "public"
@@ -34,8 +37,8 @@
     ]
   },
   "scripts": {
-    "build": "yarn clean; tsc",
-    "build:win": "tsc",
+    "build": "yarn clean; tsc --build --verbose",
+    "build:win": "tsc --build --verbose",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
     "clean:win": "rm dist -r",
@@ -49,6 +52,7 @@
     "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
+    "package:build": "cd $INIT_CWD && tsc --build tsconfig.json",
     "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf --glob 'dist/**/__tests__'",
     "test": "jest --colors",
     "test:windows": "jest --config ./jest.config-windows.js --colors",
@@ -72,6 +76,7 @@
     "@azure/arm-appservice": "^16.0.0",
     "@azure/arm-resources": "^6.1.0",
     "@azure/identity": "^4.10.1",
+    "@datadog/datadog-ci-base": "workspace:*",
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "@smithy/property-provider": "^2.0.12",

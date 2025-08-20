@@ -1,16 +1,15 @@
 import fs from 'fs'
 import os from 'os'
 
-import simpleGit from 'simple-git'
-import upath from 'upath'
-
-import {DatadogCiConfig} from '../../../helpers/config'
+import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
 import {
   getSpanTags,
   getMissingRequiredGitTags,
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
-} from '../../../helpers/tags'
+} from '@datadog/datadog-ci-base/helpers/tags'
+import simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {generatePayload} from '../payload'
 import {DependencyLanguage, Location} from '../types'

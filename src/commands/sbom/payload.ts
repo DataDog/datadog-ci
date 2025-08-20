@@ -1,7 +1,7 @@
 import * as console from 'console'
 import crypto from 'crypto'
 
-import {SpanTags} from '../../helpers/interfaces'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {
   GIT_BRANCH,
   GIT_COMMIT_AUTHOR_EMAIL,
@@ -12,7 +12,7 @@ import {
   GIT_SHA,
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
-} from '../../helpers/tags'
+} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {
   EXCLUSION_KEY,

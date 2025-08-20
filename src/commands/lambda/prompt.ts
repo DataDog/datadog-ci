@@ -1,3 +1,4 @@
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {filter} from 'fuzzy'
 import inquirer from 'inquirer'
@@ -10,7 +11,6 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '../../constants'
-import {isValidDatadogSite} from '../../helpers/validation'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,

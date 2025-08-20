@@ -1,8 +1,7 @@
+import {MOCK_BASE_URL, getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import {default as axios} from 'axios'
 import deepExtend from 'deep-extend'
-
-import {MOCK_BASE_URL, getAxiosError} from '../../../helpers/__tests__/testing-tools'
-import {ProxyConfiguration} from '../../../helpers/utils'
 
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 

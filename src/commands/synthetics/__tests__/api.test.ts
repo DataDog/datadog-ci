@@ -3,9 +3,8 @@ import {AddressInfo} from 'net'
 
 import type {AxiosResponse} from 'axios'
 
+import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import axios, {AxiosError} from 'axios'
-
-import {getAxiosError} from '../../../helpers/__tests__/testing-tools'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
 import {RecursivePartial} from '../base-command'

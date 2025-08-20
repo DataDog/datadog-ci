@@ -1,4 +1,4 @@
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {DeploymentMarkCommand} from '../mark'
 

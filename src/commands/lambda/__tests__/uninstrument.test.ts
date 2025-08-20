@@ -5,7 +5,7 @@ jest.mock('@aws-sdk/credential-providers', () => ({
 }))
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
-jest.mock('../../../helpers/prompt')
+jest.mock('@datadog/datadog-ci-base/helpers/prompt')
 jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
 
 import * as fs from 'fs'
@@ -17,6 +17,8 @@ import {
   UpdateFunctionConfigurationCommand,
 } from '@aws-sdk/client-lambda'
 import {fromIni} from '@aws-sdk/credential-providers'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {
@@ -30,8 +32,6 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
 } from '../../../constants'
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import {requestConfirmation} from '../../../helpers/prompt'
 
 import 'aws-sdk-client-mock-jest'
 

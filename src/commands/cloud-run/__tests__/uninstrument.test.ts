@@ -1,6 +1,8 @@
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 import type {IContainer} from '../types'
 
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+
 import {
   API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -8,7 +10,6 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   SERVICE_ENV_VAR,
 } from '../../../constants'
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import * as cloudRunPromptModule from '../prompt'
 import {UninstrumentCommand} from '../uninstrument'
