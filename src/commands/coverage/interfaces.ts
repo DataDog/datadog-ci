@@ -11,6 +11,7 @@ export interface Payload {
   customMeasures: Record<string, number>
   paths: string[]
   format: string
+  basePath: string | undefined
   commitDiff: DiffData | undefined
   prDiff: DiffData | undefined
 }

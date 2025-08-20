@@ -27,6 +27,7 @@ export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => 
     type: 'coverage_report',
     '_dd.hostname': payload.hostname,
     format: payload.format,
+    basepath: payload.basePath,
     ...payload.spanTags,
     ...payload.customTags,
     ...payload.customMeasures,

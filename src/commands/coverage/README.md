@@ -21,11 +21,8 @@ datadog-ci coverage upload --tags key1:value1 --tags key2:value2 unit-tests/cove
 ```
 
 - The positional arguments are directories, files, or glob patterns that will be used when looking for coverage report files. If you pass a folder, the CLI will do a recursive search looking for supported coverage reports.
-- `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported
-- `--tags` is an array of key value pairs of the shape `key:value`. This will set global tags applied to all coverage reports.
-  - The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable. If a `key` appears both in `--tags` and `DD_TAGS`, whatever value is in `DD_TAGS` will take precedence.
-- `--measures` is an array of key numerical value pairs of the shape `key:123`. This will set global measures applied to all coverage reports.
-  - The resulting dictionary will be merged with whatever is in the `DD_MEASURES` environment variable. If a `key` appears both in `--measures` and `DD_MEASURES`, whatever value is in `DD_MEASURES` will take precedence.
+- `--ignored-paths` a comma-separated list of paths that should be excluded from automatic reports discovery (only applicable when `--auto-discovery` is set). Glob patterns are supported.
+- `--base-path` a string specifying the base (relative to repository root) for the file paths inside the coverage reports. If not specified, the paths inside the reports are considered relative to repository root.
 - `--dry-run` (default: `false`): it will run the command without the final upload step. All other checks are performed.
 - `--verbose` (default: `false`): it will add extra verbosity to the output of the command.
 - `--upload-git-diff` (default: `true`): if the command is run in a PR context, it will try to upload the PR git diff along with the coverage data.

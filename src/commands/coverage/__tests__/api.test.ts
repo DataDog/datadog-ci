@@ -47,6 +47,7 @@ describe('uploadCodeCoverageReport', () => {
       prDiff: undefined,
       commitDiff: undefined,
       paths: ['/my/path/.resultset.json'],
+      basePath: '/my/base/path',
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -54,6 +55,56 @@ describe('uploadCodeCoverageReport', () => {
 
     expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/coverage_report/), {filename: 'event.json'})
     expect(appendMock).toHaveBeenCalledWith('code_coverage_report_file', mockStream, {filename: 'resultset.json.gz'})
+
+    expect(requestMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        method: 'POST',
+        url: 'api/v2/cicovreprt',
+        data: formMock,
+        headers: formMock.getHeaders(),
+      })
+    )
+  })
+
+  it('sets base path in event', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce((mockStream as unknown) as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce((mockStream as unknown) as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'simplecov-internal',
+      spanTags: {},
+      customTags: {'custom.tag': 'value'},
+      customMeasures: {'custom.measure': 123},
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/my/path/.resultset.json'],
+      basePath: '/my/base/path',
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/"basepath":"\/my\/base\/path"/), {
+      filename: 'event.json',
+    })
 
     expect(requestMock).toHaveBeenCalledWith(
       expect.objectContaining({

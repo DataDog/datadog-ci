@@ -71,17 +71,17 @@ export const renderUpload = (payload: Payload): string => {
   }
 }
 
-export const renderCommandInfo = (basePaths: string[], dryRun: boolean) => {
+export const renderCommandInfo = (reportPaths: string[], dryRun: boolean) => {
   let fullStr = ''
   if (dryRun) {
     fullStr += chalk.yellow(`${ICONS.WARNING} DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORTS\n`)
   }
   fullStr += chalk.green(`${new Date().toLocaleString()} - Starting upload. \n`)
-  if (!!basePaths.length) {
-    if (basePaths.length === 1 && !!upath.extname(basePaths[0])) {
-      fullStr += chalk.green(`Will upload code coverage report file ${basePaths[0]}`)
+  if (!!reportPaths.length) {
+    if (reportPaths.length === 1 && !!upath.extname(reportPaths[0])) {
+      fullStr += chalk.green(`Will upload code coverage report file ${reportPaths[0]}`)
     } else {
-      fullStr += chalk.green(`Will look for code coverage report files in ${basePaths.join(', ')}`)
+      fullStr += chalk.green(`Will look for code coverage report files in ${reportPaths.join(', ')}`)
     }
   }
 
