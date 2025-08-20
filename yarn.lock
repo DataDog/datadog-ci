@@ -2056,7 +2056,7 @@ __metadata:
     "@babel/preset-env": 7.4.5
     "@babel/preset-typescript": 7.3.3
     "@google-cloud/logging": ^11.2.0
-    "@google-cloud/run": ^2.3.0
+    "@google-cloud/run": ^3.0.0
     "@microsoft/eslint-formatter-sarif": ^3.0.0
     "@smithy/property-provider": ^2.0.12
     "@smithy/util-retry": ^2.0.4
@@ -2339,12 +2339,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google-cloud/run@npm:^2.3.0":
-  version: 2.3.0
-  resolution: "@google-cloud/run@npm:2.3.0"
+"@google-cloud/run@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@google-cloud/run@npm:3.0.0"
   dependencies:
     google-gax: ^5.0.0
-  checksum: fa060a3cd1eb74f86d316ffa9146f7325f063a5953d2a6a1ec61279b4110254c7aea88673f0c5884afc70f495fa77b7520258646239cf8e69b0cf8b7dbd35328
+  checksum: 6b7423fa2fbf31c9588fefa27d251bd772a11b7abac30ee1558220811aa84d039b84bc7bb2ebcf46593f2df99b861048dd29913885bbfaf779da9e76cbc065ee
   languageName: node
   linkType: hard
 
