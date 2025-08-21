@@ -129,7 +129,7 @@ const getTestVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<void
 ) => {
   await retryRequest(
     {
-      url: `/synthetics/tests/${testId}/version_history/${version}?check_only=true`,
+      url: `/synthetics/tests/${testId}/version_history/${version}?only_check_existence=true`,
     },
     request,
     {retryOn429: true}
