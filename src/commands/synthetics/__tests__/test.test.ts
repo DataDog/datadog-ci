@@ -99,7 +99,7 @@ describe('getTestsToTrigger', () => {
     const {tests, overriddenTestsToTrigger, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
 
     expect(tests).toStrictEqual([fakeTests['123-456-789']])
-    expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789'}, {public_id: 'ski-ppe-d01'}])
+    expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789', version: undefined}, {public_id: 'ski-ppe-d01', version: undefined}])
 
     const expectedSummary: InitialSummary = {
       criticalErrors: 0,
@@ -213,6 +213,36 @@ describe('getTestAndOverrideConfig', () => {
     const triggerConfig = {suite: 'Suite 1', id: 'a123-456-789'}
     await expect(getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).rejects.toThrow(
       expectedError
+    )
+  })
+
+  test('Version not found error when version is provided', async () => {
+    const axiosMock = jest.spyOn(axios, 'create')
+    axiosMock.mockImplementation((() => (e: any) => {
+      if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
+        throw getAxiosError(404, {errors: ['Version not found']})
+      }
+      return {data: {subtype: 'http', public_id: '123-456-789'}}
+    }) as any)
+
+    const triggerConfig = {id: '123-456-789', version: 50}
+    expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toStrictEqual({
+      errorMessage: '[123-456-789@50] Test version not found: query on https://app.datadoghq.com/example returned: "Version not found"',
+    })
+  })
+
+  test('Passes when version exists and is provided', async () => {
+    const axiosMock = jest.spyOn(axios, 'create')
+    axiosMock.mockImplementation((() => (e: any) => {
+      if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
+        return {data: {}}
+      }
+      return {data: {subtype: 'http', public_id: '123-456-789'}}
+    }) as any)
+
+    const triggerConfig = {id: '123-456-789', version: 50}
+    expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toEqual(
+      expect.objectContaining({test: expect.objectContaining({public_id: '123-456-789', subtype: 'http'})})
     )
   })
 

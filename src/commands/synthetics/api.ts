@@ -123,6 +123,19 @@ const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>
   return resp.data
 }
 
+const getTestVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
+  testId: string,
+  version: number
+) => {
+  await retryRequest(
+    {
+      url: `/synthetics/tests/${testId}/version_history/${version}?check_only=true`,
+    },
+    request,
+    {retryOn429: true}
+  )
+}
+
 const getLocalTestDefinition = (request: (args: AxiosRequestConfig) => AxiosPromise<LocalTestDefinition>) => async (
   testId: string,
   testType?: string
@@ -457,6 +470,7 @@ export const apiConstructor = (configuration: APIConfiguration) => {
     getBatch: getBatch(requestV1),
     getMobileApplicationPresignedURLs: getMobileApplicationPresignedURLs(requestUnstable),
     getTest: getTest(requestV1),
+    getTestVersion: getTestVersion(requestV2),
     getLocalTestDefinition: getLocalTestDefinition(requestV1),
     editTest: editTest(requestV1),
     getSyntheticsOrgSettings: getSyntheticsOrgSettings(requestV1),
