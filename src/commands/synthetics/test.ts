@@ -194,7 +194,10 @@ export const getTestAndOverrideConfig = async (
 
   const testResult = await getTest(api, triggerConfig)
   if ('errorMessage' in testResult) {
-    if (testResult.errorMessage.includes('Test not found') || testResult.errorMessage.includes('Test version not found')) {
+    if (
+      testResult.errorMessage.includes('Test not found') ||
+      testResult.errorMessage.includes('Test version not found')
+    ) {
       summary.testsNotFound.add(normalizedId)
     } else if (testResult.errorMessage.includes('Test not authorized')) {
       summary.testsNotAuthorized.add(normalizedId)
@@ -261,14 +264,18 @@ const getTest = async (
     } catch (error) {
       if (isForbiddenError(error)) {
         const errorMessage = formatBackendErrors(error)
-  
+
         return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.red.bold('Test not authorized')}: ${errorMessage}`}
       }
 
       if (isNotFoundError(error)) {
         const errorMessage = formatBackendErrors(error)
-        
-        return {errorMessage: `[${chalk.bold.dim(publicId)}@${version}] ${chalk.yellow.bold('Test version not found')}: ${errorMessage}`}
+
+        return {
+          errorMessage: `[${chalk.bold.dim(publicId)}@${version}] ${chalk.yellow.bold(
+            'Test version not found'
+          )}: ${errorMessage}`,
+        }
       }
     }
   }

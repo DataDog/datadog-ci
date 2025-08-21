@@ -99,7 +99,10 @@ describe('getTestsToTrigger', () => {
     const {tests, overriddenTestsToTrigger, initialSummary} = await getTestsToTrigger(api, triggerConfigs, mockReporter)
 
     expect(tests).toStrictEqual([fakeTests['123-456-789']])
-    expect(overriddenTestsToTrigger).toStrictEqual([{public_id: '123-456-789', version: undefined}, {public_id: 'ski-ppe-d01', version: undefined}])
+    expect(overriddenTestsToTrigger).toStrictEqual([
+      {public_id: '123-456-789', version: undefined},
+      {public_id: 'ski-ppe-d01', version: undefined},
+    ])
 
     const expectedSummary: InitialSummary = {
       criticalErrors: 0,
@@ -222,12 +225,14 @@ describe('getTestAndOverrideConfig', () => {
       if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
         throw getAxiosError(404, {errors: ['Version not found']})
       }
+
       return {data: {subtype: 'http', public_id: '123-456-789'}}
     }) as any)
 
     const triggerConfig = {id: '123-456-789', version: 50}
     expect(await getTestAndOverrideConfig(api, triggerConfig, mockReporter, getSummary())).toStrictEqual({
-      errorMessage: '[123-456-789@50] Test version not found: query on https://app.datadoghq.com/example returned: "Version not found"',
+      errorMessage:
+        '[123-456-789@50] Test version not found: query on https://app.datadoghq.com/example returned: "Version not found"',
     })
   })
 
@@ -237,6 +242,7 @@ describe('getTestAndOverrideConfig', () => {
       if (e.url?.includes('/synthetics/tests/123-456-789/version_history/50')) {
         return {data: {}}
       }
+
       return {data: {subtype: 'http', public_id: '123-456-789'}}
     }) as any)
 
