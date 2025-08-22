@@ -52,6 +52,9 @@ See each command's linked README for more details, or click on [📚](https://do
 - `instrument`: Apply Datadog instrumentation to the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
 - `uninstrument`: Revert Datadog instrumentation from the given [Cloud Run Services](src/commands/cloud-run). [📚](https://docs.datadoghq.com/serverless/google_cloud_run/)
 
+#### `coverage`
+- `upload`: Upload code coverage report files to Datadog. [📚](https://docs.datadoghq.com/code_coverage/)
+
 #### `dsyms`
 - `upload`: Upload [iOS dSYM files](src/commands/dsyms) for Error Tracking (macOS only). [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)
 
@@ -107,9 +110,6 @@ See each command's linked README for more details, or click on [📚](https://do
 ### Beta commands
 
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
-
-#### `coverage`
-- `upload`: Upload code coverage report files to Datadog. [📚](https://docs.datadoghq.com/code_coverage/)
 
 #### `deployment`
 - `mark`: Mark a CI job as a [deployment](src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
