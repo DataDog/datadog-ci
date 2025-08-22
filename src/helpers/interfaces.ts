@@ -34,6 +34,7 @@ import {
   SBOM_TOOL_GENERATOR_NAME,
   SBOM_TOOL_GENERATOR_VERSION,
   PR_NUMBER,
+  CI_JOB_ID,
 } from './tags'
 
 export interface Metadata {
@@ -89,6 +90,7 @@ export interface GitAuthorAndCommitterMetadata {
 export type SpanTag =
   | typeof CI_JOB_NAME
   | typeof CI_JOB_URL
+  | typeof CI_JOB_ID
   | typeof CI_PIPELINE_ID
   | typeof CI_PIPELINE_NAME
   | typeof CI_PIPELINE_NUMBER

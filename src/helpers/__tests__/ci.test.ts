@@ -5,15 +5,15 @@ import upath from 'upath'
 import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
-  CI_ENV_VARS,
+  CI_ENV_VARS, CI_JOB_ID,
   CI_NODE_LABELS,
   CI_NODE_NAME,
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
-  PR_NUMBER,
-} from '../tags'
+  PR_NUMBER
+} from "../tags";
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
@@ -25,8 +25,6 @@ const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => 
 
     if (tagKey === 'git.repository.url') {
       tagKey = 'git.repository_url'
-    } else if (tagKey === 'git.commit.head.sha') {
-      tagKey = 'git.commit.head_sha'
     } else if (tagKey === 'git.pull.request.base.branch') {
       tagKey = 'git.pull_request.base_branch'
     } else if (tagKey === 'git.pull.request.base.branch.sha') {
@@ -91,6 +89,15 @@ describe('getCIMetadata', () => {
       {[tag: string]: string}
     ][]
 
+    for (const assertion of assertions) {
+      const env = assertion[0]
+      for (const [k, v] of Object.entries(env)) {
+        if (typeof v !== 'string') {
+          env[k] = String(v)
+        }
+      }
+    }
+
     test.each(assertions)('spec %#', (env, tags: SpanTags) => {
       process.env = env
 
@@ -140,7 +147,9 @@ describe('getCIMetadata', () => {
       delete ciMetadata?.[CI_ENV_VARS]
       delete ciMetadata?.[CI_NODE_LABELS]
       delete ciMetadata?.[CI_NODE_NAME]
+      delete ciMetadata?.[CI_JOB_ID]
       delete ciMetadata?.[PR_NUMBER]
+      delete ciMetadata?.[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
       expect(ciMetadata).toEqual(expectedMetadata)
     })
   })
