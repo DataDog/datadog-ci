@@ -66,6 +66,7 @@ describe('execute', () => {
       "fedcba"
     ]`)
     expect(output).toContain(`"ci_env": {
+      "ci.job.id": "1",
       "ci.pipeline.id": "1",
       "ci.provider.name": "gitlab",
       "git.commit.sha": "abcdef",
