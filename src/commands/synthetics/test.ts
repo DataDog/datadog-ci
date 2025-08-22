@@ -72,7 +72,10 @@ export const getTestConfigs = async (
           suite: suite.name,
           ...(isLocalTriggerConfig(test)
             ? {localTestDefinition: normalizeLocalTestDefinition(test.localTestDefinition)}
-            : {id: normalizePublicId(test.id) ?? ''}),
+            : {
+                id: normalizePublicId(test.id) ?? '',
+                version: test.version,
+              }),
         }
       })
     )
@@ -191,7 +194,10 @@ export const getTestAndOverrideConfig = async (
 
   const testResult = await getTest(api, triggerConfig)
   if ('errorMessage' in testResult) {
-    if (testResult.errorMessage.includes('Test not found')) {
+    if (
+      testResult.errorMessage.includes('Test not found') ||
+      testResult.errorMessage.includes('Test version not found')
+    ) {
       summary.testsNotFound.add(normalizedId)
     } else if (testResult.errorMessage.includes('Test not authorized')) {
       summary.testsNotAuthorized.add(normalizedId)
@@ -250,7 +256,29 @@ const getTest = async (
     return {test}
   }
 
-  const {id: publicId, suite} = triggerConfig
+  const {id: publicId, suite, version} = triggerConfig
+
+  if (version !== undefined) {
+    try {
+      await api.getTestVersion(publicId, version)
+    } catch (error) {
+      if (isForbiddenError(error)) {
+        const errorMessage = formatBackendErrors(error)
+
+        return {errorMessage: `[${chalk.bold.dim(publicId)}] ${chalk.red.bold('Test not authorized')}: ${errorMessage}`}
+      }
+
+      if (isNotFoundError(error)) {
+        const errorMessage = formatBackendErrors(error)
+
+        return {
+          errorMessage: `[${chalk.bold.dim(publicId)}@${version}] ${chalk.yellow.bold(
+            'Test version not found'
+          )}: ${errorMessage}`,
+        }
+      }
+    }
+  }
 
   try {
     const test = {

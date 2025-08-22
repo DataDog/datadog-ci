@@ -616,6 +616,7 @@ export interface LocalTestPayload extends ServerConfigOverride {
 }
 export interface RemoteTestPayload extends ServerConfigOverride {
   public_id: string
+  version?: number
 }
 export type TestPayload = LocalTestPayload | RemoteTestPayload
 
@@ -660,6 +661,7 @@ export interface RemoteTriggerConfig extends BaseTriggerConfig {
    * @pattern ^(https://.*)?([a-z2-9]{3}-[a-z2-9]{3}-[a-z2-9]{3})$
    */
   id: string
+  version?: number
 }
 export interface LocalTriggerConfig extends BaseTriggerConfig {
   localTestDefinition: LocalTestDefinition

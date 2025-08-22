@@ -189,6 +189,85 @@ describe('utils', () => {
     })
   })
 
+  describe('parsePublicIdWithVersion', () => {
+    test('should parse public ID without version', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: undefined,
+      })
+    })
+
+    test('should parse public ID with version', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@123')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 123,
+      })
+    })
+
+    test('should parse public ID with version 0', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@0')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 0,
+      })
+    })
+
+    test('should handle local test placeholder', () => {
+      expect(utils.parsePublicIdWithVersion('local')).toEqual({
+        publicId: 'local',
+        version: undefined,
+      })
+    })
+
+    test('should return undefined for invalid format', () => {
+      expect(utils.parsePublicIdWithVersion('invalid-id@123')).toBe(undefined)
+      expect(utils.parsePublicIdWithVersion('@123')).toBe(undefined)
+      expect(utils.parsePublicIdWithVersion('not-a-valid-id')).toBe(undefined)
+      expect(utils.parsePublicIdWithVersion('')).toBe(undefined)
+    })
+
+    test('should handle public ID with multiple @ symbols', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@123@456')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: undefined,
+      })
+    })
+
+    test('should parse public ID with large version numbers', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@999999')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 999999,
+      })
+    })
+
+    test('should parse public ID with version from URL', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@123')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 123,
+      })
+    })
+
+    test('should parse public ID with single digit version', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@1')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 1,
+      })
+    })
+
+    test('should parse public ID with large version number', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@9999')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 9999,
+      })
+    })
+
+    test('should handle edge cases', () => {
+      expect(utils.parsePublicIdWithVersion('abc-def-ghi@0')).toEqual({
+        publicId: 'abc-def-ghi',
+        version: 0,
+      })
+    })
+  })
+
   describe('makeTestPayload', () => {
     test('empty config returns simple payload', () => {
       const publicId = 'abc-def-ghi'
@@ -305,6 +384,50 @@ describe('utils', () => {
         ...testOverrides,
         public_id: publicId,
       })
+    })
+
+    test('version is included when specified in trigger config', () => {
+      const publicId = 'abc-def-ghi'
+      const version = 123
+      const fakeTest = {
+        config: {request: {url: 'http://example.org/path'}},
+        public_id: publicId,
+        type: 'api',
+      } as Test
+
+      const overriddenConfig = utils.makeTestPayload(fakeTest, {id: publicId, version}, publicId) as RemoteTestPayload
+
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.version).toBe(version)
+    })
+
+    test('version is undefined when not specified in trigger config', () => {
+      const publicId = 'abc-def-ghi'
+      const fakeTest = {
+        config: {request: {url: 'http://example.org/path'}},
+        public_id: publicId,
+        type: 'api',
+      } as Test
+
+      const overriddenConfig = utils.makeTestPayload(fakeTest, {id: publicId}, publicId) as RemoteTestPayload
+
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.version).toBe(undefined)
+    })
+
+    test('version 0 is included when specified', () => {
+      const publicId = 'abc-def-ghi'
+      const version = 0
+      const fakeTest = {
+        config: {request: {url: 'http://example.org/path'}},
+        public_id: publicId,
+        type: 'api',
+      } as Test
+
+      const overriddenConfig = utils.makeTestPayload(fakeTest, {id: publicId, version}, publicId) as RemoteTestPayload
+
+      expect(overriddenConfig.public_id).toBe(publicId)
+      expect(overriddenConfig.version).toBe(0)
     })
   })
 

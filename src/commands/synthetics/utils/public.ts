@@ -70,6 +70,7 @@ export const makeTestPayload = (test: Test, triggerConfig: TriggerConfig, public
   return {
     ...getBasePayload(test, triggerConfig.testOverrides),
     public_id: publicId,
+    version: triggerConfig.version,
   }
 }
 
@@ -198,6 +199,29 @@ export const getFilePathRelativeToRepo = async (filePath: string) => {
 
 export const normalizePublicId = (id: string): string | undefined =>
   id === LOCAL_TEST_DEFINITION_PUBLIC_ID_PLACEHOLDER ? id : id.match(PUBLIC_ID_REGEX)?.[0]
+
+export interface ParsedPublicId {
+  publicId: string
+  version?: number
+}
+
+export const parsePublicIdWithVersion = (id: string): ParsedPublicId | undefined => {
+  // Check if the ID contains a version (format: <public-id>@<version-id>)
+  const versionMatch = id.match(/^([a-z0-9]{3}-[a-z0-9]{3}-[a-z0-9]{3})@(\d+)$/)
+  if (versionMatch) {
+    const [, matchedId, versionStr] = versionMatch
+    const version = parseInt(versionStr, 10)
+
+    return {publicId: matchedId, version}
+  }
+
+  const plainId = normalizePublicId(id)
+  if (plainId) {
+    return {publicId: plainId}
+  }
+
+  return undefined
+}
 
 export const getOrgSettings = async (
   reporter: MainReporter,

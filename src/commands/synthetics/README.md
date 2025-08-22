@@ -229,7 +229,13 @@ Run tests by executing the CLI through **Yarn**:
 The `run-tests` sub-command accepts the `--public-id` (or shorthand `-p`) argument to trigger only the specified test. It can be set multiple times to run multiple tests:
 
 ```bash
-yarn datadog-ci synthetics run-tests --public-id pub-lic-id1 --public-id pub-lic-id2
+yarn datadog-ci synthetics run-tests --public-id aaa-aaa-aaa --public-id bbb-bbb-bbb
+```
+
+You can also specify a specific version of a test using the format `<public-id>@<version>`:
+
+```bash
+yarn datadog-ci synthetics run-tests --public-id aaa-aaa-aaa@2 --public-id bbb-bbb-bbb@4
 ```
 
 It is also possible to trigger tests corresponding to a search query by using the `--search` (or shorthand `-s`) argument. With this option, the overrides defined in your [global configuration file](#global-configuration-file) apply to all tests discovered with the search query.
@@ -401,6 +407,8 @@ The proxy to be used for outgoing connections to Datadog. `host` and `port` keys
 #### `publicIds`
 
 Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic [test configuration files](#test-files).
+
+You can specify a specific version of a test using the format `<public-id>@<version>`. For example, `abc-def-ghi@123` runs version 123 of the test with public ID `abc-def-ghi`. If no version is specified, the latest version of the test is used.
 
 **Configuration options**
 
