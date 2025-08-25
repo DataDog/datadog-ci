@@ -21,7 +21,9 @@ const requestGateEvaluation = (
         identifier: evaluationRequest.identifier,
         ...(evaluationRequest.version && {version: evaluationRequest.version}),
         ...(evaluationRequest.apm_primary_tag && {apm_primary_tag: evaluationRequest.apm_primary_tag}),
-        ...(evaluationRequest.monitor_variable && {monitor_variable: evaluationRequest.monitor_variable}),
+        ...(evaluationRequest.monitors_query_variable && {
+          monitors_query_variable: evaluationRequest.monitors_query_variable,
+        }),
       },
     },
   }
