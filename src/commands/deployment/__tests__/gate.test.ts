@@ -527,17 +527,17 @@ describe('gate', () => {
       })
     })
 
-    test('should include monitor_variable when provided', () => {
+    test('should include monitors_query_variable when provided', () => {
       const command = createCommand(DeploymentGateCommand)
       command['service'] = 'test-service'
       command['env'] = 'prod'
-      command['monitorVariable'] = 'test-monitor-variable'
+      command['monitorsQueryVariable'] = 'test-monitors-query-variable'
 
       const request = command['buildEvaluationRequest']()
       expect(request).toEqual({
         service: 'test-service',
         env: 'prod',
-        monitor_variable: 'test-monitor-variable',
+        monitors_query_variable: 'test-monitors-query-variable',
       })
     })
 
@@ -548,7 +548,7 @@ describe('gate', () => {
       command['identifier'] = 'default'
       command['version'] = '1.2.3'
       command['apmPrimaryTag'] = 'team:backend'
-      command['monitorVariable'] = 'test-monitor-variable'
+      command['monitorsQueryVariable'] = 'test-monitors-query-variable'
 
       const request = command['buildEvaluationRequest']()
       expect(request).toEqual({
@@ -557,7 +557,7 @@ describe('gate', () => {
         identifier: 'default',
         version: '1.2.3',
         apm_primary_tag: 'team:backend',
-        monitor_variable: 'test-monitor-variable',
+        monitors_query_variable: 'test-monitors-query-variable',
       })
     })
   })

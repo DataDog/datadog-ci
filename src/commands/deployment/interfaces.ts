@@ -6,7 +6,7 @@ export interface GateEvaluationRequest {
   identifier?: string
   version?: string
   apm_primary_tag?: string
-  monitor_variable?: string
+  monitors_query_variable?: string
 }
 
 export interface GateEvaluationRequestResponse {

@@ -83,8 +83,8 @@ export class DeploymentGateCommand extends Command {
     description:
       'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
   })
-  // monitorVariable is hidden because it's not available yet
-  private monitorVariable = Option.String('--monitor-variable', '', {
+  // monitorsQueryVariable is hidden because it's not available yet
+  private monitorsQueryVariable = Option.String('--monitors-query-variable', '', {
     validator: t.isString(),
     hidden: true,
   })
@@ -217,8 +217,8 @@ export class DeploymentGateCommand extends Command {
       request.apm_primary_tag = this.apmPrimaryTag
     }
 
-    if (this.monitorVariable) {
-      request.monitor_variable = this.monitorVariable
+    if (this.monitorsQueryVariable) {
+      request.monitors_query_variable = this.monitorsQueryVariable
     }
 
     return request
