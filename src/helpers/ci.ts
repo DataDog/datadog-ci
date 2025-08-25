@@ -827,6 +827,7 @@ export const getCIMetadata = (tagSizeLimits?: {[key in keyof SpanTags]?: number}
   const metadata: Metadata = {
     ci: removeUndefinedValues({
       job: removeUndefinedValues({
+        id: tags[CI_JOB_ID],
         name: tags[CI_JOB_NAME],
         url: tags[CI_JOB_URL],
       }),

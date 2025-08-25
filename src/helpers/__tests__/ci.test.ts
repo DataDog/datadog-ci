@@ -108,6 +108,7 @@ describe('getCIMetadata', () => {
 
   describe.each(CI_PROVIDERS)('Ensure DD env variables override %s env variables', (ciProvider) => {
     const DD_METADATA = {
+      DD_CI_JOB_ID: 'DD_CI_JOB_ID',
       DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
       DD_CI_JOB_URL: 'DD_CI_JOB_URL',
       DD_CI_PIPELINE_ID: 'DD_CI_PIPELINE_ID',
@@ -148,7 +149,6 @@ describe('getCIMetadata', () => {
       delete ciMetadata?.[CI_ENV_VARS]
       delete ciMetadata?.[CI_NODE_LABELS]
       delete ciMetadata?.[CI_NODE_NAME]
-      delete ciMetadata?.[CI_JOB_ID]
       delete ciMetadata?.[PR_NUMBER]
       delete ciMetadata?.[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA]
       expect(ciMetadata).toEqual(expectedMetadata)
