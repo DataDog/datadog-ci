@@ -27,6 +27,8 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH,
   PR_NUMBER,
   GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA,
+  GIT_PULL_REQUEST_BASE_BRANCH_SHA,
+  CI_JOB_ID,
 } from './tags'
 import {getUserCISpanTags, getUserGitSpanTags} from './user-provided-git'
 import {
@@ -154,6 +156,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_JOB_URL]: CIRCLE_BUILD_URL,
+      [CI_JOB_ID]: CIRCLE_BUILD_NUM,
       [CI_PIPELINE_ID]: CIRCLE_WORKFLOW_ID,
       [CI_PIPELINE_NAME]: CIRCLE_PROJECT_REPONAME,
       [CI_PIPELINE_URL]: pipelineUrl,
@@ -239,6 +242,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
       CI_MERGE_REQUEST_IID,
       CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
       CI_MERGE_REQUEST_SOURCE_BRANCH_SHA,
+      CI_MERGE_REQUEST_DIFF_BASE_SHA,
+      CI_MERGE_REQUEST_TARGET_BRANCH_SHA,
     } = env
 
     const {name, email} = parseEmailAndName(CI_COMMIT_AUTHOR)
@@ -246,6 +251,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
     tags = {
       [CI_JOB_NAME]: GITLAB_CI_JOB_NAME,
       [CI_JOB_URL]: GITLAB_CI_JOB_URL,
+      [CI_JOB_ID]: GITLAB_CI_JOB_ID,
       [CI_PIPELINE_ID]: GITLAB_CI_PIPELINE_ID,
       [CI_PIPELINE_NAME]: CI_PROJECT_PATH,
       [CI_PIPELINE_NUMBER]: CI_PIPELINE_IID,
@@ -274,6 +280,8 @@ export const getCISpanTags = (): SpanTags | undefined => {
     if (CI_MERGE_REQUEST_IID) {
       tags[PR_NUMBER] = CI_MERGE_REQUEST_IID
       tags[GIT_PULL_REQUEST_BASE_BRANCH] = CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      tags[GIT_PULL_REQUEST_BASE_BRANCH_SHA] = CI_MERGE_REQUEST_DIFF_BASE_SHA
+      tags[GIT_PULL_REQUEST_BASE_BRANCH_HEAD_SHA] = CI_MERGE_REQUEST_TARGET_BRANCH_SHA
       tags[GIT_HEAD_SHA] = CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
     }
   }
@@ -304,6 +312,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_JOB_NAME]: GITHUB_JOB,
+      [CI_JOB_ID]: GITHUB_JOB,
       [CI_JOB_URL]: filterSensitiveInfoFromRepository(
         `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}/checks`
       ),
@@ -440,6 +449,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [CI_PIPELINE_NUMBER]: BUILDKITE_BUILD_NUMBER,
       [CI_PIPELINE_URL]: BUILDKITE_BUILD_URL,
       [CI_JOB_URL]: `${BUILDKITE_BUILD_URL}#${BUILDKITE_JOB_ID}`,
+      [CI_JOB_ID]: BUILDKITE_JOB_ID,
       [GIT_SHA]: BUILDKITE_COMMIT,
       [CI_WORKSPACE_PATH]: BUILDKITE_BUILD_CHECKOUT_PATH,
       [GIT_REPOSITORY_URL]: BUILDKITE_REPO,
@@ -625,6 +635,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
       [GIT_COMMIT_MESSAGE]: BUILD_SOURCEVERSIONMESSAGE,
       [CI_STAGE_NAME]: SYSTEM_STAGEDISPLAYNAME,
       [CI_JOB_NAME]: SYSTEM_JOBDISPLAYNAME,
+      [CI_JOB_ID]: SYSTEM_JOBID,
       [CI_ENV_VARS]: JSON.stringify({
         SYSTEM_TEAMPROJECTID,
         BUILD_BUILDID,
@@ -752,6 +763,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
 
     tags = {
       [CI_PROVIDER_NAME]: CI_ENGINES.AWSCODEPIPELINE,
+      [CI_JOB_ID]: DD_ACTION_EXECUTION_ID,
       [CI_PIPELINE_ID]: DD_PIPELINE_EXECUTION_ID,
       [CI_ENV_VARS]: JSON.stringify({CODEBUILD_BUILD_ARN, DD_PIPELINE_EXECUTION_ID, DD_ACTION_EXECUTION_ID}),
     }
