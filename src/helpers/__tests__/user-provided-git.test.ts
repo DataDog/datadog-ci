@@ -22,6 +22,7 @@ import {
   GIT_SHA,
   GIT_TAG,
   GIT_HEAD_SHA,
+  CI_JOB_ID,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
@@ -114,6 +115,7 @@ describe('getUserGitSpanTags', () => {
 
 describe('getUserCISpanTags', () => {
   const DD_CI_METADATA = {
+    DD_CI_JOB_ID: 'DD_CI_JOB_ID',
     DD_CI_JOB_NAME: 'DD_CI_JOB_NAME',
     DD_CI_JOB_URL: 'DD_CI_JOB_URL',
     DD_CI_PIPELINE_ID: 'DD_CI_PIPELINE_ID',
@@ -129,6 +131,7 @@ describe('getUserCISpanTags', () => {
     process.env = {...DD_CI_METADATA}
     const result = getUserCISpanTags()
     expect(result).toEqual({
+      [CI_JOB_ID]: 'DD_CI_JOB_ID',
       [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
       [CI_JOB_URL]: 'DD_CI_JOB_URL',
       [CI_PIPELINE_ID]: 'DD_CI_PIPELINE_ID',
@@ -145,6 +148,7 @@ describe('getUserCISpanTags', () => {
     process.env = {...DD_CI_METADATA, DD_CI_PIPELINE_ID: undefined}
     const result = getUserCISpanTags()
     expect(result).toEqual({
+      [CI_JOB_ID]: 'DD_CI_JOB_ID',
       [CI_JOB_NAME]: 'DD_CI_JOB_NAME',
       [CI_JOB_URL]: 'DD_CI_JOB_URL',
       [CI_PIPELINE_NAME]: 'DD_CI_PIPELINE_NAME',
