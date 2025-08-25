@@ -40,6 +40,7 @@ import {
 export interface Metadata {
   ci: {
     job: {
+      id?: string
       name?: string
       url?: string
     }

@@ -1,4 +1,5 @@
 import {
+  CI_JOB_ID,
   CI_JOB_NAME,
   CI_JOB_URL,
   CI_PIPELINE_ID,
@@ -74,6 +75,7 @@ export const getUserGitSpanTags = () => {
 
 export const getUserCISpanTags = () => {
   const {
+    DD_CI_JOB_ID,
     DD_CI_JOB_NAME,
     DD_CI_JOB_URL,
     DD_CI_PIPELINE_ID,
@@ -86,6 +88,7 @@ export const getUserCISpanTags = () => {
   } = process.env
 
   return removeEmptyValues({
+    [CI_JOB_ID]: DD_CI_JOB_ID,
     [CI_JOB_NAME]: DD_CI_JOB_NAME,
     [CI_JOB_URL]: DD_CI_JOB_URL,
     [CI_PIPELINE_ID]: DD_CI_PIPELINE_ID,
