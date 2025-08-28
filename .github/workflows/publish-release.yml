@@ -238,7 +238,7 @@ jobs:
         with:
           node-version: 20.11.0
       - run: yarn
-      - run: yarn npm publish
+      - run: yarn publish:all
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
 
