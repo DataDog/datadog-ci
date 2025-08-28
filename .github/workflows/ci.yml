@@ -218,10 +218,9 @@ jobs:
       - run: yarn build:win
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
-      - name: Remove dist and src folder to check that binary can stand alone
+      - name: Remove src and dist folders to check that binary can stand alone
         run: |
-          rm dist -r
-          rm src -r
+          yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
 
