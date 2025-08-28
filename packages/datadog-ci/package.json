@@ -22,36 +22,13 @@
       "dist/commands/*/*.js"
     ],
     "assets": [
-      "node_modules/axios/dist/node/axios.cjs"
+      "../../node_modules/axios/dist/node/axios.cjs"
     ]
   },
   "scripts": {
-    "build": "yarn clean; tsc",
-    "build:win": "tsc",
-    "check-licenses": "node bin/check-licenses.js",
-    "check-junit-upload": "node bin/check-junit-upload.js",
-    "clean:win": "rm dist -r",
-    "clean": "rm -rf dist/*",
+    "build": "yarn package:clean; yarn package:build",
     "dist-standalone": "pkg --compress GZip .",
-    "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
-    "format": "yarn eslint --fix",
-    "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path src/commands/synthetics/interfaces.ts --type TestConfig > src/commands/synthetics/test-config.schema.json && prettier --write src/commands/synthetics/test-config.schema.json",
-    "launch": "ts-node --transpile-only src/cli.ts",
-    "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk src/cli.ts",
-    "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
-    "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
-    "no-only-in-tests": "grep -R \"\\.only[(\\.]\" $(find src -name '*.ts' | grep '__tests__'); test $? -eq 1 || (echo '.only was found in the tests, please remove it.' && false)",
-    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf --glob 'dist/**/__tests__'",
-    "test": "jest --colors",
-    "test:windows": "jest --config ./jest.config-windows.js --colors",
-    "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
-    "test:lambda": "jest src/commands/lambda --colors",
-    "test:cloud-run": "jest src/commands/cloud-run --colors",
-    "test:dsyms": "jest src/commands/dsyms --colors",
-    "test:helpers": "jest src/helpers --colors",
-    "eslint": "eslint --quiet 'src/**/*.ts'",
-    "typecheck": "bash bin/typecheck.sh",
-    "watch": "tsc -w"
+    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf --glob 'dist/**/__tests__'"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
