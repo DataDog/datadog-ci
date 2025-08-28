@@ -23,6 +23,8 @@
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk packages/datadog-ci/src/cli.ts",
     "lint": "yarn eslint || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
+    "loop-packages": "yarn workspaces foreach --all --no-private",
+    "version:all": "yarn loop-packages version ${0} --immediate",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:build": "cd $INIT_CWD && yarn tsc:build",
     "test": "jest --colors",
