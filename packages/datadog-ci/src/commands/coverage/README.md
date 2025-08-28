@@ -48,7 +48,7 @@ To verify this command works as expected, you can use `--dry-run`:
 ```bash
 export DD_API_KEY='<API key>'
 
-yarn launch coverage upload --dry-run ./src/commands/coverage/__tests__/fixtures/jacoco-report.xml 
+yarn launch coverage upload --dry-run ./packages/datadog-ci/src/commands/coverage/__tests__/fixtures/jacoco-report.xml 
 ```
 
 Successful output should look like this:
@@ -56,8 +56,8 @@ Successful output should look like this:
 ```bash
 ⚠️ DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT
 Starting upload.
-Will upload ode coverage report file src/commands/coverage/__tests__/fixtures/jacoco-report.xml
-[DRYRUN] Uploading code coverage report file in src/commands/coverage/__tests__/fixtures/jacoco-report.xml
+Will upload code coverage report file packages/datadog-ci/src/commands/coverage/__tests__/fixtures/jacoco-report.xml
+[DRYRUN] Uploading code coverage report file in packages/datadog-ci/src/commands/coverage/__tests__/fixtures/jacoco-report.xml
 ✅ Uploaded 1 files in 0 seconds.
 ```
 

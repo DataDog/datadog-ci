@@ -66,7 +66,7 @@ To verify this command works as expected, you can use `--dry-run`:
 ```bash
 export DD_API_KEY='<API key>'
 
-yarn launch junit upload ./src/commands/junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
+yarn launch junit upload ./packages/datadog-ci/src/commands/junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
 ```
 
 Successful output should look like this:
