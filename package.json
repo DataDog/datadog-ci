@@ -3,9 +3,9 @@
   "private": true,
   "volta": {
     "node": "20.11.0",
-    "yarn": "3.4.1"
+    "yarn": "4.9.4"
   },
-  "packageManager": "yarn@3.4.1",
+  "packageManager": "yarn@4.9.4",
   "workspaces": [
     "packages/*"
   ],
