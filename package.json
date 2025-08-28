@@ -10,12 +10,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "yarn clean; tsc",
-    "build:win": "tsc",
+    "build": "yarn clean; yarn tsc:build",
+    "build:win": "yarn tsc:build",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
-    "clean:win": "rm dist -r",
-    "clean": "rm -rf dist/*",
+    "clean": "rimraf --glob 'packages/**/dist'",
     "dist-standalone": "pkg --compress GZip .",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
     "format": "yarn eslint --fix",
@@ -33,9 +32,10 @@
     "test:cloud-run": "jest src/commands/cloud-run --colors",
     "test:dsyms": "jest src/commands/dsyms --colors",
     "test:helpers": "jest src/helpers --colors",
+    "tsc:build": "tsc --build --verbose packages/datadog-ci",
     "eslint": "eslint --quiet 'src/**/*.ts'",
     "typecheck": "bash bin/typecheck.sh",
-    "watch": "tsc -w"
+    "watch": "yarn tsc:build --watch"
   },
   "devDependencies": {
     "@babel/core": "7.8.0",

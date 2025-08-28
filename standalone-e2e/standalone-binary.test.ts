@@ -1,6 +1,6 @@
 import child_process from 'node:child_process'
 
-import {version} from '../package.json'
+import {version} from '../packages/datadog-ci/package.json'
 
 const execPromise = async (command: string): Promise<{exitCode: number; stdout: string; stderr: string}> => {
   return new Promise((resolve) => {

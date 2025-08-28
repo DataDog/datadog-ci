@@ -58,8 +58,9 @@ typings/
 # next.js build output
 .next
 
-# Custom paths
+# TypeScript output
 dist
+*.tsbuildinfo
 
 #DS_Store
 **/.DS_Store
