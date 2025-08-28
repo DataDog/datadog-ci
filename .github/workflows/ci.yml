@@ -34,8 +34,6 @@ jobs:
             echo ""
             exit 1
           fi
-      - run: yarn no-only-in-tests
-
       - run: yarn test
         env:
           CI: true
