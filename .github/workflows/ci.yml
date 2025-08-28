@@ -43,9 +43,10 @@ jobs:
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
           NODE_OPTIONS: -r dd-trace/ci/init
-      - run: mkdir artifacts
-      - run: yarn pack --filename artifacts/datadog-ci-${{ matrix.version }}.tgz
-      - run: cp -r .github/workflows/e2e artifacts/
+      - run: |
+          mkdir artifacts
+          yarn workspace @datadog/datadog-ci pack --filename ../../artifacts/datadog-ci-${{ matrix.version }}.tgz
+          cp -r .github/workflows/e2e artifacts/
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: artifacts-${{ matrix.version }}
