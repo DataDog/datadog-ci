@@ -2037,6 +2037,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@datadog/datadog-ci-base@workspace:*, @datadog/datadog-ci-base@workspace:packages/base":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-base@workspace:packages/base"
+  dependencies:
+    "@types/inquirer": "npm:8.2.6"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    inquirer: "npm:^8.2.5"
+    proxy: "npm:^2.1.1"
+    proxy-agent: "npm:^6.4.0"
+    simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci@workspace:packages/datadog-ci":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
@@ -2055,6 +2071,7 @@ __metadata:
     "@babel/core": "npm:7.8.0"
     "@babel/preset-env": "npm:7.4.5"
     "@babel/preset-typescript": "npm:7.3.3"
+    "@datadog/datadog-ci-base": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
     "@microsoft/eslint-formatter-sarif": "npm:^3.0.0"
