@@ -17,5 +17,5 @@ module.exports = {
   roots: ['packages'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   // Fix `duplicate manual mock found` where `src` and `dist` are both imported.
-  modulePathIgnorePatterns: ['.*\\/dist\\/.*'],
+  modulePathIgnorePatterns: ['<rootDir>/packages/.*/dist'],
 }
