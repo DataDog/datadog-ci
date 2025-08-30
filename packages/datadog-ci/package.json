@@ -28,7 +28,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "dist-standalone": "pkg --compress GZip .",
-    "prepack": "yarn build && node ./bin/make-it-executable.js && rimraf --glob 'dist/**/__tests__'"
+    "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.709.0",

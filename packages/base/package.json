@@ -10,7 +10,8 @@
     "dist/**/*"
   ],
   "scripts": {
-    "build": "yarn package:build"
+    "build": "yarn package:clean; yarn package:build",
+    "prepack": "yarn package:clean-dist"
   },
   "dependencies": {
     "axios": "^1.11.0",
