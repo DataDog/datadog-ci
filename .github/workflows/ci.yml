@@ -76,6 +76,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
+      - run: yarn build
       - run: yarn test:windows
         env:
           CI: true
