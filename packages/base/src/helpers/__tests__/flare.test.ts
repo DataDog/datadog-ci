@@ -2,10 +2,11 @@ import fs from 'fs'
 import process from 'process'
 import {Writable} from 'stream'
 
-import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import axios from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
+
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
 
 const getLatestVersion = jest.fn()
 jest.mock('../../helpers/get-latest-version', () => ({

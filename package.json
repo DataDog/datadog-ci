@@ -50,7 +50,7 @@
     "dd-trace": "^5.42.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-import-resolver-typescript": "2.7.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jest": "^28.11.0",
     "eslint-plugin-no-null": "^1.0.2",

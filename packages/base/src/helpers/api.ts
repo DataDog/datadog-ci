@@ -1,4 +1,4 @@
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {DATADOG_SITE_US1} from '../constants'
 
 /**
  * Get the base intake URL for a service. If the `DD_SITE` or `DATADOG_SITE` environment

@@ -5,7 +5,6 @@ import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
-import retry from 'async-retry'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
@@ -356,7 +355,7 @@ export class DeploymentGateCommand extends Command {
     return 'PASS'
   }
 
-  private getRetryOptions(timeout: number): retry.Options {
+  private getRetryOptions(timeout: number) {
     const timeElapsed = Date.now() - this.startTime
     const maxRetryTime = timeout - timeElapsed
 
