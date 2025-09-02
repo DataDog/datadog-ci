@@ -16,8 +16,7 @@
     ]
   },
   "scripts": {
-    "build": "yarn clean; yarn tsc:build",
-    "build:win": "yarn tsc:build",
+    "build": "yarn tsc:build",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
     "clean": "rimraf --glob 'packages/*/{dist,tsconfig.tsbuildinfo}'",
