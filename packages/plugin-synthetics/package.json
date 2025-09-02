@@ -1,0 +1,18 @@
+{
+  "name": "@datadog/datadog-ci-plugin-synthetics",
+  "version": "0.0.1",
+  "exports": {},
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "prepack": "yarn package:clean-dist"
+  },
+  "dependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
+    "axios": "^1.11.0",
+    "chalk": "3.0.0",
+    "clipanion": "^3.2.1"
+  }
+}

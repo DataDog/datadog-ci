@@ -2068,6 +2068,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci@workspace:packages/datadog-ci":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
