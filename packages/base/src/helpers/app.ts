@@ -1,3 +1,6 @@
+import {SpanTags} from './interfaces'
+import {CI_JOB_URL, CI_PIPELINE_URL} from './tags'
+
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'
 
 export const getBaseUrl = () => {
@@ -20,4 +23,19 @@ export const getCommonAppBaseURL = (datadogSite: string, subdomain: string) => {
   }
 
   return `https://${validSubdomain}.${datadogSite}/`
+}
+
+export const getTestRunsUrlPath = (spanTags: SpanTags, queryPrefix = ''): string => {
+  if (!spanTags[CI_PIPELINE_URL] && !spanTags[CI_JOB_URL]) {
+    return ''
+  }
+
+  let query = queryPrefix
+  if (spanTags[CI_JOB_URL]) {
+    query += ` @ci.job.url:"${spanTags[CI_JOB_URL]}"`
+  } else if (spanTags[CI_PIPELINE_URL]) {
+    query += ` @ci.pipeline.url:"${spanTags[CI_PIPELINE_URL]}"`
+  }
+
+  return `ci/test-runs?query=${encodeURIComponent(query)}`
 }
