@@ -15,6 +15,26 @@
     "@datadog/datadog-ci-base": "workspace:*",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
-    "clipanion": "^3.2.1"
+    "clipanion": "^3.2.1",
+    "debug": "^4.4.1",
+    "deep-extend": "0.6.0",
+    "fast-levenshtein": "^3.0.0",
+    "get-value": "^4.0.1",
+    "ora": "5.4.1",
+    "set-value": "^4.1.0",
+    "ssh2": "^1.16.0",
+    "sshpk": "1.16.1",
+    "upath": "^2.0.1",
+    "ws": "^7.5.10",
+    "xml2js": "0.5.0",
+    "yamux-js": "0.1.2"
+  },
+  "devDependencies": {
+    "@types/deep-extend": "0.4.31",
+    "@types/set-value": "^4.0.3",
+    "@types/ssh2": "1.15.5",
+    "@types/sshpk": "1.10.5",
+    "@types/ws": "7.2.9",
+    "@types/xml2js": "0.4.9"
   }
 }
