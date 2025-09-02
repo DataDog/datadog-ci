@@ -197,7 +197,7 @@ describe('run-tests', () => {
         appKey: 'fake_app_key',
         batchTimeout: 1,
         buildCommand: 'build-command',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json',
+        configPath: 'src/__tests__/config-fixtures/config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
@@ -246,7 +246,7 @@ describe('run-tests', () => {
       }
 
       const command = createCommand(RunTestsCommand)
-      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/config-with-all-keys.json'
+      command['configPath'] = 'src/__tests__/config-fixtures/config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -257,7 +257,7 @@ describe('run-tests', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         failOnCriticalErrors: true,
         failOnMissingTests: true,
@@ -354,7 +354,7 @@ describe('run-tests', () => {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
         batchTimeout: 1,
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.eu',
         defaultTestOverrides: {
           allowInsecureCertificates: true,
@@ -596,7 +596,7 @@ describe('run-tests', () => {
           appKey: 'cli_app_key',
           batchTimeout: 1,
           buildCommand: 'build-command',
-          configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file-from-cli.json',
+          configPath: 'src/__tests__/config-fixtures/empty-config-file-from-cli.json',
           datadogSite: 'datadoghq.eu',
           failOnCriticalErrors: true,
           failOnMissingTests: true,
@@ -1366,7 +1366,7 @@ describe('upload-application', () => {
       const expectedConfig: UploadApplicationCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json',
+        configPath: 'src/__tests__/config-fixtures/upload-app-config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         proxy: {protocol: 'http'},
         mobileApplicationVersionFilePath: 'fake_path/fake_app.apk',
@@ -1376,7 +1376,7 @@ describe('upload-application', () => {
       }
 
       const command = createCommand(UploadApplicationCommand)
-      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
+      command['configPath'] = 'src/__tests__/config-fixtures/upload-app-config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -1386,7 +1386,7 @@ describe('upload-application', () => {
       const overrideCLI: Omit<UploadApplicationCommandConfig, 'proxy'> = {
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         mobileApplicationVersionFilePath: 'fake_path/cli_fake_app.apk',
         mobileApplicationId: 'fake-abc-cli',
@@ -1409,7 +1409,7 @@ describe('upload-application', () => {
         ...UploadApplicationCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         mobileApplicationVersionFilePath: 'fake_path/cli_fake_app.apk',
         mobileApplicationId: 'fake-abc-cli',
@@ -1554,7 +1554,7 @@ describe('import-tests', () => {
       const expectedConfig: ImportTestsCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/import-tests-config-with-all-keys.json',
+        configPath: 'src/__tests__/config-fixtures/import-tests-config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         files: ['my-new-file'],
         proxy: {protocol: 'http'},
@@ -1563,7 +1563,7 @@ describe('import-tests', () => {
       }
 
       const command = createCommand(ImportTestsCommand)
-      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/import-tests-config-with-all-keys.json'
+      command['configPath'] = 'src/__tests__/config-fixtures/import-tests-config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -1573,7 +1573,7 @@ describe('import-tests', () => {
       const overrideCLI: Omit<ImportTestsCommandConfig, 'proxy'> = {
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         files: ['new-file'],
         publicIds: ['ran-dom-id2'],
@@ -1594,7 +1594,7 @@ describe('import-tests', () => {
         ...ImportTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         files: ['new-file'],
         publicIds: ['ran-dom-id2'],
@@ -1671,7 +1671,7 @@ describe('deploy-tests', () => {
       const expectedConfig: DeployTestsCommandConfig = {
         apiKey: 'fake_api_key',
         appKey: 'fake_app_key',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/deploy-tests-config-with-all-keys.json',
+        configPath: 'src/__tests__/config-fixtures/deploy-tests-config-with-all-keys.json',
         datadogSite: 'datadoghq.eu',
         files: ['my-new-file'],
         proxy: {protocol: 'http'},
@@ -1681,7 +1681,7 @@ describe('deploy-tests', () => {
       }
 
       const command = createCommand(DeployTestsCommand)
-      command['configPath'] = 'src/commands/synthetics/__tests__/config-fixtures/deploy-tests-config-with-all-keys.json'
+      command['configPath'] = 'src/__tests__/config-fixtures/deploy-tests-config-with-all-keys.json'
 
       await command['resolveConfig']()
       expect(command['config']).toEqual(expectedConfig)
@@ -1691,7 +1691,7 @@ describe('deploy-tests', () => {
       const overrideCLI: Omit<DeployTestsCommandConfig, 'proxy'> = {
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         files: ['new-file'],
         publicIds: ['ran-dom-id2'],
@@ -1712,7 +1712,7 @@ describe('deploy-tests', () => {
         ...DeployTestsCommand.getDefaultConfig(),
         apiKey: 'fake_api_key_cli',
         appKey: 'fake_app_key_cli',
-        configPath: 'src/commands/synthetics/__tests__/config-fixtures/empty-config-file.json',
+        configPath: 'src/__tests__/config-fixtures/empty-config-file.json',
         datadogSite: 'datadoghq.cli',
         files: ['new-file'],
         publicIds: ['ran-dom-id2'],
