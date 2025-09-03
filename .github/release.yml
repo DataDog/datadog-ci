@@ -16,9 +16,9 @@ changelog:
     - title: Documentation
       labels:
         - documentation
-    - title: CI Visibility
+    - title: Software Delivery
       labels:
-        - ci-visibility
+        - software-delivery
     - title: RUM
       labels:
         - rum

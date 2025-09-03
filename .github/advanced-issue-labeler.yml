@@ -4,12 +4,11 @@ policy:
   - section:
       - id: [command]
         label:
-          - name: ci-visibility
+          - name: software-delivery
             keys:
               - coverage
               - deployment
               - dora
-              - gate
               - junit
               - metric
               - tag
@@ -36,6 +35,7 @@ policy:
           - name: source-code-integration
             keys:
               - git-metadata
+              - gate
           - name: synthetics
             keys:
               - synthetics
