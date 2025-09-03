@@ -1,18 +1,27 @@
+/* eslint-disable @typescript-eslint/member-ordering */
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
-import {makeTerminalLink, removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {
+  makeTerminalLink,
+  recursivelyRemoveUndefinedValues,
+  removeUndefinedValues,
+  resolveConfigFromFile,
+} from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
 
-import {BaseCommand, RecursivePartial} from './base-command'
+import {RecursivePartial} from './base-command'
 import {buildAssets} from './build-and-test'
 import {CiError} from './errors'
-import {Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from './interfaces'
+import {DefaultReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {executeTests, getDefaultConfig} from './run-tests-lib'
 import {toExecutionRule, validateAndParseOverrides} from './utils/internal'
-import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs} from './utils/public'
+import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from './utils/public'
 
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'
@@ -26,7 +35,7 @@ const $5 = makeTerminalLink(
 )
 const $6 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/mobile_app_testing/`)
 
-export class RunTestsCommand extends BaseCommand {
+export class RunTestsCommand extends Command {
   public static paths = [
     ['synthetics', 'run-tests'],
     ['synthetics', 'build-and-test'],
@@ -65,6 +74,69 @@ export class RunTestsCommand extends BaseCommand {
   })
 
   protected config: RunTestsCommandConfig = getDefaultConfig()
+
+  // BASE COMMAND START
+  protected reporter!: MainReporter
+
+  protected apiKey = Option.String('--apiKey', {
+    description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
+  protected appKey = Option.String('--appKey', {
+    description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+  })
+  protected configPath = Option.String('--config', {
+    description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
+  })
+  protected datadogSite = Option.String('--datadogSite', {
+    description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
+  })
+
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
+  protected async setup() {
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
+
+    // Bootstrap reporter
+    this.reporter = getReporter([new DefaultReporter(this)])
+
+    // Load config
+    await this.resolveConfig()
+    this.normalizeConfig()
+    this.validateConfig()
+
+    // Update reporter
+    this.reporter = getReporter([new DefaultReporter(this), ...this.getReporters()])
+  }
+
+  protected async resolveConfig() {
+    // Defaults < file < ENV < CLI
+
+    // Override with config file variables (e.g. datadog-ci.json)
+    try {
+      // Override Config Path with ENV variables
+      const overrideConfigPath = this.configPath ?? process.env.DATADOG_SYNTHETICS_CONFIG_PATH ?? 'datadog-ci.json'
+      this.config = await resolveConfigFromFile(this.config, {
+        configPath: overrideConfigPath,
+        defaultConfigPaths: [this.config.configPath],
+      })
+    } catch (error) {
+      if (this.configPath) {
+        throw new CiError('INVALID_CONFIG', error.message)
+      }
+    }
+
+    // Override with ENV variables
+    this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromEnv()))
+
+    // Override with CLI parameters
+    this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromCli()))
+  }
+  // BASE COMMAND END
 
   private batchTimeout = Option.String('--batchTimeout', {
     description:
@@ -211,7 +283,13 @@ export class RunTestsCommand extends BaseCommand {
     )
 
     return {
-      ...super.resolveConfigFromEnv(),
+      // ...super.resolveConfigFromEnv(),
+      // BASE COMMAND START
+      apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+      appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
+      configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
+      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      // BASE COMMAND END
       batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
       buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,
       defaultTestOverrides: {
@@ -282,7 +360,13 @@ export class RunTestsCommand extends BaseCommand {
     )
 
     return {
-      ...super.resolveConfigFromCli(),
+      // ...super.resolveConfigFromCli(),
+      // BASE COMMAND START
+      apiKey: this.apiKey,
+      appKey: this.appKey,
+      configPath: this.configPath,
+      datadogSite: this.datadogSite,
+      // BASE COMMAND END
       batchTimeout: this.batchTimeout,
       buildCommand: this.buildCommand,
       defaultTestOverrides: {
