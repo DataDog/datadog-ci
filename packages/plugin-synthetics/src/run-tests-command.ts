@@ -73,11 +73,7 @@ export class RunTestsCommand extends Command {
     description: 'A name for this run, which will be included in the JUnit report.',
   })
 
-  protected config: RunTestsCommandConfig = getDefaultConfig()
-
   // BASE COMMAND START
-  protected reporter!: MainReporter
-
   protected apiKey = Option.String('--apiKey', {
     description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
   })
@@ -93,6 +89,68 @@ export class RunTestsCommand extends Command {
 
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+  // BASE COMMAND END
+
+  public batchTimeout = Option.String('--batchTimeout', {
+    description:
+      'The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.',
+    validator: validation.isInteger(),
+  })
+  public failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
+    description:
+      'Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.',
+  })
+  public failOnMissingTests = Option.Boolean('--failOnMissingTests', {
+    description: `Fail the CI job if the list of tests to run is empty or if some explicitly listed tests are missing.`,
+  })
+  public failOnTimeout = Option.Boolean('--failOnTimeout', {
+    description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
+  })
+  public files = Option.Array('-f,--files', {
+    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
+  })
+  public mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
+    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`}. The version must be uploaded and available within Datadog.`,
+  })
+  public mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
+    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`} with a local or recently built application.`,
+  })
+  public overrides = Option.Array('--override', {
+    description: 'Override specific test properties.',
+  })
+  public publicIds = Option.Array('-p,--public-id', {
+    description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
+  })
+  public selectiveRerun = Option.Boolean('--selectiveRerun', {
+    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$2`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
+  })
+  public subdomain = Option.String('--subdomain', {
+    description:
+      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
+  })
+  public testSearchQuery = Option.String('-s,--search', {
+    description: `Use a ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
+  })
+  public tunnel = Option.Boolean('-t,--tunnel', {
+    description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
+  })
+
+  public buildCommand = Option.String('--buildCommand', {
+    description: 'The build command to generate the assets to run the tests against.',
+  })
+
+  public async execute() {
+    return 0
+  }
+}
+
+export class RunTestsCommandImplementation extends RunTestsCommand {
+  protected reporter!: MainReporter
+  protected config: RunTestsCommandConfig = getDefaultConfig()
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
@@ -136,57 +194,6 @@ export class RunTestsCommand extends Command {
     // Override with CLI parameters
     this.config = deepExtend(this.config, recursivelyRemoveUndefinedValues(this.resolveConfigFromCli()))
   }
-  // BASE COMMAND END
-
-  private batchTimeout = Option.String('--batchTimeout', {
-    description:
-      'The duration in milliseconds after which the CI batch fails as timed out. This does not affect the outcome of a test run that already started.',
-    validator: validation.isInteger(),
-  })
-  private failOnCriticalErrors = Option.Boolean('--failOnCriticalErrors', {
-    description:
-      'Fail the CI job if a critical error that is typically transient occurs, such as rate limits, authentication failures, or Datadog infrastructure issues.',
-  })
-  private failOnMissingTests = Option.Boolean('--failOnMissingTests', {
-    description: `Fail the CI job if the list of tests to run is empty or if some explicitly listed tests are missing.`,
-  })
-  private failOnTimeout = Option.Boolean('--failOnTimeout', {
-    description: 'A boolean flag that fails the CI job if at least one test exceeds the default test timeout.',
-  })
-  private files = Option.Array('-f,--files', {
-    description: `Glob patterns to detect Synthetic ${$1`test configuration files`}}.`,
-  })
-  private mobileApplicationVersion = Option.String('--mobileApplicationVersion', {
-    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`}. The version must be uploaded and available within Datadog.`,
-  })
-  private mobileApplicationVersionFilePath = Option.String('--mobileApp,--mobileApplicationVersionFilePath', {
-    description: `Override the mobile application version for ${$6`Synthetic mobile application tests`} with a local or recently built application.`,
-  })
-  private overrides = Option.Array('--override', {
-    description: 'Override specific test properties.',
-  })
-  private publicIds = Option.Array('-p,--public-id', {
-    description: `Public IDs of Synthetic tests to run. If no value is provided, tests are discovered in Synthetic ${$1`test configuration files`}.`,
-  })
-  private selectiveRerun = Option.Boolean('--selectiveRerun', {
-    description: `Whether to only rerun failed tests. If a test has already passed for a given commit, it will not be rerun in subsequent CI batches. By default, your ${$2`organization's default setting`} is used. Set it to \`false\` to force full runs when your configuration enables it by default.`,
-  })
-  private subdomain = Option.String('--subdomain', {
-    description:
-      'The custom subdomain to access your Datadog organization. If your URL is `myorg.datadoghq.com`, the custom subdomain is `myorg`.',
-  })
-  private testSearchQuery = Option.String('-s,--search', {
-    description: `Use a ${$3`search query`} to select which Synthetic tests to run. Use the ${$4`Synthetic Tests list page's search bar`} to craft your query, then copy and paste it.`,
-  })
-  private tunnel = Option.Boolean('-t,--tunnel', {
-    description: `Use the ${$5`Continuous Testing tunnel`} to launch tests against internal environments.`,
-  })
-
-  private buildCommand = Option.String('--buildCommand', {
-    description: 'The build command to generate the assets to run the tests against.',
-  })
-
-  private tearDowns: (() => Promise<void>)[] = []
 
   public async execute() {
     try {
@@ -207,6 +214,8 @@ export class RunTestsCommand extends Command {
     let results: Result[]
     let summary: Summary
 
+    let teardown = async () => {}
+
     const [_, command] = this.path ?? []
     if (command === 'build-and-test') {
       if (!this.config.buildCommand) {
@@ -216,7 +225,7 @@ export class RunTestsCommand extends Command {
       }
 
       const {builds, devServerUrl, stop} = await buildAssets(this.config.buildCommand, this.reporter)
-      this.tearDowns.push(stop)
+      teardown = stop
 
       const resourceUrlSubstitutionRegexes = builds.map(
         // All of the resources matching the publicPath prefix will be redirected to the dev server.
@@ -238,7 +247,7 @@ export class RunTestsCommand extends Command {
 
       return toExitCode(getExitReason(this.config, {error}))
     } finally {
-      await this.tearDown()
+      await teardown()
     }
 
     const orgSettings = await getOrgSettings(this.reporter, this.config)
@@ -453,11 +462,5 @@ export class RunTestsCommand extends Command {
     }
 
     return []
-  }
-
-  private tearDown = async () => {
-    for (const tearDown of this.tearDowns) {
-      await tearDown()
-    }
   }
 }
