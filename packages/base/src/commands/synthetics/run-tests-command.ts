@@ -1,14 +1,20 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'
+
+// BASE COMMAND START
+const $B1 = makeTerminalLink(`${datadogDocsBaseUrl}/account_management/api-app-keys`)
+const $B2 = makeTerminalLink(
+  `${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#global-configuration-file`
+)
+const $B3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
+// BASE COMMAND END
 
 const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
 const $2 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/settings/continuous-testing`)
@@ -59,24 +65,20 @@ export class RunTestsCommand extends Command {
 
   // BASE COMMAND START
   protected apiKey = Option.String('--apiKey', {
-    description: `Your Datadog API key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+    description: `Your Datadog API key. This key is ${$B1`created in your Datadog organization`} and should be stored as a secret.`,
   })
   protected appKey = Option.String('--appKey', {
-    description: `Your Datadog application key. This key is ${$1`created in your Datadog organization`} and should be stored as a secret.`,
+    description: `Your Datadog application key. This key is ${$B1`created in your Datadog organization`} and should be stored as a secret.`,
   })
   protected configPath = Option.String('--config', {
-    description: `The path to the ${$2`global configuration file`} that configures datadog-ci.`,
+    description: `The path to the ${$B2`global configuration file`} that configures datadog-ci.`,
   })
   protected datadogSite = Option.String('--datadogSite', {
-    description: `Your Datadog site. Possible values are listed ${$3`in this table`}.`,
+    description: `Your Datadog site. Possible values are listed ${$B3`in this table`}.`,
   })
 
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  protected fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
   // BASE COMMAND END
 
   public batchTimeout = Option.String('--batchTimeout', {

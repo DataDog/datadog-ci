@@ -2,14 +2,14 @@ import {createCommand, getAxiosError} from '@datadog/datadog-ci-base/helpers/__t
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
-import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from '../__tests__/fixtures'
-import * as api from '../api'
-import {PluginCommand as RunTestsCommand} from '../commands/run-tests'
-import {RunTestsCommandConfig, ExecutionRule, UserConfigOverride, CookiesObject, ServerTest} from '../interfaces'
-import {getDefaultConfig} from '../run-tests-lib'
-import * as testUtils from '../test'
-import {toExecutionRule} from '../utils/internal'
-import * as utils from '../utils/public'
+import {getApiTest, getTestSuite, mockApi, mockServerTriggerResponse} from '../../__tests__/fixtures'
+import * as api from '../../api'
+import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
+import {RunTestsCommandConfig, ExecutionRule, UserConfigOverride, CookiesObject, ServerTest} from '../../interfaces'
+import {getDefaultConfig} from '../../run-tests-lib'
+import * as testUtils from '../../test'
+import {toExecutionRule} from '../../utils/internal'
+import * as utils from '../../utils/public'
 
 describe('run-tests', () => {
   beforeEach(() => {

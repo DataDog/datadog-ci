@@ -50,6 +50,12 @@ export const deployTests = async (reporter: MainReporter, config: DeployTestsCom
     return [triggerConfig]
   })
 
+  if (localTestDefinitionsToDeploy.length === 0) {
+    reporter.log('No local test definitions to deploy\n')
+
+    return
+  }
+
   for (const localTestDefinition of localTestDefinitionsToDeploy) {
     // SYNTH-18434: public ID should be made required
     const publicId = localTestDefinition.localTestDefinition.public_id!
