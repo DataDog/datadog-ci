@@ -9,6 +9,12 @@
   "workspaces": [
     "packages/*"
   ],
+  "knip": {
+    "ignoreDependencies": [
+      "@microsoft/eslint-formatter-sarif",
+      "dd-trace"
+    ]
+  },
   "scripts": {
     "build": "yarn clean; yarn tsc:build",
     "build:win": "yarn tsc:build",
@@ -18,6 +24,7 @@
     "dist-standalone": "yarn workspace @datadog/datadog-ci dist-standalone",
     "dist-standalone:test": "jest --config ./jest.config-standalone.js --colors",
     "format": "yarn eslint --fix",
+    "knip": "npx knip --include dependencies --fix --no-config-hints",
     "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path packages/datadog-ci/src/commands/synthetics/interfaces.ts --type TestConfig > packages/datadog-ci/src/commands/synthetics/test-config.schema.json && prettier --write packages/datadog-ci/src/commands/synthetics/test-config.schema.json",
     "launch": "ts-node --transpile-only packages/datadog-ci/src/cli.ts",
     "launch:debug": "node -r ts-node/register/transpile-only --inspect-brk packages/datadog-ci/src/cli.ts",
