@@ -1,6 +1,6 @@
-import {getCIMetadata} from '../../helpers/ci'
-import {GIT_COMMIT_MESSAGE} from '../../helpers/tags'
-import {getProxyAgent} from '../../helpers/utils'
+import {getCIMetadata} from '@datadog/datadog-ci-base/helpers/ci'
+import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
+import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
 import {BaseCommand} from './base-command'

@@ -1,21 +1,16 @@
 import os from 'os'
 
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import * as simpleGit from 'simple-git'
-import upath from 'upath'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCISpanTags} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {partitionFiles} from '../../helpers/file-finder'
-import {enableFips} from '../../helpers/fips'
-import {getGitMetadata} from '../../helpers/git/format-git-span-data'
-import {parsePathsList} from '../../helpers/glob'
-import id from '../../helpers/id'
-import {RequestBuilder, SpanTags} from '../../helpers/interfaces'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {retryRequest} from '../../helpers/retry'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {partitionFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {parsePathsList} from '@datadog/datadog-ci-base/helpers/glob'
+import id from '@datadog/datadog-ci-base/helpers/id'
+import {RequestBuilder, SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {
   GIT_HEAD_SHA,
   GIT_PULL_REQUEST_BASE_BRANCH,
@@ -25,9 +20,13 @@ import {
   GIT_SHA,
   parseMetrics,
   parseTags,
-} from '../../helpers/tags'
-import {getUserGitSpanTags} from '../../helpers/user-provided-git'
-import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
+} from '@datadog/datadog-ci-base/helpers/tags'
+import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
+import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+import * as simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {isGitRepo} from '../git-metadata'
 import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '../git-metadata/git'

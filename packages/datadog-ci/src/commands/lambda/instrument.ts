@@ -1,9 +1,6 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-
 import {
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
@@ -11,13 +8,16 @@ import {
   FIPS_IGNORE_ERROR_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
-import {requestConfirmation} from '../../helpers/prompt'
-import * as helperRenderer from '../../helpers/renderer'
-import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '../../helpers/utils'
+} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+
+import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from './constants'
 import {

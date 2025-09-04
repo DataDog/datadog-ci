@@ -2,10 +2,9 @@ import * as http from 'http'
 import * as net from 'net'
 import {URL} from 'url'
 
+import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 import WebSocket, {Server as WebSocketServer} from 'ws'
-
-import {Metadata} from '../../../helpers/interfaces'
-import {ProxyConfiguration} from '../../../helpers/utils'
 
 import {APIHelper, apiConstructor} from '../api'
 import {

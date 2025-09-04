@@ -1,18 +1,18 @@
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
-import {toBoolean} from '../../helpers/env'
-import {InvalidConfigurationError} from '../../helpers/errors'
-import {enableFips} from '../../helpers/fips'
-import {ICONS} from '../../helpers/formatting'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
-import {UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
@@ -47,7 +47,7 @@ export class UploadCommand extends Command {
   private noGitSync = Option.Boolean('--no-gitsync', false)
   private directory = Option.String('--directory', '')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)

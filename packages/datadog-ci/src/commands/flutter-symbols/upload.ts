@@ -1,27 +1,27 @@
 import fs from 'fs'
 
-import {Command, Option} from 'clipanion'
-import yaml from 'js-yaml'
-import semver from 'semver'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {getRepositoryData, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {globSync} from '../../helpers/glob'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {MultipartValue, UploadStatus} from '../../helpers/upload'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {getRepositoryData, RepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   buildPath,
   DEFAULT_CONFIG_PATHS,
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
-} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+} from '@datadog/datadog-ci-base/helpers/utils'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {Command, Option} from 'clipanion'
+import yaml from 'js-yaml'
+import semver from 'semver'
+
+import {cliVersion} from '../../version'
 
 import * as dsyms from '../dsyms/upload'
 import {newSimpleGit} from '../git-metadata/git'
@@ -95,7 +95,7 @@ export class UploadCommand extends Command {
   private serviceName = Option.String('--service-name')
   private version = Option.String('--version')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

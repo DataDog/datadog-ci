@@ -1,11 +1,10 @@
 import type {TunnelReporter} from '../tunnel/tunnel'
+import type {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {Writable} from 'stream'
 
+import {CI_JOB_URL, CI_PIPELINE_URL} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 import ora from 'ora'
-
-import type {CommandContext} from '../../../helpers/interfaces'
-import {CI_JOB_URL, CI_PIPELINE_URL} from '../../../helpers/tags'
 
 import {getTestRunsUrlPath} from '../../junit/utils'
 

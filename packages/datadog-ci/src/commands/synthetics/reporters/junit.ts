@@ -1,12 +1,11 @@
 import fs from 'fs'
 
+import type {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {Writable} from 'stream'
 
 import c from 'chalk'
 import upath from 'upath'
 import {Builder} from 'xml2js'
-
-import type {CommandContext} from '../../../helpers/interfaces'
 
 import {
   ApiServerResult,

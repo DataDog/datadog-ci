@@ -1,12 +1,11 @@
 import {createHash} from 'crypto'
 import {existsSync, promises} from 'fs'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
 
 /**
  * The Debug ID is injected in the bundle as a plain string, using this prefix.

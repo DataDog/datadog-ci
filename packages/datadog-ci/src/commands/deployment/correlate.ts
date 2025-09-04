@@ -1,17 +1,16 @@
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
+import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCISpanTags} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '../../helpers/git/get-git-data'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {retryRequest} from '../../helpers/retry'
-import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 /**
  * This command collects environment variables and git information to correlate commits from the

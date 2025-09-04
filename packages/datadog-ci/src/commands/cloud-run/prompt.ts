@@ -1,6 +1,5 @@
+import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
 import inquirer from 'inquirer'
-
-import {DATADOG_SITES} from '../../constants'
 
 const checkboxPlusPrompt = require('inquirer-checkbox-plus-prompt')
 inquirer.registerPrompt('checkbox-plus', checkboxPlusPrompt)

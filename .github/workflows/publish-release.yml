@@ -57,10 +57,8 @@ jobs:
         run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-linux-x64 -o datadog-ci_linux-x64
-      - name: Remove dist folder to check that binary can stand alone
-        run: |
-          rm -rf dist
-          rm -rf src
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload release asset
@@ -97,10 +95,8 @@ jobs:
         run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-linux-arm64 -o datadog-ci_linux-arm64
-      - name: Remove dist folder to check that binary can stand alone
-        run: |
-          rm -rf dist
-          rm -rf src
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload release asset
@@ -134,8 +130,7 @@ jobs:
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
       - name: Remove src and dist folders to check that binary can stand alone
-        run: |
-          yarn rimraf --glob 'packages/*/{src,dist}'
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload release asset
@@ -170,10 +165,8 @@ jobs:
         run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-macos-x64 -o datadog-ci_darwin-x64
-      - name: Remove dist folder to check that binary can stand alone
-        run: |
-          rm -rf dist
-          rm -rf src
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload release asset
@@ -206,10 +199,8 @@ jobs:
         run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-macos-arm64 -o datadog-ci_darwin-arm64
-      - name: Remove dist folder to check that binary can stand alone
-        run: |
-          rm -rf dist
-          rm -rf src
+      - name: Remove src and dist folders to check that binary can stand alone
+        run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
       - name: Upload release asset

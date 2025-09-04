@@ -1,7 +1,6 @@
+import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import chalk from 'chalk'
 import upath from 'upath'
-
-import {getBaseUrl} from '../../helpers/app'
 
 import {Payload} from './interfaces'
 

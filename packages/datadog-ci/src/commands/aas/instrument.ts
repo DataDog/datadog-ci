@@ -1,15 +1,15 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
+import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {DATADOG_SITE_US1} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {handleSourceCodeIntegration} from '../../helpers/git/instrument-helpers'
-import {renderError, renderSoftWarning} from '../../helpers/renderer'
-import {maskString} from '../../helpers/utils'
+import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {
   AasCommand,

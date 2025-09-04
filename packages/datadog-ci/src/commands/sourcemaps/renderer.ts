@@ -1,8 +1,7 @@
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {pluralize} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-
-import {ICONS} from '../../helpers/formatting'
-import {UploadStatus} from '../../helpers/upload'
-import {pluralize} from '../../helpers/utils'
 
 import {Sourcemap} from './interfaces'
 

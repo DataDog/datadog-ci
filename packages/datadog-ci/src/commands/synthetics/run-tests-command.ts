@@ -1,10 +1,9 @@
+import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
+import {makeTerminalLink, removeUndefinedValues} from '@datadog/datadog-ci-base/helpers/utils'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {Command, Option} from 'clipanion'
 import deepExtend from 'deep-extend'
-
-import {toBoolean, toNumber, toStringMap} from '../../helpers/env'
-import {makeTerminalLink, removeUndefinedValues} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {isValidDatadogSite} from '../../helpers/validation'
 
 import {BaseCommand, RecursivePartial} from './base-command'
 import {buildAssets} from './build-and-test'

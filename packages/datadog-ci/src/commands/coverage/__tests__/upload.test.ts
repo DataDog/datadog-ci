@@ -1,12 +1,11 @@
+import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
-
-import {createCommand, createMockContext, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import {SpanTags} from '../../../helpers/interfaces'
 
 import {UploadCodeCoverageReportCommand} from '../upload'
 import {jacocoFormat} from '../utils'
 
-jest.mock('../../../helpers/id', () => jest.fn())
+jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())

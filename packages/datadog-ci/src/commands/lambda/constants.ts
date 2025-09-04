@@ -1,7 +1,5 @@
 import type {Runtime} from '@aws-sdk/client-lambda'
 
-import {ConfiguredRetryStrategy} from '@smithy/util-retry'
-
 import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_TAGS_ENV_VAR,
@@ -10,7 +8,8 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '../../constants'
+} from '@datadog/datadog-ci-base/constants'
+import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 

@@ -4,10 +4,9 @@ import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 import {v4 as uuidv4} from 'uuid'
-
-import {getRequestBuilder} from '../../helpers/utils'
 
 import {Payload} from './interfaces'
 import {renderUpload} from './renderer'

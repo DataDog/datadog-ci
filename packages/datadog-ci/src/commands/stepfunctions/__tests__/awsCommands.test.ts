@@ -15,9 +15,8 @@ import {
   DescribeStateMachineCommandOutput,
   LogLevel,
 } from '@aws-sdk/client-sfn'
+import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {mockClient} from 'aws-sdk-client-mock'
-
-import {createMockContext} from '../../../helpers/__tests__/testing-tools'
 
 import {
   createLogGroup,

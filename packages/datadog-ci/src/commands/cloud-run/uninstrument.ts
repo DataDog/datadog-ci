@@ -1,12 +1,11 @@
 import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from './types'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {renderError, renderSoftWarning} from '../../helpers/renderer'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from './prompt'

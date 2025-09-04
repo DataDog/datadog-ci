@@ -1,13 +1,12 @@
+import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {retryRequest} from '../../helpers/retry'
-import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export class DeploymentCorrelateImageCommand extends Command {
   public static paths = [['deployment', 'correlate-image']]

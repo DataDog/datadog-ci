@@ -87,3 +87,6 @@ packages/datadog-ci/src/commands/react-native/__tests__/fixtures/with-sources-co
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Jest cache directories
+.jest-cache/
