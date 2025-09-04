@@ -1,6 +1,6 @@
 import {PluginCommand as RunTestsCommand} from './commands/run-tests'
-import {DeployTestsCommand} from './deploy-tests-command'
+import {PluginCommand as DeployTestsCommand} from './commands/deploy-tests'
 import {ImportTestsCommand} from './import-tests-command'
-import {UploadApplicationCommand} from './upload-application-command'
+import {PluginCommand as UploadApplicationCommand} from './commands/upload-application'
 
 module.exports = [RunTestsCommand, UploadApplicationCommand, ImportTestsCommand, DeployTestsCommand]

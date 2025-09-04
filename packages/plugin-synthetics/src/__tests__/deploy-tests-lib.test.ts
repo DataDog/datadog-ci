@@ -1,5 +1,5 @@
 import * as api from '../api'
-import {DeployTestsCommand} from '../deploy-tests-command'
+import {PluginCommand as DeployTestsCommand} from '../commands/deploy-tests'
 import {deployTests} from '../deploy-tests-lib'
 import * as tests from '../test'
 
