@@ -2,9 +2,10 @@
   "name": "@datadog/datadog-ci-base",
   "version": "0.0.1",
   "exports": {
+    "./cli": "./dist/cli.js",
+    "./commands/*": "./dist/commands/*.js",
     "./constants": "./dist/constants.js",
-    "./helpers/*": "./dist/helpers/*.js",
-    "./helpers/__tests__/testing-tools": "./dist/helpers/__tests__/testing-tools.js"
+    "./helpers/*": "./dist/helpers/*.js"
   },
   "files": [
     "dist/**/*"

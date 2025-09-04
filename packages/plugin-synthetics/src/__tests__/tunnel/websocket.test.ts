@@ -1,7 +1,7 @@
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
-import {RunTestsCommand} from '../../run-tests-command'
+import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 import * as utils from '../../utils/public'
 
 import {getSyntheticsProxy} from '../fixtures'

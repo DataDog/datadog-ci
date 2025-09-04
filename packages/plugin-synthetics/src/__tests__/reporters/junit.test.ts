@@ -7,7 +7,6 @@ import {BaseContext} from 'clipanion'
 
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
-import {RunTestsCommand} from '../../run-tests-command'
 
 import {
   BATCH_ID,
@@ -45,7 +44,7 @@ describe('Junit reporter', () => {
 
   describe('constructor', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as RunTestsCommand)
+      reporter = new JUnitReporter(commandMock as any)
     })
 
     it("should append '.xml' to destination if isn't there", () => {
@@ -59,7 +58,7 @@ describe('Junit reporter', () => {
 
   describe('runEnd', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as RunTestsCommand)
+      reporter = new JUnitReporter(commandMock as any)
       jest.spyOn(fs, 'writeFileSync')
       jest.spyOn(reporter['builder'], 'buildObject')
     })
@@ -140,7 +139,7 @@ describe('Junit reporter', () => {
 
   describe('resultEnd', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as RunTestsCommand)
+      reporter = new JUnitReporter(commandMock as any)
     })
 
     it('should give a default suite name', () => {
@@ -324,7 +323,7 @@ describe('Junit reporter', () => {
 
   describe('getTestCase', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as RunTestsCommand)
+      reporter = new JUnitReporter(commandMock as any)
     })
 
     it('should add stats to the test case - api test', () => {
@@ -398,7 +397,7 @@ describe('GitLab test report compatibility', () => {
   let reporter: JUnitReporter
 
   beforeEach(() => {
-    reporter = new JUnitReporter(commandMock as RunTestsCommand)
+    reporter = new JUnitReporter(commandMock as any)
   })
 
   test('all test case names are unique', () => {
