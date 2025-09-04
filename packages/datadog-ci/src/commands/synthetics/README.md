@@ -1097,7 +1097,7 @@ Additional helpful documentation, links, and articles:
 [6]: https://www.datadoghq.com/blog/datadog-github-action-synthetics-ci-visibility/
 [7]: https://docs.datadoghq.com/continuous_testing/cicd_integrations/
 [8]: https://docs.datadoghq.com/continuous_testing/explorer/
-[9]: https://github.com/DataDog/datadog-ci/blob/master/src/commands/synthetics/examples/global-config-complete-example.json
+[9]: https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/examples/global-config-complete-example.json
 [10]: https://docs.datadoghq.com/mobile_app_testing/
 [11]: https://docs.datadoghq.com/synthetics/platform/settings/?tab=specifyvalue#global-variables
 [12]: https://app.datadoghq.com/api/v1/synthetics/locations?only_public=true

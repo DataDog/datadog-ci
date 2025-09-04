@@ -1,6 +1,7 @@
 import child_process from 'node:child_process'
+import path from 'node:path'
 
-import {version} from '../package.json'
+import {version} from '../packages/datadog-ci/package.json'
 
 const execPromise = async (command: string): Promise<{exitCode: number; stdout: string; stderr: string}> => {
   return new Promise((resolve) => {
@@ -29,7 +30,7 @@ const isARM = process.arch === 'arm64'
 const arch = isARM ? 'arm64' : 'x64'
 
 const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
-const STANDALONE_BINARY_PATH = `${isWin ? '.\\' : './'}${STANDALONE_BINARY}${isWin ? '.exe' : ''}`
+const STANDALONE_BINARY_PATH = path.join('./packages/datadog-ci', `${STANDALONE_BINARY}${isWin ? '.exe' : ''}`)
 
 const timeoutPerPlatform: Record<typeof os, number> = {
   // Some macOS agents sometimes run slower, making this test suite flaky on macOS only.

@@ -27,7 +27,7 @@ Follow the [Structure](#structure) below for any commands you add. Then, don't f
 
 #### Structure
 
-Commands are stored in the [src/commands](src/commands) folder.
+Commands are stored in the [packages/datadog-ci/src/commands](packages/datadog-ci/src/commands) folder.
 
 The skeleton of a command is composed of a README, an `index.ts` and a folder for the tests.
 
@@ -41,7 +41,7 @@ src/
          └── index.ts
 ```
 
-The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
+The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `packages/datadog-ci/src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
 
 A sample `index.ts` file for a new command would be:
 
