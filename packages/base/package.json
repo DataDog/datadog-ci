@@ -24,6 +24,7 @@
   ],
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
