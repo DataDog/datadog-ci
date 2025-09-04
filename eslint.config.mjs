@@ -98,7 +98,7 @@ const restrictedImports = [
 ]
 
 export default defineConfig(
-  globalIgnores(['eslint.config.mjs', 'jest.config.js', 'packages/*/dist']),
+  globalIgnores(['eslint.config.mjs', 'packages/*/dist']),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
@@ -110,7 +110,7 @@ export default defineConfig(
       parser: tseslint.parser,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['jest.setup.ts'],
+          allowDefaultProject: ['jest.config*.mjs', 'jest.setup.ts'],
         },
         tsconfigRootDir: import.meta.dirname,
       },
