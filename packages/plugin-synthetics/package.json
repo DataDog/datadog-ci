@@ -12,6 +12,9 @@
     "build": "yarn package:clean; yarn package:build",
     "prepack": "yarn package:clean-dist"
   },
+  "peerDependencies": {
+    "@datadog/datadog-ci": "workspace:*"
+  },
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "axios": "^1.11.0",

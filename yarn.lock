@@ -2065,6 +2065,8 @@ __metadata:
     tiny-async-pool: "npm:^2.1.0"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2094,6 +2096,8 @@ __metadata:
     ws: "npm:^7.5.10"
     xml2js: "npm:0.5.0"
     yamux-js: "npm:0.1.2"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
   linkType: soft
 

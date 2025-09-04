@@ -14,6 +14,9 @@
     "build": "yarn package:clean; yarn package:build",
     "prepack": "yarn package:clean-dist"
   },
+  "peerDependencies": {
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  },
   "dependencies": {
     "@types/datadog-metrics": "0.6.1",
     "async-retry": "1.3.1",
