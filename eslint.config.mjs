@@ -1,7 +1,7 @@
 import eslint from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
-import importPlugin from 'eslint-plugin-import'
+import {importX} from 'eslint-plugin-import-x'
 import jest from 'eslint-plugin-jest'
 import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
@@ -101,7 +101,8 @@ export default defineConfig(
   globalIgnores(['eslint.config.mjs', 'jest.config.js', 'packages/*/dist']),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
-  importPlugin.flatConfigs.recommended,
+  importX.flatConfigs.recommended,
+  importX.flatConfigs.typescript,
   prettierRecommended,
   jest.configs['flat/recommended'],
   {
@@ -110,13 +111,6 @@ export default defineConfig(
       parserOptions: {
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
-      },
-    },
-    settings: {
-      'import/resolver': {
-        typescript: {
-          project: ['./tsconfig.json'],
-        },
       },
     },
     plugins: {
@@ -276,8 +270,8 @@ export default defineConfig(
       'guard-for-in': 'error',
       'id-denylist': 'error',
       'id-match': 'error',
-      'import/no-extraneous-dependencies': 'error',
-      'import/order': [
+      'import-x/no-extraneous-dependencies': 'error',
+      'import-x/order': [
         'error',
         {
           alphabetize: {order: 'asc', caseInsensitive: true},
