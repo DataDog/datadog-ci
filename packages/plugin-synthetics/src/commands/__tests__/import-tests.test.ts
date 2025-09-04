@@ -1,8 +1,9 @@
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
-import {ImportTestsCommand} from '../import-tests-command'
-import {ImportTestsCommandConfig} from '../interfaces'
+import {ImportTestsCommandConfig} from '../../interfaces'
+
+import {PluginCommand as ImportTestsCommand} from '../import-tests'
 
 describe('import-tests', () => {
   beforeEach(() => {
