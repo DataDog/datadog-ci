@@ -109,7 +109,9 @@ export default defineConfig(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ['jest.setup.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },
