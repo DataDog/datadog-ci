@@ -253,7 +253,7 @@ export class UploadCommand extends Command {
 
     const tmpDirectory = await createUniqueTmpDirectory()
 
-    const requestBuilder = getUnityRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getUnityRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, soFiles, async (soFileName) => {
         const elfMetadata = await elf.getElfFileMetadata(soFileName)
@@ -337,7 +337,7 @@ export class UploadCommand extends Command {
     const metricsLogger = this.getMetricsLogger(['platform:unity'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
-    const requestBuilder = getUnityRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getUnityRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('IL2CPP Mapping File', il2cppMappingPath)}`)
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {createHash} from 'crypto'
 import fs from 'fs'
 

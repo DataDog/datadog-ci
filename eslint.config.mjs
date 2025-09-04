@@ -132,6 +132,8 @@ export default defineConfig(
           default: 'array',
         },
       ],
+      '@typescript-eslint/no-base-to-string': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-restricted-types': [
         'error',
         {
@@ -201,6 +203,7 @@ export default defineConfig(
       '@typescript-eslint/no-namespace': 'error',
       '@typescript-eslint/no-parameter-properties': 'off',
       '@typescript-eslint/no-extra-semi': 'off', // enforced by prettier
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
       '@typescript-eslint/prefer-regexp-exec': 'off',
       '@typescript-eslint/unbound-method': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
@@ -300,10 +303,12 @@ export default defineConfig(
       'no-caller': 'error',
       'no-cond-assign': 'error',
       'no-console': 'off',
+      'no-control-regex': 'off',
       'no-debugger': 'error',
       'no-empty': 'error',
       'no-empty-function': 'off',
       'no-eval': 'error',
+      'no-extra-boolean-cast': 'off',
       'no-extra-semi': 'off',
       'no-fallthrough': 'off',
       'no-invalid-this': 'off',
@@ -363,6 +368,7 @@ export default defineConfig(
       'valid-typeof': 'off',
       'jest/no-interpolation-in-snapshots': 'off', // allow showing from which variable comes a specific value in inline snapshots
       'jest/padding-around-test-blocks': 'error',
+      'no-prototype-builtins': 'off',
       'no-restricted-imports': [
         'error',
         {

@@ -311,13 +311,14 @@ export class DeploymentGateCommand extends Command {
           this.logger.info(chalk.red(`\t${ICONS.FAILED} Gate evaluation failed`))
 
           return 'FAIL'
-        case 'in_progress':
+        case 'in_progress': {
           const rules = response.data.data.attributes.rules
           const totalRules = rules.length
           const completedRules = rules.filter((rule) => rule.status !== 'in_progress').length
 
           this.logger.info(`\tGate evaluation in progress (${completedRules}/${totalRules} rules completed)`)
           break
+        }
 
         default:
           this.logger.warn(`Unknown gate evaluation status: ${status}`)
