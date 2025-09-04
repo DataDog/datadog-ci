@@ -40,7 +40,6 @@
   "devDependencies": {
     "@types/async-retry": "1.4.8",
     "@types/deep-extend": "0.4.31",
-    "@types/glob": "7.1.1",
     "@types/inquirer": "8.2.6",
     "@types/tiny-async-pool": "^2.0.3",
     "proxy": "^2.1.1"

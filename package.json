@@ -48,9 +48,6 @@
     "watch": "yarn tsc:build --watch"
   },
   "devDependencies": {
-    "@babel/core": "7.8.0",
-    "@babel/preset-env": "7.4.5",
-    "@babel/preset-typescript": "7.3.3",
     "@microsoft/eslint-formatter-sarif": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
