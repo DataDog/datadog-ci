@@ -19,7 +19,6 @@
     "@datadog/datadog-ci-base": "workspace:*",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
-    "clipanion": "^3.2.1",
     "debug": "^4.4.1",
     "deep-extend": "0.6.0",
     "fast-levenshtein": "^3.0.0",

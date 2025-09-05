@@ -3,7 +3,7 @@ import fsp from 'fs/promises'
 import {Writable} from 'stream'
 
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
@@ -35,7 +35,7 @@ const globalSummaryMock = getSummary()
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
+    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }
@@ -389,7 +389,7 @@ describe('Junit reporter', () => {
 describe('GitLab test report compatibility', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
+    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }

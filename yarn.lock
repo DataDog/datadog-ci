@@ -2083,7 +2083,6 @@ __metadata:
     "@types/xml2js": "npm:0.4.9"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     debug: "npm:^4.4.1"
     deep-extend: "npm:0.6.0"
     fast-levenshtein: "npm:^3.0.0"
