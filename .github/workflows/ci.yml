@@ -119,7 +119,8 @@ jobs:
           echo '{
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
-              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz"

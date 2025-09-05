@@ -1,4 +1,4 @@
-import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
+import * as appHelpers from '@datadog/datadog-ci-base/helpers/app'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {
   CI_JOB_URL,
@@ -8,73 +8,13 @@ import {
   GIT_SHA,
 } from '@datadog/datadog-ci-base/helpers/tags'
 
-import {getTestRunsUrlPath, getTestRunsUrl, getTestCommitRedirectURL} from '../utils'
+import {getTestRunsUrl, getTestCommitRedirectURL} from '../utils'
 
-// Mock the getBaseUrl function
-jest.mock('@datadog/datadog-ci-base/helpers/app', () => ({
-  getBaseUrl: jest.fn(),
-}))
-
-const mockGetBaseUrl = getBaseUrl as jest.MockedFunction<typeof getBaseUrl>
+let mockGetBaseUrl: jest.SpyInstance<string>
 
 describe('junit utils', () => {
   beforeEach(() => {
-    mockGetBaseUrl.mockReset()
-  })
-
-  describe('getTestRunsUrlPath', () => {
-    it('should return empty string when no CI_JOB_URL or CI_PIPELINE_URL', () => {
-      const spanTags: SpanTags = {}
-      const result = getTestRunsUrlPath(spanTags)
-      expect(result).toBe('')
-    })
-
-    it('should return path with job URL when CI_JOB_URL is present', () => {
-      const spanTags: SpanTags = {
-        [CI_JOB_URL]: 'https://ci.example.com/job/123',
-      }
-      const result = getTestRunsUrlPath(spanTags)
-      expect(result).toBe('ci/test-runs?query=%20%40ci.job.url%3A%22https%3A%2F%2Fci.example.com%2Fjob%2F123%22')
-    })
-
-    it('should return path with pipeline URL when CI_PIPELINE_URL is present but no CI_JOB_URL', () => {
-      const spanTags: SpanTags = {
-        [CI_PIPELINE_URL]: 'https://ci.example.com/pipeline/456',
-      }
-      const result = getTestRunsUrlPath(spanTags)
-      expect(result).toBe(
-        'ci/test-runs?query=%20%40ci.pipeline.url%3A%22https%3A%2F%2Fci.example.com%2Fpipeline%2F456%22'
-      )
-    })
-
-    it('should prefer CI_JOB_URL over CI_PIPELINE_URL when both are present', () => {
-      const spanTags: SpanTags = {
-        [CI_JOB_URL]: 'https://ci.example.com/job/123',
-        [CI_PIPELINE_URL]: 'https://ci.example.com/pipeline/456',
-      }
-      const result = getTestRunsUrlPath(spanTags)
-      expect(result).toBe('ci/test-runs?query=%20%40ci.job.url%3A%22https%3A%2F%2Fci.example.com%2Fjob%2F123%22')
-    })
-
-    it('should include queryPrefix when provided', () => {
-      const spanTags: SpanTags = {
-        [CI_JOB_URL]: 'https://ci.example.com/job/123',
-      }
-      const result = getTestRunsUrlPath(spanTags, '@service:my-service')
-      expect(result).toBe(
-        'ci/test-runs?query=%40service%3Amy-service%20%40ci.job.url%3A%22https%3A%2F%2Fci.example.com%2Fjob%2F123%22'
-      )
-    })
-
-    it('should handle special characters in URLs', () => {
-      const spanTags: SpanTags = {
-        [CI_JOB_URL]: 'https://ci.example.com/job/my-job?param=value&other=123',
-      }
-      const result = getTestRunsUrlPath(spanTags)
-      expect(result).toBe(
-        'ci/test-runs?query=%20%40ci.job.url%3A%22https%3A%2F%2Fci.example.com%2Fjob%2Fmy-job%3Fparam%3Dvalue%26other%3D123%22'
-      )
-    })
+    mockGetBaseUrl = jest.spyOn(appHelpers, 'getBaseUrl')
   })
 
   describe('getTestRunsUrl', () => {

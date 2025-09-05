@@ -1,4 +1,6 @@
+import {baseCommands} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {PluginSubmodule} from '@datadog/datadog-ci-base/helpers/plugin'
 import {Builtins, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
@@ -22,7 +24,7 @@ describe('cli', () => {
 
   const cases: [string, string, string[], CommandClass][] = commandPaths.map(({command, commandPath}) => {
     const [rootPath, subPath] = commandPath
-    const commandName = BETA_COMMANDS.includes(rootPath) ? `${rootPath} (beta)` : rootPath // e.g. synthetics
+    const commandName = BETA_COMMANDS.has(rootPath) ? `${rootPath} (beta)` : rootPath // e.g. synthetics
     const subcommandName = subPath || '<root>' // e.g. run-tests
 
     return [commandName, subcommandName, commandPath, command]
@@ -55,6 +57,25 @@ describe('cli', () => {
     const mockedEnableFips = enableFips as jest.MockedFunction<typeof enableFips>
     mockedEnableFips.mockImplementation(() => true)
 
+    const pluginCommandPaths = new Set<string>()
+    Object.entries(baseCommands).forEach(([_, commandClasses]) => {
+      commandClasses.forEach((commandClass) => {
+        // We assume the first path is always the real import, and other paths are only aliases.
+        const [scope, command] = commandClass.paths?.[0] ?? []
+
+        // Using `await import()` in Jest causes `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG`, so we use `require()` instead.
+        const submodule = require(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`) as PluginSubmodule
+        submodule.PluginCommand.paths = submodule.PluginCommand.paths?.map((paths) => {
+          pluginCommandPaths.add(paths.join(' '))
+
+          return ['__plugin__', ...paths]
+        })
+
+        // Register the plugin commands as `__plugin__` commands.
+        cli.register(submodule.PluginCommand)
+      })
+    })
+
     // Without the required options, the commands are not executed at all
     const requiredOptions: Record<string, string[]> = {
       'coverage upload': ['.', '--dry-run'],
@@ -74,7 +95,12 @@ describe('cli', () => {
     const fipsCases = cases.filter(([commandName]) => !['version'].includes(commandName))
 
     describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath) => {
-      const command = [...commandPath, ...(requiredOptions[commandPath.join(' ')] ?? [])]
+      const path = commandPath.join(' ')
+      const command = [
+        ...(pluginCommandPaths.has(path) ? ['__plugin__'] : []),
+        ...commandPath,
+        ...(requiredOptions[path] ?? []),
+      ]
 
       test('supports the --fips option', async () => {
         // When running the command with the --fips option

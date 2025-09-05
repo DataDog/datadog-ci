@@ -2065,6 +2065,38 @@ __metadata:
     tiny-async-pool: "npm:^2.1.0"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-synthetics@workspace:*, @datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@types/deep-extend": "npm:0.4.31"
+    "@types/set-value": "npm:^4.0.3"
+    "@types/ssh2": "npm:1.15.5"
+    "@types/sshpk": "npm:1.10.5"
+    "@types/ws": "npm:7.2.9"
+    "@types/xml2js": "npm:0.4.9"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    debug: "npm:^4.4.1"
+    deep-extend: "npm:0.6.0"
+    fast-levenshtein: "npm:^3.0.0"
+    get-value: "npm:^4.0.1"
+    ora: "npm:5.4.1"
+    set-value: "npm:^4.1.0"
+    ssh2: "npm:^1.16.0"
+    sshpk: "npm:1.16.1"
+    upath: "npm:^2.0.1"
+    ws: "npm:^7.5.10"
+    xml2js: "npm:0.5.0"
+    yamux-js: "npm:0.1.2"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -2084,6 +2116,7 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
     "@smithy/property-provider": "npm:^2.0.12"
