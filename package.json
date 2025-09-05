@@ -33,7 +33,7 @@
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "publish:all": "yarn loop-packages --parallel --interlaced --topological npm publish",
     "version:all": "yarn loop-packages version ${0} --immediate",
-    "package:build": "cd $INIT_CWD && yarn tsc:build",
+    "package:build": "yarn tsc:build $INIT_CWD",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
     "test": "jest --colors",
@@ -43,7 +43,7 @@
     "test:cloud-run": "jest packages/datadog-ci/src/commands/cloud-run --colors",
     "test:dsyms": "jest packages/datadog-ci/src/commands/dsyms --colors",
     "test:helpers": "jest packages/datadog-ci/src/helpers --colors",
-    "tsc:build": "tsc --build --verbose packages/datadog-ci",
+    "tsc:build": "tsc --build --verbose",
     "eslint": "eslint --quiet '**/*.ts'"
   },
   "devDependencies": {
