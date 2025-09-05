@@ -188,28 +188,33 @@ type ValidTestOverrideValueTypeName = 'boolean' | 'number' | 'string' | 'string[
 
 export const parseOverrideValue = (value: string, type: ValidTestOverrideValueTypeName): TestOverrideValueType => {
   switch (type) {
-    case 'boolean':
+    case 'boolean': {
       const parsedBoolean = toBoolean(value)
       if (parsedBoolean !== undefined) {
         return parsedBoolean
       }
       throw new Error(`Invalid boolean value: ${value}`)
-    case 'number':
+    }
+    case 'number': {
       const parsedNumber = toNumber(value)
       if (parsedNumber !== undefined) {
         return parsedNumber
       }
       throw new Error(`Invalid number value: ${value}`)
-    case 'string':
+    }
+    case 'string': {
       return value.replace(/\\n/g, '\n').trim()
-    case 'string[]':
+    }
+    case 'string[]': {
       return value.split(';').map((item) => item.trim())
-    case 'ExecutionRule':
+    }
+    case 'ExecutionRule': {
       const parsedExecutionRule = toExecutionRule(value)
       if (parsedExecutionRule !== undefined) {
         return parsedExecutionRule
       }
       throw new Error(`Invalid ExecutionRule value: ${value}`)
+    }
     default:
       throw new Error(`Unknown type: ${type}`)
   }
@@ -313,7 +318,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           }
           break
 
-        default:
+        default: {
           const closestKey = allOverrideKeys.reduce((prev, curr) =>
             levenshtein.get(curr, key) < levenshtein.get(prev, key) ? curr : prev
           )
@@ -323,6 +328,7 @@ export const validateAndParseOverrides = (overrides: string[] | undefined): Accu
           }
 
           throw new Error(`Invalid key: ${key}. Did you mean \`${closestKey}\`?`)
+        }
       }
 
       return acc

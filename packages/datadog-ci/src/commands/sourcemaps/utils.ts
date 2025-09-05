@@ -10,8 +10,8 @@ export const getMinifiedFilePath = (sourcemapPath: string) => {
 
 // ExtractRepeatedPath checks if the last part of paths of the first arg are repeated at the start of the second arg.
 export const extractRepeatedPath = (path1: string, path2: string): string | undefined => {
-  const splitOnSlashes = new RegExp(/[\/]+|[\\]+/)
-  const trimSlashes = new RegExp(/^[\/]+|^[\\]+|[\/]+$|[\\]+$/)
+  const splitOnSlashes = new RegExp(/[/]+|[\\]+/)
+  const trimSlashes = new RegExp(/^[/]+|^[\\]+|[/]+$|[\\]+$/)
   const path1split = path1.trim().replace(trimSlashes, '').split(splitOnSlashes)
   const path2split = path2.trim().replace(trimSlashes, '').split(splitOnSlashes)
   const normalizedpath2 = path2split.join('/')

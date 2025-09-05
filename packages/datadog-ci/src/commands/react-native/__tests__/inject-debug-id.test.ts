@@ -38,7 +38,7 @@ describe('inject-debug-id', () => {
 
     expect(logs[0]).toBe(`Scanning directory: ${tmpDir}`)
     expect(logs[1]).toMatch(
-      /Generated Debug ID for test\-1\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
+      /Generated Debug ID for test-1\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
     )
     expect(logs[2]).toBe(`✅ Debug ID injected into ${tmpBundlePath}`)
 
@@ -73,7 +73,7 @@ describe('inject-debug-id', () => {
 
     expect(logs[0]).toBe(`Scanning directory: ${tmpDir}`)
     expect(logs[1]).toMatch(
-      /Found existing Debug ID for test\-2\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
+      /Found existing Debug ID for test-2\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
     )
     expect(logs[2]).toBe(`✅ Debug ID injected into ${tmpBundlePath}`)
 
@@ -107,7 +107,7 @@ describe('inject-debug-id', () => {
     const logs = context.stdout.toString().split('\n')
     expect(logs[0]).toBe(`Scanning directory: ${tmpDir}`)
     expect(logs[1]).toMatch(
-      /Found existing Debug ID for test\-3\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
+      /Found existing Debug ID for test-3\.js\.bundle: ([0-9a-fA-F]{8}\b-(?:[0-9a-fA-F]{4}\b-){3}[0-9a-fA-F]{12})/
     )
     expect(logs[2]).toBe(`✅ Debug ID injected into ${tmpBundlePath}`)
 

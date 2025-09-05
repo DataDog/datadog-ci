@@ -44,15 +44,11 @@ export const getRepositoryData = async (
   let remote: string
   let hash: string
   let trackedFiles: string[]
-  try {
-    if (repositoryURL) {
-      ;[hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
-      remote = repositoryURL
-    } else {
-      ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
-    }
-  } catch (e) {
-    throw e
+  if (repositoryURL) {
+    ;[hash, trackedFiles] = await Promise.all([gitHash(git), gitTrackedFiles(git)])
+    remote = repositoryURL
+  } else {
+    ;[remote, hash, trackedFiles] = await Promise.all([gitRemote(git), gitHash(git), gitTrackedFiles(git)])
   }
 
   const data = {

@@ -335,7 +335,7 @@ export class UploadCommand extends Command {
     ).flat()
     elfFilesMetadata = this.removeBuildIdDuplicates(elfFilesMetadata)
 
-    const requestBuilder = getElfRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getElfRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     const tmpDirectory = await createUniqueTmpDirectory()
 
     try {
@@ -398,8 +398,6 @@ export class UploadCommand extends Command {
       })
 
       return results
-    } catch (error) {
-      throw error
     } finally {
       await deleteDirectory(tmpDirectory)
       try {

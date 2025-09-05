@@ -20,7 +20,7 @@ If not, you can learn more about it here: https://github.com/DataDog/build-plugi
 `)
 
 export const MalformedBuildError = new Error(
-  `Invalid payload. Expected payload is {\"outputDirectory\": string, \"publicPath\": string}`
+  `Invalid payload. Expected payload is {"outputDirectory": string, "publicPath": string}`
 )
 
 const MIME_TYPES = {

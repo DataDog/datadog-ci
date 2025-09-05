@@ -240,7 +240,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
     const reader = new FileReader(fileHandle)
     const peHeaderResult = await readPEHeader(reader)
     if (!peHeaderResult.isPE || peHeaderResult.peHeader === undefined) {
-      throw peHeaderResult.error
+      throw peHeaderResult.error ?? Error('Invalid PE header')
     }
     metadata.isPE = true
     metadata.arch = peHeaderResult.peHeader?.architecture

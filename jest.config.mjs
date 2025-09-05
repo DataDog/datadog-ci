@@ -2,12 +2,10 @@
 // https://jestjs.io/docs/en/configuration.html
 
 /** @type {import('ts-jest').JestConfigWithTsJest} */
-module.exports = {
+export default {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
   testMatch: ['**/__tests__/**/*.test.ts'],
-  // Those commands are not supported in Windows.
-  testPathIgnorePatterns: ['react-native', 'dsyms'],
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -25,4 +23,6 @@ module.exports = {
     '^@datadog/datadog-ci-base(.*)$': '<rootDir>/packages/base/src$1',
     '^@datadog/datadog-ci(.*)$': '<rootDir>/packages/datadog-ci/src$1',
   },
+  cache: true,
+  cacheDirectory: '<rootDir>/.jest-cache',
 }

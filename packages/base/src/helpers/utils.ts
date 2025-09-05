@@ -246,10 +246,10 @@ export const buildPath = (...args: string[]) =>
     .map((part, i) => {
       if (i === 0) {
         // For the first part, drop all / at the end of the path
-        return part.trim().replace(/[\/]*$/g, '')
+        return part.trim().replace(/[/]*$/g, '')
       } else {
         // For the following parts, remove all / at the beginning and at the end
-        return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
+        return part.trim().replace(/(^[/]*|[/]*$)/g, '')
       }
     })
     // Filter out empty parts

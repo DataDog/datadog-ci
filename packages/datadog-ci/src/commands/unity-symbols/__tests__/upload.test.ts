@@ -393,8 +393,8 @@ describe('unity-symbols upload', () => {
         expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
         const repoValue = payload.content.get('repository') as MultipartStringValue
         expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
-        expect((repoValue?.options).filename).toBe('repository')
-        expect((repoValue?.options).contentType).toBe('application/json')
+        expect(repoValue.options.filename).toBe('repository')
+        expect(repoValue.options.contentType).toBe('application/json')
         expect(exitCode).toBe(0)
       })
 

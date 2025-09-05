@@ -324,7 +324,7 @@ export class UploadCommand extends Command {
     const metricsLogger = this.getMetricsLogger(['platform:android'])
     const apiKeyValidator = this.getApiKeyValidator(metricsLogger)
 
-    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     if (this.dryRun) {
       this.context.stdout.write(`[DRYRUN] ${renderUpload('Android Mapping File', this.androidMappingLocation!)}`)
 
@@ -387,7 +387,7 @@ export class UploadCommand extends Command {
 
     const filesMetadata = files.map((filename) => ({filename, ...getArchInfoFromFilename(filename)}))
 
-    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getFlutterRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, filesMetadata, async (fileMetadata) => {
         if (!fileMetadata.arch || !fileMetadata.platform) {
@@ -449,8 +449,6 @@ export class UploadCommand extends Command {
       })
 
       return results
-    } catch (error) {
-      throw error
     } finally {
       try {
         await metricsLogger.flush()
