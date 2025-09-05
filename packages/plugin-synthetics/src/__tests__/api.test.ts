@@ -7,10 +7,10 @@ import {getAxiosError} from '@datadog/datadog-ci-base/helpers/__tests__/testing-
 import axios, {AxiosError} from 'axios'
 
 import {apiConstructor, formatBackendErrors, getApiHelper} from '../api'
-import {RecursivePartial} from '../base-command'
 import {CriticalError} from '../errors'
 import {ExecutionRule, PollResult, RawPollResult, ServerResult, ServerTrigger, Test, TestPayload} from '../interfaces'
 import {MAX_TESTS_TO_TRIGGER} from '../test'
+import {RecursivePartial} from '../utils/internal'
 import * as internalUtils from '../utils/internal'
 
 import {

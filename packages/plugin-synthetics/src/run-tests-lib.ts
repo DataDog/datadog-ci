@@ -3,7 +3,6 @@ import {GIT_COMMIT_MESSAGE} from '@datadog/datadog-ci-base/helpers/tags'
 import {getProxyAgent} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {APIHelper, getApiHelper, isForbiddenError} from './api'
-import {BaseCommand} from './base-command'
 import {DEFAULT_BATCH_TIMEOUT, runTests, waitForResults} from './batch'
 import {CiError, CriticalError, BatchTimeoutRunawayError} from './errors'
 import {
@@ -25,6 +24,7 @@ import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
+import {getDefaultConfig as getDefaultConfigBase} from './utils/internal'
 import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
 import {
   getReporter,
@@ -46,7 +46,7 @@ type ExecuteOptions = {
 
 export const getDefaultConfig = (): RunTestsCommandConfig => {
   return {
-    ...BaseCommand.getDefaultConfig(),
+    ...getDefaultConfigBase(),
     batchTimeout: DEFAULT_BATCH_TIMEOUT,
     defaultTestOverrides: {},
     failOnCriticalErrors: false,

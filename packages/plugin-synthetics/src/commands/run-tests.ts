@@ -11,13 +11,13 @@ import {
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import deepExtend from 'deep-extend'
 
-import {RecursivePartial} from '../base-command'
 import {buildAssets} from '../build-and-test'
 import {CiError} from '../errors'
 import {MainReporter, Reporter, Result, RunTestsCommandConfig, Summary} from '../interfaces'
 import {DefaultReporter} from '../reporters/default'
 import {JUnitReporter} from '../reporters/junit'
 import {executeTests, getDefaultConfig} from '../run-tests-lib'
+import {RecursivePartial} from '../utils/internal'
 import {toExecutionRule, validateAndParseOverrides} from '../utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
 
