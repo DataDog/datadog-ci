@@ -1,14 +1,14 @@
 import http from 'http'
 import {AddressInfo} from 'net'
 
-import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+// import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import axios from 'axios'
 import {createProxy} from 'proxy'
 import {ProxyAgent} from 'proxy-agent'
 
 import * as ciUtils from '../utils'
-import {formatBytes, maskString} from '../utils'
+import {formatBytes, isFile, maskString} from '../utils'
 
 import {MOCK_DATADOG_API_KEY} from './testing-tools'
 
@@ -447,6 +447,24 @@ describe('utils', () => {
 
     it('should mask API keys correctly', () => {
       expect(maskString(MOCK_DATADOG_API_KEY)).toEqual('02**********33bd')
+    })
+  })
+
+  describe('isFile', () => {
+    it('should determine regular file is a file', () => {
+      expect(isFile('src/helpers/__tests__/utils-fixtures/file.txt')).toEqual(true)
+    })
+
+    it('should determine symlink to a file is a file', () => {
+      expect(isFile('src/helpers/__tests__/utils-fixtures/file-symlink.txt')).toEqual(true)
+    })
+
+    it('should determine a folder is not a file', () => {
+      expect(isFile('src/helpers/__tests__/utils-fixtures/folder')).toEqual(false)
+    })
+
+    it('should determine symlink to a folder is not a file', () => {
+      expect(isFile('src/helpers/__tests__/utils-fixtures/folder-symlink')).toEqual(false)
     })
   })
 })
