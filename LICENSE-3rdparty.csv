@@ -5,22 +5,16 @@ Component,Origin,Licence,Copyright
 @aws-sdk/client-sfn,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-providers,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/types,dev,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
-@aws-sdk/core,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @azure/identity,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
-@babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
-@babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
-@babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @smithy/property-provider,import,Apache-2.0,"Copyright 2018-2020 Amazon.com, Inc. or its affiliates."
 @smithy/util-retry,import,Apache-2.0,"Copyright 2019 Amazon.com, Inc. or its affiliates."
 @types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation
 @types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
-@types/get-value,dev,MIT,Copyright Microsoft Corporation
-@types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
@@ -28,7 +22,6 @@ Component,Origin,Licence,Copyright
 @types/semver,dev,MIT,Copyright Microsoft Corporation
 @types/set-value,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
-@types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
 @types/uuid,dev,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 @types/xml2js,dev,MIT,Copyright Microsoft Corporation
@@ -66,7 +59,6 @@ semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 set-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
-ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
 sshpk,import,MIT,"Copyright (c) Joyent, Inc."
 terminal-link,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
