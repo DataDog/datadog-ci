@@ -2,8 +2,14 @@
   "name": "@datadog/datadog-ci-plugin-synthetics",
   "version": "0.0.1",
   "exports": {
-    ".": "./dist/index.js",
-    "./commands/*": "./dist/commands/*.js"
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
   },
   "files": [
     "dist/**/*"
