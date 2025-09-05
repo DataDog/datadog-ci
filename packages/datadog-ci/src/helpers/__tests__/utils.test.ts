@@ -1,7 +1,7 @@
 import http from 'http'
 import {AddressInfo} from 'net'
 
-// import type {AxiosPromise, AxiosRequestConfig} from 'axios'
+import type {AxiosPromise, AxiosRequestConfig} from 'axios'
 
 import axios from 'axios'
 import {createProxy} from 'proxy'
