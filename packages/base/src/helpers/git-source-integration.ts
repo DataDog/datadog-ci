@@ -1,9 +1,8 @@
-import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {filterAndFormatGithubRemote} from '@datadog/datadog-ci-base/helpers/utils'
-import {BaseContext, Cli} from 'clipanion'
+import {renderSoftWarning} from './renderer'
+import {filterAndFormatGithubRemote} from './utils'
+import {BaseContext} from 'clipanion'
 
-import {getCommitInfo, newSimpleGit} from './commands/git-metadata/git'
-import {UploadCommand} from './commands/git-metadata/upload'
+import {newSimpleGit, getCommitInfo} from './git/git-utils'
 
 const getGitData = async () => {
   let currentStatus
@@ -44,16 +43,6 @@ export const getCurrentGitStatus = async () => {
   }
 }
 
-export const uploadGitData = async (context: BaseContext) => {
-  const cli = new Cli()
-  cli.register(UploadCommand)
-  if ((await cli.run(['git-metadata', 'upload'], context)) !== 0) {
-    throw Error("Couldn't upload git metadata")
-  }
-
-  return
-}
-
 export const handleSourceCodeIntegration = async (
   context: BaseContext,
   uploadGitMetadata: boolean,
@@ -61,9 +50,13 @@ export const handleSourceCodeIntegration = async (
 ) => {
   try {
     const gitData = await getGitData()
+
+    // Note: uploadGitMetadata functionality is not available in base package
+    // This would need to be handled by the consuming package if needed
     if (uploadGitMetadata) {
-      await uploadGitData(context)
+      context.stdout.write(renderSoftWarning('Git metadata upload is not available in base package. Continuing without upload.'))
     }
+
     if (extraTags) {
       extraTags += `,git.commit.sha:${gitData.commitSha},git.repository_url:${gitData.gitRemote}`
     } else {

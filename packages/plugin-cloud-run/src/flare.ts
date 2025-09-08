@@ -35,9 +35,8 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {cliVersion} from '../../version'
-
-import {getUniqueFileNames} from '../lambda/flare'
+import {getCliVersion} from '@datadog/datadog-ci-base/helpers/version'
+import {getUniqueFileNames} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
@@ -104,7 +103,7 @@ export class CloudRunFlareCommand extends Command {
    */
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    await validateCliVersion(cliVersion, this.context.stdout)
+    await validateCliVersion(getCliVersion(), this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
@@ -390,7 +389,7 @@ export class CloudRunFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, cliVersion)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, getCliVersion())
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
@@ -710,7 +709,7 @@ export const generateInsightsFile = (
   // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
-  lines.push(`**CLI Version**: \`${cliVersion}\`  `)
+  lines.push(`**CLI Version**: \`${getCliVersion()}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
   lines.push(`**Timestamp**: \`${timeString}\`  `)
 

@@ -34,12 +34,12 @@ import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/
 import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
-import {formatBytes} from '@datadog/datadog-ci-base/helpers/utils'
+import {formatBytes, getUniqueFileNames} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {cliVersion} from '../../version'
+import {getCliVersion} from '@datadog/datadog-ci-base/helpers/version'
 
 import {
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -102,7 +102,7 @@ export class LambdaFlareCommand extends Command {
    */
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    await validateCliVersion(cliVersion, this.context.stdout)
+    await validateCliVersion(getCliVersion(), this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Lambda', this.isDryRun))
 
     // Validate function name
@@ -422,7 +422,7 @@ export class LambdaFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, cliVersion)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, getCliVersion())
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
@@ -622,40 +622,6 @@ export const getTags = async (
   }
 }
 
-/**
- * Generate unique file names
- * If the original file name is unique, keep it as is
- * Otherwise, replace separators in the file path with dashes
- * @param filePaths the list of file paths
- * @returns a mapping of file paths to new file names
- */
-export const getUniqueFileNames = (filePaths: Set<string>): Map<string, string> => {
-  // Count occurrences of each filename
-  const fileNameCount: {[fileName: string]: number} = {}
-  filePaths.forEach((filePath) => {
-    const fileName = upath.basename(filePath)
-    const count = fileNameCount[fileName] || 0
-    fileNameCount[fileName] = count + 1
-  })
-
-  // Create new filenames
-  const filePathsToNewFileNames = new Map<string, string>()
-  filePaths.forEach((filePath) => {
-    const fileName = upath.basename(filePath)
-    if (fileNameCount[fileName] > 1) {
-      // Trim leading and trailing '/'s and '\'s
-      const trimRegex = /^\/+|\/+$/g
-      const filePathTrimmed = filePath.replace(trimRegex, '')
-      // Replace '/'s and '\'s with '-'s
-      const newFileName = filePathTrimmed.split('/').join('-')
-      filePathsToNewFileNames.set(filePath, newFileName)
-    } else {
-      filePathsToNewFileNames.set(filePath, fileName)
-    }
-  })
-
-  return filePathsToNewFileNames
-}
 
 /**
  * Convert the log events to a CSV string
@@ -762,7 +728,7 @@ export const generateInsightsFile = (
   // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
-  lines.push(`**CLI Version**: \`${cliVersion}\`  `)
+  lines.push(`**CLI Version**: \`${getCliVersion()}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
   lines.push(`**Timestamp**: \`${timeString}\`  `)
   lines.push(`**Framework**: \`${getFramework()}\``)

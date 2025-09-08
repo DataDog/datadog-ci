@@ -9,7 +9,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git-source-integration'
 
 import {
   AasCommand,

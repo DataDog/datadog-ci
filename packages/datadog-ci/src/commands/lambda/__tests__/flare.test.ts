@@ -20,6 +20,7 @@ import {
 import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
+import {getUniqueFileNames} from '@datadog/datadog-ci-base/helpers/utils'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
@@ -31,7 +32,6 @@ import {
   getLogEvents,
   getLogStreamNames,
   getTags,
-  getUniqueFileNames,
   summarizeConfig,
   LambdaFlareCommand,
 } from '../flare'
@@ -99,7 +99,7 @@ jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 // Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('../../../version', () => ({cliVersion: '1.0-mock-version'}))
+jest.mock('@datadog/datadog-ci-base/helpers/version', () => ({getCliVersion: () => '1.0-mock-version'}))
 
 describe('lambda flare', () => {
   const runCLI = makeRunCLI(LambdaFlareCommand, ['lambda', 'flare'], {appendStdoutWithStderr: true, skipResetEnv: true})

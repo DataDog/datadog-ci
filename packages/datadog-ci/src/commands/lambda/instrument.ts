@@ -17,7 +17,7 @@ import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-b
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git-source-integration'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from './constants'
 import {

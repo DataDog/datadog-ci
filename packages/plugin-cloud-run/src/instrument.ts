@@ -31,7 +31,7 @@ import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git-source-integration'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'

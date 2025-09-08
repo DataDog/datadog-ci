@@ -19,7 +19,7 @@ import {
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 
-import * as instrumentHelpers from '../../../git-instrument-helpers'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git-source-integration'
 
 import {InstrumentCommand} from '../instrument'
 import * as cloudRunPromptModule from '../prompt'
