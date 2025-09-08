@@ -2065,10 +2065,12 @@ __metadata:
     tiny-async-pool: "npm:^2.1.0"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run":
+"@datadog/datadog-ci-plugin-cloud-run@workspace:*, @datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
@@ -2097,6 +2099,7 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
     "@smithy/property-provider": "npm:^2.0.12"
