@@ -1,5 +1,6 @@
 import {readFileSync} from 'fs'
-import path from 'path'
+
+import upath from 'upath'
 
 /**
  * Get the CLI version from package.json
@@ -16,7 +17,7 @@ export const getCliVersion = (packagePath?: string): string => {
   let currentDir = __dirname
   for (let i = 0; i < 10; i++) {
     try {
-      const packageJsonPath = path.join(currentDir, 'package.json')
+      const packageJsonPath = upath.join(currentDir, 'package.json')
       const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
       if (packageJson.version) {
         return packageJson.version as string
@@ -24,7 +25,7 @@ export const getCliVersion = (packagePath?: string): string => {
     } catch {
       // Continue searching up
     }
-    currentDir = path.dirname(currentDir)
+    currentDir = upath.dirname(currentDir)
   }
 
   // Fallback: use require to get the package.json relative to this module

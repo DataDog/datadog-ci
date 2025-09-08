@@ -20,8 +20,19 @@
   },
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
+    "@google-cloud/logging": "^11.0.0",
+    "@google-cloud/run": "^1.4.0",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
+    "clipanion": "^3.2.1",
+    "google-auth-library": "^9.14.1",
+    "inquirer": "^8.2.5",
+    "inquirer-checkbox-plus-prompt": "^1.0.1",
+    "jest-diff": "^29.7.0",
+    "ora": "^5.4.1",
     "upath": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^8.2.10"
   }
 }

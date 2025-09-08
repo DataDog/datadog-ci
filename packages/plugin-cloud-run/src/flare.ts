@@ -31,12 +31,11 @@ import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/hel
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {getUniqueFileNames} from '@datadog/datadog-ci-base/helpers/utils'
+import {getCliVersion} from '@datadog/datadog-ci-base/helpers/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {getCliVersion} from '@datadog/datadog-ci-base/helpers/version'
-import {getUniqueFileNames} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'

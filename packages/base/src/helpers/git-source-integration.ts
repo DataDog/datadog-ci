@@ -1,8 +1,8 @@
-import {renderSoftWarning} from './renderer'
-import {filterAndFormatGithubRemote} from './utils'
 import {BaseContext} from 'clipanion'
 
 import {newSimpleGit, getCommitInfo} from './git/git-utils'
+import {renderSoftWarning} from './renderer'
+import {filterAndFormatGithubRemote} from './utils'
 
 const getGitData = async () => {
   let currentStatus
@@ -54,7 +54,9 @@ export const handleSourceCodeIntegration = async (
     // Note: uploadGitMetadata functionality is not available in base package
     // This would need to be handled by the consuming package if needed
     if (uploadGitMetadata) {
-      context.stdout.write(renderSoftWarning('Git metadata upload is not available in base package. Continuing without upload.'))
+      context.stdout.write(
+        renderSoftWarning('Git metadata upload is not available in base package. Continuing without upload.')
+      )
     }
 
     if (extraTags) {

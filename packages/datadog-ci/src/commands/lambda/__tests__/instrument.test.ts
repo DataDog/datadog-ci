@@ -20,12 +20,11 @@ import {
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git-source-integration'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'
-
-import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git-source-integration'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
