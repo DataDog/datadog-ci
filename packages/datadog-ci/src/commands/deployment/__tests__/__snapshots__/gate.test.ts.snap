@@ -163,7 +163,16 @@ Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 Waiting for gate evaluation results...
 Unknown gate evaluation status: unexpected
 	Retrying in 15s...
-	✅ Gate evaluation passed
+
+✅ Gate evaluation passed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
 
@@ -182,7 +191,19 @@ Error polling for gate evaluation results: 404 Not Found
 	Retrying in 15s...
 	Gate evaluation in progress (0/2 rules completed)
 	Retrying in 15s...
-	✅ Gate evaluation passed
+
+✅ Gate evaluation passed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: PASS
+    - Rule: Rule 2
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
 
@@ -197,7 +218,23 @@ Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
-	❌ Gate evaluation failed
+
+❌ Gate evaluation failed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: FAIL
+      Reason: Failure reason 1
+    - Rule: Rule 2
+      Evaluation mode: Active
+      Status: IN_PROGRESS
+    - Rule: Rule 3
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
 
@@ -216,7 +253,19 @@ Waiting for gate evaluation results...
 	Retrying in 15s...
 	Gate evaluation in progress (1/2 rules completed)
 	Retrying in 15s...
-	✅ Gate evaluation passed
+
+✅ Gate evaluation passed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: PASS
+    - Rule: Rule 2
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
 
@@ -231,7 +280,16 @@ Requesting gate evaluation...
 Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 
 Waiting for gate evaluation results...
-	✅ Gate evaluation passed
+
+✅ Gate evaluation passed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
 
@@ -250,6 +308,15 @@ Gate evaluation started successfully. Evaluation ID: test-evaluation-id
 Waiting for gate evaluation results...
 Error polling for gate evaluation results: 500 Internal Server Error
 	Retrying in 15s...
-	✅ Gate evaluation passed
+
+✅ Gate evaluation passed
+   Evaluation mode: Active
+   Evaluation URL: https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456
+   Rules evaluated:
+    - Rule: Rule 1
+      Evaluation mode: Active
+      Status: PASS
+
+
 "
 `;
