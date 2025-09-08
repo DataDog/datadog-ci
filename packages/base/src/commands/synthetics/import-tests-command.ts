@@ -24,9 +24,9 @@ export class ImportTestsCommand extends Command {
 
   public static usage = Command.Usage({
     category: 'Synthetics',
-    description: 'Import the Main Test Definition from a Datadog scheduled tests as a Local Test Definitions.',
+    description: 'Import the Main Test Definition from a Datadog scheduled test as a Local Test Definition.',
     details: `
-      This command imports a Main Test Definition from a Datadog scheduled tests as a Local Test Definitions to be used in local development.
+      This command imports a Main Test Definition from a Datadog scheduled test as a Local Test Definition to be used in local development.
     `,
     examples: [
       [
