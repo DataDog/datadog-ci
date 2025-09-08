@@ -7,7 +7,7 @@
 packages/datadog-ci/src/commands/coverage      @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
 packages/datadog-ci/src/commands/deployment    @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
 packages/datadog-ci/src/commands/dora          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
-packages/datadog-ci/src/commands/gate          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
+packages/plugin-gate                           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
 packages/datadog-ci/src/commands/junit         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
 packages/datadog-ci/src/commands/measure       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
 packages/datadog-ci/src/commands/tag           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries
