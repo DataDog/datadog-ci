@@ -2075,8 +2075,17 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    "@google-cloud/logging": "npm:^11.0.0"
+    "@google-cloud/run": "npm:^1.4.0"
+    "@types/inquirer": "npm:^8.2.10"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    google-auth-library: "npm:^9.14.1"
+    inquirer: "npm:^8.2.5"
+    inquirer-checkbox-plus-prompt: "npm:^1.0.1"
+    jest-diff: "npm:^29.7.0"
+    ora: "npm:^5.4.1"
     upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
@@ -2337,6 +2346,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@google-cloud/logging@npm:^11.0.0":
+  version: 11.2.1
+  resolution: "@google-cloud/logging@npm:11.2.1"
+  dependencies:
+    "@google-cloud/common": "npm:^5.0.0"
+    "@google-cloud/paginator": "npm:^5.0.0"
+    "@google-cloud/projectify": "npm:^4.0.0"
+    "@google-cloud/promisify": "npm:4.0.0"
+    "@opentelemetry/api": "npm:^1.7.0"
+    arrify: "npm:^2.0.1"
+    dot-prop: "npm:^6.0.0"
+    eventid: "npm:^2.0.0"
+    extend: "npm:^3.0.2"
+    gcp-metadata: "npm:^6.0.0"
+    google-auth-library: "npm:^9.0.0"
+    google-gax: "npm:^4.0.3"
+    on-finished: "npm:^2.3.0"
+    pumpify: "npm:^2.0.1"
+    stream-events: "npm:^1.0.5"
+    uuid: "npm:^9.0.0"
+  checksum: 10/b0883e733f2244e93fefd9209714c6b70ec42aebd391dfee8e7fc073e2bd92d836a820912b4aad147fdb4373a96a61afbab4658af57f629089adf21c9b3c728c
+  languageName: node
+  linkType: hard
+
 "@google-cloud/logging@npm:^11.2.0":
   version: 11.2.0
   resolution: "@google-cloud/logging@npm:11.2.0"
@@ -2378,10 +2411,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@google-cloud/promisify@npm:^4.0.0":
+"@google-cloud/promisify@npm:4.0.0, @google-cloud/promisify@npm:^4.0.0":
   version: 4.0.0
   resolution: "@google-cloud/promisify@npm:4.0.0"
   checksum: 10/c5de81321b3a5c567edcbe0b941fb32644611147f3ba22f20575918c225a979988a99bc2ebda05ac914fa8714b0a54c69be72c3f46c7a64c3b19db7d7fba8d04
+  languageName: node
+  linkType: hard
+
+"@google-cloud/run@npm:^1.4.0":
+  version: 1.5.1
+  resolution: "@google-cloud/run@npm:1.5.1"
+  dependencies:
+    google-gax: "npm:^4.0.3"
+  checksum: 10/98d15a91d277a592124c4a22bd80c5e9e290a572b174f62fb5ee8af0b21ce5213386d467a772888a5244537f9a5ad11b0f91abbac6f0ff301aac9a29781cb70a
   languageName: node
   linkType: hard
 
@@ -3817,6 +3859,16 @@ __metadata:
     "@types/through": "npm:*"
     rxjs: "npm:^7.2.0"
   checksum: 10/7f93b12b4da7a3a8bca270b6adca761e88a6c8a05b6ea61553ced2d92f26795143ff886792057028b68ea94ed00b610b2cbed317d13e96e3e520a09bc48f03a7
+  languageName: node
+  linkType: hard
+
+"@types/inquirer@npm:^8.2.10":
+  version: 8.2.12
+  resolution: "@types/inquirer@npm:8.2.12"
+  dependencies:
+    "@types/through": "npm:*"
+    rxjs: "npm:^7.2.0"
+  checksum: 10/b382693011a5f33c92ac1f90a16f3d6fa600c2a294433ca5dc65ab108eccd658b9293e968c34a738ef60d5cd1f2f150ebef7da731aa302201d9978abad1fcb94
   languageName: node
   linkType: hard
 
@@ -7333,6 +7385,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"google-auth-library@npm:^9.14.1":
+  version: 9.15.1
+  resolution: "google-auth-library@npm:9.15.1"
+  dependencies:
+    base64-js: "npm:^1.3.0"
+    ecdsa-sig-formatter: "npm:^1.0.11"
+    gaxios: "npm:^6.1.1"
+    gcp-metadata: "npm:^6.1.0"
+    gtoken: "npm:^7.0.0"
+    jws: "npm:^4.0.0"
+  checksum: 10/6b977dd20f4f1ab6b2d2b78650d1e1c79ca84b951720b1064b85ebbb32af469547db7505a6609265e806be11c823bd6e07323b5073a98729b43b29fe34f05717
+  languageName: node
+  linkType: hard
+
 "google-gax@npm:^4.0.3":
   version: 4.3.8
   resolution: "google-gax@npm:4.3.8"
@@ -7695,7 +7761,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"inquirer-checkbox-plus-prompt@npm:^1.4.2":
+"inquirer-checkbox-plus-prompt@npm:^1.0.1, inquirer-checkbox-plus-prompt@npm:^1.4.2":
   version: 1.4.2
   resolution: "inquirer-checkbox-plus-prompt@npm:1.4.2"
   dependencies:
