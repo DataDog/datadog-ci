@@ -14,13 +14,18 @@ const buildEvaluationRequestResponse = (evaluationId: string) => ({
 })
 
 const buildGateEvaluationResultResponse = (status: string, ruleStatuses: string[] | undefined = ['pass']) => {
-  const rules = ruleStatuses.map((ruleStatus) => ({status: ruleStatus}))
+  const rules = ruleStatuses.map((ruleStatus, index) => ({
+    name: `Rule ${index + 1}`,
+    status: ruleStatus,
+    reason: ruleStatus === 'fail' ? `Failure reason ${index + 1}` : '',
+  }))
 
   return {
     data: {
       data: {
         attributes: {
           gate_status: status,
+          evaluation_url: 'https://app.datadoghq.com/ci/deployment-gates/evaluations?query=evaluation_id%3A123456',
           rules,
         },
       },
@@ -143,7 +148,9 @@ describe('gate', () => {
       test('should fail when gate evaluation fails', async () => {
         const mockApi = {
           requestGateEvaluation: jest.fn().mockResolvedValue(buildEvaluationRequestResponse('test-evaluation-id')),
-          getGateEvaluationResult: jest.fn().mockResolvedValue(buildGateEvaluationResultResponse('fail')),
+          getGateEvaluationResult: jest
+            .fn()
+            .mockResolvedValue(buildGateEvaluationResultResponse('fail', ['fail', 'in_progress', 'pass'])),
         }
         const apiConstructorSpy = jest.spyOn(apiModule, 'apiConstructor').mockReturnValue(mockApi)
 
