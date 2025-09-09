@@ -12,6 +12,9 @@
     },
     {
       "path": "../plugin-synthetics"
+    },
+    {
+      "path": "../plugin-gate"
     }
   ]
 }
