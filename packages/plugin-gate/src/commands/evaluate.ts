@@ -28,6 +28,7 @@ import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from '.
 export class PluginCommand extends GateEvaluateCommand {
   private initialRetryMs = 1000
   private maxRetries = 5
+  private defaultTimeout = 600 // 10 min
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
@@ -122,6 +123,8 @@ export class PluginCommand extends GateEvaluateCommand {
         }
       },
       retries: this.maxRetries,
+      maxTimeout: 0,
+      minTimeout: 0,
     })
       .then((response) => {
         return this.handleEvaluationSuccess(response.data.data.attributes)
@@ -146,7 +149,7 @@ export class PluginCommand extends GateEvaluateCommand {
     bail?: (e: Error) => void
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const timeoutInSeconds = parseInt(String(this.timeoutInSeconds), 10)
+    const timeoutInSeconds = parseInt(String(this.timeoutInSeconds), 10) || this.defaultTimeout
     const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
