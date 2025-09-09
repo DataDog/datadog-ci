@@ -35,7 +35,8 @@ packages/datadog-ci/src/commands/git-metadata   @DataDog/datadog-ci-admins @Data
 packages/datadog-ci/src/commands/gate           @DataDog/datadog-ci-admins @DataDog/source-code-integration
 
 ## Synthetics (label: synthetics)
-packages/datadog-ci/src/commands/synthetics   @DataDog/datadog-ci-admins @DataDog/synthetics-orchestrating
+packages/plugin-synthetics              @DataDog/datadog-ci-admins @DataDog/synthetics-orchestrating
+packages/base/src/commands/synthetics   @DataDog/datadog-ci-admins @DataDog/synthetics-orchestrating
 
 ## Profiling (label: profiling)
 packages/datadog-ci/src/commands/elf-symbols  @DataDog/datadog-ci-admins @DataDog/profiling-full-host
