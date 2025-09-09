@@ -8,6 +8,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
@@ -66,24 +67,31 @@ export class GateEvaluateCommand extends Command {
     ],
   })
 
-  private initialRetryMs = 1000
-  private maxRetries = 5
   private defaultTimeout = 600 // 10 min
 
-  private dryRun = Option.Boolean('--dry-run', false)
-  private failOnEmpty = Option.Boolean('--fail-on-empty', false)
-  private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
-  private noWait = Option.Boolean('--no-wait', false)
-  private timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {
+  protected dryRun = Option.Boolean('--dry-run', false)
+  protected failOnEmpty = Option.Boolean('--fail-on-empty', false)
+  protected failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
+  protected noWait = Option.Boolean('--no-wait', false)
+  protected timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {
     validator: validation.isInteger(),
   })
-  private userScope = Option.Array('--scope')
-  private tags = Option.Array('--tags')
+  protected userScope = Option.Array('--scope')
+  protected tags = Option.Array('--tags')
+
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  public async execute() {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends GateEvaluateCommand {
+  private initialRetryMs = 1000
+  private maxRetries = 5
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
   private config = {
     apiKey: process.env.DD_API_KEY,
@@ -142,7 +150,7 @@ export class GateEvaluateCommand extends Command {
     return apiConstructor(getBaseIntakeUrl(), this.config.apiKey, this.config.appKey)
   }
 
-  private async getSpanTags(): Promise<SpanTags> {
+  protected async getSpanTags(): Promise<SpanTags> {
     const ciSpanTags = getCISpanTags()
     const gitSpanTags = await getGitMetadata()
     const userGitSpanTags = getUserGitSpanTags()
@@ -157,9 +165,10 @@ export class GateEvaluateCommand extends Command {
       ...cliTags,
       ...envVarTags,
     }
+
   }
 
-  private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
+  protected async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
     this.context.stdout.write(renderGateEvaluationInput(evaluateRequest))
 
     /**
