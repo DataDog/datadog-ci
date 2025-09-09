@@ -103,7 +103,6 @@ export class PluginCommand extends GateEvaluateCommand {
       ...cliTags,
       ...envVarTags,
     }
-
   }
 
   private async evaluateRules(api: APIHelper, evaluateRequest: Payload): Promise<number> {
@@ -147,7 +146,7 @@ export class PluginCommand extends GateEvaluateCommand {
     bail?: (e: Error) => void
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const timeoutInSeconds = parseInt(this.timeoutInSeconds, 10)
+    const timeoutInSeconds = parseInt(String(this.timeoutInSeconds), 10)
     const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {

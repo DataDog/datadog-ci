@@ -1,6 +1,7 @@
+import {Command, Option} from 'clipanion'
+
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
-import {Command, Option} from 'clipanion'
 
 export class GateEvaluateCommand extends Command {
   public static paths = [['gate', 'evaluate']]
@@ -42,13 +43,11 @@ export class GateEvaluateCommand extends Command {
     ],
   })
 
-  private defaultTimeout = 600 // 10 min
-
   protected dryRun = Option.Boolean('--dry-run', false)
   protected failOnEmpty = Option.Boolean('--fail-on-empty', false)
   protected failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
   protected noWait = Option.Boolean('--no-wait', false)
-  protected timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {
+  protected timeoutInSeconds = Option.String('--timeout', '600', {
     validator: validation.isInteger(),
   })
   protected userScope = Option.Array('--scope')
