@@ -5,10 +5,9 @@ import {Writable} from 'stream'
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
+import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
-
-import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 
 import {
   BATCH_ID,
