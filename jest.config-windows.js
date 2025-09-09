@@ -13,11 +13,15 @@ module.exports = {
       'ts-jest',
       {
         tsconfig: 'tsconfig.json',
+        isolatedModules: true,
       },
     ],
   },
-  roots: ['packages'],
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  // Fix `duplicate manual mock found` where `src` and `dist` are both imported.
-  modulePathIgnorePatterns: ['.*\\/dist\\/.*'],
+  roots: ['<rootDir>/packages'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/packages/.*/dist'],
+  moduleNameMapper: {
+    '^@datadog/datadog-ci-base(.*)$': '<rootDir>/packages/base/src$1',
+    '^@datadog/datadog-ci(.*)$': '<rootDir>/packages/datadog-ci/src$1',
+  },
 }

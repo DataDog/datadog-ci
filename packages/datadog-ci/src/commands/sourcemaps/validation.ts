@@ -1,6 +1,6 @@
 import {Writable} from 'stream'
 
-import {checkFile} from '../../helpers/validation'
+import {checkFile} from '@datadog/datadog-ci-base/helpers/validation'
 
 import {Sourcemap} from './interfaces'
 import {renderMinifiedPathPrefixMisusage} from './renderer'

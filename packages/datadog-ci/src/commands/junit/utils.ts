@@ -1,6 +1,12 @@
-import {getBaseUrl} from '../../helpers/app'
-import {SpanTags} from '../../helpers/interfaces'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_BRANCH, GIT_REPOSITORY_URL, GIT_SHA} from '../../helpers/tags'
+import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {
+  CI_JOB_URL,
+  CI_PIPELINE_URL,
+  GIT_BRANCH,
+  GIT_REPOSITORY_URL,
+  GIT_SHA,
+} from '@datadog/datadog-ci-base/helpers/tags'
 
 export const getTestRunsUrlPath = (spanTags: SpanTags, queryPrefix = ''): string => {
   if (!spanTags[CI_PIPELINE_URL] && !spanTags[CI_JOB_URL]) {

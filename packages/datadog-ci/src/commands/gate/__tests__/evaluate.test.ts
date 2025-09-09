@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 
-import {createCommand} from '../../../helpers/__tests__/testing-tools'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {apiConstructor} from '../api'
 import {GateEvaluateCommand} from '../evaluate'

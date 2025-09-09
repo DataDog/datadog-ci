@@ -1,15 +1,14 @@
 import os from 'os'
 
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import id from '@datadog/datadog-ci-base/helpers/id'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
-
-import {createCommand, makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import id from '../../../helpers/id'
-import {SpanTags} from '../../../helpers/interfaces'
 
 import {renderInvalidFile} from '../renderer'
 import {UploadJUnitXMLCommand} from '../upload'
 
-jest.mock('../../../helpers/id', () => jest.fn())
+jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())

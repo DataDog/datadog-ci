@@ -1,15 +1,14 @@
 import type {AxiosError} from 'axios'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
+import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCIEnv} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {retryRequest} from '../../helpers/retry'
-import {parseMeasuresFile} from '../../helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {

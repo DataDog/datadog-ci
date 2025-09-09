@@ -1,26 +1,30 @@
 import fs from 'fs'
 
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {newApiKeyValidator} from '../../helpers/apikey'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {RepositoryData, getRepositoryData, newSimpleGit} from '../../helpers/git/format-git-sourcemaps-data'
-import {globSync} from '../../helpers/glob'
-import {MetricsLogger, getMetricsLogger} from '../../helpers/metrics'
-import {MultipartValue, UploadStatus} from '../../helpers/upload'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {
+  RepositoryData,
+  getRepositoryData,
+  newSimpleGit,
+} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import {MetricsLogger, getMetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {MultipartValue, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {
   DEFAULT_CONFIG_PATHS,
   buildPath,
   performSubCommand,
   resolveConfigFromFileAndEnvironment,
-} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+} from '@datadog/datadog-ci-base/helpers/utils'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
+
+import {cliVersion} from '../../version'
 
 import * as dsyms from '../dsyms/upload'
 import {createUniqueTmpDirectory} from '../dsyms/utils'
@@ -75,7 +79,7 @@ export class UploadCommand extends Command {
   private skipIl2Cpp = Option.Boolean('--skip-il2cpp', false)
 
   private buildId?: string
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

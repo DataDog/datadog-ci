@@ -1,21 +1,25 @@
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {
+  getRepositoryData,
+  newSimpleGit,
+  RepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
+import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
-import {getBaseSourcemapIntakeUrl} from '../../helpers/base-intake-url'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {InvalidConfigurationError} from '../../helpers/errors'
-import {enableFips} from '../../helpers/fips'
-import {getRepositoryData, newSimpleGit, RepositoryData} from '../../helpers/git/format-git-sourcemaps-data'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {upload, UploadStatus} from '../../helpers/upload'
-import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {
@@ -70,7 +74,7 @@ export class UploadCommand extends Command {
   private service = Option.String('--service')
   private sourcemap = Option.String('--sourcemap')
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private config: Record<string, string> = {
     datadogSite: 'datadoghq.com',
   }

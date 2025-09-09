@@ -1,7 +1,6 @@
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import chalk from 'chalk'
 import ora from 'ora'
-
-import {CommandContext} from '../../../../helpers/interfaces'
 
 import {AppUploadDetails} from '../../interfaces'
 

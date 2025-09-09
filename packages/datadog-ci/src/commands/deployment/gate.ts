@@ -1,16 +1,14 @@
-import retry from 'async-retry'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
-
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
-import {ICONS} from '../../helpers/formatting'
-import {Logger, LogLevel} from '../../helpers/logger'
-import {retryRequest} from '../../helpers/retry'
-import {getApiHostForSite} from '../../helpers/utils'
 
 import {apiConstructor} from './api'
 import {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from './interfaces'
@@ -382,7 +380,7 @@ export class DeploymentGateCommand extends Command {
     return 'PASS'
   }
 
-  private getRetryOptions(timeout: number): retry.Options {
+  private getRetryOptions(timeout: number) {
     const timeElapsed = Date.now() - this.startTime
     const maxRetryTime = timeout - timeElapsed
 

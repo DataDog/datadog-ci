@@ -16,13 +16,12 @@ import {
 import {FromIniInit} from '@aws-sdk/credential-provider-ini'
 import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {AwsCredentialIdentity, AwsCredentialIdentityProvider} from '@aws-sdk/types'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {CredentialsProviderError} from '@smithy/property-provider'
 import inquirer from 'inquirer'
-
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '../../../constants'
-import * as helpersRenderer from '../../../helpers/renderer'
-import {maskString} from '../../../helpers/utils'
-import {isValidDatadogSite} from '../../../helpers/validation'
 
 import {
   ARM64_ARCHITECTURE,

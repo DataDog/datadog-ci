@@ -15,16 +15,17 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   DD_SOURCE_ENV_VAR,
-} from '../../../constants'
-import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
-import * as apikey from '../../../helpers/apikey'
-import * as instrumentHelpers from '../../../helpers/git/instrument-helpers'
+} from '@datadog/datadog-ci-base/constants'
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
+
+import * as instrumentHelpers from '../../../git-instrument-helpers'
 
 import {InstrumentCommand} from '../instrument'
 import * as cloudRunPromptModule from '../prompt'
 import * as utils from '../utils'
 
-jest.mock('../../../helpers/apikey')
+jest.mock('@datadog/datadog-ci-base/helpers/apikey')
 jest.mock('../utils', () => ({
   ...jest.requireActual('../utils'),
   checkAuthentication: jest.fn(),

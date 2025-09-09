@@ -5,10 +5,6 @@ import util from 'util'
 import type {IService, IContainer, ServicesClient as IServicesClient} from './types'
 import type {Logging} from '@google-cloud/logging'
 
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
-
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -20,22 +16,26 @@ import {
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
-} from '../../constants'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
+} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
   getProjectFiles,
   sendToDatadog,
   validateCliVersion,
   validateFilePath,
   validateStartEndFlags,
-} from '../../helpers/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '../../helpers/fs'
-import {requestConfirmation, requestFilePath} from '../../helpers/prompt'
-import * as helpersRenderer from '../../helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '../../helpers/renderer'
-import {formatBytes, maskString} from '../../helpers/utils'
-import {version} from '../../helpers/version'
+} from '@datadog/datadog-ci-base/helpers/flare'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
+import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
+
+import {cliVersion} from '../../version'
 
 import {getUniqueFileNames} from '../lambda/flare'
 
@@ -104,7 +104,7 @@ export class CloudRunFlareCommand extends Command {
    */
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-    await validateCliVersion(this.context.stdout)
+    await validateCliVersion(cliVersion, this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
     const errorMessages: string[] = []
@@ -390,7 +390,7 @@ export class CloudRunFlareCommand extends Command {
 
       // Send to Datadog
       this.context.stdout.write(chalk.bold('\n🚀 Sending to Datadog Support...\n'))
-      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath)
+      await sendToDatadog(zipPath, this.caseId!, this.email!, this.apiKey!, rootFolderPath, cliVersion)
       this.context.stdout.write(chalk.bold('\n✅ Successfully sent flare file to Datadog Support!\n'))
 
       // Delete contents
@@ -710,7 +710,7 @@ export const generateInsightsFile = (
   // CLI Insights
   lines.push('\n ## CLI')
   lines.push(`**Run Location**: \`${process.cwd()}\`  `)
-  lines.push(`**CLI Version**: \`${version}\`  `)
+  lines.push(`**CLI Version**: \`${cliVersion}\`  `)
   const timeString = new Date().toISOString().replace('T', ' ').replace('Z', '') + ' UTC'
   lines.push(`**Timestamp**: \`${timeString}\`  `)
 

@@ -1,4 +1,4 @@
-import {getRepositoryData, TrackedFilesMatcher} from '../format-git-sourcemaps-data'
+import {getRepositoryData, TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 
 describe('git', () => {
   describe('TrackedFilesMatcher', () => {

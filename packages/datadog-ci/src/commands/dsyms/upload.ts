@@ -1,23 +1,23 @@
 import {promises} from 'fs'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
+import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
+import {upload, UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
+import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/datadog-ci-base/helpers/utils'
+import * as validation from '@datadog/datadog-ci-base/helpers/validation'
+import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {ApiKeyValidator, newApiKeyValidator} from '../../helpers/apikey'
-import {doWithMaxConcurrency} from '../../helpers/concurrency'
-import {toBoolean} from '../../helpers/env'
-import {InvalidConfigurationError} from '../../helpers/errors'
-import {enableFips} from '../../helpers/fips'
-import {globSync} from '../../helpers/glob'
-import {RequestBuilder} from '../../helpers/interfaces'
-import {getMetricsLogger, MetricsLogger} from '../../helpers/metrics'
-import {upload, UploadStatus} from '../../helpers/upload'
-import {buildPath, getRequestBuilder, resolveConfigFromFileAndEnvironment} from '../../helpers/utils'
-import * as validation from '../../helpers/validation'
-import {checkAPIKeyOverride} from '../../helpers/validation'
-import {version} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {
@@ -66,7 +66,7 @@ export class UploadCommand extends Command {
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
 
-  private cliVersion = version
+  private cliVersion = cliVersion
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 

@@ -1,7 +1,6 @@
+import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import chalk from 'chalk'
 import deepExtend from 'deep-extend'
-
-import {Metadata} from '../../helpers/interfaces'
 
 import {
   APIHelper,

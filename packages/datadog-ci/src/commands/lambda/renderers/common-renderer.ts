@@ -1,4 +1,4 @@
-import {renderError, renderSoftWarning} from '../../../helpers/renderer'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 
 /**
  * @returns a message indicating that no default region has been specified.

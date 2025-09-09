@@ -1,5 +1,5 @@
-import {createCommand} from '../../../../helpers/__tests__/testing-tools'
-import * as ciUtils from '../../../../helpers/utils'
+import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as ciUtils from '@datadog/datadog-ci-base/helpers/utils'
 
 import {RunTestsCommand} from '../../run-tests-command'
 import * as utils from '../../utils/public'

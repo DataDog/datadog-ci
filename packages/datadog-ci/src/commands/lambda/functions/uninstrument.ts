@@ -5,7 +5,6 @@ import {
   Runtime,
   UpdateFunctionConfigurationRequest,
 } from '@aws-sdk/client-lambda'
-
 import {
   API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -18,7 +17,7 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   DD_TAGS_ENV_VAR,
-} from '../../../constants'
+} from '@datadog/datadog-ci-base/constants'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,

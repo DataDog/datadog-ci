@@ -2,9 +2,8 @@ import {stringify} from 'querystring'
 
 import type {AxiosError, AxiosPromise, AxiosRequestConfig} from 'axios'
 
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
-
-import {getRequestBuilder} from '../../helpers/utils'
 
 import {CriticalError} from './errors'
 import {
