@@ -149,7 +149,7 @@ export class PluginCommand extends GateEvaluateCommand {
     bail?: (e: Error) => void
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const timeoutInSeconds = parseInt(String(this.timeoutInSeconds), 10) || this.defaultTimeout
+    const timeoutInSeconds = this.timeoutInSeconds !== undefined ? parseInt(String(this.timeoutInSeconds), 10) : this.defaultTimeout
     const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
