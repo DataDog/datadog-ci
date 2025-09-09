@@ -53,6 +53,7 @@ import {
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  APPSEC_TRACER_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
@@ -248,9 +249,11 @@ export const calculateUpdateRequest = async (
     changedEnvVars[SITE_ENV_VAR] = 'datadoghq.com'
   }
 
+  const APPSEC_ENV_VAR = runtimeType === RuntimeType.PYTHON ? APPSEC_TRACER_ENABLED_ENV_VAR : APPSEC_ENABLED_ENV_VAR
+
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
     ['apmFlushDeadline', APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR],
-    ['appsecEnabled', APPSEC_ENABLED_ENV_VAR],
+    ['appsecEnabled', APPSEC_ENV_VAR],
     ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', DD_TAGS_ENV_VAR],
@@ -292,7 +295,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Enable ASM
-  if (settings['appsecEnabled'] === true) {
+  if (settings['appsecEnabled'] === true && runtimeType !== RuntimeType.PYTHON) {
     newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
   }
 

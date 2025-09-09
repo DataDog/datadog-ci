@@ -42,6 +42,7 @@ import {
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   APPSEC_ENABLED_ENV_VAR,
+  APPSEC_TRACER_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
@@ -186,6 +187,7 @@ export const calculateUpdateRequest = (
     SITE_ENV_VAR,
     APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
     APPSEC_ENABLED_ENV_VAR,
+    APPSEC_TRACER_ENABLED_ENV_VAR,
     CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
     ENVIRONMENT_ENV_VAR,
     DD_TAGS_ENV_VAR,
