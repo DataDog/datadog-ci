@@ -1,8 +1,8 @@
 import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {RecursivePartial} from './base-command'
 import {TunnelInfo} from './tunnel'
+import {RecursivePartial} from './utils/internal'
 
 export type SupportedReporter = 'junit' | 'default'
 

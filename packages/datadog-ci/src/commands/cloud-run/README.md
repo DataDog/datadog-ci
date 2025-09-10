@@ -86,6 +86,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--sidecar-cpus` | | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` | | The amount of memory to allocate to the sidecar container. | `512Mi` |
+| `--language` | | Set the language used in your container or function for advanced log parsing. Sets the `DD_SOURCE` env var. Possible values: `nodejs`, `python`, `go`, `java`, `csharp`, `ruby`, or `php`. | |
 
 #### `uninstrument`
 You can pass the following arguments to `uninstrument` to specify its behavior.

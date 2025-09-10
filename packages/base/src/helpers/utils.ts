@@ -1,5 +1,5 @@
 import {exec} from 'child_process'
-import {readFile, existsSync, lstatSync, readFileSync} from 'fs'
+import {readFile, existsSync, statSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
@@ -440,7 +440,7 @@ export const getGitHubEventPayload = () => {
 
 export const isFile = (path: string) => {
   try {
-    return lstatSync(path).isFile()
+    return statSync(path).isFile()
   } catch (e) {
     return false
   }

@@ -45,6 +45,7 @@ export const DD_LLMOBS_ENABLED_ENV_VAR = 'DD_LLMOBS_ENABLED'
 export const DD_LLMOBS_ML_APP_ENV_VAR = 'DD_LLMOBS_ML_APP'
 export const DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR = 'DD_LLMOBS_AGENTLESS_ENABLED'
 export const DD_TAGS_ENV_VAR = 'DD_TAGS'
+export const DD_SOURCE_ENV_VAR = 'DD_SOURCE'
 /*
  * DD_TAGS Regular Expression
  * This RegExp ensures that the --extra-tags string

@@ -3,8 +3,9 @@ import fsp from 'fs/promises'
 import {Writable} from 'stream'
 
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
+import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'
 import {Args, getDefaultSuiteStats, getDefaultTestCaseStats, JUnitReporter, XMLTestCase} from '../../reporters/junit'
 
@@ -35,7 +36,7 @@ const globalSummaryMock = getSummary()
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
+    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }
@@ -44,7 +45,7 @@ describe('Junit reporter', () => {
 
   describe('constructor', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as any)
+      reporter = new JUnitReporter(commandMock as RunTestsCommand)
     })
 
     it("should append '.xml' to destination if isn't there", () => {
@@ -58,7 +59,7 @@ describe('Junit reporter', () => {
 
   describe('runEnd', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as any)
+      reporter = new JUnitReporter(commandMock as RunTestsCommand)
       jest.spyOn(fs, 'writeFileSync')
       jest.spyOn(reporter['builder'], 'buildObject')
     })
@@ -139,7 +140,7 @@ describe('Junit reporter', () => {
 
   describe('resultEnd', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as any)
+      reporter = new JUnitReporter(commandMock as RunTestsCommand)
     })
 
     it('should give a default suite name', () => {
@@ -323,7 +324,7 @@ describe('Junit reporter', () => {
 
   describe('getTestCase', () => {
     beforeEach(() => {
-      reporter = new JUnitReporter(commandMock as any)
+      reporter = new JUnitReporter(commandMock as RunTestsCommand)
     })
 
     it('should add stats to the test case - api test', () => {
@@ -389,7 +390,7 @@ describe('Junit reporter', () => {
 describe('GitLab test report compatibility', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as BaseContext,
+    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }
@@ -397,7 +398,7 @@ describe('GitLab test report compatibility', () => {
   let reporter: JUnitReporter
 
   beforeEach(() => {
-    reporter = new JUnitReporter(commandMock as any)
+    reporter = new JUnitReporter(commandMock as RunTestsCommand)
   })
 
   test('all test case names are unique', () => {

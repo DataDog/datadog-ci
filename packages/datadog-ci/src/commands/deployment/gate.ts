@@ -11,7 +11,7 @@ import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
 import {apiConstructor} from './api'
-import {APIHelper, GateEvaluationRequest} from './interfaces'
+import {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from './interfaces'
 
 type CommandResult = 'PASS' | 'FAIL'
 
@@ -304,11 +304,11 @@ export class DeploymentGateCommand extends Command {
 
       switch (status) {
         case 'pass':
-          this.logger.info(chalk.green(`\t${ICONS.SUCCESS} Gate evaluation passed`))
+          this.renderEvaluationSummary(response.data)
 
           return 'PASS'
         case 'fail':
-          this.logger.info(chalk.red(`\t${ICONS.FAILED} Gate evaluation failed`))
+          this.renderEvaluationSummary(response.data)
 
           return 'FAIL'
         case 'in_progress': {
@@ -321,7 +321,7 @@ export class DeploymentGateCommand extends Command {
         }
 
         default:
-          this.logger.warn(`Unknown gate evaluation status: ${status}`)
+          this.logger.warn(`Unknown gate evaluation status: ${status as string}`)
       }
     } catch (error) {
       if (isAxiosError(error) && error.response?.status) {
@@ -342,6 +342,31 @@ export class DeploymentGateCommand extends Command {
 
       throw error
     }
+  }
+
+  private renderEvaluationSummary(result: GateEvaluationStatusResponse): void {
+    const attributes = result.data.attributes
+
+    if (attributes.gate_status === 'pass') {
+      this.logger.info(chalk.green(`\n${ICONS.SUCCESS} Gate evaluation passed`))
+    } else if (attributes.gate_status === 'fail') {
+      this.logger.info(chalk.red(`\n${ICONS.FAILED} Gate evaluation failed`))
+    }
+
+    this.logger.info(`   Evaluation mode: ${attributes.dry_run ? 'Dry run' : 'Active'}`)
+    this.logger.info(`   Evaluation URL: ${attributes.evaluation_url}`)
+    this.logger.info(`   Rules evaluated:`)
+
+    attributes.rules.forEach((rule) => {
+      const ruleName = `    - Rule: ${rule.name}`
+      const evaluationMode = `\n      Evaluation mode: ${rule.dry_run ? 'Dry run' : 'Active'}`
+      const status = `\n      Status: ${rule.status.toUpperCase()}`
+      const reason = rule.status === 'fail' ? `\n      Reason: ${rule.reason ?? 'Unknown'}` : ''
+
+      this.logger.info(`${ruleName}${evaluationMode}${status}${reason}`)
+    })
+
+    this.logger.info('\n')
   }
 
   private getResultForDatadogError(): CommandResult {
