@@ -1,3 +1,4 @@
+import {cliVersion} from '@datadog/datadog-ci/src/version'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -11,8 +12,6 @@ import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {cliVersion} from '../../version'
 
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'

@@ -31,7 +31,8 @@ packages/datadog-ci/src/commands/stepfunctions  @DataDog/datadog-ci-admins @Data
 src/helpers/**/flare*.ts    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
-packages/datadog-ci/src/commands/git-metadata   @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/plugin-git-metadata   @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/base/src/commands/git-metadata   @DataDog/datadog-ci-admins @DataDog/source-code-integration
 packages/datadog-ci/src/commands/gate           @DataDog/datadog-ci-admins @DataDog/source-code-integration
 
 ## Synthetics (label: synthetics)

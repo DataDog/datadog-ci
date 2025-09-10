@@ -35,6 +35,7 @@
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
+    "@datadog/datadog-ci-plugin-git-metadata": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
   },
   "dependencies": {
