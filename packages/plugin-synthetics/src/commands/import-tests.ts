@@ -7,10 +7,10 @@ import {LogLevel, Logger} from '@datadog/datadog-ci-base/helpers/logger'
 import {recursivelyRemoveUndefinedValues, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
 import deepExtend from 'deep-extend'
 
-import {BaseCommand, RecursivePartial} from '../base-command'
 import {CiError} from '../errors'
 import {importTests} from '../import-tests-lib'
 import {ImportTestsCommandConfig, MainReporter} from '../interfaces'
+import {RecursivePartial, getDefaultConfig} from '../utils/internal'
 
 export class PluginCommand extends ImportTestsCommand {
   protected reporter!: MainReporter
@@ -26,7 +26,7 @@ export class PluginCommand extends ImportTestsCommand {
 
   public static getDefaultConfig(): ImportTestsCommandConfig {
     return {
-      ...BaseCommand.getDefaultConfig(),
+      ...getDefaultConfig(),
       files: [],
       publicIds: [],
       testSearchQuery: '',

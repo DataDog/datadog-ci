@@ -6,6 +6,7 @@ import {
   BasicAuthCredentials,
   BrowserServerResult,
   CookiesObject,
+  DatadogCIConfig,
   ExecutionRule,
   LocalTriggerConfig,
   MobileTestWithOverride,
@@ -27,6 +28,20 @@ import {
 import {getStrictestExecutionRule, isResultSkippedBySelectiveRerun} from './public'
 
 const levenshtein = require('fast-levenshtein')
+
+export type RecursivePartial<T> = {
+  [P in keyof T]?: RecursivePartial<T[P]>
+}
+
+export const getDefaultConfig = (): DatadogCIConfig => {
+  return {
+    apiKey: '',
+    appKey: '',
+    configPath: 'datadog-ci.json',
+    datadogSite: 'datadoghq.com',
+    proxy: {protocol: 'http'},
+  }
+}
 
 export const wait = async (duration: number) => new Promise((resolve) => setTimeout(resolve, duration))
 

@@ -30,7 +30,7 @@ jobs:
             documentation
             chores
             release
-            ci-visibility
+            software-delivery
             static-analysis
             rum
             serverless

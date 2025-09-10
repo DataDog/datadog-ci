@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {UploadApplicationCommand as BaseUploadApplicationCommand} from '@datadog/datadog-ci-base/commands/synthetics/upload-application-command'
+import {UploadApplicationCommand} from '@datadog/datadog-ci-base/commands/synthetics/upload-application-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -9,13 +9,13 @@ import chalk from 'chalk'
 import deepExtend from 'deep-extend'
 
 import {EndpointError} from '../api'
-import {BaseCommand, RecursivePartial} from '../base-command'
 import {CiError} from '../errors'
 import {UploadApplicationCommandConfig} from '../interfaces'
 import {uploadMobileApplicationVersion} from '../mobile'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
+import {RecursivePartial, getDefaultConfig} from '../utils/internal'
 
-export class PluginCommand extends BaseUploadApplicationCommand {
+export class PluginCommand extends UploadApplicationCommand {
   protected config: UploadApplicationCommandConfig = PluginCommand.getDefaultConfig()
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
@@ -28,7 +28,7 @@ export class PluginCommand extends BaseUploadApplicationCommand {
 
   public static getDefaultConfig(): UploadApplicationCommandConfig {
     return {
-      ...BaseCommand.getDefaultConfig(),
+      ...getDefaultConfig(),
       mobileApplicationVersionFilePath: '',
       mobileApplicationId: '',
       versionName: '',

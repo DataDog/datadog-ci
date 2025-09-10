@@ -10,7 +10,7 @@ Object.defineProperty(process, 'platform', {
 })
 
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {
   ExecutionRule,
@@ -53,7 +53,7 @@ describe('Default reporter', () => {
       },
     },
   }
-  const reporter = new DefaultReporter(mockContext as {context: BaseContext})
+  const reporter = new DefaultReporter(mockContext as {context: CommandContext})
 
   afterEach(() => {
     reporter['removeSpinner']()
@@ -223,7 +223,7 @@ describe('Default reporter', () => {
         },
       }
 
-      const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: BaseContext})
+      const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: CommandContext})
 
       clearLine.mockClear()
       ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')

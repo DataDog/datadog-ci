@@ -1,6 +1,13 @@
 {
   "name": "@datadog/datadog-ci-base",
   "version": "0.0.1",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/base",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/base"
+  },
   "exports": {
     "./cli": "./dist/cli.js",
     "./commands/*": "./dist/commands/*.js",

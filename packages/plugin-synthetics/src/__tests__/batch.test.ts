@@ -6,7 +6,6 @@ import deepExtend from 'deep-extend'
 process.env.DATADOG_SYNTHETICS_CI_TRIGGER_APP = 'env_default'
 
 import {apiConstructor} from '../api'
-import {RecursivePartial} from '../base-command'
 import {getResultsToReport, reportReceivedResults, runTests, waitForResults} from '../batch'
 import {BatchTimeoutRunawayError} from '../errors'
 import {
@@ -21,6 +20,7 @@ import {
   TriggerInfo,
 } from '../interfaces'
 import {getDefaultConfig} from '../run-tests-lib'
+import {RecursivePartial} from '../utils/internal'
 import * as internalUtils from '../utils/internal'
 import * as utils from '../utils/public'
 
