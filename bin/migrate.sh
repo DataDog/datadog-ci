@@ -160,16 +160,19 @@ gsed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SC
 echo Done
 
 echo 9. Check if we can automatically knip
-if yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
+yarn install
+if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
   echo "Linting passed, running knip..."
   yarn knip || true
   echo Done
 else
   echo "Linting failed. Please fix the issues manually."
 fi
+git add -A
 
 echo
 echo "Manual steps remaining:"
+echo "- Commit the changes, then make the following manual changes:"
 echo "- Move any shared helpers to @datadog/datadog-ci-base if needed."
 echo "- Split FooCommand/PluginCommand classes as described in https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor"
 echo "- Run yarn build, yarn lint, and yarn knip as needed to ensure everything works."
