@@ -1,10 +1,18 @@
 {
   "name": "@datadog/datadog-ci-base",
   "version": "0.0.1",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/base",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/base"
+  },
   "exports": {
+    "./cli": "./dist/cli.js",
+    "./commands/*": "./dist/commands/*.js",
     "./constants": "./dist/constants.js",
-    "./helpers/*": "./dist/helpers/*.js",
-    "./helpers/__tests__/testing-tools": "./dist/helpers/__tests__/testing-tools.js"
+    "./helpers/*": "./dist/helpers/*.js"
   },
   "files": [
     "dist/**/*"
@@ -12,6 +20,9 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
   },
   "dependencies": {
     "@types/datadog-metrics": "0.6.1",

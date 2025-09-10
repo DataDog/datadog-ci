@@ -98,8 +98,8 @@ See each command's linked README for more details, or click on [📚](https://do
 - `uninstrument`: Uninstrument [AWS Step Function](packages/datadog-ci/src/commands/stepfunctions). [📚](https://docs.datadoghq.com/serverless/step_functions/installation/?tab=datadogcli)
 
 #### `synthetics`
-- `run-tests`: Run [Continuous Testing tests](packages/datadog-ci/src/commands/synthetics) from the CI. [📚](https://docs.datadoghq.com/continuous_testing/)
-- `upload-application`: Upload a new version to an [existing mobile application](packages/datadog-ci/src/commands/synthetics) in Datadog. [📚](https://docs.datadoghq.com/mobile_app_testing/)
+- `run-tests`: Run [Continuous Testing tests](packages/plugin-synthetics/src) from the CI. [📚](https://docs.datadoghq.com/continuous_testing/)
+- `upload-application`: Upload a new version to an [existing mobile application](packages/plugin-synthetics/src) in Datadog. [📚](https://docs.datadoghq.com/mobile_app_testing/)
 
 #### `tag`
 - Add [custom tags](packages/datadog-ci/src/commands/tag) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)

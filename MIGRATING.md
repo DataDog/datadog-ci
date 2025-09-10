@@ -29,31 +29,31 @@ This major version cleans up most deprecated CLI parameters, options and environ
 ##### Configuration structure
 
 - The `global` field in the global configuration file (e.g. `datadog-ci.json`) is removed.
-  - Use [`defaultTestOverrides`](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#defaulttestoverrides) instead.
+  - Use [`defaultTestOverrides`](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#defaulttestoverrides) instead.
 - The `config` field in test configuration files (e.g. `*.synthetics.json`) is removed.
-  - Use [`testOverrides`](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#test-files) instead.
+  - Use [`testOverrides`](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#test-files) instead.
 
 ##### Files
 
-More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#files).
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#files).
 
 - The `files` option in the global configuration file does not support simple strings anymore.
   - Use an array of strings instead, i.e. `"files": ["{,!(node_modules)/**/}*.synthetics.json"]`.
 
 ##### Polling timeout
 
-More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#batchtimeout).
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#batchtimeout).
 
 - The `--pollingTimeout` CLI parameter is removed.
   - Use `--batchTimeout` instead.
 - The `pollingTimeout` option in the global configuration file is removed.
   - Use `batchTimeout` instead.
 - The `pollingTimeout` option in test configuration files is removed.
-  - If you want to set specific test-level timeouts, use [`testTimeout`](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#testtimeout-number). Otherwise, set a batch-level timeout with `batchTimeout`.
+  - If you want to set specific test-level timeouts, use [`testTimeout`](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#testtimeout-number). Otherwise, set a batch-level timeout with `batchTimeout`.
 
 ##### Locations
 
-More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#locations-array).
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#locations-array).
 
 - The `--locations` CLI parameter is removed.
   - Use `--override locations="location1;location2"` instead.
@@ -64,7 +64,7 @@ More information [in the documentation](https://github.com/DataDog/datadog-ci/bl
 
 ##### Variables
 
-More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#variables-object).
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#variables-object).
 
 - The `--variable` CLI parameter is removed.
   - Use `--override variables.NAME=VALUE` instead.
@@ -73,7 +73,7 @@ More information [in the documentation](https://github.com/DataDog/datadog-ci/bl
 
 ##### Device IDs
 
-More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/datadog-ci/src/commands/synthetics/README.md#deviceids-array).
+More information [in the documentation](https://github.com/DataDog/datadog-ci/blob/master/packages/plugin-synthetics/README.md#deviceids-array).
 
 - The `--deviceIds` CLI parameter is removed.
   - Use `--override deviceIds="device1;device2"` instead.
