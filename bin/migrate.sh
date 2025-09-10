@@ -28,6 +28,7 @@ fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
+env cp "$DST_DIR/LICENSE" "$PLUGIN_DIR"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -51,7 +52,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     }
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "README",
+    "LICENSE"
   ],
   "scripts": {
     "build": "yarn package:clean; yarn package:build",

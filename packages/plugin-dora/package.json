@@ -15,7 +15,9 @@
     }
   },
   "files": [
-    "dist/**/*"
+    "dist/**/*",
+    "README",
+    "LICENSE"
   ],
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
