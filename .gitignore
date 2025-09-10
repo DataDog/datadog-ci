@@ -90,3 +90,6 @@ packages/datadog-ci/src/commands/react-native/__tests__/fixtures/with-sources-co
 
 # Jest cache directories
 .jest-cache/
+
+# README is copied to the packages/datadog-ci/package.json
+packages/datadog-ci/README.md
