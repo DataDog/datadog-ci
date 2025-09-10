@@ -231,7 +231,7 @@ jobs:
         with:
           node-version: 20.11.0 # Use newer version to build the standalone binary
       - run: yarn install --immutable
-      - run: yarn build:win
+      - run: yarn build
       - name: Create standalone binary
         run: yarn dist-standalone -t node18-win-x64 -o datadog-ci_win-x64
       - name: Remove src and dist folders to check that binary can stand alone

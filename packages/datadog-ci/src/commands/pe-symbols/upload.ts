@@ -318,7 +318,7 @@ export class UploadCommand extends Command {
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
-    const requestBuilder = getPERequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getPERequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, peFilesMetadata, async (fileMetadata) => {
@@ -403,8 +403,6 @@ export class UploadCommand extends Command {
       })
 
       return results
-    } catch (error) {
-      throw error
     } finally {
       try {
         await metricsLogger.flush()

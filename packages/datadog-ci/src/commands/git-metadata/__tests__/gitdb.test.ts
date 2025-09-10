@@ -111,7 +111,7 @@ describe('gitdb', () => {
     axios: MockParam<
       {
         url: string
-        data: any | undefined
+        data: any
       },
       any
     >[]
@@ -164,6 +164,7 @@ describe('gitdb', () => {
         params.forEach((param) => {
           if (param.output instanceof Error) {
             mock = mock.mockImplementationOnce((..._: any) => {
+              // eslint-disable-next-line @typescript-eslint/only-throw-error
               throw param.output
             })
           } else {
@@ -185,7 +186,7 @@ describe('gitdb', () => {
             })
           } catch (e) {
             // To make it easier to debug the tests
-            // eslint-disable-next-line
+
             console.log('Error in', name, 'mock')
             throw e
           }

@@ -710,7 +710,7 @@ export interface DatadogCIConfig extends APIHelperConfig {
   configPath: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SyntheticsCIConfig extends DatadogCIConfig {}
 
 export interface RunTestsCommandConfig extends SyntheticsCIConfig {

@@ -33,6 +33,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "dist-standalone": "pkg --compress GZip .",
+    "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
   "dependencies": {
