@@ -121,13 +121,17 @@ yarn workspace @datadog/datadog-ci add -E "$PLUGIN_PKG"
 yarn workspace @datadog/datadog-ci-base add -E -P "$PLUGIN_PKG"
 echo Done
 
+print-files() {
+  git ls-files ':!:*symlink*' ":!:$SRC_DIR/*" "${1:-.}"
+}
 
 echo 5. Update string references
-git ls-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
-git ls-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g" {} +
-git ls-files "$PLUGIN_DIR" | xargs gsed -i -e "s|src/commands/$SCOPE/|src/|g" {} +
+git add -A
+print-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
+print-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g"
+print-files "$PLUGIN_DIR" | xargs gsed -i -e "s|src/commands/$SCOPE/|src/|g"
 echo Updating known shared imports...
-git ls-files "$DST_DIR" | xargs gsed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g" {} +
+print-files "$DST_DIR" | xargs gsed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
 echo Done
 
 echo 6. Add plugin folder to tsconfig.json and packages/datadog-ci/tsconfig.json
