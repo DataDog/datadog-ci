@@ -10,8 +10,8 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import * as t from 'typanion'
 
-import {apiConstructor} from './api'
-import {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from './interfaces'
+import {apiConstructor} from '../api'
+import {APIHelper, GateEvaluationRequest, GateEvaluationStatusResponse} from '../interfaces'
 
 type CommandResult = 'PASS' | 'FAIL'
 

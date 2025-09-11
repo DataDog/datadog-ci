@@ -1,7 +1,7 @@
-import {DeploymentCorrelateCommand} from './correlate'
-import {DeploymentCorrelateImageCommand} from './correlate-image'
-import {DeploymentGateCommand} from './gate'
-import {DeploymentMarkCommand} from './mark'
+import {DeploymentCorrelateCommand} from './commands/correlate'
+import {DeploymentCorrelateImageCommand} from './commands/correlate-image'
+import {DeploymentGateCommand} from './commands/gate'
+import {DeploymentMarkCommand} from './commands/mark'
 
 module.exports = [
   DeploymentMarkCommand,
