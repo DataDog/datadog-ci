@@ -14,3 +14,8 @@ export const commands: Record<string, CommandClass[]> = {
   'plugin': [CheckCommand],
   'synthetics': [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
 }
+
+/**
+ * Some command scopes do not have a plugin package, and their logic is entirely included in `@datadog/datadog-ci-base`.
+ */
+export const noPluginExceptions: Set<string> = new Set(['git-metadata', 'plugin'])

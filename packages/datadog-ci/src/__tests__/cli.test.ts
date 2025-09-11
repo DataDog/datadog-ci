@@ -1,4 +1,4 @@
-import {commands as migratedCommands} from '@datadog/datadog-ci-base/cli'
+import {commands as migratedCommands, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 import {Builtins, CommandClass} from 'clipanion'
@@ -9,9 +9,6 @@ process.env.DD_BETA_COMMANDS_ENABLED = '1'
 import {cli, BETA_COMMANDS} from '../cli'
 
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
-
-// scopes that are not plugins, at least for now
-const nonPluginScopes = ['git-metadata']
 
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
 
@@ -65,7 +62,7 @@ describe('cli', () => {
       commandClasses.forEach((commandClass) => {
         // We assume the first path is always the real import, and other paths are only aliases.
         const [scope, command] = commandClass.paths?.[0] ?? []
-        if (nonPluginScopes.includes(scope)) {
+        if (noPluginExceptions.has(scope)) {
           return
         }
 
@@ -103,7 +100,7 @@ describe('cli', () => {
     describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath) => {
       const path = commandPath.join(' ')
       const command = [
-        ...(pluginCommandPaths.has(path) ? ['__plugin__'] : []),
+        ...(pluginCommandPaths.has(path) && !noPluginExceptions.has(commandPath[0]) ? ['__plugin__'] : []),
         ...commandPath,
         ...(requiredOptions[path] ?? []),
       ]
