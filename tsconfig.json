@@ -28,6 +28,9 @@
     },
     {
       "path": "./packages/plugin-synthetics"
+    },
+    {
+      "path": "./packages/plugin-deployment"
     }
   ],
   "exclude": [
