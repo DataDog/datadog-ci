@@ -73,7 +73,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_linux-x64',
-              data: await fs.readFile('./datadog-ci_linux-x64'),
+              data: await fs.readFile('./packages/datadog-ci/datadog-ci_linux-x64'),
             })
 
   build-binary-ubuntu-arm:
@@ -111,7 +111,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_linux-arm64',
-              data: await fs.readFile('./datadog-ci_linux-arm64'),
+              data: await fs.readFile('./packages/datadog-ci/datadog-ci_linux-arm64'),
             })
 
   build-binary-windows:
@@ -145,7 +145,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_win-x64',
-              data: await fs.readFile('./datadog-ci_win-x64.exe'),
+              data: await fs.readFile('./packages/datadog-ci/datadog-ci_win-x64.exe'),
             })
 
   build-binary-macos:
@@ -181,7 +181,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_darwin-x64',
-              data: await fs.readFile('./datadog-ci_darwin-x64'),
+              data: await fs.readFile('./packages/datadog-ci/datadog-ci_darwin-x64'),
             })
 
   build-binary-macos-arm:
@@ -215,7 +215,7 @@ jobs:
               repo: context.repo.repo,
               release_id: "${{ needs.create-draft-release.outputs.release-id }}",
               name: 'datadog-ci_darwin-arm64',
-              data: await fs.readFile('./datadog-ci_darwin-arm64'),
+              data: await fs.readFile('./packages/datadog-ci/datadog-ci_darwin-arm64'),
             })
 
   # Requires an approval
