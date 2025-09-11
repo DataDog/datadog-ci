@@ -5,7 +5,7 @@ import {RequestBuilder} from '../../helpers/interfaces'
 import {Logger, LogLevel} from '../../helpers/logger'
 import {upload, UploadOptions, UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, filterAndFormatGithubRemote} from '../../helpers/utils'
-import {cliVersion} from '../../helpers/version'
+import {cliVersion} from '../../version'
 
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'

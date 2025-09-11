@@ -18,11 +18,10 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
-
-import {cliVersion} from '../../version'
 
 import * as dsyms from '../dsyms/upload'
 import * as sourcemaps from '../sourcemaps/upload'

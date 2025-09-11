@@ -24,6 +24,10 @@
     "./helpers/*": {
       "development": "./src/helpers/*.ts",
       "default": "./dist/helpers/*.js"
+    },
+    "./version": {
+      "development": "./src/version.ts",
+      "default": "./dist/version.js"
     }
   },
   "files": [
