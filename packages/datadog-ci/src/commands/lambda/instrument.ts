@@ -11,13 +11,12 @@ import {
 } from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git-instrument-helpers'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from './constants'
 import {
