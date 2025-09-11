@@ -19,7 +19,7 @@
     "build": "yarn tsc:build",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
-    "clean": "rimraf --glob 'packages/*/{dist,tsconfig.tsbuildinfo}'",
+    "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
     "dev": "yarn tsc:build --watch",
     "dist-standalone": "yarn workspace @datadog/datadog-ci dist-standalone",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
