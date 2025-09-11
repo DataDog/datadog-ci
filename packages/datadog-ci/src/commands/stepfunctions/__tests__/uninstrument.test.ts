@@ -6,7 +6,7 @@ import {UninstrumentStepFunctionsCommand} from '../uninstrument'
 
 import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
 
-jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '2.0.0'}))
 
 describe('stepfunctions uninstrument', () => {
   const runCLI = makeRunCLI(UninstrumentStepFunctionsCommand, ['stepfunctions', 'uninstrument'])

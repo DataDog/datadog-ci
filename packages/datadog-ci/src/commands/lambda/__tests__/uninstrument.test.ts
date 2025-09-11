@@ -6,7 +6,7 @@ jest.mock('@aws-sdk/credential-providers', () => ({
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
 jest.mock('@datadog/datadog-ci-base/helpers/prompt')
-jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import * as fs from 'fs'
 

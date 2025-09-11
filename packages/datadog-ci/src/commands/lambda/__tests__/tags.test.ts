@@ -1,5 +1,5 @@
 jest.mock('../loggroup')
-jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import {
   LambdaClient,
