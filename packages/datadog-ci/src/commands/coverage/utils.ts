@@ -27,7 +27,7 @@ export const coverageFormats = [
   simplecovInternalFormat,
   cloverFormat,
 ] as const
-export type CoverageFormat = typeof coverageFormats[number]
+export type CoverageFormat = (typeof coverageFormats)[number]
 
 export const isCoverageFormat = (value: string): value is CoverageFormat => {
   return (coverageFormats as readonly string[]).includes(value)

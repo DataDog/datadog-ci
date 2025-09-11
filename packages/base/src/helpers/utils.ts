@@ -74,7 +74,7 @@ const resolveConfigPath = ({
  */
 export const resolveConfigFromFileAndEnvironment = async <
   T extends Record<string, unknown>,
-  U extends Record<string, unknown>
+  U extends Record<string, unknown>,
 >(
   baseConfig: T,
   environment: U,

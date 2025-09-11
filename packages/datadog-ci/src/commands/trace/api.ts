@@ -8,21 +8,20 @@ import {Payload} from './interfaces'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const reportCustomSpan = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  customSpan: Payload
-) => {
-  return request({
-    data: {
+export const reportCustomSpan =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (customSpan: Payload) => {
+    return request({
       data: {
-        type: 'ci_app_custom_span',
-        attributes: customSpan,
+        data: {
+          type: 'ci_app_custom_span',
+          attributes: customSpan,
+        },
       },
-    },
-    maxBodyLength,
-    method: 'POST',
-    url: '/api/intake/ci/custom_spans',
-  })
-}
+      maxBodyLength,
+      method: 'POST',
+      url: '/api/intake/ci/custom_spans',
+    })
+  }
 
 export const apiConstructor = (baseUrl: string, apiKey: string) => {
   const requestIntake = getRequestBuilder({baseUrl, apiKey})

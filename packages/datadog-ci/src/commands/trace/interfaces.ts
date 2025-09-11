@@ -11,7 +11,7 @@ export const SUPPORTED_PROVIDERS = [
   CI_ENGINES.AZURE,
   CI_ENGINES.BUILDKITE,
 ] as const
-export type Provider = typeof SUPPORTED_PROVIDERS[number]
+export type Provider = (typeof SUPPORTED_PROVIDERS)[number]
 
 export interface Payload {
   ci_provider: string

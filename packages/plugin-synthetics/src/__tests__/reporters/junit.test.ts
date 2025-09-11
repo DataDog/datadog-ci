@@ -36,7 +36,7 @@ const globalSummaryMock = getSummary()
 describe('Junit reporter', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
+    context: {stdout: {write: writeMock}} as unknown as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }
@@ -390,7 +390,7 @@ describe('Junit reporter', () => {
 describe('GitLab test report compatibility', () => {
   const writeMock: Writable['write'] = jest.fn()
   const commandMock: Args = {
-    context: ({stdout: {write: writeMock}} as unknown) as CommandContext,
+    context: {stdout: {write: writeMock}} as unknown as CommandContext,
     jUnitReport: 'junit',
     runName: 'Custom run name',
   }
@@ -547,9 +547,8 @@ describe('GitLab test report compatibility', () => {
       ''
     )
 
-    const [testCaseSkipped, testCaseBlocking, testCaseNonBlocking, testCasePassed] = reporter[
-      'json'
-    ].testsuites.testsuite[0].testcase
+    const [testCaseSkipped, testCaseBlocking, testCaseNonBlocking, testCasePassed] =
+      reporter['json'].testsuites.testsuite[0].testcase
 
     expect(getStatusIcon(testCaseSkipped)).toBe('⏩')
     expect(getStatusIcon(testCaseBlocking)).toBe('❌')

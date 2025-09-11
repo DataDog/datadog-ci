@@ -101,14 +101,13 @@ const uploadToSrcmapTrack = async (apiKey: string, datadogSite: string, payload:
   }
 }
 
-export const uploadRepository = (
-  requestBuilder: RequestBuilder,
-  libraryVersion: string
-): ((commitInfo: CommitInfo, opts: UploadOptions) => Promise<UploadStatus>) => async (
-  commitInfo: CommitInfo,
-  opts: UploadOptions
-) => {
-  const payload = commitInfo.asMultipartPayload(libraryVersion)
+export const uploadRepository =
+  (
+    requestBuilder: RequestBuilder,
+    libraryVersion: string
+  ): ((commitInfo: CommitInfo, opts: UploadOptions) => Promise<UploadStatus>) =>
+  async (commitInfo: CommitInfo, opts: UploadOptions) => {
+    const payload = commitInfo.asMultipartPayload(libraryVersion)
 
-  return upload(requestBuilder)(payload, opts)
-}
+    return upload(requestBuilder)(payload, opts)
+  }

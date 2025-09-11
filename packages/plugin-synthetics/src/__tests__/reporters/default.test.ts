@@ -223,7 +223,7 @@ describe('Default reporter', () => {
         },
       }
 
-      const ttyReporter = new DefaultReporter((ttyContext as unknown) as {context: CommandContext})
+      const ttyReporter = new DefaultReporter(ttyContext as unknown as {context: CommandContext})
 
       clearLine.mockClear()
       ttyReporter.testsWait([getApiTest('aaa-aaa-aaa'), getApiTest('bbb-bbb-bbb')], MOCK_BASE_URL, '123')

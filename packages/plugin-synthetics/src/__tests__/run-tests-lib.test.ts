@@ -52,7 +52,7 @@ describe('run-test', () => {
 
       const apiHelper = {}
 
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({}) as any)
 
       await expect(
         runTests.executeTests(mockReporter, {
@@ -85,7 +85,7 @@ describe('run-test', () => {
 
       const apiHelper = {}
 
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({}) as any)
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
@@ -118,7 +118,7 @@ describe('run-test', () => {
       const apiHelper = {}
       const configOverride = {executionRule: ExecutionRule.SKIPPED}
 
-      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({} as any))
+      jest.spyOn(api, 'getApiHelper').mockImplementation(() => ({}) as any)
       await expect(
         runTests.executeTests(mockReporter, {
           ...ciConfig,
@@ -531,7 +531,7 @@ describe('run-test', () => {
             getSyntheticsOrgSettings: () => ({
               onDemandConcurrencyCap: 1,
             }),
-          } as any)
+          }) as any
       )
       jest.spyOn(runTests, 'executeTests').mockReturnValue(Promise.resolve({results: [], summary: {} as Summary}))
       jest.spyOn(utils, 'renderResults').mockImplementation(jest.fn())

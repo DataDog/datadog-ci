@@ -87,7 +87,7 @@ describe('getCIMetadata', () => {
   describe.each(CI_PROVIDERS)('%s', (ciProvider) => {
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
-      {[tag: string]: string}
+      {[tag: string]: string},
     ][]
 
     for (const assertion of assertions) {
@@ -138,7 +138,7 @@ describe('getCIMetadata', () => {
 
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
-      {[tag: string]: string}
+      {[tag: string]: string},
     ][]
 
     it.each(assertions)('spec %#', (env, tags: SpanTags) => {
@@ -170,7 +170,7 @@ describe('ci spec', () => {
   CI_PROVIDERS.forEach((ciProvider) => {
     const assertions = require(upath.join(__dirname, 'ci-env', ciProvider)) as [
       {[key: string]: string},
-      {[key: string]: string}
+      {[key: string]: string},
     ][]
 
     if (ciProvider === 'github.json') {

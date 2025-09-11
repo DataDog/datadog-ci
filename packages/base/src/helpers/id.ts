@@ -42,7 +42,7 @@ const pseudoRandom = () => {
   const offset = batch * 8
 
   return [
-    data[offset] & 0x7F, // only positive int64,
+    data[offset] & 0x7f, // only positive int64,
     data[offset + 1],
     data[offset + 2],
     data[offset + 3],
@@ -55,10 +55,7 @@ const pseudoRandom = () => {
 
 // Read a buffer to unsigned integer bytes.
 const readInt32 = (buffer: number[], offset: number) => {
-  return (buffer[offset + 0] * 16777216) +
-    (buffer[offset + 1] << 16) +
-    (buffer[offset + 2] << 8) +
-    buffer[offset + 3]
+  return buffer[offset + 0] * 16777216 + (buffer[offset + 1] << 16) + (buffer[offset + 2] << 8) + buffer[offset + 3]
 }
 
 export default () => toNumberString(pseudoRandom())

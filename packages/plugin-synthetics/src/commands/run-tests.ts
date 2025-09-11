@@ -188,9 +188,8 @@ export class PluginCommand extends RunTestsCommand {
         headers: toStringMap(process.env.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
         locations: process.env.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS?.split(';'),
         mobileApplicationVersion: process.env.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-        resourceUrlSubstitutionRegexes: process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
-          ';'
-        ),
+        resourceUrlSubstitutionRegexes:
+          process.env.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(';'),
         retry: Object.keys(envOverrideRetryConfig).length > 0 ? envOverrideRetryConfig : undefined,
         startUrl: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL,
         startUrlSubstitutionRegex: process.env.DATADOG_SYNTHETICS_OVERRIDE_START_URL_SUBSTITUTION_REGEX,
