@@ -1386,6 +1386,7 @@ __metadata:
     jszip: "npm:^3.10.1"
     proxy: "npm:^2.1.1"
     proxy-agent: "npm:^6.4.0"
+    semver: "npm:^7.5.3"
     simple-git: "npm:3.16.0"
     terminal-link: "npm:2.1.1"
     tiny-async-pool: "npm:^2.1.0"
