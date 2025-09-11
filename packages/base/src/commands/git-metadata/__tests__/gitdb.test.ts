@@ -3,11 +3,12 @@ import fs from 'fs'
 import fspromises from 'fs/promises'
 import os from 'os'
 
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import axios from 'axios'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
+
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 import {uploadToGitDB} from '../gitdb'
 
