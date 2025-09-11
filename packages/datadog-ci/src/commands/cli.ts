@@ -1,5 +1,5 @@
 /* eslint-disable quote-props */
-import {CommandClass} from 'clipanion'
+import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
 import {commands as aasCommands} from './aas/cli'
 import {commands as cloudRunCommands} from './cloud-run/cli'
@@ -26,7 +26,7 @@ import {commands as unitySymbolsCommands} from './unity-symbols/cli'
 import {commands as versionCommands} from './version/cli'
 
 // prettier-ignore
-export const commands: Record<string, CommandClass[]> = {
+export const commands = {
   'aas': aasCommands,
   'cloud-run': cloudRunCommands,
   'coverage': coverageCommands,
@@ -50,4 +50,4 @@ export const commands: Record<string, CommandClass[]> = {
   'trace': traceCommands,
   'unity-symbols': unitySymbolsCommands,
   'version': versionCommands,
-}
+} satisfies RecordWithKebabCaseKeys
