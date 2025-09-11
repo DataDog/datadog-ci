@@ -25,7 +25,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'
 
-import * as instrumentHelpers from '../../../git-instrument-helpers'
+import * as instrumentHelpers from '@datadog/datadog-ci-plugin-git-metadata/src/instrument-helpers'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,

@@ -5,11 +5,12 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-plugin-git-metadata/src/instrument-helpers'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
+// import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {
   AasCommand,

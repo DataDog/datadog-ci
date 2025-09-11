@@ -2,8 +2,8 @@ import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {filterAndFormatGithubRemote} from '@datadog/datadog-ci-base/helpers/utils'
 import {BaseContext, Cli} from 'clipanion'
 
-import {getCommitInfo, newSimpleGit} from './commands/git-metadata/git'
-import {UploadCommand} from './commands/git-metadata/upload'
+import {getCommitInfo, newSimpleGit} from './git'
+import {UploadCommand} from './upload'
 
 const getGitData = async () => {
   let currentStatus

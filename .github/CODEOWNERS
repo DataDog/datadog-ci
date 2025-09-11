@@ -28,12 +28,15 @@ packages/datadog-ci/src/commands/aas            @DataDog/datadog-ci-admins @Data
 packages/datadog-ci/src/commands/cloud-run      @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/datadog-ci/src/commands/lambda         @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/datadog-ci/src/commands/stepfunctions  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-src/helpers/**/flare*.ts    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+src/helpers/**/flare*.ts                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
-packages/plugin-git-metadata   @DataDog/datadog-ci-admins @DataDog/source-code-integration
-packages/base/src/commands/git-metadata   @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/plugin-git-metadata                    @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration
 packages/datadog-ci/src/commands/gate           @DataDog/datadog-ci-admins @DataDog/source-code-integration
+
+### Source Code integration with Serverless Commands
+packages/plugin-git-metadata/src/instrument-helpers.ts  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Synthetics (label: synthetics)
 packages/plugin-synthetics              @DataDog/datadog-ci-admins @DataDog/synthetics-orchestrating
