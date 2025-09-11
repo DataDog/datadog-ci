@@ -50,7 +50,6 @@ jest,dev,MIT,"Copyright (c) Facebook, Inc. and its affiliates."
 js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 packageurl-js,import,MIT,Copyright (c) the purl authors
-pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 prettier,dev,MIT,Copyright © James Long and contributors
 proxy,dev,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
 proxy-agent,import,MIT,Copyright (c) 2013 Nathan Rajlich <nathan@tootallnate.net>
@@ -90,3 +89,5 @@ jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"
 tsx,dev,MIT,Copyright (c) Hiroki Osame <hiroki.osame@gmail.com>
 typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contributors
 @stylistic/eslint-plugin,dev,MIT,Copyright (c) 2023-PRESENT ESLint Stylistic contributors
+@yao-pkg/pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
+esbuild,dev,MIT,Copyright (c) 2020 Evan Wallace
