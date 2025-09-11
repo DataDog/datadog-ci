@@ -13,7 +13,7 @@ import {
   REVISION_TAG,
   SERVICE_TAG,
   CONTAINS_DEPLOYMENT_TAG,
-} from './constants'
+} from '../constants'
 
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
