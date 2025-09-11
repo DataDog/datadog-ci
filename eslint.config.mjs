@@ -1,7 +1,8 @@
 import eslint from '@eslint/js'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
-import {importX} from 'eslint-plugin-import-x'
+import {importX, createNodeResolver} from 'eslint-plugin-import-x'
+import {createTypeScriptImportResolver} from 'eslint-import-resolver-typescript'
 import jest from 'eslint-plugin-jest'
 import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
@@ -114,6 +115,12 @@ export default defineConfig(
         },
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+    settings: {
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({conditionNames: ['development']}),
+        createNodeResolver(),
+      ],
     },
     plugins: {
       '@stylistic': stylistic,
