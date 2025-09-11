@@ -13,7 +13,7 @@ jest.mock('@datadog/datadog-ci-base/helpers/apikey', () => ({
 }))
 
 const handleSourceCodeIntegration = jest.fn()
-jest.mock('@datadog/datadog-ci-base/helpers/git-instrument-helpers', () => ({
+jest.mock('@datadog/datadog-ci-base/helpers/git/source-code-integration', () => ({
   handleSourceCodeIntegration,
 }))
 

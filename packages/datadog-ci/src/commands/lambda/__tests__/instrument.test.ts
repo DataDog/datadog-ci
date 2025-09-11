@@ -20,7 +20,7 @@ import {
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git-instrument-helpers'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'

@@ -11,7 +11,7 @@ import {
 } from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git-instrument-helpers'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
