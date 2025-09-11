@@ -6,7 +6,6 @@ import {UploadCommand} from '../../commands/git-metadata/upload'
 import {renderSoftWarning} from '../renderer'
 import {filterAndFormatGithubRemote} from '../utils'
 
-
 export const handleSourceCodeIntegration = async (
   context: BaseContext,
   uploadGitMetadata: boolean,
@@ -29,8 +28,6 @@ export const handleSourceCodeIntegration = async (
   return extraTags
 }
 
-
-// Only exported to be mocked in unit tests
 const getGitData = async () => {
   let currentStatus
 
@@ -81,4 +78,3 @@ export const uploadGitData = async (context: BaseContext) => {
 
   return
 }
-
