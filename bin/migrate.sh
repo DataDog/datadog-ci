@@ -32,7 +32,7 @@ echo 2. Create package.json
 cat > "$PLUGIN_DIR/package.json" <<EOF
 {
   "name": "$PLUGIN_PKG",
-  "version": "0.0.1",
+  "version": "$(jq -r .version packages/base/package.json)",
   "license": "Apache-2.0",
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/$PLUGIN_DIR",
   "repository": {
