@@ -130,6 +130,15 @@ describe('standalone binary', () => {
         stderr: '',
       })
     })
+
+    it('plugin can be loaded', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} plugin check synthetics run-tests`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('The plugin is ready to be used! 🔌') as string,
+        stderr: '',
+      })
+    })
   })
   describe('trace', () => {
     it('can be called', async () => {

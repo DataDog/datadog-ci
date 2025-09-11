@@ -1,6 +1,6 @@
 import {commands as migratedCommands} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {PluginSubmodule} from '@datadog/datadog-ci-base/helpers/plugin'
+import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 import {Builtins, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
@@ -70,7 +70,7 @@ describe('cli', () => {
         }
 
         // Using `await import()` in Jest causes `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG`, so we use `require()` instead.
-        const submodule = require(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`) as PluginSubmodule
+        const submodule = require(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`) as PluginSubModule
         submodule.PluginCommand.paths = submodule.PluginCommand.paths?.map((paths) => {
           pluginCommandPaths.add(paths.join(' '))
 
@@ -97,8 +97,8 @@ describe('cli', () => {
       trace: ['id', '--dry-run'],
     }
 
-    // version doesn't support --fips option
-    const fipsCases = cases.filter(([commandName]) => !['version'].includes(commandName))
+    // some commands do not support --fips option
+    const fipsCases = cases.filter(([commandName]) => !['version', 'plugin'].includes(commandName))
 
     describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath) => {
       const path = commandPath.join(' ')

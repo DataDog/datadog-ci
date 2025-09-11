@@ -1,41 +1,136 @@
+import {inspect} from 'util'
+
 import chalk from 'chalk'
 import {Command, CommandClass} from 'clipanion'
 
 import {messageBox} from './message-box'
 
-export type PluginSubmodule = {PluginCommand: CommandClass}
+export type PluginPackageJson = {name: string; version: string}
+export type PluginSubModule = {PluginCommand: CommandClass}
 
 export const executePluginCommand = async <T extends Command>(instance: T): Promise<number | void> => {
   const [scope, command] = instance.path
 
   try {
-    const submodule = (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubmodule
+    const submodule = await importPluginSubmodule(scope, command)
     const pluginCommand = Object.assign(new submodule.PluginCommand(), instance)
 
     return pluginCommand.execute()
   } catch (error) {
-    if (error && (error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') {
-      console.log()
-      messageBox('Plugin not installed 🔌', 'red', [
-        `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command is not installed.`,
-        `To use this command, please install the ${chalk.bold.magenta(`@datadog/datadog-ci-plugin-${scope}`)} package.`,
-      ])
-      console.log(
-        [
-          '',
-          `For example, you can install it using:`,
-          `  ${chalk.bold('npm install')} ${chalk.magenta(`@datadog/datadog-ci-plugin-${scope}`)}`,
-          `or`,
-          `  ${chalk.bold('yarn add')} ${chalk.magenta(`@datadog/datadog-ci-plugin-${scope}`)}`,
-          '',
-        ].join('\n')
-      )
+    handleErrorGeneric(error, scope, command)
 
-      return 1
-    }
+    const packageName = `@datadog/datadog-ci-plugin-${scope}`
 
-    console.error(chalk.red('Unexpected error when executing plugin:'), error)
+    console.log(
+      [
+        `To troubleshoot, run:`,
+        `  ${chalk.bold.cyan(`datadog-ci plugin check`)} ${chalk.magenta(packageName)}`,
+        ...(command
+          ? [`or`, `  ${chalk.bold.cyan(`datadog-ci plugin check`)} ${chalk.magenta(scope)} ${chalk.magenta(command)}`]
+          : []),
+        '',
+      ].join('\n')
+    )
 
     return 1
   }
+}
+
+export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {
+  try {
+    const module = await importPlugin(scope, command)
+
+    console.log(
+      [
+        '',
+        chalk.bold.green('The plugin is ready to be used! 🔌'),
+        '',
+        chalk.dim(`Contents: ${inspect(module, {colors: true})}`),
+        '',
+      ].join('\n')
+    )
+  } catch (error) {
+    handleErrorGeneric(error, scope, command)
+
+    if (isModuleNotFoundError(error)) {
+      console.log(chalk.bold.red('Original NodeJS error:\n'), error)
+    }
+
+    return false
+  }
+
+  return true
+}
+
+const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
+  return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
+}
+
+const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
+  if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
+    return extractPackageJson(require(`${scope}/package.json`))
+  }
+
+  if (!command) {
+    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
+  }
+
+  return importPluginSubmodule(scope, command)
+}
+
+const extractPackageJson = (content: unknown): PluginPackageJson => {
+  if (typeof content !== 'object' || !content) {
+    throw new Error('Invalid package.json: not an object')
+  }
+
+  if (!('name' in content) || typeof content.name !== 'string') {
+    throw new Error('Invalid package.json: missing name')
+  }
+
+  if (!('version' in content) || typeof content.version !== 'string') {
+    throw new Error('Invalid package.json: missing version')
+  }
+
+  const {name, version} = content
+
+  return {name, version}
+}
+
+const handleErrorGeneric = (error: unknown, scope: string, command?: string) => {
+  console.log()
+
+  if (isModuleNotFoundError(error)) {
+    const packageName = `@datadog/datadog-ci-plugin-${scope}`
+
+    if (command) {
+      messageBox('Plugin not installed 🔌', 'red', [
+        `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command could not be found.`,
+        `To use this command, please install ${chalk.bold.magenta(packageName)} alongside datadog-ci.`,
+      ])
+    } else {
+      messageBox('Plugin not installed 🔌', 'red', [
+        `The ${chalk.bold.magenta(packageName)} package could not be found.`,
+        `To use the any command in this plugin, please install it alongside datadog-ci.`,
+      ])
+    }
+
+    console.log(
+      [
+        '',
+        `For example, you can install it using:`,
+        `  ${chalk.bold.cyan('npm install')} ${chalk.magenta(packageName)}`,
+        `or`,
+        `  ${chalk.bold.cyan('yarn add')} ${chalk.magenta(packageName)}`,
+        '',
+      ].join('\n')
+    )
+
+    return
+  }
+
+  console.error(chalk.red('Unexpected error when executing plugin:'), error)
+}
+
+const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException => {
+  return error instanceof Error && (error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND'
 }
