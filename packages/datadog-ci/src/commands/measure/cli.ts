@@ -1,3 +1,3 @@
 import {MeasureCommand} from './measure'
 
-module.exports = [MeasureCommand]
+export const commands = [MeasureCommand]

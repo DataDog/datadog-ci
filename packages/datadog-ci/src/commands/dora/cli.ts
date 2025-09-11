@@ -1,3 +1,3 @@
 import {SendDeploymentEvent} from './deployment'
 
-module.exports = [SendDeploymentEvent]
+export const commands = [SendDeploymentEvent]

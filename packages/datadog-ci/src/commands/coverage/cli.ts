@@ -1,3 +1,3 @@
 import {UploadCodeCoverageReportCommand} from './upload'
 
-module.exports = [UploadCodeCoverageReportCommand]
+export const commands = [UploadCodeCoverageReportCommand]

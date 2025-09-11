@@ -1,3 +1,3 @@
 import {TraceCommand} from './trace'
 
-module.exports = [TraceCommand]
+export const commands = [TraceCommand]

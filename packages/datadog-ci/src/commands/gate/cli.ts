@@ -1,3 +1,3 @@
 import {GateEvaluateCommand} from './evaluate'
 
-module.exports = [GateEvaluateCommand]
+export const commands = [GateEvaluateCommand]
