@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {ICONS} from '../../helpers/formatting'
 
 import {CommitInfo} from './interfaces'
 

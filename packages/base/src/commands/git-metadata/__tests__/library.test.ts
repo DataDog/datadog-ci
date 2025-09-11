@@ -1,5 +1,5 @@
-import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
-import * as upload from '@datadog/datadog-ci-base/helpers/upload'
+import * as apikey from '../../../helpers/apikey'
+import * as upload from '../../../helpers/upload'
 
 import * as git from '../git'
 import * as gitdb from '../gitdb'
