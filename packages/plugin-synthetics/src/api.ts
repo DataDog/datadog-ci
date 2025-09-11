@@ -40,7 +40,10 @@ interface BackendError {
 }
 
 export class EndpointError extends Error {
-  constructor(public message: string, public status: number) {
+  constructor(
+    public message: string,
+    public status: number
+  ) {
     super(message)
     Object.setPrototypeOf(this, EndpointError.prototype)
   }
@@ -107,157 +110,147 @@ const triggerTests = (request: (args: AxiosRequestConfig) => AxiosPromise<Server
   return resp.data
 }
 
-const getTest = (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (
-  testId: string,
-  testType?: string
-) => {
-  const resp = await retryRequest(
-    {
-      url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
-    },
-    request,
-    {retryOn429: true}
-  )
-
-  return resp.data
-}
-
-const getTestVersion = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
-  testId: string,
-  version: number
-) => {
-  await retryRequest(
-    {
-      url: `/synthetics/tests/${testId}/version_history/${version}?only_check_existence=true`,
-    },
-    request,
-    {retryOn429: true}
-  )
-}
-
-const getLocalTestDefinition = (request: (args: AxiosRequestConfig) => AxiosPromise<LocalTestDefinition>) => async (
-  testId: string,
-  testType?: string
-) => {
-  const resp = await retryRequest(
-    {
-      params: {
-        format: 'ltd',
+const getTest =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<ServerTest>) => async (testId: string, testType?: string) => {
+    const resp = await retryRequest(
+      {
+        url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
       },
-      url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
-    },
-    request,
-    {retryOn429: true}
-  )
+      request,
+      {retryOn429: true}
+    )
 
-  return resp.data
-}
-
-const editTest = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
-  testId: string,
-  data: ServerTest
-) => {
-  await retryRequest(
-    {
-      data,
-      method: 'PUT',
-      url: `/synthetics/tests/${testId}`,
-    },
-    request,
-    {retryOn429: true}
-  )
-}
-
-const searchTests = (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (
-  query: string
-) => {
-  const resp = await retryRequest(
-    {
-      params: {
-        // Search for one more test than limit to detect if too many tests are returned
-        count: MAX_TESTS_TO_TRIGGER + 1,
-        text: query,
-      },
-      url: '/synthetics/tests/search',
-    },
-    request
-  )
-
-  return resp.data
-}
-
-const getSyntheticsOrgSettings = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsOrgSettings>
-) => async () => {
-  const resp = await retryRequest(
-    {
-      url: '/synthetics/settings',
-    },
-    request
-  )
-
-  return resp.data
-}
-
-const getBatch = (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) => async (
-  batchId: string
-): Promise<Batch> => {
-  const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
-    retryOn404: true,
-    retryOn429: true,
-  })
-
-  const serverBatch = resp.data.data
-
-  return {
-    results: serverBatch.results.filter((r) => r.status !== 'skipped' || r.selective_rerun) as Batch['results'],
-    status: serverBatch.status,
+    return resp.data
   }
-}
 
-const pollResults = (request: (args: AxiosRequestConfig) => AxiosPromise<RawPollResult>) => async (
-  resultIds: string[]
-) => {
-  const resp = await retryRequest(
-    {
-      params: {
-        result_ids: JSON.stringify(resultIds),
+const getTestVersion =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (testId: string, version: number) => {
+    await retryRequest(
+      {
+        url: `/synthetics/tests/${testId}/version_history/${version}?only_check_existence=true`,
       },
-      url: '/synthetics/tests/poll_results',
-    },
-    request,
-    {retryOn404: true, retryOn429: true}
-  )
+      request,
+      {retryOn429: true}
+    )
+  }
 
-  const includedTestsByID = new Map<string, RawPollResultTest>()
-  resp.data.included?.forEach((r) => {
-    if (r.type === 'test') {
-      const test = {
-        id: r.id,
-        ...r.attributes,
+const getLocalTestDefinition =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<LocalTestDefinition>) =>
+  async (testId: string, testType?: string) => {
+    const resp = await retryRequest(
+      {
+        params: {
+          format: 'ltd',
+        },
+        url: !!testType ? `/synthetics/tests/${testType}/${testId}` : `/synthetics/tests/${testId}`,
+      },
+      request,
+      {retryOn429: true}
+    )
+
+    return resp.data
+  }
+
+const editTest =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (testId: string, data: ServerTest) => {
+    await retryRequest(
+      {
+        data,
+        method: 'PUT',
+        url: `/synthetics/tests/${testId}`,
+      },
+      request,
+      {retryOn429: true}
+    )
+  }
+
+const searchTests =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<TestSearchResult>) => async (query: string) => {
+    const resp = await retryRequest(
+      {
+        params: {
+          // Search for one more test than limit to detect if too many tests are returned
+          count: MAX_TESTS_TO_TRIGGER + 1,
+          text: query,
+        },
+        url: '/synthetics/tests/search',
+      },
+      request
+    )
+
+    return resp.data
+  }
+
+const getSyntheticsOrgSettings =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<SyntheticsOrgSettings>) => async () => {
+    const resp = await retryRequest(
+      {
+        url: '/synthetics/settings',
+      },
+      request
+    )
+
+    return resp.data
+  }
+
+const getBatch =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<{data: ServerBatch}>) =>
+  async (batchId: string): Promise<Batch> => {
+    const resp = await retryRequest({url: `/synthetics/ci/batch/${batchId}`}, request, {
+      retryOn404: true,
+      retryOn429: true,
+    })
+
+    const serverBatch = resp.data.data
+
+    return {
+      results: serverBatch.results.filter((r) => r.status !== 'skipped' || r.selective_rerun) as Batch['results'],
+      status: serverBatch.status,
+    }
+  }
+
+const pollResults =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<RawPollResult>) => async (resultIds: string[]) => {
+    const resp = await retryRequest(
+      {
+        params: {
+          result_ids: JSON.stringify(resultIds),
+        },
+        url: '/synthetics/tests/poll_results',
+      },
+      request,
+      {retryOn404: true, retryOn429: true}
+    )
+
+    const includedTestsByID = new Map<string, RawPollResultTest>()
+    resp.data.included?.forEach((r) => {
+      if (r.type === 'test') {
+        const test = {
+          id: r.id,
+          ...r.attributes,
+        }
+        includedTestsByID.set(r.id, test)
       }
-      includedTestsByID.set(r.id, test)
-    }
-  })
+    })
 
-  const rawPollResults = resp.data.data
-  const parsedPollResults = []
-  for (const r of rawPollResults) {
-    const test = includedTestsByID.get(r.relationships.test.data.id)
-    if (!test) {
-      continue
-    }
-    const pollResult: PollResult = {
-      ...r.attributes,
-      test: parseIncludedTest(test),
-      resultID: r.id,
+    const rawPollResults = resp.data.data
+    const parsedPollResults = []
+    for (const r of rawPollResults) {
+      const test = includedTestsByID.get(r.relationships.test.data.id)
+      if (!test) {
+        continue
+      }
+      const pollResult: PollResult = {
+        ...r.attributes,
+        test: parseIncludedTest(test),
+        resultID: r.id,
+      }
+
+      parsedPollResults.push(pollResult)
     }
 
-    parsedPollResults.push(pollResult)
+    return parsedPollResults
   }
-
-  return parsedPollResults
-}
 
 const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
   return {
@@ -274,126 +267,127 @@ const parseIncludedTest = (test: RawPollResultTest): PollResult['test'] => {
   }
 }
 
-const getTunnelPresignedURL = (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (
-  testIds: string[]
-) => {
-  const resp = await retryRequest(
-    {
-      params: {
-        test_id: testIds,
-      },
-      paramsSerializer: (params) => stringify(params),
-      url: '/synthetics/ci/tunnel',
-    },
-    request
-  )
-
-  return resp.data
-}
-
-const getMobileApplicationPresignedURLs = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<MultipartPresignedUrlsResponse>
-) => async (
-  applicationId: string,
-  appSize: number,
-  parts: MobileApplicationUploadPart[]
-): Promise<MultipartPresignedUrlsResponse> => {
-  const partForRequest = (part: MobileApplicationUploadPart) => ({
-    md5: part.md5,
-    partNumber: part.partNumber,
-  })
-
-  const resp = await retryRequest(
-    {
-      data: {
-        appSize,
-        parts: parts.map(partForRequest),
-      },
-      method: 'POST',
-      url: `/synthetics/mobile/applications/${applicationId}/multipart-presigned-urls`,
-    },
-    request
-  )
-
-  return resp.data
-}
-
-const uploadMobileApplicationPart = (request: (args: AxiosRequestConfig) => AxiosPromise<void>) => async (
-  parts: MobileApplicationUploadPart[],
-  multipartPresignedUrlsParams: MultipartPresignedUrlsResponse['multipart_presigned_urls_params']
-): Promise<MobileApplicationUploadPartResponse[]> => {
-  const promises = Object.entries(multipartPresignedUrlsParams.urls).map(async ([partNumber, presignedUrl]) => {
+const getTunnelPresignedURL =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<{url: string}>) => async (testIds: string[]) => {
     const resp = await retryRequest(
       {
-        data: parts[Number(partNumber) - 1].blob,
-        headers: {
-          'Content-MD5': parts[Number(partNumber) - 1].md5,
-          // Presigned URL *requires* unset content-type since it's used for signature
-          // We can clear axios default by setting to null
-          // https://github.com/axios/axios/pull/1845
-          // eslint-disable-next-line no-null/no-null
-          'Content-Type': null,
+        params: {
+          test_id: testIds,
         },
-        maxBodyLength: Infinity,
-        maxContentLength: Infinity,
-        method: 'PUT',
-        url: presignedUrl,
+        paramsSerializer: (params) => stringify(params),
+        url: '/synthetics/ci/tunnel',
       },
       request
     )
 
-    // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
-    const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
+    return resp.data
+  }
 
-    return {
-      ETag: quotedEtag.replace(/"/g, ''),
-      PartNumber: Number(partNumber),
-    }
-  })
+const getMobileApplicationPresignedURLs =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<MultipartPresignedUrlsResponse>) =>
+  async (
+    applicationId: string,
+    appSize: number,
+    parts: MobileApplicationUploadPart[]
+  ): Promise<MultipartPresignedUrlsResponse> => {
+    const partForRequest = (part: MobileApplicationUploadPart) => ({
+      md5: part.md5,
+      partNumber: part.partNumber,
+    })
 
-  return Promise.all(promises)
-}
-
-export const completeMultipartMobileApplicationUpload = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>
-) => async (
-  applicationId: string,
-  uploadId: string,
-  key: string,
-  uploadPartResponses: MobileApplicationUploadPartResponse[],
-  newVersionParams?: MobileApplicationNewVersionParams
-): Promise<string> => {
-  const resp = await retryRequest(
-    {
-      data: {
-        key,
-        newVersionParams,
-        parts: uploadPartResponses,
-        uploadId,
-        validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
+    const resp = await retryRequest(
+      {
+        data: {
+          appSize,
+          parts: parts.map(partForRequest),
+        },
+        method: 'POST',
+        url: `/synthetics/mobile/applications/${applicationId}/multipart-presigned-urls`,
       },
-      method: 'POST',
-      url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
-    },
-    request
-  )
+      request
+    )
 
-  return resp.data.job_id
-}
+    return resp.data
+  }
 
-export const pollMobileApplicationUploadResponse = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>
-) => async (jobId: string): Promise<MobileAppUploadResult> => {
-  const response = await retryRequest(
-    {
-      method: 'GET',
-      url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
-    },
-    request
-  )
+const uploadMobileApplicationPart =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<void>) =>
+  async (
+    parts: MobileApplicationUploadPart[],
+    multipartPresignedUrlsParams: MultipartPresignedUrlsResponse['multipart_presigned_urls_params']
+  ): Promise<MobileApplicationUploadPartResponse[]> => {
+    const promises = Object.entries(multipartPresignedUrlsParams.urls).map(async ([partNumber, presignedUrl]) => {
+      const resp = await retryRequest(
+        {
+          data: parts[Number(partNumber) - 1].blob,
+          headers: {
+            'Content-MD5': parts[Number(partNumber) - 1].md5,
+            // Presigned URL *requires* unset content-type since it's used for signature
+            // We can clear axios default by setting to null
+            // https://github.com/axios/axios/pull/1845
+            // eslint-disable-next-line no-null/no-null
+            'Content-Type': null,
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+          method: 'PUT',
+          url: presignedUrl,
+        },
+        request
+      )
 
-  return response.data
-}
+      // Azure part-upload does not return ETag headers, so our backend ignores it for Azure
+      const quotedEtag = isAzureUrl(presignedUrl) ? '' : (resp.headers.etag as string)
+
+      return {
+        ETag: quotedEtag.replace(/"/g, ''),
+        PartNumber: Number(partNumber),
+      }
+    })
+
+    return Promise.all(promises)
+  }
+
+export const completeMultipartMobileApplicationUpload =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<{job_id: string}>) =>
+  async (
+    applicationId: string,
+    uploadId: string,
+    key: string,
+    uploadPartResponses: MobileApplicationUploadPartResponse[],
+    newVersionParams?: MobileApplicationNewVersionParams
+  ): Promise<string> => {
+    const resp = await retryRequest(
+      {
+        data: {
+          key,
+          newVersionParams,
+          parts: uploadPartResponses,
+          uploadId,
+          validateMode: newVersionParams ? 'validate-and-persist' : 'validate-only',
+        },
+        method: 'POST',
+        url: `/synthetics/mobile/applications/${applicationId}/multipart-upload-complete`,
+      },
+      request
+    )
+
+    return resp.data.job_id
+  }
+
+export const pollMobileApplicationUploadResponse =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<MobileAppUploadResult>) =>
+  async (jobId: string): Promise<MobileAppUploadResult> => {
+    const response = await retryRequest(
+      {
+        method: 'GET',
+        url: `/synthetics/mobile/applications/validation-job-status/${jobId}`,
+      },
+      request
+    )
+
+    return response.data
+  }
 
 const retryWithJitter = (delay: number = DELAY_BETWEEN_429_RETRIES) => delay + Math.floor(Math.random() * delay)
 

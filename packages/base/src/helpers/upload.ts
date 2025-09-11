@@ -65,34 +65,33 @@ export enum UploadStatus {
  * This handles retries as well as logging information about upload if a logger is provided in
  * the options
  */
-export const upload = (requestBuilder: RequestBuilder) => async (
-  payload: MultipartPayload,
-  opts: UploadOptions
-): Promise<UploadStatus> => {
-  opts.onUpload()
-  try {
-    await retryRequest(() => uploadMultipart(requestBuilder, payload, opts.useGzip ?? false), {
-      onRetry: opts.onRetry,
-      retries: opts.retries,
-    })
+export const upload =
+  (requestBuilder: RequestBuilder) =>
+  async (payload: MultipartPayload, opts: UploadOptions): Promise<UploadStatus> => {
+    opts.onUpload()
+    try {
+      await retryRequest(() => uploadMultipart(requestBuilder, payload, opts.useGzip ?? false), {
+        onRetry: opts.onRetry,
+        retries: opts.retries,
+      })
 
-    return UploadStatus.Success
-  } catch (error) {
-    if (opts.apiKeyValidator) {
-      // Raise an exception in case of invalid API key
-      await opts.apiKeyValidator.verifyApiKey(error)
-    }
-    if (error.response && error.response.statusText) {
-      // Rewrite error to have formatted error string
-      opts.onError(new Error(`${error.message} (${error.response.statusText})`))
-    } else {
-      // Default error handling
-      opts.onError(error)
-    }
+      return UploadStatus.Success
+    } catch (error) {
+      if (opts.apiKeyValidator) {
+        // Raise an exception in case of invalid API key
+        await opts.apiKeyValidator.verifyApiKey(error)
+      }
+      if (error.response && error.response.statusText) {
+        // Rewrite error to have formatted error string
+        opts.onError(new Error(`${error.message} (${error.response.statusText})`))
+      } else {
+        // Default error handling
+        opts.onError(error)
+      }
 
-    return UploadStatus.Failure
+      return UploadStatus.Failure
+    }
   }
-}
 
 // Dependency follows-redirects sets a default maxBodyLength of 10 MB https://github.com/follow-redirects/follow-redirects/blob/b774a77e582b97174813b3eaeb86931becba69db/index.js#L391
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.

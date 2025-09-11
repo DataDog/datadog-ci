@@ -18,55 +18,54 @@ export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'd
 export const intakeUrl = `https://cireport-intake.${datadogSite}`
 export const apiUrl = `https://api.${datadogSite}`
 
-export const uploadJUnitXML = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  jUnitXML: Payload
-) => {
-  const form = new FormData()
+export const uploadJUnitXML =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (jUnitXML: Payload) => {
+    const form = new FormData()
 
-  let fileName
-  try {
-    fileName = upath.parse(jUnitXML.xmlPath).name
-  } catch (e) {
-    fileName = 'default_file_name'
+    let fileName
+    try {
+      fileName = upath.parse(jUnitXML.xmlPath).name
+    } catch (e) {
+      fileName = 'default_file_name'
+    }
+
+    const reportTagsAndMetrics: Record<string, any> = {
+      tags: jUnitXML.reportTags,
+      metrics: jUnitXML.reportMeasures, // We can't change `metrics` to `measures` because the backend only accepts `metrics`.
+    }
+
+    const custom: Record<string, any> = {
+      metadata: jUnitXML.spanTags,
+      tags: jUnitXML.customTags,
+      metrics: jUnitXML.customMeasures,
+      session: reportTagsAndMetrics,
+      '_dd.cireport_version': '3',
+      '_dd.hostname': jUnitXML.hostname,
+      '_dd.report_name': fileName,
+    }
+
+    if (jUnitXML.logsEnabled) {
+      custom['_dd.junitxml_logs'] = true
+    }
+
+    if (jUnitXML.xpathTags) {
+      custom['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
+    }
+
+    form.append('event', JSON.stringify(custom), {filename: 'event.json'})
+
+    form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
+      filename: `${uuidv4()}.xml.gz`,
+    })
+
+    return request({
+      data: form,
+      headers: form.getHeaders(),
+      maxBodyLength,
+      method: 'POST',
+      url: 'api/v2/cireport',
+    })
   }
-
-  const reportTagsAndMetrics: Record<string, any> = {
-    tags: jUnitXML.reportTags,
-    metrics: jUnitXML.reportMeasures, // We can't change `metrics` to `measures` because the backend only accepts `metrics`.
-  }
-
-  const custom: Record<string, any> = {
-    metadata: jUnitXML.spanTags,
-    tags: jUnitXML.customTags,
-    metrics: jUnitXML.customMeasures,
-    session: reportTagsAndMetrics,
-    '_dd.cireport_version': '3',
-    '_dd.hostname': jUnitXML.hostname,
-    '_dd.report_name': fileName,
-  }
-
-  if (jUnitXML.logsEnabled) {
-    custom['_dd.junitxml_logs'] = true
-  }
-
-  if (jUnitXML.xpathTags) {
-    custom['_dd.junitxml_xpath_tags'] = jUnitXML.xpathTags
-  }
-
-  form.append('event', JSON.stringify(custom), {filename: 'event.json'})
-
-  form.append('junit_xml_report_file', fs.createReadStream(jUnitXML.xmlPath).pipe(createGzip()), {
-    filename: `${uuidv4()}.xml.gz`,
-  })
-
-  return request({
-    data: form,
-    headers: form.getHeaders(),
-    maxBodyLength,
-    method: 'POST',
-    url: 'api/v2/cireport',
-  })
-}
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
   const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})

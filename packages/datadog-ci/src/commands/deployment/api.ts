@@ -9,43 +9,43 @@ import {
   GateEvaluationStatusResponse,
 } from './interfaces'
 
-const requestGateEvaluation = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationRequestResponse>
-) => async (evaluationRequest: GateEvaluationRequest) => {
-  const payload = {
-    data: {
-      type: 'deployment_gates_evaluation_request',
-      attributes: {
-        service: evaluationRequest.service,
-        env: evaluationRequest.env,
-        identifier: evaluationRequest.identifier,
-        ...(evaluationRequest.version && {version: evaluationRequest.version}),
-        ...(evaluationRequest.apm_primary_tag && {apm_primary_tag: evaluationRequest.apm_primary_tag}),
-        ...(evaluationRequest.monitors_query_variable && {
-          monitors_query_variable: evaluationRequest.monitors_query_variable,
-        }),
+const requestGateEvaluation =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationRequestResponse>) =>
+  async (evaluationRequest: GateEvaluationRequest) => {
+    const payload = {
+      data: {
+        type: 'deployment_gates_evaluation_request',
+        attributes: {
+          service: evaluationRequest.service,
+          env: evaluationRequest.env,
+          identifier: evaluationRequest.identifier,
+          ...(evaluationRequest.version && {version: evaluationRequest.version}),
+          ...(evaluationRequest.apm_primary_tag && {apm_primary_tag: evaluationRequest.apm_primary_tag}),
+          ...(evaluationRequest.monitors_query_variable && {
+            monitors_query_variable: evaluationRequest.monitors_query_variable,
+          }),
+        },
       },
-    },
+    }
+
+    return request({
+      data: JSON.stringify(payload),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      url: '/api/unstable/deployments/gates/evaluation',
+    })
   }
 
-  return request({
-    data: JSON.stringify(payload),
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    method: 'POST',
-    url: '/api/unstable/deployments/gates/evaluation',
-  })
-}
-
-const getGateEvaluationResult = (
-  request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationStatusResponse>
-) => async (evaluationId: string) => {
-  return request({
-    method: 'GET',
-    url: `/api/unstable/deployments/gates/evaluation/${evaluationId}`,
-  })
-}
+const getGateEvaluationResult =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<GateEvaluationStatusResponse>) =>
+  async (evaluationId: string) => {
+    return request({
+      method: 'GET',
+      url: `/api/unstable/deployments/gates/evaluation/${evaluationId}`,
+    })
+  }
 
 export const apiConstructor = (baseUrl: string, apiKey: string, appKey: string): APIHelper => {
   const requestBuilder = getRequestBuilder({baseUrl, apiKey, appKey})

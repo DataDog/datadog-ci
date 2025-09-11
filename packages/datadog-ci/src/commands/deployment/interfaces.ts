@@ -35,7 +35,7 @@ export interface GateEvaluationStatusResponse {
           status: 'pass' | 'fail' | 'in_progress'
           reason: string
           dry_run: boolean
-        }
+        },
       ]
     }
   }

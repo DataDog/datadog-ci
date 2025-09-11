@@ -320,11 +320,12 @@ describe('commons', () => {
     ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
 
     test('returns credentials when `fromNodeProviderChain` returns a succesful promise', async () => {
-      ;(fromNodeProviderChain as any).mockImplementation(() => () =>
-        Promise.resolve({
-          accessKeyId: mockAwsAccessKeyId,
-          secretAccessKey: mockAwsSecretAccessKey,
-        })
+      ;(fromNodeProviderChain as any).mockImplementation(
+        () => () =>
+          Promise.resolve({
+            accessKeyId: mockAwsAccessKeyId,
+            secretAccessKey: mockAwsSecretAccessKey,
+          })
       )
 
       const credentials = await getAWSCredentials()

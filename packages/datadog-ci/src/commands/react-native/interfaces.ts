@@ -131,4 +131,4 @@ export interface GitData {
 
 export const RN_SUPPORTED_PLATFORMS = ['ios', 'android'] as const
 // Notice that the array and type can have the same name if you want
-export type RNPlatform = typeof RN_SUPPORTED_PLATFORMS[number]
+export type RNPlatform = (typeof RN_SUPPORTED_PLATFORMS)[number]

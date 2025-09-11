@@ -221,9 +221,12 @@ export class GateEvaluateCommand extends Command {
           if (response.data.data.attributes.status === 'wait') {
             this.context.stdout.write(renderWaiting())
             const waitTime = response.data.data.attributes.metadata?.wait_time_ms ?? 0
-            setTimeout(() => {
-              reject(new Error('wait'))
-            }, Math.min(remainingWait, waitTime))
+            setTimeout(
+              () => {
+                reject(new Error('wait'))
+              },
+              Math.min(remainingWait, waitTime)
+            )
           } else {
             resolve(response)
           }
@@ -234,9 +237,12 @@ export class GateEvaluateCommand extends Command {
 
             return
           }
-          setTimeout(() => {
-            reject(err)
-          }, Math.min(remainingWait, this.getDelay(attempt ?? 1)))
+          setTimeout(
+            () => {
+              reject(err)
+            },
+            Math.min(remainingWait, this.getDelay(attempt ?? 1))
+          )
         })
     })
   }

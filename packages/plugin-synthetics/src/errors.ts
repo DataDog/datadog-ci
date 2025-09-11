@@ -26,7 +26,10 @@ export type CriticalCiErrorCode =
 export type CiErrorCode = NonCriticalCiErrorCode | CriticalCiErrorCode
 
 export class CiError extends Error {
-  constructor(public code: CiErrorCode, message?: string) {
+  constructor(
+    public code: CiErrorCode,
+    message?: string
+  ) {
     super(message)
   }
 
@@ -39,7 +42,10 @@ export class CiError extends Error {
 }
 
 export class CriticalError extends CiError {
-  constructor(public code: CriticalCiErrorCode, message?: string) {
+  constructor(
+    public code: CriticalCiErrorCode,
+    message?: string
+  ) {
     super(code, message)
   }
 }
