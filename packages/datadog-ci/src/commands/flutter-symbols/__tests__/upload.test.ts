@@ -2,8 +2,7 @@ import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-
 import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {cliVersion} from '../../../version'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import * as dsyms from '../../dsyms/upload'
 import * as sourcemaps from '../../sourcemaps/upload'

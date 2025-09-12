@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-base",
-  "version": "0.0.1",
+  "version": "3.20.0",
   "license": "Apache-2.0",
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/base",
   "repository": {
@@ -24,6 +24,10 @@
     "./helpers/*": {
       "development": "./src/helpers/*.ts",
       "default": "./dist/helpers/*.js"
+    },
+    "./version": {
+      "development": "./src/version.ts",
+      "default": "./dist/version.js"
     }
   },
   "files": [
@@ -51,6 +55,7 @@
     "inquirer": "^8.2.5",
     "jszip": "^3.10.1",
     "proxy-agent": "^6.4.0",
+    "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "terminal-link": "2.1.1",
     "tiny-async-pool": "^2.1.0",
@@ -61,6 +66,7 @@
     "@types/async-retry": "1.4.8",
     "@types/deep-extend": "0.4.31",
     "@types/inquirer": "8.2.6",
+    "@types/semver": "^7.7.1",
     "@types/tiny-async-pool": "^2.0.3",
     "proxy": "^2.1.1"
   }

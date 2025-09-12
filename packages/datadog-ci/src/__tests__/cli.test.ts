@@ -10,6 +10,9 @@ import {cli, BETA_COMMANDS} from '../cli'
 
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
+// scopes that are not plugins, at least for now
+const nonPluginScopes = ['git-metadata']
+
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
 
 describe('cli', () => {
@@ -62,6 +65,9 @@ describe('cli', () => {
       commandClasses.forEach((commandClass) => {
         // We assume the first path is always the real import, and other paths are only aliases.
         const [scope, command] = commandClass.paths?.[0] ?? []
+        if (nonPluginScopes.includes(scope)) {
+          return
+        }
 
         // Using `await import()` in Jest causes `ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING_FLAG`, so we use `require()` instead.
         const submodule = require(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`) as PluginSubmodule

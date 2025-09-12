@@ -6,7 +6,7 @@ jest.mock('@aws-sdk/credential-providers', () => ({
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
 jest.mock('@datadog/datadog-ci-base/helpers/prompt')
-jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import * as fs from 'fs'
 
@@ -20,12 +20,11 @@ import {
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'
-
-import * as instrumentHelpers from '../../../git-instrument-helpers'
 
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,

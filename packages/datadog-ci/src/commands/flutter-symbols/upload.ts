@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -17,14 +18,12 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
-import {cliVersion} from '../../version'
-
 import * as dsyms from '../dsyms/upload'
-import {newSimpleGit} from '../git-metadata/git'
 import * as sourcemaps from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'

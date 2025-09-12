@@ -7,8 +7,7 @@ import {
   UntagResourceCommand,
   ListTagsCommand,
 } from '@aws-sdk/client-lambda'
-
-import {cliVersion} from '../../version'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'

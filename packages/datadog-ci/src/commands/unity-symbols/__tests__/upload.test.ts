@@ -7,8 +7,7 @@ import {
   MultipartValue,
 } from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {cliVersion} from '../../../version'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import * as dsyms from '../../dsyms/upload'
 

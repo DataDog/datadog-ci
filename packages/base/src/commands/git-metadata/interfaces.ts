@@ -1,4 +1,4 @@
-import {MultipartPayload, MultipartValue} from '@datadog/datadog-ci-base/helpers/upload'
+import {MultipartPayload, MultipartValue} from '../../helpers/upload'
 
 export class CommitInfo {
   public hash: string

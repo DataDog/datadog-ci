@@ -3,7 +3,7 @@ jest.mock('fs', () => ({
   readFile: jest.fn().mockImplementation((a, b, callback) => callback({code: 'ENOENT'})),
 }))
 
-jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 const getToken = jest.fn()
 

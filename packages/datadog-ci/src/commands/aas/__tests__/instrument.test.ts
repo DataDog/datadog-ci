@@ -3,7 +3,7 @@ jest.mock('fs', () => ({
   readFile: jest.fn().mockImplementation((a, b, callback) => callback({code: 'ENOENT'})),
 }))
 
-jest.mock('../../../../package.json', () => ({version: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 const validateApiKey = jest.fn()
 jest.mock('@datadog/datadog-ci-base/helpers/apikey', () => ({
@@ -13,7 +13,7 @@ jest.mock('@datadog/datadog-ci-base/helpers/apikey', () => ({
 }))
 
 const handleSourceCodeIntegration = jest.fn()
-jest.mock('../../../git-instrument-helpers', () => ({
+jest.mock('@datadog/datadog-ci-base/helpers/git/source-code-integration', () => ({
   handleSourceCodeIntegration,
 }))
 

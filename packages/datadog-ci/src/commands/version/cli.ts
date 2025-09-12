@@ -1,6 +1,5 @@
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command} from 'clipanion'
-
-import {cliVersion} from '../../version'
 
 class VersionCommand extends Command {
   public static paths = [['version']]

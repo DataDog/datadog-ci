@@ -1,6 +1,9 @@
 import fs from 'fs'
 import os from 'os'
 
+import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
+import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -22,10 +25,6 @@ import {Command, Option} from 'clipanion'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import * as t from 'typanion'
 import upath from 'upath'
-
-import {isGitRepo} from '../git-metadata'
-import {newSimpleGit} from '../git-metadata/git'
-import {uploadToGitDB} from '../git-metadata/gitdb'
 
 import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload} from './interfaces'

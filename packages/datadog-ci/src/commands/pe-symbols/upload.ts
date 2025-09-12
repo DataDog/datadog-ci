@@ -20,10 +20,9 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {cliVersion} from '../../version'
 
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'

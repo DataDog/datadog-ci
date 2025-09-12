@@ -1,8 +1,7 @@
 import type {AxiosPromise, AxiosResponse} from 'axios'
 
+import {DiffData} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-
-import {DiffData} from '../git-metadata/git'
 
 export interface Payload {
   hostname: string

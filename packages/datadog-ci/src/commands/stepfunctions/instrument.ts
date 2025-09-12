@@ -4,9 +4,8 @@ import {SFNClient} from '@aws-sdk/client-sfn'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
-
-import {cliVersion} from '../../version'
 
 import {
   createLogGroup,
