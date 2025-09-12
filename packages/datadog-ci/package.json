@@ -24,8 +24,8 @@
   },
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
-    "bundle": "esbuild dist/cli.js --bundle --platform=node --outfile=dist/bundle.js",
-    "dist-standalone": "yarn bundle --minify && pkg --sea --compress GZip dist/bundle.js",
+    "bundle": "node scripts/esbuild.mjs",
+    "dist-standalone": "yarn bundle && pkg --sea --compress GZip dist/bundle.js",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
@@ -73,7 +73,7 @@
     "@types/inquirer": "8.2.6",
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "^18.19.76",
+    "@types/node": "^20.19.13",
     "@types/semver": "^7.3.12",
     "@types/uuid": "^9.0.2",
     "@yao-pkg/pkg": "^6.6.0",

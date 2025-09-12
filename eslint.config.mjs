@@ -100,7 +100,11 @@ const restrictedImports = [
 ]
 
 export default defineConfig(
-  globalIgnores(['eslint.config.mjs', 'packages/*/dist']),
+  globalIgnores([
+    'eslint.config.mjs',
+    'packages/*/dist',
+    'packages/datadog-ci/scripts/injected-plugin-submodules-shim.js',
+  ]),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
@@ -279,6 +283,7 @@ export default defineConfig(
       'guard-for-in': 'error',
       'id-denylist': 'error',
       'id-match': 'error',
+      'import-x/no-unresolved': ['error', {ignore: ['node:sea']}],
       'import-x/no-extraneous-dependencies': 'error',
       'import-x/order': [
         'error',

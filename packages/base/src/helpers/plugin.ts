@@ -1,8 +1,9 @@
-import {inspect} from 'util'
+import {inspect} from 'node:util'
 
 import chalk from 'chalk'
 import {Command, CommandClass} from 'clipanion'
 
+import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
 
 export type PluginPackageJson = {name: string; version: string}
@@ -37,6 +38,20 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
 }
 
 export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {
+  if (await isStandaloneBinary()) {
+    console.log(
+      [
+        '',
+        chalk.bold.green('The plugin is ready to be used! 🔌'),
+        '',
+        `${chalk.bold('Note:')} All plugins are already baked into the standalone binary.`,
+        '',
+      ].join('\n')
+    )
+
+    return true
+  }
+
   try {
     const module = await importPlugin(scope, command)
 
@@ -63,6 +78,11 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 }
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
+  if (await isStandaloneBinary()) {
+    // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
+    return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
+  }
+
   return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
 }
 
@@ -128,7 +148,8 @@ const handleErrorGeneric = (error: unknown, scope: string, command?: string) => 
     return
   }
 
-  console.error(chalk.red('Unexpected error when executing plugin:'), error)
+  console.error(chalk.bold.red('Unexpected error when executing plugin:'), error)
+  console.log()
 }
 
 const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException => {

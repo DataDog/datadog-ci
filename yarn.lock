@@ -1443,7 +1443,7 @@ __metadata:
     "@types/inquirer": "npm:8.2.6"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
-    "@types/node": "npm:^18.19.76"
+    "@types/node": "npm:^20.19.13"
     "@types/semver": "npm:^7.3.12"
     "@types/uuid": "npm:^9.0.2"
     "@yao-pkg/pkg": "npm:^6.6.0"
@@ -3512,12 +3512,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^18.19.76":
-  version: 18.19.76
-  resolution: "@types/node@npm:18.19.76"
+"@types/node@npm:^20.19.13":
+  version: 20.19.13
+  resolution: "@types/node@npm:20.19.13"
   dependencies:
-    undici-types: "npm:~5.26.4"
-  checksum: 10/844799baffeaecc0951ebd5a3ed5aeef468cbf04aa597d69443dd60e18441efeac6ced94d742ee3369f5f8fd950c5199fbc30811f3e404730f60696d1b8a445a
+    undici-types: "npm:~6.21.0"
+  checksum: 10/41014282d24d4a218dcbda6ed09d8d2692fe988426bc030e629d560c7f7886aaaaaaf94cba3c486c6c3d7a4ab4afcbe7dac941a661803b9be340af2a9246aab8
   languageName: node
   linkType: hard
 
@@ -10527,6 +10527,13 @@ __metadata:
   version: 5.26.5
   resolution: "undici-types@npm:5.26.5"
   checksum: 10/0097779d94bc0fd26f0418b3a05472410408877279141ded2bd449167be1aed7ea5b76f756562cb3586a07f251b90799bab22d9019ceba49c037c76445f7cddd
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~6.21.0":
+  version: 6.21.0
+  resolution: "undici-types@npm:6.21.0"
+  checksum: 10/ec8f41aa4359d50f9b59fa61fe3efce3477cc681908c8f84354d8567bb3701fafdddf36ef6bff307024d3feb42c837cf6f670314ba37fc8145e219560e473d14
   languageName: node
   linkType: hard
 
