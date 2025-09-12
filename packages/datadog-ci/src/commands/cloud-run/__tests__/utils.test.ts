@@ -16,14 +16,14 @@ describe('generateConfigDiff', () => {
     }
 
     const expected = `  {
-    \"port\": 8080,
--   \"volumes\": []
-+   \"volumes\": [
+    "port": 8080,
+-   "volumes": []
++   "volumes": [
 +     {
-+       \"emptyDir\": {
-+         \"medium\": 1
++       "emptyDir": {
++         "medium": 1
 +       },
-+       \"name\": \"shared-volume\"
++       "name": "shared-volume"
 +     }
 +   ]
   }`

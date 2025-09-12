@@ -1,4 +1,4 @@
-import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {makeRunCLI} from '../../../helpers/__tests__/testing-tools'
 
 import {UploadCommand} from '../upload'
 

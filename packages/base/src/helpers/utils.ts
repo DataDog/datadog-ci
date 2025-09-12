@@ -1,5 +1,5 @@
 import {exec} from 'child_process'
-import {readFile, existsSync, lstatSync, readFileSync} from 'fs'
+import {readFile, existsSync, statSync, readFileSync} from 'fs'
 import {promisify} from 'util'
 
 import type {SpanTag, SpanTags} from './interfaces'
@@ -74,7 +74,7 @@ const resolveConfigPath = ({
  */
 export const resolveConfigFromFileAndEnvironment = async <
   T extends Record<string, unknown>,
-  U extends Record<string, unknown>
+  U extends Record<string, unknown>,
 >(
   baseConfig: T,
   environment: U,
@@ -246,10 +246,10 @@ export const buildPath = (...args: string[]) =>
     .map((part, i) => {
       if (i === 0) {
         // For the first part, drop all / at the end of the path
-        return part.trim().replace(/[\/]*$/g, '')
+        return part.trim().replace(/[/]*$/g, '')
       } else {
         // For the following parts, remove all / at the beginning and at the end
-        return part.trim().replace(/(^[\/]*|[\/]*$)/g, '')
+        return part.trim().replace(/(^[/]*|[/]*$)/g, '')
       }
     })
     // Filter out empty parts
@@ -440,7 +440,7 @@ export const getGitHubEventPayload = () => {
 
 export const isFile = (path: string) => {
   try {
-    return lstatSync(path).isFile()
+    return statSync(path).isFile()
   } catch (e) {
     return false
   }

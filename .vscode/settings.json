@@ -10,5 +10,6 @@
   "[markdown]": {
     // Easier to read tables without word wrapping.
     "editor.wordWrap": "off"
-  }
+  },
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

@@ -53,7 +53,7 @@ describe('Tunnel', () => {
         ({
           close: mockClose,
           connect: mockConnect,
-        } as any)
+        }) as any
     )
 
     const websocketConnectError = new Error('Error when connecting over WebSocket!')

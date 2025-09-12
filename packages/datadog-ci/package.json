@@ -2,8 +2,13 @@
   "name": "@datadog/datadog-ci",
   "version": "3.20.0",
   "description": "Run datadog actions from the CI.",
-  "repository": "https://github.com/DataDog/datadog-ci",
   "license": "Apache-2.0",
+  "homepage": "https://github.com/DataDog/datadog-ci",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/datadog-ci"
+  },
   "bin": "dist/cli.js",
   "engines": {
     "node": ">=18"
@@ -28,6 +33,7 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "dist-standalone": "pkg --compress GZip .",
+    "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
   "dependencies": {
@@ -35,7 +41,6 @@
     "@aws-sdk/client-iam": "^3.709.0",
     "@aws-sdk/client-lambda": "^3.709.0",
     "@aws-sdk/client-sfn": "^3.709.0",
-    "@aws-sdk/core": "^3.709.0",
     "@aws-sdk/credential-provider-ini": "^3.709.0",
     "@aws-sdk/credential-providers": "^3.709.0",
     "@azure/arm-appservice": "^16.0.0",
@@ -53,15 +58,11 @@
     "axios": "^1.11.0",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "debug": "^4.4.1",
-    "deep-extend": "0.6.0",
     "deep-object-diff": "^1.1.9",
     "fast-deep-equal": "^3.1.3",
-    "fast-levenshtein": "^3.0.0",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
     "fuzzy": "^0.1.3",
-    "get-value": "^4.0.1",
     "google-auth-library": "^10.2.1",
     "inquirer": "^8.2.5",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
@@ -69,41 +70,22 @@
     "js-yaml": "3.13.1",
     "ora": "5.4.1",
     "packageurl-js": "^2.0.1",
-    "proxy-agent": "^6.4.0",
     "semver": "^7.5.3",
-    "set-value": "^4.1.0",
     "simple-git": "3.16.0",
-    "ssh2": "^1.16.0",
-    "ssh2-streams": "0.4.10",
-    "sshpk": "1.16.1",
     "typanion": "^3.14.0",
     "upath": "^2.0.1",
-    "uuid": "^9.0.0",
-    "ws": "^7.5.10",
-    "xml2js": "0.5.0",
-    "yamux-js": "0.1.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@aws-sdk/types": "^3.709.0",
-    "@types/deep-extend": "0.4.31",
-    "@types/get-value": "^3.0.5",
     "@types/inquirer": "8.2.6",
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^18.19.76",
     "@types/semver": "^7.3.12",
-    "@types/set-value": "^4.0.3",
-    "@types/ssh2": "1.15.5",
-    "@types/ssh2-streams": "0.1.9",
-    "@types/sshpk": "1.10.5",
     "@types/uuid": "^9.0.2",
-    "@types/ws": "7.2.9",
-    "@types/xml2js": "0.4.9",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "@typescript-eslint/parser": "^5.62.0",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
-    "pkg": "5.8.1",
-    "proxy": "^2.1.1"
+    "pkg": "5.8.1"
   }
 }

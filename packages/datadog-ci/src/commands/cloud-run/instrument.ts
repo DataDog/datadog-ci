@@ -20,17 +20,17 @@ import {
   CI_SITE_ENV_VAR,
   FIPS_ENV_VAR,
   FIPS_IGNORE_ERROR_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
-
-import {handleSourceCodeIntegration} from '../../git-instrument-helpers'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from './prompt'
@@ -111,6 +111,9 @@ export class InstrumentCommand extends Command {
   })
   private sidecarMemory = Option.String('--sidecar-memory', '512Mi', {
     description: `The amount of memory to allocate to the sidecar container. Defaults to '512Mi'.`,
+  })
+  private language = Option.String('--language', {
+    description: `Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php".`,
   })
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -370,6 +373,9 @@ export class InstrumentCommand extends Command {
     }
     if (this.extraTags) {
       newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags
+    }
+    if (this.language) {
+      newEnvVars[DD_SOURCE_ENV_VAR] = this.language
     }
     newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
 

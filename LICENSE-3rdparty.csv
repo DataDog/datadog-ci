@@ -5,22 +5,16 @@ Component,Origin,Licence,Copyright
 @aws-sdk/client-sfn,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-providers,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/types,dev,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
-@aws-sdk/core,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @aws-sdk/credential-provider-ini,import,Apache-2.0,"Copyright 2018-2024 Amazon.com, Inc. or its affiliates."
 @azure/identity,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-appservice,import,MIT,Copyright (c) Microsoft Corporation
 @azure/arm-resources,import,MIT,Copyright (c) Microsoft Corporation
-@babel/core,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
-@babel/preset-env,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
-@babel/preset-typescript,dev,MIT,Copyright (c) 2014-present Sebastian McKenzie and other contributors
 @smithy/property-provider,import,Apache-2.0,"Copyright 2018-2020 Amazon.com, Inc. or its affiliates."
 @smithy/util-retry,import,Apache-2.0,"Copyright 2019 Amazon.com, Inc. or its affiliates."
 @types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation
 @types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
-@types/get-value,dev,MIT,Copyright Microsoft Corporation
-@types/glob,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
 @types/jest,dev,MIT,Copyright Microsoft Corporation
 @types/js-yaml,dev,MIT,Bart van der Schoor
@@ -28,7 +22,6 @@ Component,Origin,Licence,Copyright
 @types/semver,dev,MIT,Copyright Microsoft Corporation
 @types/set-value,dev,MIT,Copyright Microsoft Corporation
 @types/ssh2,dev,MIT,Copyright Microsoft Corporation
-@types/ssh2-streams,dev,MIT,Copyright Microsoft Corporation
 @types/sshpk,dev,MIT,Copyright Microsoft Corporation
 @types/uuid,dev,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 @types/xml2js,dev,MIT,Copyright Microsoft Corporation
@@ -66,13 +59,11 @@ semver,import,ISC,Copyright (c) Isaac Z. Schlueter and Contributors
 set-value,import,MIT,"Copyright (c) 2014-present, Jon Schlinkert."
 simple-git,import,MIT,Copyright (c) 2015 Steve King
 ssh2,import,MIT,Copyright (c) Brian White
-ssh2-streams,import,MIT,Copyright (c) 2014 Brian White
 sshpk,import,MIT,"Copyright (c) Joyent, Inc."
 terminal-link,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 tiny-async-pool,import,MIT,Copyright (c) 2017 Rafael Xavier de Souza http://rafael.xavier.blog.br
 ts-jest,dev,MIT,Copyright (c) 2016-2018
 ts-json-schema-generator,dev,MIT,"Copyright (c) 2019, TypeScript JSON Schema Generator"
-ts-node,import,MIT,Copyright (c) 2014 Blake Embrey (hello@blakeembrey.com)
 typescript,dev,Apache-2.0,Copyright (c) Microsoft Corporation.
 typanion,import,MIT,Copyright (c) Mael Nison
 upath,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
@@ -80,12 +71,10 @@ uuid,import,MIT,Copyright (c) 2010-2020 Robert Kieffer and other contributors
 xml2js,import,MIT,Copyright (c) Marek Kubica <marek@xivilization.net> (https://xivilization.net)
 ws,import,MIT,Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
 yamux-js,import,MIT,Copyright (c) 2020 th-ch
-@typescript-eslint/eslint-plugin,dev,BSD 2-Clause,Copyright JS Foundation and other contributors
-@typescript-eslint/parser,dev,BSD-2-Clause,Copyright JS Foundation and other contributors
 eslint,dev,MIT,Copyright OpenJS Foundation and other contributors
 eslint-config-prettier,dev,MIT,Copyright (c) 2017-2022 Simon Lydell and contributors
 eslint-import-resolver-typescript,dev,ISC,Copyright 2021 Alex Gorbatchev <alex.gorbatchev@gmail.com>
-eslint-plugin-import,dev,MIT,Copyright (c) 2015 Ben Mosher
+eslint-plugin-import-x,dev,MIT,Copyright (c) 2015 Ben Mosher
 eslint-plugin-jest,dev,MIT,Copyright (c) 2018 Jonathan Kim
 eslint-plugin-prefer-arrow,dev,MIT,Copyright (c) 2018 Triston Jones
 eslint-plugin-prettier,dev,MIT,Copyright © 2017 Andres Suarez and Teddy Katz
@@ -98,3 +87,6 @@ jszip,import,MIT,Copyright (c) 2009-2016 Stuart Knightley and other contributors
 google-auth-library,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 @google-cloud/logging,import,Apache-2.0,Copyright (c) 2023 Google LLC and other contributors
 jest-diff,import,MIT,"Copyright (c) Meta Platforms, Inc. and other contributors"
+tsx,dev,MIT,Copyright (c) Hiroki Osame <hiroki.osame@gmail.com>
+typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contributors
+@stylistic/eslint-plugin,dev,MIT,Copyright (c) 2023-PRESENT ESLint Stylistic contributors

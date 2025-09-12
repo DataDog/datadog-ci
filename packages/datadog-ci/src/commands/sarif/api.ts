@@ -15,35 +15,34 @@ import {renderUpload} from './renderer'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const uploadSarifReport = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  sarifReport: Payload,
-  write: Writable['write']
-) => {
-  const form = new FormData()
-  write(renderUpload(sarifReport))
+export const uploadSarifReport =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) =>
+  async (sarifReport: Payload, write: Writable['write']) => {
+    const form = new FormData()
+    write(renderUpload(sarifReport))
 
-  const metadata: Record<string, any> = {
-    service: sarifReport.service,
-    ...sarifReport.spanTags,
-    event_type: 'static_analysis',
-    event_format_name: 'sarif',
-    event_format_version: '2.1.0',
+    const metadata: Record<string, any> = {
+      service: sarifReport.service,
+      ...sarifReport.spanTags,
+      event_type: 'static_analysis',
+      event_format_name: 'sarif',
+      event_format_version: '2.1.0',
+    }
+
+    form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
+
+    form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
+      filename: `${uuidv4()}.sarif.gz`,
+    })
+
+    return request({
+      data: form,
+      headers: form.getHeaders(),
+      maxBodyLength,
+      method: 'POST',
+      url: 'api/v2/cicodescan',
+    })
   }
-
-  form.append('event', JSON.stringify(metadata), {filename: 'event.json'})
-
-  form.append('sarif_report_file', fs.createReadStream(sarifReport.reportPath).pipe(createGzip()), {
-    filename: `${uuidv4()}.sarif.gz`,
-  })
-
-  return request({
-    data: form,
-    headers: form.getHeaders(),
-    maxBodyLength,
-    method: 'POST',
-    url: 'api/v2/cicodescan',
-  })
-}
 
 export const apiConstructor = (baseIntakeUrl: string, apiKey: string) => {
   const requestIntake = getRequestBuilder({baseUrl: baseIntakeUrl, apiKey})

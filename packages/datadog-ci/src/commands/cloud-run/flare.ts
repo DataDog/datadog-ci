@@ -31,11 +31,10 @@ import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/hel
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {cliVersion} from '../../version'
 
 import {getUniqueFileNames} from '../lambda/flare'
 

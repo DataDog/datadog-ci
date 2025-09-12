@@ -41,10 +41,10 @@ describe('dd-api', () => {
     {
       test_type: 'api',
       test: API_TEST as RecursivePartial<Test>,
-      result: ({
+      result: {
         id: RESULT_ID,
         finished_at: 0,
-      } as unknown) as ServerResult,
+      } as unknown as ServerResult,
       resultID: RESULT_ID,
     },
   ]

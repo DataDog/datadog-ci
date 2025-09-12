@@ -7,7 +7,7 @@ import {InstrumentStepFunctionsCommand} from '../instrument'
 
 import {describeStateMachineFixture, stepFunctionTagListFixture} from './fixtures/aws-resources'
 
-jest.mock('../../../../package.json', () => ({version: '2.0.0'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '2.0.0'}))
 
 describe('stepfunctions instrument test', () => {
   const runCLI = makeRunCLI(InstrumentStepFunctionsCommand, ['stepfunctions', 'instrument'])

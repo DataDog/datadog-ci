@@ -101,9 +101,8 @@ describe('run-tests', () => {
           headers: toStringMap(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_HEADERS),
           locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
           mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-          resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
-            ';'
-          ),
+          resourceUrlSubstitutionRegexes:
+            overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(';'),
           retry: {
             count: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT)!,
             interval: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL)!,
@@ -502,9 +501,8 @@ describe('run-tests', () => {
             },
             locations: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_LOCATIONS.split(';'),
             mobileApplicationVersion: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_MOBILE_APPLICATION_VERSION,
-            resourceUrlSubstitutionRegexes: overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(
-              ';'
-            ),
+            resourceUrlSubstitutionRegexes:
+              overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RESOURCE_URL_SUBSTITUTION_REGEXES?.split(';'),
             retry: {
               count: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_COUNT),
               interval: toNumber(overrideEnv.DATADOG_SYNTHETICS_OVERRIDE_RETRY_INTERVAL),
@@ -898,10 +896,10 @@ describe('run-tests', () => {
       })
       const getExpectedTestsToTriggerArguments = (
         testOverrides: Partial<UserConfigOverride>
-      ): Parameters<typeof testUtils['getTestsToTrigger']> => {
+      ): Parameters<(typeof testUtils)['getTestsToTrigger']> => {
         return [
           // Parameters we care about.
-          (apiHelper as unknown) as api.APIHelper,
+          apiHelper as unknown as api.APIHelper,
           [{suite: 'Suite 1', id: 'aaa-bbb-ccc', testOverrides}],
 
           // Ignore the rest of the parameters.

@@ -99,7 +99,7 @@ jest.spyOn(flareModule, 'sleep').mockResolvedValue()
 // Misc
 jest.mock('util')
 jest.mock('jszip')
-jest.mock('../../../version', () => ({cliVersion: '1.0-mock-version'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '1.0-mock-version'}))
 
 describe('lambda flare', () => {
   const runCLI = makeRunCLI(LambdaFlareCommand, ['lambda', 'flare'], {appendStdoutWithStderr: true, skipResetEnv: true})
@@ -268,7 +268,7 @@ describe('lambda flare', () => {
       cloudWatchLogsClientMock.on(DescribeLogStreamsCommand).rejects('Cannot retrieve log streams')
 
       await expect(
-        getLogStreamNames((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP)
+        getLogStreamNames(cloudWatchLogsClientMock as unknown as CloudWatchLogsClient, MOCK_LOG_GROUP)
       ).rejects.toThrow('Cannot retrieve log streams')
     })
 
@@ -308,7 +308,7 @@ describe('lambda flare', () => {
       ]
 
       const logEvents = await getLogEvents(
-        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+        cloudWatchLogsClientMock as unknown as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM
       )
@@ -320,7 +320,7 @@ describe('lambda flare', () => {
       mockCloudWatchLogEvents(cloudWatchLogsClientMock, [])
 
       const logEvents = await getLogEvents(
-        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+        cloudWatchLogsClientMock as unknown as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM
       )
@@ -331,7 +331,7 @@ describe('lambda flare', () => {
     it('throws error when log events cannot be retrieved', async () => {
       cloudWatchLogsClientMock.on(GetLogEventsCommand).rejects('Cannot retrieve log events')
       await expect(
-        getLogEvents((cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
+        getLogEvents(cloudWatchLogsClientMock as unknown as CloudWatchLogsClient, MOCK_LOG_GROUP, MOCK_LOG_STREAM)
       ).rejects.toThrow('Cannot retrieve log events')
     })
 
@@ -349,7 +349,7 @@ describe('lambda flare', () => {
       cloudWatchLogsClientMock.send = sendMock
 
       const logEventsResult = await getLogEvents(
-        (cloudWatchLogsClientMock as unknown) as CloudWatchLogsClient,
+        cloudWatchLogsClientMock as unknown as CloudWatchLogsClient,
         MOCK_LOG_GROUP,
         MOCK_LOG_STREAM,
         mockStartTime,

@@ -198,11 +198,14 @@ export const renderApiRequestDescription = (
     const stepsDescription = Object.entries(
       steps
         .map((step) => step.subtype)
-        .reduce((counts, type) => {
-          counts[type] = (counts[type] || 0) + 1
+        .reduce(
+          (counts, type) => {
+            counts[type] = (counts[type] || 0) + 1
 
-          return counts
-        }, {} as {[key: string]: number})
+            return counts
+          },
+          {} as {[key: string]: number}
+        )
     )
       .map(([type, count]) => `${count} ${type.toUpperCase()} test`)
       .join(', ')

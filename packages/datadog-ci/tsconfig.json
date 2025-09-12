@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "rootDir": "./src",
@@ -10,6 +10,7 @@
     {
       "path": "../base"
     },
+    // List every plugin here, so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
     {
       "path": "../plugin-synthetics"
     },

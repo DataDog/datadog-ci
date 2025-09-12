@@ -20,7 +20,7 @@ If not, you can learn more about it here: https://github.com/DataDog/build-plugi
 `)
 
 export const MalformedBuildError = new Error(
-  `Invalid payload. Expected payload is {\"outputDirectory\": string, \"publicPath\": string}`
+  `Invalid payload. Expected payload is {"outputDirectory": string, "publicPath": string}`
 )
 
 const MIME_TYPES = {
@@ -50,7 +50,7 @@ type File =
     }
 
 const routeVerbs = ['get', 'post', 'put', 'patch', 'delete'] as const
-type RouteVerb = typeof routeVerbs[number]
+type RouteVerb = (typeof routeVerbs)[number]
 const isRouteVerb = (verb: string): verb is RouteVerb => {
   return routeVerbs.includes(verb as RouteVerb)
 }
@@ -110,43 +110,42 @@ const prepareFile = async (root = process.cwd(), builds: ReportedBuild[], reques
   }
 }
 
-const getRequestHandler = ({builds, root, routes}: RequestHandlerOptions) => async (
-  req: http.IncomingMessage,
-  res: http.ServerResponse
-) => {
-  try {
-    // Handle routes.
-    const route = routes?.[req.url || '/']
-    if (route) {
-      const verb = req.method?.toLowerCase() ?? ''
-      if (isRouteVerb(verb)) {
-        const handler = route[verb]
-        if (handler) {
-          await handler(req, res)
+const getRequestHandler =
+  ({builds, root, routes}: RequestHandlerOptions) =>
+  async (req: http.IncomingMessage, res: http.ServerResponse) => {
+    try {
+      // Handle routes.
+      const route = routes?.[req.url || '/']
+      if (route) {
+        const verb = req.method?.toLowerCase() ?? ''
+        if (isRouteVerb(verb)) {
+          const handler = route[verb]
+          if (handler) {
+            await handler(req, res)
 
-          return
+            return
+          }
         }
       }
+
+      // Fallback to files.
+      const file = await prepareFile(root, builds, req.url || '/')
+      if (file.found) {
+        const mimeType = isMIMEType(file.ext) ? MIME_TYPES[file.ext] : MIME_TYPES.default
+        res.writeHead(200, {'Content-Type': mimeType})
+        res.end(file.content)
+
+        return
+      }
+
+      res.writeHead(404)
+      res.end()
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      res.writeHead(500, {'Content-Type': MIME_TYPES.html})
+      res.end(`Internal Server Error: ${errorMessage}`)
     }
-
-    // Fallback to files.
-    const file = await prepareFile(root, builds, req.url || '/')
-    if (file.found) {
-      const mimeType = isMIMEType(file.ext) ? MIME_TYPES[file.ext] : MIME_TYPES.default
-      res.writeHead(200, {'Content-Type': mimeType})
-      res.end(file.content)
-
-      return
-    }
-
-    res.writeHead(404)
-    res.end()
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    res.writeHead(500, {'Content-Type': MIME_TYPES.html})
-    res.end(`Internal Server Error: ${errorMessage}`)
   }
-}
 
 const getRequestBody = async (req: http.IncomingMessage): Promise<string> => {
   const chunks: string[] = []

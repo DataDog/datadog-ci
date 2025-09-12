@@ -1,9 +1,8 @@
 import fs from 'fs'
 
 import {baseCommands} from '@datadog/datadog-ci-base/cli'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli, CommandClass} from 'clipanion'
-
-import {cliVersion} from './version'
 
 export const BETA_COMMANDS = new Set(['dora', 'deployment', 'elf-symbols'])
 

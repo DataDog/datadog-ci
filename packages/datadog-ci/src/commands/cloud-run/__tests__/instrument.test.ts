@@ -14,11 +14,11 @@ import {
   SITE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
-
-import * as instrumentHelpers from '../../../git-instrument-helpers'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 
 import {InstrumentCommand} from '../instrument'
 import * as cloudRunPromptModule from '../prompt'
@@ -346,6 +346,7 @@ describe('InstrumentCommand', () => {
       ;(command as any).logLevel = 'debug'
       ;(command as any).llmobs = 'my-llm-app'
       ;(command as any).extraTags = 'foo:bar,abc:def'
+      ;(command as any).language = 'nodejs'
 
       const newSidecarContainer = command.buildSidecarContainer(undefined, 'my-service')
       const expected: IEnvVar[] = [
@@ -360,6 +361,7 @@ describe('InstrumentCommand', () => {
         {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
         {name: DD_LOG_LEVEL_ENV_VAR, value: 'debug'},
         {name: DD_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
+        {name: DD_SOURCE_ENV_VAR, value: 'nodejs'},
       ]
       expect(newSidecarContainer.env).toEqual(expect.arrayContaining(expected))
       expect(newSidecarContainer.env).toHaveLength(expected.length)

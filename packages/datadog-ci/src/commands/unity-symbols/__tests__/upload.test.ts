@@ -7,8 +7,7 @@ import {
   MultipartValue,
 } from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
-
-import {cliVersion} from '../../../version'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 
 import * as dsyms from '../../dsyms/upload'
 
@@ -393,8 +392,8 @@ describe('unity-symbols upload', () => {
         expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
         const repoValue = payload.content.get('repository') as MultipartStringValue
         expect(JSON.parse(repoValue.value)).toStrictEqual(expectedRepository)
-        expect((repoValue?.options).filename).toBe('repository')
-        expect((repoValue?.options).contentType).toBe('application/json')
+        expect(repoValue.options.filename).toBe('repository')
+        expect(repoValue.options.contentType).toBe('application/json')
         expect(exitCode).toBe(0)
       })
 

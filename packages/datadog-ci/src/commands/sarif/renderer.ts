@@ -1,3 +1,5 @@
+import {inspect} from 'util'
+
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import chalk from 'chalk'
 import upath from 'upath'
@@ -48,6 +50,9 @@ export const renderFailedUpload = (sarifReport: Payload, error: any) => {
   fullStr += chalk.red(`${ICONS.FAILED} Failed upload SARIF report file ${reportPath}: ${error.message}\n`)
   if (error?.response?.status) {
     fullStr += chalk.red(`API status code: ${error.response.status}\n`)
+  }
+  if (error.message.includes('Aggregate Error')) {
+    fullStr += chalk.red(`Inspect error: ${inspect(error)}\n`)
   }
 
   return fullStr

@@ -1,5 +1,8 @@
 import os from 'os'
 
+import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
+import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -28,9 +31,6 @@ import {Command, Option} from 'clipanion'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
-import {isGitRepo} from '../git-metadata'
-import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '../git-metadata/git'
-import {uploadToGitDB} from '../git-metadata/gitdb'
 import {apiUrl} from '../junit/api'
 
 import {apiConstructor, intakeUrl} from './api'

@@ -385,9 +385,7 @@ export class JUnitReporter implements Reporter {
     }
   }
 
-  private getBrowserTestErrors(
-    step: Step
-  ): {
+  private getBrowserTestErrors(step: Step): {
     allowedErrors: XMLError[]
     browserErrors: XMLError[]
     errors: XMLError[]

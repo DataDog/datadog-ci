@@ -21,10 +21,9 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {cliVersion} from '../../version'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 
@@ -335,7 +334,7 @@ export class UploadCommand extends Command {
     ).flat()
     elfFilesMetadata = this.removeBuildIdDuplicates(elfFilesMetadata)
 
-    const requestBuilder = getElfRequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getElfRequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
     const tmpDirectory = await createUniqueTmpDirectory()
 
     try {
@@ -398,8 +397,6 @@ export class UploadCommand extends Command {
       })
 
       return results
-    } catch (error) {
-      throw error
     } finally {
       await deleteDirectory(tmpDirectory)
       try {

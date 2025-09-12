@@ -24,8 +24,8 @@ describe('uploadCodeCoverageReport', () => {
     const zlibMock = jest.mocked(zlib)
 
     const mockStream = new PassThrough()
-    fsMock.createReadStream.mockReturnValueOnce((mockStream as unknown) as fs.ReadStream)
-    zlibMock.createGzip.mockReturnValueOnce((mockStream as unknown) as zlib.Gzip)
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
 
     const appendMock = jest.fn()
     const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
@@ -73,8 +73,8 @@ describe('uploadCodeCoverageReport', () => {
     const zlibMock = jest.mocked(zlib)
 
     const mockStream = new PassThrough()
-    fsMock.createReadStream.mockReturnValueOnce((mockStream as unknown) as fs.ReadStream)
-    zlibMock.createGzip.mockReturnValueOnce((mockStream as unknown) as zlib.Gzip)
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
 
     const appendMock = jest.fn()
     const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})

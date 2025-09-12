@@ -20,10 +20,9 @@ import {
 } from '@datadog/datadog-ci-base/helpers/utils'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
+import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {cliVersion} from '../../version'
 
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
@@ -318,7 +317,7 @@ export class UploadCommand extends Command {
     ).flat()
     peFilesMetadata = this.removeBuildIdDuplicates(peFilesMetadata)
 
-    const requestBuilder = getPERequestBuilder(this.config.apiKey!, this.cliVersion, this.config.datadogSite)
+    const requestBuilder = getPERequestBuilder(this.config.apiKey, this.cliVersion, this.config.datadogSite)
 
     try {
       const results = await doWithMaxConcurrency(this.maxConcurrency, peFilesMetadata, async (fileMetadata) => {
@@ -403,8 +402,6 @@ export class UploadCommand extends Command {
       })
 
       return results
-    } catch (error) {
-      throw error
     } finally {
       try {
         await metricsLogger.flush()

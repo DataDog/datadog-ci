@@ -17,48 +17,47 @@ export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'd
 export const intakeUrl = `https://ci-intake.${datadogSite}`
 export const apiUrl = `https://api.${datadogSite}`
 
-export const uploadCodeCoverageReport = (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (
-  payload: Payload
-) => {
-  const form = new FormData()
+export const uploadCodeCoverageReport =
+  (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: Payload) => {
+    const form = new FormData()
 
-  const event: Record<string, any> = {
-    type: 'coverage_report',
-    '_dd.hostname': payload.hostname,
-    format: payload.format,
-    basepath: payload.basePath,
-    ...payload.spanTags,
-    ...payload.customTags,
-    ...payload.customMeasures,
-  }
+    const event: Record<string, any> = {
+      type: 'coverage_report',
+      '_dd.hostname': payload.hostname,
+      format: payload.format,
+      basepath: payload.basePath,
+      ...payload.spanTags,
+      ...payload.customTags,
+      ...payload.customMeasures,
+    }
 
-  form.append('event', JSON.stringify(event), {filename: 'event.json'})
+    form.append('event', JSON.stringify(event), {filename: 'event.json'})
 
-  if (payload.prDiff) {
-    form.append('pr_diff', gzipSync(Buffer.from(JSON.stringify(payload.prDiff), 'utf8')), {
-      filename: 'pr_diff.json.gz',
+    if (payload.prDiff) {
+      form.append('pr_diff', gzipSync(Buffer.from(JSON.stringify(payload.prDiff), 'utf8')), {
+        filename: 'pr_diff.json.gz',
+      })
+    }
+
+    if (payload.commitDiff) {
+      form.append('commit_diff', gzipSync(Buffer.from(JSON.stringify(payload.commitDiff), 'utf8')), {
+        filename: 'commit_diff.json.gz',
+      })
+    }
+
+    await doWithMaxConcurrency(20, payload.paths, async (path) => {
+      const gzip = fs.createReadStream(path).pipe(createGzip())
+      form.append('code_coverage_report_file', gzip, {filename: `${getReportFilename(path)}.gz`})
+    })
+
+    return request({
+      data: form,
+      headers: form.getHeaders(),
+      maxBodyLength,
+      method: 'POST',
+      url: 'api/v2/cicovreprt',
     })
   }
-
-  if (payload.commitDiff) {
-    form.append('commit_diff', gzipSync(Buffer.from(JSON.stringify(payload.commitDiff), 'utf8')), {
-      filename: 'commit_diff.json.gz',
-    })
-  }
-
-  await doWithMaxConcurrency(20, payload.paths, async (path) => {
-    const gzip = fs.createReadStream(path).pipe(createGzip())
-    form.append('code_coverage_report_file', gzip, {filename: `${getReportFilename(path)}.gz`})
-  })
-
-  return request({
-    data: form,
-    headers: form.getHeaders(),
-    maxBodyLength,
-    method: 'POST',
-    url: 'api/v2/cicovreprt',
-  })
-}
 
 const getReportFilename = (path: string) => {
   const filename = path.split('/').pop() || path

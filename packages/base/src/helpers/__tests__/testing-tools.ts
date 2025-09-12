@@ -63,28 +63,27 @@ export const getEnvVarPlaceholders = () => ({
   DATADOG_APP_KEY: 'PLACEHOLDER',
 })
 
-export const makeRunCLI = (commandClass: CommandClass, baseArgs: string[], opts?: MakeRunCLIOptions) => async (
-  extraArgs: string[],
-  extraEnv?: Record<string, string>
-) => {
-  const cli = new Cli()
-  cli.register(commandClass)
+export const makeRunCLI =
+  (commandClass: CommandClass, baseArgs: string[], opts?: MakeRunCLIOptions) =>
+  async (extraArgs: string[], extraEnv?: Record<string, string>) => {
+    const cli = new Cli()
+    cli.register(commandClass)
 
-  if (!opts?.skipResetEnv) {
-    process.env = getEnvVarPlaceholders()
+    if (!opts?.skipResetEnv) {
+      process.env = getEnvVarPlaceholders()
+    }
+
+    process.env = {
+      ...process.env,
+      ...opts?.env,
+      ...extraEnv,
+    }
+
+    const context = createMockContext({...opts, env: process.env})
+    const code = await cli.run([...baseArgs, ...extraArgs], context)
+
+    return {context, code}
   }
-
-  process.env = {
-    ...process.env,
-    ...opts?.env,
-    ...extraEnv,
-  }
-
-  const context = createMockContext({...opts, env: process.env})
-  const code = await cli.run([...baseArgs, ...extraArgs], context)
-
-  return {context, code}
-}
 
 const isCommandOption = <T = unknown>(value: unknown): value is CommandOption<T> => {
   // eslint-disable-next-line no-null/no-null

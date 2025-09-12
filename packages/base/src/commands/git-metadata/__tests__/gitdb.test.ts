@@ -3,11 +3,12 @@ import fs from 'fs'
 import fspromises from 'fs/promises'
 import os from 'os'
 
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import axios from 'axios'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
+
+import {Logger, LogLevel} from '../../../helpers/logger'
+import {getRequestBuilder} from '../../../helpers/utils'
 
 import {uploadToGitDB} from '../gitdb'
 
@@ -111,7 +112,7 @@ describe('gitdb', () => {
     axios: MockParam<
       {
         url: string
-        data: any | undefined
+        data: any
       },
       any
     >[]
@@ -164,6 +165,7 @@ describe('gitdb', () => {
         params.forEach((param) => {
           if (param.output instanceof Error) {
             mock = mock.mockImplementationOnce((..._: any) => {
+              // eslint-disable-next-line @typescript-eslint/only-throw-error
               throw param.output
             })
           } else {
@@ -185,7 +187,7 @@ describe('gitdb', () => {
             })
           } catch (e) {
             // To make it easier to debug the tests
-            // eslint-disable-next-line
+
             console.log('Error in', name, 'mock')
             throw e
           }
