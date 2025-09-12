@@ -7,8 +7,11 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-if ! command -v gsed >/dev/null 2>&1; then
-  brew install gnu-sed
+if [[ $(uname -s) == "Darwin" ]]; then
+  if ! command -v gsed >/dev/null 2>&1; then
+    brew install gnu-sed
+  fi
+  export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
 fi
 
 SCOPE="$1"
@@ -127,16 +130,16 @@ print-files() {
 
 echo 5. Update string references
 git add -A
-print-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
-print-files | xargs gsed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g"
-print-files "$PLUGIN_DIR" | xargs gsed -i -e "s|src/commands/$SCOPE/|src/|g"
+print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
+print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g"
+print-files "$PLUGIN_DIR" | xargs sed -i -e "s|src/commands/$SCOPE/|src/|g"
 echo Updating known shared imports...
-print-files "$DST_DIR" | xargs gsed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
+print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
 echo Done
 
 echo 6. Add plugin folder to tsconfig.json and packages/datadog-ci/tsconfig.json
-gsed -i -e 's|in the future.|in the future.\n    {\n      "path": "./'"${PLUGIN_DIR}"'"\n    },|g' tsconfig.json
-gsed -i -e 's|in the future.|in the future.\n    {\n      "path": "../'"plugin-$SCOPE"'"\n    },|g' packages/datadog-ci/tsconfig.json
+sed -i -e 's|in the future.|in the future.\n    {\n      "path": "./'"${PLUGIN_DIR}"'"\n    },|g' tsconfig.json
+sed -i -e 's|in the future.|in the future.\n    {\n      "path": "../'"plugin-$SCOPE"'"\n    },|g' packages/datadog-ci/tsconfig.json
 echo Done
 
 echo 7. Update CI configuration
@@ -147,7 +150,7 @@ PLUGIN_LINE="              \"$PLUGIN_PKG\": \"file:./artifacts/$PLUGIN_PKG-\${{ 
 
 if grep -q "$BASE_LINE" "$CI_FILE"; then
   # Insert the plugin package line after the datadog-ci-base line in ci.yml
-  gsed -i -e "s|$BASE_LINE|$BASE_LINE\\n$PLUGIN_LINE|" "$CI_FILE"
+  sed -i -e "s|$BASE_LINE|$BASE_LINE\\n$PLUGIN_LINE|" "$CI_FILE"
   echo "Updated .github/workflows/ci.yml to include $PLUGIN_PKG"
 else
   echo "Could not find base line in .github/workflows/ci.yml -- please add the following line manually:
@@ -155,8 +158,8 @@ $PLUGIN_LINE"
 fi
 
 echo 8. Update CODEOWNERS
-CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | gsed 's|\s\+| |g' | cut -d' ' -f 2-)
-gsed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SCOPE|" .github/CODEOWNERS
+CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | sed 's|\s\+| |g' | cut -d' ' -f 2-)
+sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SCOPE|" .github/CODEOWNERS
 echo Done
 
 echo 9. Check if we can automatically knip
