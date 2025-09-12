@@ -146,7 +146,7 @@ echo 7. Update CI configuration
 
 CI_FILE=".github/workflows/ci.yml"
 BASE_LINE='"@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",'
-PLUGIN_LINE="              \"$PLUGIN_PKG\": \"file:./artifacts/$PLUGIN_PKG-\${{ matrix.version }}.tgz\","
+PLUGIN_LINE="              \"$PLUGIN_PKG\": \"file:./artifacts/@datadog-datadog-ci-plugin-$SCOPE-\${{ matrix.version }}.tgz\","
 
 if grep -q "$BASE_LINE" "$CI_FILE"; then
   # Insert the plugin package line after the datadog-ci-base line in ci.yml
