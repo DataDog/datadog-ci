@@ -86,24 +86,27 @@ export class UploadSbomCommand extends Command {
     if (githubEvent === 'pull_request') {
       this.context.stdout.write(
         '::error title=Unsupported Trigger::The pull_request trigger is not supported by Datadog Code Security. ' +
-        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
+          'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
+
       return 1
     }
 
     if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
         'The merge_request_event trigger is not supported by Datadog Code Security. ' +
-        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
+          'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
+
       return 1
     }
 
     if (azureReason === 'PullRequest') {
       this.context.stdout.write(
         '##vso[task.logissue type=error]The PullRequest trigger is not supported by Datadog Code Security. ' +
-        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
+          'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
+
       return 1
     }
 
