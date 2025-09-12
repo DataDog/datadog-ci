@@ -2,20 +2,10 @@ import type {PagedAsyncIterableIterator} from '@azure/core-paging'
 
 import {Site} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
-import {
-  DATADOG_SITE_US1,
-  EXTRA_TAGS_REG_EXP,
-  FIPS_ENV_VAR,
-  FIPS_IGNORE_ERROR_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {dryRunTag, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
+import {AasConfigOptions, ENV_VAR_REGEX} from '@datadog/datadog-ci-base/commands/aas/common'
+import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-
-import {AasConfigOptions} from './interfaces'
 
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
@@ -34,8 +24,6 @@ const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
 const CORECLR_PROFILER_PATH_MUSL = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
-const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
-
 export const AAS_DD_SETTING_NAMES = [
   'DD_API_KEY',
   'DD_SITE',
@@ -52,160 +40,43 @@ export const AAS_DD_SETTING_NAMES = [
   'DD_TAGS',
 ] as const
 
-/**
- * Maps Subscription ID to Resource Group to App Service names.
- */
-export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+type Print = (arg: string) => void
 
-export abstract class AasCommand extends Command {
-  public dryRun = Option.Boolean('-d,--dry-run', false, {
-    description: 'Run the command in dry-run mode, without making any changes',
-  })
-  private subscriptionId = Option.String('-s,--subscription-id', {
-    description: 'Azure Subscription ID containing the App Service',
-  })
-  private resourceGroup = Option.String('-g,--resource-group', {
-    description: 'Name of the Azure Resource Group containing the App Service',
-  })
-  private aasName = Option.String('-n,--name', {
-    description: 'Name of the Azure App Service to instrument',
-  })
-  private resourceIds = Option.Array('-r,--resource-id', {
-    description:
-      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
-  })
-  private envVars = Option.Array('-e,--env-vars', {
-    description:
-      'Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
-  })
-
-  private configPath = Option.String('--config', {
-    description: 'Path to the configuration file',
-  })
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
-
-  public get dryRunPrefix(): string {
-    return this.dryRun ? dryRunTag + ' ' : ''
-  }
-
-  public get additionalConfig(): Partial<AasConfigOptions> {
-    return {}
-  }
-
-  public enableFips(): void {
-    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
-  }
-
-  public async ensureConfig(): Promise<[AasBySubscriptionAndGroup, AasConfigOptions, string[]]> {
-    const config = (
-      await resolveConfigFromFile<{aas: AasConfigOptions}>(
-        {
-          aas: {
-            subscriptionId: this.subscriptionId,
-            resourceGroup: this.resourceGroup,
-            aasName: this.aasName,
-            envVars: this.envVars,
-            ...this.additionalConfig,
-          },
-        },
-        {
-          configPath: this.configPath,
-          defaultConfigPaths: DEFAULT_CONFIG_PATHS,
-        }
+export const ensureAzureAuth = async (print: Print, cred: DefaultAzureCredential): Promise<boolean> => {
+  try {
+    await cred.getToken('https://management.azure.com/.default')
+  } catch (error) {
+    print(
+      renderSoftWarning(
+        `Failed to authenticate with Azure: ${
+          error.name
+        }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
+          'az login'
+        )} to authenticate.\n`
       )
-    ).aas
-    const appServices: AasBySubscriptionAndGroup = {}
-    const errors: string[] = []
-    if (process.env.DD_API_KEY === undefined) {
-      errors.push('DD_API_KEY environment variable is required')
-    }
-    // Validate that envVars, if provided, are in the format 'key=value'
-    if (config.envVars?.some((e) => !ENV_VAR_REGEX.test(e))) {
-      errors.push('All envVars must be in the format `KEY=VALUE`')
-    }
-    // Validate that extraTags, if provided, comply with the expected format
-    if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
-      errors.push('Extra tags do not comply with the <key>:<value> array.')
-    }
-    // Validate musl setting
-    if (config.isMusl && !config.isDotnet) {
-      errors.push(
-        '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
-      )
-    }
-    const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
-    // all or none of the site args should be specified
-    if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
-      errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
-    } else if (specifiedSiteArgs.every((arg) => arg)) {
-      appServices[config.subscriptionId!] = {[config.resourceGroup!]: [config.aasName!]}
-    }
-    if (this.resourceIds?.length) {
-      for (const resourceId of this.resourceIds) {
-        const parsed = parseResourceId(resourceId)
-        if (parsed) {
-          const {subscriptionId, resourceGroup, name} = parsed
-          if (!appServices[subscriptionId]) {
-            appServices[subscriptionId] = {}
-          }
-          if (!appServices[subscriptionId][resourceGroup]) {
-            appServices[subscriptionId][resourceGroup] = []
-          }
-          appServices[subscriptionId][resourceGroup].push(name)
-        } else {
-          errors.push(`Invalid AAS resource ID: ${resourceId}`)
-        }
-      }
-    }
-    if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
-      errors.push('No App Services specified to instrument')
-    }
+    )
 
-    return [appServices, config, errors]
+    return false
   }
 
-  public async ensureAzureAuth(cred: DefaultAzureCredential): Promise<boolean> {
-    try {
-      await cred.getToken('https://management.azure.com/.default')
-    } catch (error) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Failed to authenticate with Azure: ${
-            error.name
-          }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
-            'az login'
-          )} to authenticate.\n`
-        )
-      )
+  return true
+}
 
-      return false
-    }
-
-    return true
-  }
-
-  public ensureLinux(site: Site): boolean {
-    if (isWindows(site)) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Unable to instrument ${site.name}. Only Linux-based Azure App Services are currently supported.
+export const ensureLinux = (print: Print, site: Site): boolean => {
+  if (isWindows(site)) {
+    print(
+      renderSoftWarning(
+        `Unable to instrument ${site.name}. Only Linux-based Azure App Services are currently supported.
 Please see the documentation for information on
 how to instrument Windows-based App Services:
 https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-        )
       )
+    )
 
-      return false
-    }
-
-    return true
+    return false
   }
+
+  return true
 }
 
 export const parseEnvVars = (envVars: string[] | undefined): Record<string, string> => {
@@ -294,21 +165,4 @@ export const formatError = (error: any): string => {
   const errorMessage = error.details?.message ?? error.message
 
   return `${errorType}: ${errorMessage}`
-}
-
-interface Resource {
-  subscriptionId: string
-  resourceGroup: string
-  name: string
-}
-
-export const parseResourceId = (resourceId: string): Resource | undefined => {
-  const match = resourceId.match(
-    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.Web\/sites\/([^/]+)$/i
-  )
-  if (match) {
-    const [, subscriptionId, resourceGroup, name] = match
-
-    return {subscriptionId, resourceGroup, name}
-  }
 }
