@@ -1403,8 +1403,17 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@types/jest": "npm:29.5.3"
+    "@types/node": "npm:^18.19.76"
+    ajv: "npm:^8.12.0"
+    ajv-formats: "npm:^2.1.1"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    packageurl-js: "npm:^2.0.1"
+    simple-git: "npm:3.16.0"
+    typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
