@@ -23,12 +23,13 @@
     "dev": "yarn tsc:build --watch",
     "dist-standalone": "yarn workspace @datadog/datadog-ci dist-standalone",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
-    "format": "yarn eslint --fix",
+    "format": "yarn lint:all --fix",
     "knip": "npx knip --include dependencies --fix --no-config-hints",
     "launch": "tsx --conditions=development packages/datadog-ci/src/cli.ts",
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
-    "lint": "yarn eslint $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
-    "lint:ci": "yarn eslint -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
+    "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
+    "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
+    "lint:all": "eslint --cache --quiet '**/*.ts'",
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "publish:all": "yarn loop-packages --parallel --interlaced --topological npm publish",
     "version:all": "yarn loop-packages version ${0} --immediate",
@@ -43,8 +44,7 @@
     "test:cloud-run": "jest packages/datadog-ci/src/commands/cloud-run --colors",
     "test:dsyms": "jest packages/datadog-ci/src/commands/dsyms --colors",
     "test:helpers": "jest packages/datadog-ci/src/helpers --colors",
-    "tsc:build": "tsc --build --verbose",
-    "eslint": "eslint --cache --quiet '**/*.ts'"
+    "tsc:build": "tsc --build --verbose"
   },
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "^3.1.0",

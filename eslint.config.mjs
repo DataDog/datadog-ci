@@ -1,4 +1,5 @@
 import eslint from '@eslint/js'
+import globals from 'globals'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
 import {importX, createNodeResolver} from 'eslint-plugin-import-x'
@@ -110,11 +111,10 @@ export default defineConfig(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['jest.config*.mjs', 'jest.setup.ts'],
-        },
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+      globals: globals.node,
     },
     settings: {
       'import-x/resolver-next': [
@@ -399,6 +399,10 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    files: ['jest.config*.mjs', 'jest.setup.ts', 'packages/datadog-ci/scripts/esbuild.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
   },
   {
     files: ['**/*.test.ts'],
