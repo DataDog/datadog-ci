@@ -1495,7 +1495,6 @@ __metadata:
     jest-diff: "npm:^30.0.4"
     js-yaml: "npm:3.13.1"
     ora: "npm:5.4.1"
-    packageurl-js: "npm:^2.0.1"
     pkg: "npm:5.8.1"
     semver: "npm:^7.5.3"
     simple-git: "npm:3.16.0"

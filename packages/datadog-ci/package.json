@@ -69,7 +69,6 @@
     "jest-diff": "^30.0.4",
     "js-yaml": "3.13.1",
     "ora": "5.4.1",
-    "packageurl-js": "^2.0.1",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "typanion": "^3.14.0",
