@@ -7,5 +7,6 @@ import {RunTestsCommand} from './commands/synthetics/run-tests-command'
 import {UploadApplicationCommand} from './commands/synthetics/upload-application-command'
 
 export const baseCommands: Record<string, CommandClass[]> = {
-  synthetics: [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand, GateEvaluateCommand],
+  gate: [GateEvaluateCommand],
+  synthetics: [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
 }
