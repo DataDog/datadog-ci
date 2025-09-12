@@ -107,18 +107,6 @@ export class UploadSbomCommand extends Command {
       return 1
     }
 
-    if (this.serviceFromCli !== undefined) {
-      this.context.stderr.write(
-        'The CLI flag `--service` is deprecated and will be removed in a future version of datadog-ci\n'
-      )
-      this.context.stderr.write(
-        'To associate findings with services, consider using the service-to-repo mapping from service catalog\n'
-      )
-      this.context.stderr.write(
-        'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
-      )
-    }
-
     const service = 'datadog-ci'
 
     const environment = this.env
