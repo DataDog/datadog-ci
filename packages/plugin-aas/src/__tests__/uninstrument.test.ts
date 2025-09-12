@@ -28,7 +28,7 @@ jest.mock('@azure/arm-appservice', () => ({
 
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {UninstrumentCommand} from '../uninstrument'
+import {PluginCommand as UninstrumentCommand} from '../uninstrument'
 
 import {CONTAINER_WEB_APP, DEFAULT_ARGS} from './common'
 

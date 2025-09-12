@@ -1,6 +1,5 @@
 import {Site} from '@azure/arm-appservice'
-
-import {AasConfigOptions} from '../interfaces'
+import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 
 export const DEFAULT_CONFIG: AasConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',

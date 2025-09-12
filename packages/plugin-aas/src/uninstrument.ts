@@ -1,24 +1,20 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
-import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
+import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
-import {Command} from 'clipanion'
 
-import {AAS_DD_SETTING_NAMES, AasCommand, formatError, isDotnet, parseEnvVars, SIDECAR_CONTAINER_NAME} from './common'
-import {AasConfigOptions} from './interfaces'
+import {
+  AAS_DD_SETTING_NAMES,
+  ensureAzureAuth,
+  ensureLinux,
+  formatError,
+  isDotnet,
+  parseEnvVars,
+  SIDECAR_CONTAINER_NAME,
+} from './common'
 
-export class UninstrumentCommand extends AasCommand {
-  public static paths = [['aas', 'uninstrument']]
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Remove Datadog instrumentation from an Azure App Service.',
-  })
-
-  public async execute(): Promise<number | void> {
-    return executePluginCommand(this)
-  }
-}
 export class PluginCommand extends UninstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
@@ -32,7 +28,7 @@ export class PluginCommand extends UninstrumentCommand {
     }
 
     const cred = new DefaultAzureCredential()
-    if (!(await this.ensureAzureAuth(cred))) {
+    if (!(await ensureAzureAuth(this.context.stdout.write, cred))) {
       return 1
     }
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning uninstrumentation of Azure App Service(s)\n`)
@@ -79,7 +75,7 @@ export class PluginCommand extends UninstrumentCommand {
   ): Promise<boolean> {
     try {
       const site = await client.webApps.get(resourceGroup, aasName)
-      if (!this.ensureLinux(site)) {
+      if (!ensureLinux(this.context.stdout.write, site)) {
         return false
       }
 
