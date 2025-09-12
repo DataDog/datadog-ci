@@ -1409,9 +1409,7 @@ __metadata:
     "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     fast-deep-equal: "npm:^3.1.3"
-    typanion: "npm:^3.14.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
