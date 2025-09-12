@@ -83,17 +83,34 @@ export class UploadSarifReportCommand extends Command {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    // TODO(julien): remove this notice in April 2025
-    if (this.serviceFromCli) {
-      this.context.stderr.write(
-        'The CLI flag `--service` is deprecated and will be removed in a future version of datadog-ci\n'
+    const githubEvent = process.env.GITHUB_EVENT_NAME
+    const gitlabEvent = process.env.CI_PIPELINE_SOURCE
+    const azureReason = process.env.BUILD_REASON
+
+    if (githubEvent === 'pull_request') {
+      // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
+      this.context.stdout.write(
+        '::error title=Unsupported Trigger::The pull_request trigger is not supported by Datadog Code Security. ' +
+        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
+      return 1
+    }
+
+    if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
-        'To associate findings with services, consider using the service-to-repo mapping from service catalog\n'
+        'The merge_request_event trigger is not supported by Datadog Code Security. ' +
+        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
-      this.context.stderr.write(
-        'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
+      return 1
+    }
+
+    if (azureReason === 'PullRequest') {
+      // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#logging-commands-for-build-pipelines
+      this.context.stdout.write(
+        '##vso[task.logissue type=error]The PullRequest trigger is not supported by Datadog Code Security. ' +
+        'Use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n'
       )
+      return 1
     }
 
     if (!this.basePaths || !this.basePaths.length) {
