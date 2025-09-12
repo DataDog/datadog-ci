@@ -2071,7 +2071,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-gate@workspace:*, @datadog/datadog-ci-plugin-gate@workspace:^, @datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate":
+"@datadog/datadog-ci-plugin-gate@workspace:*, @datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
@@ -5599,7 +5599,7 @@ __metadata:
     "@babel/core": "npm:7.8.0"
     "@babel/preset-env": "npm:7.4.5"
     "@babel/preset-typescript": "npm:7.3.3"
-    "@datadog/datadog-ci-plugin-gate": "workspace:^"
+    "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@microsoft/eslint-formatter-sarif": "npm:^3.0.0"
     "@typescript-eslint/eslint-plugin": "npm:^5.62.0"
     "@typescript-eslint/parser": "npm:^5.62.0"
