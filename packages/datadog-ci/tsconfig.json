@@ -18,6 +18,9 @@
       "path": "../plugin-sbom"
     },
     {
+      "path": "../plugin-aas"
+    },
+    {
       "path": "../plugin-synthetics"
     }
   ]
