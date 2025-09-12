@@ -4,6 +4,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
+import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
@@ -88,6 +89,12 @@ export class InstrumentCommand extends AasCommand {
     }
   }
 
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends InstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToInstrument, config, errors] = await this.ensureConfig()
@@ -126,7 +133,11 @@ export class InstrumentCommand extends AasCommand {
     const tagClient = new ResourceManagementClient(cred).tagsOperations
 
     if (config.sourceCodeIntegration) {
-      config.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, config.extraTags)
+      config.extraTags = await handleSourceCodeIntegration(
+        this.context,
+        config.uploadGitMetadata ?? true,
+        config.extraTags
+      )
     }
 
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)

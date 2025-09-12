@@ -1,5 +1,6 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
+import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 import {Command} from 'clipanion'
@@ -14,6 +15,11 @@ export class UninstrumentCommand extends AasCommand {
     description: 'Remove Datadog instrumentation from an Azure App Service.',
   })
 
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+export class PluginCommand extends UninstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToUninstrument, config, errors] = await this.ensureConfig()
