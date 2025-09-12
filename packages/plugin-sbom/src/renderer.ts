@@ -116,3 +116,16 @@ export const renderPayloadWarning = (dependencies: Dependency[]): string => {
 
   return ret
 }
+
+export const renderMissingTags = (missingTags: string[]) => {
+  const styledPath = `[${chalk.bold.dim(process.cwd())}]`
+
+  let fullStr = ''
+  fullStr += chalk.red(`There are missing git tags in ${styledPath}:\n`)
+  missingTags.forEach((tag: string) => {
+    fullStr += chalk.red(` - ${tag}\n`)
+  })
+  fullStr += chalk.red(`To fix this, ensure that the git information above is available for your commit.\n`)
+
+  return fullStr
+}

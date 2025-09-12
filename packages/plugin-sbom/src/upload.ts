@@ -15,8 +15,6 @@ import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 import {Command, Option} from 'clipanion'
 
-import {renderMissingTags} from '../sarif/renderer'
-
 import {getApiHelper} from './api'
 import {generatePayload} from './payload'
 import {
@@ -24,6 +22,7 @@ import {
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
+  renderMissingTags,
   renderNoDefaultBranch,
   renderPayloadWarning,
   renderSuccessfulCommand,
