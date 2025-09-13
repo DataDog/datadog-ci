@@ -1,18 +1,20 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
+import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {InstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import equal from 'fast-deep-equal/es6'
 
 import {
-  AasCommand,
   collectAsyncIterator,
+  ensureAzureAuth,
+  ensureLinux,
   formatError,
   getEnvVars,
   isDotnet,
@@ -21,73 +23,8 @@ import {
   SIDECAR_IMAGE,
   SIDECAR_PORT,
 } from './common'
-import {AasConfigOptions} from './interfaces'
 
-export class InstrumentCommand extends AasCommand {
-  public static paths = [['aas', 'instrument']]
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Apply Datadog instrumentation to an Azure App Service.',
-  })
-
-  private service = Option.String('--service', {
-    description: 'The value for the service tag. For example, `my-service`',
-  })
-  private environment = Option.String('--env,--environment', {
-    description: 'The value for the env tag. For example, `prod`',
-  })
-  private version = Option.String('--version', {
-    description: 'The value for the version tag. For example, `1.0.0`',
-  })
-  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
-    description:
-      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
-  })
-  private logPath = Option.String('--log-path', {
-    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
-  })
-  private shouldNotRestart = Option.Boolean('--no-restart', false, {
-    description: 'Do not restart the App Service after applying instrumentation.',
-  })
-
-  private isDotnet = Option.Boolean('--dotnet', false, {
-    description:
-      'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
-  })
-  private isMusl = Option.Boolean('--musl', false, {
-    description:
-      'Add in required .NET-specific configuration options for musl-based .NET apps. This should be specified if you are using a containerized .NET app on a musl-based distribution like Alpine Linux.',
-  })
-
-  private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
-    description:
-      'Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable.',
-  })
-
-  private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
-    description: 'Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable.',
-  })
-
-  private extraTags = Option.String('--extra-tags,--extraTags', {
-    description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
-  })
-
-  public get additionalConfig(): Partial<AasConfigOptions> {
-    return {
-      service: this.service,
-      environment: this.environment,
-      version: this.version,
-      isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
-      logPath: this.logPath,
-      shouldNotRestart: this.shouldNotRestart,
-      isDotnet: this.isDotnet,
-      isMusl: this.isMusl,
-      sourceCodeIntegration: this.sourceCodeIntegration,
-      uploadGitMetadata: this.uploadGitMetadata,
-      extraTags: this.extraTags,
-    }
-  }
-
+export class PluginCommand extends InstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToInstrument, config, errors] = await this.ensureConfig()
@@ -120,13 +57,17 @@ export class InstrumentCommand extends AasCommand {
     }
 
     const cred = new DefaultAzureCredential()
-    if (!(await this.ensureAzureAuth(cred))) {
+    if (!(await ensureAzureAuth(this.context.stdout.write, cred))) {
       return 1
     }
     const tagClient = new ResourceManagementClient(cred).tagsOperations
 
     if (config.sourceCodeIntegration) {
-      config.extraTags = await handleSourceCodeIntegration(this.context, this.uploadGitMetadata, config.extraTags)
+      config.extraTags = await handleSourceCodeIntegration(
+        this.context,
+        config.uploadGitMetadata ?? true,
+        config.extraTags
+      )
     }
 
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
@@ -176,7 +117,7 @@ export class InstrumentCommand extends AasCommand {
   ): Promise<boolean> {
     try {
       const site = await aasClient.webApps.get(resourceGroup, aasName)
-      if (!this.ensureLinux(site)) {
+      if (!ensureLinux(this.context.stdout.write, site)) {
         return false
       }
 
