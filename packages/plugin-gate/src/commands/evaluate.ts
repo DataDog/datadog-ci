@@ -1,6 +1,7 @@
-import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from './interfaces'
+import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from '../interfaces'
 import type {AxiosResponse} from 'axios'
 
+import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -11,79 +12,25 @@ import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import {v4 as uuidv4} from 'uuid'
 
-import {apiConstructor} from './api'
+import {apiConstructor} from '../api'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
   renderGateEvaluationError,
   renderEvaluationRetry,
   renderWaiting,
-} from './renderer'
-import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from './utils'
+} from '../renderer'
+import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from '../utils'
 
-export class GateEvaluateCommand extends Command {
-  public static paths = [['gate', 'evaluate']]
-
-  public static usage = Command.Usage({
-    category: 'CI Visibility',
-    description: 'Evaluate Quality Gates rules in Datadog.',
-    details: `
-      This command will evaluate the matching quality gate rules in Datadog.\n
-      See README for details.
-    `,
-    examples: [
-      ['Evaluate matching quality gate rules in Datadog', 'datadog-ci gate evaluate'],
-      [
-        'Evaluate matching quality gate rules in Datadog, failing if no rules were found',
-        'datadog-ci gate evaluate --fail-on-empty',
-      ],
-      [
-        'Evaluate matching quality gate rules in Datadog, failing if Datadog is not available',
-        'datadog-ci gate evaluate --fail-if-unavailable',
-      ],
-      [
-        'Evaluate matching quality gate rules in Datadog and add extra scope',
-        'datadog-ci gate evaluate --scope team:backend',
-      ],
-      [
-        'Evaluate matching quality gate rules in Datadog and add extra tags',
-        'datadog-ci gate evaluate --tags team:frontend',
-      ],
-      [
-        'Evaluate matching quality gate rules in Datadog from the datadoghq.eu site',
-        'DD_SITE=datadoghq.eu datadog-ci gate evaluate',
-      ],
-      [
-        'Evaluate matching quality gate rules in Datadog with a timeout of 120 seconds',
-        'datadog-ci gate evaluate --timeout 120',
-      ],
-      ['Evaluate matching quality gate rules in Datadog without waiting', 'datadog-ci gate evaluate --no-wait'],
-    ],
-  })
-
+export class PluginCommand extends GateEvaluateCommand {
   private initialRetryMs = 1000
   private maxRetries = 5
   private defaultTimeout = 600 // 10 min
 
-  private dryRun = Option.Boolean('--dry-run', false)
-  private failOnEmpty = Option.Boolean('--fail-on-empty', false)
-  private failIfUnavailable = Option.Boolean('--fail-if-unavailable', false)
-  private noWait = Option.Boolean('--no-wait', false)
-  private timeoutInSeconds = Option.String('--timeout', String(this.defaultTimeout), {
-    validator: validation.isInteger(),
-  })
-  private userScope = Option.Array('--scope')
-  private tags = Option.Array('--tags')
-
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
   private config = {
     apiKey: process.env.DD_API_KEY,
@@ -151,8 +98,8 @@ export class GateEvaluateCommand extends Command {
     const cliTags = this.tags ? parseTags(this.tags) : {}
 
     return {
-      ...gitSpanTags,
       ...ciSpanTags,
+      ...gitSpanTags,
       ...userGitSpanTags,
       ...cliTags,
       ...envVarTags,
@@ -202,7 +149,10 @@ export class GateEvaluateCommand extends Command {
     bail?: (e: Error) => void
   ): Promise<AxiosResponse<EvaluationResponsePayload>> {
     const timePassed = new Date().getTime() - evaluateRequest.startTimeMs
-    const remainingWait = this.timeoutInSeconds * 1000 - timePassed
+    const timeoutInSeconds =
+      this.timeoutInSeconds !== undefined ? parseInt(String(this.timeoutInSeconds), 10) : this.defaultTimeout
+
+    const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
       const request = {...evaluateRequest, options: {...evaluateRequest.options}}

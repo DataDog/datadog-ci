@@ -5,7 +5,7 @@ import type {AxiosResponse, InternalAxiosRequestConfig} from 'axios'
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {apiConstructor} from '../api'
-import {GateEvaluateCommand} from '../evaluate'
+import {PluginCommand as GateEvaluateCommand} from '../commands/evaluate'
 import {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
 
 describe('evaluate', () => {

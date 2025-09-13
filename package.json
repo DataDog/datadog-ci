@@ -66,5 +66,8 @@
     "tsx": "^4.20.5",
     "typescript": "5.1.6",
     "typescript-eslint": "^8.42.0"
+  },
+  "dependencies": {
+    "@datadog/datadog-ci-plugin-gate": "workspace:*"
   }
 }
