@@ -9,6 +9,7 @@
     "directory": "packages/plugin-synthetics"
   },
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "development": "./src/index.ts",
       "default": "./dist/index.js"

@@ -31,7 +31,6 @@ describe('execute', () => {
     })
 
     test('with all parameters provided', async () => {
-      /* eslint-disable prettier/prettier */
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
@@ -46,7 +45,7 @@ describe('execute', () => {
         '--custom-tags', 'key1:value1',
         '--custom-tags', 'key2:value2',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: 'test-service',
@@ -64,7 +63,6 @@ describe('execute', () => {
     })
 
     test('with minimal parameters provided', async () => {
-      /* eslint-disable prettier/prettier */
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
@@ -72,7 +70,7 @@ describe('execute', () => {
         '--service', 'test-service',
         '--started-at', '1699960648',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: 'test-service',
@@ -86,14 +84,14 @@ describe('execute', () => {
         DD_SERVICE: 'different-test-service',
         DD_ENV: 'test-env',
       }
-      /* eslint-disable prettier/prettier */
+
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
         '--started-at', '1699960648',
       ], envVars)
-      /* eslint-enable prettier/prettier */
+
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: envVars.DD_SERVICE,
@@ -112,14 +110,14 @@ describe('execute', () => {
       }
       mockGitRepositoryURL.mockResolvedValue(gitInfo.repoURL)
       mockGitHash.mockResolvedValue(gitInfo.commitSHA)
-      /* eslint-disable prettier/prettier */
+
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
         '--started-at', '1699960648',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).toBe(0)
       expect(mockGitRepositoryURL).toHaveBeenCalled()
       expect(mockGitHash).toHaveBeenCalled()
@@ -132,33 +130,30 @@ describe('execute', () => {
     })
 
     test('service is required', async () => {
-      /* eslint-disable prettier/prettier */
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
         '--started-at', '1699960648',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--service')
     })
 
     test('started-at is required', async () => {
-      /* eslint-disable prettier/prettier */
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
         '--service', 'test-service',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })
 
     test('started-at after finished-at is rejected', async () => {
-      /* eslint-disable prettier/prettier */
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
@@ -166,7 +161,7 @@ describe('execute', () => {
         '--service', 'test-service',
         '--started-at', '2099-11-14T11:17:28Z',
       ])
-      /* eslint-enable prettier/prettier */
+
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })

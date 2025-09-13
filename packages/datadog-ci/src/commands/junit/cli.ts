@@ -1,3 +1,3 @@
 import {UploadJUnitXMLCommand} from './upload'
 
-module.exports = [UploadJUnitXMLCommand]
+export const commands = [UploadJUnitXMLCommand]

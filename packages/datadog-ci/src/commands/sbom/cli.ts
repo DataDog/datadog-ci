@@ -1,3 +1,3 @@
 import {UploadSbomCommand} from './upload'
 
-module.exports = [UploadSbomCommand]
+export const commands = [UploadSbomCommand]

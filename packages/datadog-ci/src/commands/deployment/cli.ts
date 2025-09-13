@@ -3,7 +3,7 @@ import {DeploymentCorrelateImageCommand} from './correlate-image'
 import {DeploymentGateCommand} from './gate'
 import {DeploymentMarkCommand} from './mark'
 
-module.exports = [
+export const commands = [
   DeploymentMarkCommand,
   DeploymentCorrelateCommand,
   DeploymentCorrelateImageCommand,

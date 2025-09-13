@@ -1,3 +1,3 @@
 import {SpanCommand} from './span'
 
-module.exports = [SpanCommand]
+export const commands = [SpanCommand]

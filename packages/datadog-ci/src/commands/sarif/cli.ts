@@ -1,3 +1,3 @@
 import {UploadSarifReportCommand} from './upload'
 
-module.exports = [UploadSarifReportCommand]
+export const commands = [UploadSarifReportCommand]
