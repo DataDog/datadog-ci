@@ -1,3 +1,3 @@
-import {UploadSbomCommand} from './upload'
+import {PluginCommand as SbomUploadCommand} from './upload'
 
-module.exports = [UploadSbomCommand]
+module.exports = [SbomUploadCommand]
