@@ -1,3 +1,3 @@
-import {UploadSarifReportCommand} from './upload'
+import {PluginCommand as SarifUploadCommand} from './upload'
 
-module.exports = [UploadSarifReportCommand]
+module.exports = [SarifUploadCommand]
