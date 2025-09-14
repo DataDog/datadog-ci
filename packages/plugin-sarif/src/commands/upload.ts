@@ -14,8 +14,8 @@ import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {apiConstructor} from './api'
-import {APIHelper, Payload} from './interfaces'
+import {apiConstructor} from '../api'
+import {APIHelper, Payload} from '../interfaces'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,
@@ -25,9 +25,9 @@ import {
   renderInvalidFile,
   renderFilesNotFound,
   renderMissingTags,
-} from './renderer'
-import {getBaseIntakeUrl, getServiceFromSarifTool} from './utils'
-import {checkForError, validateSarif} from './validation'
+} from '../renderer'
+import {getBaseIntakeUrl, getServiceFromSarifTool} from '../utils'
+import {checkForError, validateSarif} from '../validation'
 
 export class PluginCommand extends SarifUploadCommand {
   private config: DatadogCiConfig = {
