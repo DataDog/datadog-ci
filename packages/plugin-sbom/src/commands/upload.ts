@@ -15,8 +15,8 @@ import {
 import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
 
-import {getApiHelper} from './api'
-import {generatePayload} from './payload'
+import {getApiHelper} from '../api'
+import {generatePayload} from '../payload'
 import {
   renderDuplicateUpload,
   renderFailedUpload,
@@ -27,14 +27,14 @@ import {
   renderPayloadWarning,
   renderSuccessfulCommand,
   renderUploading,
-} from './renderer'
-import {ScaRequest} from './types'
+} from '../renderer'
+import {ScaRequest} from '../types'
 import {
   filterInvalidDependencies,
   getValidator,
   validateFileAgainstToolRequirements,
   validateSbomFileAgainstSchema,
-} from './validation'
+} from '../validation'
 
 export class PluginCommand extends SbomUploadCommand {
   private config = {
