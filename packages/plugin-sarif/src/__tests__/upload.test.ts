@@ -181,10 +181,7 @@ describe('execute', () => {
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [
-        'src/__tests__/fixtures/subfolder/',
-        'src/__tests__/fixtures/another_subfolder/',
-      ],
+      basePaths: ['src/__tests__/fixtures/subfolder/', 'src/__tests__/fixtures/another_subfolder/'],
       concurrency: 20,
       env: 'ci',
     })
