@@ -47,7 +47,7 @@ describe('upload', () => {
       const command = createCommand(SarifUploadCommand)
       const [firstFile, secondFile] = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures'],
+          basePaths: ['./src/__tests__/fixtures'],
           config: {},
           context,
         },
@@ -55,10 +55,10 @@ describe('upload', () => {
       )
 
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
 
       const getInvalidJsonUnexpectedTokenErrorMessage = () => {
@@ -74,15 +74,15 @@ describe('upload', () => {
 
       const output = context.stdout.toString()
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
+        renderInvalidFile('./src/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
       )
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid.sarif', [
+        renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [
           getInvalidJsonUnexpectedTokenErrorMessage(),
         ])
       )
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid-result.sarif', [
+        renderInvalidFile('./src/__tests__/fixtures/invalid-result.sarif', [
           "/runs/0/results/0: must have required property 'message'",
         ])
       )
@@ -93,7 +93,7 @@ describe('upload', () => {
       const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures/valid-results.sarif'],
+          basePaths: ['./src/__tests__/fixtures/valid-results.sarif'],
           config: {},
           context,
         },
@@ -103,7 +103,7 @@ describe('upload', () => {
       expect(files.length).toEqual(1)
 
       expect(files[0]).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
     })
 
@@ -112,7 +112,7 @@ describe('upload', () => {
       const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures/does-not-exist.sarif'],
+          basePaths: ['./src/__tests__/fixtures/does-not-exist.sarif'],
           config: {},
           context,
         },
@@ -128,8 +128,8 @@ describe('upload', () => {
       const [firstFile, secondFile, thirdFile] = await command['getMatchingSarifReports'].call(
         {
           basePaths: [
-            './src/commands/sarif/__tests__/fixtures',
-            './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
+            './src/__tests__/fixtures',
+            './src/__tests__/fixtures/subfolder/valid-results.sarif',
           ],
           config: {},
           context,
@@ -137,13 +137,13 @@ describe('upload', () => {
         {}
       )
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(thirdFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/subfolder/valid-results.sarif',
       })
     })
 
@@ -153,7 +153,7 @@ describe('upload', () => {
       const files = await command['getMatchingSarifReports'].call(
         {
           basePaths: [
-            './src/commands/sarif/__tests__/fixtures',
+            './src/__tests__/fixtures',
             './src/commands/junit/__tests__/fixtures/valid-results.sarif',
           ],
           config: {},
@@ -171,7 +171,7 @@ describe('execute', () => {
   const runCLI = makeRunCLI(SarifUploadCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
 
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
+    const {context, code} = await runCLI(['./src/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
@@ -183,8 +183,8 @@ describe('execute', () => {
 
   test('multiple paths', async () => {
     const {context, code} = await runCLI([
-      './src/commands/sarif/__tests__/fixtures/subfolder/',
-      './src/commands/sarif/__tests__/fixtures/another_subfolder/',
+      './src/__tests__/fixtures/subfolder/',
+      './src/__tests__/fixtures/another_subfolder/',
     ])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
@@ -314,7 +314,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
 }
 
 const getFixtures = (file: string) => {
-  return upath.join('./src/commands/sarif/__tests__/fixtures', file)
+  return upath.join('./src/__tests__/fixtures', file)
 }
 
 const setupLocalGitConfig = (dir: string) => {
