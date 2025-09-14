@@ -77,9 +77,7 @@ describe('upload', () => {
         renderInvalidFile('./src/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
       )
       expect(output).toContain(
-        renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [
-          getInvalidJsonUnexpectedTokenErrorMessage(),
-        ])
+        renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [getInvalidJsonUnexpectedTokenErrorMessage()])
       )
       expect(output).toContain(
         renderInvalidFile('./src/__tests__/fixtures/invalid-result.sarif', [
@@ -127,10 +125,7 @@ describe('upload', () => {
       const command = createCommand(SarifUploadCommand)
       const [firstFile, secondFile, thirdFile] = await command['getMatchingSarifReports'].call(
         {
-          basePaths: [
-            './src/__tests__/fixtures',
-            './src/__tests__/fixtures/subfolder/valid-results.sarif',
-          ],
+          basePaths: ['./src/__tests__/fixtures', './src/__tests__/fixtures/subfolder/valid-results.sarif'],
           config: {},
           context,
         },
@@ -152,10 +147,7 @@ describe('upload', () => {
       const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: [
-            './src/__tests__/fixtures',
-            './src/commands/junit/__tests__/fixtures/valid-results.sarif',
-          ],
+          basePaths: ['./src/__tests__/fixtures', './src/commands/junit/__tests__/fixtures/valid-results.sarif'],
           config: {},
           context,
         },
