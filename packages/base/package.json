@@ -39,6 +39,7 @@
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
+    "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
   },
