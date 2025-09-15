@@ -27,6 +27,27 @@ const createMockContext = () => {
   }
 }
 
+// Mock context for CI event validation tests with compatible write signatures
+const createSimpleMockContext = () => {
+  let stdoutData = ''
+  let stderrData = ''
+
+  return {
+    stdout: {
+      toString: () => stdoutData,
+      write: (input?: string) => {
+        if (input) stdoutData += input
+      },
+    },
+    stderr: {
+      toString: () => stderrData,
+      write: (input?: string) => {
+        if (input) stderrData += input
+      },
+    },
+  }
+}
+
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
 
@@ -168,7 +189,7 @@ describe('execute', () => {
       process.env.GITHUB_EVENT_NAME = 'pull_request'
       
       try {
-        const context = createMockContext()
+        const context = createSimpleMockContext()
         const command = createCommand(SarifUploadCommand, context)
         command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
         
@@ -189,7 +210,7 @@ describe('execute', () => {
       process.env.CI_PIPELINE_SOURCE = 'merge_request_event'
       
       try {
-        const context = createMockContext()
+        const context = createSimpleMockContext()
         const command = createCommand(SarifUploadCommand, context)
         command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
         
@@ -209,7 +230,7 @@ describe('execute', () => {
       process.env.BUILD_REASON = 'PullRequest'
       
       try {
-        const context = createMockContext()
+        const context = createSimpleMockContext()
         const command = createCommand(SarifUploadCommand, context)
         command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
         
