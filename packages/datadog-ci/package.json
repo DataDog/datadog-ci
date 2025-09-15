@@ -52,8 +52,6 @@
     "@google-cloud/run": "^3.0.0",
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
-    "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",

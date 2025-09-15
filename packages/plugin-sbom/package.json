@@ -31,10 +31,8 @@
     "ajv-formats": "^2.1.1",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
-    "clipanion": "^3.2.1",
     "packageurl-js": "^2.0.1",
     "simple-git": "3.16.0",
-    "typanion": "^3.14.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
