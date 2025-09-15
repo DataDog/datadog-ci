@@ -120,6 +120,7 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-cloud-run": "file:./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",

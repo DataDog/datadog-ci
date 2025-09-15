@@ -45,6 +45,7 @@
     "@aws-sdk/credential-providers": "^3.709.0",
     "@datadog/datadog-ci-base": "workspace:*",
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*",

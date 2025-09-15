@@ -12,6 +12,9 @@
     },
     // Add Plugins Here:
     {
+      "path": "../plugin-cloud-run"
+    },
+    {
       "path": "../plugin-sarif"
     },
     {
