@@ -1393,9 +1393,25 @@ __metadata:
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
+    "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-aas@workspace:*, @datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas"
+  dependencies:
+    "@azure/arm-appservice": "npm:^16.0.0"
+    "@azure/arm-resources": "npm:^6.1.0"
+    "@azure/identity": "npm:^4.10.1"
+    "@datadog/datadog-ci-base": "workspace:*"
+    chalk: "npm:3.0.0"
+    fast-deep-equal: "npm:^3.1.3"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1484,10 +1500,8 @@ __metadata:
     "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
     "@aws-sdk/credential-providers": "npm:^3.709.0"
     "@aws-sdk/types": "npm:^3.709.0"
-    "@azure/arm-appservice": "npm:^16.0.0"
-    "@azure/arm-resources": "npm:^6.1.0"
-    "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
@@ -1509,7 +1523,6 @@ __metadata:
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     deep-object-diff: "npm:^1.1.9"
-    fast-deep-equal: "npm:^3.1.3"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
     fuzzy: "npm:^0.1.3"
@@ -8229,9 +8242,9 @@ __metadata:
   linkType: hard
 
 "lru-cache@npm:^11.0.0":
-  version: 11.1.0
-  resolution: "lru-cache@npm:11.1.0"
-  checksum: 10/5011011675ca98428902de774d0963b68c3a193cd959347cb63b781dad4228924124afab82159fd7b8b4db18285d9aff462b877b8f6efd2b41604f806c1d9db4
+  version: 11.2.1
+  resolution: "lru-cache@npm:11.2.1"
+  checksum: 10/cd1cc7a8d7617ede28702f80449d9c3f851bb6671d5ec37b34ca10ffb18d5aa068d798ed057e73092f25e563202d33ab6562c356b0c1ff4a6065525dbe577b1c
   languageName: node
   linkType: hard
 
@@ -10496,12 +10509,12 @@ __metadata:
   linkType: hard
 
 "typescript@npm:^5.8.2":
-  version: 5.8.3
-  resolution: "typescript@npm:5.8.3"
+  version: 5.9.2
+  resolution: "typescript@npm:5.9.2"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/65c40944c51b513b0172c6710ee62e951b70af6f75d5a5da745cb7fab132c09ae27ffdf7838996e3ed603bb015dadd099006658046941bd0ba30340cc563ae92
+  checksum: 10/cc2fe6c822819de5d453fa25aa9f32096bf70dde215d481faa1ad84a283dfb264e33988ed8f6d36bc803dd0b16dbe943efa311a798ef76d5b3892a05dfbfd628
   languageName: node
   linkType: hard
 
@@ -10516,12 +10529,12 @@ __metadata:
   linkType: hard
 
 "typescript@patch:typescript@npm%3A^5.8.2#optional!builtin<compat/typescript>":
-  version: 5.8.3
-  resolution: "typescript@patch:typescript@npm%3A5.8.3#optional!builtin<compat/typescript>::version=5.8.3&hash=5786d5"
+  version: 5.9.2
+  resolution: "typescript@patch:typescript@npm%3A5.9.2#optional!builtin<compat/typescript>::version=5.9.2&hash=5786d5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/b9b1e73dabac5dc730c041325dbd9c99467c1b0d239f1b74ec3b90d831384af3e2ba973946232df670519147eb51a2c20f6f96163cea2b359f03de1e2091cc4f
+  checksum: 10/bd810ab13e8e557225a8b5122370385440b933e4e077d5c7641a8afd207fdc8be9c346e3c678adba934b64e0e70b0acf5eef9493ea05170a48ce22bef845fdc7
   languageName: node
   linkType: hard
 

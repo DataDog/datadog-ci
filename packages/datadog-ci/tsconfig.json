@@ -10,12 +10,15 @@
     {
       "path": "../base"
     },
-    // List every plugin here, so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
+    // Add Plugins Here:
     {
       "path": "../plugin-sarif"
     },
     {
       "path": "../plugin-sbom"
+    },
+    {
+      "path": "../plugin-aas"
     },
     {
       "path": "../plugin-synthetics"

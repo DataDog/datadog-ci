@@ -15,8 +15,13 @@
       "path": "./packages/plugin-sbom"
     },
     {
+      "path": "./packages/plugin-aas"
+    },
+    {
       "path": "./packages/plugin-synthetics"
     }
   ],
-  "exclude": ["*"] // Exclude everything from the root project.
+  "exclude": [
+    "*"
+  ] // Exclude everything from the root project.
 }
