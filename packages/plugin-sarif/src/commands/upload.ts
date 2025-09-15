@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {SarifUploadCommand} from '@datadog/datadog-ci-base/commands/sarif/upload-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
@@ -10,13 +11,11 @@ import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {GIT_SHA, getSpanTags, getMissingRequiredGitTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
-import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {apiConstructor} from './api'
-import {APIHelper, Payload} from './interfaces'
+import {apiConstructor} from '../api'
+import {APIHelper, Payload} from '../interfaces'
 import {
   renderCommandInfo,
   renderSuccessfulCommand,
@@ -26,55 +25,17 @@ import {
   renderInvalidFile,
   renderFilesNotFound,
   renderMissingTags,
-} from './renderer'
-import {getBaseIntakeUrl, getServiceFromSarifTool} from './utils'
-import {checkForError, validateSarif} from './validation'
+} from '../renderer'
+import {getBaseIntakeUrl, getServiceFromSarifTool} from '../utils'
+import {checkForError, validateSarif} from '../validation'
 
-export class UploadSarifReportCommand extends Command {
-  public static paths = [['sarif', 'upload']]
-
-  public static usage = Command.Usage({
-    category: 'Static Analysis',
-    description: 'Upload SARIF reports files to Datadog.',
-    details: `
-      This command will upload SARIF reports files to Datadog.\n
-      See README for details.
-    `,
-    examples: [
-      ['Upload all SARIF report files in current directory', 'datadog-ci sarif upload .'],
-      [
-        'Upload all SARIF report files in src/sarif-go-reports and src/sarif-java-reports',
-        'datadog-ci sarif upload src/sarif-go-reports src/sarif-java-reports',
-      ],
-      [
-        'Upload all SARIF report files in current directory and add extra tags globally',
-        'datadog-ci sarif upload --tags key1:value1 --tags key2:value2 .',
-      ],
-      [
-        'Upload all SARIF report files in current directory to the datadoghq.eu site',
-        'DATADOG_SITE=datadoghq.eu datadog-ci sarif upload .',
-      ],
-    ],
-  })
-
-  private basePaths = Option.Rest({required: 1})
-  private dryRun = Option.Boolean('--dry-run', false)
-  private env = Option.String('--env', 'ci')
-  private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
-  private serviceFromCli = Option.String('--service')
-  private tags = Option.Array('--tags')
-  private gitPath = Option.String('--git-repository')
-  private noVerify = Option.Boolean('--no-verify', false)
-  private noCiTags = Option.Boolean('--no-ci-tags', false)
-
+export class PluginCommand extends SarifUploadCommand {
   private config: DatadogCiConfig = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
     envVarTags: process.env.DD_TAGS,
   }
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

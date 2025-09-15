@@ -5,8 +5,8 @@ import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__test
 import simpleGit from 'simple-git'
 import upath from 'upath'
 
+import {PluginCommand as SarifUploadCommand} from '../commands/upload'
 import {renderInvalidFile} from '../renderer'
-import {UploadSarifReportCommand} from '../upload'
 
 const createMockContext = () => {
   let data = ''
@@ -35,7 +35,7 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = createCommand(UploadSarifReportCommand, {stdout: {write}})
+      const command = createCommand(SarifUploadCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DATADOG_API_KEY')
@@ -44,10 +44,10 @@ describe('upload', () => {
   describe('getMatchingSarifReports', () => {
     test('should read all sarif reports and reject invalid ones', async () => {
       const context = createMockContext()
-      const command = createCommand(UploadSarifReportCommand)
+      const command = createCommand(SarifUploadCommand)
       const [firstFile, secondFile] = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures'],
+          basePaths: ['./src/__tests__/fixtures'],
           config: {},
           context,
         },
@@ -55,10 +55,10 @@ describe('upload', () => {
       )
 
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
 
       const getInvalidJsonUnexpectedTokenErrorMessage = () => {
@@ -74,15 +74,13 @@ describe('upload', () => {
 
       const output = context.stdout.toString()
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
+        renderInvalidFile('./src/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
       )
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid.sarif', [
-          getInvalidJsonUnexpectedTokenErrorMessage(),
-        ])
+        renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [getInvalidJsonUnexpectedTokenErrorMessage()])
       )
       expect(output).toContain(
-        renderInvalidFile('./src/commands/sarif/__tests__/fixtures/invalid-result.sarif', [
+        renderInvalidFile('./src/__tests__/fixtures/invalid-result.sarif', [
           "/runs/0/results/0: must have required property 'message'",
         ])
       )
@@ -90,10 +88,10 @@ describe('upload', () => {
 
     test('should allow single files', async () => {
       const context = createMockContext()
-      const command = createCommand(UploadSarifReportCommand)
+      const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures/valid-results.sarif'],
+          basePaths: ['./src/__tests__/fixtures/valid-results.sarif'],
           config: {},
           context,
         },
@@ -103,16 +101,16 @@ describe('upload', () => {
       expect(files.length).toEqual(1)
 
       expect(files[0]).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
     })
 
     test('should not fail for invalid single files', async () => {
       const context = createMockContext()
-      const command = createCommand(UploadSarifReportCommand)
+      const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: ['./src/commands/sarif/__tests__/fixtures/does-not-exist.sarif'],
+          basePaths: ['./src/__tests__/fixtures/does-not-exist.sarif'],
           config: {},
           context,
         },
@@ -124,38 +122,32 @@ describe('upload', () => {
 
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
-      const command = createCommand(UploadSarifReportCommand)
+      const command = createCommand(SarifUploadCommand)
       const [firstFile, secondFile, thirdFile] = await command['getMatchingSarifReports'].call(
         {
-          basePaths: [
-            './src/commands/sarif/__tests__/fixtures',
-            './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
-          ],
+          basePaths: ['./src/__tests__/fixtures', './src/__tests__/fixtures/subfolder/valid-results.sarif'],
           config: {},
           context,
         },
         {}
       )
       expect(firstFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
       expect(secondFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/valid-no-results.sarif',
+        reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
       expect(thirdFile).toMatchObject({
-        reportPath: './src/commands/sarif/__tests__/fixtures/subfolder/valid-results.sarif',
+        reportPath: './src/__tests__/fixtures/subfolder/valid-results.sarif',
       })
     })
 
     test('should not have repeated files', async () => {
       const context = createMockContext()
-      const command = createCommand(UploadSarifReportCommand)
+      const command = createCommand(SarifUploadCommand)
       const files = await command['getMatchingSarifReports'].call(
         {
-          basePaths: [
-            './src/commands/sarif/__tests__/fixtures',
-            './src/commands/junit/__tests__/fixtures/valid-results.sarif',
-          ],
+          basePaths: ['./src/__tests__/fixtures', './src/commands/junit/__tests__/fixtures/valid-results.sarif'],
           config: {},
           context,
         },
@@ -168,14 +160,14 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = makeRunCLI(UploadSarifReportCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
+  const runCLI = makeRunCLI(SarifUploadCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
 
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['./src/commands/sarif/__tests__/doesnotexist/../fixtures/subfolder'])
+    const {context, code} = await runCLI(['./src/__tests__/doesnotexist/../fixtures/subfolder'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/sarif/__tests__/fixtures/subfolder'],
+      basePaths: ['src/__tests__/fixtures/subfolder'],
       concurrency: 20,
       env: 'ci',
     })
@@ -183,16 +175,13 @@ describe('execute', () => {
 
   test('multiple paths', async () => {
     const {context, code} = await runCLI([
-      './src/commands/sarif/__tests__/fixtures/subfolder/',
-      './src/commands/sarif/__tests__/fixtures/another_subfolder/',
+      'src/__tests__/fixtures/subfolder/',
+      'src/__tests__/fixtures/another_subfolder/',
     ])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [
-        'src/commands/sarif/__tests__/fixtures/subfolder/',
-        'src/commands/sarif/__tests__/fixtures/another_subfolder/',
-      ],
+      basePaths: ['src/__tests__/fixtures/subfolder/', 'src/__tests__/fixtures/another_subfolder/'],
       concurrency: 20,
       env: 'ci',
     })
@@ -200,11 +189,11 @@ describe('execute', () => {
 
   test('absolute path', async () => {
     const cwd = upath.normalize(process.cwd())
-    const {context, code} = await runCLI([cwd + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const {context, code} = await runCLI([cwd + '/src/__tests__/fixtures/subfolder'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${cwd}/src/commands/sarif/__tests__/fixtures/subfolder`],
+      basePaths: [`${cwd}/src/__tests__/fixtures/subfolder`],
       concurrency: 20,
       env: 'ci',
       spanTags: {
@@ -227,13 +216,13 @@ describe('execute', () => {
       await git.commit('Initial commit', [], {'--allow-empty': null})
       const repositoryParam = `--git-repository=${tmpdir}`
 
-      const {context, code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+      const {context, code} = await runCLI([repositoryParam, CWD + '/src/__tests__/fixtures/subfolder'])
 
       const output = context.stdout.toString().split('\n')
       expect(code).toBe(0)
 
       checkConsoleOutput(output, {
-        basePaths: [`${CWD}/src/commands/sarif/__tests__/fixtures/subfolder`],
+        basePaths: [`${CWD}/src/__tests__/fixtures/subfolder`],
         concurrency: 20,
         env: 'ci',
         spanTags: {
@@ -258,14 +247,14 @@ describe('execute', () => {
     const repositoryParam = `--git-repository=${nonExistingGitRepository}`
 
     // Pass a git repository which does not exist, command should fail
-    const {code} = await runCLI([repositoryParam, CWD + '/src/commands/sarif/__tests__/fixtures/subfolder'])
+    const {code} = await runCLI([repositoryParam, CWD + '/src/__tests__/fixtures/subfolder'])
     expect(code).toBe(1)
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/valid-results.sarif'])
+    const {context, code} = await runCLI([CWD + '/src/__tests__/fixtures/valid-results.sarif'])
     const output = context.stdout.toString().split('\n')
-    const path = `${CWD}/src/commands/sarif/__tests__/fixtures/valid-results.sarif`
+    const path = `${CWD}/src/__tests__/fixtures/valid-results.sarif`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
@@ -276,9 +265,9 @@ describe('execute', () => {
   })
 
   test('not found file', async () => {
-    const {context, code} = await runCLI([CWD + '/src/commands/sarif/__tests__/fixtures/not-found.sarif'])
+    const {context, code} = await runCLI([CWD + '/src/__tests__/fixtures/not-found.sarif'])
     const output = context.stdout.toString().split('\n')
-    const path = `${CWD}/src/commands/sarif/__tests__/fixtures/not-found.sarif`
+    const path = `${CWD}/src/__tests__/fixtures/not-found.sarif`
     expect(code).toBe(1)
     expect(output[0]).toContain(`Cannot find valid SARIF report files to upload in ${path}`)
     expect(output[1]).toContain('Check the files exist and are valid.')
@@ -314,7 +303,7 @@ const checkConsoleOutput = (output: string[], expected: ExpectedOutput) => {
 }
 
 const getFixtures = (file: string) => {
-  return upath.join('./src/commands/sarif/__tests__/fixtures', file)
+  return upath.join('./src/__tests__/fixtures', file)
 }
 
 const setupLocalGitConfig = (dir: string) => {

@@ -51,7 +51,7 @@ To verify the command works as expected, use `--dry-run`:
 ```bash
 export DATADOG_API_KEY='<API key>'
 
-yarn launch sarif upload ./packages/datadog-ci/src/commands/sarif/__tests__/fixtures/valid-results.sarif --dry-run
+yarn launch sarif upload ./packages/plugin-sarif/src/__tests__/fixtures/valid-results.sarif --dry-run
 ```
 
 Successful output looks like the example below:
@@ -59,8 +59,8 @@ Successful output looks like the example below:
 ```bash
 ⚠️ DRY-RUN MODE ENABLED. WILL NOT UPLOAD SARIF REPORT
 Starting upload with concurrency 20.
-Will upload SARIF report file packages/datadog-ci/src/commands/sarif/__tests__/fixtures/valid-results.sarif
-[DRYRUN] Uploading SARIF report in packages/datadog-ci/src/commands/sarif/__tests__/fixtures/valid-results.sarif
+Will upload SARIF report file packages/plugin-sarif/src/__tests__/fixtures/valid-results.sarif
+[DRYRUN] Uploading SARIF report in packages/plugin-sarif/src/__tests__/fixtures/valid-results.sarif
 ✅ Uploaded 1 files in 0 seconds.
 ```
 
