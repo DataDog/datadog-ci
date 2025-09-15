@@ -21,7 +21,7 @@ describe('generation of payload', () => {
   })
 
   test('should correctly work with a CycloneDX 1.4 file', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+    const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -52,7 +52,7 @@ describe('generation of payload', () => {
   })
 
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok.json'
+    const sbomFile = './src/__tests__/fixtures/sbom.1.5.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -96,7 +96,7 @@ describe('generation of payload', () => {
   })
 
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5 with tools declared in components', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.5.ok-with-tools-as-components.json'
+    const sbomFile = './src/__tests__/fixtures/sbom.1.5.ok-with-tools-as-components.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -119,7 +119,7 @@ describe('generation of payload', () => {
   })
 
   test('should correctly work with a CycloneDX 1.6 file', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/cdxgen-cyclonedx1.6.json'
+    const sbomFile = './src/__tests__/fixtures/cdxgen-cyclonedx1.6.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -154,7 +154,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM for rust with multiple licenses', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-rust.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-rust.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -175,7 +175,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated for Ruby from a Gemfile lock', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-ruby.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-ruby.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -196,7 +196,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated for Java and Go', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-java-go.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-java-go.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -221,7 +221,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated for Python', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-python.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-python.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -244,7 +244,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated from Trivy 4.9 with group', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/trivy-4.9.json'
+    const sbomFile = './src/__tests__/fixtures/trivy-4.9.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -270,7 +270,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated from cyclonedx-npm', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/cyclonedx-npm.json'
+    const sbomFile = './src/__tests__/fixtures/cyclonedx-npm.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -294,7 +294,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated from osv-scanner with files', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/osv-scanner-files.json'
+    const sbomFile = './src/__tests__/fixtures/osv-scanner-files.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -360,7 +360,7 @@ describe('generation of payload', () => {
   })
 
   test('SBOM generated from osv-scanner with missing versions', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-missing-version.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-missing-version.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -391,7 +391,7 @@ describe('generation of payload', () => {
       // eslint-disable-next-line no-null/no-null
       await git.commit('Initial commit', [], {'--allow-empty': null})
 
-      const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+      const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok.json'
       const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
       const config: DatadogCiConfig = {
         apiKey: undefined,
@@ -427,7 +427,7 @@ describe('generation of payload', () => {
   })
 
   test('should not override provided tool.generator with value from SBOM', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok.json'
+    const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -451,7 +451,7 @@ describe('generation of payload', () => {
   })
 
   test('should not read tool.generator when missing from SBOM', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom.1.4.ok-without-metadata.json'
+    const sbomFile = './src/__tests__/fixtures/sbom.1.4.ok-without-metadata.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -468,7 +468,7 @@ describe('generation of payload', () => {
   })
 
   test('should correctly add reachability information with a CycloneDX 1.5 file', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-with-reachability.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-with-reachability.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -513,7 +513,7 @@ describe('generation of payload', () => {
   })
 
   test('should correctly add exclusions information with a CycloneDX 1.5 file', async () => {
-    const sbomFile = './src/commands/sbom/__tests__/fixtures/sbom-with-exclusion.json'
+    const sbomFile = './src/__tests__/fixtures/sbom-with-exclusion.json'
     const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
     const config: DatadogCiConfig = {
       apiKey: undefined,
@@ -559,7 +559,7 @@ describe('generation of payload', () => {
 })
 
 const getFixtures = (file: string) => {
-  return upath.join('./src/commands/sbom/__tests__/fixtures', file)
+  return upath.join('./src/__tests__/fixtures', file)
 }
 
 const setupLocalGitConfig = (dir: string) => {

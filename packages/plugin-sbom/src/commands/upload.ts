@@ -1,6 +1,7 @@
 import fs from 'fs'
 import process from 'process'
 
+import {SbomUploadCommand} from '@datadog/datadog-ci-base/commands/sbom/upload-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -13,50 +14,29 @@ import {
 } from '@datadog/datadog-ci-base/helpers/tags'
 import Ajv from 'ajv'
 import {AxiosPromise, AxiosResponse, isAxiosError} from 'axios'
-import {Command, Option} from 'clipanion'
 
-import {renderMissingTags} from '../sarif/renderer'
-
-import {getApiHelper} from './api'
-import {generatePayload} from './payload'
+import {getApiHelper} from '../api'
+import {generatePayload} from '../payload'
 import {
   renderDuplicateUpload,
   renderFailedUpload,
   renderInvalidFile,
   renderInvalidPayload,
+  renderMissingTags,
   renderNoDefaultBranch,
   renderPayloadWarning,
   renderSuccessfulCommand,
   renderUploading,
-} from './renderer'
-import {ScaRequest} from './types'
+} from '../renderer'
+import {ScaRequest} from '../types'
 import {
   filterInvalidDependencies,
   getValidator,
   validateFileAgainstToolRequirements,
   validateSbomFileAgainstSchema,
-} from './validation'
+} from '../validation'
 
-export class UploadSbomCommand extends Command {
-  public static paths = [['sbom', 'upload']]
-
-  public static usage = Command.Usage({
-    category: 'Static Analysis',
-    description: 'Upload SBOM files to Datadog.',
-    details: `
-      This command uploads SBOM files to Datadog for dependency tracking.
-    `,
-    examples: [['Upload the SBOM file sbom.json', 'datadog-ci sbom upload file.sbom']],
-  })
-
-  private basePath = Option.String()
-  private serviceFromCli = Option.String('--service')
-  private env = Option.String('--env', 'ci')
-  private tags = Option.Array('--tags')
-  private gitPath = Option.String('--git-repository')
-  private debug = Option.Boolean('--debug')
-  private noCiTags = Option.Boolean('--no-ci-tags', false)
-
+export class PluginCommand extends SbomUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY || '',
@@ -65,8 +45,6 @@ export class UploadSbomCommand extends Command {
     fips: process.env[FIPS_ENV_VAR],
   }
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

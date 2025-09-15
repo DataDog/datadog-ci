@@ -14,7 +14,8 @@ packages/datadog-ci/src/commands/trace         @DataDog/datadog-ci-admins @DataD
 
 ## Static Analysis (label: static-analysis)
 packages/datadog-ci/src/commands/sarif   @DataDog/datadog-ci-admins @DataDog/k9-vm-ast
-packages/datadog-ci/src/commands/sbom    @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
+packages/plugin-sbom                     @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
+packages/base/src/commands/sbom          @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
 
 ## RUM (label: rum)
 packages/datadog-ci/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile

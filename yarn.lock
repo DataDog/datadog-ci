@@ -1393,7 +1393,29 @@ __metadata:
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
+    "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-sbom@workspace:*, @datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@types/jest": "npm:29.5.3"
+    "@types/node": "npm:^18.19.76"
+    ajv: "npm:^8.12.0"
+    ajv-formats: "npm:^2.1.1"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    packageurl-js: "npm:^2.0.1"
+    simple-git: "npm:3.16.0"
+    typanion: "npm:^3.14.0"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1442,6 +1464,7 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
@@ -1471,7 +1494,6 @@ __metadata:
     jest-diff: "npm:^30.0.4"
     js-yaml: "npm:3.13.1"
     ora: "npm:5.4.1"
-    packageurl-js: "npm:^2.0.1"
     pkg: "npm:5.8.1"
     semver: "npm:^7.5.3"
     simple-git: "npm:3.16.0"
