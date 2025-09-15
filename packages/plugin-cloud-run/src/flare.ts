@@ -21,6 +21,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
   getProjectFiles,
+  getUniqueFileNames,
   sendToDatadog,
   validateCliVersion,
   validateFilePath,
@@ -35,8 +36,6 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {getUniqueFileNames} from '../lambda/flare'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
 import {CloudRunLog, LogConfig} from './interfaces'
