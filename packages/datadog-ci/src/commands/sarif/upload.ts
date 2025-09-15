@@ -87,6 +87,8 @@ export class UploadSarifReportCommand extends Command {
     const gitlabEvent = process.env.CI_PIPELINE_SOURCE
     const azureReason = process.env.BUILD_REASON
 
+    this.context.stdout.write(`Debug: githubEvent='${githubEvent}', gitlabEvent='${gitlabEvent}', azureReason='${azureReason}'\n`)
+
     if (githubEvent === 'pull_request') {
       // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
       this.context.stdout.write(
