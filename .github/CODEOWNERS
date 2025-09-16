@@ -32,7 +32,7 @@ packages/plugin-cloud-run                            @DataDog/datadog-ci-admins 
 packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/datadog-ci/src/commands/lambda              @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/datadog-ci/src/commands/stepfunctions       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-src/helpers/**/flare*.ts                             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/helpers/flare.ts                   @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/base/src/helpers/git-instrument-helpers.ts  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
