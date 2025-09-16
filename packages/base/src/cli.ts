@@ -1,7 +1,5 @@
 import {CommandClass} from 'clipanion'
 
-import {InstrumentCommand as AasInstrumentCommand} from './commands/aas/instrument'
-import {UninstrumentCommand as AasUninstrumentCommand} from './commands/aas/uninstrument'
 import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
@@ -17,7 +15,6 @@ export const baseCommands: Record<string, CommandClass[]> = {
   sarif: [SarifUploadCommand],
   sbom: [SbomUploadCommand],
   synthetics: [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
-  aas: [AasInstrumentCommand, AasUninstrumentCommand],
   'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
   'git-metadata': [UploadCommand],
 }
