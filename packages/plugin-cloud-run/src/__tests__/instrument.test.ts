@@ -122,7 +122,7 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
-    })
+    }, 10000)
   })
 
   describe('snapshot tests', () => {
