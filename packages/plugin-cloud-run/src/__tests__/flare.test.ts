@@ -24,7 +24,7 @@ import {
   MAX_LOGS,
   saveLogsFile,
   summarizeConfig,
-  CloudRunFlareCommand,
+  PluginCommand as CloudRunFlareCommand,
 } from '../flare'
 import {checkAuthentication} from '../utils'
 

@@ -1,4 +1,4 @@
-import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR} from '../../constants'
 
 export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([
   SITE_ENV_VAR,

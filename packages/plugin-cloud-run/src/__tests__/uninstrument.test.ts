@@ -11,7 +11,7 @@ import {
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import * as cloudRunPromptModule from '../prompt'
-import {UninstrumentCommand} from '../uninstrument'
+import {PluginCommand as UninstrumentCommand} from '../uninstrument'
 import * as utils from '../utils'
 
 jest.mock('../utils', () => ({

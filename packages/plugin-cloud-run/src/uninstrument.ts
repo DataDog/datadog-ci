@@ -1,13 +1,10 @@
 import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from './types'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/uninstrument'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 
-import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from './prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
@@ -15,41 +12,7 @@ import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './ut
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')
 
-export class UninstrumentCommand extends Command {
-  public static paths = [['cloud-run', 'uninstrument']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Revert Datadog instrumentation in a Cloud Run app.',
-  })
-
-  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private project = Option.String('-p,--project', {
-    description: 'GCP project ID',
-  })
-  private services = Option.Array('-s,--service,--services', [], {
-    description: 'Cloud Run service(s) to instrument',
-  })
-  private interactive = Option.Boolean('-i,--interactive', false, {
-    description: 'Prompt for flags one at a time',
-  })
-  private region = Option.String('-r,--region', {
-    description: 'GCP region your service(s) are deployed in',
-  })
-  private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
-    description: `The name of the sidecar container to remove. Specify if you have a different sidecar name. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
-  })
-  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
-    description: `The name of the shared volume to remove. Specify if you have a different shared volume name. Defaults to '${DEFAULT_VOLUME_NAME}'`,
-  })
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-
-  private fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
-
+export class PluginCommand extends UninstrumentCommand {
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
