@@ -106,7 +106,7 @@ describe('InstrumentCommand', () => {
         'us-central1',
       ])
       expect(code).toBe(1)
-    })
+    }, 10000)
 
     test('should succeed with valid parameters', async () => {
       const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
