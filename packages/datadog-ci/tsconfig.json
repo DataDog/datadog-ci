@@ -12,6 +12,9 @@
     },
     // Add Plugins Here:
     {
+      "path": "../plugin-lambda"
+    },
+    {
       "path": "../plugin-cloud-run"
     },
     {

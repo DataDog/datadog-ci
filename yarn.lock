@@ -663,7 +663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/types@npm:3.734.0, @aws-sdk/types@npm:^3.709.0":
+"@aws-sdk/types@npm:3.734.0":
   version: 3.734.0
   resolution: "@aws-sdk/types@npm:3.734.0"
   dependencies:
@@ -680,6 +680,16 @@ __metadata:
     "@smithy/types": "npm:^3.3.0"
     tslib: "npm:^2.6.2"
   checksum: 10/3448eef72037f2ee95f26abfd1ae33a2e626be2467126a8fb0102a0067fecbb50e99d6104e45681717617456de33d0ac518362f807091678f1303f5a896f3051
+  languageName: node
+  linkType: hard
+
+"@aws-sdk/types@npm:^3.887.0":
+  version: 3.887.0
+  resolution: "@aws-sdk/types@npm:3.887.0"
+  dependencies:
+    "@smithy/types": "npm:^4.5.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/b4a0024c35d01b481d18454ed1d6eaca8aa1f61082e9e71b1af78d1bc714c919fad3f594498a572aafa73f0d4301b26ae359d009a79d62c5ad995dad25416d59
   languageName: node
   linkType: hard
 
@@ -1395,6 +1405,7 @@ __metadata:
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
@@ -1429,6 +1440,31 @@ __metadata:
     inquirer: "npm:^8.2.5"
     inquirer-checkbox-plus-prompt: "npm:^1.4.2"
     jest-diff: "npm:^30.0.4"
+    ora: "npm:5.4.1"
+    typanion: "npm:^3.14.0"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-lambda@workspace:*, @datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda"
+  dependencies:
+    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
+    "@aws-sdk/client-lambda": "npm:^3.709.0"
+    "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
+    "@aws-sdk/credential-providers": "npm:^3.709.0"
+    "@aws-sdk/types": "npm:^3.887.0"
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@smithy/property-provider": "npm:^2.0.12"
+    "@smithy/util-retry": "npm:^2.0.4"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    fuzzy: "npm:^0.1.3"
+    inquirer: "npm:^8.2.5"
+    inquirer-checkbox-plus-prompt: "npm:^1.4.2"
     ora: "npm:5.4.1"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
@@ -1513,19 +1549,14 @@ __metadata:
   dependencies:
     "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
     "@aws-sdk/client-iam": "npm:^3.709.0"
-    "@aws-sdk/client-lambda": "npm:^3.709.0"
     "@aws-sdk/client-sfn": "npm:^3.709.0"
-    "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
-    "@aws-sdk/credential-providers": "npm:^3.709.0"
-    "@aws-sdk/types": "npm:^3.709.0"
     "@datadog/datadog-ci-base": "workspace:*"
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
-    "@smithy/property-provider": "npm:^2.0.12"
-    "@smithy/util-retry": "npm:^2.0.4"
     "@types/inquirer": "npm:8.2.6"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
@@ -1533,18 +1564,14 @@ __metadata:
     "@types/semver": "npm:^7.3.12"
     "@types/uuid": "npm:^9.0.2"
     aws-sdk-client-mock: "npm:^4.1.0"
-    aws-sdk-client-mock-jest: "npm:^4.1.0"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     deep-object-diff: "npm:^1.1.9"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
-    fuzzy: "npm:^0.1.3"
     inquirer: "npm:^8.2.5"
-    inquirer-checkbox-plus-prompt: "npm:^1.4.2"
     js-yaml: "npm:3.13.1"
-    ora: "npm:5.4.1"
     pkg: "npm:5.8.1"
     semver: "npm:^7.5.3"
     simple-git: "npm:3.16.0"
@@ -3140,6 +3167,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@smithy/types@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "@smithy/types@npm:4.5.0"
+  dependencies:
+    tslib: "npm:^2.6.2"
+  checksum: 10/d25275a0f1cb75dd3534a60a637b0202fbe1343703a448c410aa3e3029d5dc1d128c711c005bbda29a111af5a072aaf01bd8314a05c9806857d18e625f41c075
+  languageName: node
+  linkType: hard
+
 "@smithy/url-parser@npm:^4.0.1":
   version: 4.0.1
   resolution: "@smithy/url-parser@npm:4.0.1"
@@ -3999,47 +4035,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/expect@npm:>1.6.0":
-  version: 3.0.5
-  resolution: "@vitest/expect@npm:3.0.5"
-  dependencies:
-    "@vitest/spy": "npm:3.0.5"
-    "@vitest/utils": "npm:3.0.5"
-    chai: "npm:^5.1.2"
-    tinyrainbow: "npm:^2.0.0"
-  checksum: 10/e9dfaed51e3a2952306fa621b4fe6c4323b367c8b731fc57d661d971628df89d1bfa163be79e4de3004d6e2e32c99b496efb8d065db6cf41d6be01dc2b833f8d
-  languageName: node
-  linkType: hard
-
-"@vitest/pretty-format@npm:3.0.5":
-  version: 3.0.5
-  resolution: "@vitest/pretty-format@npm:3.0.5"
-  dependencies:
-    tinyrainbow: "npm:^2.0.0"
-  checksum: 10/1ffbee16e9aa2cd7862bc6b83c30b7b53031d29ddae0302d09e6b1f6bfa0e4338e5c74a2dfaeed1bab317aff300c4fd309004dbaa69baf9ebe71f6806b132e96
-  languageName: node
-  linkType: hard
-
-"@vitest/spy@npm:3.0.5":
-  version: 3.0.5
-  resolution: "@vitest/spy@npm:3.0.5"
-  dependencies:
-    tinyspy: "npm:^3.0.2"
-  checksum: 10/ed85319cd03f3f35121e84ce31721316daf94a7c01d493dff746ff5469d12e40b218cc728d57c5a71612c5a3882e8e66d9cefe82b82c2044d5f257954ec7e9d8
-  languageName: node
-  linkType: hard
-
-"@vitest/utils@npm:3.0.5":
-  version: 3.0.5
-  resolution: "@vitest/utils@npm:3.0.5"
-  dependencies:
-    "@vitest/pretty-format": "npm:3.0.5"
-    loupe: "npm:^3.1.2"
-    tinyrainbow: "npm:^2.0.0"
-  checksum: 10/4e85a7514592df63870eb4ec27c434034cc91c9e63c052bcb2304c4cc2f4fbb49350099280480313e93526247d020b42bea52436cf7f93fee0bd98cfac51a644
-  languageName: node
-  linkType: hard
-
 "abbrev@npm:^2.0.0":
   version: 2.0.0
   resolution: "abbrev@npm:2.0.0"
@@ -4297,13 +4292,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"assertion-error@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "assertion-error@npm:2.0.1"
-  checksum: 10/a0789dd882211b87116e81e2648ccb7f60340b34f19877dd020b39ebb4714e475eb943e14ba3e22201c221ef6645b7bfe10297e76b6ac95b48a9898c1211ce66
-  languageName: node
-  linkType: hard
-
 "ast-types@npm:^0.13.4":
   version: 0.13.4
   resolution: "ast-types@npm:0.13.4"
@@ -4333,23 +4321,6 @@ __metadata:
   version: 1.0.0
   resolution: "at-least-node@npm:1.0.0"
   checksum: 10/463e2f8e43384f1afb54bc68485c436d7622acec08b6fad269b421cb1d29cebb5af751426793d0961ed243146fe4dc983402f6d5a51b720b277818dbf6f2e49e
-  languageName: node
-  linkType: hard
-
-"aws-sdk-client-mock-jest@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "aws-sdk-client-mock-jest@npm:4.1.0"
-  dependencies:
-    "@vitest/expect": "npm:>1.6.0"
-    expect: "npm:>28.1.3"
-    tslib: "npm:^2.1.0"
-  peerDependencies:
-    aws-sdk-client-mock: 4.1.0
-    vitest: ">1.6.0"
-  peerDependenciesMeta:
-    vitest:
-      optional: true
-  checksum: 10/d17acb560aabe6dd23a737ba08f300d4afb2325f188106b647f92397b63c3d17d3f43e141173d327eb10b365e4d8274f78897411f686a0dcd6628dfbb268b1a3
   languageName: node
   linkType: hard
 
@@ -4689,19 +4660,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chai@npm:^5.1.2":
-  version: 5.1.2
-  resolution: "chai@npm:5.1.2"
-  dependencies:
-    assertion-error: "npm:^2.0.1"
-    check-error: "npm:^2.1.1"
-    deep-eql: "npm:^5.0.1"
-    loupe: "npm:^3.1.0"
-    pathval: "npm:^2.0.0"
-  checksum: 10/e8c2bbc83cb5a2f87130d93056d4cfbbe04106e12aa798b504816dbe3fa538a9f68541b472e56cbf0f54558b501d7e31867d74b8218abcd5a8cc8ba536fba46c
-  languageName: node
-  linkType: hard
-
 "chalk@npm:2.4.2, chalk@npm:^2.4.2":
   version: 2.4.2
   resolution: "chalk@npm:2.4.2"
@@ -4744,13 +4702,6 @@ __metadata:
   version: 0.7.0
   resolution: "chardet@npm:0.7.0"
   checksum: 10/b0ec668fba5eeec575ed2559a0917ba41a6481f49063c8445400e476754e0957ee09e44dc032310f526182b8f1bf25e9d4ed371f74050af7be1383e06bc44952
-  languageName: node
-  linkType: hard
-
-"check-error@npm:^2.1.1":
-  version: 2.1.1
-  resolution: "check-error@npm:2.1.1"
-  checksum: 10/d785ed17b1d4a4796b6e75c765a9a290098cf52ff9728ce0756e8ffd4293d2e419dd30c67200aee34202463b474306913f2fcfaf1890641026d9fc6966fea27a
   languageName: node
   linkType: hard
 
@@ -5145,13 +5096,6 @@ __metadata:
     babel-plugin-macros:
       optional: true
   checksum: 10/e5277f6268f288649503125b781a7b7a2c9b22d011139688c0b3619fe40121e600eb1f077c891938d4b2428bdb6326cc3c77a763e4b1cc681bd9666ab1bad2a1
-  languageName: node
-  linkType: hard
-
-"deep-eql@npm:^5.0.1":
-  version: 5.0.2
-  resolution: "deep-eql@npm:5.0.2"
-  checksum: 10/a529b81e2ef8821621d20a36959a0328873a3e49d393ad11f8efe8559f31239494c2eb889b80342808674c475802ba95b9d6c4c27641b9a029405104c1b59fcf
   languageName: node
   linkType: hard
 
@@ -5990,7 +5934,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expect@npm:>28.1.3, expect@npm:^29.0.0, expect@npm:^29.7.0":
+"expect@npm:^29.0.0, expect@npm:^29.7.0":
   version: 29.7.0
   resolution: "expect@npm:29.7.0"
   dependencies:
@@ -8240,13 +8184,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loupe@npm:^3.1.0, loupe@npm:^3.1.2":
-  version: 3.1.3
-  resolution: "loupe@npm:3.1.3"
-  checksum: 10/9e98c34daf0eba48ccc603595e51f2ae002110982d84879cf78c51de2c632f0c571dfe82ce4210af60c32203d06b443465c269bda925076fe6d9b612cc65c321
-  languageName: node
-  linkType: hard
-
 "lru-cache@npm:^10.0.1, lru-cache@npm:^10.2.0":
   version: 10.4.3
   resolution: "lru-cache@npm:10.4.3"
@@ -9054,13 +8991,6 @@ __metadata:
   version: 4.0.0
   resolution: "path-type@npm:4.0.0"
   checksum: 10/5b1e2daa247062061325b8fdbfd1fb56dde0a448fb1455453276ea18c60685bdad23a445dc148cf87bc216be1573357509b7d4060494a6fd768c7efad833ee45
-  languageName: node
-  linkType: hard
-
-"pathval@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "pathval@npm:2.0.0"
-  checksum: 10/b91575bf9cdf01757afd7b5e521eb8a0b874a49bc972d08e0047cfea0cd3c019f5614521d4bc83d2855e3fcc331db6817dfd533dd8f3d90b16bc76fad2450fc1
   languageName: node
   linkType: hard
 
@@ -10267,20 +10197,6 @@ __metadata:
     fdir: "npm:^6.4.4"
     picomatch: "npm:^4.0.2"
   checksum: 10/3d306d319718b7cc9d79fb3f29d8655237aa6a1f280860a217f93417039d0614891aee6fc47c5db315f4fcc6ac8d55eb8e23e2de73b2c51a431b42456d9e5764
-  languageName: node
-  linkType: hard
-
-"tinyrainbow@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "tinyrainbow@npm:2.0.0"
-  checksum: 10/94d4e16246972614a5601eeb169ba94f1d49752426312d3cf8cc4f2cc663a2e354ffc653aa4de4eebccbf9eeebdd0caef52d1150271fdfde65d7ae7f3dcb9eb5
-  languageName: node
-  linkType: hard
-
-"tinyspy@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "tinyspy@npm:3.0.2"
-  checksum: 10/5db671b2ff5cd309de650c8c4761ca945459d7204afb1776db9a04fb4efa28a75f08517a8620c01ee32a577748802231ad92f7d5b194dc003ee7f987a2a06337
   languageName: node
   linkType: hard
 
