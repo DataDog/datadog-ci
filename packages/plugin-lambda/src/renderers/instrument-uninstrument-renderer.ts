@@ -9,8 +9,8 @@ import {
 import chalk from 'chalk'
 import ora from 'ora'
 
-import {InstrumentCommand} from '../instrument'
-import {UninstrumentCommand} from '../uninstrument'
+import {PluginCommand as InstrumentCommand} from '../commands/instrument'
+import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
 /**
  * @returns a header indicating which `lambda` subcommand is running.

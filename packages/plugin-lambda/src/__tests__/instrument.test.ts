@@ -26,6 +26,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'
 
+import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import {
   AWS_ACCESS_KEY_ID_ENV_VAR,
   AWS_DEFAULT_REGION_ENV_VAR,
@@ -33,7 +34,6 @@ import {
   AWS_SESSION_TOKEN_ENV_VAR,
   DEFAULT_LAYER_AWS_ACCOUNT,
 } from '../constants'
-import {InstrumentCommand} from '../instrument'
 import {InstrumentationSettings, LambdaConfigOptions} from '../interfaces'
 import {
   requestAWSCredentials,

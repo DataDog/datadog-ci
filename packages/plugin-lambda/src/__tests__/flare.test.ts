@@ -22,7 +22,6 @@ import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
 import {
   convertToCSV,
   generateInsightsFile,
@@ -32,9 +31,10 @@ import {
   getLogStreamNames,
   getTags,
   summarizeConfig,
-  LambdaFlareCommand,
-} from '../flare'
-import * as flareModule from '../flare'
+  PluginCommand as LambdaFlareCommand,
+} from '../commands/flare'
+import * as flareModule from '../commands/flare'
+import {AWS_DEFAULT_REGION_ENV_VAR, DeploymentFrameworks} from '../constants'
 import {getAWSCredentials, getLambdaFunctionConfig, maskConfig} from '../functions/commons'
 import {requestAWSCredentials} from '../prompt'
 

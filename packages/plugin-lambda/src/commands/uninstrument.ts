@@ -1,6 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -8,9 +9,8 @@ import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from '../constants'
 import {
   collectFunctionsByRegion,
   getAllLambdaFunctionConfigs,
@@ -19,48 +19,14 @@ import {
   getAWSCredentials,
   willUpdateFunctionConfigs,
   maskConfig,
-} from './functions/commons'
-import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from './functions/uninstrument'
-import {FunctionConfiguration} from './interfaces'
-import {requestAWSCredentials, requestFunctionSelection} from './prompt'
-import * as commonRenderer from './renderers/common-renderer'
-import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
+} from '../functions/commons'
+import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from '../functions/uninstrument'
+import {FunctionConfiguration} from '../interfaces'
+import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
+import * as commonRenderer from '../renderers/common-renderer'
+import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
-export class UninstrumentCommand extends Command {
-  public static paths = [['lambda', 'uninstrument']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Revert Datadog instrumentation in a Lambda.',
-  })
-
-  private configPath = Option.String('--config')
-  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private forwarder = Option.String('--forwarder')
-  private functions = Option.Array('-f,--function', [])
-  private interactive = Option.Boolean('-i,--interactive', false)
-  private profile = Option.String('--profile')
-  private regExPattern = Option.String('--functions-regex,--functionsRegex')
-  private region = Option.String('-r,--region')
-
-  /**
-   * Arguments that are not really in use, but to
-   * make uninstrumentation easier for the user.
-   */
-  private layerVersion = Option.String('-v,--layer-version,--layerVersion', {hidden: true})
-  private tracing = Option.String('--tracing', {hidden: true})
-  private logLevel = Option.String('--log-level,--logLevel', {hidden: true})
-  private service = Option.String('--service', {hidden: true})
-  private environment = Option.String('--env', {hidden: true})
-  private version = Option.String('--version', {hidden: true})
-  private appsecEnabled = Option.Boolean('--appsec', {hidden: true})
-  private apmFlushDeadline = Option.String('--apm-flush-deadline', {hidden: true})
-  private extraTags = Option.String('--extra-tags,--extraTags', {hidden: true})
-  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion', {hidden: true})
-  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces', {hidden: true})
-  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs', {hidden: true})
-  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload', {hidden: true})
-
+export class PluginCommand extends UninstrumentCommand {
   private config: any = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
@@ -68,8 +34,6 @@ export class UninstrumentCommand extends Command {
 
   private credentials?: AwsCredentialIdentity
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

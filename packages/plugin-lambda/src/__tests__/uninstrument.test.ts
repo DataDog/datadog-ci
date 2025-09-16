@@ -34,6 +34,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 
+import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import {
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
   AWS_ACCESS_KEY_ID_ENV_VAR,
@@ -45,7 +46,6 @@ import {
   MERGE_XRAY_TRACES_ENV_VAR,
 } from '../constants'
 import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
-import {UninstrumentCommand} from '../uninstrument'
 
 import {
   mockAwsAccessKeyId,

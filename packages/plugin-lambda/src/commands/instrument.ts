@@ -1,6 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {InstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/instrument'
 import {
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
@@ -16,9 +17,8 @@ import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from './constants'
+import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY, LAMBDA_FIPS_ENV_VAR} from '../constants'
 import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
@@ -31,59 +31,25 @@ import {
   sentenceMatchesRegEx,
   willUpdateFunctionConfigs,
   maskConfig,
-} from './functions/commons'
-import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from './functions/instrument'
+} from '../functions/commons'
+import {getInstrumentedFunctionConfigs, getInstrumentedFunctionConfigsFromRegEx} from '../functions/instrument'
 import {
   FunctionConfiguration,
   InstrumentationSettings,
   InstrumentedConfigurationGroup,
   LambdaConfigOptions,
-} from './interfaces'
+} from '../interfaces'
 import {
   requestAWSCredentials,
   requestAWSRegion,
   requestDatadogEnvVars,
   requestEnvServiceVersion,
   requestFunctionSelection,
-} from './prompt'
-import * as commonRenderer from './renderers/common-renderer'
-import * as instrumentRenderer from './renderers/instrument-uninstrument-renderer'
+} from '../prompt'
+import * as commonRenderer from '../renderers/common-renderer'
+import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
-export class InstrumentCommand extends Command {
-  public static paths = [['lambda', 'instrument']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Apply Datadog instrumentation to a Lambda.',
-  })
-
-  private apmFlushDeadline = Option.String('--apm-flush-deadline')
-  private appsecEnabled = Option.Boolean('--appsec', false)
-  private captureLambdaPayload = Option.String('--capture-lambda-payload,--captureLambdaPayload')
-  private configPath = Option.String('--config')
-  private dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private environment = Option.String('--env')
-  private extensionVersion = Option.String('-e,--extension-version,--extensionVersion')
-  private extraTags = Option.String('--extra-tags,--extraTags')
-  private flushMetricsToLogs = Option.String('--flush-metrics-to-logs,--flushMetricsToLogs')
-  private forwarder = Option.String('--forwarder')
-  private functions = Option.Array('-f,--function', [])
-  private interactive = Option.Boolean('-i,--interactive', false)
-  private layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
-  private layerVersion = Option.String('-v,--layer-version,--layerVersion')
-  private logging = Option.String('--logging')
-  private logLevel = Option.String('--log-level,--logLevel')
-  private mergeXrayTraces = Option.String('--merge-xray-traces,--mergeXrayTraces')
-  private profile = Option.String('--profile')
-  private regExPattern = Option.String('--functions-regex,--functionsRegex')
-  private region = Option.String('-r,--region')
-  private service = Option.String('--service')
-  private sourceCodeIntegration = Option.Boolean('-s,--source-code-integration,--sourceCodeIntegration', true)
-  private uploadGitMetadata = Option.Boolean('-u,--upload-git-metadata,--uploadGitMetadata', true)
-  private tracing = Option.String('--tracing')
-  private version = Option.String('--version')
-  private llmobs = Option.String('--llmobs')
-
+export class PluginCommand extends InstrumentCommand {
   private config: LambdaConfigOptions = {
     functions: [],
     tracing: 'true',
@@ -92,9 +58,6 @@ export class InstrumentCommand extends Command {
 
   private credentials?: AwsCredentialIdentity
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private lambdaFips = Option.Boolean('--lambda-fips', false)
   private fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

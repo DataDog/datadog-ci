@@ -34,6 +34,8 @@
     "@datadog/datadog-ci-base": "workspace:*",
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
+    "aws-sdk-client-mock": "^4.1.0",
+    "aws-sdk-client-mock-jest": "^4.1.0",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
     "fuzzy": "^0.1.3",
