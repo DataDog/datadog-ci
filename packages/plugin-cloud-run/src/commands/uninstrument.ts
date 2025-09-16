@@ -1,4 +1,4 @@
-import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from './types'
+import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from '../types'
 
 import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -7,9 +7,9 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 
-import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from './prompt'
-import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from './renderer'
-import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './utils'
+import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
+import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
+import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {ServicesClient} = require('@google-cloud/run')

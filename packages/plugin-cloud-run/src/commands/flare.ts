@@ -2,7 +2,7 @@ import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
-import type {IService, IContainer, ServicesClient as IServicesClient} from './types'
+import type {IService, IContainer, ServicesClient as IServicesClient} from '../types'
 import type {Logging} from '@google-cloud/logging'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
@@ -38,9 +38,9 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
 import upath from 'upath'
 
-import {CloudRunLog, LogConfig} from './interfaces'
-import {renderAuthenticationInstructions} from './renderer'
-import {checkAuthentication} from './utils'
+import {CloudRunLog, LogConfig} from '../interfaces'
+import {renderAuthenticationInstructions} from '../renderer'
+import {checkAuthentication} from '../utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {RevisionsClient, ServicesClient} = require('@google-cloud/run')

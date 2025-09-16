@@ -1,5 +1,5 @@
-import {PluginCommand as CloudRunFlareCommand} from './flare'
-import {PluginCommand as InstrumentCommand} from './instrument'
-import {PluginCommand as UninstrumentCommand} from './uninstrument'
+import {PluginCommand as CloudRunFlareCommand} from './commands/flare'
+import {PluginCommand as InstrumentCommand} from './commands/instrument'
+import {PluginCommand as UninstrumentCommand} from './commands/uninstrument'
 
 module.exports = [CloudRunFlareCommand, InstrumentCommand, UninstrumentCommand]

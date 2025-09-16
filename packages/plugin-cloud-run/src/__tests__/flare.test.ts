@@ -14,7 +14,7 @@ import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {Logging} from '@google-cloud/logging'
 
-import * as flareModule from '../flare'
+import * as flareModule from '../commands/flare'
 import {
   generateInsightsFile,
   getCloudRunServiceConfig,
@@ -25,7 +25,7 @@ import {
   saveLogsFile,
   summarizeConfig,
   PluginCommand as CloudRunFlareCommand,
-} from '../flare'
+} from '../commands/flare'
 import {checkAuthentication} from '../utils'
 
 const {GoogleAuth} = require('google-auth-library')
