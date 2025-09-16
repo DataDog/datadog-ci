@@ -2,7 +2,7 @@ import {LogLevel} from '@aws-sdk/client-sfn'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import * as aws from '../awsCommands'
-import {UninstrumentStepFunctionsCommand} from '../uninstrument'
+import {PluginCommand as UninstrumentStepFunctionsCommand} from '../commands/uninstrument'
 
 import {describeStateMachineFixture, subscriptionFilterFixture} from './fixtures/aws-resources'
 

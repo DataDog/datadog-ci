@@ -1,53 +1,20 @@
 import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
 import {SFNClient} from '@aws-sdk/client-sfn'
+import {UninstrumentStepFunctionsCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {Command, Option} from 'clipanion'
 
-import {deleteSubscriptionFilter, describeStateMachine, describeSubscriptionFilters, untagResource} from './awsCommands'
-import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from './constants'
-import {getStepFunctionLogGroupArn, isValidArn, parseArn} from './helpers'
+import {
+  deleteSubscriptionFilter,
+  describeStateMachine,
+  describeSubscriptionFilters,
+  untagResource,
+} from '../awsCommands'
+import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from '../constants'
+import {getStepFunctionLogGroupArn, isValidArn, parseArn} from '../helpers'
 
-export class UninstrumentStepFunctionsCommand extends Command {
-  public static paths = [['stepfunctions', 'uninstrument']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Remove Step Function log groups subscription filter created by datadog-ci.',
-    details: '--stepfunction expects a Step Function ARN',
-    examples: [
-      [
-        'View and apply changes to remove Step Functions log groups subscription filters created by datadog-ci',
-        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction',
-      ],
-      [
-        'View changes to remove Step Functions log groups subscription filters created by datadog-ci',
-        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --dry-run',
-      ],
-      [
-        'View and apply changes to remove Step Functions log groups subscription filters created by datadog-ci',
-        'datadog-ci stepfunctions uninstrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2',
-      ],
-    ],
-  })
-
-  private dryRun = Option.Boolean('-d,--dry-run', false)
-  private stepFunctionArns = Option.Array('-s,--step-function')
-
-  // The options below are to match what InstrumentStepFunctionsCommand has so that customers can switch from instrument to uninstrument.
-  // Lambda command adopts the same approach as well.
-  private environment = Option.String('-e,--env', {hidden: true})
-  private forwarderArn = Option.String('--forwarder', {hidden: true})
-  private service = Option.String('--service', {hidden: true})
-  private mergeStepFunctionAndLambdaTraces = Option.Boolean(
-    '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
-    false,
-    {hidden: true}
-  )
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+export class PluginCommand extends UninstrumentStepFunctionsCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
