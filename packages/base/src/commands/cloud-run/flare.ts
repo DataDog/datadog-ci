@@ -1,7 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
 import {executePluginCommand} from '../../helpers/plugin'
 
 export class CloudRunFlareCommand extends Command {
@@ -26,10 +24,6 @@ export class CloudRunFlareCommand extends Command {
 
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  protected config = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)
   }

@@ -1,7 +1,5 @@
 import {Command, Option} from 'clipanion'
 
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {toBoolean} from '../../helpers/env'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
@@ -73,10 +71,7 @@ export class InstrumentCommand extends Command {
   })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  protected fipsConfig = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
+
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)
   }

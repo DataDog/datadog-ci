@@ -1,6 +1,8 @@
 import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from './types'
 
 import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/uninstrument'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
@@ -13,6 +15,10 @@ import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from './ut
 const {ServicesClient} = require('@google-cloud/run')
 
 export class PluginCommand extends UninstrumentCommand {
+  protected fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 

@@ -20,8 +20,11 @@ import {
   VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_SOURCE_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
@@ -49,6 +52,11 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
 ]
 
 export class PluginCommand extends InstrumentCommand {
+  protected fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 

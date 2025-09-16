@@ -11,12 +11,15 @@ import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
+  FIPS_ENV_VAR,
+  FIPS_IGNORE_ERROR_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
   FLARE_PROJECT_FILES,
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
 } from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
   getProjectFiles,
@@ -66,13 +69,17 @@ const LOG_CONFIGS: LogConfig[] = [
 ]
 
 export class PluginCommand extends CloudRunFlareCommand {
+  protected fipsConfig = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
   /**
    * Entry point for the `cloud-run flare` command.
    * Gathers Cloud Run service configuration and sends it to Datadog.
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
     await validateCliVersion(cliVersion, this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 
