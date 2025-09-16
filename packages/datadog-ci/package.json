@@ -46,6 +46,7 @@
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
