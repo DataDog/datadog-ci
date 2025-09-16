@@ -1,10 +1,10 @@
 import {Command, Option} from 'clipanion'
 
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
+import {toBoolean} from '../../helpers/env'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
-import { toBoolean } from '../../helpers/env'
-import { FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR } from '../../constants'
 
 const DEFAULT_VOLUME_PATH = '/shared-volume'
 const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'

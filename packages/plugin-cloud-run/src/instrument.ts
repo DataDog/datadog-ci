@@ -49,7 +49,6 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
 ]
 
 export class PluginCommand extends InstrumentCommand {
-
   public async execute(): Promise<0 | 1> {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
