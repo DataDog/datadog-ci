@@ -124,6 +124,7 @@ jobs:
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-tag": "file:./artifacts/@datadog-datadog-ci-plugin-tag-${{ matrix.version }}.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz"

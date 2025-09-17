@@ -3,7 +3,7 @@ import {Cli} from 'clipanion'
 
 import {TagCommand} from '../tag'
 
-const fixturesPath = './src/commands/tag/__tests__/fixtures'
+const fixturesPath = './packages/plugin-tag/src/__tests__/fixtures'
 
 describe('execute', () => {
   const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {

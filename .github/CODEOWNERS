@@ -9,7 +9,8 @@ packages/datadog-ci/src/commands/deployment    @DataDog/datadog-ci-admins @DataD
 packages/datadog-ci/src/commands/dora          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/junit         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/measure       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/datadog-ci/src/commands/tag           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/plugin-tag                            @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/base/src/commands/tag                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/trace         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 
 ## Static Analysis (label: static-analysis)
