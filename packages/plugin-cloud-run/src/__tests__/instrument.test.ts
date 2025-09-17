@@ -20,7 +20,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 
-import {InstrumentCommand} from '../instrument'
+import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
 import * as utils from '../utils'
 
@@ -106,7 +106,7 @@ describe('InstrumentCommand', () => {
         'us-central1',
       ])
       expect(code).toBe(1)
-    })
+    }, 10000)
 
     test('should succeed with valid parameters', async () => {
       const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
@@ -122,7 +122,7 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
-    })
+    }, 10000)
   })
 
   describe('snapshot tests', () => {

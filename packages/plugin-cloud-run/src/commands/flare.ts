@@ -2,9 +2,11 @@ import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
-import type {IService, IContainer, ServicesClient as IServicesClient} from './types'
+import type {IService, IContainer, ServicesClient as IServicesClient} from '../types'
 import type {Logging} from '@google-cloud/logging'
 
+import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
+import {CloudRunFlareCommand} from '@datadog/datadog-ci-base/commands/cloud-run/flare'
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -21,6 +23,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
   getProjectFiles,
+  getUniqueFileNames,
   sendToDatadog,
   validateCliVersion,
   validateFilePath,
@@ -33,15 +36,11 @@ import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-bas
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {getUniqueFileNames} from '../lambda/flare'
-
-import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from './constants'
-import {CloudRunLog, LogConfig} from './interfaces'
-import {renderAuthenticationInstructions} from './renderer'
-import {checkAuthentication} from './utils'
+import {CloudRunLog, LogConfig} from '../interfaces'
+import {renderAuthenticationInstructions} from '../renderer'
+import {checkAuthentication} from '../utils'
 
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 const {RevisionsClient, ServicesClient} = require('@google-cloud/run')
@@ -69,40 +68,18 @@ const LOG_CONFIGS: LogConfig[] = [
   {type: 'debug', severityFilter: ' AND severity="DEBUG"', fileName: DEBUG_LOGS_FILE_NAME},
 ]
 
-export class CloudRunFlareCommand extends Command {
-  public static paths = [['cloud-run', 'flare']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Gather Cloud Run service configuration and sends it to Datadog.',
-  })
-
-  private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private withLogs = Option.Boolean('--with-logs', false)
-  private service = Option.String('-s,--service')
-  private project = Option.String('-p,--project')
-  private region = Option.String('-r,--region,-l,--location')
-  private caseId = Option.String('-c,--case-id')
-  private email = Option.String('-e,--email')
-  private start = Option.String('--start')
-  private end = Option.String('--end')
-
-  private apiKey?: string
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private config = {
+export class PluginCommand extends CloudRunFlareCommand {
+  protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
-
   /**
    * Entry point for the `cloud-run flare` command.
    * Gathers Cloud Run service configuration and sends it to Datadog.
    * @returns 0 if the command ran successfully, 1 otherwise.
    */
   public async execute() {
-    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+    enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
     await validateCliVersion(cliVersion, this.context.stdout)
     this.context.stdout.write(helpersRenderer.renderFlareHeader('Cloud Run', this.isDryRun))
 

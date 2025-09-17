@@ -31,7 +31,6 @@ import {
   getLogEvents,
   getLogStreamNames,
   getTags,
-  getUniqueFileNames,
   summarizeConfig,
   LambdaFlareCommand,
 } from '../flare'
@@ -680,68 +679,6 @@ describe('lambda flare', () => {
       expect(code).toBe(0)
       expect(context.stdout.toString()).toMatchSnapshot()
       expect(context.stdout.toString()).not.toContain('Added 0 custom file(s)')
-    })
-  })
-
-  describe('getUniqueFilesNames', () => {
-    it('should return file names when all are unique', () => {
-      const mockFilePaths = new Set<string>(['src/serverless.yml', 'src/package.json'])
-      const expectedFiles = new Map([
-        ['src/serverless.yml', 'serverless.yml'],
-        ['src/package.json', 'package.json'],
-      ])
-      const result = getUniqueFileNames(mockFilePaths)
-      expect(result).toEqual(expectedFiles)
-    })
-
-    it('returns unique file names when there are duplicates', () => {
-      const mockFilePaths = new Set<string>([
-        'src/func1/serverless.yml',
-        'src/func2/serverless.yml',
-        'src/func1/package.json',
-        'src/func2/package.json',
-        'src/Dockerfile',
-        'src/README.md',
-      ])
-
-      const expectedFiles = new Map([
-        ['src/func1/serverless.yml', 'src-func1-serverless.yml'],
-        ['src/func2/serverless.yml', 'src-func2-serverless.yml'],
-        ['src/func1/package.json', 'src-func1-package.json'],
-        ['src/func2/package.json', 'src-func2-package.json'],
-        ['src/Dockerfile', 'Dockerfile'],
-        ['src/README.md', 'README.md'],
-      ])
-
-      const result = getUniqueFileNames(mockFilePaths)
-      expect(result).toEqual(expectedFiles)
-    })
-
-    it('returns unique file names when there are duplicates with different prefixes', () => {
-      const mockFilePaths = new Set<string>([
-        'project1/src/func1/serverless.yml',
-        'project1/src/func2/serverless.yml',
-        'project2/src/func1/serverless.yml',
-        'project2/src/func2/serverless.yml',
-        'project2/src/func3/serverless.yml',
-        'project3/src/cool_function/serverless.yml',
-        'src/Dockerfile',
-        'src/README.md',
-      ])
-
-      const expectedFiles = new Map([
-        ['project1/src/func1/serverless.yml', 'project1-src-func1-serverless.yml'],
-        ['project1/src/func2/serverless.yml', 'project1-src-func2-serverless.yml'],
-        ['project2/src/func1/serverless.yml', 'project2-src-func1-serverless.yml'],
-        ['project2/src/func2/serverless.yml', 'project2-src-func2-serverless.yml'],
-        ['project2/src/func3/serverless.yml', 'project2-src-func3-serverless.yml'],
-        ['project3/src/cool_function/serverless.yml', 'project3-src-cool_function-serverless.yml'],
-        ['src/Dockerfile', 'Dockerfile'],
-        ['src/README.md', 'README.md'],
-      ])
-
-      const result = getUniqueFileNames(mockFilePaths)
-      expect(result).toEqual(expectedFiles)
     })
   })
 
