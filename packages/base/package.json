@@ -42,7 +42,8 @@
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
-    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
+    "@datadog/datadog-ci-plugin-tag": "workspace:*"
   },
   "dependencies": {
     "@types/datadog-metrics": "0.6.1",

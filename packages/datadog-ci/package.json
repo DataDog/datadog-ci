@@ -48,6 +48,7 @@
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
+    "@datadog/datadog-ci-plugin-tag": "workspace:*",
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "@smithy/property-provider": "^2.0.12",

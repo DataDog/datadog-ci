@@ -22,6 +22,9 @@
     },
     {
       "path": "../plugin-synthetics"
+    },
+    {
+      "path": "../plugin-tag"
     }
   ]
 }

@@ -19,9 +19,10 @@
     },
     {
       "path": "./packages/plugin-synthetics"
+    },
+    {
+      "path": "./packages/plugin-tag"
     }
   ],
-  "exclude": [
-    "*"
-  ] // Exclude everything from the root project.
+  "exclude": ["*"] // Exclude everything from the root project.
 }

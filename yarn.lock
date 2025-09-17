@@ -1397,6 +1397,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+    "@datadog/datadog-ci-plugin-tag": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1485,6 +1486,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@datadog/datadog-ci-plugin-tag@workspace:*, @datadog/datadog-ci-plugin-tag@workspace:packages/plugin-tag":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-tag@workspace:packages/plugin-tag"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci@workspace:packages/datadog-ci":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
@@ -1501,6 +1516,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+    "@datadog/datadog-ci-plugin-tag": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
     "@smithy/property-provider": "npm:^2.0.12"
