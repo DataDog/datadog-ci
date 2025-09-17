@@ -1,4 +1,4 @@
-import {PluginCommand as InstrumentCommand} from './instrument'
-import {PluginCommand as UninstrumentCommand} from './uninstrument'
+import {PluginCommand as InstrumentCommand} from './commands/instrument'
+import {PluginCommand as UninstrumentCommand} from './commands/uninstrument'
 
 module.exports = [InstrumentCommand, UninstrumentCommand]

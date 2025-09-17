@@ -52,7 +52,7 @@ import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {PluginCommand as InstrumentCommand} from '../instrument'
+import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
 import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID} from './common'
 

@@ -22,7 +22,7 @@ import {
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
   SIDECAR_PORT,
-} from './common'
+} from '../common'
 
 export class PluginCommand extends InstrumentCommand {
   public async execute(): Promise<0 | 1> {

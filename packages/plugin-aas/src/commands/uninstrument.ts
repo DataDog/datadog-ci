@@ -13,7 +13,7 @@ import {
   isDotnet,
   parseEnvVars,
   SIDECAR_CONTAINER_NAME,
-} from './common'
+} from '../common'
 
 export class PluginCommand extends UninstrumentCommand {
   public async execute(): Promise<0 | 1> {
