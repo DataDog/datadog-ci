@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-enum-comparison */
 import {createHash} from 'crypto'
 import fs from 'fs'
 
@@ -33,7 +32,7 @@ export type ElfFileMetadata = {
 }
 
 export type ElfHeader = {
-  elfClass: number
+  elfClass: ElfClass
   data: number
   elfVersion: number
   abi: number
@@ -70,7 +69,7 @@ export type SectionHeader = {
   name: string
 
   sh_name: number
-  sh_type: number
+  sh_type: SectionHeaderType
   sh_flags: bigint
   sh_addr: bigint
   sh_offset: bigint
@@ -130,6 +129,9 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
 
   try {
     const IDENT_SIZE = 16
+    const HEADER_SIZE_32 = 0x34
+    const HEADER_SIZE_64 = 0x40
+
     const identBuffer = await reader.read(IDENT_SIZE)
 
     // check magic number:  0x7F followed by 'ELF' in ASCII
@@ -139,7 +141,7 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
 
     result.isElf = true
 
-    const elfClass = identBuffer.readUint8(4)
+    const elfClass = identBuffer.readUint8(4) as ElfClass
     const data = identBuffer.readUint8(5)
     const elfVersion = identBuffer.readUint8(6)
     const abi = identBuffer.readUint8(7)
@@ -159,7 +161,7 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
       throw new Error(`Not a valid ELF file. Version '${elfVersion}' is invalid`)
     }
 
-    const headerSize = elfClass === 1 ? 52 : 64
+    const headerSize = elfClass === ElfClass.ELFCLASS32 ? HEADER_SIZE_32 : HEADER_SIZE_64
     const headerSizeLeft = headerSize - IDENT_SIZE
     const headerBuffer = await reader.read(headerSizeLeft, IDENT_SIZE)
 
@@ -188,7 +190,10 @@ export const readElfHeader = async (reader: Reader): Promise<ElfResult> => {
     const shnum = readUInt16()
     const shstrndx = readUInt16()
 
-    if ((elfClass === 1 && ehsize !== 0x34) || (elfClass === 2 && ehsize !== 0x40)) {
+    if (
+      (elfClass === ElfClass.ELFCLASS32 && ehsize !== HEADER_SIZE_32) ||
+      (elfClass === ElfClass.ELFCLASS64 && ehsize !== HEADER_SIZE_64)
+    ) {
       throw Error(`Invalid ELF file. Unexpected header size '${ehsize}'`)
     }
 
@@ -359,7 +364,7 @@ export const getBuildIds = async (
   )
   if (gnuBuildIdSection) {
     const {type, name, desc} = await readElfNote(reader, gnuBuildIdSection, elfHeader)
-    if (type === NoteType.NT_GNU_BUILD_ID || name === 'GNU') {
+    if ((type as NoteType) === NoteType.NT_GNU_BUILD_ID || name === 'GNU') {
       gnuBuildId = desc.toString('hex')
     }
   }
@@ -368,7 +373,7 @@ export const getBuildIds = async (
   )
   if (goBuildIdSection) {
     const {type, name, desc} = await readElfNote(reader, goBuildIdSection, elfHeader)
-    if (type === NoteType.NT_GO_BUILD_ID || name === 'Go') {
+    if ((type as NoteType) === NoteType.NT_GO_BUILD_ID || name === 'Go') {
       goBuildId = desc.toString('ascii')
     }
   }
