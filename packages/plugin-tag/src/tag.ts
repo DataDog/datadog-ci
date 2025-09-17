@@ -2,12 +2,14 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags, parseTagsFile} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {AxiosError} from 'axios'
 import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
+
 
 export class TagCommand extends Command {
   public static paths = [['tag']]
@@ -26,16 +28,16 @@ export class TagCommand extends Command {
     ],
   })
 
-  private level = Option.String('--level')
-  private noFail = Option.Boolean('--no-fail')
-  private silent = Option.Boolean('--silent')
-  private tags = Option.Array('--tags')
-  private tagsFile = Option.String('--tags-file')
+  protected level = Option.String('--level')
+  protected noFail = Option.Boolean('--no-fail')
+  protected silent = Option.Boolean('--silent')
+  protected tags = Option.Array('--tags')
+  protected tagsFile = Option.String('--tags-file')
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
-  private config = {
+  protected config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     envVarTags: process.env.DD_TAGS,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
@@ -61,6 +63,13 @@ export class TagCommand extends Command {
   public setSilent(silent: boolean) {
     this.silent = silent
   }
+
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends TagCommand {
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
