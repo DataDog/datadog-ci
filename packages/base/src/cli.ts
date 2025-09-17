@@ -9,6 +9,8 @@ import {InstrumentCommand as LambdaInstrumentCommand} from './commands/lambda/in
 import {UninstrumentCommand as LambdaUninstrumentCommand} from './commands/lambda/uninstrument'
 import {SarifUploadCommand} from './commands/sarif/upload-command'
 import {SbomUploadCommand} from './commands/sbom/upload-command'
+import {InstrumentStepFunctionsCommand} from './commands/stepfunctions/instrument'
+import {UninstrumentStepFunctionsCommand} from './commands/stepfunctions/uninstrument'
 import {DeployTestsCommand} from './commands/synthetics/deploy-tests-command'
 import {ImportTestsCommand} from './commands/synthetics/import-tests-command'
 import {RunTestsCommand} from './commands/synthetics/run-tests-command'
@@ -20,5 +22,6 @@ export const baseCommands: Record<string, CommandClass[]> = {
   synthetics: [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
   'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
   lambda: [LambdaInstrumentCommand, LambdaUninstrumentCommand, LambdaFlareCommand],
+  stepfunctions: [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'git-metadata': [UploadCommand],
 }

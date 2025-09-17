@@ -9,6 +9,9 @@
     },
     // List every plugin here, so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
     {
+      "path": "./packages/plugin-stepfunctions"
+    },
+    {
       "path": "./packages/plugin-lambda"
     },
     {

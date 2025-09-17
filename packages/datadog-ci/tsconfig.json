@@ -12,6 +12,9 @@
     },
     // Add Plugins Here:
     {
+      "path": "../plugin-stepfunctions"
+    },
+    {
       "path": "../plugin-lambda"
     },
     {

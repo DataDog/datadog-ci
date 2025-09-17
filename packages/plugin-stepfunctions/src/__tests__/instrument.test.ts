@@ -2,8 +2,8 @@ import {LogLevel} from '@aws-sdk/client-sfn'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import * as aws from '../awsCommands'
+import {PluginCommand as InstrumentStepFunctionsCommand} from '../commands/instrument'
 import * as helpers from '../helpers'
-import {InstrumentStepFunctionsCommand} from '../instrument'
 
 import {describeStateMachineFixture, stepFunctionTagListFixture} from './fixtures/aws-resources'
 

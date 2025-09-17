@@ -1,11 +1,11 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
+import {InstrumentStepFunctionsCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import {Command, Option} from 'clipanion'
 
 import {
   createLogGroup,
@@ -16,8 +16,8 @@ import {
   tagResource,
   attachPolicyToStateMachineIamRole,
   createLogsAccessPolicy,
-} from './awsCommands'
-import {DD_TRACE_ENABLED, TAG_VERSION_NAME} from './constants'
+} from '../awsCommands'
+import {DD_TRACE_ENABLED, TAG_VERSION_NAME} from '../constants'
 import {
   buildLogGroupName,
   buildArn,
@@ -26,44 +26,9 @@ import {
   parseArn,
   getStepFunctionLogGroupArn,
   injectContextIntoTasks,
-} from './helpers'
+} from '../helpers'
 
-export class InstrumentStepFunctionsCommand extends Command {
-  public static paths = [['stepfunctions', 'instrument']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description: 'Subscribe Step Function log groups to a Datadog Forwarder.',
-    details: '--step-function expects a Step Function ARN\n--forwarder expects a Lambda ARN',
-    examples: [
-      [
-        'View and apply changes to subscribe a Step Function Log Group to a Datadog Forwarder',
-        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
-      ],
-      [
-        'View changes to subscribe a Step Function Log Group to a Datadog Forwarder',
-        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service --dry-run',
-      ],
-      [
-        'View and apply changes to subscribe multiple Step Function Log Groups to a Datadog Forwarder',
-        'datadog-ci stepfunctions instrument --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction1 --step-function arn:aws:states:us-east-1:000000000000:stateMachine:ExampleStepFunction2 --forwarder arn:aws:lambda:us-east-1:000000000000:function:ExampleDatadogForwarder --env dev --service example-service',
-      ],
-    ],
-  })
-
-  private dryRun = Option.Boolean('-d,--dry-run', false)
-  private environment = Option.String('-e,--env')
-  private forwarderArn = Option.String('--forwarder')
-  private service = Option.String('--service')
-  private stepFunctionArns = Option.Array('-s,--step-function')
-  private mergeStepFunctionAndLambdaTraces = Option.Boolean(
-    '-mlt,--merge-lambda-traces,--merge-step-function-and-lambda-traces',
-    false
-  )
-  private propagateUpstreamTrace = Option.Boolean('--propagate-upstream-trace', false)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+export class PluginCommand extends InstrumentStepFunctionsCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

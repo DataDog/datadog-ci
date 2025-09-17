@@ -37,20 +37,17 @@
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
-    "@aws-sdk/client-iam": "^3.709.0",
-    "@aws-sdk/client-sfn": "^3.709.0",
     "@datadog/datadog-ci-base": "workspace:*",
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*",
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "deep-object-diff": "^1.1.9",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
     "inquirer": "^8.2.5",
@@ -68,7 +65,6 @@
     "@types/node": "^18.19.76",
     "@types/semver": "^7.3.12",
     "@types/uuid": "^9.0.2",
-    "aws-sdk-client-mock": "^4.1.0",
     "pkg": "5.8.1"
   }
 }

@@ -1426,6 +1426,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
   languageName: unknown
   linkType: soft
@@ -1531,6 +1532,23 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@datadog/datadog-ci-plugin-stepfunctions@workspace:*, @datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions"
+  dependencies:
+    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
+    "@aws-sdk/client-iam": "npm:^3.709.0"
+    "@aws-sdk/client-sfn": "npm:^3.709.0"
+    "@datadog/datadog-ci-base": "workspace:*"
+    aws-sdk-client-mock: "npm:^4.1.0"
+    clipanion: "npm:^3.2.1"
+    deep-object-diff: "npm:^1.1.9"
+    typanion: "npm:^3.14.0"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci-plugin-synthetics@workspace:*, @datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
@@ -1565,15 +1583,13 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
   dependencies:
-    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
-    "@aws-sdk/client-iam": "npm:^3.709.0"
-    "@aws-sdk/client-sfn": "npm:^3.709.0"
     "@datadog/datadog-ci-base": "workspace:*"
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@types/inquirer": "npm:8.2.6"
     "@types/jest": "npm:29.5.3"
@@ -1581,11 +1597,9 @@ __metadata:
     "@types/node": "npm:^18.19.76"
     "@types/semver": "npm:^7.3.12"
     "@types/uuid": "npm:^9.0.2"
-    aws-sdk-client-mock: "npm:^4.1.0"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
-    deep-object-diff: "npm:^1.1.9"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
     inquirer: "npm:^8.2.5"
