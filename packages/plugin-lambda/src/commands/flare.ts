@@ -10,6 +10,7 @@ import {
 } from '@aws-sdk/client-cloudwatch-logs'
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
+import {LambdaFlareCommand} from '@datadog/datadog-ci-base/commands/lambda/flare'
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -38,7 +39,6 @@ import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-bas
 import {formatBytes} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
 import {
@@ -47,16 +47,16 @@ import {
   DeploymentFrameworks,
   LAMBDA_PROJECT_FILES,
   EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-} from './constants'
+} from '../constants'
 import {
   getAWSCredentials,
   getLambdaFunctionConfig,
   getLayerNameWithVersion,
   getRegion,
   maskConfig,
-} from './functions/commons'
-import {requestAWSCredentials} from './prompt'
-import * as commonRenderer from './renderers/common-renderer'
+} from '../functions/commons'
+import {requestAWSCredentials} from '../prompt'
+import * as commonRenderer from '../renderers/common-renderer'
 
 const FUNCTION_CONFIG_FILE_NAME = 'function_config.json'
 const TAGS_FILE_NAME = 'tags.json'
@@ -66,29 +66,10 @@ const DEFAULT_LOG_STREAMS = 3
 const MAX_LOG_EVENTS_PER_STREAM = 1000
 const SUMMARIZED_FIELDS = new Set(['FunctionName', 'Runtime', 'FunctionArn', 'Handler', 'Environment'])
 
-export class LambdaFlareCommand extends Command {
-  public static paths = [['lambda', 'flare']]
-
-  public static usage = Command.Usage({
-    category: 'Serverless',
-    description:
-      'Gather config, logs, tags, project files, and more from a Lambda function and sends them to Datadog support.',
-  })
-
-  private isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  private withLogs = Option.Boolean('--with-logs', false)
-  private functionName = Option.String('-f,--function')
-  private region = Option.String('-r,--region')
-  private caseId = Option.String('-c,--case-id')
-  private email = Option.String('-e,--email')
-  private start = Option.String('--start')
-  private end = Option.String('--end')
-
+export class PluginCommand extends LambdaFlareCommand {
   private apiKey?: string
   private credentials?: AwsCredentialIdentity
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

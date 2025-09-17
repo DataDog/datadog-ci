@@ -19,6 +19,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
 
+import {PluginCommand as InstrumentCommand} from '../../commands/instrument'
 import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
@@ -48,7 +49,6 @@ import {
   updateLambdaFunctionConfig,
   maskConfig,
 } from '../../functions/commons'
-import {InstrumentCommand} from '../../instrument'
 import {FunctionConfiguration} from '../../interfaces'
 
 import {
