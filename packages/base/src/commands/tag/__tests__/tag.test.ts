@@ -1,9 +1,10 @@
-import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
 
-import {TagCommand} from '../tag'
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
-const fixturesPath = './src/commands/tag/__tests__/fixtures'
+import {TagCommand} from '../tag-command'
+
+const fixturesPath = './packages/base/src/commands/tag/__tests__/fixtures'
 
 describe('execute', () => {
   const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {
