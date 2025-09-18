@@ -4,7 +4,7 @@ import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests
 
 import {TagCommand} from '../tag-command'
 
-const fixturesPath = './packages/base/src/commands/tag/__tests__/fixtures'
+const fixturesPath = './src/commands/tag/__tests__/fixtures'
 
 describe('execute', () => {
   const runCLI = async (level: string, tags: string[], env: Record<string, string>, extraArgs: string[] = []) => {
