@@ -112,10 +112,10 @@ See each command's linked README for more details, or click on [📚](https://do
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
 
 #### `deployment`
-- `mark`: Mark a CI job as a [deployment](packages/datadog-ci/src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
-- `correlate`: [Correlate](packages/datadog-ci/src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
-- `correlate-image`: [Correlate an image](packages/datadog-ci/src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
-- `gate`: Evaluate a [Deployment Gate](packages/datadog-ci/src/commands/deployment/). [📚](https://docs.datadoghq.com/deployment_gates/)
+- `mark`: Mark a CI job as a [deployment](packages/plugin-deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
+- `correlate`: [Correlate](packages/plugin-deployment) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
+- `correlate-image`: [Correlate an image](packages/plugin-deployment) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
+- `gate`: Evaluate a [Deployment Gate](packages/plugin-deployment). [📚](https://docs.datadoghq.com/deployment_gates/)
 
 #### `dora`
 - `deployment`: Send a new deployment event for [DORA Metrics](packages/datadog-ci/src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
