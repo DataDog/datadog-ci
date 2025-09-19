@@ -3,6 +3,10 @@ import {CommandClass} from 'clipanion'
 import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
+import {DeploymentCorrelateCommand} from './commands/deployment/correlate-command'
+import {DeploymentCorrelateImageCommand} from './commands/deployment/correlate-image-command'
+import {DeploymentGateCommand} from './commands/deployment/gate-command'
+import {DeploymentMarkCommand} from './commands/deployment/mark-command'
 import {UploadCommand} from './commands/git-metadata/upload'
 import {LambdaFlareCommand} from './commands/lambda/flare'
 import {InstrumentCommand as LambdaInstrumentCommand} from './commands/lambda/instrument'
@@ -26,4 +30,5 @@ export const baseCommands: Record<string, CommandClass[]> = {
   stepfunctions: [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'git-metadata': [UploadCommand],
   tag: [TagCommand],
+  deployment: [DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand, DeploymentMarkCommand],
 }
