@@ -10,8 +10,8 @@ import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
 import * as t from 'typanion'
 
-import {apiConstructor} from './api'
-import {APIHelper, DeploymentEvent, GitInfo} from './interfaces'
+import {apiConstructor} from '../api'
+import {APIHelper, DeploymentEvent, GitInfo} from '../interfaces'
 import {
   renderDryRun,
   renderFailedRequest,
@@ -19,7 +19,7 @@ import {
   renderRequest,
   renderRetriedRequest,
   renderSuccessfulRequest,
-} from './renderer'
+} from '../renderer'
 
 const nonRetriableErrorCodes = [400, 403]
 
