@@ -167,6 +167,7 @@ yarn install
 if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
   echo "Linting passed, running knip..."
   yarn knip || true
+  yarn
   echo Done
 else
   echo "Linting failed. Please fix the issues manually."
