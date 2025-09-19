@@ -20,10 +20,11 @@ import {
   renderRetriedRequest,
   renderSuccessfulRequest,
 } from '../renderer'
+import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
 const nonRetriableErrorCodes = [400, 403]
 
-export class SendDeploymentEvent extends Command {
+export class DORADeploymentCommand extends Command {
   public static paths = [['dora', 'deployment']]
 
   public static usage = Command.Usage({
@@ -61,50 +62,56 @@ export class SendDeploymentEvent extends Command {
     ],
   })
 
-  private serviceParam = Option.String('--service', {env: 'DD_SERVICE'})
-  private service!: string
-  private env = Option.String('--env', {env: 'DD_ENV'})
+  protected serviceParam = Option.String('--service', {env: 'DD_SERVICE'})
+  protected service!: string
+  protected env = Option.String('--env', {env: 'DD_ENV'})
 
-  private startedAt = Option.String('--started-at', {
+  protected startedAt = Option.String('--started-at', {
     required: true,
     validator: t.isDate(),
     description: 'In Unix seconds or ISO8601 (Examples: 1699960648, 2023-11-14T11:17:28Z)',
   })
-  private finishedAt = Option.String('--finished-at', {
+  protected finishedAt = Option.String('--finished-at', {
     validator: t.isDate(),
     description: 'In Unix seconds or ISO8601 (Examples: 1699961048, 2023-11-14T11:24:08Z)',
   })
 
-  private version = Option.String('--version', {
+  protected version = Option.String('--version', {
     description: 'The version of the service being deployed',
   })
 
-  private gitInfo?: GitInfo
-  private gitRepoURL = Option.String('--git-repository-url', {
+  protected gitInfo?: GitInfo
+  protected gitRepoURL = Option.String('--git-repository-url', {
     description: 'Example: https://github.com/DataDog/datadog-ci.git',
   })
-  private gitCommitSHA = Option.String('--git-commit-sha', {
+  protected gitCommitSHA = Option.String('--git-commit-sha', {
     description: 'Example: 102836a25f5477e571c73d489b3f0f183687068e',
   })
-  private skipGit = Option.Boolean('--skip-git', false, {
+  protected skipGit = Option.Boolean('--skip-git', false, {
     description: 'Disables sending git URL and SHA. Change Lead Time will not be available',
   })
 
-  private team = Option.String('--team', {
+  protected team = Option.String('--team', {
     description: 'The team responsible for the deployment',
   })
 
-  private customTags = Option.Array('--custom-tags', {
+  protected customTags = Option.Array('--custom-tags', {
     description:
       'Custom tags to add to the deployment event in the format key:value, max 100 tags per deployment event',
   })
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
-  private verbose = Option.Boolean('--verbose', false, {hidden: true})
-  private dryRun = Option.Boolean('--dry-run', false)
+  protected verbose = Option.Boolean('--verbose', false, {hidden: true})
+  protected dryRun = Option.Boolean('--dry-run', false)
 
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends DORADeploymentCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
