@@ -2,7 +2,7 @@ import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__test
 
 import * as apiModule from '../../api'
 
-import {DeploymentGateCommand} from '../gate'
+import {PluginCommand as DeploymentGateCommand} from '../gate'
 
 const buildEvaluationRequestResponse = (evaluationId: string) => ({
   data: {
