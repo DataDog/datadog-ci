@@ -1,3 +1,3 @@
-import {SendDeploymentEvent} from './commands/deployment'
+import {PluginCommand as DORADeploymentCommand} from './commands/deployment'
 
-module.exports = [SendDeploymentEvent]
+module.exports = [DORADeploymentCommand]
