@@ -41,6 +41,7 @@
   "peerDependencies": {
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
+    "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",

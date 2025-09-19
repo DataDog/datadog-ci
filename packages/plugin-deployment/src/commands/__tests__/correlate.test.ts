@@ -1,6 +1,6 @@
 import {createCommand, getAxiosError, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {DeploymentCorrelateCommand} from '../correlate'
+import {PluginCommand as DeploymentCorrelateCommand} from '../correlate'
 
 describe('execute', () => {
   const runCLI = makeRunCLI(DeploymentCorrelateCommand, ['deployment', 'correlate'])
