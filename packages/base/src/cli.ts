@@ -30,5 +30,10 @@ export const baseCommands: Record<string, CommandClass[]> = {
   stepfunctions: [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'git-metadata': [UploadCommand],
   tag: [TagCommand],
-  deployment: [DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand, DeploymentMarkCommand],
+  deployment: [
+    DeploymentCorrelateCommand,
+    DeploymentCorrelateImageCommand,
+    DeploymentGateCommand,
+    DeploymentMarkCommand,
+  ],
 }
