@@ -28,6 +28,7 @@ const createMockContext = () => {
 }
 
 // Mock context for CI event validation tests with compatible write signatures
+// We care about stdout vs stderr for validating error messages
 const createSimpleMockContext = () => {
   let stdoutData = ''
   let stderrData = ''
