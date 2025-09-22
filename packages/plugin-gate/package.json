@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
-    "@types/uuid": "^10.0.0",
+    "@types/uuid": "^9.0.2",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
     "clipanion": "npm:^3.2.1",
