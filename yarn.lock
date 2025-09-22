@@ -1398,6 +1398,7 @@ __metadata:
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
@@ -1435,6 +1436,21 @@ __metadata:
     jest-diff: "npm:^30.0.4"
     ora: "npm:5.4.1"
     upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-dora@workspace:*, @datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    simple-git: "npm:3.16.0"
+    typanion: "npm:^3.14.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
@@ -1561,6 +1577,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"

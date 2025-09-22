@@ -4,6 +4,7 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
+import {DORADeploymentCommand} from './commands/dora/deployment-command'
 import {UploadCommand} from './commands/git-metadata/upload'
 import {LambdaFlareCommand} from './commands/lambda/flare'
 import {InstrumentCommand as LambdaInstrumentCommand} from './commands/lambda/instrument'
@@ -21,15 +22,16 @@ import {TagCommand} from './commands/tag/tag-command'
 
 // prettier-ignore
 export const commands = {
+  'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
+  'dora': [DORADeploymentCommand],
+  'git-metadata': [UploadCommand],
+  'lambda': [LambdaInstrumentCommand, LambdaUninstrumentCommand, LambdaFlareCommand],
+  'plugin': [CheckCommand],
   'sarif': [SarifUploadCommand],
   'sbom': [SbomUploadCommand],
-  'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
-  'lambda': [LambdaInstrumentCommand, LambdaUninstrumentCommand, LambdaFlareCommand],
   'stepfunctions': [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
-  'git-metadata': [UploadCommand],
-  'tag': [TagCommand],
-  'plugin': [CheckCommand],
   'synthetics': [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
+  'tag': [TagCommand],
 } satisfies RecordWithKebabCaseKeys
 
 /**

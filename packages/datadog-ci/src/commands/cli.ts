@@ -3,7 +3,6 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 
 import {commands as coverageCommands} from './coverage/cli'
 import {commands as deploymentCommands} from './deployment/cli'
-import {commands as doraCommands} from './dora/cli'
 import {commands as dsymsCommands} from './dsyms/cli'
 import {commands as elfSymbolsCommands} from './elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './flutter-symbols/cli'
@@ -22,7 +21,6 @@ import {commands as versionCommands} from './version/cli'
 export const commands = {
   'coverage': coverageCommands,
   'deployment': deploymentCommands,
-  'dora': doraCommands,
   'dsyms': dsymsCommands,
   'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,

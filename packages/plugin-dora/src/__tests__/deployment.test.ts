@@ -1,7 +1,7 @@
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as gitFunctions from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 
-import {SendDeploymentEvent} from '../deployment'
+import {PluginCommand as DORADeploymentCommand} from '../commands/deployment'
 import {DeploymentEvent} from '../interfaces'
 
 describe('deployment', () => {
@@ -9,7 +9,7 @@ describe('deployment', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = createCommand(SendDeploymentEvent, {stdout: {write}})
+      const command = createCommand(DORADeploymentCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
@@ -18,7 +18,7 @@ describe('deployment', () => {
 })
 
 describe('execute', () => {
-  const runCLI = makeRunCLI(SendDeploymentEvent, ['dora', 'deployment'])
+  const runCLI = makeRunCLI(DORADeploymentCommand, ['dora', 'deployment'])
 
   describe('dry-run', () => {
     const fakeCurrentDate = new Date(1699960651000)
@@ -45,7 +45,6 @@ describe('execute', () => {
         '--custom-tags', 'key1:value1',
         '--custom-tags', 'key2:value2',
       ])
-
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: 'test-service',
@@ -70,7 +69,6 @@ describe('execute', () => {
         '--service', 'test-service',
         '--started-at', '1699960648',
       ])
-
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: 'test-service',
@@ -84,14 +82,12 @@ describe('execute', () => {
         DD_SERVICE: 'different-test-service',
         DD_ENV: 'test-env',
       }
-
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--skip-git',
         '--started-at', '1699960648',
       ], envVars)
-
       expect(code).toBe(0)
       checkDryRunConsoleOutput(context.stdout, {
         service: envVars.DD_SERVICE,
@@ -110,14 +106,12 @@ describe('execute', () => {
       }
       mockGitRepositoryURL.mockResolvedValue(gitInfo.repoURL)
       mockGitHash.mockResolvedValue(gitInfo.commitSHA)
-
       // prettier-ignore
       const {context, code} = await runCLI([
         '--dry-run',
         '--service', 'test-service',
         '--started-at', '1699960648',
       ])
-
       expect(code).toBe(0)
       expect(mockGitRepositoryURL).toHaveBeenCalled()
       expect(mockGitHash).toHaveBeenCalled()
@@ -136,7 +130,6 @@ describe('execute', () => {
         '--skip-git',
         '--started-at', '1699960648',
       ])
-
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--service')
     })
@@ -148,7 +141,6 @@ describe('execute', () => {
         '--skip-git',
         '--service', 'test-service',
       ])
-
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })
@@ -161,7 +153,6 @@ describe('execute', () => {
         '--service', 'test-service',
         '--started-at', '2099-11-14T11:17:28Z',
       ])
-
       expect(code).not.toBe(0)
       expect(context.stdout.toString()).toContain('--started-at')
     })
