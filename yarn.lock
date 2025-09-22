@@ -1424,6 +1424,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
+    "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
@@ -1476,6 +1477,22 @@ __metadata:
     clipanion: "npm:^3.2.1"
     simple-git: "npm:3.16.0"
     typanion: "npm:^3.14.0"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-gate@workspace:*, @datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@types/uuid": "npm:^9.0.2"
+    axios: "npm:^1.12.1"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    upath: "npm:^2.0.1"
+    uuid: "npm:^9.0.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
@@ -1603,6 +1620,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
+    "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"

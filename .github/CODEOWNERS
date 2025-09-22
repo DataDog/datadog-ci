@@ -40,7 +40,8 @@ packages/base/src/helpers/git-instrument-helpers.ts  @DataDog/datadog-ci-admins 
 
 ## Source Code Integration (label: source-code-integration)
 packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration
-packages/datadog-ci/src/commands/gate           @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/base/src/commands/gate                 @DataDog/datadog-ci-admins @DataDog/source-code-integration
+packages/plugin-gate                            @DataDog/datadog-ci-admins @DataDog/source-code-integration
 
 ## Synthetics (label: synthetics)
 packages/plugin-synthetics              @DataDog/datadog-ci-admins @DataDog/synthetics-orchestrating

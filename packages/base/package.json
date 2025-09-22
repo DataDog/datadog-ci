@@ -42,6 +42,7 @@
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
+    "@datadog/datadog-ci-plugin-gate": "workspace:*",
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
