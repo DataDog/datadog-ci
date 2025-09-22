@@ -121,7 +121,9 @@ echo "Created $PLUGIN_DIR/tsconfig.json"
 
 echo 4. Add "$PLUGIN_PKG" to dependencies and peerDependencies.
 yarn workspace @datadog/datadog-ci add -E "$PLUGIN_PKG"
-yarn workspace @datadog/datadog-ci-base add -E -P "$PLUGIN_PKG"
+yarn workspace @datadog/datadog-ci-base add -E -P -O "$PLUGIN_PKG"
+jq 'del(.optionalDependencies)' packages/base/package.json | sponge packages/base/package.json
+yarn
 echo Done
 
 print-files() {
