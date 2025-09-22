@@ -30,7 +30,7 @@
     "@types/uuid": "^9.0.2",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
-    "clipanion": "npm:^3.2.1",
+    "clipanion": "^3.2.1",
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
   }
