@@ -44,6 +44,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "directory": "$PLUGIN_DIR"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
