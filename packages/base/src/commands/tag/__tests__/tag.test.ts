@@ -1,7 +1,8 @@
-import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
 
-import {TagCommand} from '../tag'
+import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
+
+import {TagCommand} from '../tag-command'
 
 const fixturesPath = './src/commands/tag/__tests__/fixtures'
 
@@ -50,8 +51,9 @@ describe('execute', () => {
   })
 
   test('should fail if --tags-file is provided but it is invalid', async () => {
-    const {code} = await runCLI('pipeline', [], {}, ['--tags-file', `${fixturesPath}/invalid.json`])
+    const {context, code} = await runCLI('pipeline', [], {}, ['--tags-file', `${fixturesPath}/invalid.json`])
     expect(code).toBe(1)
+    expect(context.stderr.toString()).toContain('[ERROR] could not parse JSON file')
   })
 
   test('should fail if not running in a supported provider', async () => {
@@ -69,7 +71,6 @@ describe('execute', () => {
       {
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'id',
-        BUILDKITE_JOB_ID: 'id',
       },
       ['--silent']
     )

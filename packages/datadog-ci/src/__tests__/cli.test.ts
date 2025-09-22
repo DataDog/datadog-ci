@@ -11,7 +11,7 @@ import {cli, BETA_COMMANDS} from '../cli'
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
 // scopes that are not plugins, at least for now
-const nonPluginScopes = ['git-metadata']
+const nonPluginScopes = ['git-metadata', 'tag']
 
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
 

@@ -16,6 +16,7 @@ import {DeployTestsCommand} from './commands/synthetics/deploy-tests-command'
 import {ImportTestsCommand} from './commands/synthetics/import-tests-command'
 import {RunTestsCommand} from './commands/synthetics/run-tests-command'
 import {UploadApplicationCommand} from './commands/synthetics/upload-application-command'
+import {TagCommand} from './commands/tag/tag-command'
 
 export const baseCommands: Record<string, CommandClass[]> = {
   sarif: [SarifUploadCommand],
@@ -26,4 +27,5 @@ export const baseCommands: Record<string, CommandClass[]> = {
   stepfunctions: [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'git-metadata': [UploadCommand],
   dora: [DORADeploymentCommand],
+  tag: [TagCommand],
 }
