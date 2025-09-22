@@ -1,0 +1,38 @@
+{
+  "name": "@datadog/datadog-ci-plugin-stepfunctions",
+  "version": "3.20.0",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-stepfunctions",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-stepfunctions"
+  },
+  "exports": {
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci": "workspace:*"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
+    "@aws-sdk/client-iam": "^3.709.0",
+    "@aws-sdk/client-sfn": "^3.709.0",
+    "@datadog/datadog-ci-base": "workspace:*",
+    "aws-sdk-client-mock": "^4.1.0",
+    "clipanion": "^3.2.1",
+    "deep-object-diff": "^1.1.9",
+    "typanion": "^3.14.0"
+  }
+}
