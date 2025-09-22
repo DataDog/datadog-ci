@@ -1490,7 +1490,7 @@ __metadata:
     "@types/uuid": "npm:^10.0.0"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^4.0.0-rc.4"
+    clipanion: "npm:^3.2.1"
     upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
   peerDependencies:
@@ -5013,17 +5013,6 @@ __metadata:
   peerDependencies:
     typanion: "*"
   checksum: 10/fdc4d066e6b4683a5264d22851039d41ffcd159eed6888e5aea9744a637effd7a19601fe630c1ab849f22e35620850c5681fe48f12e43c58db1f7ca93ef7bb72
-  languageName: node
-  linkType: hard
-
-"clipanion@npm:^4.0.0-rc.4":
-  version: 4.0.0-rc.4
-  resolution: "clipanion@npm:4.0.0-rc.4"
-  dependencies:
-    typanion: "npm:^3.8.0"
-  peerDependencies:
-    typanion: "*"
-  checksum: 10/c3a94783318d91e6b35380a8aa4a6f166964082a51ff2df21a339266223aaab98f5986dd2c37ca7fd640ad1d233b3cd5b24aad64c51537b54ccc9c66ec070eeb
   languageName: node
   linkType: hard
 
