@@ -30,9 +30,9 @@
     "@aws-sdk/client-iam": "^3.709.0",
     "@aws-sdk/client-sfn": "^3.709.0",
     "@datadog/datadog-ci-base": "workspace:*",
-    "aws-sdk-client-mock": "^4.1.0",
-    "clipanion": "^3.2.1",
-    "deep-object-diff": "^1.1.9",
-    "typanion": "^3.14.0"
+    "deep-object-diff": "^1.1.9"
+  },
+  "devDependencies": {
+    "aws-sdk-client-mock": "^4.1.0"
   }
 }

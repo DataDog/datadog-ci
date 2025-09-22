@@ -1493,9 +1493,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     simple-git: "npm:3.16.0"
-    typanion: "npm:^3.14.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
@@ -1509,8 +1507,6 @@ __metadata:
     "@types/uuid": "npm:^9.0.2"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
-    upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
@@ -1593,9 +1589,7 @@ __metadata:
     "@aws-sdk/client-sfn": "npm:^3.709.0"
     "@datadog/datadog-ci-base": "workspace:*"
     aws-sdk-client-mock: "npm:^4.1.0"
-    clipanion: "npm:^3.2.1"
     deep-object-diff: "npm:^1.1.9"
-    typanion: "npm:^3.14.0"
   peerDependencies:
     "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
