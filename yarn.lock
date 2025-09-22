@@ -1488,7 +1488,7 @@ __metadata:
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
     "@types/uuid": "npm:^9.0.2"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     upath: "npm:^2.0.1"

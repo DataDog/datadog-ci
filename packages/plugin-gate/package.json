@@ -28,7 +28,7 @@
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
     "@types/uuid": "^9.0.2",
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
     "upath": "^2.0.1",
