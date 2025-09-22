@@ -1430,6 +1430,25 @@ __metadata:
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  peerDependenciesMeta:
+    "@datadog/datadog-ci-plugin-aas":
+      optional: true
+    "@datadog/datadog-ci-plugin-cloud-run":
+      optional: true
+    "@datadog/datadog-ci-plugin-dora":
+      optional: true
+    "@datadog/datadog-ci-plugin-gate":
+      optional: true
+    "@datadog/datadog-ci-plugin-lambda":
+      optional: true
+    "@datadog/datadog-ci-plugin-sarif":
+      optional: true
+    "@datadog/datadog-ci-plugin-sbom":
+      optional: true
+    "@datadog/datadog-ci-plugin-stepfunctions":
+      optional: true
+    "@datadog/datadog-ci-plugin-synthetics":
+      optional: true
   languageName: unknown
   linkType: soft
 
