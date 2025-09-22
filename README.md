@@ -85,10 +85,10 @@ See each command's linked README for more details, or click on [📚](https://do
 - `xcode`: Upload [React Native sourcemaps](packages/datadog-ci/src/commands/react-native) for Error Tracking from the XCode bundle build phase. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/reactnative/)
 
 #### `sarif`
-- `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](packages/datadog-ci/src/commands/sarif) reports to Datadog. [📚](https://docs.datadoghq.com/code_analysis/static_analysis/)
+- `upload`: Upload [Static Analysis Results Interchange Format (SARIF)](packages/plugin-sarif/src) reports to Datadog. [📚](https://docs.datadoghq.com/code_analysis/static_analysis/)
 
 #### `sbom`
-- `upload`: Upload [Software Bill of Materials (SBOM)](packages/datadog-ci/src/commands/sbom) files to Datadog. [📚](https://docs.datadoghq.com/code_analysis/software_composition_analysis/)
+- `upload`: Upload [Software Bill of Materials (SBOM)](packages/plugin-sbom/src) files to Datadog. [📚](https://docs.datadoghq.com/code_analysis/software_composition_analysis/)
 
 #### `sourcemaps`
 - `upload`: Upload [JavaScript sourcemaps](packages/datadog-ci/src/commands/sourcemaps) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps)

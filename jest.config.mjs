@@ -19,7 +19,7 @@ export default {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   modulePathIgnorePatterns: ['<rootDir>/packages/.*/dist'],
   moduleNameMapper: {
-    '^@datadog/datadog-ci-plugin-(\\w+)(.*)$': '<rootDir>/packages/plugin-$1/src$2',
+    '^@datadog/datadog-ci-plugin-([\\w-]+)(.*)$': '<rootDir>/packages/plugin-$1/src$2',
     '^@datadog/datadog-ci-base(.*)$': '<rootDir>/packages/base/src$1',
     '^@datadog/datadog-ci(.*)$': '<rootDir>/packages/datadog-ci/src$1',
   },

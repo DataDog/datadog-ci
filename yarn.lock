@@ -663,7 +663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/types@npm:3.734.0, @aws-sdk/types@npm:^3.709.0":
+"@aws-sdk/types@npm:3.734.0":
   version: 3.734.0
   resolution: "@aws-sdk/types@npm:3.734.0"
   dependencies:
@@ -680,6 +680,16 @@ __metadata:
     "@smithy/types": "npm:^3.3.0"
     tslib: "npm:^2.6.2"
   checksum: 10/3448eef72037f2ee95f26abfd1ae33a2e626be2467126a8fb0102a0067fecbb50e99d6104e45681717617456de33d0ac518362f807091678f1303f5a896f3051
+  languageName: node
+  linkType: hard
+
+"@aws-sdk/types@npm:^3.887.0":
+  version: 3.887.0
+  resolution: "@aws-sdk/types@npm:3.887.0"
+  dependencies:
+    "@smithy/types": "npm:^4.5.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/b4a0024c35d01b481d18454ed1d6eaca8aa1f61082e9e71b1af78d1bc714c919fad3f594498a572aafa73f0d4301b26ae359d009a79d62c5ad995dad25416d59
   languageName: node
   linkType: hard
 
@@ -1367,7 +1377,7 @@ __metadata:
     "@types/semver": "npm:^7.7.1"
     "@types/tiny-async-pool": "npm:^2.0.3"
     async-retry: "npm:1.3.1"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     datadog-metrics: "npm:0.9.3"
@@ -1386,7 +1396,131 @@ __metadata:
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
+    "@datadog/datadog-ci-plugin-aas": "workspace:*"
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-lambda": "workspace:*"
+    "@datadog/datadog-ci-plugin-sarif": "workspace:*"
+    "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-aas@workspace:*, @datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas"
+  dependencies:
+    "@azure/arm-appservice": "npm:^16.0.0"
+    "@azure/arm-resources": "npm:^6.1.0"
+    "@azure/identity": "npm:^4.10.1"
+    "@datadog/datadog-ci-base": "workspace:*"
+    chalk: "npm:3.0.0"
+    fast-deep-equal: "npm:^3.1.3"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-cloud-run@workspace:*, @datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@google-cloud/logging": "npm:^11.2.0"
+    "@google-cloud/run": "npm:^3.0.0"
+    chalk: "npm:3.0.0"
+    google-auth-library: "npm:^10.2.1"
+    inquirer: "npm:^8.2.5"
+    inquirer-checkbox-plus-prompt: "npm:^1.4.2"
+    jest-diff: "npm:^30.0.4"
+    ora: "npm:5.4.1"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-lambda@workspace:*, @datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda"
+  dependencies:
+    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
+    "@aws-sdk/client-lambda": "npm:^3.709.0"
+    "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
+    "@aws-sdk/credential-providers": "npm:^3.709.0"
+    "@aws-sdk/types": "npm:^3.887.0"
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@smithy/property-provider": "npm:^2.0.12"
+    "@smithy/util-retry": "npm:^2.0.4"
+    aws-sdk-client-mock: "npm:^4.1.0"
+    aws-sdk-client-mock-jest: "npm:^4.1.0"
+    chalk: "npm:3.0.0"
+    clipanion: "npm:^3.2.1"
+    fuzzy: "npm:^0.1.3"
+    inquirer: "npm:^8.2.5"
+    inquirer-checkbox-plus-prompt: "npm:^1.4.2"
+    ora: "npm:5.4.1"
+    typanion: "npm:^3.14.0"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-sarif@workspace:*, @datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@types/jest": "npm:29.5.3"
+    "@types/node": "npm:^18.19.76"
+    "@types/uuid": "npm:^9.0.2"
+    ajv: "npm:^8.12.0"
+    ajv-formats: "npm:^2.1.1"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    form-data: "npm:^4.0.4"
+    simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
+    uuid: "npm:^9.0.0"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-sbom@workspace:*, @datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
+  dependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+    "@types/jest": "npm:29.5.3"
+    "@types/node": "npm:^18.19.76"
+    ajv: "npm:^8.12.0"
+    ajv-formats: "npm:^2.1.1"
+    axios: "npm:^1.11.0"
+    chalk: "npm:3.0.0"
+    packageurl-js: "npm:^2.0.1"
+    simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-stepfunctions@workspace:*, @datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions"
+  dependencies:
+    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
+    "@aws-sdk/client-iam": "npm:^3.709.0"
+    "@aws-sdk/client-sfn": "npm:^3.709.0"
+    "@datadog/datadog-ci-base": "workspace:*"
+    aws-sdk-client-mock: "npm:^4.1.0"
+    clipanion: "npm:^3.2.1"
+    deep-object-diff: "npm:^1.1.9"
+    typanion: "npm:^3.14.0"
+  peerDependencies:
+    "@datadog/datadog-ci": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1401,7 +1535,7 @@ __metadata:
     "@types/sshpk": "npm:1.10.5"
     "@types/ws": "npm:7.2.9"
     "@types/xml2js": "npm:0.4.9"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     debug: "npm:^4.4.1"
     deep-extend: "npm:0.6.0"
@@ -1424,49 +1558,28 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
   dependencies:
-    "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
-    "@aws-sdk/client-iam": "npm:^3.709.0"
-    "@aws-sdk/client-lambda": "npm:^3.709.0"
-    "@aws-sdk/client-sfn": "npm:^3.709.0"
-    "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
-    "@aws-sdk/credential-providers": "npm:^3.709.0"
-    "@aws-sdk/types": "npm:^3.709.0"
-    "@azure/arm-appservice": "npm:^16.0.0"
-    "@azure/arm-resources": "npm:^6.1.0"
-    "@azure/identity": "npm:^4.10.1"
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-aas": "workspace:*"
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-lambda": "workspace:*"
+    "@datadog/datadog-ci-plugin-sarif": "workspace:*"
+    "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
-    "@google-cloud/logging": "npm:^11.2.0"
-    "@google-cloud/run": "npm:^3.0.0"
-    "@smithy/property-provider": "npm:^2.0.12"
-    "@smithy/util-retry": "npm:^2.0.4"
     "@types/inquirer": "npm:8.2.6"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
-    "@types/node": "npm:^20.19.13"
     "@types/semver": "npm:^7.3.12"
     "@types/uuid": "npm:^9.0.2"
     "@yao-pkg/pkg": "npm:^6.6.0"
-    ajv: "npm:^8.12.0"
-    ajv-formats: "npm:^2.1.1"
-    aws-sdk-client-mock: "npm:^4.1.0"
-    aws-sdk-client-mock-jest: "npm:^4.1.0"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
-    deep-object-diff: "npm:^1.1.9"
     esbuild: "npm:^0.25.9"
-    fast-deep-equal: "npm:^3.1.3"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
-    fuzzy: "npm:^0.1.3"
-    google-auth-library: "npm:^10.2.1"
     inquirer: "npm:^8.2.5"
-    inquirer-checkbox-plus-prompt: "npm:^1.4.2"
-    jest-diff: "npm:^30.0.4"
     js-yaml: "npm:3.13.1"
-    ora: "npm:5.4.1"
-    packageurl-js: "npm:^2.0.1"
     semver: "npm:^7.5.3"
     simple-git: "npm:3.16.0"
     typanion: "npm:^3.14.0"
@@ -3097,6 +3210,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@smithy/types@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "@smithy/types@npm:4.5.0"
+  dependencies:
+    tslib: "npm:^2.6.2"
+  checksum: 10/d25275a0f1cb75dd3534a60a637b0202fbe1343703a448c410aa3e3029d5dc1d128c711c005bbda29a111af5a072aaf01bd8314a05c9806857d18e625f41c075
+  languageName: node
+  linkType: hard
+
 "@smithy/url-parser@npm:^4.0.1":
   version: 4.0.1
   resolution: "@smithy/url-parser@npm:4.0.1"
@@ -3512,12 +3634,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.19.13":
-  version: 20.19.13
-  resolution: "@types/node@npm:20.19.13"
+"@types/node@npm:^18.19.76":
+  version: 18.19.76
+  resolution: "@types/node@npm:18.19.76"
   dependencies:
-    undici-types: "npm:~6.21.0"
-  checksum: 10/41014282d24d4a218dcbda6ed09d8d2692fe988426bc030e629d560c7f7886aaaaaaf94cba3c486c6c3d7a4ab4afcbe7dac941a661803b9be340af2a9246aab8
+    undici-types: "npm:~5.26.4"
+  checksum: 10/844799baffeaecc0951ebd5a3ed5aeef468cbf04aa597d69443dd60e18441efeac6ced94d742ee3369f5f8fd950c5199fbc30811f3e404730f60696d1b8a445a
   languageName: node
   linkType: hard
 
@@ -4357,6 +4479,17 @@ __metadata:
     form-data: "npm:^4.0.4"
     proxy-from-env: "npm:^1.1.0"
   checksum: 10/232df4af7a4e4e07baa84621b9cc4b0c518a757b4eacc7f635c0eb3642cb98dff347326739f24b891b3b4481b7b838c79a3a0c4819c9fbc1fc40232431b9c5dc
+  languageName: node
+  linkType: hard
+
+"axios@npm:^1.12.1":
+  version: 1.12.1
+  resolution: "axios@npm:1.12.1"
+  dependencies:
+    follow-redirects: "npm:^1.15.6"
+    form-data: "npm:^4.0.4"
+    proxy-from-env: "npm:^1.1.0"
+  checksum: 10/928e88cba180a48451a7872cfd7e7072f39e3e797c69960a048eae90f456d1de44ef0d7929325939140cd4d03b06fe2ee0d29f3f4d5873b4a7584cbe6d0d3080
   languageName: node
   linkType: hard
 
@@ -8191,7 +8324,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loupe@npm:^3.1.0, loupe@npm:^3.1.2":
+"loupe@npm:^3.1.0":
+  version: 3.2.1
+  resolution: "loupe@npm:3.2.1"
+  checksum: 10/a4d78ec758aaa04e0e35d5cd1c15e970beb9cdbfd3d0f34f98b9bcda489f896a7190b3b6cc40b7a6dcb8e97e82e96eafaae10096aaa469804acdba6f7c2bde5f
+  languageName: node
+  linkType: hard
+
+"loupe@npm:^3.1.2":
   version: 3.1.3
   resolution: "loupe@npm:3.1.3"
   checksum: 10/9e98c34daf0eba48ccc603595e51f2ae002110982d84879cf78c51de2c632f0c571dfe82ce4210af60c32203d06b443465c269bda925076fe6d9b612cc65c321
@@ -10527,13 +10667,6 @@ __metadata:
   version: 5.26.5
   resolution: "undici-types@npm:5.26.5"
   checksum: 10/0097779d94bc0fd26f0418b3a05472410408877279141ded2bd449167be1aed7ea5b76f756562cb3586a07f251b90799bab22d9019ceba49c037c76445f7cddd
-  languageName: node
-  linkType: hard
-
-"undici-types@npm:~6.21.0":
-  version: 6.21.0
-  resolution: "undici-types@npm:6.21.0"
-  checksum: 10/ec8f41aa4359d50f9b59fa61fe3efce3477cc681908c8f84354d8567bb3701fafdddf36ef6bff307024d3feb42c837cf6f670314ba37fc8145e219560e473d14
   languageName: node
   linkType: hard
 

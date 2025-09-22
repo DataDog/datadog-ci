@@ -9,12 +9,14 @@ packages/datadog-ci/src/commands/deployment    @DataDog/datadog-ci-admins @DataD
 packages/datadog-ci/src/commands/dora          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/junit         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/measure       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/datadog-ci/src/commands/tag           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/base/src/commands/tag                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/trace         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 
 ## Static Analysis (label: static-analysis)
-packages/datadog-ci/src/commands/sarif   @DataDog/datadog-ci-admins @DataDog/k9-vm-ast
-packages/datadog-ci/src/commands/sbom    @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
+packages/plugin-sarif                    @DataDog/datadog-ci-admins @DataDog/k9-vm-ast
+packages/base/src/commands/sarif         @DataDog/datadog-ci-admins @DataDog/k9-vm-ast
+packages/plugin-sbom                     @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
+packages/base/src/commands/sbom          @DataDog/datadog-ci-admins @DataDog/k9-vm-sca
 
 ## RUM (label: rum)
 packages/datadog-ci/src/commands/dsyms            @DataDog/datadog-ci-admins @DataDog/rum-mobile
@@ -24,11 +26,15 @@ packages/datadog-ci/src/commands/sourcemaps       @DataDog/datadog-ci-admins @Da
 packages/datadog-ci/src/commands/unity-symbols    @DataDog/datadog-ci-admins @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
-packages/datadog-ci/src/commands/aas                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/datadog-ci/src/commands/cloud-run           @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/datadog-ci/src/commands/lambda              @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/datadog-ci/src/commands/stepfunctions       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-src/helpers/**/flare*.ts                             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-aas                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/commands/aas                       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-cloud-run                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/helpers/flare.ts                   @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/base/src/helpers/git-instrument-helpers.ts  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
