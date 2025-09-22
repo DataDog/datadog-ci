@@ -6,7 +6,6 @@ import {commands as deploymentCommands} from './deployment/cli'
 import {commands as dsymsCommands} from './dsyms/cli'
 import {commands as elfSymbolsCommands} from './elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './flutter-symbols/cli'
-import {commands as gateCommands} from './gate/cli'
 import {commands as junitCommands} from './junit/cli'
 import {commands as measureCommands} from './measure/cli'
 import {commands as peSymbolsCommands} from './pe-symbols/cli'
@@ -24,7 +23,6 @@ export const commands = {
   'dsyms': dsymsCommands,
   'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,
-  'gate': gateCommands,
   'junit': junitCommands,
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,

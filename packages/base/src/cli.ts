@@ -5,6 +5,7 @@ import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
 import {DORADeploymentCommand} from './commands/dora/deployment-command'
+import {GateEvaluateCommand} from './commands/gate/evaluate-command'
 import {UploadCommand} from './commands/git-metadata/upload'
 import {LambdaFlareCommand} from './commands/lambda/flare'
 import {InstrumentCommand as LambdaInstrumentCommand} from './commands/lambda/instrument'
@@ -24,6 +25,7 @@ import {TagCommand} from './commands/tag/tag-command'
 export const commands = {
   'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
   'dora': [DORADeploymentCommand],
+  'gate': [GateEvaluateCommand],
   'git-metadata': [UploadCommand],
   'lambda': [LambdaInstrumentCommand, LambdaUninstrumentCommand, LambdaFlareCommand],
   'plugin': [CheckCommand],

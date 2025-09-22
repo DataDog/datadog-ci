@@ -127,13 +127,14 @@ jobs:
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz"
             }
           }' > package.json
-            
+
           yarn set version stable
           yarn install --no-immutable
       - name: Run synthetics test

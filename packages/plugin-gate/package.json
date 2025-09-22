@@ -1,0 +1,37 @@
+{
+  "name": "@datadog/datadog-ci-plugin-gate",
+  "version": "0.0.1",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-gate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-gate"
+  },
+  "exports": {
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci": "workspace:*"
+  },
+  "dependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
+    "@types/uuid": "^9.0.2",
+    "axios": "^1.12.1",
+    "chalk": "3.0.0",
+    "clipanion": "^3.2.1",
+    "upath": "^2.0.1",
+    "uuid": "^9.0.0"
+  }
+}

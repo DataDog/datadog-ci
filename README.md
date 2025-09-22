@@ -115,7 +115,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `mark`: Mark a CI job as a [deployment](packages/datadog-ci/src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
 - `correlate`: [Correlate](packages/datadog-ci/src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
 - `correlate-image`: [Correlate an image](packages/datadog-ci/src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
-- `gate`: Evaluate a [Deployment Gate](packages/datadog-ci/src/commands/deployment/). [📚](https://docs.datadoghq.com/deployment_gates/)
+- `gate`: Evaluate a [Deployment Gate](packages/plugin-gate/src/commands/). [📚](https://docs.datadoghq.com/deployment_gates/)
 
 #### `dora`
 - `deployment`: Send a new deployment event for [DORA Metrics](packages/datadog-ci/src/commands/dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
@@ -127,7 +127,7 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `upload`: Upload [Windows PE debug info files](packages/datadog-ci/src/commands/pe-symbols) for Profiling. [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
 
 #### `gate`
-- `evaluate`: Evaluate [Quality Gates](packages/datadog-ci/src/commands/gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
+- `evaluate`: Evaluate [Quality Gates](packages/plugin-gate/src/commands/) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 
 
 ### FIPS support
