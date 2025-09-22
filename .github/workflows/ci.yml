@@ -65,7 +65,7 @@ jobs:
         version: [18, 20, 22]
 
     name: Unit tests (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2022
     env:
       FORCE_COLOR: 1
 
