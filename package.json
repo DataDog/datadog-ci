@@ -19,6 +19,7 @@
     "build": "yarn tsc:build",
     "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
+    "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
     "dev": "yarn tsc:build --watch",
     "dist-standalone": "FORCE_COLOR=1 yarn workspace @datadog/datadog-ci bundle && pkg --sea --compress GZip packages/datadog-ci/dist/bundle.js",
