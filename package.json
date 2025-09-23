@@ -51,7 +51,7 @@
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@stylistic/eslint-plugin": "^5.3.1",
-    "@yao-pkg/pkg": "^6.6.0",
+    "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch",
     "dd-trace": "^5.42.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
@@ -69,5 +69,8 @@
     "tsx": "^4.20.5",
     "typescript": "5.1.6",
     "typescript-eslint": "^8.42.0"
+  },
+  "resolutions": {
+    "@yao-pkg/pkg-fetch@npm:3.5.24": "patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch"
   }
 }

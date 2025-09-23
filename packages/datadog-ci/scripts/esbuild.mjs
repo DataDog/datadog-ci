@@ -8,7 +8,7 @@ try {
     entryPoints: ['dist/cli.js'],
     bundle: true,
     platform: 'node',
-    inject: ['shims/injected-plugin-submodules.js'],
+    inject: ['shims/injected-plugin-submodules.js', 'shims/intl-collator.js'],
     target: 'node22',
     format: 'cjs',
     outfile: 'dist/bundle.js',

@@ -1,0 +1,46 @@
+diff --git a/lib-es5/index.js b/lib-es5/index.js
+index 17ad9d3ff875433ff3b813c82106349bbd1fb7cc..ecc0815f56fa1710c1078418b8a8378d8a8a5272 100644
+--- a/lib-es5/index.js
++++ b/lib-es5/index.js
+@@ -398,13 +398,6 @@ async function exec(argv2) {
+             }
+         }
+     }
+-    if (argv.sea) {
+-        await (0, sea_1.default)(inputFin, {
+-            targets,
+-            signature: argv.signature,
+-        });
+-        return;
+-    }
+     // fetch targets
+     const { bytecode } = argv;
+     const nativeBuild = argv['native-build'];
+@@ -447,6 +440,13 @@ async function exec(argv2) {
+             }
+         }
+     }
++    if (argv.sea) {
++        await (0, sea_1.default)(inputFin, {
++            targets,
++            signature: argv.signature,
++        });
++        return;
++    }
+     // marker
+     let marker;
+     if (configJson) {
+diff --git a/lib-es5/sea.js b/lib-es5/sea.js
+index 181835978c61f4ece50cacd50aec0ce2ae544a48..fd02b9440ab3946bcdf02fdb3867c585762bda03 100644
+--- a/lib-es5/sea.js
++++ b/lib-es5/sea.js
+@@ -176,6 +176,9 @@ async function getNodejsExecutable(target, opts) {
+     }
+     const os = getNodeOs(target.platform);
+     const arch = getNodeArch(target.arch);
++    if (target.fabricator) {
++        return target.fabricator.binaryPath;
++    }
+     const nodeVersion = await getNodeVersion(os, arch, target.nodeRange.replace('node', ''));
+     const fileName = `node-${nodeVersion}-${os}-${arch}.${os === 'win' ? 'zip' : 'tar.gz'}`;
+     let url;

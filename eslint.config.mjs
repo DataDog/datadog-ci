@@ -104,6 +104,7 @@ export default defineConfig(
     'eslint.config.mjs',
     'packages/*/dist',
     'packages/datadog-ci/shims/injected-plugin-submodules.js',
+    'packages/datadog-ci/shims/intl-collator.js',
     'bin/*.js',
   ]),
   eslint.configs.recommended,

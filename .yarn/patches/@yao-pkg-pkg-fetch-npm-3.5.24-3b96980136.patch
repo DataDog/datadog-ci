@@ -1,0 +1,102 @@
+diff --git a/lib-es5/expected-shas.json b/lib-es5/expected-shas.json
+index 62cc3245a0c3c56580e069de4e40caf330a6d601..309bb600921ddd9c890137ebab621cc670925ea5 100644
+--- a/lib-es5/expected-shas.json
++++ b/lib-es5/expected-shas.json
+@@ -1,57 +1,7 @@
+ {
+-    "node-v14.21.3-alpine-arm64": "651c2b423925c9dab1ca7695acfb1462be13264f0c1fb6c8b472474c7dbacddd",
+-    "node-v14.21.3-alpine-x64": "4f2b5b16428f998302bbcf59ca229998be48e5dc6c2487edb603152651c182cd",
+-    "node-v14.21.3-linux-arm64": "bb20f63ac32c4e6a0545dfcea3833e8a8a968b95e91ce01cab7f4f48f1a56064",
+-    "node-v14.21.3-linux-x64": "4be08d8f62fc05d70d76daf1ad71aec0bdb47317e4f7b74bb0cb5ec13a137179",
+-    "node-v14.21.3-linuxstatic-arm64": "c4812bbb6829e06fa60716a55a044f11b6bf6096ebc4945d5bccf05d860cc7a8",
+-    "node-v14.21.3-linuxstatic-armv7": "7c4e47db71c4c7dbc071fd2be13ba34b324fbec28ccaa0beadc7dab74fec8d23",
+-    "node-v14.21.3-linuxstatic-x64": "22b84e0d92817432cc7e25cdb5e4d984b49415f708fc0aef13110ad194c773f1",
+-    "node-v14.21.3-macos-x64": "4b19a9555807de2119e2fb00f2ba5f04126b35afdb8264d7b2dd8e2e134fa934",
+-    "node-v14.21.3-win-arm64": "1f9d32c4693893ce4e2e8b340648a12d37cb742866b067b85402078e70151ba7",
+-    "node-v14.21.3-win-x64": "cb2a0bf3e063a2bc6b66a4894e6a57d334922c4bb3a337157764fd914d616666",
+-    "node-v14.21.3-macos-arm64": "1cdd2e5aeea38c909aba5d4565082914370d16f32ca90bb1671f3b9687c62e1d",
+-    "node-v16.20.2-alpine-arm64": "a30cc9be5472dc0f66bf859669c742c6a47f66973c82bea0e7605c357079c8d5",
+-    "node-v16.20.2-alpine-x64": "171381ff415321dede24c5883003a1c07301a4d7bf44aeb0ef4e72b7f78c3202",
+-    "node-v16.20.2-linux-arm64": "12c175838b4e76dabf67f0668dbfa0889ce80aca35a5866635a3a42664cbba22",
+-    "node-v16.20.2-linux-x64": "b8ad09f0fccf5341dc459056096aa6d413d278ca3e939e42a29e6fbaa149ca50",
+-    "node-v16.20.2-linuxstatic-arm64": "fa6ecba685dbdd0e1a1e3a9cb7db07dc558f422a0b53baf3834b855c422a2a3a",
+-    "node-v16.20.2-linuxstatic-armv7": "a8c63fb9523ad44fe59329ba02dba2936da4b9adc7d4238e7180f15031cb1cff",
+-    "node-v16.20.2-linuxstatic-x64": "1a136b7c97c56a90e48d51683ca9181e53e750928a439a88da185c0d7917e432",
+-    "node-v16.20.2-macos-x64": "cd60ba35e3305519ce4ce6398897a1c9e9e68a14c170325d9ece8d078775b3f9",
+-    "node-v16.20.2-win-arm64": "7514915e02aedfbdc9f87ede04f1f251b014e312e3e184d5b94b42aeb28c2485",
+-    "node-v16.20.2-win-x64": "272729724993ce07b37d328718a0152e50ec5c9d27aa972975c09b75604c0dca",
+-    "node-v16.20.2-macos-arm64": "3d04eb7ddd8b614b888eeb1caa6e64a068b665ab4a26dd064051973ae5842a85",
+-    "node-v18.20.8-alpine-arm64": "c7f20847fbfd765517612647593c7767331a318d2b229ddac2b4afd7d13b78d0",
+-    "node-v18.20.8-alpine-x64": "3b24c6f571681046a6ed1b42752b21a41e10e8c7ac19416b9571927cc10f4a49",
+-    "node-v18.20.8-linux-arm64": "690ed47821dfbf842a1ba40a7cd2e28344e6ad998a89f5d0eb61da3c86fcd29c",
+-    "node-v18.20.8-linux-x64": "0121b3c810db3f5e47028f0b1e2294a1a52a2aa20923c037247e39c82be0f789",
+-    "node-v18.20.8-linuxstatic-arm64": "ac03e112f9229126e62924f1fefbb44c54f5fbbb4827d5ffa6243d3b8e81dfa4",
+-    "node-v18.20.8-linuxstatic-armv7": "4c96d99319e850887d01cb63500e34f5db3b64944b3644f4ed5c94ae2be5b625",
+-    "node-v18.20.8-linuxstatic-x64": "16e25c30e3a4d03a18e21bcd41b6980c65f837425d485e3f5f68c8362bad0625",
+-    "node-v18.20.8-macos-arm64": "d3f8f8966ceb4cea5447edacda9d2f151e97e06baf21a3fcba9d7a7e8470cee9",
+-    "node-v18.20.8-macos-x64": "f2cf139bfe3501d39d22b48a069f9ceb24942b0cdc001a0bc30ea3a68fbcc6b3",
+-    "node-v18.20.8-win-arm64": "dd56454cfc9292f047413657c8b997006f27ecda8cd7f7dd38acf8d22317e743",
+-    "node-v18.20.8-win-x64": "4d45cdfbcba3de3f6c0ddcd78251179b9d04dd2fcb2dba2fb052940a2821eb39",
+-    "node-v20.19.4-alpine-arm64": "26bdc75d316a8e63f6023d419987f7e87f40899cd6f14bc320531d90cec3a2fd",
+-    "node-v20.19.4-alpine-x64": "ebf147ddef51f42184d7efd37220f4430db8aaeabc3a1420f9e395484d90f456",
+-    "node-v20.19.4-linux-arm64": "f7444ac0fd3a1b5af900e59f31d4ad0b73c5d4f0db66723b01f22ad6a0952b73",
+-    "node-v20.19.4-linux-x64": "41ef9a2b41373d5923984a323dbbe61b6729751096c61989872be6ae63972531",
+-    "node-v20.19.4-linuxstatic-arm64": "ad100cef1de4fecfe3e00aac60220c2276ad5e9feb6f7917bac2af20d633f2e3",
+-    "node-v20.19.4-linuxstatic-armv7": "09e670c1ba93bf531d9ce3ee5f7f069b9a4813732c353d477be72833ca80f6d8",
+-    "node-v20.19.4-linuxstatic-x64": "43ccf1fc68b659c20a633302d7cb7117c3f3a2ec99a73b27b3928590c768ce01",
+-    "node-v20.19.4-macos-arm64": "103917dfe9e4f106ce9c3d8f62f162a3faeb107524938a01c96fdacc182c3420",
+-    "node-v20.19.4-macos-x64": "f26530d2b3af9c7f4cf2b27a60ffbf75522c2ca08a573f6cabf2424b40783587",
+-    "node-v20.19.4-win-arm64": "d146053af54d560d5fb2890ab90595c1f3eb02f025ec491ace830353fc596008",
+-    "node-v20.19.4-win-x64": "4627b65afcd8a0abfbe616c4a7eb4cb7b81dbb52f5ccc54c8103efa34fe9a125",
+-    "node-v22.17.1-alpine-arm64": "e28a2c0cc6529e1a133485b94211602a99ff6f8bd485aea2f5d21dae9f8d30a1",
+-    "node-v22.17.1-alpine-x64": "41b3ede409b27c755e4c24d1bf071cc40f448199d98744f6c40fcebba398beff",
+-    "node-v22.17.1-linux-arm64": "2f356ceacb670010db08189a129e1c250e1d98f37fec60b492797e043a1fc696",
+-    "node-v22.17.1-linux-x64": "9702cb7019c72b2dc31f7de33a0e73fefcddade2364c59a9a22d3edb75d637b1",
+-    "node-v22.17.1-linuxstatic-arm64": "95664f11b6619d6dd905d88776aba80b6218601dde25647b552fe223a3b52484",
+-    "node-v22.17.1-linuxstatic-armv7": "69660e85e5249d6965d8e682b157f35a467730a4f2b80b0242f83e53e6c083e6",
+-    "node-v22.17.1-linuxstatic-x64": "657881fe0f18b0aecda9d63140c6c2b8b8ff7287c81826a93a90100459540b70",
+-    "node-v22.17.1-macos-arm64": "bbb0ce0747474ab4a3fb98ece79b29d7e5dc9ea72d12136a898cedbb6b7638b6",
+-    "node-v22.17.1-macos-x64": "b8ba2debbdbe9cf967f738a450ef3656c55bb13da776a206b673e1bb23437f70",
+-    "node-v22.17.1-win-arm64": "6188cdeb574a9e3de4f664d73bab0068201967245c8eb50b69b2850e1f356f8e",
+-    "node-v22.17.1-win-x64": "6974763a335f33733766805659eb039908bcab3f09a5525d59fbe9ab4ed7926a"
++    "node-v22.19.0-linux-arm64": "bf0b13343f044104e935e8c9581c1c8bbf4f70185fc49ee49a63c83be95e2b93",
++    "node-v22.19.0-linux-x64": "f51476881e6af23347b4e8e0cc56e1aeffe6641e7523f2cac9601287ab3d00b4",
++    "node-v22.19.0-macos-arm64": "83b21eb4f79caa516ac7638fcbbbedd9dd357756549dd61f69ee7d40f2d95e63",
++    "node-v22.19.0-macos-x64": "fb493dbaced86bc65b19e04b5a325c89f470bc318720b0ab505a00cbb80ec039",
++    "node-v22.19.0-win-x64": "8440fe844868085dce1eb363b819c982f56f650e789fd04aa8213ce9968f07c4"
+ }
+\ No newline at end of file
+diff --git a/lib-es5/index.js b/lib-es5/index.js
+index f9b35abdd8c2be426df193885da5cb538b77f4e6..8177990218c4d10e66bcba768cd4af85292212f3 100644
+--- a/lib-es5/index.js
++++ b/lib-es5/index.js
+@@ -84,7 +84,7 @@ function download(_a, local) {
+         return __generator(this, function (_c) {
+             switch (_c.label) {
+                 case 0:
+-                    url = "https://github.com/yao-pkg/pkg-fetch/releases/download/".concat(tag, "/").concat(name);
++                    url = "https://github.com/Drarig29/pkg-fetch/releases/download/".concat(tag, "/").concat(name);
+                     _c.label = 1;
+                 case 1:
+                     _c.trys.push([1, 4, , 5]);
+@@ -123,7 +123,7 @@ function exists(file) {
+     });
+ }
+ function satisfyingNodeVersion(nodeRange) {
+-    var versions = Object.keys(patches_json_1.default)
++    var versions = ['v22.19.0']
+         .filter(function (nv) { return semver_1.default.satisfies(nv, nodeRange) || nodeRange === 'latest'; })
+         .sort(function (nv1, nv2) { return (semver_1.default.gt(nv1, nv2) ? 1 : -1); });
+     var nodeVersion = versions.pop();
+diff --git a/package.json b/package.json
+index af50b3c6c776b8b4ad4365235f567d48a625969e..690a8c9bdf7a6b734d22e83d0f675f4fe1918ccc 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@yao-pkg/pkg-fetch",
+-  "version": "3.5.24",
++  "version": "1.0.0",
+   "description": "Compiles and stores base binaries for pkg",
+   "main": "lib-es5/index.js",
+   "license": "MIT",
