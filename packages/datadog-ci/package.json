@@ -22,17 +22,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "pkg": {
-    "scripts": [
-      "dist/commands/*/*.js"
-    ],
-    "assets": [
-      "../../node_modules/axios/dist/node/axios.cjs"
-    ]
-  },
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
-    "dist-standalone": "pkg --compress GZip .",
+    "bundle": "node scripts/esbuild.mjs",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
@@ -64,9 +56,8 @@
     "@types/inquirer": "8.2.6",
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
-    "@types/node": "^18.19.76",
     "@types/semver": "^7.3.12",
     "@types/uuid": "^9.0.2",
-    "pkg": "5.8.1"
+    "esbuild": "^0.25.9"
   }
 }

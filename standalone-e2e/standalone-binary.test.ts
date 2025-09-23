@@ -1,5 +1,4 @@
 import child_process from 'node:child_process'
-import path from 'node:path'
 
 import {version} from '../packages/datadog-ci/package.json'
 
@@ -30,7 +29,7 @@ const isARM = process.arch === 'arm64'
 const arch = isARM ? 'arm64' : 'x64'
 
 const STANDALONE_BINARY = `datadog-ci_${os}-${arch}`
-const STANDALONE_BINARY_PATH = path.join('./packages/datadog-ci', `${STANDALONE_BINARY}${isWin ? '.exe' : ''}`)
+const STANDALONE_BINARY_PATH = isWin ? `.\\${STANDALONE_BINARY}.exe` : `./${STANDALONE_BINARY}`
 
 const timeoutPerPlatform: Record<typeof os, number> = {
   // Some macOS agents sometimes run slower, making this test suite flaky on macOS only.
@@ -127,6 +126,15 @@ describe('standalone binary', () => {
       expect(result).toStrictEqual({
         exitCode: 0,
         stdout: expect.stringContaining('datadog-ci synthetics run-tests') as string,
+        stderr: '',
+      })
+    })
+
+    it('plugin can be loaded', async () => {
+      const result = await execPromise(`${STANDALONE_BINARY_PATH} plugin check synthetics run-tests`)
+      expect(result).toStrictEqual({
+        exitCode: 0,
+        stdout: expect.stringContaining('The plugin is ready to be used! 🔌') as string,
         stderr: '',
       })
     })

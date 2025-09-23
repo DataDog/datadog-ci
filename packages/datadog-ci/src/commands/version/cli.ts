@@ -18,4 +18,4 @@ class VersionCommand extends Command {
   }
 }
 
-module.exports = [VersionCommand]
+export const commands = [VersionCommand]

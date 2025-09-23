@@ -9,6 +9,7 @@
     "directory": "packages/plugin-sarif"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"

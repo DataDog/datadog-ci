@@ -1,7 +1,9 @@
 import eslint from '@eslint/js'
+import globals from 'globals'
 import stylistic from '@stylistic/eslint-plugin'
 import {defineConfig, globalIgnores} from 'eslint/config'
-import {importX} from 'eslint-plugin-import-x'
+import {importX, createNodeResolver} from 'eslint-plugin-import-x'
+import {createTypeScriptImportResolver} from 'eslint-import-resolver-typescript'
 import jest from 'eslint-plugin-jest'
 import noNull from 'eslint-plugin-no-null'
 import preferArrow from 'eslint-plugin-prefer-arrow'
@@ -98,7 +100,7 @@ const restrictedImports = [
 ]
 
 export default defineConfig(
-  globalIgnores(['eslint.config.mjs', 'packages/*/dist']),
+  globalIgnores(['eslint.config.mjs', 'packages/*/dist', 'packages/datadog-ci/shims/injected-plugin-submodules.js']),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,
@@ -109,11 +111,16 @@ export default defineConfig(
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
-        projectService: {
-          allowDefaultProject: ['jest.config*.mjs', 'jest.setup.ts'],
-        },
+        projectService: true,
         tsconfigRootDir: import.meta.dirname,
       },
+      globals: globals.node,
+    },
+    settings: {
+      'import-x/resolver-next': [
+        createTypeScriptImportResolver({conditionNames: ['development']}),
+        createNodeResolver(),
+      ],
     },
     plugins: {
       '@stylistic': stylistic,
@@ -272,6 +279,7 @@ export default defineConfig(
       'guard-for-in': 'error',
       'id-denylist': 'error',
       'id-match': 'error',
+      'import-x/no-unresolved': ['error', {ignore: ['node:sea']}],
       'import-x/no-extraneous-dependencies': 'error',
       'import-x/order': [
         'error',
@@ -392,6 +400,10 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    files: ['jest.config*.mjs', 'jest.setup.ts', 'packages/datadog-ci/scripts/esbuild.mjs'],
+    extends: [tseslint.configs.disableTypeChecked],
   },
   {
     files: ['**/*.test.ts'],
