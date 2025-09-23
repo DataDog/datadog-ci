@@ -3,6 +3,8 @@ import {inspect} from 'node:util'
 import chalk from 'chalk'
 import {Command, CommandClass} from 'clipanion'
 
+import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
+
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
 
@@ -38,6 +40,18 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
 }
 
 export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {
+  if (!(scopeToPackageName(scope) in peerDependencies)) {
+    console.log(
+      [
+        '',
+        chalk.bold.red("This plugin is not listed as a possible peer dependency. Make sure you didn't make a typo."),
+        '',
+      ].join('\n')
+    )
+
+    return false
+  }
+
   if (await isStandaloneBinary()) {
     console.log(
       [
@@ -86,13 +100,21 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
 }
 
+const scopeToPackageName = (scope: string): string => {
+  if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
+    return scope
+  }
+
+  return `@datadog/datadog-ci-plugin-${scope}`
+}
+
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    return extractPackageJson(require(`${scope}/package.json`))
+    return extractPackageJson(await import(`${scope}/package.json`))
   }
 
   if (!command) {
-    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
+    return extractPackageJson(await import(`@datadog/datadog-ci-plugin-${scope}/package.json`))
   }
 
   return importPluginSubmodule(scope, command)

@@ -9,6 +9,7 @@
     "directory": "packages/base"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./cli": {
       "development": "./src/cli.ts",
       "default": "./dist/cli.js"
