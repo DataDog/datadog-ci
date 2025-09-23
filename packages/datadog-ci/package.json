@@ -25,7 +25,6 @@
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "bundle": "node scripts/esbuild.mjs",
-    "dist-standalone": "yarn bundle && pkg --sea --compress GZip dist/bundle.js",
     "lint": "yarn package:lint",
     "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
   },
@@ -59,7 +58,6 @@
     "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.3.12",
     "@types/uuid": "^9.0.2",
-    "@yao-pkg/pkg": "^6.6.0",
     "esbuild": "^0.25.9"
   }
 }
