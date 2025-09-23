@@ -33,8 +33,8 @@ try {
   await writeFile('dist/meta.json', JSON.stringify(result.metafile, undefined, 2))
 
   const inputs = Object.keys(result.metafile.inputs)
-  console.log(`Bundled files starting matching ${chalk.bold.magenta('plugin-*')}:`)
-  console.log(inputs.filter((input) => input.includes('plugin-')))
+  console.log(`Bundled files starting matching ${chalk.bold.magenta('@datadog/datadog-ci-plugin-*')}:`)
+  console.log(inputs.filter((input) => input.includes('@datadog/datadog-ci-plugin-')))
 } catch (error) {
   console.error(chalk.red('Build failed:'), error)
   process.exit(1)
