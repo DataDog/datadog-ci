@@ -8,7 +8,7 @@ try {
     entryPoints: ['dist/cli.js'],
     bundle: true,
     platform: 'node',
-    inject: ['scripts/injected-plugin-submodules-shim.js'],
+    inject: ['shims/injected-plugin-submodules.js'],
     target: 'node22',
     format: 'cjs',
     outfile: 'dist/bundle.js',
