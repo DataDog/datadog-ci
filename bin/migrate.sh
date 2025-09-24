@@ -141,7 +141,7 @@ print-files() {
 echo 5. Update string references
 git add -A
 print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
-print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g"
+print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$PLUGIN_DIR/|g"
 print-files "$PLUGIN_DIR" | xargs sed -i -e "s|src/commands/$SCOPE/|src/|g"
 echo Updating known shared imports...
 print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
