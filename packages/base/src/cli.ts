@@ -4,6 +4,10 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
+import { DeploymentCorrelateCommand } from './commands/deployment/correlate-command'
+import { DeploymentCorrelateImageCommand } from './commands/deployment/correlate-image-command'
+import { DeploymentGateCommand } from './commands/deployment/gate-command'
+import { DeploymentMarkCommand } from './commands/deployment/mark-command'
 import {DORADeploymentCommand} from './commands/dora/deployment-command'
 import {GateEvaluateCommand} from './commands/gate/evaluate-command'
 import {UploadCommand} from './commands/git-metadata/upload'
@@ -34,6 +38,7 @@ export const commands = {
   'stepfunctions': [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'synthetics': [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
   'tag': [TagCommand],
+  'deployment': [DeploymentMarkCommand,DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand],
 } satisfies RecordWithKebabCaseKeys
 
 /**
