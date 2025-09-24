@@ -1,7 +1,7 @@
-import {DeploymentCorrelateCommand} from './commands/correlate'
-import {DeploymentCorrelateImageCommand} from './commands/correlate-image'
-import {DeploymentGateCommand} from './commands/gate'
-import {DeploymentMarkCommand} from './commands/mark'
+import {PluginCommand as DeploymentCorrelateCommand} from './commands/correlate'
+import {PluginCommand as DeploymentCorrelateImageCommand} from './commands/correlate-image'
+import {PluginCommand as DeploymentGateCommand} from './commands/gate'
+import {PluginCommand as DeploymentMarkCommand} from './commands/mark'
 
 export const commands = [
   DeploymentMarkCommand,
