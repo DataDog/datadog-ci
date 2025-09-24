@@ -13,7 +13,6 @@ import chalk from 'chalk'
 import simpleGit from 'simple-git'
 
 export class PluginCommand extends DeploymentCorrelateCommand {
-
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,

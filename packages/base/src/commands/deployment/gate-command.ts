@@ -3,7 +3,6 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-
 /**
  * This command allows to evaluate a deployment gate in Datadog.
  * It handles the entire process of requesting a gate evaluation and polling for results
