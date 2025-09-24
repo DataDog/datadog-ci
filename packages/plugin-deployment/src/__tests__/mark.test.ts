@@ -1,6 +1,6 @@
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {DeploymentMarkCommand} from '../mark'
+import {PluginCommand as DeploymentMarkCommand} from '../commands/mark'
 
 describe('mark', () => {
   describe('execute', () => {

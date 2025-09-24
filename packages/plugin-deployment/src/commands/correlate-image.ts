@@ -1,34 +1,12 @@
+import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image-command'
 import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
-import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
-
-export class DeploymentCorrelateImageCommand extends Command {
-  public static paths = [['deployment', 'correlate-image']]
-
-  public static usage = Command.Usage({
-    category: 'CI Visibility',
-    description: 'Correlate images with their source commit.',
-    details: 'This command will correlate the image with a commit of the application repository.',
-  })
-
-  protected commitSha = Option.String('--commit-sha')
-  protected repositoryUrl = Option.String('--repository-url')
-  protected image = Option.String('--image')
-  protected fips = Option.Boolean('--fips', false)
-  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  protected dryRun = Option.Boolean('--dry-run', false)
-
-  public async execute(): Promise<number | void> {
-    return executePluginCommand(this)
-  }
-}
 
 export class PluginCommand extends DeploymentCorrelateImageCommand {
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
