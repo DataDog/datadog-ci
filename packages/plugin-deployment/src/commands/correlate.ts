@@ -4,6 +4,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
@@ -40,13 +41,20 @@ export class DeploymentCorrelateCommand extends Command {
     ],
   })
 
-  private cdProviderParam = Option.String('--provider')
-  private configurationRepo = Option.String('--config-repo')
-  private configurationShas = Option.Array('--config-shas')
-  private dryRun = Option.Boolean('--dry-run', false)
+  protected cdProviderParam = Option.String('--provider')
+  protected configurationRepo = Option.String('--config-repo')
+  protected configurationShas = Option.Array('--config-shas')
+  protected dryRun = Option.Boolean('--dry-run', false)
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends DeploymentCorrelateCommand {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,

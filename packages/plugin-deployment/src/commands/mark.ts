@@ -2,6 +2,7 @@ import {TagCommand} from '@datadog/datadog-ci-base/commands/tag/tag-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {Command, Option} from 'clipanion'
 
 import {
@@ -40,21 +41,28 @@ export class DeploymentMarkCommand extends Command {
     ],
   })
 
-  private noFail = Option.Boolean('--no-fail', false)
-  private isRollback = Option.Boolean('--is-rollback', false)
-  private env = Option.String('--env', {
+  protected noFail = Option.Boolean('--no-fail', false)
+  protected isRollback = Option.Boolean('--is-rollback', false)
+  protected env = Option.String('--env', {
     description: 'Example: prod',
   })
-  private revision = Option.String('--revision', {
+  protected revision = Option.String('--revision', {
     description: 'Example: 1.0.0',
   })
-  private service = Option.String('--service', {
+  protected service = Option.String('--service', {
     description: 'Example: payment-service',
   })
-  private tags = Option.Array('--tags')
+  protected tags = Option.Array('--tags')
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends DeploymentMarkCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

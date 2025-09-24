@@ -2,6 +2,7 @@ import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
@@ -17,13 +18,19 @@ export class DeploymentCorrelateImageCommand extends Command {
     details: 'This command will correlate the image with a commit of the application repository.',
   })
 
-  private commitSha = Option.String('--commit-sha')
-  private repositoryUrl = Option.String('--repository-url')
-  private image = Option.String('--image')
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private dryRun = Option.Boolean('--dry-run', false)
+  protected commitSha = Option.String('--commit-sha')
+  protected repositoryUrl = Option.String('--repository-url')
+  protected image = Option.String('--image')
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected dryRun = Option.Boolean('--dry-run', false)
 
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends DeploymentCorrelateImageCommand {
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
 
   private config = {

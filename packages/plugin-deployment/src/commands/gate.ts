@@ -3,6 +3,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import { executePluginCommand } from '@datadog/datadog-ci-base/helpers/plugin'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
@@ -51,46 +52,52 @@ export class DeploymentGateCommand extends Command {
   })
 
   // Required parameters
-  private service = Option.String('--service', {
+  protected service = Option.String('--service', {
     description: 'The service name (e.g. payments-backend)',
     validator: t.isString(),
   })
-  private env = Option.String('--env', {
+  protected env = Option.String('--env', {
     description: 'The environment name (e.g. prod, staging)',
     validator: t.isString(),
   })
 
   // Optional parameters
-  private identifier = Option.String('--identifier', {
+  protected identifier = Option.String('--identifier', {
     description: 'The deployment identifier (defaults to "default")',
     validator: t.isString(),
   })
-  private version = Option.String('--version', {
+  protected version = Option.String('--version', {
     description: 'The deployment version (required for gates with faulty deployment detection rules)',
     validator: t.isString(),
   })
-  private apmPrimaryTag = Option.String('--apm-primary-tag', {
+  protected apmPrimaryTag = Option.String('--apm-primary-tag', {
     description: 'The APM primary tag (only for gates with faulty deployment detection rules)',
     validator: t.isString(),
   })
-  private timeout = Option.String('--timeout', '10800', {
+  protected timeout = Option.String('--timeout', '10800', {
     description: 'Maximum amount of seconds to wait for the script execution in seconds (default: 10800 = 3 hours)',
     validator: t.isString(),
   })
-  private failOnError = Option.Boolean('--fail-on-error', false, {
+  protected failOnError = Option.Boolean('--fail-on-error', false, {
     description:
       'When true, the script will consider the gate as failed when timeout is reached or unexpected errors occur calling the Datadog APIs',
   })
   // monitorsQueryVariable is hidden because it's not available yet
-  private monitorsQueryVariable = Option.String('--monitors-query-variable', '', {
+  protected monitorsQueryVariable = Option.String('--monitors-query-variable', '', {
     validator: t.isString(),
     hidden: true,
   })
 
   // FIPS options
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected fips = Option.Boolean('--fips', false)
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
+  }
+}
+
+export class PluginCommand extends DeploymentGateCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
