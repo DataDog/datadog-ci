@@ -12,6 +12,10 @@ if [[ $(uname -s) == "Darwin" ]]; then
     brew install gnu-sed
   fi
   export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
+
+  if ! command -v sponge >/dev/null 2>&1; then
+    brew install moreutils
+  fi
 fi
 
 SCOPE="$1"
@@ -28,7 +32,7 @@ fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
-env cp "$DST_DIR/LICENSE" "$PLUGIN_DIR"
+env cp LICENSE "$PLUGIN_DIR"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
