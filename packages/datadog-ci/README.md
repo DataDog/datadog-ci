@@ -113,8 +113,8 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `deployment`
 - `mark`: Mark a CI job as a [deployment](packages/datadog-ci/src/commands/deployment). [📚](https://docs.datadoghq.com/continuous_delivery/)
-- `correlate`: [Correlate](packages/datadog-ci/src/commands/deployment/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
-- `correlate-image`: [Correlate an image](packages/datadog-ci/src/commands/deployment/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
+- `correlate`: [Correlate](packages/plugin-deployment/src/) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
+- `correlate-image`: [Correlate an image](packages/plugin-deployment/src/) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a [Deployment Gate](packages/plugin-gate/src/commands/). [📚](https://docs.datadoghq.com/deployment_gates/)
 
 #### `dora`
