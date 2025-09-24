@@ -4170,7 +4170,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@yao-pkg/pkg@npm:^6.6.0":
+"@yao-pkg/pkg-fetch@patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch":
+  version: 3.5.24
+  resolution: "@yao-pkg/pkg-fetch@patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch::version=3.5.24&hash=49e69c"
+  dependencies:
+    https-proxy-agent: "npm:^5.0.0"
+    node-fetch: "npm:^2.6.6"
+    picocolors: "npm:^1.1.0"
+    progress: "npm:^2.0.3"
+    semver: "npm:^7.3.5"
+    tar-fs: "npm:^2.1.1"
+    yargs: "npm:^16.2.0"
+  bin:
+    pkg-fetch: lib-es5/bin.js
+  checksum: 10/5e25d31929146c5a0a091cb08f82a82c789dbf9189c9defe94c39a80780543a05b92b6bc1221481e2114478bae3b9a34e5a5c05fe68439f3426ca49415b838ad
+  languageName: node
+  linkType: hard
+
+"@yao-pkg/pkg@npm:6.6.0":
   version: 6.6.0
   resolution: "@yao-pkg/pkg@npm:6.6.0"
   dependencies:
@@ -4192,6 +4209,31 @@ __metadata:
   bin:
     pkg: lib-es5/bin.js
   checksum: 10/71793921f729c9e0d89f6a7c325d132eacd44339145182d87296a11f318fa7ebd3e79ea0c4cafb4439e81e2b4eaa73a5305501c44674075eb8cfedc7cda61bf5
+  languageName: node
+  linkType: hard
+
+"@yao-pkg/pkg@patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch":
+  version: 6.6.0
+  resolution: "@yao-pkg/pkg@patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch::version=6.6.0&hash=013c77"
+  dependencies:
+    "@babel/generator": "npm:^7.23.0"
+    "@babel/parser": "npm:^7.23.0"
+    "@babel/types": "npm:^7.23.0"
+    "@yao-pkg/pkg-fetch": "npm:3.5.24"
+    into-stream: "npm:^6.0.0"
+    minimist: "npm:^1.2.6"
+    multistream: "npm:^4.1.0"
+    picocolors: "npm:^1.1.0"
+    picomatch: "npm:^4.0.2"
+    prebuild-install: "npm:^7.1.1"
+    resolve: "npm:^1.22.10"
+    stream-meter: "npm:^1.0.4"
+    tar: "npm:^7.4.3"
+    tinyglobby: "npm:^0.2.11"
+    unzipper: "npm:^0.12.3"
+  bin:
+    pkg: lib-es5/bin.js
+  checksum: 10/76f5b3a4562631a3b8c9add780b2c28cb787ba8f2f252ad46d261ad927554450b72ea151ce22c52273c94156b84e42b3be8c6b0bd4398a515f8679542e066957
   languageName: node
   linkType: hard
 
@@ -5172,7 +5214,7 @@ __metadata:
   dependencies:
     "@microsoft/eslint-formatter-sarif": "npm:^3.1.0"
     "@stylistic/eslint-plugin": "npm:^5.3.1"
-    "@yao-pkg/pkg": "npm:^6.6.0"
+    "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch"
     dd-trace: "npm:^5.42.0"
     eslint: "npm:^9.34.0"
     eslint-config-prettier: "npm:^10.1.8"

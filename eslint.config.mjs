@@ -100,7 +100,13 @@ const restrictedImports = [
 ]
 
 export default defineConfig(
-  globalIgnores(['eslint.config.mjs', 'packages/*/dist', 'packages/datadog-ci/shims/injected-plugin-submodules.js']),
+  globalIgnores([
+    'eslint.config.mjs',
+    'packages/*/dist',
+    'packages/datadog-ci/shims/injected-plugin-submodules.js',
+    'packages/datadog-ci/shims/intl-collator.js',
+    'bin/*.js',
+  ]),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   importX.flatConfigs.recommended,

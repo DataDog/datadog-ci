@@ -197,7 +197,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -206,6 +206,8 @@ jobs:
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - name: Compare binary sizes
+        run: yarn compare-binary-size datadog-ci_linux-x64
 
   standalone-binary-test-ubuntu-arm:
     name: Test standalone binary in ARM ubuntu
@@ -217,7 +219,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary
+          node-version: 22.19.0
       - run: npm install -g yarn
         name: Install Yarn # Yarn is not installed by default in this runner
       - run: yarn install --immutable
@@ -228,6 +230,8 @@ jobs:
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - name: Compare binary sizes
+        run: yarn compare-binary-size datadog-ci_linux-arm64
 
   standalone-binary-test-windows:
     name: Test standalone binary in windows
@@ -237,7 +241,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -246,6 +250,8 @@ jobs:
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - name: Compare binary sizes
+        run: yarn compare-binary-size datadog-ci_win-x64.exe
 
   standalone-binary-test-macos:
     name: Test standalone binary in macOS
@@ -257,7 +263,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -266,6 +272,8 @@ jobs:
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - name: Compare binary sizes
+        run: yarn compare-binary-size datadog-ci_darwin-x64
 
   standalone-binary-test-macos-arm:
     name: Test standalone binary in ARM macOS
@@ -275,7 +283,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0 # Use newer version to build the standalone binary
+          node-version: 22.19.0
       - run: yarn install --immutable
       - run: yarn build
       - name: Create standalone binary
@@ -284,6 +292,8 @@ jobs:
         run: yarn rimraf --glob 'packages/*/{src,dist}'
       - name: Test generated standalone binary
         run: yarn dist-standalone:test
+      - name: Compare binary sizes
+        run: yarn compare-binary-size datadog-ci_darwin-arm64
 
   datadog-static-analyzer:
     runs-on: ubuntu-latest
@@ -324,7 +334,7 @@ jobs:
       - name: Install node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20.11.0
+          node-version: 22.19.0
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
       # by the script `check-licenses` below.
       - run: yarn install --immutable
