@@ -31,7 +31,7 @@ import {
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
 
@@ -63,7 +63,7 @@ export const putSubscriptionFilter = async (
   filterName: string,
   logGroupName: string,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<PutSubscriptionFilterCommandOutput | undefined> => {
   // Running this function multiple times would not create duplicate filters (old filter with the same name would be overwritten).
@@ -94,7 +94,7 @@ export const tagResource = async (
   stepFunctionsClient: SFNClient,
   stepFunctionArn: string,
   tags: Tag[],
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<TagResourceCommandOutput | undefined> => {
   const input = {
@@ -117,7 +117,7 @@ export const createLogGroup = async (
   cloudWatchLogsClient: CloudWatchLogsClient,
   logGroupName: string,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<CreateLogGroupCommandOutput | undefined> => {
   const input = {
@@ -147,7 +147,7 @@ export const createLogsAccessPolicy = async (
   iamClient: IAMClient,
   describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<CreatePolicyCommandOutput | undefined> => {
   // according to https://docs.aws.amazon.com/step-functions/latest/dg/cw-logs.html#cloudwatch-iam-policy
@@ -202,7 +202,7 @@ export const attachPolicyToStateMachineIamRole = async (
   describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   accountId: string,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<AttachRolePolicyCommandOutput | undefined> => {
   const splitRoleArnList = describeStateMachineCommandOutput?.roleArn?.split('/')
@@ -236,7 +236,7 @@ export const enableStepFunctionLogs = async (
   stepFunction: DescribeStateMachineCommandOutput,
   logGroupArn: string,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<UpdateStateMachineCommandOutput | undefined> => {
   const input = {
@@ -268,7 +268,7 @@ export const updateStateMachineDefinition = async (
   stepFunctionsClient: SFNClient,
   stepFunction: DescribeStateMachineCommandOutput,
   definitionObj: StateMachineDefinitionType,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<UpdateStateMachineCommandOutput | undefined> => {
   if (stepFunction === undefined) {
@@ -306,7 +306,7 @@ export const deleteSubscriptionFilter = async (
   filterName: string,
   logGroupName: string,
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<DeleteSubscriptionFilterCommandOutput | undefined> => {
   const input = {
@@ -336,7 +336,7 @@ export const describeSubscriptionFilters = async (
   return data
 }
 
-const printSuccessfulMessage = (commandName: string, context: BaseContext): void => {
+const printSuccessfulMessage = (commandName: string, context: CommandContext): void => {
   context.stdout.write(`${commandName} finished successfully!\n\n`)
 }
 
@@ -344,7 +344,7 @@ export const untagResource = async (
   stepFunctionsClient: SFNClient,
   tagKeys: string[],
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<UntagResourceCommandOutput | undefined> => {
   const input = {

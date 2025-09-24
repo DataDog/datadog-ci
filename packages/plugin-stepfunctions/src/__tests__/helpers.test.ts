@@ -1,5 +1,5 @@
 import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {
   buildArn,
@@ -17,14 +17,14 @@ import {
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
 
-const createMockContext = (): BaseContext => {
+const createMockContext = (): CommandContext => {
   return {
     stdout: {
       write: (input: string) => {
         return true
       },
     },
-  } as BaseContext
+  } as CommandContext
 }
 
 describe('stepfunctions command helpers tests', () => {

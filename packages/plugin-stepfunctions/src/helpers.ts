@@ -1,6 +1,6 @@
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {BaseContext} from 'clipanion'
+import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {diff} from 'deep-object-diff'
 
 import {updateStateMachineDefinition} from './awsCommands'
@@ -8,7 +8,7 @@ import {DD_CI_IDENTIFYING_STRING} from './constants'
 
 export const displayChanges = (
   stepFunctionArn: string,
-  context: BaseContext,
+  context: CommandContext,
   commandName: string,
   dryRun: boolean,
   params: any,
@@ -83,7 +83,7 @@ export const buildLogAccessPolicyName = (stepFunction: DescribeStateMachineComma
 export const injectContextIntoTasks = async (
   describeStateMachineCommandOutput: DescribeStateMachineCommandOutput,
   stepFunctionsClient: SFNClient,
-  context: BaseContext,
+  context: CommandContext,
   dryRun: boolean
 ): Promise<void> => {
   if (typeof describeStateMachineCommandOutput.definition !== 'string') {
@@ -158,7 +158,7 @@ export type ParametersType = {
 //  4.2 | "Payload.$": "States.JsonMerge($$, $, false)" or         | false
 //      | "Payload.$": "$$['Execution', 'State', 'StateMachine']"  |
 //  4.3 | Custom "Payload.$"                                       | false
-export const injectContextForLambdaFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
+export const injectContextForLambdaFunctions = (step: StepType, context: CommandContext, stepName: string): boolean => {
   // not default lambda api or legacy lambda definition
   // Using startsWith on the lambda invoke to allow for waitForTaskToken invocations
   if (!step.Resource?.startsWith('arn:aws:states:::lambda:invoke') && !step.Resource?.startsWith('arn:aws:lambda')) {
@@ -262,7 +262,7 @@ check out https://docs.datadoghq.com/serverless/step_functions/troubleshooting/\
 //  3.1 | "CONTEXT.$": "States.JsonMerge($$, $, false)" or         | false
 //      | "CONTEXT.$": "$$['Execution', 'State', 'StateMachine']"  |
 //  3.2 | Custom "CONTEXT.$"                                       | false
-export const injectContextForStepFunctions = (step: StepType, context: BaseContext, stepName: string): boolean => {
+export const injectContextForStepFunctions = (step: StepType, context: CommandContext, stepName: string): boolean => {
   // not default lambda api
   if (!step.Resource?.startsWith('arn:aws:states:::states:startExecution')) {
     return false
