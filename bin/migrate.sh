@@ -56,6 +56,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "README",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "yarn package:clean; yarn package:build",
     "lint": "yarn package:lint",
