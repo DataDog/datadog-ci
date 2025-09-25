@@ -4,7 +4,8 @@
   "license": "Apache-2.0",
   "keywords": [
     "datadog",
-    "datadog-ci"
+    "datadog-ci",
+    "plugin"
   ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-stepfunctions",
   "repository": {
