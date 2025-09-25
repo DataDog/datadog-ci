@@ -2,6 +2,12 @@
   "name": "@datadog/datadog-ci-plugin-stepfunctions",
   "version": "3.21.0",
   "license": "Apache-2.0",
+  "description": "Datadog CI plugin for `stepfunctions` commands",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-stepfunctions",
   "repository": {
     "type": "git",

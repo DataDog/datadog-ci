@@ -1,8 +1,12 @@
 {
   "name": "@datadog/datadog-ci",
   "version": "3.21.0",
-  "description": "Run datadog actions from the CI.",
+  "description": "Use Datadog from your CI.",
   "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci",
   "repository": {
     "type": "git",
@@ -26,7 +30,7 @@
     "build": "yarn package:clean; yarn package:build",
     "bundle": "node scripts/esbuild.mjs",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist && node ./bin/make-it-executable.js"
+    "prepack": "yarn package:clean-dist"
   },
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",

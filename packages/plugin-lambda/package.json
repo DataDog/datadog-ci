@@ -2,6 +2,12 @@
   "name": "@datadog/datadog-ci-plugin-lambda",
   "version": "3.21.0",
   "license": "Apache-2.0",
+  "description": "Datadog CI plugin for `lambda` commands",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-lambda",
   "repository": {
     "type": "git",

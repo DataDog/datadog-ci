@@ -42,6 +42,12 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "name": "$PLUGIN_PKG",
   "version": "$(jq -r .version packages/base/package.json)",
   "license": "Apache-2.0",
+  "description": "Datadog CI plugin for `$SCOPE` commands",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/$PLUGIN_DIR",
   "repository": {
     "type": "git",
