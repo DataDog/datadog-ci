@@ -12,6 +12,10 @@ if [[ $(uname -s) == "Darwin" ]]; then
     brew install gnu-sed
   fi
   export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
+
+  if ! command -v sponge >/dev/null 2>&1; then
+    brew install moreutils
+  fi
 fi
 
 SCOPE="$1"
@@ -28,7 +32,7 @@ fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
-env cp "$DST_DIR/LICENSE" "$PLUGIN_DIR"
+env cp LICENSE "$PLUGIN_DIR"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -140,7 +144,7 @@ print-files() {
 echo 5. Update string references
 git add -A
 print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
-print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$DST_DIR/|g"
+print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$PLUGIN_DIR/|g"
 print-files "$PLUGIN_DIR" | xargs sed -i -e "s|src/commands/$SCOPE/|src/|g"
 echo Updating known shared imports...
 print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
@@ -189,3 +193,4 @@ echo "- Commit the changes, then make the following manual changes:"
 echo "- Move any shared helpers to @datadog/datadog-ci-base if needed."
 echo "- Split FooCommand/PluginCommand classes as described in https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor"
 echo "- Run yarn build, yarn lint, and yarn knip as needed to ensure everything works."
+echo "- Update packages/datadog-ci/shims/injected-plugin-submodules.js"

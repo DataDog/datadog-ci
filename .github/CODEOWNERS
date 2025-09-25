@@ -5,7 +5,8 @@
 
 ## Software Delivery (label: software-delivery)
 packages/datadog-ci/src/commands/coverage      @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/datadog-ci/src/commands/deployment    @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/base/src/commands/deployment          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/plugin-dora                           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/base/src/commands/dora                @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/junit         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend

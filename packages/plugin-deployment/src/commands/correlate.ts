@@ -1,3 +1,4 @@
+import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -9,45 +10,9 @@ import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datad
 import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import simpleGit from 'simple-git'
 
-/**
- * This command collects environment variables and git information to correlate commits from the
- * source code repository to the configuration repository. This allows to connect pipelines triggering
- * changes on the configuration repository to deployments from gitOps CD providers
- */
-export class DeploymentCorrelateCommand extends Command {
-  public static paths = [['deployment', 'correlate']]
-
-  public static usage = Command.Usage({
-    category: 'CI Visibility',
-    description: 'Correlate GitOps CD deployments with CI pipelines.',
-    details: `
-      This command will correlate the pipeline with a GitOps CD deployment.\n
-      See README for additional details.
-    `,
-    examples: [
-      ['Correlate an Argo CD deployment', 'datadog-ci deployment correlate --provider argocd'],
-      [
-        'Correlate ArgoCD deployment manually',
-        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4',
-      ],
-      [
-        'Correlate ArgoCD deployment manually to several commits',
-        'datadog-ci deployment correlate --provider argocd --config-repo https://github.com/my-manifests-repo --config-shas 92eb0db6926aaf51b9fb223895b6d8d1c0ff1ff4 --config-shas e996e5c30ba1cb4dc7f634ab4a0a59473741c4de',
-      ],
-    ],
-  })
-
-  private cdProviderParam = Option.String('--provider')
-  private configurationRepo = Option.String('--config-repo')
-  private configurationShas = Option.Array('--config-shas')
-  private dryRun = Option.Boolean('--dry-run', false)
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-
+export class PluginCommand extends DeploymentCorrelateCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
