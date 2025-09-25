@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import {commands as migratedCommands} from '@datadog/datadog-ci-base/cli'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
