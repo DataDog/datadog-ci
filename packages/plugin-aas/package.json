@@ -2,6 +2,10 @@
   "name": "@datadog/datadog-ci-plugin-aas",
   "version": "3.21.0",
   "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-aas",
   "repository": {
     "type": "git",

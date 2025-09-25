@@ -3,6 +3,10 @@
   "version": "3.21.0",
   "description": "Run datadog actions from the CI.",
   "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci",
   "repository": {
     "type": "git",

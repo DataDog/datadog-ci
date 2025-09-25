@@ -2,6 +2,10 @@
   "name": "@datadog/datadog-ci-plugin-dora",
   "version": "3.21.0",
   "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci"
+  ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-dora",
   "repository": {
     "type": "git",
@@ -9,6 +13,7 @@
     "directory": "packages/plugin-dora"
   },
   "exports": {
+    "./package.json": "./package.json",
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
