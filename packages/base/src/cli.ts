@@ -28,6 +28,7 @@ import {TagCommand} from './commands/tag/tag-command'
 // prettier-ignore
 export const commands = {
   'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
+  'deployment': [DeploymentMarkCommand, DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand],
   'dora': [DORADeploymentCommand],
   'gate': [GateEvaluateCommand],
   'git-metadata': [UploadCommand],
@@ -38,7 +39,6 @@ export const commands = {
   'stepfunctions': [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],
   'synthetics': [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand],
   'tag': [TagCommand],
-  'deployment': [DeploymentMarkCommand,DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand],
 } satisfies RecordWithKebabCaseKeys
 
 /**
