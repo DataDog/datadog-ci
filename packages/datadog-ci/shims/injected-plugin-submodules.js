@@ -8,6 +8,12 @@ const injectedPluginSubmodules = {
     'uninstrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/uninstrument'),
     'flare': require('@datadog/datadog-ci-plugin-cloud-run/commands/flare'),
   },
+  'deployment': {
+    'correlate': require('@datadog/datadog-ci-plugin-deployment/commands/correlate'),
+    'correlate-image': require('@datadog/datadog-ci-plugin-deployment/commands/correlate-image'),
+    'gate': require('@datadog/datadog-ci-plugin-deployment/commands/gate'),
+    'mark': require('@datadog/datadog-ci-plugin-deployment/commands/mark'),
+  },
   'dora': {
     'deployment': require('@datadog/datadog-ci-plugin-dora/commands/deployment'),
   },

@@ -1,8 +1,8 @@
+import {DeploymentMarkCommand} from '@datadog/datadog-ci-base/commands/deployment/mark-command'
 import {TagCommand} from '@datadog/datadog-ci-base/commands/tag/tag-command'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {Command, Option} from 'clipanion'
 
 import {
   CUSTOM_TAGS_TAG,
@@ -12,49 +12,9 @@ import {
   REVISION_TAG,
   SERVICE_TAG,
   CONTAINS_DEPLOYMENT_TAG,
-} from './constants'
+} from '../constants'
 
-/**
- * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
- * as deployments and setting specific properties, like the environment or the revision in a simple way.
- */
-export class DeploymentMarkCommand extends Command {
-  public static paths = [['deployment', 'mark']]
-
-  public static usage = Command.Usage({
-    category: 'CI Visibility',
-    description: 'Mark a CI job as a deployment.',
-    details: `
-      This command will mark a CI job as a deployment.\n
-      See README for details.
-    `,
-    examples: [
-      ['Mark a CI job as a deployment', 'datadog-ci deployment mark'],
-      ['Mark a CI job as a deployment to the staging environment', 'datadog-ci deployment mark --env:staging'],
-      ['Mark a CI job as a rollback deployment', 'datadog-ci deployment mark --is-rollback'],
-      ['Mark a CI job as a deployment of the v123-456 version', 'datadog-ci deployment mark --revision:v123-456'],
-      [
-        'Mark a CI job as a deployment for service payment-service',
-        'datadog-ci deployment mark --service:payment-service',
-      ],
-    ],
-  })
-
-  private noFail = Option.Boolean('--no-fail', false)
-  private isRollback = Option.Boolean('--is-rollback', false)
-  private env = Option.String('--env', {
-    description: 'Example: prod',
-  })
-  private revision = Option.String('--revision', {
-    description: 'Example: 1.0.0',
-  })
-  private service = Option.String('--service', {
-    description: 'Example: payment-service',
-  })
-  private tags = Option.Array('--tags')
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+export class PluginCommand extends DeploymentMarkCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
