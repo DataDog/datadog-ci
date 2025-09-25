@@ -2,6 +2,7 @@
   "name": "@datadog/datadog-ci-plugin-synthetics",
   "version": "3.21.0",
   "license": "Apache-2.0",
+  "description": "Datadog CI plugin for `synthetics` commands",
   "keywords": [
     "datadog",
     "datadog-ci",
