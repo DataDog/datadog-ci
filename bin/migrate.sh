@@ -33,6 +33,7 @@ mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
+rm "$DST_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
