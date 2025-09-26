@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-stepfunctions",
-  "version": "3.21.3",
+  "version": "3.21.4",
   "license": "Apache-2.0",
   "description": "Datadog CI plugin for `stepfunctions` commands",
   "keywords": [
