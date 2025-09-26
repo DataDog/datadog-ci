@@ -1470,9 +1470,7 @@ __metadata:
   dependencies:
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     simple-git: "npm:3.16.0"
-    typanion: "npm:^3.14.0"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
