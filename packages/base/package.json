@@ -104,6 +104,7 @@
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
     "datadog-metrics": "0.9.3",
+    "debug": "^4.4.1",
     "deep-extend": "0.6.0",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
@@ -120,6 +121,7 @@
   },
   "devDependencies": {
     "@types/async-retry": "1.4.8",
+    "@types/debug": "^4.1.12",
     "@types/deep-extend": "0.4.31",
     "@types/inquirer": "8.2.6",
     "@types/semver": "^7.7.1",

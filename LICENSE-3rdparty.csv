@@ -13,6 +13,7 @@ Component,Origin,Licence,Copyright
 @smithy/util-retry,import,Apache-2.0,"Copyright 2019 Amazon.com, Inc. or its affiliates."
 @types/async-retry,dev,MIT,Copyright (c) Microsoft Corporation
 @types/datadog-metrics,dev,MIT,Copyright (c) Microsoft Corporation
+@types/debug,dev,MIT,Copyright (c) Microsoft Corporation
 @types/tiny-async-pool,dev,MIT,Copyright (c) Microsoft Corporation
 @types/deep-extend,dev,MIT,Copyright Microsoft Corporation
 @types/inquirer,dev,MIT,Copyright Microsoft Corporation
