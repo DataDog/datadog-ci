@@ -2,6 +2,7 @@ import {inspect} from 'node:util'
 
 import chalk from 'chalk'
 import {Command, CommandClass} from 'clipanion'
+import createDebug from 'debug'
 
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
@@ -11,11 +12,17 @@ import {messageBox} from './message-box'
 export type PluginPackageJson = {name: string; version: string}
 export type PluginSubModule = {PluginCommand: CommandClass}
 
+// Use `DEBUG=plugins` to enable debug logs
+const debug = createDebug('plugins')
+
 export const executePluginCommand = async <T extends Command>(instance: T): Promise<number | void> => {
   const [scope, command] = instance.path
+  debug(`Executing command ${command} in plugin ${scope}`)
 
   try {
     const submodule = await importPluginSubmodule(scope, command)
+    debug(`Done importing plugin command`)
+
     const pluginCommand = Object.assign(new submodule.PluginCommand(), instance)
 
     return pluginCommand.execute()
@@ -34,6 +41,8 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
         '',
       ].join('\n')
     )
+
+    debug('Original error:', error)
 
     return 1
   }
@@ -93,9 +102,13 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (await isStandaloneBinary()) {
+    debug(`Loading plugin injected in the standalone binary`)
+
     // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
     return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
   }
+
+  debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
 
   return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
 }

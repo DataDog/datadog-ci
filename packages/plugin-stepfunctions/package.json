@@ -35,13 +35,12 @@
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
     "@aws-sdk/client-iam": "^3.709.0",
     "@aws-sdk/client-sfn": "^3.709.0",
-    "@datadog/datadog-ci-base": "workspace:*",
     "deep-object-diff": "^1.1.9"
   },
   "devDependencies": {

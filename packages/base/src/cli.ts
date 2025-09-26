@@ -1,6 +1,8 @@
 /* eslint-disable quote-props */
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
+import {InstrumentCommand as AasInstrumentCommand} from './commands/aas/instrument'
+import {UninstrumentCommand as AasUninstrumentCommand} from './commands/aas/uninstrument'
 import {CloudRunFlareCommand} from './commands/cloud-run/flare'
 import {InstrumentCommand as CloudRunInstrumentCommand} from './commands/cloud-run/instrument'
 import {UninstrumentCommand as CloudRunUninstrumentCommand} from './commands/cloud-run/uninstrument'
@@ -27,6 +29,7 @@ import {TagCommand} from './commands/tag/tag-command'
 
 // prettier-ignore
 export const commands = {
+  'aas': [AasInstrumentCommand, AasUninstrumentCommand],
   'cloud-run': [CloudRunInstrumentCommand, CloudRunUninstrumentCommand, CloudRunFlareCommand],
   'deployment': [DeploymentMarkCommand, DeploymentCorrelateCommand, DeploymentCorrelateImageCommand, DeploymentGateCommand],
   'dora': [DORADeploymentCommand],

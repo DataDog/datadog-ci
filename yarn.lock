@@ -1372,6 +1372,7 @@ __metadata:
   dependencies:
     "@types/async-retry": "npm:1.4.8"
     "@types/datadog-metrics": "npm:0.6.1"
+    "@types/debug": "npm:^4.1.12"
     "@types/deep-extend": "npm:0.4.31"
     "@types/inquirer": "npm:8.2.6"
     "@types/semver": "npm:^7.7.1"
@@ -1381,6 +1382,7 @@ __metadata:
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     datadog-metrics: "npm:0.9.3"
+    debug: "npm:^4.4.1"
     deep-extend: "npm:0.6.0"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
@@ -1437,11 +1439,10 @@ __metadata:
     "@azure/arm-appservice": "npm:^16.0.0"
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
-    "@datadog/datadog-ci-base": "workspace:*"
     chalk: "npm:3.0.0"
     fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1449,7 +1450,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@google-cloud/logging": "npm:^11.2.0"
     "@google-cloud/run": "npm:^3.0.0"
     chalk: "npm:3.0.0"
@@ -1460,7 +1460,7 @@ __metadata:
     ora: "npm:5.4.1"
     upath: "npm:^2.0.1"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1468,14 +1468,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     simple-git: "npm:3.16.0"
-    typanion: "npm:^3.14.0"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1483,12 +1480,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     axios: "npm:^1.11.0"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.16.0"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1496,13 +1492,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@types/uuid": "npm:^9.0.2"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     uuid: "npm:^9.0.0"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1515,7 +1510,6 @@ __metadata:
     "@aws-sdk/credential-provider-ini": "npm:^3.709.0"
     "@aws-sdk/credential-providers": "npm:^3.709.0"
     "@aws-sdk/types": "npm:^3.887.0"
-    "@datadog/datadog-ci-base": "workspace:*"
     "@smithy/property-provider": "npm:^2.0.12"
     "@smithy/util-retry": "npm:^2.0.4"
     aws-sdk-client-mock: "npm:^4.1.0"
@@ -1529,7 +1523,7 @@ __metadata:
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1537,7 +1531,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/node": "npm:^18.19.76"
     "@types/uuid": "npm:^9.0.2"
@@ -1550,7 +1543,7 @@ __metadata:
     upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1558,7 +1551,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/node": "npm:^18.19.76"
     ajv: "npm:^8.12.0"
@@ -1569,7 +1561,7 @@ __metadata:
     simple-git: "npm:3.16.0"
     upath: "npm:^2.0.1"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1580,11 +1572,10 @@ __metadata:
     "@aws-sdk/client-cloudwatch-logs": "npm:^3.709.0"
     "@aws-sdk/client-iam": "npm:^3.709.0"
     "@aws-sdk/client-sfn": "npm:^3.709.0"
-    "@datadog/datadog-ci-base": "workspace:*"
     aws-sdk-client-mock: "npm:^4.1.0"
     deep-object-diff: "npm:^1.1.9"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -1592,7 +1583,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@types/deep-extend": "npm:0.4.31"
     "@types/set-value": "npm:^4.0.3"
     "@types/ssh2": "npm:1.15.5"
@@ -1614,7 +1604,7 @@ __metadata:
     xml2js: "npm:0.5.0"
     yamux-js: "npm:0.1.2"
   peerDependencies:
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -3593,6 +3583,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/debug@npm:^4.1.12":
+  version: 4.1.12
+  resolution: "@types/debug@npm:4.1.12"
+  dependencies:
+    "@types/ms": "npm:*"
+  checksum: 10/47876a852de8240bfdaf7481357af2b88cb660d30c72e73789abf00c499d6bc7cd5e52f41c915d1b9cd8ec9fef5b05688d7b7aef17f7f272c2d04679508d1053
+  languageName: node
+  linkType: hard
+
 "@types/deep-extend@npm:0.4.31":
   version: 0.4.31
   resolution: "@types/deep-extend@npm:0.4.31"
@@ -3679,6 +3678,13 @@ __metadata:
   version: 4.0.2
   resolution: "@types/long@npm:4.0.2"
   checksum: 10/68afa05fb20949d88345876148a76f6ccff5433310e720db51ac5ca21cb8cc6714286dbe04713840ddbd25a8b56b7a23aa87d08472fabf06463a6f2ed4967707
+  languageName: node
+  linkType: hard
+
+"@types/ms@npm:*":
+  version: 2.1.0
+  resolution: "@types/ms@npm:2.1.0"
+  checksum: 10/532d2ebb91937ccc4a89389715e5b47d4c66e708d15942fe6cc25add6dc37b2be058230a327dd50f43f89b8b6d5d52b74685a9e8f70516edfc9bdd6be910eff4
   languageName: node
   linkType: hard
 

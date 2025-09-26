@@ -33,6 +33,7 @@ mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
+rm "$DST_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -75,7 +76,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
@@ -87,7 +88,6 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "@azure/arm-appservice": "^16.0.0",
     "@azure/arm-resources": "^6.1.0",
     "@azure/identity": "^4.10.1",
-    "@datadog/datadog-ci-base": "workspace:*",
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "@smithy/property-provider": "^2.0.12",
@@ -114,8 +114,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "typanion": "^3.14.0",
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
-  },
-  "devDependencies": {}
+  }
 }
 EOF
 

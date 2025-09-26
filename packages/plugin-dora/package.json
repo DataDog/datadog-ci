@@ -35,10 +35,9 @@
     "prepack": "yarn package:clean-dist"
   },
   "peerDependencies": {
-    "@datadog/datadog-ci": "workspace:*"
+    "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@datadog/datadog-ci-base": "workspace:*",
     "axios": "^1.11.0",
     "chalk": "3.0.0",
     "simple-git": "3.16.0"
