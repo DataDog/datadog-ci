@@ -3,6 +3,10 @@
 
 // prettier-ignore
 const injectedPluginSubmodules = {
+  'aas': {
+    'instrument': require('@datadog/datadog-ci-plugin-aas/commands/instrument'),
+    'uninstrument': require('@datadog/datadog-ci-plugin-aas/commands/uninstrument'),
+  },
   'cloud-run': {
     'instrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/instrument'),
     'uninstrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/uninstrument'),
