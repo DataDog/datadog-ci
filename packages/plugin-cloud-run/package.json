@@ -19,6 +19,9 @@
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
+    },
+    "./commands/*-bundled": {
+      "default": "./dist/commands/*-bundled.js"
     }
   },
   "files": [
@@ -30,15 +33,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "yarn package:clean; yarn package:build",
+    "build": "yarn package:clean && yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn build && yarn package:clean-dist && yarn package:bundle-plugin-commands"
   },
   "peerDependencies": {
     "@datadog/datadog-ci": "workspace:*"
   },
   "dependencies": {
-    "@datadog/datadog-ci-base": "workspace:*",
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "chalk": "3.0.0",
@@ -48,5 +50,8 @@
     "jest-diff": "^30.0.4",
     "ora": "5.4.1",
     "upath": "^2.0.1"
+  },
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
   }
 }

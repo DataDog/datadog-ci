@@ -2,6 +2,7 @@ import {inspect} from 'node:util'
 
 import chalk from 'chalk'
 import {Command, CommandClass} from 'clipanion'
+import createDebug from 'debug'
 
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
@@ -11,11 +12,17 @@ import {messageBox} from './message-box'
 export type PluginPackageJson = {name: string; version: string}
 export type PluginSubModule = {PluginCommand: CommandClass}
 
+// Use `DEBUG=plugins` to enable debug logs
+const debug = createDebug('plugins')
+
 export const executePluginCommand = async <T extends Command>(instance: T): Promise<number | void> => {
   const [scope, command] = instance.path
+  debug(`Executing command ${command} in plugin ${scope}`)
 
   try {
     const submodule = await importPluginSubmodule(scope, command)
+    debug(`Done importing plugin command`)
+
     const pluginCommand = Object.assign(new submodule.PluginCommand(), instance)
 
     return pluginCommand.execute()
@@ -93,11 +100,29 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (await isStandaloneBinary()) {
+    debug(`Loading plugin injected in the standalone binary`)
+
     // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
     return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
   }
 
-  return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
+  // Use `FORCE_LOAD_BUNDLED_PLUGIN_COMMANDS=1` to force load bundled plugin commands in development mode
+  if (process.execArgv.includes('--conditions=development') && !process.env.FORCE_LOAD_BUNDLED_PLUGIN_COMMANDS) {
+    debug(`Loading development plugin command at ./packages/plugin-${scope}/src/commands/${command}.ts`)
+
+    return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
+  }
+
+  // Load bundled plugin commands in production mode
+  debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}-bundled.js`)
+
+  const bundled = (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}-bundled`)) as {
+    factory: (require: NodeJS.Require) => PluginSubModule
+  }
+
+  debug('Calling factory to get the plugin command')
+
+  return bundled.factory(require)
 }
 
 const scopeToPackageName = (scope: string): string => {

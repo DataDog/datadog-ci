@@ -19,6 +19,9 @@
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
+    },
+    "./commands/*-bundled": {
+      "default": "./dist/commands/*-bundled.js"
     }
   },
   "files": [
@@ -30,9 +33,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "yarn package:clean; yarn package:build",
+    "build": "yarn package:clean && yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn build && yarn package:clean-dist && yarn package:bundle-plugin-commands"
   },
   "peerDependencies": {
     "@datadog/datadog-ci": "workspace:*"
@@ -41,10 +44,10 @@
     "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
     "@aws-sdk/client-iam": "^3.709.0",
     "@aws-sdk/client-sfn": "^3.709.0",
-    "@datadog/datadog-ci-base": "workspace:*",
     "deep-object-diff": "^1.1.9"
   },
   "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "aws-sdk-client-mock": "^4.1.0"
   }
 }

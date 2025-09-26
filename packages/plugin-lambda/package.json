@@ -19,6 +19,9 @@
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
+    },
+    "./commands/*-bundled": {
+      "default": "./dist/commands/*-bundled.js"
     }
   },
   "files": [
@@ -30,9 +33,9 @@
     "access": "public"
   },
   "scripts": {
-    "build": "yarn package:clean; yarn package:build",
+    "build": "yarn package:clean && yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn build && yarn package:clean-dist && yarn package:bundle-plugin-commands"
   },
   "peerDependencies": {
     "@datadog/datadog-ci": "workspace:*"
@@ -43,7 +46,6 @@
     "@aws-sdk/credential-provider-ini": "^3.709.0",
     "@aws-sdk/credential-providers": "^3.709.0",
     "@aws-sdk/types": "^3.887.0",
-    "@datadog/datadog-ci-base": "workspace:*",
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
     "chalk": "3.0.0",
@@ -55,6 +57,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "aws-sdk-client-mock": "^4.1.0",
     "aws-sdk-client-mock-jest": "^4.1.0",
     "clipanion": "^3.2.1"

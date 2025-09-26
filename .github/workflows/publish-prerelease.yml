@@ -11,7 +11,6 @@ jobs:
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
-      - run: yarn build
       - run: |
           # Isolate the tag and exit if none found
           IFS='-' read -ra ARR_TAG <<< $TAG

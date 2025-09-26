@@ -19,6 +19,9 @@
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
+    },
+    "./commands/*-bundled": {
+      "default": "./dist/commands/*-bundled.js"
     }
   },
   "files": [
@@ -30,15 +33,14 @@
     "access": "public"
   },
   "scripts": {
-    "build": "yarn package:clean; yarn package:build",
+    "build": "yarn package:clean && yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn build && yarn package:clean-dist && yarn package:bundle-plugin-commands"
   },
   "peerDependencies": {
     "@datadog/datadog-ci": "workspace:*"
   },
   "dependencies": {
-    "@datadog/datadog-ci-base": "workspace:*",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "axios": "^1.11.0",
@@ -49,6 +51,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "@types/jest": "29.5.3",
     "@types/node": "^18.19.76",
     "@types/uuid": "^9.0.2"

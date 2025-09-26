@@ -229,7 +229,6 @@ jobs:
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
-      - run: yarn build
       - run: yarn publish:all
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}

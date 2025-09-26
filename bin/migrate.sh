@@ -59,6 +59,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
+    },
+    "./commands/*-bundled": {
+      "default": "./dist/commands/*-bundled.js"
     }
   },
   "files": [
@@ -70,9 +73,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "access": "public"
   },
   "scripts": {
-    "build": "yarn package:clean; yarn package:build",
+    "build": "yarn package:clean && yarn package:build",
     "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
+    "prepack": "yarn build && yarn package:clean-dist && yarn package:bundle-plugin-commands"
   },
   "peerDependencies": {
     "@datadog/datadog-ci": "workspace:*"
@@ -87,7 +90,6 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "@azure/arm-appservice": "^16.0.0",
     "@azure/arm-resources": "^6.1.0",
     "@azure/identity": "^4.10.1",
-    "@datadog/datadog-ci-base": "workspace:*",
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "@smithy/property-provider": "^2.0.12",
@@ -115,7 +117,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
+  }
 }
 EOF
 
