@@ -29,11 +29,17 @@ if [ ! -d "$SRC_DIR" ]; then
   echo "Source directory $SRC_DIR does not exist!"
   exit 1
 fi
+if [ -d "$DST_DIR" ]; then
+  echo "Destination directory $DST_DIR already exists!"
+  echo "You can run \`rm -rf packages/plugin-$SCOPE && rm -rf packages/base/src/commands/$SCOPE\` to clean up a previous run of this script."
+  exit 1
+fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
-rm "$DST_DIR/cli.ts"
+mkdir -p "packages/base/src/commands/$SCOPE"
+mv "$DST_DIR/cli.ts" "packages/base/src/commands/$SCOPE/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -43,7 +49,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "name": "$PLUGIN_PKG",
   "version": "$(jq -r .version packages/base/package.json)",
   "license": "Apache-2.0",
-  "description": "Datadog CI plugin for `$SCOPE` commands",
+  "description": "Datadog CI plugin for \`$SCOPE\` commands",
   "keywords": [
     "datadog",
     "datadog-ci",
@@ -155,37 +161,15 @@ echo Updating known shared imports...
 print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
 echo Done
 
-echo 6. Add plugin folder to tsconfig.json and packages/datadog-ci/tsconfig.json
-sed -i -e 's|in the future.|in the future.\n    {\n      "path": "./'"${PLUGIN_DIR}"'"\n    },|g' tsconfig.json
-sed -i -e 's|Add Plugins Here:|Add Plugins Here:\n    {\n      "path": "../'"plugin-$SCOPE"'"\n    },|g' packages/datadog-ci/tsconfig.json
-echo Done
-
-echo 7. Update CI configuration
-
-CI_FILE=".github/workflows/ci.yml"
-BASE_LINE='"@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",'
-PLUGIN_LINE="              \"$PLUGIN_PKG\": \"file:./artifacts/@datadog-datadog-ci-plugin-$SCOPE-\${{ matrix.version }}.tgz\","
-
-if grep -q "$BASE_LINE" "$CI_FILE"; then
-  # Insert the plugin package line after the datadog-ci-base line in ci.yml
-  sed -i -e "s|$BASE_LINE|$BASE_LINE\\n$PLUGIN_LINE|" "$CI_FILE"
-  echo "Updated .github/workflows/ci.yml to include $PLUGIN_PKG"
-else
-  echo "Could not find base line in .github/workflows/ci.yml -- please add the following line manually:
-$PLUGIN_LINE" 
-fi
-
-echo 8. Update CODEOWNERS
+echo 6. Update CODEOWNERS
 CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | sed 's|\s\+| |g' | cut -d' ' -f 2-)
 sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SCOPE|" .github/CODEOWNERS
 echo Done
 
-echo 9. Check if we can automatically knip
-yarn install
+echo "7. Run \`yarn lint:packages --fix\`"
+yarn lint:packages --fix
+
 if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
-  echo "Linting passed, running knip..."
-  yarn knip || true
-  yarn
   echo Done
 else
   echo "Linting failed. Please fix the issues manually."
@@ -198,4 +182,3 @@ echo "- Commit the changes, then make the following manual changes:"
 echo "- Move any shared helpers to @datadog/datadog-ci-base if needed."
 echo "- Split FooCommand/PluginCommand classes as described in https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor"
 echo "- Run yarn build, yarn lint, and yarn knip as needed to ensure everything works."
-echo "- Update packages/datadog-ci/shims/injected-plugin-submodules.js"

@@ -1,3 +1,4 @@
+import {execSync} from 'child_process'
 import fs from 'fs'
 // eslint-disable-next-line no-restricted-imports
 import path from 'path'
@@ -25,6 +26,15 @@ type PluginPackage = Package & {
 const fix = process.argv.includes('--fix')
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+
+const exec = (cmd: string) => {
+  console.log(chalk.bold.blue(`\nRunning ${cmd}...\n`))
+  try {
+    execSync(cmd, {stdio: 'inherit'})
+  } catch {
+    // ignore exit status
+  }
+}
 
 const loadPackage = (folderName: string): Package => {
   const folder = path.join('packages', folderName)
@@ -331,3 +341,6 @@ if (Object.keys(localReferenceRanges).length > 1) {
 // #endregion
 
 // #endregion
+
+exec('yarn knip')
+exec('yarn install')
