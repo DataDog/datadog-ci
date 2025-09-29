@@ -32,6 +32,7 @@
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:all": "eslint --cache --quiet '**/*.ts'",
+    "lint:packages": "tsx --conditions=development bin/lint-packages.ts",
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "publish:all": "yarn loop-packages --topological --verbose npm publish",
     "version:all": "yarn loop-packages version ${0} --immediate",
@@ -49,9 +50,11 @@
     "tsc:build": "tsc --build --verbose"
   },
   "devDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@stylistic/eslint-plugin": "^5.3.1",
     "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch",
+    "chalk": "3.0.0",
     "dd-trace": "^5.42.0",
     "eslint": "^9.34.0",
     "eslint-config-prettier": "^10.1.8",
@@ -62,6 +65,7 @@
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^5.5.4",
     "jest": "29.6.2",
+    "jest-diff": "^30.0.4",
     "prettier": "^3.6.2",
     "rimraf": "^5.0.0",
     "ts-jest": "29.1.1",
