@@ -3,43 +3,20 @@
   "compilerOptions": {
     "noEmit": true
   },
+  // All plugins are listed here so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
   "references": [
-    {
-      "path": "./packages/datadog-ci"
-    },
-    // List every plugin here, so they keep being built even when we drop them from `@datadog/datadog-ci` in the future.
-    {
-      "path": "./packages/plugin-deployment"
-    },
-    {
-      "path": "./packages/plugin-dora"
-    },
-    {
-      "path": "./packages/plugin-stepfunctions"
-    },
-    {
-      "path": "./packages/plugin-lambda"
-    },
-    {
-      "path": "./packages/plugin-cloud-run"
-    },
-    {
-      "path": "./packages/plugin-sarif"
-    },
-    {
-      "path": "./packages/plugin-sbom"
-    },
-    {
-      "path": "./packages/plugin-aas"
-    },
-    {
-      "path": "./packages/plugin-synthetics"
-    },
-    {
-      "path": "./packages/plugin-gate"
-    }
+    {"path": "./packages/base"},
+    {"path": "./packages/datadog-ci"},
+    {"path": "./packages/plugin-aas"},
+    {"path": "./packages/plugin-cloud-run"},
+    {"path": "./packages/plugin-deployment"},
+    {"path": "./packages/plugin-dora"},
+    {"path": "./packages/plugin-gate"},
+    {"path": "./packages/plugin-lambda"},
+    {"path": "./packages/plugin-sarif"},
+    {"path": "./packages/plugin-sbom"},
+    {"path": "./packages/plugin-stepfunctions"},
+    {"path": "./packages/plugin-synthetics"}
   ],
-  "exclude": [
-    "*"
-  ] // Exclude everything from the root project.
+  "include": ["bin/lint-packages.ts"]
 }

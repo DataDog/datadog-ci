@@ -8,13 +8,13 @@ const injectedPluginSubmodules = {
     'uninstrument': require('@datadog/datadog-ci-plugin-aas/commands/uninstrument'),
   },
   'cloud-run': {
+    'flare': require('@datadog/datadog-ci-plugin-cloud-run/commands/flare'),
     'instrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/instrument'),
     'uninstrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/uninstrument'),
-    'flare': require('@datadog/datadog-ci-plugin-cloud-run/commands/flare'),
   },
   'deployment': {
-    'correlate': require('@datadog/datadog-ci-plugin-deployment/commands/correlate'),
     'correlate-image': require('@datadog/datadog-ci-plugin-deployment/commands/correlate-image'),
+    'correlate': require('@datadog/datadog-ci-plugin-deployment/commands/correlate'),
     'gate': require('@datadog/datadog-ci-plugin-deployment/commands/gate'),
     'mark': require('@datadog/datadog-ci-plugin-deployment/commands/mark'),
   },
@@ -25,9 +25,9 @@ const injectedPluginSubmodules = {
     'evaluate': require('@datadog/datadog-ci-plugin-gate/commands/evaluate'),
   },
   'lambda': {
+    'flare': require('@datadog/datadog-ci-plugin-lambda/commands/flare'),
     'instrument': require('@datadog/datadog-ci-plugin-lambda/commands/instrument'),
     'uninstrument': require('@datadog/datadog-ci-plugin-lambda/commands/uninstrument'),
-    'flare': require('@datadog/datadog-ci-plugin-lambda/commands/flare'),
   },
   'sarif': {
     'upload': require('@datadog/datadog-ci-plugin-sarif/commands/upload'),
@@ -40,10 +40,10 @@ const injectedPluginSubmodules = {
     'uninstrument': require('@datadog/datadog-ci-plugin-stepfunctions/commands/uninstrument'),
   },
   'synthetics': {
-    'run-tests': require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests'),
     'deploy-tests': require('@datadog/datadog-ci-plugin-synthetics/commands/deploy-tests'),
-    'upload-application': require('@datadog/datadog-ci-plugin-synthetics/commands/upload-application'),
     'import-tests': require('@datadog/datadog-ci-plugin-synthetics/commands/import-tests'),
+    'run-tests': require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests'),
+    'upload-application': require('@datadog/datadog-ci-plugin-synthetics/commands/upload-application'),
   },
 }
 
