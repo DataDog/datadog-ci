@@ -1532,7 +1532,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif"
   dependencies:
     "@types/jest": "npm:29.5.3"
-    "@types/node": "npm:^18.19.76"
     "@types/uuid": "npm:^9.0.2"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
@@ -1552,7 +1551,6 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
   dependencies:
     "@types/jest": "npm:29.5.3"
-    "@types/node": "npm:^18.19.76"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
     axios: "npm:^1.11.0"
@@ -3859,12 +3857,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^18.19.76":
-  version: 18.19.76
-  resolution: "@types/node@npm:18.19.76"
+"@types/node@npm:^20.19.18":
+  version: 20.19.18
+  resolution: "@types/node@npm:20.19.18"
   dependencies:
-    undici-types: "npm:~5.26.4"
-  checksum: 10/844799baffeaecc0951ebd5a3ed5aeef468cbf04aa597d69443dd60e18441efeac6ced94d742ee3369f5f8fd950c5199fbc30811f3e404730f60696d1b8a445a
+    undici-types: "npm:~6.21.0"
+  checksum: 10/83aabe25445a16e24d8effe24464f6f9dcba74209509e36b04f81183b50fe972398cc74445d90ba549c4bfcb13225c0733d453d9560bb6a3e24105575b364354
   languageName: node
   linkType: hard
 
@@ -5406,6 +5404,7 @@ __metadata:
     "@datadog/datadog-ci-base": "workspace:*"
     "@microsoft/eslint-formatter-sarif": "npm:^3.1.0"
     "@stylistic/eslint-plugin": "npm:^5.3.1"
+    "@types/node": "npm:^20.19.18"
     "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch"
     chalk: "npm:3.0.0"
     dd-trace: "npm:^5.42.0"
@@ -11065,6 +11064,13 @@ __metadata:
   version: 5.26.5
   resolution: "undici-types@npm:5.26.5"
   checksum: 10/0097779d94bc0fd26f0418b3a05472410408877279141ded2bd449167be1aed7ea5b76f756562cb3586a07f251b90799bab22d9019ceba49c037c76445f7cddd
+  languageName: node
+  linkType: hard
+
+"undici-types@npm:~6.21.0":
+  version: 6.21.0
+  resolution: "undici-types@npm:6.21.0"
+  checksum: 10/ec8f41aa4359d50f9b59fa61fe3efce3477cc681908c8f84354d8567bb3701fafdddf36ef6bff307024d3feb42c837cf6f670314ba37fc8145e219560e473d14
   languageName: node
   linkType: hard
 

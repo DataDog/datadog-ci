@@ -53,6 +53,7 @@
     "@datadog/datadog-ci-base": "workspace:*",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@stylistic/eslint-plugin": "^5.3.1",
+    "@types/node": "^20.19.18",
     "@yao-pkg/pkg": "patch:@yao-pkg/pkg@npm%3A6.6.0#~/.yarn/patches/@yao-pkg-pkg-npm-6.6.0-d4777368b9.patch",
     "chalk": "3.0.0",
     "dd-trace": "^5.42.0",
