@@ -50,6 +50,7 @@ inquirer,import,MIT,Copyright (c) 2012 Simon Boudrias
 inquirer-checkbox-plus-prompt,import,MIT,Copyright (c) 2018 Mohammad Anas Fares
 jest,dev,MIT,"Copyright (c) Facebook, Inc. and its affiliates."
 js-yaml,import,MIT,Copyright (C) 2011-2015 by Vitaly Puzrin
+knip,dev,ISC,Copyright 2022-2025 Lars Kappert
 ora,import,MIT,Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
 packageurl-js,import,MIT,Copyright (c) the purl authors
 prettier,dev,MIT,Copyright © James Long and contributors

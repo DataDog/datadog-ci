@@ -6,40 +6,18 @@
     "outDir": "./dist"
   },
   "include": ["src", "**/json-schema/**/*.json"],
+  // Only plugins that are dependencies of `@datadog/datadog-ci` are listed here.
   "references": [
-    {
-      "path": "../base"
-    },
-    // Add Plugins Here:
-    {
-      "path": "../plugin-deployment"
-    },
-    {
-      "path": "../plugin-dora"
-    },
-    {
-      "path": "../plugin-stepfunctions"
-    },
-    {
-      "path": "../plugin-lambda"
-    },
-    {
-      "path": "../plugin-cloud-run"
-    },
-    {
-      "path": "../plugin-sarif"
-    },
-    {
-      "path": "../plugin-sbom"
-    },
-    {
-      "path": "../plugin-aas"
-    },
-    {
-      "path": "../plugin-synthetics"
-    },
-    {
-      "path": "../plugin-gate"
-    }
+    {"path": "../base"},
+    {"path": "../plugin-aas"},
+    {"path": "../plugin-cloud-run"},
+    {"path": "../plugin-deployment"},
+    {"path": "../plugin-dora"},
+    {"path": "../plugin-gate"},
+    {"path": "../plugin-lambda"},
+    {"path": "../plugin-sarif"},
+    {"path": "../plugin-sbom"},
+    {"path": "../plugin-stepfunctions"},
+    {"path": "../plugin-synthetics"}
   ]
 }

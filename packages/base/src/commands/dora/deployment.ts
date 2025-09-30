@@ -3,7 +3,7 @@ import * as t from 'typanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-export class DORADeploymentCommand extends Command {
+export class DoraDeploymentCommand extends Command {
   public static paths = [['dora', 'deployment']]
 
   public static usage = Command.Usage({

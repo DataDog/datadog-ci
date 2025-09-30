@@ -1,3 +1,3 @@
-import {TagCommand} from './tag-command'
+import {TagCommand} from './tag'
 
-module.exports = [TagCommand]
+export const commands = [TagCommand]

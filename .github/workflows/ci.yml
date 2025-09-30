@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
+      - run: yarn lint:packages
       - run: yarn build
       - name: Run yarn lint:ci
         run: |
@@ -66,8 +67,6 @@ jobs:
 
     name: Unit tests (Windows)
     runs-on: windows-2022
-    env:
-      FORCE_COLOR: 1
 
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -120,16 +119,16 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-cloud-run": "file:./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-stepfunctions": "file:./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-lambda": "file:./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-cloud-run": "file:./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-stepfunctions": "file:./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz"
@@ -157,8 +156,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -171,8 +170,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit

@@ -1,4 +1,4 @@
-import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate-command'
+import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'

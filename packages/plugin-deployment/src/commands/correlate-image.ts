@@ -1,4 +1,4 @@
-import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image-command'
+import {DeploymentCorrelateImageCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-image'
 import {FIPS_IGNORE_ERROR_ENV_VAR, FIPS_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'

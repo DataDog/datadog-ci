@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import {SarifUploadCommand} from '@datadog/datadog-ci-base/commands/sarif/upload-command'
+import {SarifUploadCommand} from '@datadog/datadog-ci-base/commands/sarif/upload'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {DatadogCiConfig} from '@datadog/datadog-ci-base/helpers/config'
@@ -155,7 +155,6 @@ export class PluginCommand extends SarifUploadCommand {
 
       const validationErrorMessage = validateSarif(sarifReport)
       if (validationErrorMessage) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         this.context.stdout.write(renderInvalidFile(sarifReport, [validationErrorMessage]))
 
         return false
