@@ -1,6 +1,11 @@
-import {CodepushCommand} from './codepush'
-import {InjectDebugIdCommand} from './injectDebugId'
-import {UploadCommand} from './upload'
-import {XCodeCommand} from './xcode'
+import {ReactNativeCodepushCommand} from './codepush'
+import {ReactNativeInjectDebugIdCommand} from './injectDebugId'
+import {ReactNativeUploadCommand} from './upload'
+import {ReactNativeXcodeCommand} from './xcode'
 
-export const commands = [CodepushCommand, UploadCommand, XCodeCommand, InjectDebugIdCommand]
+export const commands = [
+  ReactNativeCodepushCommand,
+  ReactNativeUploadCommand,
+  ReactNativeXcodeCommand,
+  ReactNativeInjectDebugIdCommand,
+]

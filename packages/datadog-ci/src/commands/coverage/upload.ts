@@ -55,7 +55,7 @@ const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
 
-export class UploadCodeCoverageReportCommand extends Command {
+export class CoverageUploadCommand extends Command {
   public static paths = [['coverage', 'upload']]
 
   public static usage = Command.Usage({

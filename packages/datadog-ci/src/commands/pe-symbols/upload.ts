@@ -43,7 +43,7 @@ import {
   renderWarning,
 } from './renderer'
 
-export class UploadCommand extends Command {
+export class PeSymbolsUploadCommand extends Command {
   public static paths = [['pe-symbols', 'upload']]
 
   public static usage = Command.Usage({

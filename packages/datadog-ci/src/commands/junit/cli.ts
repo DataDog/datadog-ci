@@ -1,3 +1,3 @@
-import {UploadJUnitXMLCommand} from './upload'
+import {JunitUploadCommand} from './upload'
 
-export const commands = [UploadJUnitXMLCommand]
+export const commands = [JunitUploadCommand]

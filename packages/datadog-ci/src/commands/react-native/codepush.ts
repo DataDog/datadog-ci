@@ -7,10 +7,10 @@ import {Cli, Command, Option} from 'clipanion'
 
 import {CodepushHistoryCommandError, CodepushHistoryParseError, NoCodepushReleaseError} from './errors'
 import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
-import {UploadCommand} from './upload'
+import {ReactNativeUploadCommand} from './upload'
 import {sanitizeReleaseVersion} from './utils'
 
-export class CodepushCommand extends Command {
+export class ReactNativeCodepushCommand extends Command {
   public static paths = [['react-native', 'codepush']]
 
   public static usage = Command.Usage({
@@ -108,7 +108,7 @@ export class CodepushCommand extends Command {
 
     // Run upload script in the background
     const cli = new Cli()
-    cli.register(UploadCommand)
+    cli.register(ReactNativeUploadCommand)
 
     const uploadCommand = [
       'react-native',

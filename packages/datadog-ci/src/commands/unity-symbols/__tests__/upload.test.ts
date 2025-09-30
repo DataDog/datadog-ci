@@ -9,7 +9,7 @@ import {
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import * as dsyms from '../../dsyms/upload'
+import {DsymsUploadCommand} from '../../dsyms/upload'
 
 import {uploadMultipartHelper} from '../helpers'
 import {
@@ -19,7 +19,7 @@ import {
   renderMissingIL2CPPMappingFile,
   renderMustSupplyPlatform,
 } from '../renderer'
-import {UploadCommand} from '../upload'
+import {UnitySymbolsUploadCommand} from '../upload'
 
 const fixtureDir = 'src/commands/unity-symbols/__tests__/fixtures'
 
@@ -39,8 +39,8 @@ jest.mock('../helpers', () => ({
 }))
 
 describe('unity-symbols upload', () => {
-  const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
-    const command = createCommand(UploadCommand)
+  const runCommand = async (prepFunction: (command: UnitySymbolsUploadCommand) => void) => {
+    const command = createCommand(UnitySymbolsUploadCommand)
     prepFunction(command)
 
     const exitCode = await command.execute()
@@ -48,7 +48,7 @@ describe('unity-symbols upload', () => {
     return {exitCode, context: command.context}
   }
 
-  const mockGitRepoParameters = (command: UploadCommand) => {
+  const mockGitRepoParameters = (command: UnitySymbolsUploadCommand) => {
     command['gitData'] = {
       hash: 'fake-git-hash',
       remote: 'fake-git-remote',
@@ -57,7 +57,7 @@ describe('unity-symbols upload', () => {
   }
 
   test('creates correct metadata payload with arch when supplied', async () => {
-    const command = createCommand(UploadCommand)
+    const command = createCommand(UnitySymbolsUploadCommand)
     command['ios'] = true
     command['symbolsLocation'] = `${fixtureDir}/mappingFile`
     await command['verifyParameters']()
@@ -100,7 +100,7 @@ describe('unity-symbols upload', () => {
     })
 
     test('default ios symbol location is ./datadogSymbols', async () => {
-      let captureCmd: UploadCommand
+      let captureCmd: UnitySymbolsUploadCommand
       const {exitCode} = await runCommand((cmd) => {
         cmd['ios'] = true
         captureCmd = cmd
@@ -111,7 +111,7 @@ describe('unity-symbols upload', () => {
     })
 
     test('default android symbol location is ./unityLibrary/symbols', async () => {
-      let captureCmd: UploadCommand
+      let captureCmd: UnitySymbolsUploadCommand
       const {exitCode} = await runCommand((cmd) => {
         cmd['android'] = true
         captureCmd = cmd
@@ -182,7 +182,7 @@ describe('unity-symbols upload', () => {
       expect(exitCode).toBe(0)
 
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20'],
         expect.anything()
       )
@@ -197,7 +197,7 @@ describe('unity-symbols upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '20', '--dry-run'],
         expect.anything()
       )
@@ -212,7 +212,7 @@ describe('unity-symbols upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', symbolsLocation, '--max-concurrency', '12'],
         expect.anything()
       )
@@ -334,7 +334,7 @@ describe('unity-symbols upload', () => {
       })
 
       test(`creates correct metadata payload for ${platform}`, async () => {
-        const command = createCommand(UploadCommand)
+        const command = createCommand(UnitySymbolsUploadCommand)
         ;(command as any)[platform] = true
         command['symbolsLocation'] = `${fixtureDir}/mappingFile`
         await command['verifyParameters']()

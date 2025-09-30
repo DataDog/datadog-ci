@@ -41,7 +41,7 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
-export class UploadCommand extends Command {
+export class DsymsUploadCommand extends Command {
   public static paths = [['dsyms', 'upload']]
 
   public static usage = Command.Usage({

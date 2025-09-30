@@ -2,7 +2,7 @@ import {createCommand, createMockContext, makeRunCLI} from '@datadog/datadog-ci-
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
-import {UploadCodeCoverageReportCommand} from '../upload'
+import {CoverageUploadCommand} from '../upload'
 import {jacocoFormat} from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
@@ -15,7 +15,7 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = createCommand(UploadCodeCoverageReportCommand, {stdout: {write}})
+      const command = createCommand(CoverageUploadCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
@@ -24,7 +24,7 @@ describe('upload', () => {
 
   describe('getMatchingCoverageReportFilesByFormat', () => {
     test('should read all coverage report files and reject invalid ones', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
@@ -44,7 +44,7 @@ describe('upload', () => {
     })
 
     test('should filter by format', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = jacocoFormat
       command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
@@ -58,7 +58,7 @@ describe('upload', () => {
     })
 
     test('should read all coverage report files excluding ignored paths', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['ignoredPaths'] = 'src/commands/coverage/__tests__/fixtures/subfolder.xml'
       command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
@@ -76,7 +76,7 @@ describe('upload', () => {
     })
 
     test('should read all coverage report files excluding ignored paths specified partially', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['ignoredPaths'] = 'subfolder.xml'
       command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures']
 
@@ -94,7 +94,7 @@ describe('upload', () => {
     })
 
     test('should allow specifying files directly', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
         'src/commands/coverage/__tests__/fixtures/lcov.info',
@@ -110,7 +110,7 @@ describe('upload', () => {
     })
 
     test('should filter files by format if format is provided', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = 'lcov'
       command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures/jacoco-report.xml',
@@ -126,7 +126,7 @@ describe('upload', () => {
     })
 
     test('should not fail for invalid single files', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['reportPaths'] = ['src/commands/coverage/__tests__/fixtures/does-not-exist.xml']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
@@ -137,7 +137,7 @@ describe('upload', () => {
     })
 
     test('should allow folder and single unit paths', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = jacocoFormat
       command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures',
@@ -154,7 +154,7 @@ describe('upload', () => {
     })
 
     test('should not have repeated files', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = jacocoFormat
       command['reportPaths'] = [
         'src/commands/coverage/__tests__/fixtures',
@@ -172,7 +172,7 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders when using glob patterns', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['reportPaths'] = ['**/coverage/**/*.xml']
 
       const result = command['getMatchingCoverageReportFilesByFormat']()
@@ -190,7 +190,7 @@ describe('upload', () => {
     })
 
     test('should filter by format when using glob patterns', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = 'lcov'
       command['reportPaths'] = ['**/coverage/**']
 
@@ -203,7 +203,7 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders and ignore files that are not coverage reports', () => {
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       command['format'] = jacocoFormat
       command['reportPaths'] = ['**/coverage/**']
 
@@ -221,7 +221,7 @@ describe('upload', () => {
     test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {
           env: process.env.DD_ENV,
@@ -237,7 +237,7 @@ describe('upload', () => {
   describe('parseCustomTags', () => {
     test('should parse tags argument', () => {
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = command['getCustomTags'].call({
         config: {},
         context,
@@ -253,7 +253,7 @@ describe('upload', () => {
     test('should parse DD_TAGS environment variable', () => {
       process.env.DD_TAGS = 'key1:https://google.com,key2:value2,key3:1234321'
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = command['getCustomTags'].call({
         config: {
           envVarTags: process.env.DD_TAGS,
@@ -269,7 +269,7 @@ describe('upload', () => {
 
     test('should parse measures argument', () => {
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {},
         context,
@@ -285,7 +285,7 @@ describe('upload', () => {
     test('should parse DD_MEASURES environment variable', () => {
       process.env.DD_MEASURES = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {
           envVarMeasures: process.env.DD_MEASURES,
@@ -304,7 +304,7 @@ describe('upload', () => {
     test('should ignore DD_MEASURES if a non-numeric value is passed', () => {
       process.env.DD_MEASURES = 'key1:321,key2:abc'
       const context = createMockContext()
-      const command = createCommand(UploadCodeCoverageReportCommand)
+      const command = createCommand(CoverageUploadCommand)
       const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {
           envVarMeasures: process.env.DD_MEASURES,
@@ -318,7 +318,7 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = makeRunCLI(UploadCodeCoverageReportCommand, ['coverage', 'upload', '--dry-run'])
+  const runCLI = makeRunCLI(CoverageUploadCommand, ['coverage', 'upload', '--dry-run'])
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/coverage/__tests__/doesnotexist/../fixtures'])

@@ -9,13 +9,13 @@ import chalk from 'chalk'
 import {Cli} from 'clipanion'
 
 import {RNSourcemap} from '../interfaces'
-import {UploadCommand} from '../upload'
+import {ReactNativeUploadCommand} from '../upload'
 
 describe('upload', () => {
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', async () => {
       process.env = {}
-      const command = new UploadCommand()
+      const command = new ReactNativeUploadCommand()
 
       expect(command['getRequestBuilder'].bind(command)).toThrow(
         `Missing ${chalk.bold('DATADOG_API_KEY')} or ${chalk.bold('DD_API_KEY')} in your environment.`
@@ -52,7 +52,7 @@ describe('upload', () => {
   describe('addRepositoryDataToPayloads', () => {
     test('repository url and commit still defined without payload', async () => {
       const write = jest.fn()
-      const command = createCommand(UploadCommand, {stdout: {write}})
+      const command = createCommand(ReactNativeUploadCommand, {stdout: {write}})
 
       const sourcemaps = new Array<RNSourcemap>(
         new RNSourcemap(
@@ -71,7 +71,7 @@ describe('upload', () => {
 
     test('should include payload', async () => {
       const write = jest.fn()
-      const command = createCommand(UploadCommand, {stdout: {write}})
+      const command = createCommand(ReactNativeUploadCommand, {stdout: {write}})
 
       const sourcemaps = new Array<RNSourcemap>(
         new RNSourcemap('main.jsbundle', 'src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle.map')
@@ -95,7 +95,7 @@ describe('execute', () => {
     options?: {configPath?: string; uploadBundle?: boolean; env?: Record<string, string>}
   ) => {
     const cli = new Cli()
-    cli.register(UploadCommand)
+    cli.register(ReactNativeUploadCommand)
 
     const context = createMockContext()
     const command = [

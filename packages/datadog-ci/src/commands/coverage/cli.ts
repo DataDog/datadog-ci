@@ -1,3 +1,3 @@
-import {UploadCodeCoverageReportCommand} from './upload'
+import {CoverageUploadCommand} from './upload'
 
-export const commands = [UploadCodeCoverageReportCommand]
+export const commands = [CoverageUploadCommand]
