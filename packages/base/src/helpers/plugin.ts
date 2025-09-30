@@ -29,12 +29,10 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
   } catch (error) {
     handleErrorGeneric(error, scope, command)
 
-    const packageName = `@datadog/datadog-ci-plugin-${scope}`
-
     console.log(
       [
         `To troubleshoot, run:`,
-        `  ${chalk.bold.cyan(`datadog-ci plugin check`)} ${chalk.magenta(packageName)}`,
+        `  ${chalk.bold.cyan(`datadog-ci plugin check`)} ${chalk.magenta(scope)}`,
         ...(command
           ? [`or`, `  ${chalk.bold.cyan(`datadog-ci plugin check`)} ${chalk.magenta(scope)} ${chalk.magenta(command)}`]
           : []),
@@ -89,7 +87,7 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
     handleErrorGeneric(error, scope, command)
 
     if (isModuleNotFoundError(error)) {
-      console.log(chalk.bold.red('Original NodeJS error:\n'), error)
+      console.log(chalk.bold.red('Original Node.js error:\n'), error)
     }
 
     return false
@@ -145,6 +143,14 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 }
 
+const handleSimulateMissingPlugin = () => {
+  if (!!process.env['SIMULATE_MISSING_PLUGIN']) {
+    const error: NodeJS.ErrnoException = new Error('Simulated "Module not found" error')
+    error.code = 'MODULE_NOT_FOUND'
+    throw error
+  }
+}
+
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (await isStandaloneBinary()) {
     debug(`Loading plugin injected in the standalone binary`)
@@ -156,6 +162,11 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   await handlePluginAutoInstall(scope)
 
   debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
+
+  // Only handle `SIMULATE_MISSING_PLUGIN` when used in combination with `DISABLE_PLUGIN_AUTO_INSTALL`.
+  if (process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
+    handleSimulateMissingPlugin()
+  }
 
   return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
 }
@@ -169,6 +180,8 @@ const scopeToPackageName = (scope: string): string => {
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
+  handleSimulateMissingPlugin()
+
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
     // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
     return extractPackageJson(require(`${scope}/package.json`))
@@ -223,10 +236,10 @@ const handleErrorGeneric = (error: unknown, scope: string, command?: string) => 
     console.log(
       [
         '',
-        `For example, you can install it using:`,
-        `  ${chalk.bold.cyan('npm install')} ${chalk.magenta(packageName)}`,
+        `You can install the plugin using:`,
+        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
         `or`,
-        `  ${chalk.bold.cyan('yarn add')} ${chalk.magenta(packageName)}`,
+        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(packageName)}`,
         '',
       ].join('\n')
     )
