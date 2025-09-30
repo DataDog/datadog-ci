@@ -1,3 +1,6 @@
 import {DoraDeploymentCommand} from './deployment'
 
-export const commands = [DoraDeploymentCommand]
+// prettier-ignore
+export const commands = [
+  DoraDeploymentCommand,
+]

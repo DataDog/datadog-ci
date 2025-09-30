@@ -163,13 +163,13 @@ const formatBasePackageScopeCliFile = (plugin: PluginPackage) => {
     importPath: `./${command}`,
   }))
 
-  const newContent = `
-${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
+  const newContent = `${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
 
 // prettier-ignore
 export const commands = [
 ${imports.map((i) => `  ${i.importName},`).join('\n')}
-]`
+]
+`
 
   return makeApplyChanges(file, originalContent, newContent)
 }

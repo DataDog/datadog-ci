@@ -1,5 +1,10 @@
 import {CloudRunFlareCommand} from './flare'
-import {InstrumentCommand} from './instrument'
-import {UninstrumentCommand} from './uninstrument'
+import {CloudRunInstrumentCommand} from './instrument'
+import {CloudRunUninstrumentCommand} from './uninstrument'
 
-export const commands = [InstrumentCommand, UninstrumentCommand, CloudRunFlareCommand]
+// prettier-ignore
+export const commands = [
+  CloudRunFlareCommand,
+  CloudRunInstrumentCommand,
+  CloudRunUninstrumentCommand,
+]

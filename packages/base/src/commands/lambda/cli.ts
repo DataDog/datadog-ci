@@ -1,5 +1,10 @@
 import {LambdaFlareCommand} from './flare'
-import {InstrumentCommand} from './instrument'
-import {UninstrumentCommand} from './uninstrument'
+import {LambdaInstrumentCommand} from './instrument'
+import {LambdaUninstrumentCommand} from './uninstrument'
 
-export const commands = [InstrumentCommand, UninstrumentCommand, LambdaFlareCommand]
+// prettier-ignore
+export const commands = [
+  LambdaFlareCommand,
+  LambdaInstrumentCommand,
+  LambdaUninstrumentCommand,
+]

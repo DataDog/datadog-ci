@@ -1,4 +1,8 @@
-import {InstrumentCommand} from './instrument'
-import {UninstrumentCommand} from './uninstrument'
+import {AasInstrumentCommand} from './instrument'
+import {AasUninstrumentCommand} from './uninstrument'
 
-export const commands = [InstrumentCommand, UninstrumentCommand]
+// prettier-ignore
+export const commands = [
+  AasInstrumentCommand,
+  AasUninstrumentCommand,
+]

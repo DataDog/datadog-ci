@@ -1,3 +1,6 @@
 import {GateEvaluateCommand} from './evaluate'
 
-export const commands = [GateEvaluateCommand]
+// prettier-ignore
+export const commands = [
+  GateEvaluateCommand,
+]

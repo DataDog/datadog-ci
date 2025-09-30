@@ -1,6 +1,12 @@
-import {DeployTestsCommand} from './deploy-tests'
-import {ImportTestsCommand} from './import-tests'
-import {RunTestsCommand} from './run-tests'
-import {UploadApplicationCommand} from './upload-application'
+import {SyntheticsDeployTestsCommand} from './deploy-tests'
+import {SyntheticsImportTestsCommand} from './import-tests'
+import {SyntheticsRunTestsCommand} from './run-tests'
+import {SyntheticsUploadApplicationCommand} from './upload-application'
 
-export const commands = [RunTestsCommand, DeployTestsCommand, UploadApplicationCommand, ImportTestsCommand]
+// prettier-ignore
+export const commands = [
+  SyntheticsDeployTestsCommand,
+  SyntheticsImportTestsCommand,
+  SyntheticsRunTestsCommand,
+  SyntheticsUploadApplicationCommand,
+]
