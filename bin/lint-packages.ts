@@ -37,7 +37,7 @@ const isCI = !!process.env.CI
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 
 const exec = (cmd: string, {throwError}: {throwError?: boolean} = {}) => {
-  console.log(chalk.bold.blue(`\nRunning ${cmd}...\n`))
+  console.log(chalk.bold.blue(`\nRunning ${cmd}...`))
   try {
     execSync(cmd, {stdio: 'inherit'})
   } catch (e) {
@@ -355,7 +355,7 @@ if (Object.keys(versions).length > 1) {
   error(`All packages must have the same version. Found: ${JSON.stringify(versions, undefined, 2)}`)
   process.exit(1)
 } else {
-  success(`All packages have the same version: ${chalk.bold(Object.keys(versions)[0])}\n`)
+  success(`All packages have the same version: ${chalk.bold(Object.keys(versions)[0])}`)
 }
 // #endregion
 
@@ -381,7 +381,7 @@ if (Object.keys(localReferenceRanges).length > 1) {
   const range = Object.keys(localReferenceRanges)[0]
 
   if (range === 'workspace:*') {
-    success(`All packages refer to local packages with ${chalk.bold('workspace:*')}\n`)
+    success(`All packages refer to local packages with ${chalk.bold('workspace:*')}`)
   } else {
     error(`All packages must refer to local packages with ${chalk.bold('workspace:*')}. Found: ${chalk.bold(range)}`)
     process.exit(1)
