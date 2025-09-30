@@ -17,6 +17,7 @@ import {LambdaFlareCommand} from './commands/lambda/flare'
 import {InstrumentCommand as LambdaInstrumentCommand} from './commands/lambda/instrument'
 import {UninstrumentCommand as LambdaUninstrumentCommand} from './commands/lambda/uninstrument'
 import {CheckCommand} from './commands/plugin/check-command'
+import {InstallCommand} from './commands/plugin/install'
 import {SarifUploadCommand} from './commands/sarif/upload-command'
 import {SbomUploadCommand} from './commands/sbom/upload-command'
 import {InstrumentStepFunctionsCommand} from './commands/stepfunctions/instrument'
@@ -36,7 +37,7 @@ export const commands = {
   'gate': [GateEvaluateCommand],
   'git-metadata': [UploadCommand],
   'lambda': [LambdaInstrumentCommand, LambdaUninstrumentCommand, LambdaFlareCommand],
-  'plugin': [CheckCommand],
+  'plugin': [CheckCommand, InstallCommand],
   'sarif': [SarifUploadCommand],
   'sbom': [SbomUploadCommand],
   'stepfunctions': [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand],

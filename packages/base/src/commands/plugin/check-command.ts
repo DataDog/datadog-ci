@@ -6,8 +6,8 @@ export class CheckCommand extends Command {
   public static paths = [['plugin', 'check']]
 
   public static usage = Command.Usage({
-    category: 'Plugin',
-    description: 'Check the plugin.',
+    category: 'Plugins',
+    description: 'Check and troubleshoot the installation of a plugin.',
     examples: [
       ['Check the plugin by passing its package name', 'datadog-ci plugin check @datadog/datadog-ci-plugin-synthetics'],
       ['Check the plugin by passing its scope', 'datadog-ci plugin check synthetics'],

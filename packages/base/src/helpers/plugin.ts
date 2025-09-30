@@ -98,7 +98,32 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   return true
 }
 
-const ensurePluginIsInstalled = async (scope: string) => {
+export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
+  const pluginName = scopeToPackageName(packageOrScope)
+  const currentVersion = peerDependencies[pluginName as keyof typeof peerDependencies]
+  const basePackage = `@datadog/datadog-ci-base@${currentVersion}`
+  const pluginPackage = `${pluginName}@${currentVersion}`
+
+  // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
+  const {installPackage} = await import('@antfu/install-pkg')
+  const output = await installPackage([basePackage, pluginPackage], {silent: true})
+
+  if (output.exitCode === 0) {
+    console.log()
+    messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage)}`])
+    console.log()
+
+    return true
+  } else {
+    console.log(chalk.bold.red(`Failed to install ${pluginPackage}! 🔌`))
+    console.log('Stdout:', output.stdout)
+    console.log('Stderr:', output.stderr)
+
+    return false
+  }
+}
+
+const handlePluginAutoInstall = async (scope: string) => {
   if (!!process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
     debug('Found DISABLE_PLUGIN_AUTO_INSTALL env variable, skipping auto-install')
 
@@ -114,25 +139,9 @@ const ensurePluginIsInstalled = async (scope: string) => {
       throw error
     }
 
-    const pluginName = `@datadog/datadog-ci-plugin-${scope}`
-    const currentVersion = peerDependencies[pluginName as keyof typeof peerDependencies]
-    const basePackage = `@datadog/datadog-ci-base@${currentVersion}`
-    const pluginPackage = `${pluginName}@${currentVersion}`
-
-    console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...\n`))
-
-    // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
-    const {installPackage} = await import('@antfu/install-pkg')
-    const output = await installPackage([basePackage, pluginPackage], {silent: true})
-
-    if (output.exitCode === 0) {
-      messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage)}`])
-      console.log()
-    } else {
-      console.log(chalk.bold.red(`Failed to install ${pluginPackage}! 🔌`))
-      console.log('Stdout:', output.stdout)
-      console.log('Stderr:', output.stderr)
-    }
+    const pluginName = scopeToPackageName(scope)
+    console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
+    await installPlugin(pluginName)
   }
 }
 
@@ -144,7 +153,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
     return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
   }
 
-  await ensurePluginIsInstalled(scope)
+  await handlePluginAutoInstall(scope)
 
   debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
 
