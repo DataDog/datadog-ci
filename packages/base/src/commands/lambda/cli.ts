@@ -1,3 +1,4 @@
+/* eslint-disable import-x/order */
 import {LambdaFlareCommand} from './flare'
 import {LambdaInstrumentCommand} from './instrument'
 import {LambdaUninstrumentCommand} from './uninstrument'

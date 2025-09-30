@@ -163,7 +163,8 @@ const formatBasePackageScopeCliFile = (plugin: PluginPackage) => {
     importPath: `./${command}`,
   }))
 
-  const newContent = `${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
+  const newContent = `/* eslint-disable import-x/order */
+${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
 
 // prettier-ignore
 export const commands = [

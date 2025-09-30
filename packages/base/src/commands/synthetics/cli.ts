@@ -1,3 +1,4 @@
+/* eslint-disable import-x/order */
 import {SyntheticsDeployTestsCommand} from './deploy-tests'
 import {SyntheticsImportTestsCommand} from './import-tests'
 import {SyntheticsRunTestsCommand} from './run-tests'
