@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {DeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests-command'
+import {DeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'

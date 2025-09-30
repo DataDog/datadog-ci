@@ -1,4 +1,4 @@
-import {DORADeploymentCommand} from '@datadog/datadog-ci-base/commands/dora/deployment-command'
+import {DoraDeploymentCommand} from '@datadog/datadog-ci-base/commands/dora/deployment'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -22,7 +22,7 @@ import {
 
 const nonRetriableErrorCodes = [400, 403]
 
-export class PluginCommand extends DORADeploymentCommand {
+export class PluginCommand extends DoraDeploymentCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,

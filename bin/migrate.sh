@@ -23,17 +23,24 @@ PLUGIN_PKG="@datadog/datadog-ci-plugin-$SCOPE"
 PLUGIN_DIR="packages/plugin-$SCOPE"
 SRC_DIR="packages/datadog-ci/src/commands/$SCOPE"
 DST_DIR="$PLUGIN_DIR/src"
+BASE_DIR="packages/base/src/commands/$SCOPE"
 
 echo 1. Move the folder
 if [ ! -d "$SRC_DIR" ]; then
   echo "Source directory $SRC_DIR does not exist!"
   exit 1
 fi
+if [ -d "$DST_DIR" ]; then
+  echo "Destination directory $DST_DIR already exists!"
+  echo "You can run \`rm -rf packages/plugin-$SCOPE && rm -rf $BASE_DIR\` to clean up a previous run of this script."
+  exit 1
+fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
-rm "$DST_DIR/cli.ts"
+mkdir -p "$BASE_DIR"
+mv "$DST_DIR/cli.ts" "$BASE_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -43,7 +50,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
   "name": "$PLUGIN_PKG",
   "version": "$(jq -r .version packages/base/package.json)",
   "license": "Apache-2.0",
-  "description": "Datadog CI plugin for `$SCOPE` commands",
+  "description": "Datadog CI plugin for \`$SCOPE\` commands",
   "keywords": [
     "datadog",
     "datadog-ci",
@@ -79,36 +86,14 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.709.0",
-    "@aws-sdk/client-iam": "^3.709.0",
-    "@aws-sdk/client-lambda": "^3.709.0",
-    "@aws-sdk/client-sfn": "^3.709.0",
-    "@aws-sdk/credential-provider-ini": "^3.709.0",
-    "@aws-sdk/credential-providers": "^3.709.0",
-    "@azure/arm-appservice": "^16.0.0",
-    "@azure/arm-resources": "^6.1.0",
-    "@azure/identity": "^4.10.1",
-    "@google-cloud/logging": "^11.2.0",
-    "@google-cloud/run": "^3.0.0",
-    "@smithy/property-provider": "^2.0.12",
-    "@smithy/util-retry": "^2.0.4",
-    "ajv": "^8.12.0",
-    "ajv-formats": "^2.1.1",
-    "axios": "^1.11.0",
+    "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "deep-object-diff": "^1.1.9",
-    "fast-deep-equal": "^3.1.3",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
-    "fuzzy": "^0.1.3",
-    "google-auth-library": "^10.2.1",
-    "inquirer": "^8.2.5",
-    "inquirer-checkbox-plus-prompt": "^1.4.2",
     "jest-diff": "^30.0.4",
     "js-yaml": "3.13.1",
     "ora": "5.4.1",
-    "packageurl-js": "^2.0.1",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "typanion": "^3.14.0",
@@ -155,37 +140,15 @@ echo Updating known shared imports...
 print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
 echo Done
 
-echo 6. Add plugin folder to tsconfig.json and packages/datadog-ci/tsconfig.json
-sed -i -e 's|in the future.|in the future.\n    {\n      "path": "./'"${PLUGIN_DIR}"'"\n    },|g' tsconfig.json
-sed -i -e 's|Add Plugins Here:|Add Plugins Here:\n    {\n      "path": "../'"plugin-$SCOPE"'"\n    },|g' packages/datadog-ci/tsconfig.json
-echo Done
-
-echo 7. Update CI configuration
-
-CI_FILE=".github/workflows/ci.yml"
-BASE_LINE='"@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",'
-PLUGIN_LINE="              \"$PLUGIN_PKG\": \"file:./artifacts/@datadog-datadog-ci-plugin-$SCOPE-\${{ matrix.version }}.tgz\","
-
-if grep -q "$BASE_LINE" "$CI_FILE"; then
-  # Insert the plugin package line after the datadog-ci-base line in ci.yml
-  sed -i -e "s|$BASE_LINE|$BASE_LINE\\n$PLUGIN_LINE|" "$CI_FILE"
-  echo "Updated .github/workflows/ci.yml to include $PLUGIN_PKG"
-else
-  echo "Could not find base line in .github/workflows/ci.yml -- please add the following line manually:
-$PLUGIN_LINE" 
-fi
-
-echo 8. Update CODEOWNERS
+echo 6. Update CODEOWNERS
 CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | sed 's|\s\+| |g' | cut -d' ' -f 2-)
-sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SCOPE|" .github/CODEOWNERS
+sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\n$BASE_DIR|" .github/CODEOWNERS
 echo Done
 
-echo 9. Check if we can automatically knip
-yarn install
+echo "7. Run \`yarn lint:packages --fix\`"
+yarn lint:packages --fix
+
 if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
-  echo "Linting passed, running knip..."
-  yarn knip || true
-  yarn
   echo Done
 else
   echo "Linting failed. Please fix the issues manually."
@@ -198,4 +161,3 @@ echo "- Commit the changes, then make the following manual changes:"
 echo "- Move any shared helpers to @datadog/datadog-ci-base if needed."
 echo "- Split FooCommand/PluginCommand classes as described in https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor"
 echo "- Run yarn build, yarn lint, and yarn knip as needed to ensure everything works."
-echo "- Update packages/datadog-ci/shims/injected-plugin-submodules.js"

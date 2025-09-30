@@ -1,5 +1,5 @@
-import {DeploymentMarkCommand} from '@datadog/datadog-ci-base/commands/deployment/mark-command'
-import {TagCommand} from '@datadog/datadog-ci-base/commands/tag/tag-command'
+import {DeploymentMarkCommand} from '@datadog/datadog-ci-base/commands/deployment/mark'
+import {TagCommand} from '@datadog/datadog-ci-base/commands/tag/tag'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
