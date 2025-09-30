@@ -23,6 +23,14 @@ type PluginPackage = Package & {
   commands: string[]
 }
 
+declare global {
+  interface RegExpMatchArray {
+    indices: [start: number, end: number][] & {
+      groups: Record<string, [start: number, end: number]>
+    }
+  }
+}
+
 const fix = process.argv.includes('--fix')
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
@@ -71,6 +79,37 @@ const findCommands = (folder: string, scope: string): string[] => {
     }
     throw e
   }
+}
+
+const formatCodeownersFile = () => {
+  const file = '.github/CODEOWNERS'
+  const originalContent = fs.readFileSync('.github/CODEOWNERS', 'utf8')
+
+  const lines = originalContent.split('\n')
+  const formattedLines: string[] = []
+
+  let currentBlockPadding: number | undefined
+  for (const line of lines) {
+    const match = line.match(/^(?<pattern>[\w/.*-]+?)(?<spacing>[ ]{1,})(?<owners>[@\w/ -]+)/d)
+    if (!match) {
+      currentBlockPadding = undefined
+      formattedLines.push(line)
+      continue
+    }
+
+    const {pattern, owners} = match.groups ?? {}
+    const ownersStart = match.indices.groups.owners[0]
+
+    if (currentBlockPadding === undefined) {
+      currentBlockPadding = ownersStart
+    }
+
+    formattedLines.push(`${pattern.padEnd(currentBlockPadding)}${owners}`)
+  }
+
+  const newContent = formattedLines.join('\n')
+
+  return makeApplyChanges(file, originalContent, newContent)
 }
 
 const datadogCiPackage = loadPackage('datadog-ci')
@@ -131,8 +170,36 @@ const error = (message: string): 1 => {
   return 1
 }
 
+const makeApplyChanges = (file: string, originalContent: string, newContent: string): ApplyChanges => {
+  const delta = diff(originalContent, newContent, {
+    aColor: chalk.red,
+    bColor: chalk.green,
+    contextLines: 1,
+    expand: false,
+    omitAnnotationLines: true,
+  })
+
+  const applyChanges = (): 0 | 1 => {
+    if (!delta || delta.includes('no visual difference')) {
+      return success(`${chalk.bold(file)} is up to date\n`)
+    }
+
+    console.log(`${chalk.bold(file)} should be updated:\n`, delta, '\n')
+
+    if (fix) {
+      fs.writeFileSync(file, newContent)
+
+      return success(`Updated ${chalk.bold(file)}\n`)
+    } else {
+      return error(`Run with ${chalk.bold('--fix')} to apply changes to ${chalk.bold(file)}\n`)
+    }
+  }
+
+  return applyChanges
+}
+
 const matchAndReplace = (file: string): Replacer => {
-  return (strings: TemplateStringsArray, replacement: string) => {
+  return (strings: TemplateStringsArray, replacement: string): ApplyChanges => {
     const originalContent = fs.readFileSync(file, 'utf8')
 
     // Remove leading and trailing newlines
@@ -156,45 +223,21 @@ const matchAndReplace = (file: string): Replacer => {
       indentString(replacement, offsetAtIndex(originalContent, middleStart)) + // = middle
       middleAndAfter.slice(afterMatch.index) // > middle
 
-    const delta = diff(originalContent, newContent, {
-      aColor: chalk.red,
-      bColor: chalk.green,
-      contextLines: 1,
-      expand: false,
-      omitAnnotationLines: true,
-    })
-
-    const applyChanges = (): 0 | 1 => {
-      if (!delta || delta.includes('no visual difference')) {
-        return success(`${chalk.bold(file)} is up to date\n`)
-      }
-
-      console.log(`${chalk.bold(file)} should be updated:\n`, delta, '\n')
-
-      if (fix) {
-        fs.writeFileSync(file, newContent)
-
-        return success(`Updated ${chalk.bold(file)}\n`)
-      } else {
-        return error(`Run with ${chalk.bold('--fix')} to apply changes to ${chalk.bold(file)}\n`)
-      }
-    }
-
-    return applyChanges
+    return makeApplyChanges(file, originalContent, newContent)
   }
 }
 
 // Use "Fold All Regions" command in VSCode to collapse all regions
 
 // #region ================================ REPLACERS ================================
-const REPLACERS: ApplyChanges[] = []
+const TO_APPLY: ApplyChanges[] = []
 
 // #region - Format file: .github/workflows/ci.yml
 const resolutions = ['@datadog/datadog-ci-base', ...pluginPackages.map((p) => p.packageJson.name)]
   .map((name) => `"${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join('\n')
 
-REPLACERS.push(matchAndReplace('.github/workflows/ci.yml')`
+TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
         run: |
           echo '{
@@ -210,13 +253,13 @@ REPLACERS.push(matchAndReplace('.github/workflows/ci.yml')`
 // #endregion
 
 // #region - Format file: packages/base/package.json
-REPLACERS.push(matchAndReplace('packages/base/package.json')`
+TO_APPLY.push(matchAndReplace('packages/base/package.json')`
   "peerDependencies": {
     ${pluginPackages.map((p) => `"${p.packageJson.name}": "workspace:*"`).join(',\n')}
   }
 `)
 
-REPLACERS.push(matchAndReplace('packages/base/package.json')`
+TO_APPLY.push(matchAndReplace('packages/base/package.json')`
   "peerDependenciesMeta": {
     ${pluginPackages.map((p) => `"${p.packageJson.name}": {\n  "optional": true\n}`).join(',\n')}
   }
@@ -246,7 +289,7 @@ ${imports.map((p) => `  '${p.scope}': ${p.importName},`).join('\n')}
 } satisfies RecordWithKebabCaseKeys
 `
 
-REPLACERS.push(matchAndReplace('packages/base/src/cli.ts')`
+TO_APPLY.push(matchAndReplace('packages/base/src/cli.ts')`
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 ${generated}
 /**
@@ -255,7 +298,7 @@ ${generated}
 // #endregion
 
 // #region - Format file: tsconfig.json
-REPLACERS.push(matchAndReplace('tsconfig.json')`
+TO_APPLY.push(matchAndReplace('tsconfig.json')`
   "references": [
     {"path": "./packages/base"},
     {"path": "./packages/datadog-ci"},
@@ -267,7 +310,7 @@ REPLACERS.push(matchAndReplace('tsconfig.json')`
 // #region - Format file: packages/datadog-ci/tsconfig.json
 const dependencyPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
 
-REPLACERS.push(matchAndReplace('packages/datadog-ci/tsconfig.json')`
+TO_APPLY.push(matchAndReplace('packages/datadog-ci/tsconfig.json')`
   "references": [
     {"path": "../base"},
     ${dependencyPlugins.map((p) => `{"path": "../plugin-${p.scope}"}`).join(',\n')}
@@ -280,7 +323,7 @@ const formatBlock = (plugin: PluginPackage) => {
   return `'${plugin.scope}': {\n${plugin.commands.map((command) => `  '${command}': require('@datadog/datadog-ci-plugin-${plugin.scope}/commands/${command}'),`).join('\n')}\n},`
 }
 
-REPLACERS.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
+TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
 const injectedPluginSubmodules = {
   ${dependencyPlugins.map(formatBlock).join('\n')}
 }
@@ -288,7 +331,10 @@ const injectedPluginSubmodules = {
 // #endregion
 
 console.log(chalk.bold.blue('Linting files...\n'))
-if (REPLACERS.map((replacer) => replacer()).some((result) => result !== 0)) {
+
+TO_APPLY.push(formatCodeownersFile())
+
+if (TO_APPLY.map((apply) => apply()).some((result) => result !== 0)) {
   process.exit(1)
 }
 // #endregion
