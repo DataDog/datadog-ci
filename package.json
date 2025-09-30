@@ -22,7 +22,7 @@
     "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
     "dev": "yarn tsc:build --watch",
-    "dist-standalone": "FORCE_COLOR=1 yarn workspace @datadog/datadog-ci bundle && pkg --sea --compress GZip packages/datadog-ci/dist/bundle.js",
+    "dist-standalone": "FORCE_COLOR=1 yarn workspace @datadog/datadog-ci bundle && pkg --sea packages/datadog-ci/dist/bundle.js",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
     "format": "yarn lint:all --fix",
     "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path packages/plugin-synthetics/src/interfaces.ts --type TestConfig > packages/plugin-synthetics/src/test-config.schema.json && prettier --write packages/plugin-synthetics/src/test-config.schema.json",
