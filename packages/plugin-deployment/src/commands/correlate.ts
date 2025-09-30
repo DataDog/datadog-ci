@@ -1,4 +1,4 @@
-import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate-command'
+import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'

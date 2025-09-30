@@ -2,7 +2,7 @@ import {Cli} from 'clipanion'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
-import {TagCommand} from '../tag-command'
+import {TagCommand} from '../tag'
 
 const fixturesPath = './src/commands/tag/__tests__/fixtures'
 
