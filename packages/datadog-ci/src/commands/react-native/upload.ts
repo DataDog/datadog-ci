@@ -37,7 +37,7 @@ import {
 import {getBundleName} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
-export class UploadCommand extends Command {
+export class ReactNativeUploadCommand extends Command {
   public static paths = [['react-native', 'upload']]
 
   public static usage = Command.Usage({

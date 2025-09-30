@@ -6,7 +6,7 @@ import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
 import {renderInvalidFile} from '../renderer'
-import {UploadJUnitXMLCommand} from '../upload'
+import {JunitUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
@@ -18,7 +18,7 @@ describe('upload', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}
       const write = jest.fn()
-      const command = createCommand(UploadJUnitXMLCommand, {stdout: {write}})
+      const command = createCommand(JunitUploadCommand, {stdout: {write}})
 
       expect(command['getApiHelper'].bind(command)).toThrow('API key is missing')
       expect(write.mock.calls[0][0]).toContain('DD_API_KEY')
@@ -26,7 +26,7 @@ describe('upload', () => {
   })
   describe('getMatchingJUnitXMLFiles', () => {
     test('should read all xml files and reject invalid ones', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -59,7 +59,7 @@ describe('upload', () => {
     })
 
     test('should allow single files', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/go-report.xml'],
@@ -82,7 +82,7 @@ describe('upload', () => {
     })
 
     test('should not fail for invalid single files', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/does-not-exist.xml'],
@@ -101,7 +101,7 @@ describe('upload', () => {
     })
 
     test('should allow folder and single unit paths', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: [
@@ -128,7 +128,7 @@ describe('upload', () => {
     })
 
     test('should allow folders with extensions', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/junit.xml'],
@@ -150,7 +150,7 @@ describe('upload', () => {
     })
 
     test('should not have repeated files', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures', 'src/commands/junit/__tests__/fixtures/go-report.xml'],
@@ -169,7 +169,7 @@ describe('upload', () => {
     })
 
     test('should set hostname', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -192,7 +192,7 @@ describe('upload', () => {
 
     test('should set logsEnabled for each file', async () => {
       process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -216,7 +216,7 @@ describe('upload', () => {
 
     test('should show different error on no test report', async () => {
       process.env.DD_CIVISIBILITY_LOGS_ENABLED = 'true'
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/subfolder/invalid-no-tests.xml'],
@@ -241,7 +241,7 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['**/junit/**/*.xml'],
@@ -269,7 +269,7 @@ describe('upload', () => {
     })
 
     test('should fetch nested folders and ignore non xml files', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['**/junit/**'],
@@ -297,7 +297,7 @@ describe('upload', () => {
     })
 
     test('should discover junit XML files automatically with recursive search', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/autodiscovery'],
@@ -322,7 +322,7 @@ describe('upload', () => {
     })
 
     test('should discover junit XML files automatically excluding ignored paths', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures/autodiscovery'],
@@ -346,7 +346,7 @@ describe('upload', () => {
     })
 
     test('should combine explicit file paths with auto-discovered files', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: [
@@ -374,7 +374,7 @@ describe('upload', () => {
   describe('getSpanTags', () => {
     test('should parse DD_ENV environment variable', async () => {
       process.env.DD_ENV = 'ci'
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = await command['getSpanTags'].call({
         config: {
           env: process.env.DD_ENV,
@@ -388,7 +388,7 @@ describe('upload', () => {
   })
   describe('parseCustomTags', () => {
     test('should parse tags argument', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getCustomTags'].call({
         config: {},
         context: command.context,
@@ -403,7 +403,7 @@ describe('upload', () => {
 
     test('should parse DD_TAGS environment variable', async () => {
       process.env.DD_TAGS = 'key1:https://google.com,key2:value2'
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getCustomTags'].call({
         config: {
           envVarTags: process.env.DD_TAGS,
@@ -417,7 +417,7 @@ describe('upload', () => {
     })
 
     test('should parse measures argument', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {},
         context: command.context,
@@ -432,7 +432,7 @@ describe('upload', () => {
 
     test('should parse DD_MEASURES environment variable', async () => {
       process.env.DD_MEASURES = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getCustomMeasures'].call({
         config: {
           envVarMeasures: process.env.DD_MEASURES,
@@ -449,7 +449,7 @@ describe('upload', () => {
     })
 
     test('should parse report tags argument', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getReportTags'].call({
         config: {},
         context: command.context,
@@ -463,7 +463,7 @@ describe('upload', () => {
     })
 
     test('should parse report measures argument', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const spanTags: SpanTags = command['getReportMeasures'].call({
         config: {},
         context: command.context,
@@ -478,7 +478,7 @@ describe('upload', () => {
   })
   describe('parseXPathTags', () => {
     test('should parse xpath assignments', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       const xPathTags = command['parseXPathTags'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -495,7 +495,7 @@ describe('upload', () => {
     })
 
     test('should alert of invalid values', async () => {
-      const command = createCommand(UploadJUnitXMLCommand)
+      const command = createCommand(JunitUploadCommand)
       command['parseXPathTags'].call(
         {
           basePaths: ['src/commands/junit/__tests__/fixtures'],
@@ -512,14 +512,7 @@ describe('upload', () => {
 })
 
 describe('execute', () => {
-  const runCLI = makeRunCLI(UploadJUnitXMLCommand, [
-    'junit',
-    'upload',
-    '--service',
-    'test-service',
-    '--dry-run',
-    '--logs',
-  ])
+  const runCLI = makeRunCLI(JunitUploadCommand, ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs'])
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['src/commands/junit/__tests__/doesnotexist/../fixtures'])

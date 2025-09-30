@@ -1,4 +1,9 @@
-import {InstrumentCommand} from './instrument'
-import {UninstrumentCommand} from './uninstrument'
+/* eslint-disable import-x/order */
+import {AasInstrumentCommand} from './instrument'
+import {AasUninstrumentCommand} from './uninstrument'
 
-export const commands = [InstrumentCommand, UninstrumentCommand]
+// prettier-ignore
+export const commands = [
+  AasInstrumentCommand,
+  AasUninstrumentCommand,
+]

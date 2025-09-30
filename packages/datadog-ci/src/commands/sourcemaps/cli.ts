@@ -1,3 +1,3 @@
-import {UploadCommand} from './upload'
+import {SourcemapsUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+export const commands = [SourcemapsUploadCommand]

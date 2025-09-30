@@ -14,7 +14,7 @@ const $B2 = makeTerminalLink(
 const $B3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
 // BASE COMMAND END
 
-export class UploadApplicationCommand extends Command {
+export class SyntheticsUploadApplicationCommand extends Command {
   public static paths = [['synthetics', 'upload-application']]
 
   public static usage = Command.Usage({

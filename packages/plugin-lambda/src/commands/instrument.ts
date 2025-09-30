@@ -1,7 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import {InstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/instrument'
+import {LambdaInstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/instrument'
 import {
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
@@ -49,7 +49,7 @@ import {
 import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
-export class PluginCommand extends InstrumentCommand {
+export class PluginCommand extends LambdaInstrumentCommand {
   private config: LambdaConfigOptions = {
     functions: [],
     tracing: 'true',

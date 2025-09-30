@@ -4,7 +4,7 @@ import {executePluginCommand} from '../../helpers/plugin'
 
 import {AasCommand, AasConfigOptions} from './common'
 
-export class InstrumentCommand extends AasCommand {
+export class AasInstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
   public static usage = Command.Usage({
     category: 'Serverless',

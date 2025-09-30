@@ -1,7 +1,7 @@
 import {BaseContext, Cli} from 'clipanion'
 
 import {getCommitInfo, newSimpleGit} from '../../commands/git-metadata/git'
-import {UploadCommand} from '../../commands/git-metadata/upload'
+import {GitMetadataUploadCommand} from '../../commands/git-metadata/upload'
 
 import {renderSoftWarning} from '../renderer'
 import {filterAndFormatGithubRemote} from '../utils'
@@ -71,7 +71,7 @@ export const getCurrentGitStatus = async () => {
 // Only exported to be mocked in unit tests
 export const uploadGitData = async (context: BaseContext) => {
   const cli = new Cli()
-  cli.register(UploadCommand)
+  cli.register(GitMetadataUploadCommand)
   if ((await cli.run(['git-metadata', 'upload'], context)) !== 0) {
     throw Error("Couldn't upload git metadata")
   }

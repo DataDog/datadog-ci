@@ -1,4 +1,9 @@
-import {InstrumentStepFunctionsCommand} from './instrument'
-import {UninstrumentStepFunctionsCommand} from './uninstrument'
+/* eslint-disable import-x/order */
+import {StepfunctionsInstrumentCommand} from './instrument'
+import {StepfunctionsUninstrumentCommand} from './uninstrument'
 
-export const commands = [InstrumentStepFunctionsCommand, UninstrumentStepFunctionsCommand]
+// prettier-ignore
+export const commands = [
+  StepfunctionsInstrumentCommand,
+  StepfunctionsUninstrumentCommand,
+]

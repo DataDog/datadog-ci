@@ -5,7 +5,7 @@ import * as formatGitSourcemapsData from '@datadog/datadog-ci-base/helpers/git/f
 import {Cli} from 'clipanion'
 
 import * as utils from '../utils'
-import {XCodeCommand} from '../xcode'
+import {ReactNativeXcodeCommand} from '../xcode'
 
 beforeEach(() => {
   delete process.env.CONFIGURATION
@@ -52,7 +52,7 @@ const runCLI = async (
   }
 ) => {
   const cli = new Cli()
-  cli.register(XCodeCommand)
+  cli.register(ReactNativeXcodeCommand)
 
   const context = createMockContext()
   process.env = {...process.env, ...getEnvVarPlaceholders()}
@@ -108,14 +108,14 @@ describe('xcode', () => {
   describe('getBundleLocation', () => {
     test('should return the location from CONFIGURATION_BUILD_DIR', () => {
       process.env.CONFIGURATION_BUILD_DIR = './src/commands/react-native/__tests__/fixtures/basic-ios'
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getBundleLocation']()).toBe(
         './src/commands/react-native/__tests__/fixtures/basic-ios/main.jsbundle'
       )
     })
 
     test('should return null if no CONFIGURATION_BUILD_DIR is specified', () => {
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getBundleLocation']()).toBeNull()
     })
   })
@@ -123,24 +123,24 @@ describe('xcode', () => {
   describe('getSourcemapsLocation', () => {
     test('should return the location from SOURCEMAP_FILE', () => {
       process.env.SOURCEMAP_FILE = './main.jsbundle.map'
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getSourcemapsLocation']()).toMatch('./main.jsbundle.map')
     })
 
     test('should return the location from EXTRA_PACKAGER_ARGS', () => {
       process.env.EXTRA_PACKAGER_ARGS = '--bundle-output ./main.jsbundle --sourcemap-output ./main.jsbundle.map'
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getSourcemapsLocation']()).toBe('./main.jsbundle.map')
     })
 
     test('should return null if no location is in EXTRA_PACKAGER_ARGS and SOURCEMAP_FILE is undefined', () => {
       process.env.EXTRA_PACKAGER_ARGS = '--bundle-output ./main.jsbundle'
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getSourcemapsLocation']()).toBeNull()
     })
 
     test('should return null if EXTRA_PACKAGER_ARGS and SOURCEMAP_FILE are undefined', () => {
-      const command = new XCodeCommand()
+      const command = new ReactNativeXcodeCommand()
       expect(command['getSourcemapsLocation']()).toBeNull()
     })
   })

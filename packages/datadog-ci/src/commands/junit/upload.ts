@@ -76,7 +76,7 @@ const validateXml = (xmlFilePath: string) => {
   return undefined
 }
 
-export class UploadJUnitXMLCommand extends Command {
+export class JunitUploadCommand extends Command {
   public static paths = [['junit', 'upload']]
 
   public static usage = Command.Usage({

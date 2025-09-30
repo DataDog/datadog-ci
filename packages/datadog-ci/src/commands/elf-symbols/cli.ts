@@ -1,3 +1,3 @@
-import {UploadCommand} from './upload'
+import {ElfSymbolsUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+export const commands = [ElfSymbolsUploadCommand]

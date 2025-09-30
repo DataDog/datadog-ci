@@ -1,7 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/uninstrument'
+import {LambdaUninstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -26,7 +26,7 @@ import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
-export class PluginCommand extends UninstrumentCommand {
+export class PluginCommand extends LambdaUninstrumentCommand {
   private config: any = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],

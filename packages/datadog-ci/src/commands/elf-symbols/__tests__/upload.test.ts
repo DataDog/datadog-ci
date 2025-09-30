@@ -15,7 +15,7 @@ import upath from 'upath'
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'
 import {renderArgumentMissingError, renderInvalidSymbolsLocation} from '../renderer'
-import {UploadCommand} from '../upload'
+import {ElfSymbolsUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
   ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
@@ -42,8 +42,8 @@ const commonMetadata = {
 }
 
 describe('elf-symbols upload', () => {
-  const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
-    const command = createCommand(UploadCommand)
+  const runCommand = async (prepFunction: (command: ElfSymbolsUploadCommand) => void) => {
+    const command = createCommand(ElfSymbolsUploadCommand)
     prepFunction(command)
 
     const exitCode = await command.execute()
@@ -90,7 +90,7 @@ describe('elf-symbols upload', () => {
 
   describe('getElfSymbolFiles', () => {
     test('should find all symbol files', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       const files = await command['getElfSymbolFiles'](fixtureDir)
       expect(files.map((f) => f.filename)).toEqual([
         `${fixtureDir}/.debug/dyn_aarch64.debug`,
@@ -104,7 +104,7 @@ describe('elf-symbols upload', () => {
     })
 
     test('should accept elf file with only dynamic symbols if --upload-dynamic-symbols option is passed', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       command['acceptDynamicSymbolTableAsSymbolSource'] = true
       const files = await command['getElfSymbolFiles'](fixtureDir)
 
@@ -122,17 +122,17 @@ describe('elf-symbols upload', () => {
     })
 
     test('should throw an error when input is a single non-elf file', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       await expect(command['getElfSymbolFiles'](`${fixtureDir}/non_elf_file`)).rejects.toThrow()
     })
 
     test('should throw an error when input is a single elf file without symbols', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       await expect(command['getElfSymbolFiles'](`${fixtureDir}/go_x86_64_only_go_build_id`)).rejects.toThrow()
     })
 
     test('should not throw an error when a directory (except top-level) is not readable', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       let tmpDir
       let tmpSubDir
       try {
@@ -154,7 +154,7 @@ describe('elf-symbols upload', () => {
 
   describe('upload', () => {
     test('creates correct metadata payload', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(ElfSymbolsUploadCommand)
       command['symbolsLocations'] = [fixtureDir]
 
       command['gitData'] = {

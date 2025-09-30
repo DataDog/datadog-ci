@@ -39,7 +39,7 @@ import {
 import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
-export class UploadCommand extends Command {
+export class SourcemapsUploadCommand extends Command {
   public static paths = [['sourcemaps', 'upload']]
 
   public static usage = Command.Usage({

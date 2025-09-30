@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-export class UninstrumentStepFunctionsCommand extends Command {
+export class StepfunctionsUninstrumentCommand extends Command {
   public static paths = [['stepfunctions', 'uninstrument']]
 
   public static usage = Command.Usage({

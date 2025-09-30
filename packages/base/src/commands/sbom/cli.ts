@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {SbomUploadCommand} from './upload'
 
-export const commands = [SbomUploadCommand]
+// prettier-ignore
+export const commands = [
+  SbomUploadCommand,
+]

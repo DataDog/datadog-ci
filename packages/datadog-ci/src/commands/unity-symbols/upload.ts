@@ -25,7 +25,7 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import * as dsyms from '../dsyms/upload'
+import {DsymsUploadCommand} from '../dsyms/upload'
 import {createUniqueTmpDirectory} from '../dsyms/utils'
 import * as elf from '../elf-symbols/elf'
 
@@ -54,7 +54,7 @@ import {
   renderUseOnlyOnePlatform,
 } from './renderer'
 
-export class UploadCommand extends Command {
+export class UnitySymbolsUploadCommand extends Command {
   public static paths = [['unity-symbols', 'upload']]
 
   public static usage = Command.Usage({
@@ -217,7 +217,7 @@ export class UploadCommand extends Command {
       dsymUploadCommand.push('--dry-run')
     }
 
-    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
+    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }

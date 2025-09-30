@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {UploadApplicationCommand} from '@datadog/datadog-ci-base/commands/synthetics/upload-application'
+import {SyntheticsUploadApplicationCommand} from '@datadog/datadog-ci-base/commands/synthetics/upload-application'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -15,7 +15,7 @@ import {uploadMobileApplicationVersion} from '../mobile'
 import {AppUploadReporter} from '../reporters/mobile/app-upload'
 import {RecursivePartial, getDefaultConfig} from '../utils/internal'
 
-export class PluginCommand extends UploadApplicationCommand {
+export class PluginCommand extends SyntheticsUploadApplicationCommand {
   protected config: UploadApplicationCommandConfig = PluginCommand.getDefaultConfig()
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
