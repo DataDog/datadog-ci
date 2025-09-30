@@ -33,7 +33,7 @@
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:all": "eslint --cache --quiet '**/*.ts'",
     "loop-packages": "yarn workspaces foreach --all --no-private",
-    "publish:all": "yarn loop-packages --topological --verbose npm publish",
+    "publish:all": "yarn loop-packages --topological --verbose npm publish --provenance",
     "version:all": "yarn loop-packages version ${0} --immediate",
     "package:build": "yarn tsc:build $INIT_CWD",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
