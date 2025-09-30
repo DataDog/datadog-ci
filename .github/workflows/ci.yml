@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
+      - run: yarn lint:packages
       - run: yarn build
       - name: Run yarn lint:ci
         run: |
@@ -157,8 +158,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -171,8 +172,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit

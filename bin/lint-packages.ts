@@ -32,15 +32,18 @@ declare global {
 }
 
 const fix = process.argv.includes('--fix')
+const isCI = !!process.env.CI
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 
-const exec = (cmd: string) => {
+const exec = (cmd: string, {throwError}: {throwError?: boolean} = {}) => {
   console.log(chalk.bold.blue(`\nRunning ${cmd}...\n`))
   try {
     execSync(cmd, {stdio: 'inherit'})
-  } catch {
-    // ignore exit status
+  } catch (e) {
+    if (throwError) {
+      throw e
+    }
   }
 }
 
@@ -388,5 +391,15 @@ if (Object.keys(localReferenceRanges).length > 1) {
 
 // #endregion
 
-exec('yarn knip')
+try {
+  exec('yarn knip', {throwError: isCI})
+} catch (e) {
+  console.log(
+    chalk.red(
+      'Knip detected changes that need to be applied locally! Run `yarn lint:packages --fix` locally to fix it.\n'
+    )
+  )
+  process.exit(1)
+}
+
 exec('yarn install')
