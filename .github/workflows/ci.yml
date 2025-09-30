@@ -67,8 +67,6 @@ jobs:
 
     name: Unit tests (Windows)
     runs-on: windows-2022
-    env:
-      FORCE_COLOR: 1
 
     steps:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0

@@ -32,7 +32,7 @@
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:all": "eslint --cache --quiet '**/*.ts'",
-    "lint:packages": "tsx --conditions=development bin/lint-packages.ts",
+    "lint:packages": "FORCE_COLOR=1 tsx --conditions=development bin/lint-packages.ts",
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "publish:all": "yarn loop-packages --topological --verbose npm publish",
     "version:all": "yarn loop-packages version ${0} --immediate",
