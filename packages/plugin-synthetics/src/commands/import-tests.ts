@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {ImportTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/import-tests'
+import {SyntheticsImportTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/import-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -12,7 +12,7 @@ import {importTests} from '../import-tests-lib'
 import {ImportTestsCommandConfig, MainReporter} from '../interfaces'
 import {RecursivePartial, getDefaultConfig} from '../utils/internal'
 
-export class PluginCommand extends ImportTestsCommand {
+export class PluginCommand extends SyntheticsImportTestsCommand {
   protected reporter!: MainReporter
   protected config: ImportTestsCommandConfig = PluginCommand.getDefaultConfig()
   protected fipsConfig = {

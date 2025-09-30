@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-export class InstrumentCommand extends Command {
+export class LambdaInstrumentCommand extends Command {
   public static paths = [['lambda', 'instrument']]
 
   public static usage = Command.Usage({

@@ -1,7 +1,7 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {UninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
+import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 
@@ -15,7 +15,7 @@ import {
   SIDECAR_CONTAINER_NAME,
 } from '../common'
 
-export class PluginCommand extends UninstrumentCommand {
+export class PluginCommand extends AasUninstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToUninstrument, config, errors] = await this.ensureConfig()

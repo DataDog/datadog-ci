@@ -1,7 +1,7 @@
 import {CloudWatchLogsClient} from '@aws-sdk/client-cloudwatch-logs'
 import {IAMClient} from '@aws-sdk/client-iam'
 import {SFNClient} from '@aws-sdk/client-sfn'
-import {InstrumentStepFunctionsCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/instrument'
+import {StepfunctionsInstrumentCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -28,7 +28,7 @@ import {
   injectContextIntoTasks,
 } from '../helpers'
 
-export class PluginCommand extends InstrumentStepFunctionsCommand {
+export class PluginCommand extends StepfunctionsInstrumentCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

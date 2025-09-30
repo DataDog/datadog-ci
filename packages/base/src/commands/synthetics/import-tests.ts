@@ -19,7 +19,7 @@ const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integ
 const $2 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
 const $3 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
 
-export class ImportTestsCommand extends Command {
+export class SyntheticsImportTestsCommand extends Command {
   public static paths = [['synthetics', 'import-tests']]
 
   public static usage = Command.Usage({

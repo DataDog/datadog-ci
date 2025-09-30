@@ -16,7 +16,7 @@ const $B3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access
 
 const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integrations/configuration#test-files`)
 
-export class DeployTestsCommand extends Command {
+export class SyntheticsDeployTestsCommand extends Command {
   public static paths = [['synthetics', 'deploy-tests']]
 
   public static usage = Command.Usage({

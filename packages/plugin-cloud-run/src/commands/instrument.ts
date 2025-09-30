@@ -1,6 +1,6 @@
 import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from '../types'
 
-import {InstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
+import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {
   API_KEY_ENV_VAR,
   DATADOG_SITE_US1,
@@ -51,7 +51,7 @@ const DEFAULT_ENV_VARS: IEnvVar[] = [
   {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
 ]
 
-export class PluginCommand extends InstrumentCommand {
+export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
