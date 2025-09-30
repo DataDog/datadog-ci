@@ -61,8 +61,8 @@ See each command's linked README for more details, or click on [📚](https://do
 #### `flutter-symbols`
 - `upload`: Upload [Flutter symbols](/packages/datadog-ci/src/commands/flutter-symbols) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/flutter/)
 
-#### `unity-symbols`
-- `upload`: Upload [Unity symbols](/packages/datadog-ci/src/commands/unity-symbols) for Error Tracking.
+#### `gate`
+- `evaluate`: Evaluate [Quality Gates](/packages/plugin-gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
 
 #### `git-metadata`
 - `upload`: Upload [Git metadata](/packages/base/src/commands/git-metadata) for the Source Code Integration. [📚](https://docs.datadoghq.com/integrations/guide/source-code-integration/)
@@ -76,8 +76,10 @@ See each command's linked README for more details, or click on [📚](https://do
 - `uninstrument`: Revert Datadog instrumentation from the given [AWS Lambda functions](/packages/plugin-lambda).
 
 #### `measure`
-
 - Add [measures](/packages/datadog-ci/src/commands/measure) to a CI Visibility pipeline trace or job span in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_tags_and_measures/)
+
+#### `pe-symbols`
+- `upload`: Upload [Windows PE debug info files](/packages/datadog-ci/src/commands/pe-symbols) for Profiling. [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
 
 #### `react-native`
 - `codepush`: Upload [React Native CodePush sourcemaps](/packages/datadog-ci/src/commands/react-native) for Error Tracking. [📚](https://docs.datadoghq.com/real_user_monitoring/mobile_and_tv_monitoring/setup/codepush/)
@@ -107,6 +109,9 @@ See each command's linked README for more details, or click on [📚](https://do
 #### `trace`
 - Add [custom commands](/packages/datadog-ci/src/commands/trace) to a CI Visibility pipeline in Datadog. [📚](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)
 
+#### `unity-symbols`
+- `upload`: Upload [Unity symbols](/packages/datadog-ci/src/commands/unity-symbols) for Error Tracking.
+
 ### Beta commands
 
 The following are **beta** commands, you can enable them with with `DD_BETA_COMMANDS_ENABLED=1`:
@@ -122,13 +127,6 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 
 #### `elf-symbols`
 - `upload`: Upload [Elf debug info files](/packages/datadog-ci/src/commands/elf-symbols) for Profiling (requires binutils). [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
-
-#### `pe-symbols`
-- `upload`: Upload [Windows PE debug info files](/packages/datadog-ci/src/commands/pe-symbols) for Profiling. [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
-
-#### `gate`
-- `evaluate`: Evaluate [Quality Gates](/packages/plugin-gate) rules in Datadog. [📚](https://docs.datadoghq.com/quality_gates/)
-
 
 ### FIPS support
 
