@@ -1,4 +1,5 @@
 Component,Origin,Licence,Copyright
+@antfu/install-pkg,import,MIT,Copyright (c) 2021 Anthony Fu <https://github.com/antfu>
 @aws-sdk/client-cloudwatch-logs,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/client-iam,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."
 @aws-sdk/client-lambda,import,Apache-2.0,"Copyright 2018-2021 Amazon.com, Inc. or its affiliates."

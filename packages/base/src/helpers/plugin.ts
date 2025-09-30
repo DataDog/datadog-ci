@@ -42,8 +42,6 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
       ].join('\n')
     )
 
-    debug('Original error:', error)
-
     return 1
   }
 }
@@ -100,6 +98,44 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   return true
 }
 
+const ensurePluginIsInstalled = async (scope: string) => {
+  if (!!process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
+    debug('Found DISABLE_PLUGIN_AUTO_INSTALL env variable, skipping auto-install')
+
+    return
+  }
+
+  try {
+    await importPlugin(scope)
+
+    debug('Auto-install check: plugin is installed, skipping installation')
+  } catch (error) {
+    if (!isModuleNotFoundError(error)) {
+      throw error
+    }
+
+    const pluginName = `@datadog/datadog-ci-plugin-${scope}`
+    const currentVersion = peerDependencies[pluginName as keyof typeof peerDependencies]
+    const basePackage = `@datadog/datadog-ci-base@${currentVersion}`
+    const pluginPackage = `${pluginName}@${currentVersion}`
+
+    console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...\n`))
+
+    // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
+    const {installPackage} = await import('@antfu/install-pkg')
+    const output = await installPackage([basePackage, pluginPackage], {silent: true})
+
+    if (output.exitCode === 0) {
+      messageBox('Installed plugin 🔌', 'green', [`Successfully installed ${chalk.bold(pluginPackage)}`])
+      console.log()
+    } else {
+      console.log(chalk.bold.red(`Failed to install ${pluginPackage}! 🔌`))
+      console.log('Stdout:', output.stdout)
+      console.log('Stderr:', output.stderr)
+    }
+  }
+}
+
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (await isStandaloneBinary()) {
     debug(`Loading plugin injected in the standalone binary`)
@@ -107,6 +143,8 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
     // @ts-expect-error - All plugins are injected in the standalone binary with esbuild.
     return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
   }
+
+  await ensurePluginIsInstalled(scope)
 
   debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
 
@@ -123,11 +161,13 @@ const scopeToPackageName = (scope: string): string => {
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    return extractPackageJson(await import(`${scope}/package.json`))
+    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
+    return extractPackageJson(require(`${scope}/package.json`))
   }
 
   if (!command) {
-    return extractPackageJson(await import(`@datadog/datadog-ci-plugin-${scope}/package.json`))
+    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
+    return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
   }
 
   return importPluginSubmodule(scope, command)
@@ -152,6 +192,8 @@ const extractPackageJson = (content: unknown): PluginPackageJson => {
 }
 
 const handleErrorGeneric = (error: unknown, scope: string, command?: string) => {
+  debug('Original error:', error)
+
   console.log()
 
   if (isModuleNotFoundError(error)) {
@@ -183,10 +225,12 @@ const handleErrorGeneric = (error: unknown, scope: string, command?: string) => 
     return
   }
 
-  console.error(chalk.bold.red('Unexpected error when executing plugin:'), error)
   console.log()
 }
 
 const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException => {
-  return error instanceof Error && (error as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND'
+  return (
+    error instanceof Error &&
+    ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes((error as NodeJS.ErrnoException).code ?? '')
+  )
 }
