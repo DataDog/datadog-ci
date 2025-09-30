@@ -16,22 +16,12 @@ export class CheckCommand extends Command {
   })
 
   // Positional
-  public args = Option.Rest({
-    required: 1,
-  })
+  public packageOrScope = Option.String()
+  public command = Option.String({required: false})
 
   public async execute() {
-    const {scope, command} = parseScopeAndCommand(this.args)
-    const succeeded = await checkPlugin(scope, command)
+    const succeeded = await checkPlugin(this.packageOrScope, this.command)
 
     return succeeded ? 0 : 1
   }
-}
-
-const parseScopeAndCommand = (restParameters: string[]): {scope: string; command?: string} => {
-  if (restParameters.length === 1) {
-    return {scope: restParameters[0]}
-  }
-
-  return {scope: restParameters[0], command: restParameters[1]}
 }
