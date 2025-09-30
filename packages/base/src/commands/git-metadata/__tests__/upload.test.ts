@@ -3,10 +3,10 @@ import {UploadStatus} from '../../../helpers/upload'
 
 import * as gitdbModule from '../gitdb'
 import * as libraryModule from '../library'
-import {UploadCommand} from '../upload'
+import {GitMetadataUploadCommand} from '../upload'
 
 describe('execute', () => {
-  const runCLI = makeRunCLI(UploadCommand, ['git-metadata', 'upload', '--dry-run'])
+  const runCLI = makeRunCLI(GitMetadataUploadCommand, ['git-metadata', 'upload', '--dry-run'])
   let mockUploadToGitDB: jest.SpyInstance
   let mockUploadRepository: jest.SpyInstance
 

@@ -6,8 +6,10 @@ import path from 'path'
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
-// Source of truth for commands without plugins: this should be updated manually.
+// Source of truth for command scopes without plugins: this should be updated manually.
 const noPluginExceptions = new Set(['git-metadata', 'plugin', 'tag'])
+// Source of truth for scope-less commands: this should be updated manually.
+const scopeLessCommandExceptions = new Set(['tag'])
 
 type Package = {
   folder: string
@@ -19,10 +21,12 @@ type Package = {
   }
 }
 
-type PluginPackage = Package & {
+type CommandScope = {
   scope: string
   commands: string[]
 }
+
+type PluginPackage = Package & CommandScope
 
 const fix = process.argv.includes('--fix')
 const isCI = !!process.env.CI
@@ -62,9 +66,26 @@ const loadPackage = (folderName: string): Package => {
 }
 
 const findCommands = (folder: string, scope: string): string[] => {
+  if (noPluginExceptions.has(scope)) {
+    return fs
+      .readdirSync(folder) // `packages/base/src/commands/<scope>`
+      .reduce<string[]>((acc, file) => {
+        if (!file.endsWith('.ts')) {
+          return acc
+        }
+
+        const content = fs.readFileSync(path.join(folder, file), 'utf8')
+        if (!content.match(/export class \w+ extends Command/)) {
+          return acc
+        }
+
+        return [...acc, file.replace('.ts', '')]
+      }, [])
+  }
+
   try {
     return fs
-      .readdirSync(path.join(folder, 'src/commands'))
+      .readdirSync(path.join(folder, 'src/commands')) // `packages/plugin-<scope>/src/commands`
       .reduce<string[]>((acc, file) => (file.endsWith('.ts') ? [...acc, file.replace('.ts', '')] : acc), [])
   } catch (e) {
     if (e instanceof Error && e.message.includes('no such file or directory')) {
@@ -154,12 +175,14 @@ export const noPluginExceptions: Set<string> = new Set([${Array.from(noPluginExc
   return makeApplyChanges(file, originalContent, newContent)
 }
 
-const formatBasePackageScopeCliFile = (plugin: PluginPackage) => {
-  const file = `packages/base/src/commands/${plugin.scope}/cli.ts`
+const formatBasePackageScopeCliFile = ({scope, commands}: CommandScope) => {
+  const file = `packages/base/src/commands/${scope}/cli.ts`
   const originalContent = fs.readFileSync(file, 'utf8')
 
-  const imports = plugin.commands.map((command) => ({
-    importName: `${upperCamelCase(plugin.scope)}${upperCamelCase(command)}Command`,
+  const imports = commands.map((command) => ({
+    importName: scopeLessCommandExceptions.has(scope)
+      ? `${upperCamelCase(command)}Command`
+      : `${upperCamelCase(scope)}${upperCamelCase(command)}Command`,
     importPath: `./${command}`,
   }))
 
@@ -202,6 +225,11 @@ const pluginPackages = fs
     }
   })
   .filter((p): p is PluginPackage => p !== undefined)
+
+const exceptionScopes: CommandScope[] = [...noPluginExceptions].map((scope) => ({
+  scope,
+  commands: findCommands(path.join('packages/base/src/commands', scope), scope),
+}))
 
 type ApplyChanges = () => 0 | 1
 type Replacer = (strings: TemplateStringsArray, replacement: string) => ApplyChanges
@@ -332,9 +360,7 @@ TO_APPLY.push(matchAndReplace('packages/base/package.json')`
 // #region - Format files: packages/base/src/cli.ts and packages/base/src/commands/<scope>/cli.ts
 TO_APPLY.push(formatBasePackageCliFile())
 
-for (const plugin of pluginPackages) {
-  TO_APPLY.push(formatBasePackageScopeCliFile(plugin))
-}
+TO_APPLY.push(...exceptionScopes.concat(pluginPackages).map(formatBasePackageScopeCliFile))
 // #endregion
 
 // #region - Format file: tsconfig.json

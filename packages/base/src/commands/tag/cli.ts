@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {TagCommand} from './tag'
 
-export const commands = [TagCommand]
+// prettier-ignore
+export const commands = [
+  TagCommand,
+]

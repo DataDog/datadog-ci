@@ -28,7 +28,7 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 
-export class UploadCommand extends Command {
+export class GitMetadataUploadCommand extends Command {
   public static paths = [['git-metadata', 'upload']]
 
   public static usage = Command.Usage({

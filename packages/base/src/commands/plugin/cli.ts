@@ -1,3 +1,9 @@
-import {CheckCommand} from './check'
+/* eslint-disable import-x/order */
+import {PluginCheckCommand} from './check'
+import {PluginInstallCommand} from './install'
 
-export const commands = [CheckCommand]
+// prettier-ignore
+export const commands = [
+  PluginCheckCommand,
+  PluginInstallCommand,
+]
