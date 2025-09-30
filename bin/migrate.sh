@@ -23,6 +23,7 @@ PLUGIN_PKG="@datadog/datadog-ci-plugin-$SCOPE"
 PLUGIN_DIR="packages/plugin-$SCOPE"
 SRC_DIR="packages/datadog-ci/src/commands/$SCOPE"
 DST_DIR="$PLUGIN_DIR/src"
+BASE_DIR="packages/base/src/commands/$SCOPE"
 
 echo 1. Move the folder
 if [ ! -d "$SRC_DIR" ]; then
@@ -31,15 +32,15 @@ if [ ! -d "$SRC_DIR" ]; then
 fi
 if [ -d "$DST_DIR" ]; then
   echo "Destination directory $DST_DIR already exists!"
-  echo "You can run \`rm -rf packages/plugin-$SCOPE && rm -rf packages/base/src/commands/$SCOPE\` to clean up a previous run of this script."
+  echo "You can run \`rm -rf packages/plugin-$SCOPE && rm -rf $BASE_DIR\` to clean up a previous run of this script."
   exit 1
 fi
 mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
-mkdir -p "packages/base/src/commands/$SCOPE"
-mv "$DST_DIR/cli.ts" "packages/base/src/commands/$SCOPE/cli.ts"
+mkdir -p "$BASE_DIR"
+mv "$DST_DIR/cli.ts" "$BASE_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
@@ -163,7 +164,7 @@ echo Done
 
 echo 6. Update CODEOWNERS
 CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | sed 's|\s\+| |g' | cut -d' ' -f 2-)
-sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\npackages/base/src/commands/$SCOPE|" .github/CODEOWNERS
+sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\n$BASE_DIR|" .github/CODEOWNERS
 echo Done
 
 echo "7. Run \`yarn lint:packages --fix\`"
