@@ -238,7 +238,7 @@ const TO_APPLY: ApplyChanges[] = []
 // #region - Format file: .github/workflows/ci.yml
 const resolutions = ['@datadog/datadog-ci-base', ...pluginPackages.map((p) => p.packageJson.name)]
   .map((name) => `"${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
-  .join('\n')
+  .join(',\n')
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
