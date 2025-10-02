@@ -2,7 +2,7 @@
 
 ## Overview
 
-Use the [`@datadog-ci` NPM package][1] to run Continuous Testing tests directly within your CI/CD pipeline. You can automatically halt a build, block a deployment, and roll back a deployment when a Synthetic test detects a regression.
+Use the [`@datadog/datadog-ci` NPM package][1] to run Continuous Testing tests directly within your CI/CD pipeline. You can automatically halt a build, block a deployment, and roll back a deployment when a Synthetic test detects a regression.
 
 ## Setup
 
@@ -28,6 +28,12 @@ yarn add --dev @datadog/datadog-ci
 
 <!-- xxz tab xxx -->
 <!-- xxz tabs xxx -->
+
+Then run the following command to install the Synthetics plugin:
+
+```bash
+datadog-ci plugin install synthetics
+```
 
 ### Setup the client
 
