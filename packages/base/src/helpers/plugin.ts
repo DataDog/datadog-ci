@@ -104,7 +104,10 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
 
   // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await import('@antfu/install-pkg')
-  const output = await installPackage([basePackage, pluginPackage], {silent: true})
+  const output = await installPackage([basePackage, pluginPackage], {
+    silent: true,
+    dev: true,
+  })
 
   if (output.exitCode === 0) {
     console.log()
