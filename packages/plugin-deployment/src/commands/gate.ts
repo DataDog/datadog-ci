@@ -295,12 +295,13 @@ export class PluginCommand extends DeploymentGateCommand {
 
   private getResultForDatadogError(): CommandResult {
     if (this.failOnError) {
-      this.logger.warn('Unexpected error happened, exiting with status 1 because --fail-on-error is enabled')
+      this.logger.warn('Unexpected error happened, exiting with status 1 (fail) because --fail-on-error is enabled')
 
       return 'FAIL'
     }
 
-    this.logger.warn('Unexpected error happened, exiting with status 0')
+    this.logger.warn('Unexpected error happened, exiting with status 0 (pass)')
+    this.logger.info('You can override this behavior by setting --fail-on-error to true')
 
     return 'PASS'
   }
