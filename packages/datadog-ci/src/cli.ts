@@ -6,7 +6,7 @@ import {Builtins, Cli} from 'clipanion'
 
 import {commands as commandsToMigrate} from './commands/cli'
 
-export const BETA_COMMANDS = new Set(['dora', 'deployment', 'elf-symbols'])
+export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
 
 const betaCommandsEnabled =
   process.env.DD_BETA_COMMANDS_ENABLED === '1' || process.env.DD_BETA_COMMANDS_ENABLED === 'true'
