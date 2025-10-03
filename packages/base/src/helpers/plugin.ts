@@ -15,6 +15,8 @@ export type PluginSubModule = {PluginCommand: CommandClass}
 // Use `DEBUG=plugins` to enable debug logs
 const debug = createDebug('plugins')
 
+const PLUGINS_INSTALLABLE_IN_NEXT_MAJOR_RELEASE = new Set(['aas', 'cloud-run', 'lambda', 'stepfunctions', 'synthetics'])
+
 export const executePluginCommand = async <T extends Command>(instance: T): Promise<number | void> => {
   const [scope, command] = instance.path
   debug(`Executing command ${command} in plugin ${scope}`)
@@ -24,6 +26,7 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
     debug(`Done importing plugin command`)
 
     const pluginCommand = Object.assign(new submodule.PluginCommand(), instance)
+    handleNextMajorReleaseNotice(scope)
 
     return pluginCommand.execute()
   } catch (error) {
@@ -119,6 +122,21 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
 
     return false
   }
+}
+
+const handleNextMajorReleaseNotice = (scope: string) => {
+  if (!PLUGINS_INSTALLABLE_IN_NEXT_MAJOR_RELEASE.has(scope)) {
+    return
+  }
+
+  console.log()
+  messageBox('Datadog-ci 4.0: Plugins 🔌', 'magenta', [
+    `In the next major release of datadog-ci, the commands in the ${chalk.magenta(scope)} scope will be moved to a separate plugin (${chalk.magenta(scopeToPackageName(scope))}).`,
+    `To reduce friction, running a command requiring a plugin in ${chalk.bold('version 4.x')} will automatically install it if necessary. ${chalk.bold('No action needed.')}`,
+    '',
+    `More information at ${chalk.cyan('https://github.com/DataDog/datadog-ci/blob/master/MIGRATING.md#30-to-40')}`,
+  ])
+  console.log()
 }
 
 const handlePluginAutoInstall = async (scope: string) => {
