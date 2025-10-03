@@ -37,15 +37,19 @@ For more ways to install the CLI, see [this section](#more-ways-to-install-the-c
 
 Plugins are separate packages that were split from the `@datadog/datadog-ci` package to reduce its installation size.
 
-You can install them with the `datadog-ci plugin install` command:
+Use `datadog-ci plugin list` to list the available plugins:
+
+```sh
+datadog-ci plugin list
+```
+
+Use `datadog-ci plugin install` to install a plugin:
 
 ```sh
 datadog-ci plugin install <scope>
 ```
 
 By default, running a command that requires a plugin will automatically install the plugin if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
-
-You can find a list of available plugins [at this link](https://www.npmjs.com/search?q=author%3Adatadog%20keywords%3Adatadog-ci%2Cplugin).
 
 ## Usage
 
