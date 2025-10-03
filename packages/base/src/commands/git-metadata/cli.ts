@@ -1,3 +1,7 @@
-import {UploadCommand} from './upload'
+/* eslint-disable import-x/order */
+import {GitMetadataUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+// prettier-ignore
+export const commands = [
+  GitMetadataUploadCommand,
+]

@@ -52,7 +52,7 @@ import {
   renderWarning,
 } from './renderer'
 
-export class UploadCommand extends Command {
+export class ElfSymbolsUploadCommand extends Command {
   public static paths = [['elf-symbols', 'upload']]
 
   public static usage = Command.Usage({

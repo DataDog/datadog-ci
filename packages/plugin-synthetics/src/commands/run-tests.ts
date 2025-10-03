@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {RunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
+import {SyntheticsRunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -20,7 +20,7 @@ import {executeTests, getDefaultConfig} from '../run-tests-lib'
 import {RecursivePartial, toExecutionRule, validateAndParseOverrides} from '../utils/internal'
 import {getExitReason, getOrgSettings, renderResults, toExitCode, reportExitLogs, getReporter} from '../utils/public'
 
-export class PluginCommand extends RunTestsCommand {
+export class PluginCommand extends SyntheticsRunTestsCommand {
   protected reporter!: MainReporter
   protected config: RunTestsCommandConfig = getDefaultConfig()
   protected fipsConfig = {

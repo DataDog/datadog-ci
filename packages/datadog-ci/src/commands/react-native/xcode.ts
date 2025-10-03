@@ -8,7 +8,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {parsePlist} from '@datadog/datadog-ci-base/helpers/plist'
 import {Cli, Command, Option} from 'clipanion'
 
-import {UploadCommand} from './upload'
+import {ReactNativeUploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'
 
 /**
@@ -65,7 +65,7 @@ const getDatadogReactNativePath = () => {
   }
 }
 
-export class XCodeCommand extends Command {
+export class ReactNativeXcodeCommand extends Command {
   public static paths = [['react-native', 'xcode']]
 
   public static usage = Command.Usage({
@@ -251,7 +251,7 @@ export class XCodeCommand extends Command {
 
     // Run upload script in the background
     const cli = new Cli()
-    cli.register(UploadCommand)
+    cli.register(ReactNativeUploadCommand)
 
     const uploadCommand = [
       'react-native',

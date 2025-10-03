@@ -5412,7 +5412,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "datadog-ci-monorepo@workspace:."
   dependencies:
-    "@datadog/datadog-ci-base": "workspace:*"
     "@microsoft/eslint-formatter-sarif": "npm:^3.1.0"
     "@stylistic/eslint-plugin": "npm:^5.3.1"
     "@types/node": "npm:^20.19.18"

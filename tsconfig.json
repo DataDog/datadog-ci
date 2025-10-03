@@ -18,5 +18,5 @@
     {"path": "./packages/plugin-stepfunctions"},
     {"path": "./packages/plugin-synthetics"}
   ],
-  "include": ["bin/lint-packages.ts"]
+  "exclude": ["*"]
 }

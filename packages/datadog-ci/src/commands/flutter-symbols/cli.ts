@@ -1,3 +1,3 @@
-import {UploadCommand} from './upload'
+import {FlutterSymbolsUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+export const commands = [FlutterSymbolsUploadCommand]

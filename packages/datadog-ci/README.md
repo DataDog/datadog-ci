@@ -80,6 +80,12 @@ The following `<scope>` and `<command>` values are available.
 
 - `upload`: Upload code coverage report files to Datadog.
 
+#### `dora`
+
+<sub>**README:** [📚](/packages/plugin-dora) | **Documentation:** [🔗](https://docs.datadoghq.com/dora_metrics/)</sub>
+
+- `deployment`: Send a new deployment event for DORA Metrics to Datadog.
+
 #### `dsyms`
 
 <sub>**README:** [📚](/packages/datadog-ci/src/commands/dsyms) | **Documentation:** [🔗](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)</sub>
@@ -200,12 +206,6 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `correlate`: Correlate GitOps CD deployments with application repositories CI pipelines. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
 - `correlate-image`: Correlate an image from a CD provider with its source commit. [🔗](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a Deployment Gate. [🔗](https://docs.datadoghq.com/deployment_gates/)
-
-#### `dora`
-
-<sub>**README:** [📚](/packages/plugin-dora) | **Documentation:** [🔗](https://docs.datadoghq.com/dora_metrics/)</sub>
-
-- `deployment`: Send a new deployment event for DORA Metrics to Datadog.
 
 #### `elf-symbols`
 

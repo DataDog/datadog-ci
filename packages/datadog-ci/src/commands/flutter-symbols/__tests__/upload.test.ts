@@ -4,8 +4,8 @@ import {MultipartFileValue, MultipartPayload, MultipartStringValue} from '@datad
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 
-import * as dsyms from '../../dsyms/upload'
-import * as sourcemaps from '../../sourcemaps/upload'
+import {DsymsUploadCommand} from '../../dsyms/upload'
+import {SourcemapsUploadCommand} from '../../sourcemaps/upload'
 
 import {getArchInfoFromFilename, uploadMultipartHelper} from '../helpers'
 import {
@@ -18,7 +18,7 @@ import {
   renderPubspecMissingVersionError,
   renderVersionBuildNumberWarning,
 } from '../renderer'
-import {UploadCommand} from '../upload'
+import {FlutterSymbolsUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/utils', () => ({
   ...jest.requireActual('@datadog/datadog-ci-base/helpers/utils'),
@@ -38,8 +38,8 @@ jest.mock('../helpers', () => ({
 const fixtureDir = './src/commands/flutter-symbols/__tests__/fixtures'
 
 describe('flutter-symbol upload', () => {
-  const runCommand = async (prepFunction: (command: UploadCommand) => void) => {
-    const command = createCommand(UploadCommand)
+  const runCommand = async (prepFunction: (command: FlutterSymbolsUploadCommand) => void) => {
+    const command = createCommand(FlutterSymbolsUploadCommand)
     prepFunction(command)
 
     const exitCode = await command.execute()
@@ -121,7 +121,7 @@ describe('flutter-symbol upload', () => {
 
   describe('getFlutterSymbolFiles', () => {
     test('should read all symbol files', async () => {
-      const command = new UploadCommand()
+      const command = new FlutterSymbolsUploadCommand()
       const searchDir = `${fixtureDir}/dart-symbols`
       const files = command['getFlutterSymbolFiles'](searchDir)
 
@@ -136,7 +136,7 @@ describe('flutter-symbol upload', () => {
 
   describe('parsePubspec', () => {
     test('writes error on missing pubspec', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion']('./pubspec.yaml')
 
@@ -147,7 +147,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('writes error on invalid pubspec', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/invalidPubspec.yaml`)
 
@@ -158,7 +158,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('writes error on missing version in pubspec', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/missingVersionPubspec.yaml`)
 
@@ -169,7 +169,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('populates version from valid pubspec', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/validPubspec.yaml`)
 
@@ -181,7 +181,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('strips pre-release from pre-release pubspec and shows warning', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/prereleasePubspec.yaml`)
 
@@ -193,7 +193,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('strips build from build pubspec and shows warning', async () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       const context = command.context
       const exitCode = await command['parsePubspecVersion'](`${fixtureDir}/pubspecs/buildPubspec.yaml`)
 
@@ -215,7 +215,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs'],
         expect.anything()
       )
@@ -231,7 +231,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', './build/ios/archive/Runner.xcarchive/dSYMs', '--dry-run'],
         expect.anything()
       )
@@ -248,7 +248,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        dsyms.UploadCommand,
+        DsymsUploadCommand,
         ['dsyms', 'upload', './dsym-location'],
         expect.anything()
       )
@@ -257,12 +257,12 @@ describe('flutter-symbol upload', () => {
   })
 
   describe('android mapping upload', () => {
-    const addDefaultCommandParameters = (command: UploadCommand) => {
+    const addDefaultCommandParameters = (command: FlutterSymbolsUploadCommand) => {
       command['serviceName'] = 'fake.service'
       command['version'] = '1.0.0'
     }
 
-    const mockGitRepoParameters = (command: UploadCommand) => {
+    const mockGitRepoParameters = (command: FlutterSymbolsUploadCommand) => {
       command['gitData'] = {
         hash: 'fake-git-hash',
         remote: 'fake-git-remote',
@@ -299,7 +299,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('creates correct metadata payload', () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
 
@@ -317,7 +317,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('build in version is sanitized in metadata payload', () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
       command['version'] = '1.2.4+987'
@@ -438,7 +438,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        sourcemaps.UploadCommand,
+        SourcemapsUploadCommand,
         [
           'sourcemaps',
           'upload',
@@ -462,7 +462,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        sourcemaps.UploadCommand,
+        SourcemapsUploadCommand,
         [
           'sourcemaps',
           'upload',
@@ -485,7 +485,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        sourcemaps.UploadCommand,
+        SourcemapsUploadCommand,
         [
           'sourcemaps',
           'upload',
@@ -509,7 +509,7 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(0)
       expect(performSubCommand).toHaveBeenCalledWith(
-        sourcemaps.UploadCommand,
+        SourcemapsUploadCommand,
         [
           'sourcemaps',
           'upload',
@@ -525,12 +525,12 @@ describe('flutter-symbol upload', () => {
   })
 
   describe('flutter symbol upload', () => {
-    const addDefaultCommandParameters = (command: UploadCommand) => {
+    const addDefaultCommandParameters = (command: FlutterSymbolsUploadCommand) => {
       command['serviceName'] = 'fake.service'
       command['version'] = '1.0.0'
     }
 
-    const mockGitRepoParameters = (command: UploadCommand) => {
+    const mockGitRepoParameters = (command: FlutterSymbolsUploadCommand) => {
       command['gitData'] = {
         hash: 'fake-git-hash',
         remote: 'fake-git-remote',
@@ -567,7 +567,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('creates correct metadata payloads', () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
 
@@ -587,7 +587,7 @@ describe('flutter-symbol upload', () => {
     })
 
     test('sanitizes build in version number payload', () => {
-      const command = createCommand(UploadCommand)
+      const command = createCommand(FlutterSymbolsUploadCommand)
       addDefaultCommandParameters(command)
       mockGitRepoParameters(command)
       command['version'] = '1.2.4+567'

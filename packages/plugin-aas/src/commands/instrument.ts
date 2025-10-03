@@ -2,7 +2,7 @@ import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {InstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
+import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
@@ -24,7 +24,7 @@ import {
   SIDECAR_PORT,
 } from '../common'
 
-export class PluginCommand extends InstrumentCommand {
+export class PluginCommand extends AasInstrumentCommand {
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToInstrument, config, errors] = await this.ensureConfig()

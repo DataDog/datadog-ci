@@ -3,7 +3,7 @@ import {readFileSync} from 'fs'
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
 
-import {CodepushCommand} from '../codepush'
+import {ReactNativeCodepushCommand} from '../codepush'
 
 jest.mock('child_process', () => ({
   exec: jest.fn().mockImplementation((command: string, callback) => {
@@ -57,7 +57,7 @@ jest.mock('child_process', () => ({
 
 const runCLI = async (appName: string, options?: {uploadBundle?: boolean}) => {
   const cli = new Cli()
-  cli.register(CodepushCommand)
+  cli.register(ReactNativeCodepushCommand)
 
   const context = createMockContext()
   process.env = {...process.env, ...getEnvVarPlaceholders()}

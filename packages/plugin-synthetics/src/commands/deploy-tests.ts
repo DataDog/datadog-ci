@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/member-ordering */
-import {DeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
+import {SyntheticsDeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -14,7 +14,7 @@ import {DefaultReporter} from '../reporters/default'
 import {RecursivePartial, getDefaultConfig} from '../utils/internal'
 import {getReporter} from '../utils/public'
 
-export class PluginCommand extends DeployTestsCommand {
+export class PluginCommand extends SyntheticsDeployTestsCommand {
   protected reporter!: MainReporter
   protected config: DeployTestsCommandConfig = PluginCommand.getDefaultConfig()
   protected fipsConfig = {

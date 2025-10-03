@@ -4,10 +4,10 @@ import os from 'os'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import upath from 'upath'
 
-import {InjectDebugIdCommand} from '../injectDebugId'
+import {ReactNativeInjectDebugIdCommand} from '../injectDebugId'
 
 const tmpDir = upath.join(os.tmpdir(), 'inject-debug-id-tests')
-const runCLI = makeRunCLI(InjectDebugIdCommand, ['react-native', 'inject-debug-id'])
+const runCLI = makeRunCLI(ReactNativeInjectDebugIdCommand, ['react-native', 'inject-debug-id'])
 
 describe('inject-debug-id', () => {
   beforeEach(async () => {

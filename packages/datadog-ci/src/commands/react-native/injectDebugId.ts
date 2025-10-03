@@ -12,7 +12,7 @@ import upath from 'upath'
  */
 const DEBUG_ID_METADATA_PREFIX = 'datadog-debug-id-'
 
-export class InjectDebugIdCommand extends Command {
+export class ReactNativeInjectDebugIdCommand extends Command {
   public static paths = [['react-native', 'inject-debug-id']]
   public static usage = Command.Usage({
     category: 'RUM',

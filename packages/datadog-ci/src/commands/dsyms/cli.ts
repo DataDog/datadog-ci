@@ -1,3 +1,3 @@
-import {UploadCommand} from './upload'
+import {DsymsUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+export const commands = [DsymsUploadCommand]

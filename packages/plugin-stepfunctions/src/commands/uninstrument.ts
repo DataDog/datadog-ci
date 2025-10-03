@@ -1,6 +1,6 @@
 import {CloudWatchLogsClient, DescribeSubscriptionFiltersCommandOutput} from '@aws-sdk/client-cloudwatch-logs'
 import {SFNClient} from '@aws-sdk/client-sfn'
-import {UninstrumentStepFunctionsCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/uninstrument'
+import {StepfunctionsUninstrumentCommand} from '@datadog/datadog-ci-base/commands/stepfunctions/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -14,7 +14,7 @@ import {
 import {DD_CI_IDENTIFYING_STRING, TAG_VERSION_NAME} from '../constants'
 import {getStepFunctionLogGroupArn, isValidArn, parseArn} from '../helpers'
 
-export class PluginCommand extends UninstrumentStepFunctionsCommand {
+export class PluginCommand extends StepfunctionsUninstrumentCommand {
   private config = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,

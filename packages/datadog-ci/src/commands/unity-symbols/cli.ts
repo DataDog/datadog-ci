@@ -1,3 +1,3 @@
-import {UploadCommand} from './upload'
+import {UnitySymbolsUploadCommand} from './upload'
 
-export const commands = [UploadCommand]
+export const commands = [UnitySymbolsUploadCommand]

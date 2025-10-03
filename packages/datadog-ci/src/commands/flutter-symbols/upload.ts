@@ -23,8 +23,8 @@ import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
-import * as dsyms from '../dsyms/upload'
-import * as sourcemaps from '../sourcemaps/upload'
+import {DsymsUploadCommand} from '../dsyms/upload'
+import {SourcemapsUploadCommand} from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'
 import {
@@ -57,7 +57,7 @@ import {
   UploadInfo,
 } from './renderer'
 
-export class UploadCommand extends Command {
+export class FlutterSymbolsUploadCommand extends Command {
   public static paths = [['flutter-symbols', 'upload']]
 
   public static usage = Command.Usage({
@@ -463,7 +463,7 @@ export class UploadCommand extends Command {
       dsymUploadCommand.push('--dry-run')
     }
 
-    const exitCode = await performSubCommand(dsyms.UploadCommand, dsymUploadCommand, this.context)
+    const exitCode = await performSubCommand(DsymsUploadCommand, dsymUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }
@@ -484,7 +484,7 @@ export class UploadCommand extends Command {
       sourceMapUploadCommand.push('--dry-run')
     }
 
-    const exitCode = await performSubCommand(sourcemaps.UploadCommand, sourceMapUploadCommand, this.context)
+    const exitCode = await performSubCommand(SourcemapsUploadCommand, sourceMapUploadCommand, this.context)
     if (exitCode && exitCode !== 0) {
       return UploadStatus.Failure
     }

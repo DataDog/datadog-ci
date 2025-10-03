@@ -25,7 +25,7 @@ const $5 = makeTerminalLink(
 )
 const $6 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/mobile_app_testing/`)
 
-export class RunTestsCommand extends Command {
+export class SyntheticsRunTestsCommand extends Command {
   public static paths = [
     ['synthetics', 'run-tests'],
     ['synthetics', 'build-and-test'],

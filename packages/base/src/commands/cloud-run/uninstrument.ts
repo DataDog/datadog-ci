@@ -4,7 +4,7 @@ import {executePluginCommand} from '../../helpers/plugin'
 
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 
-export class UninstrumentCommand extends Command {
+export class CloudRunUninstrumentCommand extends Command {
   public static paths = [['cloud-run', 'uninstrument']]
 
   public static usage = Command.Usage({

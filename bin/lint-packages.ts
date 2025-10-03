@@ -6,7 +6,10 @@ import path from 'path'
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
-import {noPluginExceptions} from '@datadog/datadog-ci-base/cli'
+// Source of truth for command scopes without plugins: this should be updated manually.
+const noPluginExceptions = new Set(['git-metadata', 'plugin', 'tag'])
+// Source of truth for scope-less commands: this should be updated manually.
+const scopeLessCommandExceptions = new Set(['tag'])
 
 type Package = {
   folder: string
@@ -18,23 +21,23 @@ type Package = {
   }
 }
 
-type PluginPackage = Package & {
+type CommandScope = {
   scope: string
   commands: string[]
 }
 
-declare global {
-  interface RegExpMatchArray {
-    indices: [start: number, end: number][] & {
-      groups: Record<string, [start: number, end: number]>
-    }
-  }
-}
+type PluginPackage = Package & CommandScope
 
 const fix = process.argv.includes('--fix')
 const isCI = !!process.env.CI
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+
+const upperCamelCase = (str: string) => {
+  const camel = camelCase(str)
+
+  return camel.charAt(0).toUpperCase() + camel.slice(1)
+}
 
 const exec = (cmd: string, {throwError}: {throwError?: boolean} = {}) => {
   console.log(chalk.bold.blue(`\nRunning ${cmd}...`))
@@ -63,9 +66,26 @@ const loadPackage = (folderName: string): Package => {
 }
 
 const findCommands = (folder: string, scope: string): string[] => {
+  if (noPluginExceptions.has(scope)) {
+    return fs
+      .readdirSync(folder) // `packages/base/src/commands/<scope>`
+      .reduce<string[]>((acc, file) => {
+        if (!file.endsWith('.ts')) {
+          return acc
+        }
+
+        const content = fs.readFileSync(path.join(folder, file), 'utf8')
+        if (!content.match(/export class \w+ extends Command/)) {
+          return acc
+        }
+
+        return [...acc, file.replace('.ts', '')]
+      }, [])
+  }
+
   try {
     return fs
-      .readdirSync(path.join(folder, 'src/commands'))
+      .readdirSync(path.join(folder, 'src/commands')) // `packages/plugin-<scope>/src/commands`
       .reduce<string[]>((acc, file) => (file.endsWith('.ts') ? [...acc, file.replace('.ts', '')] : acc), [])
   } catch (e) {
     if (e instanceof Error && e.message.includes('no such file or directory')) {
@@ -86,7 +106,7 @@ const findCommands = (folder: string, scope: string): string[] => {
 
 const formatCodeownersFile = () => {
   const file = '.github/CODEOWNERS'
-  const originalContent = fs.readFileSync('.github/CODEOWNERS', 'utf8')
+  const originalContent = fs.readFileSync(file, 'utf8')
 
   const lines = originalContent.split('\n')
   const formattedLines: string[] = []
@@ -94,7 +114,7 @@ const formatCodeownersFile = () => {
   let currentBlockPadding: number | undefined
   for (const line of lines) {
     const match = line.match(/^(?<pattern>[\w/.*-]+?)(?<spacing>[ ]{1,})(?<owners>[@\w/ -]+)/d)
-    if (!match) {
+    if (!match || !match.indices?.groups) {
       currentBlockPadding = undefined
       formattedLines.push(line)
       continue
@@ -115,10 +135,73 @@ const formatCodeownersFile = () => {
   return makeApplyChanges(file, originalContent, newContent)
 }
 
+const formatBasePackageCliFile = () => {
+  const file = `packages/base/src/cli.ts`
+  const originalContent = fs.readFileSync(file, 'utf8')
+
+  const imports = [
+    ...pluginPackages.map((p) => ({
+      importName: `${camelCase(p.scope)}Commands`,
+      importPath: `./commands/${p.scope}/cli`,
+      scope: p.scope,
+    })),
+    ...Array.from(noPluginExceptions).map((exceptionScope) => ({
+      importName: `${camelCase(exceptionScope)}Commands`,
+      importPath: `./commands/${exceptionScope}/cli`,
+      scope: exceptionScope,
+    })),
+  ].sort((a, b) => a.importPath.localeCompare(b.importPath))
+
+  const newContent = `/* eslint-disable quote-props */
+import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
+
+${imports.map((p) => `import {commands as ${p.importName}} from '${p.importPath}'`).join('\n')}
+
+// prettier-ignore
+export const commands = {
+${imports.map((p) => `  '${p.scope}': ${p.importName},`).join('\n')}
+} satisfies RecordWithKebabCaseKeys
+
+/**
+ * Some command scopes do not have a plugin package, and their logic is entirely included in \`@datadog/datadog-ci-base\`.
+ */
+export const noPluginExceptions: Set<string> = new Set([${Array.from(noPluginExceptions)
+    .map((e) => `'${e}'`)
+    .join(', ')}]) satisfies Set<
+  keyof typeof commands
+>
+`
+
+  return makeApplyChanges(file, originalContent, newContent)
+}
+
+const formatBasePackageScopeCliFile = ({scope, commands}: CommandScope) => {
+  const file = `packages/base/src/commands/${scope}/cli.ts`
+  const originalContent = fs.readFileSync(file, 'utf8')
+
+  const imports = commands.map((command) => ({
+    importName: scopeLessCommandExceptions.has(scope)
+      ? `${upperCamelCase(command)}Command`
+      : `${upperCamelCase(scope)}${upperCamelCase(command)}Command`,
+    importPath: `./${command}`,
+  }))
+
+  const newContent = `/* eslint-disable import-x/order */
+${imports.map((i) => `import {${i.importName}} from '${i.importPath}'`).join('\n')}
+
+// prettier-ignore
+export const commands = [
+${imports.map((i) => `  ${i.importName},`).join('\n')}
+]
+`
+
+  return makeApplyChanges(file, originalContent, newContent)
+}
+
 const datadogCiPackage = loadPackage('datadog-ci')
 const basePackage = loadPackage('base')
 
-// The source of truth is the filesystem
+// The source of truth is the filesystem and `noPluginExceptions`
 const pluginPackages = fs
   .readdirSync('packages')
   .filter((dir) => dir.startsWith('plugin-'))
@@ -142,6 +225,11 @@ const pluginPackages = fs
     }
   })
   .filter((p): p is PluginPackage => p !== undefined)
+
+const exceptionScopes: CommandScope[] = [...noPluginExceptions].map((scope) => ({
+  scope,
+  commands: findCommands(path.join('packages/base/src/commands', scope), scope),
+}))
 
 type ApplyChanges = () => 0 | 1
 type Replacer = (strings: TemplateStringsArray, replacement: string) => ApplyChanges
@@ -187,7 +275,7 @@ const makeApplyChanges = (file: string, originalContent: string, newContent: str
       return success(`${chalk.bold(file)} is up to date\n`)
     }
 
-    console.log(`${chalk.bold(file)} should be updated:\n`, delta, '\n')
+    console.log(`${chalk.bold(file)} should be updated:\n${delta}\n`)
 
     if (fix) {
       fs.writeFileSync(file, newContent)
@@ -269,35 +357,10 @@ TO_APPLY.push(matchAndReplace('packages/base/package.json')`
 `)
 // #endregion
 
-// #region - Format file: packages/base/src/cli.ts
-const imports = [
-  ...pluginPackages.map((p) => ({
-    importName: `${camelCase(p.scope)}Commands`,
-    importPath: `./commands/${p.scope}/cli`,
-    scope: p.scope,
-  })),
-  ...Array.from(noPluginExceptions).map((exceptionScope) => ({
-    importName: `${camelCase(exceptionScope)}Commands`,
-    importPath: `./commands/${exceptionScope}/cli`,
-    scope: exceptionScope,
-  })),
-].sort((a, b) => a.importPath.localeCompare(b.importPath))
+// #region - Format files: packages/base/src/cli.ts and packages/base/src/commands/<scope>/cli.ts
+TO_APPLY.push(formatBasePackageCliFile())
 
-const generated = `
-${imports.map((p) => `import {commands as ${p.importName}} from '${p.importPath}'`).join('\n')}
-
-// prettier-ignore
-export const commands = {
-${imports.map((p) => `  '${p.scope}': ${p.importName},`).join('\n')}
-} satisfies RecordWithKebabCaseKeys
-`
-
-TO_APPLY.push(matchAndReplace('packages/base/src/cli.ts')`
-import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
-${generated}
-/**
- * Some command scopes do not have a plugin package
-`)
+TO_APPLY.push(...exceptionScopes.concat(pluginPackages).map(formatBasePackageScopeCliFile))
 // #endregion
 
 // #region - Format file: tsconfig.json
@@ -337,7 +400,11 @@ console.log(chalk.bold.blue('Linting files...\n'))
 
 TO_APPLY.push(formatCodeownersFile())
 
-if (TO_APPLY.map((apply) => apply()).some((result) => result !== 0)) {
+const sum = TO_APPLY.map((apply) => apply()).reduce<number>((acc, result) => acc + result, 0)
+if (sum > 0) {
+  console.error(
+    chalk.red(`Found ${chalk.bold(sum)} errors. Run ${chalk.bold('yarn lint:packages --fix')} to fix them.`)
+  )
   process.exit(1)
 }
 // #endregion

@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {SarifUploadCommand} from './upload'
 
-export const commands = [SarifUploadCommand]
+// prettier-ignore
+export const commands = [
+  SarifUploadCommand,
+]

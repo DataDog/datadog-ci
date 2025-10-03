@@ -9,7 +9,7 @@ import {Cli} from 'clipanion'
 import upath from 'upath'
 
 import {Dsym} from '../interfaces'
-import {UploadCommand} from '../upload'
+import {DsymsUploadCommand} from '../upload'
 import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
 
 /**
@@ -96,7 +96,7 @@ describe('upload', () => {
   })
 
   describe('findDsyms', () => {
-    const command = new UploadCommand()
+    const command = new DsymsUploadCommand()
 
     test('Should find dSYMs recursively', async () => {
       const actualDSYMs = await command['findDsyms']('src/commands/dsyms/__tests__/fixtures')
@@ -108,7 +108,7 @@ describe('upload', () => {
   })
 
   describe('parseDwarfdumpOutput', () => {
-    const command = new UploadCommand()
+    const command = new DsymsUploadCommand()
 
     test('Should read arch slice from single-line output', () => {
       const output = 'UUID: 00000000-1111-2222-3333-444444444444 (arm64) /folder/Foo.dSYM/Contents/Resources/DWARF/Foo'
@@ -170,7 +170,7 @@ describe('upload', () => {
   })
 
   describe('processDsyms', () => {
-    const command = new UploadCommand()
+    const command = new DsymsUploadCommand()
 
     test('Given fat dSYM, it should extract each arch slice to separate dSYM in target folder', async () => {
       const tmpDirectory = await createUniqueTmpDirectory()
@@ -243,7 +243,7 @@ describe('upload', () => {
   })
 
   describe('compressDsyms', () => {
-    const command = new UploadCommand()
+    const command = new DsymsUploadCommand()
 
     test('Should archive dSYMs to target directory and name archives by their UUIDs', async () => {
       const tmpDirectory = await createUniqueTmpDirectory()
@@ -269,7 +269,7 @@ describe('upload', () => {
 describe('execute', () => {
   const runCLI = async (dsymPath: string, options?: {configPath?: string; env?: Record<string, string>}) => {
     const cli = new Cli()
-    cli.register(UploadCommand)
+    cli.register(DsymsUploadCommand)
 
     const context = createMockContext()
     const command = ['dsyms', 'upload', dsymPath, '--dry-run']
