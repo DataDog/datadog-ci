@@ -9,7 +9,7 @@ Object.defineProperty(process, 'platform', {
   writable: true,
 })
 
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {CommandContext} from '@datadog/datadog-ci-base'
 
 import {AppUploadReporter} from '../../../reporters/mobile/app-upload'
 

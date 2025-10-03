@@ -1,17 +1,16 @@
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import chalk from 'chalk'
 import ora from 'ora'
 
-import {AppUploadDetails} from '../../interfaces'
+import {AppUploadDetails, ReporterContext} from '../../interfaces'
 
 import {ICONS} from '../constants'
 
 export class AppUploadReporter {
-  private context: CommandContext
+  private context: ReporterContext
   private spinner?: ora.Ora
   private startTime: number
 
-  constructor(context: CommandContext) {
+  constructor(context: ReporterContext) {
     this.context = context
     this.startTime = Date.now()
   }

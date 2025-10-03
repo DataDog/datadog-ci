@@ -2,11 +2,13 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {BaseCommand} from '../..'
+
 /**
  * This command is a wrapper around the datadog-ci tag command, allowing customers to mark CI jobs
  * as deployments and setting specific properties, like the environment or the revision in a simple way.
  */
-export class DeploymentMarkCommand extends Command {
+export class DeploymentMarkCommand extends BaseCommand {
   public static paths = [['deployment', 'mark']]
 
   public static usage = Command.Usage({

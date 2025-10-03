@@ -4,6 +4,8 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/utils'
 
+import {BaseCommand} from '../..'
+
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 
 // BASE COMMAND START
@@ -14,7 +16,7 @@ const $B2 = makeTerminalLink(
 const $B3 = makeTerminalLink(`${datadogDocsBaseUrl}/getting_started/site/#access-the-datadog-site`)
 // BASE COMMAND END
 
-export class SyntheticsUploadApplicationCommand extends Command {
+export class SyntheticsUploadApplicationCommand extends BaseCommand {
   public static paths = [['synthetics', 'upload-application']]
 
   public static usage = Command.Usage({

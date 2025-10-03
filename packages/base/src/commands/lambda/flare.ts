@@ -2,7 +2,9 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-export class LambdaFlareCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class LambdaFlareCommand extends BaseCommand {
   public static paths = [['lambda', 'flare']]
 
   public static usage = Command.Usage({

@@ -31,7 +31,7 @@ import {
   UpdateStateMachineCommandOutput,
 } from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {CommandContext} from '@datadog/datadog-ci-base'
 
 import {buildLogAccessPolicyName, displayChanges, StateMachineDefinitionType} from './helpers'
 

@@ -9,8 +9,8 @@ Object.defineProperty(process, 'platform', {
   writable: true,
 })
 
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {
   ExecutionRule,

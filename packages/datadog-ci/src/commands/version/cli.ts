@@ -1,7 +1,8 @@
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command} from 'clipanion'
 
-class VersionCommand extends Command {
+class VersionCommand extends BaseCommand {
   public static paths = [['version']]
 
   public static usage = Command.Usage({

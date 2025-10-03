@@ -5,6 +5,8 @@ import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/utils'
 import * as validation from '../../helpers/validation'
 
+import {BaseCommand} from '../..'
+
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
@@ -25,7 +27,7 @@ const $5 = makeTerminalLink(
 )
 const $6 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/mobile_app_testing/`)
 
-export class SyntheticsRunTestsCommand extends Command {
+export class SyntheticsRunTestsCommand extends BaseCommand {
   public static paths = [
     ['synthetics', 'run-tests'],
     ['synthetics', 'build-and-test'],

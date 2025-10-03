@@ -1,10 +1,12 @@
-import {Command, Option} from 'clipanion'
+import {Option} from 'clipanion'
 
 import {EXTRA_TAGS_REG_EXP, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
+
+import {BaseCommand} from '../..'
 
 export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
@@ -59,7 +61,7 @@ export const parseResourceId = (resourceId: string): Resource | undefined => {
   }
 }
 
-export abstract class AasCommand extends Command {
+export abstract class AasCommand extends BaseCommand {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
   })

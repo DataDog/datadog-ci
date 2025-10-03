@@ -2,7 +2,9 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
-export class DeploymentCorrelateImageCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class DeploymentCorrelateImageCommand extends BaseCommand {
   public static paths = [['deployment', 'correlate-image']]
 
   public static usage = Command.Usage({

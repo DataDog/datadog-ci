@@ -1,5 +1,6 @@
 import fs from 'fs/promises'
 
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {MultipartFileValue} from '@datadog/datadog-ci-base/helpers/upload'
 
@@ -24,7 +25,7 @@ describe('interfaces', () => {
         '',
         'android',
         '102030',
-        createMockContext()
+        createMockContext() as CommandContext
       )
       const sourcemapFilePath = (payload.content.get('source_map') as MultipartFileValue).path
 

@@ -3,7 +3,9 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 
-export class GateEvaluateCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class GateEvaluateCommand extends BaseCommand {
   public static paths = [['gate', 'evaluate']]
 
   public static usage = Command.Usage({

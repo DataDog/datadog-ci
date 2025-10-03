@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -57,7 +58,7 @@ import {
   UploadInfo,
 } from './renderer'
 
-export class FlutterSymbolsUploadCommand extends Command {
+export class FlutterSymbolsUploadCommand extends BaseCommand {
   public static paths = [['flutter-symbols', 'upload']]
 
   public static usage = Command.Usage({

@@ -75,7 +75,7 @@ const findCommands = (folder: string, scope: string): string[] => {
         }
 
         const content = fs.readFileSync(path.join(folder, file), 'utf8')
-        if (!content.match(/export class \w+ extends Command/)) {
+        if (!content.match(/export class \w+ extends BaseCommand/)) {
           return acc
         }
 

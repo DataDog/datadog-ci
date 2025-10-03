@@ -1,5 +1,6 @@
 import {URL} from 'url'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
@@ -39,7 +40,7 @@ import {
 import {getMinifiedFilePath} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
-export class SourcemapsUploadCommand extends Command {
+export class SourcemapsUploadCommand extends BaseCommand {
   public static paths = [['sourcemaps', 'upload']]
 
   public static usage = Command.Usage({
