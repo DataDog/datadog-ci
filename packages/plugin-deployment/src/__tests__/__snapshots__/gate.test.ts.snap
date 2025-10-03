@@ -34,7 +34,7 @@ Request failed with error: 500 Internal Server Error
 Retrying gate evaluation request (5 attempts)...
 Request failed with error: 500 Internal Server Error
 Deployment gate evaluation failed due to a non-retryable error: Request failed with status code 500
-Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
+Unexpected error happened, exiting with status 1 (fail) because --fail-on-error is enabled
 "
 `;
 
@@ -58,7 +58,8 @@ Request failed with error: 500 Internal Server Error
 Retrying gate evaluation request (5 attempts)...
 Request failed with error: 500 Internal Server Error
 Deployment gate evaluation failed due to a non-retryable error: Request failed with status code 500
-Unexpected error happened, exiting with status 0
+Unexpected error happened, exiting with status 0 (pass)
+You can override this behavior by setting --fail-on-error to true
 "
 `;
 
@@ -79,7 +80,8 @@ Error polling for gate evaluation results: 404 Not Found
 	Retrying in 15s...
 Error polling for gate evaluation results: 404 Not Found
 ⚠️ Timeout reached (30 seconds). Gate evaluation did not complete in time.
-Unexpected error happened, exiting with status 0
+Unexpected error happened, exiting with status 0 (pass)
+You can override this behavior by setting --fail-on-error to true
 "
 `;
 
@@ -104,7 +106,8 @@ Error polling for gate evaluation results: 500 Internal Server Error
 	Retrying in 15s...
 Error polling for gate evaluation results: 500 Internal Server Error
 ⚠️ Timeout reached (60 seconds). Gate evaluation did not complete in time.
-Unexpected error happened, exiting with status 0
+Unexpected error happened, exiting with status 0 (pass)
+You can override this behavior by setting --fail-on-error to true
 "
 `;
 
@@ -125,7 +128,7 @@ Error polling for gate evaluation results: 404 Not Found
 	Retrying in 15s...
 Error polling for gate evaluation results: 404 Not Found
 ⚠️ Timeout reached (30 seconds). Gate evaluation did not complete in time.
-Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
+Unexpected error happened, exiting with status 1 (fail) because --fail-on-error is enabled
 "
 `;
 
@@ -146,7 +149,7 @@ Error polling for gate evaluation results: 500 Internal Server Error
 	Retrying in 15s...
 Error polling for gate evaluation results: 500 Internal Server Error
 ⚠️ Timeout reached (30 seconds). Gate evaluation did not complete in time.
-Unexpected error happened, exiting with status 1 because --fail-on-error is enabled
+Unexpected error happened, exiting with status 1 (fail) because --fail-on-error is enabled
 "
 `;
 
