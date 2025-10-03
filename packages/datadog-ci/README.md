@@ -171,7 +171,7 @@ The following `<scope>` and `<command>` values are available.
 
 #### `synthetics`
 
-<sub>**README:** [📚](/packages/plugin-synthetics)</sub>
+<sub>**README:** [📚](/packages/plugin-synthetics) | **Plugin:** `@datadog/datadog-ci-plugin-synthetics`</sub>
 
 - `run-tests`: Run Continuous Testing tests from the CI. [🔗](https://docs.datadoghq.com/continuous_testing/)
 - `upload-application`: Upload a new version to an existing mobile application in Datadog. [🔗](https://docs.datadoghq.com/mobile_app_testing/)

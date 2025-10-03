@@ -15,6 +15,7 @@ In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/
 | <ul><li>`cloud-run flare`</li><li>`cloud-run instrument`</li><li>`cloud-run uninstrument`</li></ul> | `@datadog/datadog-ci-plugin-cloud-run`     |
 | <ul><li>`lambda flare`</li><li>`lambda instrument`</li><li>`lambda uninstrument`</li></ul>          | `@datadog/datadog-ci-plugin-lambda`        |
 | <ul><li>`stepfunctions instrument`</li><li>`stepfunctions uninstrument`</li></ul>                   | `@datadog/datadog-ci-plugin-stepfunctions` |
+| <ul><li>`synthetics run-tests`</li><li>`synthetics upload-application`</li></ul>                    | `@datadog/datadog-ci-plugin-synthetics`    |
 
 By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
