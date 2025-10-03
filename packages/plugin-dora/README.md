@@ -42,6 +42,7 @@ datadog-ci dora deployment --service my-service --env prod \
 - `--finished-at` (default: current timestamp) is the timestamp in Unix seconds or ISO8601 when the deployment finished.
 - `--git-repository-url` is a string with the repository URL for the deployed service. If this is missing, the URL is retrieved from the local git repository.
 - `--git-commit-sha` is a string with the git commit SHA that has been deployed. If this is missing, the current HEAD is retrieved from the local git repository.
+- `--version` is a string of the version associated with the deployment.
 - `--team` is a string of the team associated with the deployment. If this is missing, the team associated with the service in the Software Catalog will be used.
 - `--custom-tags` is an array of strings of custom tags to add to the deployment event in the form `key:value`. A max of 100 tags can be added to each deployment. 
 - `--skip-git` (default: `false`): Disables sending git URL and SHA. Change Lead Time will not be available
