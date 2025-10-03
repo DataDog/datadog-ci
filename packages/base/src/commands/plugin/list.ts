@@ -15,7 +15,7 @@ export class PluginListCommand extends BaseCommand {
     details: `
       This command lists the plugins that can be installed with the \`datadog-ci plugin install\` command.
 
-      All other plugins are considered **built-in** and are not listed.
+      All other plugins are **built-in** and are not listed here.
     `,
     examples: [['List the available plugins', 'datadog-ci plugin list']],
   })

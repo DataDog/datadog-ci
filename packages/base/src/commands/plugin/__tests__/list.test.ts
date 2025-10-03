@@ -8,28 +8,41 @@ import {PluginListCommand} from '../list'
 
 describe('PluginListCommand', () => {
   test.each([
-    ['', 'All plugins are currently built-in. We will start splitting them in next major release.\n'],
-    [' (--json)', '[]\n'],
-  ])('all plugins are built-in%s', async (jsonArg, expectedOutput) => {
+    {
+      title: 'no args',
+      args: [],
+      expectedOutput: 'All plugins are currently built-in. We will start splitting them in next major release.\n',
+    },
+    {
+      title: '--json',
+      args: ['--json'],
+      expectedOutput: '[]\n',
+    },
+  ])('all plugins are built-in ($title)', async ({args, expectedOutput}) => {
     const cli = new Cli<CommandContext>()
     cli.register(PluginListCommand)
 
     const context = createMockContext() as CommandContext
     context.builtinPlugins = listAllPlugins()
 
-    const code = await cli.run(['plugin', 'list', ...(jsonArg ? ['--json'] : [])], context)
+    const code = await cli.run(['plugin', 'list', ...args], context)
 
     expect(context.stdout.toString()).toStrictEqual(expectedOutput)
     expect(code).toBe(0)
   })
 
   test.each([
-    [
-      '',
-      `The following plugins are available:\n\n - @datadog/datadog-ci-plugin-aas (install with datadog-ci plugin install aas)\n`,
-    ],
-    [' (--json)', `[{"name":"@datadog/datadog-ci-plugin-aas","scope":"aas"}]\n`],
-  ])('list available plugins%s', async (jsonArg, expectedOutput) => {
+    {
+      title: 'no args',
+      args: [],
+      expectedOutput: `The following plugins are available:\n\n - @datadog/datadog-ci-plugin-aas (install with datadog-ci plugin install aas)\n`,
+    },
+    {
+      title: '--json',
+      args: ['--json'],
+      expectedOutput: `[{"name":"@datadog/datadog-ci-plugin-aas","scope":"aas"}]\n`,
+    },
+  ])('list available plugins ($title)', async ({args, expectedOutput}) => {
     const cli = new Cli<CommandContext>()
     cli.register(PluginListCommand)
 
@@ -40,7 +53,7 @@ describe('PluginListCommand', () => {
       (plugin) => plugin !== '@datadog/datadog-ci-plugin-aas'
     )
 
-    const code = await cli.run(['plugin', 'list', ...(jsonArg ? ['--json'] : [])], context)
+    const code = await cli.run(['plugin', 'list', ...args], context)
 
     expect(context.stdout.toString()).toStrictEqual(expectedOutput)
     expect(code).toBe(0)
