@@ -391,7 +391,7 @@ const formatBlock = (plugin: PluginPackage) => {
 
 TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
 const injectedPluginSubmodules = {
-  ${dependencyPlugins.map(formatBlock).join('\n')}
+  ${pluginPackages.map(formatBlock).join('\n')}
 }
 `)
 // #endregion
