@@ -1,5 +1,4 @@
 import type {TunnelReporter} from '../tunnel/tunnel'
-import type {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {Writable} from 'stream'
 
 import {getTestRunsUrlPath} from '@datadog/datadog-ci-base/helpers/app'
@@ -20,6 +19,7 @@ import {
   UserConfigOverride,
   ResultInBatch,
   TestRequest,
+  ReporterContext,
 } from '../interfaces'
 import {isBaseResult, isTimedOutRetry, getPublicIdOrPlaceholder} from '../utils/internal'
 import {
@@ -356,12 +356,12 @@ const getResultIconAndColor = (resultOutcome: ResultOutcome): [string, chalk.Cha
 }
 
 export class DefaultReporter implements MainReporter {
-  private context: CommandContext
+  private context: ReporterContext
   private testWaitSpinner?: ora.Ora
   private write: Writable['write']
   private totalDuration?: number
 
-  constructor({context}: {context: CommandContext}) {
+  constructor({context}: {context: ReporterContext}) {
     this.context = context
     this.write = context.stdout.write.bind(context.stdout)
   }

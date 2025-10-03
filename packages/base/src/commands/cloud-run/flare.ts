@@ -2,7 +2,9 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-export class CloudRunFlareCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class CloudRunFlareCommand extends BaseCommand {
   public static paths = [['cloud-run', 'flare']]
 
   public static usage = Command.Usage({

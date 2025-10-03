@@ -15,6 +15,10 @@
   },
   "exports": {
     "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
     "./cli": {
       "development": "./src/cli.ts",
       "default": "./dist/cli.js"

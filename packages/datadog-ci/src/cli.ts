@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {commands as migratedCommands} from '@datadog/datadog-ci-base/cli'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
+
+import {dependencies} from '@datadog/datadog-ci/package.json'
 
 import {commands as commandsToMigrate} from './commands/cli'
 
@@ -19,7 +22,7 @@ const onError = (err: any) => {
 process.on('uncaughtException', onError)
 process.on('unhandledRejection', onError)
 
-const cli = new Cli({
+const cli = new Cli<CommandContext>({
   binaryLabel: 'Datadog CI',
   binaryName: 'datadog-ci',
   binaryVersion: cliVersion,
@@ -36,11 +39,14 @@ Object.entries({...migratedCommands, ...commandsToMigrate}).forEach(([scope, com
   commands.forEach((command) => cli.register(command))
 })
 
+const builtinPlugins = Object.keys(dependencies).filter((plugin) => plugin.startsWith('@datadog/datadog-ci-plugin-'))
+
 if (require.main === module) {
   void cli.runExit(process.argv.slice(2), {
     stderr: process.stderr,
     stdin: process.stdin,
     stdout: process.stdout,
+    builtinPlugins,
   })
 }
 

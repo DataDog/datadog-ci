@@ -1,6 +1,7 @@
 import fs from 'fs'
 import os from 'os'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
@@ -76,7 +77,7 @@ const validateXml = (xmlFilePath: string) => {
   return undefined
 }
 
-export class JunitUploadCommand extends Command {
+export class JunitUploadCommand extends BaseCommand {
   public static paths = [['junit', 'upload']]
 
   public static usage = Command.Usage({

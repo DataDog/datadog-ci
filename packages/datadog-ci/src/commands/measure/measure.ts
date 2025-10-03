@@ -1,5 +1,6 @@
 import type {AxiosError} from 'axios'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -28,7 +29,7 @@ export const parseMeasures = (measures: string[]) =>
     }
   }, {})
 
-export class MeasureCommand extends Command {
+export class MeasureCommand extends BaseCommand {
   public static paths = [['measure']]
 
   public static usage = Command.Usage({

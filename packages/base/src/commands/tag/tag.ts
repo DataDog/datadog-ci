@@ -10,7 +10,9 @@ import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
 import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
-export class TagCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class TagCommand extends BaseCommand {
   public static paths = [['tag']]
 
   public static usage = Command.Usage({

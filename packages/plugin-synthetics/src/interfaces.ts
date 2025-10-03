@@ -1,3 +1,5 @@
+import {Writable} from 'stream'
+
 import {Metadata} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {ProxyConfiguration} from '@datadog/datadog-ci-base/helpers/utils'
 
@@ -17,6 +19,11 @@ export interface MainReporter {
   resultEnd(result: Result, baseUrl: string, batchId: string): void
   reportStart(timings: {startTime: number}): void
   runEnd(summary: Summary, baseUrl: string, orgSettings?: SyntheticsOrgSettings): void
+}
+
+export interface ReporterContext {
+  stdout: Writable
+  stderr: Writable
 }
 
 export type Reporter = Partial<MainReporter>

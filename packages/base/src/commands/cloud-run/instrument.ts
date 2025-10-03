@@ -2,6 +2,8 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
+import {BaseCommand} from '../..'
+
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from './constants'
 
 const DEFAULT_VOLUME_PATH = '/shared-volume'
@@ -9,7 +11,7 @@ const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
 
 const DEFAULT_SIDECAR_IMAGE = 'gcr.io/datadoghq/serverless-init:latest'
 
-export class CloudRunInstrumentCommand extends Command {
+export class CloudRunInstrumentCommand extends BaseCommand {
   public static paths = [['cloud-run', 'instrument']]
 
   public static usage = Command.Usage({

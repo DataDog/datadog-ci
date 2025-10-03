@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -54,7 +55,7 @@ import {
   renderUseOnlyOnePlatform,
 } from './renderer'
 
-export class UnitySymbolsUploadCommand extends Command {
+export class UnitySymbolsUploadCommand extends BaseCommand {
   public static paths = [['unity-symbols', 'upload']]
 
   public static usage = Command.Usage({

@@ -1,6 +1,5 @@
 import fs from 'fs'
 
-import type {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 import type {Writable} from 'stream'
 
 import c from 'chalk'
@@ -14,6 +13,7 @@ import {
   ExecutionRule,
   MultiStep,
   Reporter,
+  ReporterContext,
   Result,
   SelectiveRerunDecision,
   Step,
@@ -116,7 +116,7 @@ interface XMLError {
 }
 
 export interface Args {
-  context: CommandContext
+  context: ReporterContext
   jUnitReport?: string
   runName?: string
 }

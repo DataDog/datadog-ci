@@ -6,11 +6,13 @@ import createDebug from 'debug'
 
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
+import {CommandContext} from '..'
+
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
 
 export type PluginPackageJson = {name: string; version: string}
-export type PluginSubModule = {PluginCommand: CommandClass}
+export type PluginSubModule = {PluginCommand: CommandClass<CommandContext>}
 
 // Use `DEBUG=plugins` to enable debug logs
 const debug = createDebug('plugins')
@@ -42,6 +44,10 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
 
     return 1
   }
+}
+
+export const listAllPlugins = (): string[] => {
+  return Object.keys(peerDependencies)
 }
 
 export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {

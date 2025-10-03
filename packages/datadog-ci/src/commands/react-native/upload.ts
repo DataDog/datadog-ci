@@ -1,3 +1,4 @@
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
@@ -37,7 +38,7 @@ import {
 import {getBundleName} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
-export class ReactNativeUploadCommand extends Command {
+export class ReactNativeUploadCommand extends BaseCommand {
   public static paths = [['react-native', 'upload']]
 
   public static usage = Command.Usage({

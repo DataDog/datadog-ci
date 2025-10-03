@@ -107,7 +107,7 @@ describe('cli', () => {
 
       test('supports the --fips option', async () => {
         // When running the command with the --fips option
-        const exitCode = await cli.run([...command, '--fips'])
+        const exitCode = await cli.run([...command, '--fips'], {builtinPlugins: []})
 
         // The command calls the enableFips function with the right parameters
         expect([0, 1]).toContain(exitCode)
@@ -116,7 +116,7 @@ describe('cli', () => {
 
       test('supports the --fips-ignore-error option', async () => {
         // When running the command with the --fips and --fips-ignore-error options
-        const exitCode = await cli.run([...command, '--fips', '--fips-ignore-error'])
+        const exitCode = await cli.run([...command, '--fips', '--fips-ignore-error'], {builtinPlugins: []})
 
         // The command calls the enableFips function with the right parameters
         expect([0, 1]).toContain(exitCode)

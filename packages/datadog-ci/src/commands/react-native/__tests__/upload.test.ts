@@ -1,3 +1,4 @@
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {
   createCommand,
   createMockContext,
@@ -39,7 +40,7 @@ describe('upload', () => {
         'projectPath',
         'android',
         'build',
-        createMockContext()
+        createMockContext() as CommandContext
       )
 
       // THEN

@@ -1,5 +1,6 @@
 import {exec} from 'child_process'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -10,7 +11,7 @@ import {RNPlatform, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {ReactNativeUploadCommand} from './upload'
 import {sanitizeReleaseVersion} from './utils'
 
-export class ReactNativeCodepushCommand extends Command {
+export class ReactNativeCodepushCommand extends BaseCommand {
   public static paths = [['react-native', 'codepush']]
 
   public static usage = Command.Usage({

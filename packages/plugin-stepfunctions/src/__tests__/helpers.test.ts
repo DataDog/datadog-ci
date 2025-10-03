@@ -1,5 +1,6 @@
 import {DescribeStateMachineCommandOutput, LogLevel} from '@aws-sdk/client-sfn'
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {CommandContext} from '@datadog/datadog-ci-base'
+import {MockCommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {
   buildArn,
@@ -17,18 +18,18 @@ import {
 
 import {describeStateMachineFixture} from './fixtures/aws-resources'
 
-const createMockContext = (): CommandContext => {
+const createMockContext = (): MockCommandContext => {
   return {
     stdout: {
       write: (input: string) => {
         return true
       },
     },
-  } as CommandContext
+  } as MockCommandContext
 }
 
 describe('stepfunctions command helpers tests', () => {
-  const context = createMockContext()
+  const context = createMockContext() as CommandContext
   describe('injectContextForLambdaFunctions test', () => {
     test.each([
       [

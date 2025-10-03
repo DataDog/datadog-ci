@@ -127,6 +127,6 @@ export type SpanTags = Partial<Record<SpanTag, string>>
 export type RequestBuilder = (args: AxiosRequestConfig) => AxiosPromise
 
 /**
- * A subset of Clipanion's BaseContext.
+ * A subset of Clipanion's {@link BaseContext}.
  */
-export type CommandContext = Pick<BaseContext, 'stdout' | 'stderr'> & Partial<Pick<BaseContext, 'env'>>
+export type MockCommandContext = Pick<BaseContext, 'stdout' | 'stderr'> & Partial<Pick<BaseContext, 'env'>>

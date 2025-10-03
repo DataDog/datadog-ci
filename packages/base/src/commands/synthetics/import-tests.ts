@@ -4,6 +4,8 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '../../helpers/plugin'
 import {makeTerminalLink} from '../../helpers/utils'
 
+import {BaseCommand} from '../..'
+
 const datadogDocsBaseUrl = 'https://docs.datadoghq.com'
 const datadogAppBaseUrl = 'https://app.datadoghq.com'
 
@@ -19,7 +21,7 @@ const $1 = makeTerminalLink(`${datadogDocsBaseUrl}/continuous_testing/cicd_integ
 const $2 = makeTerminalLink(`${datadogDocsBaseUrl}/synthetics/explore/#search`)
 const $3 = makeTerminalLink(`${datadogAppBaseUrl}/synthetics/tests`)
 
-export class SyntheticsImportTestsCommand extends Command {
+export class SyntheticsImportTestsCommand extends BaseCommand {
   public static paths = [['synthetics', 'import-tests']]
 
   public static usage = Command.Usage({

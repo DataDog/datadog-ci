@@ -2,12 +2,14 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '@datadog/datadog-ci-base/helpers/plugin'
 
+import {BaseCommand} from '../..'
+
 /**
  * This command collects environment variables and git information to correlate commits from the
  * source code repository to the configuration repository. This allows to connect pipelines triggering
  * changes on the configuration repository to deployments from gitOps CD providers
  */
-export class DeploymentCorrelateCommand extends Command {
+export class DeploymentCorrelateCommand extends BaseCommand {
   public static paths = [['deployment', 'correlate']]
 
   public static usage = Command.Usage({

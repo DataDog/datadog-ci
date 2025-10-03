@@ -3,7 +3,9 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '../../helpers/plugin'
 import {isInteger} from '../../helpers/validation'
 
-export class SarifUploadCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class SarifUploadCommand extends BaseCommand {
   public static paths = [['sarif', 'upload']]
 
   public static usage = Command.Usage({

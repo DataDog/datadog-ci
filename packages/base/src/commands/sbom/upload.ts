@@ -2,7 +2,9 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-export class SbomUploadCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class SbomUploadCommand extends BaseCommand {
   public static paths = [['sbom', 'upload']]
 
   public static usage = Command.Usage({

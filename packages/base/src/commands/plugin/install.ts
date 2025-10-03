@@ -2,7 +2,9 @@ import {Command, Option} from 'clipanion'
 
 import {installPlugin} from '../../helpers/plugin'
 
-export class PluginInstallCommand extends Command {
+import {BaseCommand} from '../..'
+
+export class PluginInstallCommand extends BaseCommand {
   public static paths = [['plugin', 'install']]
 
   public static usage = Command.Usage({
