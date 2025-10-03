@@ -19,7 +19,7 @@ In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/
 
 By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
-More information in the [README](./README.md#installing-a-plugin).
+More information in the [README](/#installing-a-plugin).
 
 ## 2.0 to 3.0
 
