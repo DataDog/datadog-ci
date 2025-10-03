@@ -55,6 +55,9 @@ See each command's linked README for more details, or click on [📚](https://do
 #### `coverage`
 - `upload`: Upload code coverage report files to Datadog. [📚](https://docs.datadoghq.com/code_coverage/)
 
+#### `dora`
+- `deployment`: Send a new deployment event for [DORA Metrics](/packages/plugin-dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
+
 #### `dsyms`
 - `upload`: Upload [iOS dSYM files](/packages/datadog-ci/src/commands/dsyms) for Error Tracking (macOS only). [📚](https://docs.datadoghq.com/real_user_monitoring/error_tracking/ios/)
 
@@ -116,9 +119,6 @@ The following are **beta** commands, you can enable them with with `DD_BETA_COMM
 - `correlate`: [Correlate](/packages/plugin-deployment#correlate) GitOps CD deployments with application repositories CI pipelines. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-deployments-with-ci-pipelines)
 - `correlate-image`: [Correlate an image](/packages/plugin-deployment#correlate-image) from a CD provider with its source commit. [📚](https://docs.datadoghq.com/continuous_delivery/deployments/argocd#correlate-images-with-source-code)
 - `gate`: Evaluate a [Deployment Gate](/packages/plugin-deployment#gate). [📚](https://docs.datadoghq.com/deployment_gates/)
-
-#### `dora`
-- `deployment`: Send a new deployment event for [DORA Metrics](/packages/plugin-dora) to Datadog. [📚](https://docs.datadoghq.com/dora_metrics/)
 
 #### `elf-symbols`
 - `upload`: Upload [Elf debug info files](/packages/datadog-ci/src/commands/elf-symbols) for Profiling (requires binutils). [📚](https://docs.datadoghq.com/profiler/enabling/ddprof)
