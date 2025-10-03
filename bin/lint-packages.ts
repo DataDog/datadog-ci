@@ -413,6 +413,14 @@ const injectedPluginSubmodules = {
 `)
 // #endregion
 
+// #region - Format file: container/Dockerfile
+TO_APPLY.push(matchAndReplace('container/Dockerfile')`
+RUN npm install -g @datadog/datadog-ci@$VERSION \\
+    ${installablePlugins.map((p) => `@datadog/datadog-ci-plugin-${p.scope}@$VERSION \\`).join('\n')}
+    && echo -e "Installed packages:\\n$(npm list -g | grep -o '@datadog/.*')"
+`)
+// #endregion
+
 console.log(chalk.bold.blue('Linting files...\n'))
 
 TO_APPLY.push(formatCodeownersFile())
@@ -478,11 +486,7 @@ if (Object.keys(localReferenceRanges).length > 1) {
 try {
   exec('yarn knip', {throwError: isCI})
 } catch (e) {
-  console.log(
-    chalk.red(
-      'Knip detected changes that need to be applied locally! Run `yarn lint:packages --fix` locally to fix it.\n'
-    )
-  )
+  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` locally to fix it.\n'))
   process.exit(1)
 }
 
