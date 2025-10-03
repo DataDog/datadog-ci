@@ -19,6 +19,7 @@ $ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
   --finished-at #0           In Unix seconds or ISO8601. (Examples: 1699961048, 2023-11-14T11:24:08Z)
   --git-repository-url #0    Example: https://github.com/DataDog/datadog-ci.git
   --git-commit-sha #0        Example: 102836a25f5477e571c73d489b3f0f183687068e
+  --version #0               Example: 1.0.0
   --team #0                  Example: my-team
   --custom-tags #0           Example: department:engineering
   --skip-git                 Disables sending git URL and SHA. Change Lead Time will not be available
@@ -41,6 +42,7 @@ datadog-ci dora deployment --service my-service --env prod \
 - `--finished-at` (default: current timestamp) is the timestamp in Unix seconds or ISO8601 when the deployment finished.
 - `--git-repository-url` is a string with the repository URL for the deployed service. If this is missing, the URL is retrieved from the local git repository.
 - `--git-commit-sha` is a string with the git commit SHA that has been deployed. If this is missing, the current HEAD is retrieved from the local git repository.
+- `--version` is a string of the version associated with the deployment.
 - `--team` is a string of the team associated with the deployment. If this is missing, the team associated with the service in the Software Catalog will be used.
 - `--custom-tags` is an array of strings of custom tags to add to the deployment event in the form `key:value`. A max of 100 tags can be added to each deployment. 
 - `--skip-git` (default: `false`): Disables sending git URL and SHA. Change Lead Time will not be available
