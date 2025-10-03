@@ -22,6 +22,7 @@ export default {
     '^@datadog/datadog-ci-plugin-([\\w-]+)(.*)$': '<rootDir>/packages/plugin-$1/src$2',
     '^@datadog/datadog-ci-base/package.json$': '<rootDir>/packages/base/package.json',
     '^@datadog/datadog-ci-base(.*)$': '<rootDir>/packages/base/src$1',
+    '^@datadog/datadog-ci/package.json$': '<rootDir>/packages/datadog-ci/package.json',
     '^@datadog/datadog-ci(.*)$': '<rootDir>/packages/datadog-ci/src$1',
   },
   cache: true,
