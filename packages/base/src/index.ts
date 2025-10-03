@@ -1,6 +1,8 @@
 import {BaseContext, Command} from 'clipanion'
 
-export type CommandContext = BaseContext
+export type CommandContext = BaseContext & {
+  builtinPlugins: string[]
+}
 
 /**
  * This command should be extended by **every** command in the monorepo.
