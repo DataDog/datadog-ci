@@ -19,6 +19,7 @@ $ datadog-ci dora deployment [--service #0] [--env #0] [--dry-run]
   --finished-at #0           In Unix seconds or ISO8601. (Examples: 1699961048, 2023-11-14T11:24:08Z)
   --git-repository-url #0    Example: https://github.com/DataDog/datadog-ci.git
   --git-commit-sha #0        Example: 102836a25f5477e571c73d489b3f0f183687068e
+  --version #0               Example: 1.0.0
   --team #0                  Example: my-team
   --custom-tags #0           Example: department:engineering
   --skip-git                 Disables sending git URL and SHA. Change Lead Time will not be available
