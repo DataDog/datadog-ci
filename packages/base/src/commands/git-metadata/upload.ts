@@ -14,6 +14,8 @@ import {UploadStatus} from '../../helpers/upload'
 import {getRequestBuilder, timedExecAsync} from '../../helpers/utils'
 import {cliVersion} from '../../version'
 
+import {BaseCommand} from '../..'
+
 import {apiHost, datadogSite, getBaseIntakeUrl} from './api'
 import {getCommitInfo, newSimpleGit} from './git'
 import {uploadToGitDB} from './gitdb'
@@ -28,7 +30,7 @@ import {
   renderSuccessfulCommand,
 } from './renderer'
 
-export class GitMetadataUploadCommand extends Command {
+export class GitMetadataUploadCommand extends BaseCommand {
   public static paths = [['git-metadata', 'upload']]
 
   public static usage = Command.Usage({

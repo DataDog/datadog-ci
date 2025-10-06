@@ -1,6 +1,6 @@
 import {DescribeStateMachineCommandOutput} from '@aws-sdk/client-sfn'
 import {SFNClient} from '@aws-sdk/client-sfn/dist-types/SFNClient'
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {diff} from 'deep-object-diff'
 
 import {updateStateMachineDefinition} from './awsCommands'

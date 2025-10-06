@@ -1,5 +1,6 @@
 import {promises} from 'fs'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -41,7 +42,7 @@ import {
   zipDirectoryToArchive,
 } from './utils'
 
-export class DsymsUploadCommand extends Command {
+export class DsymsUploadCommand extends BaseCommand {
   public static paths = [['dsyms', 'upload']]
 
   public static usage = Command.Usage({

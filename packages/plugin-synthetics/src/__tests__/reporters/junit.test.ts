@@ -2,8 +2,8 @@ import fs from 'fs'
 import fsp from 'fs/promises'
 import {Writable} from 'stream'
 
+import {CommandContext} from '@datadog/datadog-ci-base'
 import {MOCK_BASE_URL} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {CommandContext} from '@datadog/datadog-ci-base/helpers/interfaces'
 
 import {PluginCommand as RunTestsCommand} from '../../commands/run-tests'
 import {Device, ExecutionRule, Result, ServerTest} from '../../interfaces'

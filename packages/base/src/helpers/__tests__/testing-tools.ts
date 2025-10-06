@@ -5,7 +5,7 @@ import {BaseContext, Cli, Command, CommandClass} from 'clipanion'
 import {CommandOption} from 'clipanion/lib/advanced/options'
 import upath from 'upath'
 
-import {CommandContext} from '../interfaces'
+import {MockCommandContext} from '../interfaces'
 
 export const MOCK_BASE_URL = 'https://app.datadoghq.com/'
 export const MOCK_DATADOG_API_KEY = '02aeb762fff59ac0d5ad1536cd9633bd'
@@ -22,7 +22,7 @@ interface MockContextOptions {
   /**
    * Define a custom environment for the command. That's only useful if your command uses `this.env` instead of `process.env`.
    */
-  env?: CommandContext['env']
+  env?: MockCommandContext['env']
 }
 
 interface MakeRunCLIOptions extends MockContextOptions {
@@ -32,7 +32,7 @@ interface MakeRunCLIOptions extends MockContextOptions {
   skipResetEnv?: boolean
 }
 
-export const createMockContext = (opts?: MockContextOptions): CommandContext => {
+export const createMockContext = (opts?: MockContextOptions): MockCommandContext => {
   let out = ''
   let err = ''
 

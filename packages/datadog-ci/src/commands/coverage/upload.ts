@@ -1,5 +1,6 @@
 import os from 'os'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
@@ -55,7 +56,7 @@ const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
 
-export class CoverageUploadCommand extends Command {
+export class CoverageUploadCommand extends BaseCommand {
   public static paths = [['coverage', 'upload']]
 
   public static usage = Command.Usage({

@@ -1,5 +1,6 @@
 import fs from 'fs'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -43,7 +44,7 @@ import {
   renderWarning,
 } from './renderer'
 
-export class PeSymbolsUploadCommand extends Command {
+export class PeSymbolsUploadCommand extends BaseCommand {
   public static paths = [['pe-symbols', 'upload']]
 
   public static usage = Command.Usage({

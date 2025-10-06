@@ -1,6 +1,7 @@
 import {createHash} from 'crypto'
 import {existsSync, promises} from 'fs'
 
+import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -12,7 +13,7 @@ import upath from 'upath'
  */
 const DEBUG_ID_METADATA_PREFIX = 'datadog-debug-id-'
 
-export class ReactNativeInjectDebugIdCommand extends Command {
+export class ReactNativeInjectDebugIdCommand extends BaseCommand {
   public static paths = [['react-native', 'inject-debug-id']]
   public static usage = Command.Usage({
     category: 'RUM',

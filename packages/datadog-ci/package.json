@@ -18,6 +18,13 @@
   },
   "bin": "dist/cli.js",
   "main": "dist/index.js",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "files": [
     "dist/**/*",
     "README",

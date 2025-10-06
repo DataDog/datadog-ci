@@ -24,8 +24,11 @@ import {DefaultReporter, getTunnelReporter} from './reporters/default'
 import {JUnitReporter} from './reporters/junit'
 import {getTestConfigs, getTestsFromSearchQuery, getTestsToTrigger} from './test'
 import {Tunnel} from './tunnel'
-import {getDefaultConfig as getDefaultConfigBase} from './utils/internal'
-import {getTriggerConfigPublicId, isLocalTriggerConfig} from './utils/internal'
+import {
+  getDefaultConfig as getDefaultConfigBase,
+  getTriggerConfigPublicId,
+  isLocalTriggerConfig,
+} from './utils/internal'
 import {
   getReporter,
   getOrgSettings,
