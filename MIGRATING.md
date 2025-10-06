@@ -3,6 +3,24 @@
 This guide describes the steps to upgrade datadog-ci from a major version to the next.
 If you are having any issues related to migrating, please feel free to open an issue or contact our [support](https://www.datadoghq.com/support/) team.
 
+## 3.0 to 4.0
+
+### Using plugins
+
+In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/datadog-ci` package:
+
+| Moved commands                                                                                      | Destination plugin                         |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| <ul><li>`aas instrument`</li><li>`aas uninstrument`</li></ul>                                       | `@datadog/datadog-ci-plugin-aas`           |
+| <ul><li>`cloud-run flare`</li><li>`cloud-run instrument`</li><li>`cloud-run uninstrument`</li></ul> | `@datadog/datadog-ci-plugin-cloud-run`     |
+| <ul><li>`lambda flare`</li><li>`lambda instrument`</li><li>`lambda uninstrument`</li></ul>          | `@datadog/datadog-ci-plugin-lambda`        |
+| <ul><li>`stepfunctions instrument`</li><li>`stepfunctions uninstrument`</li></ul>                   | `@datadog/datadog-ci-plugin-stepfunctions` |
+| <ul><li>`synthetics run-tests`</li><li>`synthetics upload-application`</li></ul>                    | `@datadog/datadog-ci-plugin-synthetics`    |
+
+By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+
+More information in the [README](/#installing-a-plugin).
+
 ## 2.0 to 3.0
 
 ### Node 14 and 16 are no longer supported
