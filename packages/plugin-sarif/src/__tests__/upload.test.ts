@@ -189,7 +189,7 @@ describe('execute', () => {
   const runCLI = makeRunCLI(SarifUploadCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
 
   describe('CI event validation', () => {
-    test('should exit with error for GitHub pull_request event', async () => {
+    test('should show warning for GitHub pull_request event', async () => {
       const originalEnv = {...process.env}
       process.env.GITHUB_EVENT_NAME = 'pull_request'
 
@@ -201,18 +201,16 @@ describe('execute', () => {
         const code = await command.execute()
         const output = context.stdout.toString()
 
-        expect(code).toBe(1)
-        expect(output).toContain('::error title=Unsupported Trigger::')
-        expect(output).toContain(
-          'The pull_request trigger is not supported by Datadog Code Security and will cause issues with the product'
-        )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(code).toBe(0)
+        expect(output).toContain('::warning title=Unsupported Trigger::')
+        expect(output).toContain('The pull_request trigger will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
       } finally {
         process.env = originalEnv
       }
     })
 
-    test('should exit with error for GitLab merge_request_event', async () => {
+    test('should show warning for GitLab merge_request_event', async () => {
       const originalEnv = {...process.env}
       process.env.CI_PIPELINE_SOURCE = 'merge_request_event'
 
@@ -224,17 +222,15 @@ describe('execute', () => {
         const code = await command.execute()
         const output = context.stderr.toString()
 
-        expect(code).toBe(1)
-        expect(output).toContain(
-          'The merge_request_event trigger is not supported by Datadog Code Security and will cause issues with the product'
-        )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(code).toBe(0)
+        expect(output).toContain('The merge_request_event trigger will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
       } finally {
         process.env = originalEnv
       }
     })
 
-    test('should exit with error for Azure PullRequest event', async () => {
+    test('should show warning for Azure PullRequest event', async () => {
       const originalEnv = {...process.env}
       process.env.BUILD_REASON = 'PullRequest'
 
@@ -246,12 +242,10 @@ describe('execute', () => {
         const code = await command.execute()
         const output = context.stdout.toString()
 
-        expect(code).toBe(1)
-        expect(output).toContain('##vso[task.logissue type=error]')
-        expect(output).toContain(
-          'The PullRequest trigger is not supported by Datadog Code Security and will cause issues with the product'
-        )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(code).toBe(0)
+        expect(output).toContain('##vso[task.logissue type=warning]')
+        expect(output).toContain('The PullRequest trigger will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
       } finally {
         process.env = originalEnv
       }
