@@ -13,7 +13,6 @@ import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {Logging} from '@google-cloud/logging'
-import {GoogleAuth} from 'google-auth-library'
 
 import * as flareModule from '../commands/flare'
 import {
@@ -29,6 +28,7 @@ import {
 } from '../commands/flare'
 import {checkAuthentication} from '../utils'
 
+const {GoogleAuth} = require('google-auth-library')
 
 const MOCK_REGION = 'us-east1'
 const MOCK_SERVICE = 'mock-service'
