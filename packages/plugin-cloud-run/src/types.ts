@@ -2,8 +2,20 @@
 // TODO remove this when google-auth-library ESM/CJS issues are fixed
 
 export interface IEnvVar {
-  name: string
-  value: string
+  name?: string | null | undefined
+  value?: string | null | undefined
+  valueSource?:
+    | {
+        secretKeyRef?:
+          | {
+              secret?: string | null | undefined
+              version?: string | null | undefined
+            }
+          | null
+          | undefined
+      }
+    | null
+    | undefined
 }
 
 export interface IVolumeMount {
