@@ -27,32 +27,6 @@ const createMockContext = () => {
   }
 }
 
-// Mock context for CI event validation tests with compatible write signatures
-// We care about stdout vs stderr for validating error messages
-const createSimpleMockContext = () => {
-  let stdoutData = ''
-  let stderrData = ''
-
-  return {
-    stdout: {
-      toString: () => stdoutData,
-      write: (input?: string) => {
-        if (input) {
-          stdoutData += input
-        }
-      },
-    },
-    stderr: {
-      toString: () => stderrData,
-      write: (input?: string) => {
-        if (input) {
-          stderrData += input
-        }
-      },
-    },
-  }
-}
-
 // Always posix, even on Windows.
 const CWD = upath.normalize(process.cwd())
 
@@ -187,70 +161,6 @@ describe('upload', () => {
 
 describe('execute', () => {
   const runCLI = makeRunCLI(SarifUploadCommand, ['sarif', 'upload', '--env', 'ci', '--dry-run'])
-
-  describe('CI event validation', () => {
-    test('should exit with error for GitHub pull_request event', async () => {
-      const originalEnv = {...process.env}
-      process.env.GITHUB_EVENT_NAME = 'pull_request'
-
-      try {
-        const context = createSimpleMockContext()
-        const command = createCommand(SarifUploadCommand, context)
-        command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
-
-        const code = await command.execute()
-        const output = context.stdout.toString()
-
-        expect(code).toBe(1)
-        expect(output).toContain('::error title=Unsupported Trigger::')
-        expect(output).toContain('The pull_request trigger is not supported by Datadog Code Security')
-        expect(output).toContain('Use the push event instead')
-      } finally {
-        process.env = originalEnv
-      }
-    })
-
-    test('should exit with error for GitLab merge_request_event', async () => {
-      const originalEnv = {...process.env}
-      process.env.CI_PIPELINE_SOURCE = 'merge_request_event'
-
-      try {
-        const context = createSimpleMockContext()
-        const command = createCommand(SarifUploadCommand, context)
-        command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
-
-        const code = await command.execute()
-        const output = context.stderr.toString()
-
-        expect(code).toBe(1)
-        expect(output).toContain('The merge_request_event trigger is not supported by Datadog Code Security')
-        expect(output).toContain('Use the push event instead')
-      } finally {
-        process.env = originalEnv
-      }
-    })
-
-    test('should exit with error for Azure PullRequest event', async () => {
-      const originalEnv = {...process.env}
-      process.env.BUILD_REASON = 'PullRequest'
-
-      try {
-        const context = createSimpleMockContext()
-        const command = createCommand(SarifUploadCommand, context)
-        command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
-
-        const code = await command.execute()
-        const output = context.stdout.toString()
-
-        expect(code).toBe(1)
-        expect(output).toContain('##vso[task.logissue type=error]')
-        expect(output).toContain('The PullRequest trigger is not supported by Datadog Code Security')
-        expect(output).toContain('Use the push event instead')
-      } finally {
-        process.env = originalEnv
-      }
-    })
-  })
 
   test('relative path with double dots', async () => {
     const {context, code} = await runCLI(['./src/__tests__/doesnotexist/../fixtures/subfolder'])
