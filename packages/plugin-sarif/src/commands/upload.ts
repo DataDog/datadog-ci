@@ -73,6 +73,8 @@ export class PluginCommand extends SarifUploadCommand {
         '##vso[task.logissue type=error]The PullRequest trigger is not supported by Datadog Code Security and will cause issues with the product. ' +
           'If you would like to continue using Datadog Code Security, please use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
       )
+
+      return 1
     }
 
     if (!this.basePaths || !this.basePaths.length) {
