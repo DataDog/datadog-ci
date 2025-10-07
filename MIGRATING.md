@@ -21,10 +21,6 @@ By default, running a command that requires a plugin will **automatically instal
 
 More information in the [README](/#installing-a-plugin).
 
-### Library API changes
-
-- Use `import * as synthetics from '@datadog/datadog-ci-plugin-synthetics'` instead of `import {synthetics} from '@datadog/datadog-ci'`.
-
 ## 2.0 to 3.0
 
 ### Node 14 and 16 are no longer supported

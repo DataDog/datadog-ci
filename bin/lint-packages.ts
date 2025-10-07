@@ -235,7 +235,7 @@ type ApplyChanges = () => 0 | 1
 type Replacer = (strings: TemplateStringsArray, replacement: string) => ApplyChanges
 
 // XXX: `RegExp.escape()` is only available in Node.js 24
-const escapeRegex = (part: string) => part.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+const escapeRegexCharacters = (part: string) => part.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
 
 const offsetAtIndex = (s: string, index: number) => {
   const upToIndex = s.slice(0, index)
@@ -261,12 +261,7 @@ const error = (message: string): 1 => {
   return 1
 }
 
-const makeApplyChanges = (
-  file: string,
-  originalContent: string,
-  newContent: string,
-  warnings?: string[]
-): ApplyChanges => {
+const makeApplyChanges = (file: string, originalContent: string, newContent: string): ApplyChanges => {
   const delta = diff(originalContent, newContent, {
     aColor: chalk.red,
     bColor: chalk.green,
@@ -276,10 +271,6 @@ const makeApplyChanges = (
   })
 
   const applyChanges = (): 0 | 1 => {
-    if (warnings) {
-      console.warn(chalk.yellow(warnings.join('\n')))
-    }
-
     if (!delta || delta.includes('no visual difference')) {
       return success(`${chalk.bold(file)} is up to date\n`)
     }
@@ -300,35 +291,30 @@ const makeApplyChanges = (
 
 const matchAndReplace = (file: string): Replacer => {
   return (strings: TemplateStringsArray, replacement: string): ApplyChanges => {
-    const warnings: string[] = []
     const originalContent = fs.readFileSync(file, 'utf8')
 
     // Remove leading and trailing newlines
     const before = strings[0][0] === '\n' ? strings[0].slice(1) : strings[0]
     const after = strings[1].at(-1) === '\n' ? strings[1].slice(0, -1) : strings[1]
 
-    const beforeMatch = originalContent.match(escapeRegex(before))
+    const beforeMatch = originalContent.match(escapeRegexCharacters(before))
     if (!beforeMatch?.index) {
       return () => error(`Could not match given before text in ${chalk.bold(file)}\n`)
     }
 
     const middleStart = beforeMatch.index + beforeMatch[0].length
     const middleAndAfter = originalContent.slice(middleStart)
-    const afterMatch = middleAndAfter.match(escapeRegex(after))
+    const afterMatch = middleAndAfter.match(escapeRegexCharacters(after))
     if (!afterMatch?.index) {
-      warnings.push(
-        `Could not match after text in ${chalk.bold(file)}\nWill add the middle text instead of replacing it.\n`
-      )
+      return () => error(`Could not match given after text in ${chalk.bold(file)}\n`)
     }
 
     const newContent =
       originalContent.slice(0, middleStart) + // < middle
       indentString(replacement, offsetAtIndex(originalContent, middleStart)) + // = middle
-      (afterMatch?.index // > middle
-        ? middleAndAfter.slice(afterMatch.index)
-        : originalContent.slice(originalContent.indexOf(after)))
+      middleAndAfter.slice(afterMatch.index) // > middle
 
-    return makeApplyChanges(file, originalContent, newContent, warnings)
+    return makeApplyChanges(file, originalContent, newContent)
   }
 }
 
@@ -388,15 +374,12 @@ TO_APPLY.push(matchAndReplace('tsconfig.json')`
 // #endregion
 
 // #region - Format file: packages/datadog-ci/tsconfig.json
-const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
-const installablePlugins = pluginPackages.filter(
-  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.dependencies)
-)
+const dependencyPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
 
 TO_APPLY.push(matchAndReplace('packages/datadog-ci/tsconfig.json')`
   "references": [
     {"path": "../base"},
-    ${builtinPlugins.map((p) => `{"path": "../plugin-${p.scope}"}`).join(',\n')}
+    ${dependencyPlugins.map((p) => `{"path": "../plugin-${p.scope}"}`).join(',\n')}
   ]
 `)
 // #endregion
@@ -408,16 +391,8 @@ const formatBlock = (plugin: PluginPackage) => {
 
 TO_APPLY.push(matchAndReplace('packages/datadog-ci/shims/injected-plugin-submodules.js')`
 const injectedPluginSubmodules = {
-  ${pluginPackages.map(formatBlock).join('\n')}
+  ${dependencyPlugins.map(formatBlock).join('\n')}
 }
-`)
-// #endregion
-
-// #region - Format file: container/Dockerfile
-TO_APPLY.push(matchAndReplace('container/Dockerfile')`
-RUN npm install -g @datadog/datadog-ci@$VERSION \\
-    ${installablePlugins.map((p) => `@datadog/datadog-ci-plugin-${p.scope}@$VERSION \\`).join('\n')}
-    && echo -e "Installed packages:\\n$(npm list -g | grep -o '@datadog/.*')"
 `)
 // #endregion
 
@@ -486,7 +461,11 @@ if (Object.keys(localReferenceRanges).length > 1) {
 try {
   exec('yarn knip', {throwError: isCI})
 } catch (e) {
-  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` locally to fix it.\n'))
+  console.log(
+    chalk.red(
+      'Knip detected changes that need to be applied locally! Run `yarn lint:packages --fix` locally to fix it.\n'
+    )
+  )
   process.exit(1)
 }
 

@@ -1443,7 +1443,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas":
+"@datadog/datadog-ci-plugin-aas@workspace:*, @datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-aas@workspace:packages/plugin-aas"
   dependencies:
@@ -1457,7 +1457,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run":
+"@datadog/datadog-ci-plugin-cloud-run@workspace:*, @datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-cloud-run@workspace:packages/plugin-cloud-run"
   dependencies:
@@ -1512,7 +1512,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda":
+"@datadog/datadog-ci-plugin-lambda@workspace:*, @datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda"
   dependencies:
@@ -1574,7 +1574,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions":
+"@datadog/datadog-ci-plugin-stepfunctions@workspace:*, @datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-stepfunctions@workspace:packages/plugin-stepfunctions"
   dependencies:
@@ -1588,7 +1588,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
+"@datadog/datadog-ci-plugin-synthetics@workspace:*, @datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
   dependencies:
@@ -1622,11 +1622,16 @@ __metadata:
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-aas": "workspace:*"
+    "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
+    "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/semver": "npm:^7.3.12"
