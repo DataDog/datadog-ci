@@ -14,7 +14,6 @@
     "url": "https://github.com/DataDog/datadog-ci.git",
     "directory": "packages/plugin-synthetics"
   },
-  "main": "dist/index.js",
   "exports": {
     "./package.json": "./package.json",
     ".": {

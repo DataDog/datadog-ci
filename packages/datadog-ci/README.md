@@ -300,7 +300,7 @@ docker build --tag datadog-ci .
 Optionally, you can use the `VERSION` build argument to build an image for a specific version:
 
 ```sh
-docker build --build-arg "VERSION=v3.9.0" --tag datadog-ci .
+docker build --build-arg "VERSION=v3.9.0" --t datadog-ci .
 ```
 
 ## Migration guide
