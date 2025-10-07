@@ -6,6 +6,7 @@ on:
       - v* # Any version tag
 
 permissions:
+  id-token: write # To publish on NPM with provenance
   contents: write # Required for the draft release
 
 jobs:

@@ -2,6 +2,10 @@ name: Publish package on NPM (pre-release)
 on:
   release:
     types: [prereleased]
+
+permissions:
+  id-token: write # To publish on NPM with provenance
+
 jobs:
   build:
     runs-on: ubuntu-latest
