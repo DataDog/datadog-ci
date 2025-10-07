@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount} from '../types'
+import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {
@@ -30,12 +30,14 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
-import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
+
+// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
+const {ServicesClient} = require('@google-cloud/run')
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
@@ -162,7 +164,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
-    const client = new ServicesClient()
+    const client: IServicesClient = new ServicesClient()
 
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
@@ -188,7 +190,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public async instrumentService(
-    client: ServicesClient,
+    client: IServicesClient,
     existingService: IService,
     serviceName: string,
     ddService: string
