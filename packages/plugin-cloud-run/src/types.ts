@@ -1,54 +1,21 @@
-// XXX temporary type definitions for @google-cloud/run
-// TODO remove this when google-auth-library ESM/CJS issues are fixed
+import {ServicesClient} from '@google-cloud/run'
 
-export interface IEnvVar {
-  name: string
-  value: string
-}
+type LastOverload<T> = T extends (...args: infer A) => infer R ? (...args: A) => R : never
 
-export interface IVolumeMount {
-  name?: string
-  mountPath?: string
-}
+type Prettify<T> = {
+  [K in keyof T]: T[K]
+} & {}
 
-export interface IContainer {
-  name?: string
-  image?: string
-  env?: IEnvVar[]
-  volumeMounts?: IVolumeMount[]
-  startupProbe?: any
-  resources?: any
-}
+export type IService = Prettify<
+  NonNullable<Parameters<Parameters<LastOverload<InstanceType<typeof ServicesClient>['getService']>>[1]>[1]>
+>
 
-export interface IVolume {
-  name?: string
-  emptyDir?: {
-    medium?: number
-  }
-}
+export type IServiceTemplate = Prettify<NonNullable<IService['template']>>
 
-export interface IServiceTemplate {
-  containers?: IContainer[]
-  volumes?: IVolume[]
-  revision?: string | undefined
-}
+export type IVolume = Prettify<NonNullable<IServiceTemplate['volumes']>[number]>
 
-export interface IService {
-  name?: string
-  uid?: string
-  uri?: string
-  description?: string
-  template?: IServiceTemplate
-  labels?: Record<string, string>
-}
+export type IContainer = Prettify<NonNullable<IServiceTemplate['containers']>[number]>
 
-export interface ServicesClient {
-  servicePath: (project: string, region: string, service: string) => string
-  getService: (request: {name: string}) => Promise<[IService]>
-  updateService: (request: {service: IService}) => Promise<[any]>
-}
+export type IEnvVar = Prettify<NonNullable<IContainer['env']>[number]>
 
-export interface RevisionsClient {
-  servicePath: (project: string, region: string, service: string) => string
-  listRevisions: (request: {parent: string}) => Promise<[any[]]>
-}
+export type IVolumeMount = Prettify<NonNullable<IContainer['volumeMounts']>[number]>

@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount, ServicesClient as IServicesClient} from '../types'
+import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {
@@ -30,14 +30,12 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
+import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
-
-// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
-const {ServicesClient} = require('@google-cloud/run')
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
@@ -164,7 +162,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public async instrumentSidecar(project: string, services: string[], region: string, ddService: string | undefined) {
-    const client: IServicesClient = new ServicesClient()
+    const client = new ServicesClient()
 
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
@@ -190,7 +188,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public async instrumentService(
-    client: IServicesClient,
+    client: ServicesClient,
     existingService: IService,
     serviceName: string,
     ddService: string
@@ -273,59 +271,40 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
-    const newEnvVars: Record<string, string> = {}
-    for (const envVar of existingSidecarContainer?.env ?? []) {
-      newEnvVars[envVar.name] = envVar.value
-    }
+    const newEnvVars: Record<string, IEnvVar> = Object.fromEntries(
+      (existingSidecarContainer?.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
+    )
 
     // Add these env vars to the container if they don't already exist,
     // but leave them unchanged if they already exist in the container.
-    for (const {name, value} of DEFAULT_ENV_VARS) {
-      if (!(name in newEnvVars)) {
-        newEnvVars[name] = value
+    for (const env of DEFAULT_ENV_VARS) {
+      if (env.name && !(env.name in newEnvVars)) {
+        newEnvVars[env.name] = env
+      }
+    }
+
+    const setEnv = (name: string, value: string | undefined) => {
+      if (name && value) {
+        newEnvVars[name] = {name, value}
       }
     }
 
     // Overwrite existing env vars with these if they already exist
     // and add them to the container if they don't exist yet.
-    newEnvVars[API_KEY_ENV_VAR] = process.env[API_KEY_ENV_VAR] ?? ''
-    newEnvVars[SERVICE_ENV_VAR] = ddService
-    if (process.env[SITE_ENV_VAR]) {
-      newEnvVars[SITE_ENV_VAR] = process.env[SITE_ENV_VAR]
-    }
-    if (this.tracing) {
-      newEnvVars[DD_TRACE_ENABLED_ENV_VAR] = this.tracing
-    }
-    if (this.environment) {
-      newEnvVars[ENVIRONMENT_ENV_VAR] = this.environment
-    }
-    if (this.version) {
-      newEnvVars[VERSION_ENV_VAR] = this.version
-    }
-    if (this.logLevel) {
-      newEnvVars[DD_LOG_LEVEL_ENV_VAR] = this.logLevel
-    }
-    if (this.extraTags) {
-      newEnvVars[DD_TAGS_ENV_VAR] = this.extraTags
-    }
-    if (this.language) {
-      newEnvVars[DD_SOURCE_ENV_VAR] = this.language
-    }
-    newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
+    setEnv(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
+    setEnv(SERVICE_ENV_VAR, ddService)
+    setEnv(SITE_ENV_VAR, process.env[SITE_ENV_VAR])
+    setEnv(DD_TRACE_ENABLED_ENV_VAR, this.tracing)
+    setEnv(ENVIRONMENT_ENV_VAR, this.environment)
+    setEnv(VERSION_ENV_VAR, this.version)
+    setEnv(DD_LOG_LEVEL_ENV_VAR, this.logLevel)
+    setEnv(DD_TAGS_ENV_VAR, this.extraTags)
+    setEnv(DD_SOURCE_ENV_VAR, this.language)
+    setEnv(LOGS_PATH_ENV_VAR, this.logsPath)
 
-    // If port is specified, overwrite any existing value
-    // If port is not specified but already exists, leave the existing value unchanged
-    // If port is not specified and does not exist, default to 5555
-    let healthCheckPort = newEnvVars[HEALTH_PORT_ENV_VAR] ?? DEFAULT_HEALTH_CHECK_PORT.toString()
-    if (this.healthCheckPort) {
-      const newHealthCheckPort = Number(this.healthCheckPort)
-      if (!Number.isNaN(newHealthCheckPort)) {
-        healthCheckPort = newHealthCheckPort.toString()
-        newEnvVars[HEALTH_PORT_ENV_VAR] = healthCheckPort
-      }
-    }
-
-    const newEnv: IEnvVar[] = Object.entries(newEnvVars).map(([name, value]) => ({name, value}))
+    // We prioritize in this order: CLI flag, existing setup, default
+    let healthCheckPort = Number(this.healthCheckPort ?? newEnvVars[HEALTH_PORT_ENV_VAR].value)
+    healthCheckPort = Number.isNaN(healthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : healthCheckPort
 
     // Create sidecar container with volume mount and environment variables
     return {
@@ -337,7 +316,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
           mountPath: this.sharedVolumePath,
         },
       ],
-      env: newEnv,
+      env: Object.values(newEnvVars),
       startupProbe: {
         tcpSocket: {
           port: healthCheckPort,
@@ -362,7 +341,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     const hasSharedVolumeMount = existingVolumeMounts.some(
       (mount: IVolumeMount) => mount.name === this.sharedVolumeName
     )
-    const existingEnvVars = appContainer.env || []
 
     const updatedContainer = {...appContainer}
     if (!hasSharedVolumeMount) {
@@ -376,28 +354,32 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     }
 
     // Update environment variables
-    const newEnvVars: Record<string, string> = {}
-    for (const {name, value} of existingEnvVars) {
-      newEnvVars[name] = value
+    const newEnvVars: Record<string, IEnvVar> = Object.fromEntries(
+      (appContainer.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
+    )
+    const setEnv = (name: string, value: string | undefined) => {
+      if (name && value) {
+        newEnvVars[name] = {name, value}
+      }
     }
 
     // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
     if (!(LOGS_INJECTION_ENV_VAR in newEnvVars)) {
-      newEnvVars[LOGS_INJECTION_ENV_VAR] = 'true'
+      setEnv(LOGS_INJECTION_ENV_VAR, 'true')
     }
 
     // Replace or add other env vars
-    newEnvVars[SERVICE_ENV_VAR] = ddService
-    newEnvVars[API_KEY_ENV_VAR] = process.env[API_KEY_ENV_VAR] ?? ''
-    newEnvVars[LOGS_PATH_ENV_VAR] = this.logsPath
+    setEnv(SERVICE_ENV_VAR, ddService)
+    setEnv(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
+    setEnv(LOGS_PATH_ENV_VAR, this.logsPath)
     if (this.llmobs) {
-      newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
-      newEnvVars[DD_LLMOBS_ML_APP_ENV_VAR] = this.llmobs
+      setEnv(DD_LLMOBS_ENABLED_ENV_VAR, 'true')
+      setEnv(DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs)
       // serverless-init is installed, so agentless mode should be false
-      newEnvVars[DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR] = 'false'
+      setEnv(DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false')
     }
 
-    updatedContainer.env = Object.entries(newEnvVars).map(([name, value]) => ({name, value}))
+    updatedContainer.env = Object.values(newEnvVars)
 
     return updatedContainer
   }
