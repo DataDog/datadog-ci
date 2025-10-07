@@ -41,7 +41,7 @@
     "@google-cloud/logging": "^11.2.0",
     "@google-cloud/run": "^3.0.0",
     "chalk": "3.0.0",
-    "google-auth-library": "^10.2.1",
+    "google-auth-library": "^10.4.0",
     "inquirer": "^8.2.5",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
     "jest-diff": "^30.0.4",
