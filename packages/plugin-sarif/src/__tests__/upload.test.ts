@@ -223,7 +223,9 @@ describe('execute', () => {
         const output = context.stderr.toString()
 
         expect(code).toBe(0)
-        expect(output).toContain('The `merge_request_event` pipeline source will become unsupported in the next release')
+        expect(output).toContain(
+          'The `merge_request_event` pipeline source will become unsupported in the next release'
+        )
         expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
