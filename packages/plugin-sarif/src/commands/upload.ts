@@ -61,7 +61,7 @@ export class PluginCommand extends SarifUploadCommand {
     if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
         'The `merge_request_event` pipeline source is not supported by Datadog Code Security and will cause issues with the product. ' +
-          'To continue using Datadog Code Security, use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
       )
 
       return 1
