@@ -204,9 +204,9 @@ describe('execute', () => {
         expect(code).toBe(1)
         expect(output).toContain('::error title=Unsupported Trigger::')
         expect(output).toContain(
-          'The pull_request trigger is not supported by Datadog Code Security and will cause issues with the product'
+          'The `pull_request` event is not supported by Datadog Code Security and will cause issues with the product'
         )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }
@@ -226,9 +226,9 @@ describe('execute', () => {
 
         expect(code).toBe(1)
         expect(output).toContain(
-          'The merge_request_event trigger is not supported by Datadog Code Security and will cause issues with the product'
+          'The `merge_request_event` pipeline source is not supported by Datadog Code Security and will cause issues with the product'
         )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }
@@ -249,9 +249,9 @@ describe('execute', () => {
         expect(code).toBe(1)
         expect(output).toContain('##vso[task.logissue type=error]')
         expect(output).toContain(
-          'The PullRequest trigger is not supported by Datadog Code Security and will cause issues with the product'
+          'The `PullRequest` build reason is not supported by Datadog Code Security and will cause issues with the product'
         )
-        expect(output).toContain('To continue using Datadog Code Security, use the push event instead')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }
