@@ -203,8 +203,8 @@ describe('execute', () => {
 
         expect(code).toBe(0)
         expect(output).toContain('::warning title=Unsupported Trigger::')
-        expect(output).toContain('The pull_request trigger will become unsupported in the next release')
-        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
+        expect(output).toContain('The `pull_request` event will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }
@@ -223,8 +223,8 @@ describe('execute', () => {
         const output = context.stderr.toString()
 
         expect(code).toBe(0)
-        expect(output).toContain('The merge_request_event trigger will become unsupported in the next release')
-        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
+        expect(output).toContain('The `merge_request_event` pipeline source will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }
@@ -244,8 +244,8 @@ describe('execute', () => {
 
         expect(code).toBe(0)
         expect(output).toContain('##vso[task.logissue type=warning]')
-        expect(output).toContain('The PullRequest trigger will become unsupported in the next release')
-        expect(output).toContain('To continue using Datadog Code Security, please use the push event instead')
+        expect(output).toContain('The `PullRequest` build reason will become unsupported in the next release')
+        expect(output).toContain('To continue using Datadog Code Security, use `push` instead')
       } finally {
         process.env = originalEnv
       }

@@ -51,23 +51,23 @@ export class PluginCommand extends SarifUploadCommand {
     if (githubEvent === 'pull_request') {
       // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
       this.context.stdout.write(
-        '::warning title=Unsupported Trigger::The pull_request trigger will become unsupported in the next release.' +
-          'To continue using Datadog Code Security, please use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
+        '::warning title=Unsupported Trigger::The `pull_request` event will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.\n'
       )
     }
 
     if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
-        'The merge_request_event trigger will become unsupported in the next release. ' +
-          'To continue using Datadog Code Security, please use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
+        'The `merge_request_event` pipeline source will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.\n'
       )
     }
 
     if (azureReason === 'PullRequest') {
       // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#logging-commands-for-build-pipelines
       this.context.stdout.write(
-        '##vso[task.logissue type=warning]The PullRequest trigger will become unsupported in the next release. ' +
-          'To continue using Datadog Code Security, please use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
+        '##vso[task.logissue type=warning]The `PullRequest` build reason will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.\n'
       )
     }
 
