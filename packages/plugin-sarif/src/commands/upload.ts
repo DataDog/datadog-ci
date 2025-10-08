@@ -52,7 +52,7 @@ export class PluginCommand extends SarifUploadCommand {
       // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
       this.context.stdout.write(
         '::error title=Unsupported Trigger::The `pull_request` event is not supported by Datadog Code Security and will cause issues with the product. ' +
-          'To continue using Datadog Code Security, use the push event instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow\n for more information.'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
       )
 
       return 1
