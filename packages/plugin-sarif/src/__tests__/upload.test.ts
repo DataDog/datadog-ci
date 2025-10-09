@@ -200,7 +200,7 @@ describe('execute', () => {
         command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
         command['dryRun'] = true
 
-        await command.execute()
+        const code = await command.execute()
         const output = context.stdout.toString()
 
         expect(code).toBe(1)
@@ -248,7 +248,7 @@ describe('execute', () => {
         command['basePaths'] = ['./src/__tests__/fixtures/subfolder']
         command['dryRun'] = true
 
-        await command.execute()
+        const code = await command.execute()
         const output = context.stdout.toString()
 
         expect(code).toBe(1)
