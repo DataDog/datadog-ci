@@ -9,9 +9,9 @@ If you are having any issues related to migrating, please feel free to open an i
 
 The `sarif upload` command no longer supports pull request triggers in CI platforms. This affects:
 
-- **GitHub Actions**: The `pull_request` event is not supported
-- **GitLab CI**: The `merge_request_event` pipeline source is not supported
-- **Azure Pipelines**: The `PullRequest` build reason is not supported
+- **GitHub Actions**: The `pull_request` event is not supported.
+- **GitLab CI**: The `merge_request_event` pipeline source is not supported.
+- **Azure Pipelines**: The `PullRequest` build reason is not supported.
 
 **Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow) for more information.
 

@@ -54,8 +54,6 @@ export class PluginCommand extends SarifUploadCommand {
         '::error title=Unsupported Trigger::The `pull_request` event is not supported by Datadog Code Security and will cause issues with the product. ' +
           'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
       )
-
-      return 1
     }
 
     if (gitlabEvent === 'merge_request_event') {
@@ -63,8 +61,6 @@ export class PluginCommand extends SarifUploadCommand {
         'The `merge_request_event` pipeline source is not supported by Datadog Code Security and will cause issues with the product. ' +
           'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
       )
-
-      return 1
     }
 
     if (azureReason === 'PullRequest') {
@@ -73,8 +69,6 @@ export class PluginCommand extends SarifUploadCommand {
         '##vso[task.logissue type=error]The `PullRequest` build reason is not supported by Datadog Code Security and will cause issues with the product. ' +
           'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
       )
-
-      return 1
     }
 
     if (!this.basePaths || !this.basePaths.length) {
