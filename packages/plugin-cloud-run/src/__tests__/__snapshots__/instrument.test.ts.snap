@@ -99,7 +99,7 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +           "initialDelaySeconds": 0,
 +           "periodSeconds": 10,
 +           "tcpSocket": {
-+             "port": "5555"
++             "port": 5555
 +           },
 +           "timeoutSeconds": 1
 +         },
