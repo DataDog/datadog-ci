@@ -188,7 +188,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
 
   await handlePluginAutoInstall(scope)
 
-  debug(`Loading bundled plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
+  debug(`Loading plugin command at ./packages/plugin-${scope}/dist/commands/${command}.js`)
 
   // Only handle `SIMULATE_MISSING_PLUGIN` when used in combination with `DISABLE_PLUGIN_AUTO_INSTALL`.
   if (process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
