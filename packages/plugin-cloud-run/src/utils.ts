@@ -12,7 +12,6 @@ import {withSpinner} from './renderer'
  * @returns true if the user is authenticated, false otherwise
  */
 export const checkAuthentication = async () => {
-
   const auth = new GoogleAuth()
   try {
     await auth.getApplicationDefault()
