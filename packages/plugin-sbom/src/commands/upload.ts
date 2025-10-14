@@ -65,14 +65,14 @@ export class PluginCommand extends SbomUploadCommand {
       // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
       this.context.stdout.write(
         '::warning title=Unsupported Trigger::The `pull_request` event will become unsupported in the next release. ' +
-          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#run-via-pipelines-integration for more information.\n'
       )
     }
 
     if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
         'The `merge_request_event` pipeline source will become unsupported in the next release. ' +
-          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#run-via-pipelines-integration for more information.\n'
       )
     }
 
@@ -80,7 +80,7 @@ export class PluginCommand extends SbomUploadCommand {
       // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#logging-commands-for-build-pipelines
       this.context.stdout.write(
         '##vso[task.logissue type=warning]The `PullRequest` build reason will become unsupported in the next release. ' +
-          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#run-via-pipelines-integration for more information.\n'
       )
     }
 
