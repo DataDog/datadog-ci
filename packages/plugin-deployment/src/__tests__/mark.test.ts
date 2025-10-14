@@ -1,10 +1,14 @@
-import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {
+  createCommand,
+  getEnvVarPlaceholders,
+  makeRunCLI,
+} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as DeploymentMarkCommand} from '../commands/mark'
 
 describe('mark', () => {
   describe('execute', () => {
-    const runCLI = makeRunCLI(DeploymentMarkCommand, ['deployment', 'mark'])
+    const runCLI = makeRunCLI(DeploymentMarkCommand, ['deployment', 'mark', '--dry-run'])
 
     test('should fail if not running in a supported provider', async () => {
       const {context, code} = await runCLI([])
@@ -13,6 +17,18 @@ describe('mark', () => {
       expect(context.stderr.toString()).toContain(
         'Only providers [GitHub, GitLab, CircleCI, Buildkite, Jenkins, TeamCity, AzurePipelines] are supported'
       )
+    })
+
+    test('all ok', async () => {
+      const {context, code} = await runCLI([], {
+        DD_BETA_COMMANDS_ENABLED: '1',
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+        ...getEnvVarPlaceholders(),
+      })
+      expect(code).toBe(0)
+      console.log(context.stdout.toString())
     })
   })
 

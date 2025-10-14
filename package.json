@@ -50,6 +50,8 @@
     "tsc:build": "tsc --build --verbose"
   },
   "devDependencies": {
+    "@datadog/datadog-ci-base": "4.0.1",
+    "@datadog/datadog-ci-plugin-deployment": "4.0.1",
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@stylistic/eslint-plugin": "^5.3.1",
     "@types/node": "^20.19.18",

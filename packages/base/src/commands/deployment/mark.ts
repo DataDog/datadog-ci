@@ -45,6 +45,7 @@ export class DeploymentMarkCommand extends BaseCommand {
 
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected dryRun = Option.Boolean('--dry-run', false)
 
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)

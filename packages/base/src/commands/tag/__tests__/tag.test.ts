@@ -86,7 +86,6 @@ describe('execute', () => {
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'id',
         BUILDKITE_JOB_ID: 'id',
-        DD_API_KEY: 'key',
       },
       ['--dry-run']
     )

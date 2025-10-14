@@ -66,6 +66,10 @@ export class TagCommand extends BaseCommand {
     this.silent = silent
   }
 
+  public setDryRun(dryRun: boolean) {
+    this.dryRun = dryRun
+  }
+
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
 
