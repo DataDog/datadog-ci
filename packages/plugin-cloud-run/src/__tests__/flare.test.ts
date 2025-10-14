@@ -273,7 +273,7 @@ describe('cloud-run flare', () => {
 
   describe('checkAuthentication', () => {
     it('should return true when authentication is successful', async () => {
-      GoogleAuth.mockImplementationOnce(() => ({
+      ;(GoogleAuth as jest.Mock).mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.resolve(),
       }))
 
@@ -283,7 +283,7 @@ describe('cloud-run flare', () => {
     })
 
     it('should return false when authentication fails', async () => {
-      GoogleAuth.mockImplementationOnce(() => ({
+      ;(GoogleAuth as jest.Mock).mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.reject(),
       }))
 
@@ -293,7 +293,7 @@ describe('cloud-run flare', () => {
     })
 
     it('prints instructions on how to authenticate when authentication fails', async () => {
-      GoogleAuth.mockImplementationOnce(() => ({
+      ;(GoogleAuth as jest.Mock).mockImplementationOnce(() => ({
         getApplicationDefault: () => Promise.reject(),
       }))
 

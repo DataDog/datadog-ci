@@ -2,7 +2,7 @@ import fs from 'fs'
 import process from 'process'
 import util from 'util'
 
-import type {IService, IContainer, ServicesClient as IServicesClient} from '../types'
+import type {IService, IContainer} from '../types'
 import type {Logging} from '@google-cloud/logging'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
@@ -35,15 +35,13 @@ import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {RevisionsClient, ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 import upath from 'upath'
 
 import {CloudRunLog, LogConfig} from '../interfaces'
 import {renderAuthenticationInstructions} from '../renderer'
 import {checkAuthentication} from '../utils'
-
-// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
-const {RevisionsClient, ServicesClient} = require('@google-cloud/run')
 
 const SERVICE_CONFIG_FILE_NAME = 'service_config.json'
 const FLARE_ZIP_FILE_NAME = 'cloud-run-flare-output.zip'
@@ -151,7 +149,7 @@ export class PluginCommand extends CloudRunFlareCommand {
 
     // Get and print service configuration
     this.context.stdout.write(chalk.bold('\n🔍 Fetching service configuration...\n'))
-    const runClient: IServicesClient = new ServicesClient()
+    const runClient = new ServicesClient()
     let config: IService
     try {
       config = await getCloudRunServiceConfig(runClient, this.service!, this.project!, this.region!)
@@ -393,7 +391,7 @@ export class PluginCommand extends CloudRunFlareCommand {
  * @returns the configuration for the given service
  */
 export const getCloudRunServiceConfig = async (
-  runClient: IServicesClient,
+  runClient: ServicesClient,
   serviceName: string,
   projectName: string,
   region: string
