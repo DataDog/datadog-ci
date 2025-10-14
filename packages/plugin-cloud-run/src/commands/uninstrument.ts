@@ -181,7 +181,7 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
 
     const existingEnvVars = appContainer.env || []
     // Remove env vars beginning with DD_
-    const updatedEnvVars = existingEnvVars.filter((v) => !v.name.startsWith('DD_'))
+    const updatedEnvVars = existingEnvVars.filter((v) => v.name && !v.name.startsWith('DD_'))
 
     return {
       ...appContainer,
