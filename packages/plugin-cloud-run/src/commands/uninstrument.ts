@@ -1,18 +1,16 @@
-import type {IContainer, IService, IVolume, ServicesClient as IServicesClient} from '../types'
+import type {IContainer, IService, IVolume} from '../types'
 
 import {CloudRunUninstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/uninstrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
-
-// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
-const {ServicesClient} = require('@google-cloud/run')
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
   protected fipsConfig = {
@@ -84,7 +82,7 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
   }
 
   public async uninstrumentSidecar(project: string, services: string[], region: string) {
-    const client: IServicesClient = new ServicesClient()
+    const client = new ServicesClient()
 
     this.context.stdout.write(
       chalk.bold(`\n${dryRunPrefix(this.dryRun)}⬇️ Fetching existing service configurations from Cloud Run...\n`)
@@ -108,7 +106,7 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     }
   }
 
-  public async uninstrumentService(client: IServicesClient, existingService: IService, serviceName: string) {
+  public async uninstrumentService(client: ServicesClient, existingService: IService, serviceName: string) {
     const updatedService = this.createUninstrumentedServiceConfig(existingService)
     this.context.stdout.write(generateConfigDiff(existingService, updatedService))
     if (this.dryRun) {
