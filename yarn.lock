@@ -1376,7 +1376,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/datadog-ci-base@npm:4.0.1, @datadog/datadog-ci-base@workspace:*, @datadog/datadog-ci-base@workspace:packages/base":
+"@datadog/datadog-ci-base@workspace:*, @datadog/datadog-ci-base@workspace:packages/base":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-base@workspace:packages/base"
   dependencies:
@@ -1475,7 +1475,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-deployment@npm:4.0.1, @datadog/datadog-ci-plugin-deployment@workspace:*, @datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment":
+"@datadog/datadog-ci-plugin-deployment@workspace:*, @datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
@@ -5408,8 +5408,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "datadog-ci-monorepo@workspace:."
   dependencies:
-    "@datadog/datadog-ci-base": "npm:4.0.1"
-    "@datadog/datadog-ci-plugin-deployment": "npm:4.0.1"
     "@microsoft/eslint-formatter-sarif": "npm:^3.1.0"
     "@stylistic/eslint-plugin": "npm:^5.3.1"
     "@types/node": "npm:^20.19.18"
