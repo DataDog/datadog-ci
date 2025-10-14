@@ -176,7 +176,12 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
 
   const submodulePath = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
-  debug(`The ${submodulePath} submodule resolves to ${require.resolve(submodulePath)}`)
+  try {
+    const resolvedPath = require.resolve(submodulePath)
+    debug(`The ${submodulePath} submodule resolves to ${resolvedPath}`)
+  } catch (error) {
+    debug(`Could not require.resolve() the ${submodulePath} submodule: ${error}`)
+  }
 
   return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
 }
