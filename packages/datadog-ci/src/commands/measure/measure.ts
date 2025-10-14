@@ -53,6 +53,7 @@ export class MeasureCommand extends BaseCommand {
   private measures = Option.Array('--measures')
   private measuresFile = Option.String('--measures-file')
   private noFail = Option.Boolean('--no-fail')
+  private dryRun = Option.Boolean('--dry-run', false)
 
   private fips = Option.Boolean('--fips', false)
   private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
@@ -107,7 +108,7 @@ export class MeasureCommand extends BaseCommand {
         )
 
         return 0
-      } else if (exitStatus === 0) {
+      } else if (exitStatus === 0 && !this.dryRun) {
         this.context.stdout.write('Measures sent\n')
       }
 
@@ -134,21 +135,20 @@ export class MeasureCommand extends BaseCommand {
 
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
+
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `[DRYRUN] Measure request: ${JSON.stringify(this.buildMeasureRequest(ciEnv, level, provider, measures), undefined, 2)}\n`
+      )
+
+      return 0
+    }
+
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
     const doRequest = () =>
       request({
-        data: {
-          data: {
-            attributes: {
-              ci_env: ciEnv,
-              ci_level: level,
-              metrics: measures,
-              provider,
-            },
-            type: 'ci_custom_metric',
-          },
-        },
+        data: this.buildMeasureRequest(ciEnv, level, provider, measures),
         method: 'post',
         url: 'api/v2/ci/pipeline/metrics',
       })
@@ -176,5 +176,24 @@ export class MeasureCommand extends BaseCommand {
       `${chalk.red.bold('[ERROR]')} Could not send measures: ` +
         `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
     )
+  }
+
+  private buildMeasureRequest(
+    ciEnv: Record<string, string>,
+    level: number,
+    provider: string,
+    measures: Record<string, number>
+  ) {
+    return {
+      data: {
+        attributes: {
+          ci_env: ciEnv,
+          ci_level: level,
+          metrics: measures,
+          provider,
+        },
+        type: 'ci_custom_metric',
+      },
+    }
   }
 }
