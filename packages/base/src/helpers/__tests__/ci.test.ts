@@ -2,11 +2,17 @@ import fs from 'fs'
 
 import upath from 'upath'
 
-import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
+import {
+  getCIEnv,
+  getCIMetadata,
+  getCISpanTags,
+  getGithubJobDisplayNameFromLogs,
+  githubWellKnownDiagnosticDirs,
+  isInteractive,
+} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
-  CI_JOB_ID,
   CI_NODE_LABELS,
   CI_NODE_NAME,
   GIT_HEAD_SHA,
@@ -424,6 +430,170 @@ describe('isInteractive', () => {
     process.stdout.isTTY = false
 
     expect(isInteractive()).toBe(false)
+  })
+})
+
+describe('getGithubJobDisplayNameFromLogs', () => {
+  const mockedFs = fs as jest.Mocked<typeof fs>
+
+  beforeEach(() => {
+    jest.resetAllMocks()
+  })
+
+  const getNotFoundFsError = (): Error => {
+    const error = new Error('not found')
+    Object.assign(error, {code: 'ENOENT'})
+
+    return error
+  }
+
+  const mockLogFileDirent = (logFileName: string): fs.Dirent => {
+    return {
+      name: logFileName,
+      isFile: () => true,
+      isDirectory: () => false,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isSymbolicLink: () => false,
+      isFIFO: () => false,
+      isSocket: () => false,
+      parentPath: '',
+      path: '',
+    }
+  }
+
+  const sampleLogContent = (jobDisplayName: string): string => `
+    [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
+    [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
+    [2025-09-15 10:14:00Z INFO Worker] Message received.
+    [2025-09-15 10:14:00Z INFO Worker] Job message:
+    {
+      "jobId": "95a4619c-e316-542f-8a21-74cd5a8ac9ca",
+      "jobDisplayName": "${jobDisplayName}",
+      "jobName": "__default"
+    }`
+
+  const sampleLogFileName = 'Worker_20251014-083000.log'
+  const sampleJobDisplayName = 'build-and-test'
+
+  const mockReaddirSync = (targetDir: fs.PathLike, logFileName: string) => {
+    return jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      if (pathToRead === targetDir) {
+        return [mockLogFileDirent(logFileName)]
+      }
+      throw getNotFoundFsError()
+    })
+  }
+
+  test('should find and return the job display name (SaaS)', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[0] // SaaS directory
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const result = getGithubJobDisplayNameFromLogs()
+
+    expect(result).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find and return the job display name (self-hosted)', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[1] // self-hosted directory
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const result = getGithubJobDisplayNameFromLogs()
+
+    expect(result).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should check multiple log files until the display name is found', () => {
+    const logContent1 = 'no job display name here'
+    const logContent2 = 'nor here'
+    const logContent3 = sampleLogContent('my job name')
+
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      return [mockLogFileDirent('Worker_1.log'), mockLogFileDirent('Worker_2.log'), mockLogFileDirent('Worker_3.log')]
+    })
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent1)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent2)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent3)
+
+    const result = getGithubJobDisplayNameFromLogs()
+
+    expect(result).toBe('my job name')
+  })
+
+  test('should throw an error if no diagnostic log directories are found', () => {
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw getNotFoundFsError()
+    })
+
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow('could not find Github diagnostic log files')
+  })
+
+  test('should throw an error if no worker log files are found in any directory', () => {
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      return [mockLogFileDirent('random_file_1'), mockLogFileDirent('random_file_2')]
+    })
+
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow('could not find Github diagnostic log files')
+  })
+
+  test('should throw an error if log files are found but none contain the display name', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[0]
+    const logContent = 'This log does not have the job display name.'
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow('could not find jobDisplayName attribute in Github diagnostic logs')
+  })
+
+  test('should throw an error if reading a directory throws an unexpected error', () => {
+    const accessDeniedError = new Error('access denied')
+    Object.assign(accessDeniedError, {code: 'EACCES'})
+
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw accessDeniedError
+    })
+
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow(`error reading Github diagnostic log files: access denied`)
+  })
+
+  test('should re-throw for unexpected errors', () => {
+    const err = Error('some error')
+
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw err
+    })
+
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow(new Error('error reading Github diagnostic log files: some error'))
+
+    const stringErr = 'hello error'
+    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw stringErr
+    })
+    expect(() => {
+      getGithubJobDisplayNameFromLogs()
+    }).toThrow(stringErr)
   })
 })
 

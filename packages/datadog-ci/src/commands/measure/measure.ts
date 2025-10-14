@@ -2,7 +2,12 @@ import type {AxiosError} from 'axios'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
+import {
+  envDDGithubJobName,
+  getCIEnv,
+  getGithubJobDisplayNameFromLogs,
+  shouldGetGithubJobDisplayName,
+} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -97,8 +102,24 @@ export class MeasureCommand extends BaseCommand {
       return 1
     }
 
+    let githubDisplayName = ''
+    try {
+      if (shouldGetGithubJobDisplayName()) {
+        this.context.stdout.write('Inferring github job name\n')
+        githubDisplayName = getGithubJobDisplayNameFromLogs()
+      }
+    } catch (error) {
+      this.context.stdout.write(
+        `could not infer job display name, defaulting to env variables ${error instanceof Error ? error.message : ''}\n`
+      )
+    }
+
     try {
       const {provider, ciEnv} = getCIEnv()
+
+      if (githubDisplayName !== '' && !Object.values(ciEnv).includes(envDDGithubJobName)) {
+        ciEnv[envDDGithubJobName] = githubDisplayName
+      }
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
       if (exitStatus !== 0 && this.noFail) {
