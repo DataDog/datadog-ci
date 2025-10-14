@@ -77,4 +77,20 @@ describe('execute', () => {
     expect(result.context.stderr.toString()).toBe('')
     expect(result.context.stdout.toString()).toBe('')
   })
+
+  test('all ok', async () => {
+    const result = await runCLI(
+      'pipeline',
+      ['key:value'],
+      {
+        BUILDKITE: 'true',
+        BUILDKITE_BUILD_ID: 'id',
+        BUILDKITE_JOB_ID: 'id',
+        DD_API_KEY: 'key',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    expect(result.context.stdout.toString()).toContain('[DRYRUN] Tag request')
+  })
 })
