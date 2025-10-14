@@ -57,16 +57,30 @@ export class PluginCommand extends SbomUploadCommand {
   public async execute() {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
 
-    // TODO(julien): remove this notice in April 2025
-    if (this.serviceFromCli !== undefined) {
-      this.context.stderr.write(
-        'The CLI flag `--service` is deprecated and will be removed in a future version of datadog-ci\n'
+    const githubEvent = process.env.GITHUB_EVENT_NAME
+    const gitlabEvent = process.env.CI_PIPELINE_SOURCE
+    const azureReason = process.env.BUILD_REASON
+
+    if (githubEvent === 'pull_request') {
+      // https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#example-setting-an-error-message
+      this.context.stdout.write(
+        '::warning title=Unsupported Trigger::The `pull_request` event will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
       )
+    }
+
+    if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
-        'To associate findings with services, consider using the service-to-repo mapping from service catalog\n'
+        'The `merge_request_event` pipeline source will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
       )
-      this.context.stderr.write(
-        'Learn more at https://docs.datadoghq.com/getting_started/code_security/?tab=staticcodeanalysissast#link-datadog-services-to-repository-scan-results\n'
+    }
+
+    if (azureReason === 'PullRequest') {
+      // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#logging-commands-for-build-pipelines
+      this.context.stdout.write(
+        '##vso[task.logissue type=warning]The `PullRequest` build reason will become unsupported in the next release. ' +
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static/?tab=github#upload-third-party-sbom-to-datadog for more information.\n'
       )
     }
 
