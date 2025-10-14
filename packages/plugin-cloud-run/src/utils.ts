@@ -2,6 +2,7 @@ import type {IService} from './types'
 
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
+import {GoogleAuth} from 'google-auth-library'
 import {diff} from 'jest-diff'
 
 import {withSpinner} from './renderer'
@@ -11,7 +12,6 @@ import {withSpinner} from './renderer'
  * @returns true if the user is authenticated, false otherwise
  */
 export const checkAuthentication = async () => {
-  const {GoogleAuth} = await import('google-auth-library')
 
   const auth = new GoogleAuth()
   try {
