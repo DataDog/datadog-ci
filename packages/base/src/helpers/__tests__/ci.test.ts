@@ -477,7 +477,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   const sampleJobDisplayName = 'build-and-test'
 
   const mockReaddirSync = (targetDir: fs.PathLike, logFileName: string) => {
-    return jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       if (pathToRead === targetDir) {
         return [mockLogFileDirent(logFileName)]
       }
@@ -518,7 +518,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     const logContent2 = 'nor here'
     const logContent3 = sampleLogContent('my job name')
 
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       return [mockLogFileDirent('Worker_1.log'), mockLogFileDirent('Worker_2.log'), mockLogFileDirent('Worker_3.log')]
     })
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent1)
@@ -531,7 +531,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should throw an error if no diagnostic log directories are found', () => {
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       throw getNotFoundFsError()
     })
 
@@ -541,7 +541,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should throw an error if no worker log files are found in any directory', () => {
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       return [mockLogFileDirent('random_file_1'), mockLogFileDirent('random_file_2')]
     })
 
@@ -566,7 +566,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     const accessDeniedError = new Error('access denied')
     Object.assign(accessDeniedError, {code: 'EACCES'})
 
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       throw accessDeniedError
     })
 
@@ -578,7 +578,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   test('should re-throw for unexpected errors', () => {
     const err = Error('some error')
 
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       throw err
     })
 
@@ -587,7 +587,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     }).toThrow(new Error('error reading Github diagnostic log files: some error'))
 
     const stringErr = 'hello error'
-    jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw stringErr
     })
