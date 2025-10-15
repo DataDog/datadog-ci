@@ -30,7 +30,7 @@ datadog-ci tag --level job --tags "go.version:`go version`"
   The JSON should be flat (without nested objects or arrays) and the keys and values should be strings.
   The resulting dictionary will be merged with whatever is in the `DD_TAGS` environment variable and in the `--tags` argument.
 - `--silent` (default: `false`) will prevent the tag command from writing to stdout and stderr.
-- `--dry-run` (default: `false`): it will run the command without sending a request. All other checks are performed.
+- `--dry-run` (default: `false`): will run the command without sending a request. All other checks are performed.
 
 If a `key` is present in multiple sources, the order of precedence is:
 1. Environment variable `DD_TAGS`
