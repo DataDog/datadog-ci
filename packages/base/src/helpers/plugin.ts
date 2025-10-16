@@ -163,12 +163,12 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   const installInstructions = isNpx()
     ? undefined
-    : `\nTo skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
+    : `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
 
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
     `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
-    ...(installInstructions ? [installInstructions] : []),
+    ...(installInstructions ? ['', installInstructions] : []),
   ])
   console.log()
 
