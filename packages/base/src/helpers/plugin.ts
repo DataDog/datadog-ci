@@ -139,8 +139,10 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
 
   const emitPath = os.platform() === 'win32' ? 'set PATH' : 'printenv PATH'
   const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+
+  debug('Using npx to install the missing plugin:', cmd)
   const output = await new Promise<string>((resolve, reject) => {
-    exec(cmd, (error, stdout, stderr) => {
+    exec(cmd, (error, stdout) => {
       if (error) {
         reject(error)
       } else {
@@ -148,6 +150,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
       }
     })
   })
+  debug('Output:', output)
 
   const tempPath = getTempPath(output)
 
@@ -170,6 +173,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   // Add the temporary npx `node_modules` path to make the plugin resolvable.
   process.env['NODE_PATH'] = [process.env['NODE_PATH'], nodeModulesPath].filter(Boolean).join(path.delimiter)
   require('module').Module._initPaths()
+  debug('NODE_PATH set to:', process.env['NODE_PATH'])
 }
 
 const handlePluginAutoInstall = async (scope: string) => {
@@ -222,15 +226,15 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
 
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
-  debug('Resolving submodule', submoduleName)
+  debug('Resolving submodule:', submoduleName)
   let resolvedPath = submoduleName
   try {
     resolvedPath = require.resolve(submoduleName)
-    debug(`The ${submoduleName} submodule resolves to ${resolvedPath}`)
+    debug(`Resolved to: ${resolvedPath}`)
   } catch (error) {
     debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
   }
-  debug('Importing submodule', resolvedPath)
+  debug('Importing submodule:', resolvedPath)
 
   return (await import(resolvedPath)) as PluginSubModule
 }
