@@ -436,7 +436,7 @@ describe('isInteractive', () => {
 describe('getGithubJobDisplayNameFromLogs', () => {
   const mockedFs = fs as jest.Mocked<typeof fs>
 
-  beforeEach(() => {
+  afterEach(() => {
     jest.resetAllMocks()
   })
 
