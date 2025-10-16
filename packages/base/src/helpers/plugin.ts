@@ -221,15 +221,18 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
     handleSimulateMissingPlugin()
   }
 
-  const submodulePath = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
+  const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
+  debug('Resolving submodule', submoduleName)
+  let resolvedPath = submoduleName
   try {
-    const resolvedPath = require.resolve(submodulePath)
-    debug(`The ${submodulePath} submodule resolves to ${resolvedPath}`)
+    resolvedPath = require.resolve(submoduleName)
+    debug(`The ${submoduleName} submodule resolves to ${resolvedPath}`)
   } catch (error) {
-    debug(`Could not require.resolve() the ${submodulePath} submodule: ${error}`)
+    debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
   }
+  debug('Importing submodule', resolvedPath)
 
-  return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
+  return (await import(resolvedPath)) as PluginSubModule
 }
 
 const scopeToPackageName = (scope: string): string => {
