@@ -335,19 +335,16 @@ const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/ // https://github.com/geel
  */
 export const getTempPath = (stdout: string): string => {
   if (process.platform === 'win32') {
-    // https://github.com/geelen/npx-import/commit/1b565203cf94be4c3d577d7db7b7dfdddb722ca8
     const paths = stdout
       .replace(/^PATH=/i, '')
-      .replace(/\\\\\\\\/g, '\\\\')
       .replace(/\\r\\n/g, ';')
       .split(';')
     const tempPath = paths.find((p) => /\\npm[-\\]+cache\\_npx\\/.exec(p))
 
     if (!tempPath) {
+      const list = paths.map((p) => ` - ${p}`).join('\n')
       throw new Error(
-        `Failed to find temporary install directory. Looking for paths matching '\\npm-cache\\_npx\\' in:\n${JSON.stringify(
-          paths
-        )}`
+        `Failed to find temporary install directory. Looking for paths matching '\\npm-cache\\_npx\\' in:\n${list}`
       )
     }
 
@@ -357,10 +354,9 @@ export const getTempPath = (stdout: string): string => {
     const tempPath = paths.find((p) => /\/\.npm\/_npx\//.exec(p))
 
     if (!tempPath) {
+      const list = paths.map((p) => ` - ${p}`).join('\n')
       throw new Error(
-        `Failed to find temporary install directory. Looking for paths matching '/.npm/_npx/' in:\n${JSON.stringify(
-          paths
-        )}`
+        `Failed to find temporary install directory. Looking for paths matching '/.npm/_npx/' in:\n${list}`
       )
     }
 
