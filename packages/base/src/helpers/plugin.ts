@@ -7,6 +7,7 @@ import createDebug from 'debug'
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
 import {CommandContext} from '..'
+import {cliVersion} from '../version'
 
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
@@ -102,11 +103,13 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   return true
 }
 
+/**
+ * Installs a plugin and the base package as `devDependencies` in the current project with the right package manager.
+ */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
   const pluginName = scopeToPackageName(packageOrScope)
-  const version = peerDependencies[pluginName as keyof typeof peerDependencies]
-  const basePackage = `@datadog/datadog-ci-base@${version}`
-  const pluginPackage = `${pluginName}@${version}`
+  const basePackage = `@datadog/datadog-ci-base@${cliVersion}`
+  const pluginPackage = `${pluginName}@${cliVersion}`
 
   // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await import('@antfu/install-pkg')
@@ -170,7 +173,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
 
   await handlePluginAutoInstall(scope)
 
-  // Only handle `SIMULATE_MISSING_PLUGIN` when used in combination with `DISABLE_PLUGIN_AUTO_INSTALL`.
+  // It only makes sense to simulate a missing plugin when auto-install is disabled.
   if (process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
     handleSimulateMissingPlugin()
   }
