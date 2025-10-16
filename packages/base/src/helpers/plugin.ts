@@ -326,7 +326,7 @@ const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException =
 }
 
 const NPX_PATH_REGEX = /\.npm\/_npx\//
-const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/ // https://github.com/geelen/npx-import/commit/62106d18ebeddaa12b677e98339ae2f175ae42f2
+const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/
 
 /**
  * Find where NPX just installed the package.
