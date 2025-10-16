@@ -162,11 +162,14 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
     )
   }
 
+  const installInstructions = isNpx()
+    ? undefined
+    : `\nTo skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
+
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
     `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
-    '',
-    `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
+    ...(installInstructions ? [installInstructions] : []),
   ])
   console.log()
 
@@ -338,13 +341,17 @@ const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException =
   )
 }
 
+const NPX_PATH_REGEX = /\.npm\/_npx\//
+const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/ // https://github.com/geelen/npx-import/commit/62106d18ebeddaa12b677e98339ae2f175ae42f2
+
 /**
- * Find where NPX just installed the package
+ * Find where NPX just installed the package.
  *
  * https://github.com/geelen/npx-import/blob/8a1e17ca4f88981b11be5090e20871f8704166b8/src/index.ts#L221-L250
  */
 const getTempPath = (stdout: string): string => {
   if (os.platform() === 'win32') {
+    // https://github.com/geelen/npx-import/commit/1b565203cf94be4c3d577d7db7b7dfdddb722ca8
     const paths = stdout
       .replace(/^PATH=/i, '')
       .replace(/\\\\\\\\/g, '\\\\')
@@ -375,4 +382,13 @@ const getTempPath = (stdout: string): string => {
 
     return tempPath
   }
+}
+
+/**
+ * Check if the current process was started in an NPX context, with a temporary `node_modules/.bin` folder.
+ */
+const isNpx = (): boolean => {
+  const regex = os.platform() === 'win32' ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
+
+  return (process.env['PATH'] ?? '').split(path.delimiter).some((p) => regex.test(p))
 }
