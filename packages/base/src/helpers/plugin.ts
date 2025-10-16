@@ -201,14 +201,6 @@ const handlePluginAutoInstall = async (scope: string) => {
   }
 }
 
-const handleSimulateMissingPlugin = () => {
-  if (!!process.env['SIMULATE_MISSING_PLUGIN']) {
-    const error: NodeJS.ErrnoException = new Error('Simulated "Module not found" error')
-    error.code = 'MODULE_NOT_FOUND'
-    throw error
-  }
-}
-
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
   if (!isValidScope(scope)) {
     throw new Error(`Invalid scope: ${scope}`)
@@ -222,11 +214,6 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
 
   await handlePluginAutoInstall(scope)
-
-  // It only makes sense to simulate a missing plugin when auto-install is disabled.
-  if (process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
-    handleSimulateMissingPlugin()
-  }
 
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
   debug('Resolving submodule:', submoduleName)
@@ -264,8 +251,6 @@ const getPackagesToInstall = (scope: string) => {
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
-  handleSimulateMissingPlugin()
-
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
     // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
     return extractPackageJson(require(`${scope}/package.json`))
