@@ -29,7 +29,7 @@ datadog-ci measure --level job --measures binary.size:1024
   ```
   The JSON should be flat (without nested objects or arrays) and the values should be numbers.
   If a measure is present in both the `--measures` and the `--measures-file` command line arguments, the value from the `--measures` argument takes precedence.
-- `--dry-run` (default: `false`): will run the command without sending a request. All other checks are performed.
+- `--dry-run` (default: `false`): runs the command without sending a request. All other checks are performed.
 
 ### Environment variables
 
