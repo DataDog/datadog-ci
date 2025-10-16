@@ -1,5 +1,4 @@
 import {exec} from 'node:child_process'
-import os from 'node:os'
 import path from 'node:path'
 import {inspect} from 'node:util'
 
@@ -137,7 +136,7 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
 const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const {basePackage, pluginPackage} = getPackagesToInstall(scope)
 
-  const emitPath = os.platform() === 'win32' ? 'set PATH' : 'printenv PATH'
+  const emitPath = process.platform === 'win32' ? 'set PATH' : 'printenv PATH'
   const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
@@ -334,8 +333,8 @@ const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/ // https://github.com/geel
  *
  * https://github.com/geelen/npx-import/blob/8a1e17ca4f88981b11be5090e20871f8704166b8/src/index.ts#L221-L250
  */
-const getTempPath = (stdout: string): string => {
-  if (os.platform() === 'win32') {
+export const getTempPath = (stdout: string): string => {
+  if (process.platform === 'win32') {
     // https://github.com/geelen/npx-import/commit/1b565203cf94be4c3d577d7db7b7dfdddb722ca8
     const paths = stdout
       .replace(/^PATH=/i, '')
@@ -372,8 +371,8 @@ const getTempPath = (stdout: string): string => {
 /**
  * Check if the current process was started in an NPX context, with a temporary `node_modules/.bin` folder.
  */
-const isNpx = (): boolean => {
-  const regex = os.platform() === 'win32' ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
+export const isNpx = (): boolean => {
+  const regex = process.platform === 'win32' ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
 
   return (process.env['PATH'] ?? '').split(path.delimiter).some((p) => regex.test(p))
 }
