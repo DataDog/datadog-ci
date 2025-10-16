@@ -225,6 +225,7 @@ jobs:
           }' > package.json
 
           yarn set version stable
+          yarn config set nodeLinker node-modules
           yarn install --no-immutable
       - name: Run synthetics test
         run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
