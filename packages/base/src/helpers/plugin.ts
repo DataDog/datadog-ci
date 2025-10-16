@@ -1,3 +1,6 @@
+import {exec} from 'node:child_process'
+import os from 'node:os'
+import path from 'node:path'
 import {inspect} from 'node:util'
 
 import chalk from 'chalk'
@@ -52,7 +55,7 @@ export const listAllPlugins = (): string[] => {
 }
 
 export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {
-  if (!(scopeToPackageName(scope) in peerDependencies)) {
+  if (!isValidScope(scope)) {
     console.log(
       [
         '',
@@ -107,9 +110,7 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
  * Installs a plugin and the base package as `devDependencies` in the current project with the right package manager.
  */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
-  const pluginName = scopeToPackageName(packageOrScope)
-  const basePackage = `@datadog/datadog-ci-base@${cliVersion}`
-  const pluginPackage = `${pluginName}@${cliVersion}`
+  const {basePackage, pluginPackage} = getPackagesToInstall(packageOrScope)
 
   // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await import('@antfu/install-pkg')
@@ -133,6 +134,44 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
   }
 }
 
+const temporarilyInstallPluginWithNpx = async (scope: string) => {
+  const {basePackage, pluginPackage} = getPackagesToInstall(scope)
+
+  const emitPath = os.platform() === 'win32' ? 'set PATH' : 'printenv PATH'
+  const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+  const output = await new Promise<string>((resolve, reject) => {
+    exec(cmd, (error, stdout, stderr) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(stdout)
+      }
+    })
+  })
+
+  const tempPath = getTempPath(output)
+
+  // Expecting the path ends with node_modules/.bin
+  const nodeModulesPath = path.resolve(tempPath, '..')
+  if (!nodeModulesPath.endsWith('node_modules')) {
+    throw new Error(
+      `Found NPX temporary path of '${tempPath}' but expected to be able to find a 'node_modules' directory by looking in '..'.`
+    )
+  }
+
+  console.log()
+  messageBox('Installed plugin 🔌', 'green', [
+    `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
+    '',
+    `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
+  ])
+  console.log()
+
+  // Add the temporary npx `node_modules` path to make the plugin resolvable.
+  process.env['NODE_PATH'] = [process.env['NODE_PATH'], nodeModulesPath].filter(Boolean).join(path.delimiter)
+  require('module').Module._initPaths()
+}
+
 const handlePluginAutoInstall = async (scope: string) => {
   if (!!process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
     debug('Found DISABLE_PLUGIN_AUTO_INSTALL env variable, skipping auto-install')
@@ -151,7 +190,7 @@ const handlePluginAutoInstall = async (scope: string) => {
 
     const pluginName = scopeToPackageName(scope)
     console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
-    await installPlugin(pluginName)
+    await temporarilyInstallPluginWithNpx(pluginName)
   }
 }
 
@@ -164,6 +203,10 @@ const handleSimulateMissingPlugin = () => {
 }
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
+  if (!isValidScope(scope)) {
+    throw new Error(`Invalid scope: ${scope}`)
+  }
+
   if (await isStandaloneBinary()) {
     debug(`Loading plugin injected in the standalone binary`)
 
@@ -195,6 +238,19 @@ const scopeToPackageName = (scope: string): string => {
   }
 
   return `@datadog/datadog-ci-plugin-${scope}`
+}
+
+const isValidScope = (scope: string): boolean => {
+  return scopeToPackageName(scope) in peerDependencies
+}
+
+const getPackagesToInstall = (scope: string) => {
+  const pluginName = scopeToPackageName(scope)
+  const versionOverride = process.env['PLUGIN_AUTO_INSTALL_VERSION_OVERRIDE']
+  const basePackage = `@datadog/datadog-ci-base@${versionOverride ?? cliVersion}`
+  const pluginPackage = `${pluginName}@${versionOverride ?? cliVersion}`
+
+  return {basePackage, pluginPackage}
 }
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
@@ -273,4 +329,43 @@ const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException =
     error instanceof Error &&
     ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes((error as NodeJS.ErrnoException).code ?? '')
   )
+}
+
+/**
+ * Find where NPX just installed the package
+ *
+ * https://github.com/geelen/npx-import/blob/8a1e17ca4f88981b11be5090e20871f8704166b8/src/index.ts#L221-L250
+ */
+const getTempPath = (stdout: string): string => {
+  if (os.platform() === 'win32') {
+    const paths = stdout
+      .replace(/^PATH=/i, '')
+      .replace(/\\\\\\\\/g, '\\\\')
+      .replace(/\\r\\n/g, ';')
+      .split(';')
+    const tempPath = paths.find((p) => /\\npm[-\\]+cache\\_npx\\/.exec(p))
+
+    if (!tempPath) {
+      throw new Error(
+        `Failed to find temporary install directory. Looking for paths matching '\\npm-cache\\_npx\\' in:\n${JSON.stringify(
+          paths
+        )}`
+      )
+    }
+
+    return tempPath
+  } else {
+    const paths = stdout.split(':')
+    const tempPath = paths.find((p) => /\/\.npm\/_npx\//.exec(p))
+
+    if (!tempPath) {
+      throw new Error(
+        `Failed to find temporary install directory. Looking for paths matching '/.npm/_npx/' in:\n${JSON.stringify(
+          paths
+        )}`
+      )
+    }
+
+    return tempPath
+  }
 }
