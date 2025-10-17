@@ -104,7 +104,7 @@ const resolveTilde = (filePath: string | undefined) => {
   return filePath
 }
 
-export const getCISpanTags = (): SpanTags | undefined => {
+export const getCISpanTags = (fallbackGithubJobName?: string): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
 
@@ -342,7 +342,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
-        DD_GITHUB_JOB_NAME,
+        DD_GITHUB_JOB_NAME: DD_GITHUB_JOB_NAME ?? fallbackGithubJobName,
       }),
     }
 
@@ -1036,12 +1036,19 @@ export const shouldGetGithubJobDisplayName = (): boolean => {
   return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
 }
 
+export const getGithubJobNameFromLogsAndUpdateEnv = (context: BaseContext, ciEnv: Record<string, string>) => {
+  const jobName = getGithubJobNameFromLogs(context)
+  if (jobName) {
+    ciEnv[envDDGithubJobName] = jobName
+  }
+}
+
 /**
  * Extracts the job display name from the GitHub Actions diagnostic log files.
  *
- * @returns The job display name, or an empty string if not found.
+ * @returns The job display name, or undefined if not found
  */
-export const getGithubJobDisplayNameFromLogs = (context: BaseContext, ciEnv: Record<string, string>) => {
+export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
   if (!shouldGetGithubJobDisplayName()) {
     return
   }
@@ -1092,10 +1099,9 @@ export const getGithubJobDisplayNameFromLogs = (context: BaseContext, ciEnv: Rec
 
     if (match && match[1]) {
       // match[1] is the captured group with the display name
-      ciEnv[envDDGithubJobName] = match[1]
-      context.stdout.write(`Succesfully extracted job name: ${ciEnv[envDDGithubJobName]}\n`)
+      context.stdout.write(`Succesfully extracted job name: ${match[1]}\n`)
 
-      return
+      return match[1]
     }
   }
 
