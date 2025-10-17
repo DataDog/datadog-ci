@@ -1,15 +1,18 @@
 import fs from 'fs'
 
+import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
 import {
+  envDDGithubJobName,
   getCIEnv,
   getCIMetadata,
   getCISpanTags,
   getGithubJobDisplayNameFromLogs,
   githubWellKnownDiagnosticDirs,
-  isInteractive, shouldGetGithubJobDisplayName
-} from "../ci";
+  isInteractive,
+  shouldGetGithubJobDisplayName,
+} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
@@ -22,6 +25,8 @@ import {
   PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
+
+import {createMockContext} from './testing-tools'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
@@ -436,6 +441,11 @@ describe('isInteractive', () => {
 describe('getGithubJobDisplayNameFromLogs', () => {
   const mockedFs = fs as jest.Mocked<typeof fs>
 
+  beforeEach(() => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+    }
+  })
   afterEach(() => {
     jest.resetAllMocks()
   })
@@ -492,9 +502,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    const result = getGithubJobDisplayNameFromLogs()
+    const ciEnv = {}
+    getGithubJobDisplayNameFromLogs(createMockContext() as BaseContext, ciEnv)
 
-    expect(result).toBe(sampleJobDisplayName)
+    expect(ciEnv).toHaveProperty(envDDGithubJobName, sampleJobDisplayName)
     expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
   })
@@ -506,9 +517,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    const result = getGithubJobDisplayNameFromLogs()
+    const ciEnv = {}
+    getGithubJobDisplayNameFromLogs(createMockContext() as BaseContext, ciEnv)
 
-    expect(result).toBe(sampleJobDisplayName)
+    expect(ciEnv).toHaveProperty(envDDGithubJobName, sampleJobDisplayName)
     expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
   })
@@ -525,44 +537,54 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent2)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent3)
 
-    const result = getGithubJobDisplayNameFromLogs()
+    const ciEnv = {}
+    getGithubJobDisplayNameFromLogs(createMockContext() as BaseContext, ciEnv)
 
-    expect(result).toBe('my job name')
+    expect(ciEnv).toHaveProperty(envDDGithubJobName, 'my job name')
   })
 
-  test('should throw an error if no diagnostic log directories are found', () => {
+  test('no diagnostic log directories found', () => {
     fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       throw getNotFoundFsError()
     })
 
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow('could not find Github diagnostic log files')
+    const ciEnv = {}
+    const context = createMockContext() as BaseContext
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('could not find Github diagnostic log files')
   })
 
-  test('should throw an error if no worker log files are found in any directory', () => {
+  test('no worker log files found in any directory', () => {
     fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       return [mockLogFileDirent('random_file_1'), mockLogFileDirent('random_file_2')]
     })
 
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow('could not find Github diagnostic log files')
+    const ciEnv = {}
+    const context = createMockContext() as BaseContext
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('could not find Github diagnostic log files')
   })
 
-  test('should throw an error if log files are found but none contain the display name', () => {
+  test('log files found but none contain the display name', () => {
     const targetDir = githubWellKnownDiagnosticDirs[0]
     const logContent = 'This log does not have the job display name.'
 
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow('could not find jobDisplayName attribute in Github diagnostic logs')
+    const ciEnv = {}
+    const context = createMockContext() as BaseContext
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('could not find "jobDisplayName" attribute in Github diagnostic logs')
   })
 
-  test('should throw an error if reading a directory throws an unexpected error', () => {
+  test('reading a directory throws an unexpected error', () => {
     const accessDeniedError = new Error('access denied')
     Object.assign(accessDeniedError, {code: 'EACCES'})
 
@@ -570,30 +592,37 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       throw accessDeniedError
     })
 
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow(`error reading Github diagnostic log files: access denied`)
+    const ciEnv = {}
+    const context = createMockContext() as BaseContext
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: access denied')
   })
 
-  test('should re-throw for unexpected errors', () => {
+  test('other unexpected errors', () => {
     const err = Error('some error')
 
     fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       throw err
     })
 
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow(new Error('error reading Github diagnostic log files: some error'))
+    const ciEnv = {}
+    const context = createMockContext() as BaseContext
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: some error')
 
     const stringErr = 'hello error'
     fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
       // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw stringErr
     })
-    expect(() => {
-      getGithubJobDisplayNameFromLogs()
-    }).toThrow(stringErr)
+
+    getGithubJobDisplayNameFromLogs(context, ciEnv)
+    expect(ciEnv).toEqual({})
+    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: hello error')
   })
 })
 

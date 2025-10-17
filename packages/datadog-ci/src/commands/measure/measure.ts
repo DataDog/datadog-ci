@@ -103,23 +103,11 @@ export class MeasureCommand extends BaseCommand {
       return 1
     }
 
-    let githubDisplayName = ''
-    try {
-      if (this.level !== 'pipeline' && shouldGetGithubJobDisplayName()) {
-        this.context.stdout.write('Determining github job name\n')
-        githubDisplayName = getGithubJobDisplayNameFromLogs()
-      }
-    } catch (error) {
-      this.context.stderr.write(
-        `could not infer job display name, defaulting to env variables ${error instanceof Error ? error.message : ''}\n`
-      )
-    }
-
     try {
       const {provider, ciEnv} = getCIEnv()
 
-      if (githubDisplayName !== '' && !Object.values(ciEnv).includes(envDDGithubJobName)) {
-        ciEnv[envDDGithubJobName] = githubDisplayName
+      if (this.level !== 'pipeline') {
+        getGithubJobDisplayNameFromLogs(this.context, ciEnv)
       }
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)

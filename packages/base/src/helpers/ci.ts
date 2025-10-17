@@ -42,6 +42,8 @@ import {
   filterSensitiveInfoFromRepository,
   getGitHubEventPayload,
 } from './utils'
+import { BaseContext } from "clipanion";
+import chalk from "chalk";
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -1039,7 +1041,12 @@ export const shouldGetGithubJobDisplayName = (): boolean => {
  *
  * @returns The job display name, or an empty string if not found.
  */
-export const getGithubJobDisplayNameFromLogs = (): string => {
+export const getGithubJobDisplayNameFromLogs = (context: BaseContext, ciEnv: Record<string, string>) => {
+  if (!shouldGetGithubJobDisplayName()) {
+    return
+  }
+  context.stdout.write('Determining github job name\n')
+
   let foundDiagDir = ''
   let workerLogFiles: string[] = []
 
@@ -1061,15 +1068,19 @@ export const getGithubJobDisplayNameFromLogs = (): string => {
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         continue
       }
+      let errMessage = 'error reading Github diagnostic log files'
       if (error instanceof Error) {
-        throw new Error(`error reading Github diagnostic log files: ${error.message}`)
+        errMessage += `: ${error.message}`
       } else {
-        throw error
+        errMessage += `: ${String(error)}`
       }
+      context.stderr.write(`${chalk.yellow.bold('[WARNING]')} ${errMessage}`)
+
+      return
     }
   }
   if (workerLogFiles.length === 0 || foundDiagDir === '') {
-    throw new Error('could not find Github diagnostic log files')
+    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find Github diagnostic log files`)
   }
 
   // 2. Get the job display name via regex
@@ -1080,10 +1091,14 @@ export const getGithubJobDisplayNameFromLogs = (): string => {
     const match = content.match(githubJobDisplayNameRegex)
 
     if (match && match[1]) {
-      // match[1] is the captured group
-      return match[1]
+      // match[1] is the captured group with the display name
+      ciEnv[envDDGithubJobName] = match[1]
+
+      return
     }
   }
 
-  throw Error('could not find jobDisplayName attribute in Github diagnostic logs')
+  context.stderr.write(
+    `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in Github diagnostic logs`
+  )
 }
