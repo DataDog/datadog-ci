@@ -2,6 +2,7 @@ import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base
 import {Cli} from 'clipanion'
 
 import {MeasureCommand, parseMeasures} from '../measure'
+import fs from "fs";
 
 const fixturesPath = './src/commands/measure/__tests__/fixtures'
 
@@ -55,6 +56,10 @@ describe('execute', () => {
     return {context, code}
   }
 
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
   test('should fail if an invalid level given', async () => {
     const {context, code} = await runCLI('stage', ['key:1'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
     expect(code).toBe(1)
@@ -100,11 +105,65 @@ describe('execute', () => {
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'id',
         BUILDKITE_JOB_ID: 'id',
-        DD_API_KEY: 'key',
       },
       ['--dry-run']
     )
     expect(result.code).toBe(0)
     expect(result.context.stdout.toString()).toContain('[DRYRUN] Measure request')
+  })
+
+  test('should try to determine github job display name', async () => {
+    fs.readdirSync = jest.fn().mockReturnValue([
+      {
+        name: 'Worker_1.log',
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+    const result = await runCLI(
+      'job',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'fake job name',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('Determining github job name')
+    expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
+  })
+
+  test('should not try to determine github job display name for pipelines', async () => {
+    const result = await runCLI(
+      'pipeline',
+      ['key:12345'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'fake job name',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).not.toContain('Determining github job name')
+    expect(out).not.toContain('"DD_GITHUB_JOB_NAME": "real job name"')
   })
 })

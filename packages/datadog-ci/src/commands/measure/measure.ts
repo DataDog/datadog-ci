@@ -105,12 +105,12 @@ export class MeasureCommand extends BaseCommand {
 
     let githubDisplayName = ''
     try {
-      if (shouldGetGithubJobDisplayName()) {
-        this.context.stdout.write('Inferring github job name\n')
+      if (this.level !== 'pipeline' && shouldGetGithubJobDisplayName()) {
+        this.context.stdout.write('Determining github job name\n')
         githubDisplayName = getGithubJobDisplayNameFromLogs()
       }
     } catch (error) {
-      this.context.stdout.write(
+      this.context.stderr.write(
         `could not infer job display name, defaulting to env variables ${error instanceof Error ? error.message : ''}\n`
       )
     }

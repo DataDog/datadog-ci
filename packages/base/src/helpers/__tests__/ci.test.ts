@@ -8,8 +8,8 @@ import {
   getCISpanTags,
   getGithubJobDisplayNameFromLogs,
   githubWellKnownDiagnosticDirs,
-  isInteractive,
-} from '../ci'
+  isInteractive, shouldGetGithubJobDisplayName
+} from "../ci";
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
@@ -594,6 +594,30 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     expect(() => {
       getGithubJobDisplayNameFromLogs()
     }).toThrow(stringErr)
+  })
+})
+
+describe('shouldGetGithubJobDisplayName', () => {
+  test('should get github display name', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(true)
+  })
+
+  test('should not get github display name if set manually', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      DD_GITHUB_JOB_NAME: 'value set by user',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(false)
+  })
+
+  test('should not get github display name if not from Github', () => {
+    process.env = {
+      CIRCLECI: 'true',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(false)
   })
 })
 

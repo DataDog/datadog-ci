@@ -1031,7 +1031,7 @@ export const isInteractive = ({stream = process.stdout}: {stream?: NodeJS.WriteS
 }
 
 export const shouldGetGithubJobDisplayName = (): boolean => {
-  return getCIProvider() !== CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME !== ''
+  return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
 }
 
 /**
