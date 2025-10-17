@@ -28,12 +28,14 @@ export class PluginCommand extends DeploymentMarkCommand {
     tagJobCommand.setTags(this.createJobDeploymentTags())
     tagJobCommand.context = this.context
     tagJobCommand.setSilent(false)
+    tagJobCommand.setDryRun(this.dryRun)
 
     const tagPipelineCommand = new TagCommand()
     tagPipelineCommand.setLevel('pipeline')
     tagPipelineCommand.setTags(this.createPipelineDeploymentTags())
     tagPipelineCommand.context = this.context
-    tagPipelineCommand.setSilent(true)
+    tagPipelineCommand.setSilent(!this.dryRun)
+    tagPipelineCommand.setDryRun(this.dryRun)
 
     if (this.noFail) {
       tagJobCommand.setNoFail(true)

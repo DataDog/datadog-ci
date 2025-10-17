@@ -1588,7 +1588,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
+"@datadog/datadog-ci-plugin-synthetics@workspace:*, @datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-synthetics@workspace:packages/plugin-synthetics"
   dependencies:
@@ -1627,6 +1627,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/semver": "npm:^7.3.12"

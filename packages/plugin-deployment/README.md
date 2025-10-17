@@ -26,6 +26,7 @@ datadog-ci deployment mark --env prod --service payment-service --revision v1.1.
 - `--is-rollback` specifies that the deployment is a rollback.
 - `--tags` is an array of key value pairs in the format `key:value`. These tags are added to the deployment event shown in Datadog.
 - `--no-fail` (default: `false`) prevents the deployment command from failing if there are issues submitting the data.
+- `--dry-run` (default: `false`): runs the command without sending requests. All other checks are performed.
 
 ### `correlate`
 

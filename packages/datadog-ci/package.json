@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "3.22.2",
+  "version": "4.0.2",
   "description": "Use Datadog from your CI.",
   "license": "Apache-2.0",
   "keywords": [
@@ -46,6 +46,7 @@
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
+    "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
