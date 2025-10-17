@@ -2,7 +2,7 @@ import crypto from 'crypto'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getCIProvider, getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {getCIProvider, getCISpanTags, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
@@ -53,7 +53,9 @@ export abstract class CustomSpanCommand extends BaseCommand {
 
       return 1
     }
-    const ciSpanTags = getCISpanTags()
+    const realGithubJobName = getGithubJobNameFromLogs(this.context)
+
+    const ciSpanTags = getCISpanTags(realGithubJobName)
     const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
     const cliTags = this.tags ? parseTags(this.tags) : {}
     const cliMeasures = this.measures ? parseTags(this.measures) : {}

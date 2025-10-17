@@ -1,5 +1,7 @@
 // Only the function is exported, not the test such that there is no test duplication
 
+import fs from 'fs'
+
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 type RunCLIType = ReturnType<typeof makeRunCLI>
@@ -8,6 +10,10 @@ type RunCLIType = ReturnType<typeof makeRunCLI>
 
 export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) => {
   describe('execute', () => {
+    afterEach(() => {
+      jest.resetAllMocks()
+    })
+
     test('should fail if no CI is detected', async () => {
       process.env = {}
       const {context, code} = await runCLI(runCLIArgs)
@@ -61,6 +67,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"GITHUB_RUN_ATTEMPT\\":\\"1\\"')
       expect(dryRunOutput).toContain('\\"DD_GITHUB_JOB_NAME\\":\\"custom_jobname\\"')
       expect(dryRunOutput).toContain('"ci.job.name":"jobname"')
+      expect(dryRunOutput).not.toContain('Determining github job name')
     })
 
     test('should detect the gitlab environment', async () => {
@@ -115,6 +122,36 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       const dryRunOutput = context.stdout.toString()
       expect(dryRunOutput).toContain('\\"BUILDKITE_BUILD_ID\\":\\"abc\\"')
       expect(dryRunOutput).toContain('\\"BUILDKITE_JOB_ID\\":\\"def\\"')
+    })
+
+    test('should try to infer github job name', async () => {
+      fs.readdirSync = jest.fn().mockReturnValue([
+        {
+          name: 'Worker_1.log',
+          isFile: () => true,
+          isDirectory: () => false,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          parentPath: '',
+          path: '',
+        },
+      ])
+      fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+      const {context, code} = await runCLI(runCLIArgs, {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'http://github',
+        GITHUB_REPOSITORY: 'test/test',
+        GITHUB_RUN_ID: '10',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'jobname',
+      })
+      expect(code).toBe(0)
+      const dryRunOutput = context.stdout.toString()
+      expect(dryRunOutput).toContain('\\"DD_GITHUB_JOB_NAME\\":\\"real job name\\"')
+      expect(dryRunOutput).toContain('Determining github job name')
     })
   })
 }

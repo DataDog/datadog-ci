@@ -10,6 +10,10 @@ describe('span', () => {
   const runCLI = makeRunCLI(SpanCommand, ['trace', 'span', '--dry-run'])
 
   describe('execute', () => {
+    afterEach(() => {
+      jest.resetAllMocks()
+    })
+
     test('ci_provider', async () => {
       const env = {GITLAB_CI: '1'}
       const {context, code} = await runCLI(['--name', 'mytestname', '--duration', '10000'], env)
