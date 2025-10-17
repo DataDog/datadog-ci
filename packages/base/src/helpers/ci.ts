@@ -1,5 +1,7 @@
 import fs from 'fs'
 
+import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
 import {Metadata, SpanTag, SpanTags} from './interfaces'
@@ -42,8 +44,6 @@ import {
   filterSensitiveInfoFromRepository,
   getGitHubEventPayload,
 } from './utils'
-import { BaseContext } from "clipanion";
-import chalk from "chalk";
 
 export const CI_ENGINES = {
   APPVEYOR: 'appveyor',
@@ -1093,6 +1093,7 @@ export const getGithubJobDisplayNameFromLogs = (context: BaseContext, ciEnv: Rec
     if (match && match[1]) {
       // match[1] is the captured group with the display name
       ciEnv[envDDGithubJobName] = match[1]
+      context.stdout.write(`Succesfully extracted job name: ${ciEnv[envDDGithubJobName]}\n`)
 
       return
     }

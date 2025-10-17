@@ -1,8 +1,9 @@
+import fs from 'fs'
+
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
 
 import {MeasureCommand, parseMeasures} from '../measure'
-import fs from "fs";
 
 const fixturesPath = './src/commands/measure/__tests__/fixtures'
 
