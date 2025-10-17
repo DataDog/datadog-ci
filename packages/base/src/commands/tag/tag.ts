@@ -32,6 +32,7 @@ export class TagCommand extends BaseCommand {
   private level = Option.String('--level')
   private noFail = Option.Boolean('--no-fail')
   private silent = Option.Boolean('--silent')
+  private dryRun = Option.Boolean('--dry-run', false)
   private tags = Option.Array('--tags')
   private tagsFile = Option.String('--tags-file')
 
@@ -63,6 +64,10 @@ export class TagCommand extends BaseCommand {
 
   public setSilent(silent: boolean) {
     this.silent = silent
+  }
+
+  public setDryRun(dryRun: boolean) {
+    this.dryRun = dryRun
   }
 
   public async execute() {
@@ -114,7 +119,7 @@ export class TagCommand extends BaseCommand {
         )
 
         return 0
-      } else if (exitStatus === 0) {
+      } else if (exitStatus === 0 && !this.dryRun) {
         this.context.stdout.write('Tags sent\n')
       }
 
@@ -141,21 +146,20 @@ export class TagCommand extends BaseCommand {
 
     const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
     const baseAPIURL = `https://${getApiHostForSite(site)}`
+
+    if (this.dryRun) {
+      this.context.stdout.write(
+        `[DRYRUN] Tag request: ${JSON.stringify(this.buildTagRequest(ciEnv, level, provider, tags), undefined, 2)}\n`
+      )
+
+      return 0
+    }
+
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey: this.config.apiKey})
 
     const doRequest = () =>
       request({
-        data: {
-          data: {
-            attributes: {
-              ci_env: ciEnv,
-              ci_level: level,
-              provider,
-              tags,
-            },
-            type: 'ci_custom_tag',
-          },
-        },
+        data: this.buildTagRequest(ciEnv, level, provider, tags),
         method: 'post',
         url: 'api/v2/ci/pipeline/tags',
       })
@@ -185,5 +189,24 @@ export class TagCommand extends BaseCommand {
       `${chalk.red.bold('[ERROR]')} Could not send tags: ` +
         `${error.response ? JSON.stringify(error.response.data, undefined, 2) : ''}\n`
     )
+  }
+
+  private buildTagRequest(
+    ciEnv: Record<string, string>,
+    level: number,
+    provider: string,
+    tags: Record<string, string>
+  ) {
+    return {
+      data: {
+        attributes: {
+          ci_env: ciEnv,
+          ci_level: level,
+          provider,
+          tags,
+        },
+        type: 'ci_custom_tag',
+      },
+    }
   }
 }
