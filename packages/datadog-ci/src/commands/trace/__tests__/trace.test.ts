@@ -20,6 +20,10 @@ describe('trace', () => {
     return {context, code}
   }
 
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
   describe('signalToNumber', () => {
     test('should map null to undefined', () => {
       const command = new TraceCommand()

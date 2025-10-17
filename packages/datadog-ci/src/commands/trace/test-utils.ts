@@ -10,10 +10,6 @@ type RunCLIType = ReturnType<typeof makeRunCLI>
 
 export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) => {
   describe('execute', () => {
-    afterEach(() => {
-      jest.resetAllMocks()
-    })
-
     test('should fail if no CI is detected', async () => {
       process.env = {}
       const {context, code} = await runCLI(runCLIArgs)
