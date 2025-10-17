@@ -1,9 +1,10 @@
+import fs from 'fs'
+
 import {Cli} from 'clipanion'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
 
 import {TagCommand} from '../tag'
-import fs from "fs";
 
 const fixturesPath = './src/commands/tag/__tests__/fixtures'
 

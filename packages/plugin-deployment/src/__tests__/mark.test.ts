@@ -1,15 +1,17 @@
-import {
-  createCommand,
-  getEnvVarPlaceholders,
-  makeRunCLI,
-} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import fs from 'fs'
+import {afterEach} from 'node:test'
+
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as DeploymentMarkCommand} from '../commands/mark'
-import fs from "fs";
 
 describe('mark', () => {
   describe('execute', () => {
     const runCLI = makeRunCLI(DeploymentMarkCommand, ['deployment', 'mark', '--dry-run'])
+
+    afterEach(() => {
+      jest.resetAllMocks()
+    })
 
     test('should fail if not running in a supported provider', async () => {
       const {context, code} = await runCLI([])
