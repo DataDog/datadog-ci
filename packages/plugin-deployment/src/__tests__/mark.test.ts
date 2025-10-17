@@ -5,6 +5,7 @@ import {
 } from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
 import {PluginCommand as DeploymentMarkCommand} from '../commands/mark'
+import fs from "fs";
 
 describe('mark', () => {
   describe('execute', () => {
@@ -25,10 +26,39 @@ describe('mark', () => {
         BUILDKITE: 'true',
         BUILDKITE_BUILD_ID: 'id',
         BUILDKITE_JOB_ID: 'id',
-        ...getEnvVarPlaceholders(),
       })
       expect(code).toBe(0)
       console.log(context.stdout.toString())
+    })
+
+    test('tag command should try to determine github job display name', async () => {
+      fs.readdirSync = jest.fn().mockReturnValue([
+        {
+          name: 'Worker_2.log',
+          isFile: () => true,
+          isDirectory: () => false,
+          isBlockDevice: () => false,
+          isCharacterDevice: () => false,
+          isSymbolicLink: () => false,
+          isFIFO: () => false,
+          isSocket: () => false,
+          parentPath: '',
+          path: '',
+        },
+      ])
+      fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+      const {context, code} = await runCLI([], {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'fake job name',
+      })
+      expect(code).toBe(0)
+      const out = context.stdout.toString()
+      expect(out).toContain('Determining github job name')
+      expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
     })
   })
 
