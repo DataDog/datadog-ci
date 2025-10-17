@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import { getCIEnv, getGithubJobNameFromLogsAndUpdateEnv } from "../../helpers/ci";
+import {getCIEnv, getGithubJobNameFromLogsAndUpdateEnv} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
