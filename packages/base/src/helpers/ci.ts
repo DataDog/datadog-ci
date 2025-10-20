@@ -1046,6 +1046,17 @@ export const getGithubJobNameFromLogsAndUpdateEnv = (context: BaseContext, ciEnv
 /**
  * Extracts the job display name from the GitHub Actions diagnostic log files.
  *
+ * In Github Actions, the GITHUB_JOB environment variable points to the job name
+ * defined in the workflow file, but users can change the name by using the 'name'
+ * property or matrix jobs. In this case the correlation will not work as GITHUB_JOB
+ * contains a 'fake' job name.
+ *
+ * Previous to this, users had to set manually the DD_GITHUB_JOB_NAME env variable
+ * pointing to the real job name.
+ *
+ * The diagnostic log files from the runner contain the display name, which enables
+ * the correlation to happen without manually setting the environment variable.
+ *
  * @returns The job display name, or undefined if not found
  */
 export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
