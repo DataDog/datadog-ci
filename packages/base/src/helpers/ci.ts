@@ -1063,7 +1063,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   if (!shouldGetGithubJobDisplayName()) {
     return
   }
-  context.stdout.write('Determining github job name\n')
+  context.stdout.write('Determining GitHub job name\n')
 
   let foundDiagDir = ''
   let workerLogFiles: string[] = []
@@ -1086,7 +1086,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
       if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
         continue
       }
-      let errMessage = 'error reading Github diagnostic log files'
+      let errMessage = 'error reading GitHub diagnostic log files'
       if (error instanceof Error) {
         errMessage += `: ${error.message}`
       } else {
@@ -1098,7 +1098,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     }
   }
   if (workerLogFiles.length === 0 || foundDiagDir === '') {
-    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find Github diagnostic log files`)
+    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files`)
   }
 
   // 2. Get the job display name via regex
@@ -1110,13 +1110,13 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
 
     if (match && match[1]) {
       // match[1] is the captured group with the display name
-      context.stdout.write(`Succesfully extracted job name: ${match[1]}\n`)
+      context.stdout.write(`Successfully extracted job name: ${match[1]}\n`)
 
       return match[1]
     }
   }
 
   context.stderr.write(
-    `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in Github diagnostic logs`
+    `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in GitHub diagnostic logs`
   )
 }
