@@ -1,5 +1,4 @@
 import fs from 'fs'
-import {afterEach} from 'node:test'
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
