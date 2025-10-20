@@ -22,7 +22,7 @@ If you need `datadog-ci` as a CLI tool instead of a package, you can run it with
 
 ```sh
 # npx
-npx @datadog/datadog-ci [scope]
+npx @datadog/datadog-ci@v4 [scope]
 
 # NPM install globally
 npm install -g @datadog/datadog-ci
