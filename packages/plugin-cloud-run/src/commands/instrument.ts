@@ -258,8 +258,15 @@ export class PluginCommand extends CloudRunInstrumentCommand {
           },
         ]
 
+    // Set service label to match DD_SERVICE value
+    const updatedLabels = {
+      ...service.labels,
+      service: ddService,
+    }
+
     return {
       ...service,
+      labels: updatedLabels,
       template: {
         ...template,
         containers: updatedContainers,
