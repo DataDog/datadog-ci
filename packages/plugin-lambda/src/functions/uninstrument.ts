@@ -41,8 +41,9 @@ import {
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   AWS_LAMBDA_EXEC_WRAPPER,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
-  APPSEC_ENABLED_ENV_VAR,
+  SERVERLESS_APPSEC_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
+  APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupRemoveRequest} from '../loggroup'
@@ -167,7 +168,7 @@ export const calculateUpdateRequest = (
   if (
     runtimeType === RuntimeType.DOTNET ||
     runtimeType === RuntimeType.JAVA ||
-    oldEnvVars[APPSEC_ENABLED_ENV_VAR] === 'true'
+    oldEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] === 'true'
   ) {
     if (oldEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] === AWS_LAMBDA_EXEC_WRAPPER) {
       needsUpdate = true
@@ -186,6 +187,7 @@ export const calculateUpdateRequest = (
     SITE_ENV_VAR,
     APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
     APPSEC_ENABLED_ENV_VAR,
+    SERVERLESS_APPSEC_ENABLED_ENV_VAR,
     CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
     ENVIRONMENT_ENV_VAR,
     DD_TAGS_ENV_VAR,

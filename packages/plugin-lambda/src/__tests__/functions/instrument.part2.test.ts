@@ -540,6 +540,87 @@ describe('instrument', () => {
       )
     })
 
+    test('enables tracer-based AppSec for supported runtime versions', async () => {
+      const runtime = Runtime.python311
+      const config = {
+        FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings: InstrumentationSettings = {
+        appsecEnabled: true,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 114,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "DD_APPSEC_ENABLED": "true",
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python311:114",
+          ],
+        }
+      `)
+    })
+
+    test('falls back to the serverless AppSec shim when tracer layer does not support AppSec', async () => {
+      const runtime = Runtime.python311
+      const config = {
+        FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
+        Handler: 'index.handler',
+        Layers: [],
+        Runtime: runtime,
+      }
+      const settings: InstrumentationSettings = {
+        appsecEnabled: true,
+        flushMetricsToLogs: false,
+        layerAWSAccount: mockAwsAccount,
+        layerVersion: 113,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const region = 'sa-east-1'
+
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
+      expect(updateRequest).toMatchInlineSnapshot(`
+        {
+          "Environment": {
+            "Variables": {
+              "AWS_LAMBDA_EXEC_WRAPPER": "/opt/datadog_wrapper",
+              "DD_FLUSH_TO_LOG": "false",
+              "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
+              "DD_SERVERLESS_APPSEC_ENABLED": "true",
+              "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
+            },
+          },
+          "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
+          "Handler": "datadog_lambda.handler.handler",
+          "Layers": [
+            "arn:aws:lambda:sa-east-1:123456789012:layer:Datadog-Python311:113",
+          ],
+        }
+      `)
+    })
+
     describe('test universal instrumentation workflow for Java and .Net', () => {
       const region = 'us-east-1'
       const config = {

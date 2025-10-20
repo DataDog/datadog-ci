@@ -21,7 +21,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -41,7 +40,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -80,7 +78,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "dummy",
       "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
@@ -124,7 +121,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "dummy",
       "DD_TAGS": "git.commit.sha:1be168ff837f043bde17c0314341c84271047b31,git.repository_url:git.repository_url:github.com/datadog/test.git",
@@ -178,7 +174,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -204,7 +199,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -257,7 +251,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -283,7 +276,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -327,7 +319,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -354,7 +345,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -381,7 +371,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -408,7 +397,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -449,7 +437,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:pr
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -475,7 +462,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:pr
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -514,7 +500,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -559,7 +544,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -600,7 +584,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -642,7 +625,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "staging",
       "DD_TAGS": "layer:api,team:intake",
@@ -693,7 +675,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -713,7 +694,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -733,7 +713,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -753,7 +732,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -773,7 +751,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-2:123456789012:function:la
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -821,7 +798,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
@@ -870,7 +846,6 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_LAMBDA_HANDLER": "index.handler",
       "DD_API_KEY": "02**********33bd",
       "DD_SITE": "datadoghq.com",
-      "DD_SERVERLESS_APPSEC_ENABLED": "false",
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_ENV": "sandbox",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
