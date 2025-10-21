@@ -1,8 +1,11 @@
+import {ExecException} from 'child_process'
 import {createHash} from 'crypto'
 import fs from 'fs'
 
 import {createReadFunctions, FileReader} from '@datadog/datadog-ci-base/helpers/filereader'
 import {execute} from '@datadog/datadog-ci-base/helpers/utils'
+
+import {createUniqueTmpDirectory} from '../dsyms/utils'
 
 import {
   MACHINE_TYPES_DESCRIPTION,
@@ -496,9 +499,39 @@ export const computeFileHash = async (filename: string): Promise<string> => {
 }
 
 const hasZstdSupport = async (): Promise<boolean> => {
-  const {stdout} = await execute('objcopy --help')
+  // Make a temp directory
+  const tmpDir = await createUniqueTmpDirectory()
 
-  return /--compress-debug-sections.*zstd/.test(stdout.toString())
+  // Similar to https://github.com/gcc-mirror/gcc/blob/f4afefbbbee1414e130ca2f1552216bb702a985c/gcc/configure#L32604-L32608
+  fs.writeFileSync(`${tmpDir}/conftest.c`, 'void f(){}')
+  try {
+    await execute(`gcc -x c -c -g conftest.c -o conftest.o`, tmpDir)
+  } catch (e) {
+    return false
+  }
+
+  try {
+    await execute(`objcopy --compress-debug-sections=zstd conftest.o`, tmpDir)
+
+    return true
+  } catch (e) {
+    const {stderr} = e as ExecException
+
+    // Expected error when binutils doesn't have Zstd support
+    if (stderr?.includes('binutils is not built with zstd support')) {
+      return false
+    }
+
+    // The generated `conftest.o` is not ELF (probably Mach-O instead)
+    // https://github.com/bminor/binutils-gdb/blob/43cd9e1dde7c1735f132f52df84bfedcad92dbcb/binutils/objcopy.c#L2712-L2727
+    if (stderr?.match(/--compress-debug-sections.*?zstd.*? is unsupported on .*?conftest\.o/)) {
+      return false
+    }
+
+    console.error('Unexpected error when checking for Zstd support', e)
+
+    return false
+  }
 }
 
 const memoize = <T>(fn: () => Promise<T>): (() => Promise<T>) => {
