@@ -52,8 +52,9 @@ import {
   RuntimeType,
   RUNTIME_LOOKUP,
   APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR,
-  APPSEC_ENABLED_ENV_VAR,
+  SERVERLESS_APPSEC_ENABLED_ENV_VAR,
   DD_LAMBDA_FIPS_MODE_ENV_VAR,
+  APPSEC_ENABLED_ENV_VAR,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, LogGroupConfiguration, TagConfiguration} from '../interfaces'
 import {calculateLogGroupUpdateRequest} from '../loggroup'
@@ -68,6 +69,7 @@ import {
   getLayers,
   isLayerRuntime,
   isSupportedRuntime,
+  supportsInTracerAppsec,
 } from './commons'
 import {isExtensionCompatibleWithUniversalInstrumentation, isTracerCompatibleWithExtension} from './versionChecker'
 
@@ -250,7 +252,6 @@ export const calculateUpdateRequest = async (
 
   const environmentVarsTupleArray: [keyof InstrumentationSettings, string][] = [
     ['apmFlushDeadline', APM_FLUSH_DEADLINE_MILLISECONDS_ENV_VAR],
-    ['appsecEnabled', APPSEC_ENABLED_ENV_VAR],
     ['captureLambdaPayload', CAPTURE_LAMBDA_PAYLOAD_ENV_VAR],
     ['environment', ENVIRONMENT_ENV_VAR],
     ['extraTags', DD_TAGS_ENV_VAR],
@@ -291,11 +292,6 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  // Enable ASM
-  if (settings['appsecEnabled'] === true) {
-    newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
-  }
-
   // Enable LLMObs
   if (settings['llmobsMlApp'] !== undefined) {
     newEnvVars[DD_LLMOBS_ENABLED_ENV_VAR] = 'true'
@@ -323,6 +319,16 @@ export const calculateUpdateRequest = async (
       fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerOrTraceVersion}`
     }
     layerARNs = addLayerArn(fullLambdaLibraryLayerARN, lambdaLibraryLayerName, layerARNs)
+  }
+
+  // Enable App and API Protection
+  if (settings['appsecEnabled'] === true) {
+    if (supportsInTracerAppsec(runtime, layerOrTraceVersion)) {
+      newEnvVars[APPSEC_ENABLED_ENV_VAR] = 'true'
+    } else {
+      newEnvVars[SERVERLESS_APPSEC_ENABLED_ENV_VAR] = 'true'
+      newEnvVars[AWS_LAMBDA_EXEC_WRAPPER_VAR] = AWS_LAMBDA_EXEC_WRAPPER
+    }
   }
 
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
