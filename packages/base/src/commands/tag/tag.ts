@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getCIEnv, getGithubJobNameFromLogsAndUpdateEnv} from '../../helpers/ci'
+import {getCIEnv, getGithubJobNameFromLogs, envDDGithubJobName} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
@@ -114,7 +114,10 @@ export class TagCommand extends BaseCommand {
       const {provider, ciEnv} = getCIEnv()
 
       if (this.level !== 'pipeline') {
-        getGithubJobNameFromLogsAndUpdateEnv(this.context, ciEnv)
+        const jobName = getGithubJobNameFromLogs(this.context)
+        if (jobName) {
+          ciEnv[envDDGithubJobName] = jobName
+        }
       }
 
       const exitStatus = await this.sendTags(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, tags)

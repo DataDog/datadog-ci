@@ -1099,6 +1099,8 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   }
   if (workerLogFiles.length === 0 || foundDiagDir === '') {
     context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files`)
+
+    return
   }
 
   // 2. Get the job display name via regex
