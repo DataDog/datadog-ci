@@ -5,8 +5,6 @@ import fs from 'fs'
 import {createReadFunctions, FileReader} from '@datadog/datadog-ci-base/helpers/filereader'
 import {execute} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {createUniqueTmpDirectory} from '../dsyms/utils'
-
 import {
   MACHINE_TYPES_DESCRIPTION,
   ELF_TYPES_DESCRIPTION,
@@ -498,49 +496,16 @@ export const computeFileHash = async (filename: string): Promise<string> => {
   }
 }
 
-const hasZstdSupport = async (): Promise<boolean> => {
-  // Make a temp directory
-  const tmpDir = await createUniqueTmpDirectory()
-
-  // Similar to https://github.com/gcc-mirror/gcc/blob/f4afefbbbee1414e130ca2f1552216bb702a985c/gcc/configure#L32604-L32608
-  fs.writeFileSync(`${tmpDir}/conftest.c`, 'void f(){}')
-  try {
-    await execute(`gcc -x c -c -g conftest.c -o conftest.o`, tmpDir)
-  } catch (e) {
-    return false
-  }
-
-  try {
-    await execute(`objcopy --compress-debug-sections=zstd conftest.o`, tmpDir)
-
-    return true
-  } catch (e) {
-    const {stderr} = e as ExecException
-
-    // Expected error when binutils doesn't have Zstd support
-    if (stderr?.includes('binutils is not built with zstd support')) {
-      return false
-    }
-
-    // The generated `conftest.o` is not ELF (probably Mach-O instead)
-    // https://github.com/bminor/binutils-gdb/blob/43cd9e1dde7c1735f132f52df84bfedcad92dbcb/binutils/objcopy.c#L2712-L2727
-    if (stderr?.match(/--compress-debug-sections.*?zstd.*? is unsupported on .*?conftest\.o/)) {
-      return false
-    }
-
-    console.error('Unexpected error when checking for Zstd support', e)
-
-    return false
-  }
-}
-
 const memoize = <T>(fn: () => Promise<T>): (() => Promise<T>) => {
   let promise: Promise<T> | undefined
 
   return () => (promise = promise || fn())
 }
 
-const hasZstdSupportCached = memoize(hasZstdSupport)
+/**
+ * Whether the current version of objcopy has the `--compress-debug-sections=zstd` option and it is built with zstd support.
+ */
+const hasZstdSupport = {value: undefined as boolean | undefined}
 
 const getSupportedBfdTargets = async (): Promise<string[]> => {
   const {stdout} = await execute('objcopy --help')
@@ -551,6 +516,14 @@ const getSupportedBfdTargets = async (): Promise<string[]> => {
   }
 
   return []
+}
+
+const isCompressDebugSectionsZstdOptionAvailable = async (): Promise<boolean> => {
+  const {stdout} = await execute('objcopy --help')
+
+  // This option was introduced in binutils 2.40
+  // https://sourceware.org/bugzilla/show_bug.cgi?id=29397
+  return /--compress-debug-sections.*zstd/.test(stdout.toString())
 }
 
 const getSupportedBfdTargetsCached = memoize(getSupportedBfdTargets)
@@ -568,7 +541,11 @@ export const copyElfDebugInfo = async (
   elfFileMetadata: ElfFileMetadata,
   compressDebugSections: boolean
 ): Promise<void> => {
+  // Initialize cached values
   const supportedTargets = await getSupportedBfdTargetsCached()
+  if (hasZstdSupport.value === undefined) {
+    hasZstdSupport.value = await isCompressDebugSectionsZstdOptionAvailable()
+  }
 
   let bfdTargetOption = ''
   const bfdTarget = getBFDTargetForArch(elfFileMetadata.arch, elfFileMetadata.littleEndian, elfFileMetadata.elfClass)
@@ -585,7 +562,7 @@ export const copyElfDebugInfo = async (
   let compressDebugSectionsOption = ''
   if (compressDebugSections) {
     compressDebugSectionsOption = '--compress-debug-sections'
-    if (await hasZstdSupportCached()) {
+    if (hasZstdSupport.value) {
       compressDebugSectionsOption += '=zstd'
     }
   }
@@ -602,7 +579,18 @@ export const copyElfDebugInfo = async (
     options += ' ' + sectionsToKeep.map((section) => `--set-section-flags ${section}=alloc,readonly,contents`).join(' ')
   }
 
-  await execute(`objcopy ${options} ${filename} ${outputFile}`)
+  try {
+    await execute(`objcopy ${options} ${filename} ${outputFile}`)
+  } catch (e) {
+    const {stderr} = e as ExecException
+
+    if (stderr?.includes('binutils is not built with zstd support')) {
+      // The option is available but objcopy was not built with zstd support
+      hasZstdSupport.value = false
+      const fallbackOptions = options.replace(compressDebugSectionsOption, '--compress-debug-sections')
+      await execute(`objcopy ${fallbackOptions} ${filename} ${outputFile}`)
+    }
+  }
 
   if (bfdTargetOption) {
     // Replace the ELF header in the extracted debug info file with the one from the initial file to keep the original architecture
