@@ -67,7 +67,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(dryRunOutput).toContain('\\"GITHUB_RUN_ATTEMPT\\":\\"1\\"')
       expect(dryRunOutput).toContain('\\"DD_GITHUB_JOB_NAME\\":\\"custom_jobname\\"')
       expect(dryRunOutput).toContain('"ci.job.name":"jobname"')
-      expect(dryRunOutput).not.toContain('Determining github job name')
+      expect(dryRunOutput).not.toContain('Determining GitHub job name')
     })
 
     test('should detect the gitlab environment', async () => {
@@ -151,7 +151,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
       expect(code).toBe(0)
       const dryRunOutput = context.stdout.toString()
       expect(dryRunOutput).toContain('\\"DD_GITHUB_JOB_NAME\\":\\"real job name\\"')
-      expect(dryRunOutput).toContain('Determining github job name')
+      expect(dryRunOutput).toContain('Determining GitHub job name')
     })
   })
 }

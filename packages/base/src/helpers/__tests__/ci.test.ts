@@ -553,7 +553,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
 
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('could not find Github diagnostic log files')
+    expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
   })
 
   test('no worker log files found in any directory', () => {
@@ -566,7 +566,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
 
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('could not find Github diagnostic log files')
+    expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
   })
 
   test('log files found but none contain the display name', () => {
@@ -581,7 +581,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
 
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('could not find "jobDisplayName" attribute in Github diagnostic logs')
+    expect(context.stderr.toString()).toContain('could not find "jobDisplayName" attribute in GitHub diagnostic logs')
   })
 
   test('reading a directory throws an unexpected error', () => {
@@ -597,7 +597,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
 
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: access denied')
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: access denied')
   })
 
   test('other unexpected errors', () => {
@@ -612,7 +612,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
 
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: some error')
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: some error')
 
     const stringErr = 'hello error'
     fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
@@ -622,11 +622,11 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
     getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
     expect(ciEnv).toEqual({})
-    expect(context.stderr.toString()).toContain('error reading Github diagnostic log files: hello error')
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: hello error')
   })
 })
 
-describe('shouldGetGithubJobDisplayName', () => {
+describe('shouldGetGitHubJobDisplayName', () => {
   test('should get github display name', () => {
     process.env = {
       GITHUB_ACTIONS: 'true',
@@ -642,7 +642,7 @@ describe('shouldGetGithubJobDisplayName', () => {
     expect(shouldGetGithubJobDisplayName()).toBe(false)
   })
 
-  test('should not get github display name if not from Github', () => {
+  test('should not get github display name if not from GitHub', () => {
     process.env = {
       CIRCLECI: 'true',
     }

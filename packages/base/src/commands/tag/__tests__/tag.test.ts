@@ -130,7 +130,7 @@ describe('execute', () => {
     )
     expect(result.code).toBe(0)
     const out = result.context.stdout.toString()
-    expect(out).toContain('Determining github job name')
+    expect(out).toContain('Determining GitHub job name')
     expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
   })
 
@@ -150,7 +150,7 @@ describe('execute', () => {
     )
     expect(result.code).toBe(0)
     const out = result.context.stdout.toString()
-    expect(out).not.toContain('Determining github job name')
+    expect(out).not.toContain('Determining GitHub job name')
     expect(out).not.toContain('"DD_GITHUB_JOB_NAME": "real job name"')
   })
 })

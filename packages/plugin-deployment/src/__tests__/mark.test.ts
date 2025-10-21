@@ -58,7 +58,7 @@ describe('mark', () => {
       })
       expect(code).toBe(0)
       const out = context.stdout.toString()
-      expect(out).toContain('Determining github job name')
+      expect(out).toContain('Determining GitHub job name')
       expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
     })
   })
