@@ -505,7 +505,7 @@ const memoize = <T>(fn: () => Promise<T>): (() => Promise<T>) => {
 /**
  * Whether the current version of objcopy has the `--compress-debug-sections=zstd` option and it is built with zstd support.
  */
-const hasZstdSupport = {value: undefined as boolean | undefined}
+export const hasZstdSupport = {value: undefined as boolean | undefined}
 
 const getSupportedBfdTargets = async (): Promise<string[]> => {
   const {stdout} = await execute('objcopy --help')
@@ -526,7 +526,7 @@ const isCompressDebugSectionsZstdOptionAvailable = async (): Promise<boolean> =>
   return /--compress-debug-sections.*zstd/.test(stdout.toString())
 }
 
-const getSupportedBfdTargetsCached = memoize(getSupportedBfdTargets)
+export const getSupportedBfdTargetsCached = memoize(getSupportedBfdTargets)
 
 const replaceElfHeader = async (targetFilename: string, sourceFilename: string): Promise<void> => {
   const sourceElfHeader = await getElfHeaderStart(sourceFilename)
