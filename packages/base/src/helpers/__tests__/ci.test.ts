@@ -8,7 +8,7 @@ import {
   getCIEnv,
   getCIMetadata,
   getCISpanTags,
-  getGithubJobNameFromLogsAndUpdateEnv,
+  getGithubJobNameFromLogs,
   githubWellKnownDiagnosticDirs,
   isInteractive,
   shouldGetGithubJobDisplayName,
@@ -502,10 +502,9 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    const ciEnv = {}
-    getGithubJobNameFromLogsAndUpdateEnv(createMockContext() as BaseContext, ciEnv)
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
-    expect(ciEnv).toHaveProperty(envDDGithubJobName, sampleJobDisplayName)
+    expect(jobName).toBe(sampleJobDisplayName)
     expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
   })
@@ -517,10 +516,9 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    const ciEnv = {}
-    getGithubJobNameFromLogsAndUpdateEnv(createMockContext() as BaseContext, ciEnv)
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
-    expect(ciEnv).toHaveProperty(envDDGithubJobName, sampleJobDisplayName)
+    expect(jobName).toBe(sampleJobDisplayName)
     expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
     expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
   })
@@ -537,10 +535,9 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent2)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent3)
 
-    const ciEnv = {}
-    getGithubJobNameFromLogsAndUpdateEnv(createMockContext() as BaseContext, ciEnv)
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
-    expect(ciEnv).toHaveProperty(envDDGithubJobName, 'my job name')
+    expect(jobName).toBe('my job name')
   })
 
   test('no diagnostic log directories found', () => {
@@ -548,11 +545,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       throw getNotFoundFsError()
     })
 
-    const ciEnv = {}
     const context = createMockContext() as BaseContext
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
+    const jobName = getGithubJobNameFromLogs(context)
 
-    expect(ciEnv).toEqual({})
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
   })
 
@@ -561,11 +557,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       return [mockLogFileDirent('random_file_1'), mockLogFileDirent('random_file_2')]
     })
 
-    const ciEnv = {}
     const context = createMockContext() as BaseContext
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
+    const jobName = getGithubJobNameFromLogs(context)
 
-    expect(ciEnv).toEqual({})
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
   })
 
@@ -576,11 +571,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     mockReaddirSync(targetDir, sampleLogFileName)
     jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
 
-    const ciEnv = {}
     const context = createMockContext() as BaseContext
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
+    const jobName = getGithubJobNameFromLogs(context)
 
-    expect(ciEnv).toEqual({})
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('could not find "jobDisplayName" attribute in GitHub diagnostic logs')
   })
 
@@ -592,11 +586,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       throw accessDeniedError
     })
 
-    const ciEnv = {}
     const context = createMockContext() as BaseContext
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
+    const jobName = getGithubJobNameFromLogs(context)
 
-    expect(ciEnv).toEqual({})
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: access denied')
   })
 
@@ -607,11 +600,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       throw err
     })
 
-    const ciEnv = {}
     const context = createMockContext() as BaseContext
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
+    let jobName = getGithubJobNameFromLogs(context)
 
-    expect(ciEnv).toEqual({})
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: some error')
 
     const stringErr = 'hello error'
@@ -620,8 +612,8 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       throw stringErr
     })
 
-    getGithubJobNameFromLogsAndUpdateEnv(context, ciEnv)
-    expect(ciEnv).toEqual({})
+    jobName = getGithubJobNameFromLogs(context)
+    expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: hello error')
   })
 })

@@ -1036,13 +1036,6 @@ export const shouldGetGithubJobDisplayName = (): boolean => {
   return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
 }
 
-export const getGithubJobNameFromLogsAndUpdateEnv = (context: BaseContext, ciEnv: Record<string, string>) => {
-  const jobName = getGithubJobNameFromLogs(context)
-  if (jobName) {
-    ciEnv[envDDGithubJobName] = jobName
-  }
-}
-
 /**
  * Extracts the job display name from the GitHub Actions diagnostic log files.
  *
