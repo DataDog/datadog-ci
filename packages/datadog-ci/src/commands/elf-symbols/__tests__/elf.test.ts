@@ -1,10 +1,14 @@
+import {ExecException} from 'child_process'
+
 import {createReaderFromFile} from '@datadog/datadog-ci-base/helpers/filereader'
+import * as utils from '@datadog/datadog-ci-base/helpers/utils'
 import upath from 'upath'
 
 import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,
+  hasZstdSupport,
   getElfFileMetadata,
   getOutputFilenameFromBuildId,
   readElfHeader,
@@ -14,7 +18,9 @@ import {
   readElfProgramHeaderTable,
   getBuildIds,
   computeFileHash,
+  ElfFileMetadata,
 } from '../elf'
+import * as elfModule from '../elf'
 import {MachineType, ElfFileType, ElfClass, SectionHeaderType, ProgramHeaderType} from '../elf-constants'
 
 const fixtureDir = './src/commands/elf-symbols/__tests__/fixtures'
@@ -829,6 +835,7 @@ describe('elf', () => {
 
     beforeAll(async () => {
       tmpDirectory = await createUniqueTmpDirectory()
+      jest.spyOn(elfModule, 'getSupportedBfdTargetsCached').mockResolvedValue(['elf64-x86-64'])
     })
 
     const checkCopyDebugInfo = async (elfFile: string) => {
@@ -865,6 +872,149 @@ describe('elf', () => {
       for (const testFile of testFiles) {
         await checkCopyDebugInfo(`${fixtureDir}/${testFile}`)
       }
+    })
+
+    test('no zstd support', async () => {
+      const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
+        if (cmd === 'objcopy --help') {
+          return {
+            stdout: '--compress-debug-sections[={none|zlib}] Compress DWARF debug sections',
+            stderr: '',
+          }
+        }
+
+        return {stdout: '', stderr: ''}
+      })
+
+      hasZstdSupport.value = undefined
+      expect(executeSpy).toHaveBeenCalledTimes(0)
+
+      await elfModule.copyElfDebugInfo(
+        `${fixtureDir}/exec_aarch64`,
+        `${tmpDirectory}/exec_aarch64.debug`,
+        {arch: 'x86_64', elfClass: 64} as ElfFileMetadata,
+        true
+      )
+
+      expect(hasZstdSupport.value).toBe(false)
+      expect(executeSpy).toHaveBeenCalledTimes(2)
+      expect(executeSpy).toHaveBeenNthCalledWith(1, 'objcopy --help')
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('--compress-debug-sections --remove-section=.gdb_index')
+      )
+    })
+
+    test('zstd option available and objcopy built with zstd support', async () => {
+      const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
+        if (cmd === 'objcopy --help') {
+          return {
+            stdout: '--compress-debug-sections[={none|zlib|zstd}] Compress DWARF debug sections',
+            stderr: '',
+          }
+        }
+
+        return {stdout: '', stderr: ''}
+      })
+
+      hasZstdSupport.value = undefined
+      expect(executeSpy).toHaveBeenCalledTimes(0)
+
+      await copyElfDebugInfo(
+        `${fixtureDir}/exec_aarch64`,
+        `${tmpDirectory}/exec_aarch64.debug`,
+        {arch: 'x86_64', elfClass: 64} as ElfFileMetadata,
+        true
+      )
+
+      expect(hasZstdSupport.value).toBe(true)
+      expect(executeSpy).toHaveBeenCalledTimes(2)
+      expect(executeSpy).toHaveBeenNthCalledWith(1, 'objcopy --help')
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('--compress-debug-sections=zstd --remove-section=.gdb_index')
+      )
+    })
+
+    test('zstd option available but objcopy not built with zstd support', async () => {
+      const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
+        if (cmd === 'objcopy --help') {
+          return {
+            stdout: '--compress-debug-sections[={none|zlib|zstd}] Compress DWARF debug sections',
+            stderr: '',
+          }
+        }
+
+        if (cmd.includes('--compress-debug-sections=zstd')) {
+          const error = new Error() as ExecException
+          error.stderr = 'objcopy: --compress-debug-sections=zstd: binutils is not built with zstd support'
+          throw error
+        }
+
+        return {stdout: '', stderr: ''}
+      })
+
+      hasZstdSupport.value = undefined
+      expect(executeSpy).toHaveBeenCalledTimes(0)
+
+      await copyElfDebugInfo(
+        `${fixtureDir}/exec_aarch64`,
+        `${tmpDirectory}/exec_aarch64.debug`,
+        {arch: 'x86_64', elfClass: 64} as ElfFileMetadata,
+        true
+      )
+
+      expect(hasZstdSupport.value).toBe(false)
+      expect(executeSpy).toHaveBeenCalledTimes(3)
+      expect(executeSpy).toHaveBeenNthCalledWith(1, 'objcopy --help')
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('--compress-debug-sections=zstd --remove-section=.gdb_index') // First attempt
+      )
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        3,
+        expect.stringContaining('--compress-debug-sections --remove-section=.gdb_index') // Fallback
+      )
+    })
+
+    test('memoized value is reused', async () => {
+      const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
+        if (cmd === 'objcopy --help') {
+          return {
+            stdout: '--compress-debug-sections[={none|zlib}] Compress DWARF debug sections',
+            stderr: '',
+          }
+        }
+
+        return {stdout: '', stderr: ''}
+      })
+
+      hasZstdSupport.value = false
+      await copyElfDebugInfo(
+        `${fixtureDir}/exec_aarch64`,
+        `${tmpDirectory}/exec_aarch64.debug`,
+        {arch: 'x86_64', elfClass: 64} as ElfFileMetadata,
+        true
+      )
+      expect(executeSpy).toHaveBeenCalledTimes(1)
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('--compress-debug-sections --remove-section=.gdb_index')
+      )
+
+      executeSpy.mockClear()
+      hasZstdSupport.value = true
+      await copyElfDebugInfo(
+        `${fixtureDir}/exec_aarch64`,
+        `${tmpDirectory}/exec_aarch64.debug`,
+        {arch: 'x86_64', elfClass: 64} as ElfFileMetadata,
+        true
+      )
+      expect(executeSpy).toHaveBeenCalledTimes(1)
+      expect(executeSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('--compress-debug-sections=zstd --remove-section=.gdb_index')
+      )
     })
 
     afterAll(async () => {
