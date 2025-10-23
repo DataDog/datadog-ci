@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {BaseContext} from 'clipanion'
 import upath from 'upath'
@@ -27,9 +28,7 @@ import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
 
 import {createMockContext} from './testing-tools'
 
-const CI_PROVIDERS: string[] = jest.requireActual('fs').readdirSync(upath.join(__dirname, 'ci-env'))
-
-jest.mock('fs', () => ({...jest.requireActual('fs')}))
+const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
 const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => {
   const spanTags: SpanTags = {}
