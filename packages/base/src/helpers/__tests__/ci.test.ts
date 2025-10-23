@@ -29,7 +29,7 @@ import {createMockContext} from './testing-tools'
 
 const CI_PROVIDERS: string[] = jest.requireActual('fs').readdirSync(upath.join(__dirname, 'ci-env'))
 
-jest.mock('fs')
+jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => {
   const spanTags: SpanTags = {}
