@@ -4,7 +4,6 @@ import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
 import {
-  envDDGithubJobName,
   getCIEnv,
   getCIMetadata,
   getCISpanTags,
