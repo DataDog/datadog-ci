@@ -1,3 +1,9 @@
+import fs from 'fs'
+
+import chalk from 'chalk'
+import {BaseContext} from 'clipanion'
+import upath from 'upath'
+
 import {Metadata, SpanTag, SpanTags} from './interfaces'
 import {
   CI_ENV_VARS,
@@ -56,13 +62,18 @@ export const CI_ENGINES = {
   TEAMCITY: 'teamcity',
 }
 
-export const PROVIDER_TO_DISPLAY_NAME = {
-  github: 'GitHub Actions',
-}
+export const envDDGithubJobName = 'DD_GITHUB_JOB_NAME'
 
 // DD_GITHUB_JOB_NAME is an override that is required for adding custom tags and metrics
 // to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
-const envAllowedToBeMissing = ['DD_GITHUB_JOB_NAME']
+const envAllowedToBeMissing = [envDDGithubJobName]
+
+export const githubWellKnownDiagnosticDirs = [
+  '/home/runner/actions-runner/cached/_diag', // for SaaS
+  '/home/runner/actions-runner/_diag', // for self-hosted
+]
+
+const githubJobDisplayNameRegex = /"jobDisplayName":\s*"([^"]+)"/
 
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
@@ -93,7 +104,7 @@ const resolveTilde = (filePath: string | undefined) => {
   return filePath
 }
 
-export const getCISpanTags = (): SpanTags | undefined => {
+export const getCISpanTags = (fallbackGithubJobName?: string): SpanTags | undefined => {
   const env = process.env
   let tags: SpanTags = {}
 
@@ -331,7 +342,7 @@ export const getCISpanTags = (): SpanTags | undefined => {
         GITHUB_REPOSITORY,
         GITHUB_RUN_ID,
         GITHUB_RUN_ATTEMPT,
-        DD_GITHUB_JOB_NAME,
+        DD_GITHUB_JOB_NAME: DD_GITHUB_JOB_NAME ?? fallbackGithubJobName,
       }),
     }
 
@@ -901,7 +912,7 @@ export const getCIEnv = (): {ciEnv: Record<string, string>; provider: string} =>
         'GITHUB_RUN_ID',
         'GITHUB_RUN_ATTEMPT',
         'GITHUB_JOB',
-        'DD_GITHUB_JOB_NAME',
+        envDDGithubJobName,
       ]),
       provider: 'github',
     }
@@ -1019,4 +1030,88 @@ const filterEnv = (values: string[]): Record<string, string> => {
 
 export const isInteractive = ({stream = process.stdout}: {stream?: NodeJS.WriteStream} = {}) => {
   return Boolean(!('CI' in process.env) && process.env.TERM !== 'dumb' && stream && stream.isTTY)
+}
+
+export const shouldGetGithubJobDisplayName = (): boolean => {
+  return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
+}
+
+/**
+ * Extracts the job display name from the GitHub Actions diagnostic log files.
+ *
+ * In Github Actions, the GITHUB_JOB environment variable points to the job name
+ * defined in the workflow file, but users can change the name by using the 'name'
+ * property or matrix jobs. In this case the correlation will not work as GITHUB_JOB
+ * contains a 'fake' job name.
+ *
+ * Previous to this, users had to set manually the DD_GITHUB_JOB_NAME env variable
+ * pointing to the real job name.
+ *
+ * The diagnostic log files from the runner contain the display name, which enables
+ * the correlation to happen without manually setting the environment variable.
+ *
+ * @returns The job display name, or undefined if not found
+ */
+export const getGithubJobNameFromLogs = (context: BaseContext): string | undefined => {
+  if (!shouldGetGithubJobDisplayName()) {
+    return
+  }
+  context.stdout.write('Determining GitHub job name\n')
+
+  let foundDiagDir = ''
+  let workerLogFiles: string[] = []
+
+  // 1. Iterate through well known directories to check for worker logs
+  for (const currentDir of githubWellKnownDiagnosticDirs) {
+    try {
+      const files = fs.readdirSync(currentDir, {withFileTypes: true})
+      const potentialLogs = files
+        .filter((file) => file.isFile() && file.name.startsWith('Worker_') && file.name.endsWith('.log'))
+        .map((file) => file.name)
+
+      if (potentialLogs.length > 0) {
+        foundDiagDir = currentDir
+        workerLogFiles = potentialLogs
+        break
+      }
+    } catch (error) {
+      // If the directory does not exist, just try the next one
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+        continue
+      }
+      let errMessage = 'error reading GitHub diagnostic log files'
+      if (error instanceof Error) {
+        errMessage += `: ${error.message}`
+      } else {
+        errMessage += `: ${String(error)}`
+      }
+      context.stderr.write(`${chalk.yellow.bold('[WARNING]')} ${errMessage}`)
+
+      return
+    }
+  }
+  if (workerLogFiles.length === 0 || foundDiagDir === '') {
+    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files`)
+
+    return
+  }
+
+  // 2. Get the job display name via regex
+  for (const logFile of workerLogFiles) {
+    const filePath = upath.join(foundDiagDir, logFile)
+    const content = fs.readFileSync(filePath, 'utf-8')
+
+    const match = content.match(githubJobDisplayNameRegex)
+
+    if (match && match[1]) {
+      // match[1] is the captured group with the display name
+      context.stdout.write(`Successfully extracted job name: ${match[1]}\n`)
+
+      return match[1]
+    }
+  }
+
+  context.stderr.write(
+    `${chalk.yellow.bold('[WARNING]')} could not find "jobDisplayName" attribute in GitHub diagnostic logs`
+  )
 }

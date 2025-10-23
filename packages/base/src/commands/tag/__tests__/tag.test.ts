@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 import {Cli} from 'clipanion'
 
 import {createMockContext, getEnvVarPlaceholders} from '../../../helpers/__tests__/testing-tools'
@@ -27,6 +29,10 @@ describe('execute', () => {
 
     return {context, code}
   }
+
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
 
   test('should fail if an invalid level given', async () => {
     const {context, code} = await runCLI('stage', ['key:value'], {BUILDKITE: 'true', BUILDKITE_BUILD_ID: 'id'})
@@ -91,5 +97,60 @@ describe('execute', () => {
     )
     expect(result.code).toBe(0)
     expect(result.context.stdout.toString()).toContain('[DRYRUN] Tag request')
+  })
+
+  test('should try to determine github job display name', async () => {
+    fs.readdirSync = jest.fn().mockReturnValue([
+      {
+        name: 'Worker_2.log',
+        isFile: () => true,
+        isDirectory: () => false,
+        isBlockDevice: () => false,
+        isCharacterDevice: () => false,
+        isSymbolicLink: () => false,
+        isFIFO: () => false,
+        isSocket: () => false,
+        parentPath: '',
+        path: '',
+      },
+    ])
+    fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+    const result = await runCLI(
+      'job',
+      ['key:value'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'fake job name',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).toContain('Determining GitHub job name')
+    expect(out).toContain('"DD_GITHUB_JOB_NAME": "real job name"')
+  })
+
+  test('should not try to determine github job display name for pipelines', async () => {
+    const result = await runCLI(
+      'pipeline',
+      ['key:value'],
+      {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_SERVER_URL: 'url',
+        GITHUB_REPOSITORY: 'repo',
+        GITHUB_RUN_ID: '123',
+        GITHUB_RUN_ATTEMPT: '1',
+        GITHUB_JOB: 'fake job name',
+      },
+      ['--dry-run']
+    )
+    expect(result.code).toBe(0)
+    const out = result.context.stdout.toString()
+    expect(out).not.toContain('Determining GitHub job name')
+    expect(out).not.toContain('"DD_GITHUB_JOB_NAME"')
   })
 })

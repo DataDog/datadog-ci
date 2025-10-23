@@ -2,7 +2,7 @@ import type {AxiosError} from 'axios'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
+import {envDDGithubJobName, getGithubJobNameFromLogs, getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
@@ -100,6 +100,13 @@ export class MeasureCommand extends BaseCommand {
 
     try {
       const {provider, ciEnv} = getCIEnv()
+
+      if (this.level !== 'pipeline') {
+        const jobName = getGithubJobNameFromLogs(this.context)
+        if (jobName) {
+          ciEnv[envDDGithubJobName] = jobName
+        }
+      }
 
       const exitStatus = await this.sendMeasures(ciEnv, this.level === 'pipeline' ? 0 : 1, provider, measures)
       if (exitStatus !== 0 && this.noFail) {

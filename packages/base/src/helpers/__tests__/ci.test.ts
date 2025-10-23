@@ -1,12 +1,20 @@
 import fs from 'fs'
 
+import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
-import {getCIEnv, getCIMetadata, getCISpanTags, isInteractive} from '../ci'
+import {
+  getCIEnv,
+  getCIMetadata,
+  getCISpanTags,
+  getGithubJobNameFromLogs,
+  githubWellKnownDiagnosticDirs,
+  isInteractive,
+  shouldGetGithubJobDisplayName,
+} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
-  CI_JOB_ID,
   CI_NODE_LABELS,
   CI_NODE_NAME,
   GIT_HEAD_SHA,
@@ -16,6 +24,8 @@ import {
   PR_NUMBER,
 } from '../tags'
 import {getUserCISpanTags, getUserGitSpanTags} from '../user-provided-git'
+
+import {createMockContext} from './testing-tools'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
@@ -424,6 +434,210 @@ describe('isInteractive', () => {
     process.stdout.isTTY = false
 
     expect(isInteractive()).toBe(false)
+  })
+})
+
+describe('getGithubJobDisplayNameFromLogs', () => {
+  const mockedFs = fs as jest.Mocked<typeof fs>
+
+  beforeEach(() => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+    }
+  })
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  const getNotFoundFsError = (): Error => {
+    const error = new Error('not found')
+    Object.assign(error, {code: 'ENOENT'})
+
+    return error
+  }
+
+  const mockLogFileDirent = (logFileName: string): fs.Dirent => {
+    return {
+      name: logFileName,
+      isFile: () => true,
+      isDirectory: () => false,
+      isBlockDevice: () => false,
+      isCharacterDevice: () => false,
+      isSymbolicLink: () => false,
+      isFIFO: () => false,
+      isSocket: () => false,
+      parentPath: '',
+      path: '',
+    }
+  }
+
+  const sampleLogContent = (jobDisplayName: string): string => `
+    [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
+    [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
+    [2025-09-15 10:14:00Z INFO Worker] Message received.
+    [2025-09-15 10:14:00Z INFO Worker] Job message:
+    {
+      "jobId": "95a4619c-e316-542f-8a21-74cd5a8ac9ca",
+      "jobDisplayName": "${jobDisplayName}",
+      "jobName": "__default"
+    }`
+
+  const sampleLogFileName = 'Worker_20251014-083000.log'
+  const sampleJobDisplayName = 'build-and-test'
+
+  const mockReaddirSync = (targetDir: fs.PathLike, logFileName: string) => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      if (pathToRead === targetDir) {
+        return [mockLogFileDirent(logFileName)]
+      }
+      throw getNotFoundFsError()
+    })
+  }
+
+  test('should find and return the job display name (SaaS)', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[0] // SaaS directory
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find and return the job display name (self-hosted)', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[1] // self-hosted directory
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should check multiple log files until the display name is found', () => {
+    const logContent1 = 'no job display name here'
+    const logContent2 = 'nor here'
+    const logContent3 = sampleLogContent('my job name')
+
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      return [mockLogFileDirent('Worker_1.log'), mockLogFileDirent('Worker_2.log'), mockLogFileDirent('Worker_3.log')]
+    })
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent1)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent2)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent3)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe('my job name')
+  })
+
+  test('no diagnostic log directories found', () => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw getNotFoundFsError()
+    })
+
+    const context = createMockContext() as BaseContext
+    const jobName = getGithubJobNameFromLogs(context)
+
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
+  })
+
+  test('no worker log files found in any directory', () => {
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      return [mockLogFileDirent('random_file_1'), mockLogFileDirent('random_file_2')]
+    })
+
+    const context = createMockContext() as BaseContext
+    const jobName = getGithubJobNameFromLogs(context)
+
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
+  })
+
+  test('log files found but none contain the display name', () => {
+    const targetDir = githubWellKnownDiagnosticDirs[0]
+    const logContent = 'This log does not have the job display name.'
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const context = createMockContext() as BaseContext
+    const jobName = getGithubJobNameFromLogs(context)
+
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('could not find "jobDisplayName" attribute in GitHub diagnostic logs')
+  })
+
+  test('reading a directory throws an unexpected error', () => {
+    const accessDeniedError = new Error('access denied')
+    Object.assign(accessDeniedError, {code: 'EACCES'})
+
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw accessDeniedError
+    })
+
+    const context = createMockContext() as BaseContext
+    const jobName = getGithubJobNameFromLogs(context)
+
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: access denied')
+  })
+
+  test('other unexpected errors', () => {
+    const err = Error('some error')
+
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      throw err
+    })
+
+    const context = createMockContext() as BaseContext
+    let jobName = getGithubJobNameFromLogs(context)
+
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: some error')
+
+    const stringErr = 'hello error'
+    fs.readdirSync = jest.fn().mockImplementation((pathToRead: fs.PathLike): fs.Dirent[] => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
+      throw stringErr
+    })
+
+    jobName = getGithubJobNameFromLogs(context)
+    expect(jobName).toBe(undefined)
+    expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: hello error')
+  })
+})
+
+describe('shouldGetGitHubJobDisplayName', () => {
+  test('should get github display name', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(true)
+  })
+
+  test('should not get github display name if set manually', () => {
+    process.env = {
+      GITHUB_ACTIONS: 'true',
+      DD_GITHUB_JOB_NAME: 'value set by user',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(false)
+  })
+
+  test('should not get github display name if not from GitHub', () => {
+    process.env = {
+      CIRCLECI: 'true',
+    }
+    expect(shouldGetGithubJobDisplayName()).toBe(false)
   })
 })
 
