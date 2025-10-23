@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs')
 
 import {Cli} from 'clipanion'
 

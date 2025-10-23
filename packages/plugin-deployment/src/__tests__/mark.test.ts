@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs')
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 

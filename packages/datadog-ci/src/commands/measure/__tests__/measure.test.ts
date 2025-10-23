@@ -7,6 +7,8 @@ import {MeasureCommand, parseMeasures} from '../measure'
 
 const fixturesPath = './src/commands/measure/__tests__/fixtures'
 
+jest.mock('fs')
+
 const makeCLI = () => {
   const cli = new Cli()
   cli.register(MeasureCommand)

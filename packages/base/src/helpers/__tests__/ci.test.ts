@@ -29,6 +29,8 @@ import {createMockContext} from './testing-tools'
 
 const CI_PROVIDERS = fs.readdirSync(upath.join(__dirname, 'ci-env'))
 
+jest.mock('fs')
+
 const ddMetadataToSpanTags = (ddMetadata: {[key: string]: string}): SpanTags => {
   const spanTags: SpanTags = {}
   Object.entries(ddMetadata).map(([key, value]) => {
