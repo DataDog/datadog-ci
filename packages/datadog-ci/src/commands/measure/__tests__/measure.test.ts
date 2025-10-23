@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'
@@ -7,7 +8,6 @@ import {MeasureCommand, parseMeasures} from '../measure'
 
 const fixturesPath = './src/commands/measure/__tests__/fixtures'
 
-jest.mock('fs')
 
 const makeCLI = () => {
   const cli = new Cli()
