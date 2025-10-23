@@ -16,7 +16,9 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 🚀 Instrumenting Cloud Run services with sidecar...
   {
 +   "labels": {
-+     "service": "interactive-service"
++     "env": "staging",
++     "service": "interactive-service",
++     "version": "1.0.0"
 +   },
     "name": "projects/interactive-project/locations/us-west1/services/interactive-service",
     "template": {
