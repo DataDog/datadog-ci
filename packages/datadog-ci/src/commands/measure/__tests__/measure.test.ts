@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {Cli} from 'clipanion'

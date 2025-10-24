@@ -1,4 +1,5 @@
 import fs from 'fs'
+jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {Cli} from 'clipanion'
 
