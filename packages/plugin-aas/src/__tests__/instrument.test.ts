@@ -34,15 +34,6 @@ const webAppsOperations = {
   restart: jest.fn(),
 }
 
-const webAppsClient = {
-  subscriptionId: NULL_SUBSCRIPTION_ID,
-  webApps: webAppsOperations,
-}
-
-jest.mock('@azure/arm-appservice', () => ({
-  WebSiteManagementClient: jest.fn().mockImplementation(() => webAppsClient),
-}))
-
 const updateTags = jest.fn().mockResolvedValue({})
 
 jest.mock('@azure/arm-resources', () => ({
@@ -58,6 +49,13 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
 import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID, NULL_SUBSCRIPTION_ID} from './common'
+
+jest.mock('@azure/arm-appservice', () => ({
+  WebSiteManagementClient: jest.fn().mockImplementation(() => ({
+    subscriptionId: NULL_SUBSCRIPTION_ID,
+    webApps: webAppsOperations,
+  })),
+}))
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
