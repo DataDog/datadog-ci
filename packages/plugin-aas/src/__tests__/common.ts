@@ -16,6 +16,8 @@ export const DEFAULT_CONFIG: AasConfigOptions = {
   extraTags: undefined,
 }
 
+export const NULL_SUBSCRIPTION_ID = '00000000-0000-0000-0000-000000000000'
+
 export const WEB_APP_ID =
   '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app'
 

@@ -96,11 +96,9 @@ export const getEnvVars = (config: AasConfigOptions): Record<string, string> => 
   let envVars: Record<string, string> = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
+    DD_SERVICE: config.service!,
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
     ...parseEnvVars(config.envVars),
-  }
-  if (config.service) {
-    envVars.DD_SERVICE = config.service
   }
   if (config.environment) {
     envVars.DD_ENV = config.environment
