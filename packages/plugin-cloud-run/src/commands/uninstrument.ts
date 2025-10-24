@@ -160,8 +160,14 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
 
     updatedContainers = updatedContainers.map((c) => this.updateAppContainer(c))
 
+    const updatedLabels = {...service.labels}
+    delete updatedLabels.service
+    delete updatedLabels.env
+    delete updatedLabels.version
+
     return {
       ...service,
+      labels: updatedLabels,
       template: {
         ...template,
         containers: updatedContainers,

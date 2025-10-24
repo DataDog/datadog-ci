@@ -1,5 +1,4 @@
-// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
-import type {IContainer} from '../types'
+import type {IContainer, IService} from '../types'
 
 import {
   API_KEY_ENV_VAR,
@@ -7,6 +6,7 @@ import {
   DD_TAGS_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   SERVICE_ENV_VAR,
+  VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/constants'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
@@ -92,8 +92,9 @@ describe('UninstrumentCommand', () => {
   })
 
   describe('snapshot tests', () => {
-    const mockService = {
+    const mockService: IService = {
       name: 'projects/test-project/locations/us-central1/services/test-service',
+      labels: {service: 'test-service'},
       template: {
         containers: [
           {
@@ -165,7 +166,8 @@ describe('UninstrumentCommand', () => {
     })
 
     test('removes sidecar container, shared volume, and DD_ env vars', () => {
-      const service = {
+      const service: IService = {
+        labels: {service: 'test-service', env: 'staging', version: '1.0.0'},
         template: {
           containers: [
             {
@@ -173,7 +175,9 @@ describe('UninstrumentCommand', () => {
               env: [
                 {name: 'NODE_ENV', value: 'production'},
                 {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+                {name: SERVICE_ENV_VAR, value: 'test-service'},
                 {name: ENVIRONMENT_ENV_VAR, value: 'staging'},
+                {name: VERSION_ENV_VAR, value: '1.0.0'},
                 {name: DD_TAGS_ENV_VAR, value: 'team:backend'},
                 {name: 'CUSTOM_VAR', value: 'keep-me'},
               ],
