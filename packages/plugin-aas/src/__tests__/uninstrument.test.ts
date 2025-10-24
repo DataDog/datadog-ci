@@ -20,13 +20,6 @@ const webAppsOperations = {
   updateApplicationSettings: jest.fn(),
 }
 
-jest.mock('@azure/arm-appservice', () => ({
-  WebSiteManagementClient: jest.fn().mockImplementation(() => ({
-    subscriptionId: NULL_SUBSCRIPTION_ID,
-    webApps: webAppsOperations,
-  })),
-}))
-
 const updateTags = jest.fn().mockResolvedValue({})
 
 jest.mock('@azure/arm-resources', () => ({
@@ -40,6 +33,13 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
 import {CONTAINER_WEB_APP, DEFAULT_ARGS, NULL_SUBSCRIPTION_ID, WEB_APP_ID} from './common'
+
+jest.mock('@azure/arm-appservice', () => ({
+  WebSiteManagementClient: jest.fn().mockImplementation(() => ({
+    subscriptionId: NULL_SUBSCRIPTION_ID,
+    webApps: webAppsOperations,
+  })),
+}))
 
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(UninstrumentCommand, ['aas', 'uninstrument'])
