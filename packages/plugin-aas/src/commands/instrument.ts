@@ -166,10 +166,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     aasName: string,
     tags: Record<string, string>
   ): Promise<void> {
-    const updatedTags = {...tags}
-    if (config.service) {
-      updatedTags.service = config.service
-    }
+    const updatedTags: Record<string, string> = {...tags, service: config.service!}
     if (config.environment) {
       updatedTags.env = config.environment
     }

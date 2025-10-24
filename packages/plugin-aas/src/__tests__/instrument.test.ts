@@ -25,7 +25,6 @@ jest.mock('@azure/identity', () => ({
   })),
 }))
 
-const NULL_SUBSCRIPTION_ID = '00000000-0000-0000-0000-000000000000'
 
 const webAppsOperations = {
   get: jest.fn(),
@@ -59,7 +58,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID} from './common'
+import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID, NULL_SUBSCRIPTION_ID} from './common'
 
 async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   for (const item of items) {
@@ -763,6 +762,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('does not update sidecar if config is correct', async () => {
+      webAppsOperations.get.mockResolvedValue({...CONTAINER_WEB_APP, tags: {service: 'my-web-app'}})
       webAppsOperations.listSiteContainers.mockReturnValue(
         asyncIterable({
           name: 'datadog-sidecar',
@@ -788,6 +788,7 @@ Restarting Azure App Service my-web-app
       await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
     })
 
     test('does not call Azure APIs in dry run mode', async () => {

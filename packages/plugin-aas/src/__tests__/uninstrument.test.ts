@@ -22,7 +22,16 @@ const webAppsOperations = {
 
 jest.mock('@azure/arm-appservice', () => ({
   WebSiteManagementClient: jest.fn().mockImplementation(() => ({
+    subscriptionId: NULL_SUBSCRIPTION_ID,
     webApps: webAppsOperations,
+  })),
+}))
+
+const updateTags = jest.fn().mockResolvedValue({})
+
+jest.mock('@azure/arm-resources', () => ({
+  ResourceManagementClient: jest.fn().mockImplementation(() => ({
+    tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
   })),
 }))
 
@@ -30,7 +39,7 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_ARGS} from './common'
+import {CONTAINER_WEB_APP, DEFAULT_ARGS, NULL_SUBSCRIPTION_ID, WEB_APP_ID} from './common'
 
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(UninstrumentCommand, ['aas', 'uninstrument'])
@@ -39,10 +48,14 @@ describe('aas instrument', () => {
     beforeEach(() => {
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
-      webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.get.mockReset().mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: CONTAINER_WEB_APP.name},
+      })
       webAppsOperations.deleteSiteContainer.mockReset().mockResolvedValue(undefined)
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue(undefined)
+      updateTags.mockClear().mockResolvedValue({})
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -63,10 +76,12 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
     })
 
     test('Dry run uninstrumenting doesnt change settings', async () => {
+      updateTags.mockResolvedValue({service: 'my-web-app'})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           hello: 'world', // existing setting to ensure we don't remove it
         },
@@ -76,6 +91,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 [Dry Run] Removing sidecar container datadog-sidecar from my-web-app (if it exists)
 [Dry Run] Checking Application Settings on my-web-app
 [Dry Run] Updating Application Settings for my-web-app
+[Dry Run] Updating tags for my-web-app
 [Dry Run] 🐶 Uninstrumentation completed successfully!
 `)
       expect(code).toEqual(0)
@@ -87,10 +103,15 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
     })
 
     test('Uninstrument sidecar and updates app settings', async () => {
+      webAppsOperations.get.mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: 'my-service', env: 'staging', version: '1.0', ava: 'true'},
+      })
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           hello: 'world', // existing setting to ensure we don't remove it
         },
@@ -100,6 +121,7 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 Removing sidecar container datadog-sidecar from my-web-app (if it exists)
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 🐶 Uninstrumentation completed successfully!
 `)
       expect(code).toEqual(0)
@@ -114,15 +136,18 @@ Updating Application Settings for my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {hello: 'world'}, // ensure existing settings are preserved
       })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {ava: 'true'}}})
     })
 
     test('Uninstrument sidecar and updates app settings with .NET settings', async () => {
+      updateTags.mockResolvedValue({service: 'my-web-app'})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
         properties: {
           hello: 'world',
           foo: 'bar',
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
@@ -136,6 +161,7 @@ Updating Application Settings for my-web-app
 Removing sidecar container datadog-sidecar from my-web-app (if it exists)
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 🐶 Uninstrumentation completed successfully!
 `)
       expect(code).toEqual(0)
@@ -150,15 +176,18 @@ Updating Application Settings for my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {hello: 'world', foo: 'bar'},
       })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
     })
 
     test('Uninstrument sidecar and updates custom app settings from config', async () => {
+      updateTags.mockResolvedValue({service: 'my-web-app'})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({
         properties: {
           hello: 'world',
           foo: 'bar',
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           DD_SOME_FEATURE: 'true',
         },
@@ -168,6 +197,7 @@ Updating Application Settings for my-web-app
 Removing sidecar container datadog-sidecar from my-web-app (if it exists)
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 🐶 Uninstrumentation completed successfully!
 `)
       expect(code).toEqual(0)
@@ -182,6 +212,7 @@ Updating Application Settings for my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {hello: 'world', foo: 'bar'},
       })
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
     })
 
     test('Warns and exits if App Service is not Linux', async () => {
@@ -200,6 +231,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
     })
 
     test('Exits properly if the AAS does not exist', async () => {
@@ -217,6 +249,7 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
     })
 
     test('Handles errors during sidecar uninstrumentation', async () => {
@@ -240,6 +273,7 @@ Checking Application Settings on my-web-app
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       // the last operations never get called due to the above failure
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
     })
 
     test('Errors if no Azure App Service is specified', async () => {
@@ -284,6 +318,8 @@ Checking Application Settings on my-web-app
 Checking Application Settings on my-web-app2
 No Application Settings changes needed for my-web-app.
 No Application Settings changes needed for my-web-app2.
+Updating tags for my-web-app
+Updating tags for my-web-app2
 🐶 Uninstrumentation completed successfully!
 `)
       expect(getToken).toHaveBeenCalledTimes(1)
@@ -305,6 +341,8 @@ No Application Settings changes needed for my-web-app2.
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {properties: {tags: {}}})
     })
   })
 })
