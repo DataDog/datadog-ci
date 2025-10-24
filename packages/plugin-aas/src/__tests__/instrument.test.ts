@@ -25,7 +25,6 @@ jest.mock('@azure/identity', () => ({
   })),
 }))
 
-
 const webAppsOperations = {
   get: jest.fn(),
   listSiteContainers: jest.fn(),
