@@ -25,6 +25,8 @@ jest.mock('@azure/identity', () => ({
   })),
 }))
 
+const NULL_SUBSCRIPTION_ID = '00000000-0000-0000-0000-000000000000'
+
 const webAppsOperations = {
   get: jest.fn(),
   listSiteContainers: jest.fn(),
@@ -34,10 +36,13 @@ const webAppsOperations = {
   restart: jest.fn(),
 }
 
+const webAppsClient = {
+  subscriptionId: NULL_SUBSCRIPTION_ID,
+  webApps: webAppsOperations,
+}
+
 jest.mock('@azure/arm-appservice', () => ({
-  WebSiteManagementClient: jest.fn().mockImplementation(() => ({
-    webApps: webAppsOperations,
-  })),
+  WebSiteManagementClient: jest.fn().mockImplementation(() => webAppsClient),
 }))
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -62,6 +67,11 @@ async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
   }
 }
 
+const DEFAULT_CONFIG_WITH_DEFAULT_SERVICE = {
+  ...DEFAULT_CONFIG,
+  service: DEFAULT_CONFIG.aasName,
+}
+
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['aas', 'instrument'])
 
@@ -82,11 +92,12 @@ describe('aas instrument', () => {
         .mockResolvedValue('git.commit.sha:test-sha,git.repository_url:test-remote')
     })
 
-    test('Adds a sidecar and updates the application settings', async () => {
+    test('Adds a sidecar and updates the application settings and tags', async () => {
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 Restarting Azure App Service my-web-app
 🐶 Instrumentation completed successfully!
 `)
@@ -102,6 +113,7 @@ Restarting Azure App Service my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -113,11 +125,12 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -126,6 +139,7 @@ Restarting Azure App Service my-web-app
       expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
 [Dry Run] Creating sidecar container datadog-sidecar on my-web-app
 [Dry Run] Updating Application Settings for my-web-app
+[Dry Run] Updating tags for my-web-app
 [Dry Run] Restarting Azure App Service my-web-app
 [Dry Run] 🐶 Instrumentation completed successfully!
 `)
@@ -145,6 +159,7 @@ Restarting Azure App Service my-web-app
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
@@ -159,6 +174,7 @@ Updating Application Settings for my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -170,11 +186,12 @@ Updating Application Settings for my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -257,6 +274,7 @@ Creating sidecar container datadog-sidecar on my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -312,6 +330,8 @@ Creating sidecar container datadog-sidecar on my-web-app
 Creating sidecar container datadog-sidecar on my-web-app2
 Updating Application Settings for my-web-app
 Updating Application Settings for my-web-app2
+Updating tags for my-web-app
+Updating tags for my-web-app2
 Restarting Azure App Service my-web-app
 Restarting Azure App Service my-web-app2
 🐶 Instrumentation completed successfully!
@@ -332,6 +352,7 @@ Restarting Azure App Service my-web-app2
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -347,6 +368,7 @@ Restarting Azure App Service my-web-app2
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
           image: 'index.docker.io/datadog/serverless-init:latest',
@@ -361,6 +383,7 @@ Restarting Azure App Service my-web-app2
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
@@ -368,11 +391,12 @@ Restarting Azure App Service my-web-app2
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app2', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SERVICE: 'my-web-app2',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {properties: {tags: {service: 'my-web-app2'}}})
       expect(webAppsOperations.restart).toHaveBeenCalledTimes(2)
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
@@ -404,14 +428,14 @@ Restarting Azure App Service my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_ENV', value: 'DD_ENV'},
             {name: 'DD_VERSION', value: 'DD_VERSION'},
-          ],
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -452,6 +476,7 @@ Restarting Azure App Service my-web-app
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 Restarting Azure App Service my-web-app
 🐶 Instrumentation completed successfully!
 `)
@@ -466,6 +491,7 @@ Restarting Azure App Service my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
             {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
@@ -480,12 +506,13 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           DD_API_KEY: 'PLACEHOLDER',
+          DD_SERVICE: 'my-web-app',
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
           CUSTOM_VAR2: 'value2',
         },
       })
-      expect(updateTags).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -509,6 +536,7 @@ Restarting Azure App Service my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
           ],
@@ -522,11 +550,12 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'true',
           DD_API_KEY: 'PLACEHOLDER',
+          DD_SERVICE: 'my-web-app',
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
         },
       })
-      expect(updateTags).not.toHaveBeenCalled()
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -536,6 +565,7 @@ Restarting Azure App Service my-web-app
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'git.commit.sha:test-sha,git.repository_url:test-remote',
@@ -555,6 +585,7 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           DD_API_KEY: 'PLACEHOLDER',
+          DD_SERVICE: 'my-web-app',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'custom:tag,another:value',
         },
@@ -581,6 +612,7 @@ Restarting Azure App Service my-web-app
 This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
+Updating tags for my-web-app
 Restarting Azure App Service my-web-app
 🐶 Instrumentation completed successfully!
 `)
@@ -597,7 +629,7 @@ Restarting Azure App Service my-web-app
       command.context = {stdout: {write: jest.fn()}} as any
       command.dryRun = false
 
-      client = new WebSiteManagementClient(new DefaultAzureCredential(), '00000000-0000-0000-0000-000000000000')
+      client = new WebSiteManagementClient(new DefaultAzureCredential(), NULL_SUBSCRIPTION_ID)
 
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
@@ -611,7 +643,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('creates sidecar if not present and updates app settings', async () => {
-      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -620,6 +652,7 @@ Restarting Azure App Service my-web-app
         environmentVariables: expect.arrayContaining([
           {name: 'DD_API_KEY', value: 'DD_API_KEY'},
           {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_SERVICE', value: 'DD_SERVICE'},
           {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
         ]),
       })
@@ -627,13 +660,14 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
         },
       })
     })
 
     test('adds .NET settings when the config option is specified', async () => {
-      await command.instrumentSidecar(client, {...DEFAULT_CONFIG, isDotnet: true}, 'rg', 'app')
+      await command.instrumentSidecar(client, {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true}, 'rg', 'app')
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -642,6 +676,7 @@ Restarting Azure App Service my-web-app
         environmentVariables: expect.arrayContaining([
           {name: 'DD_API_KEY', value: 'DD_API_KEY'},
           {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_SERVICE', value: 'DD_SERVICE'},
           {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
           {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
@@ -654,6 +689,7 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
@@ -665,7 +701,12 @@ Restarting Azure App Service my-web-app
     })
 
     test('adds musl .NET settings when the config options are specified', async () => {
-      await command.instrumentSidecar(client, {...DEFAULT_CONFIG, isDotnet: true, isMusl: true}, 'rg', 'app')
+      await command.instrumentSidecar(
+        client,
+        {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true, isMusl: true},
+        'rg',
+        'app'
+      )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -674,6 +715,7 @@ Restarting Azure App Service my-web-app
         environmentVariables: expect.arrayContaining([
           {name: 'DD_API_KEY', value: 'DD_API_KEY'},
           {name: 'DD_SITE', value: 'DD_SITE'},
+          {name: 'DD_SERVICE', value: 'DD_SERVICE'},
           {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
           {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
@@ -686,6 +728,7 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
           CORECLR_ENABLE_PROFILING: '1',
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
@@ -713,7 +756,7 @@ Restarting Azure App Service my-web-app
       webAppsOperations.createOrUpdateSiteContainer.mockResolvedValue({})
       webAppsOperations.updateApplicationSettings.mockResolvedValue({})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalled()
@@ -728,6 +771,7 @@ Restarting Azure App Service my-web-app
           environmentVariables: [
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
           ],
         })
@@ -736,11 +780,12 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
         },
       })
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })
@@ -750,7 +795,7 @@ Restarting Azure App Service my-web-app
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
       webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
 
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
@@ -762,11 +807,12 @@ Restarting Azure App Service my-web-app
         properties: {
           DD_API_KEY: process.env.DD_API_KEY,
           DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
         },
       })
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
 
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })
