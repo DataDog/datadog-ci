@@ -25,6 +25,9 @@ import {
 } from '../common'
 
 export class PluginCommand extends AasInstrumentCommand {
+  private cred!: DefaultAzureCredential
+  private tagClient!: TagsOperations
+
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToInstrument, config, errors] = await this.ensureConfig()
@@ -56,11 +59,11 @@ export class PluginCommand extends AasInstrumentCommand {
       return 1
     }
 
-    const cred = new DefaultAzureCredential()
-    if (!(await ensureAzureAuth(this.context.stdout.write, cred))) {
+    this.cred = new DefaultAzureCredential()
+    if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
       return 1
     }
-    const tagClient = new ResourceManagementClient(cred).tagsOperations
+    this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
 
     if (config.sourceCodeIntegration) {
       config.extraTags = await handleSourceCodeIntegration(
@@ -73,7 +76,7 @@ export class PluginCommand extends AasInstrumentCommand {
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>
-        this.processSubscription(cred, tagClient, subscriptionId, resourceGroupToNames, config)
+        this.processSubscription(subscriptionId, resourceGroupToNames, config)
       )
     )
     const success = results.every((result) => result)
@@ -87,16 +90,14 @@ export class PluginCommand extends AasInstrumentCommand {
   }
 
   public async processSubscription(
-    cred: DefaultAzureCredential,
-    tagClient: TagsOperations,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
     config: AasConfigOptions
   ): Promise<boolean> {
-    const aasClient = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
+    const aasClient = new WebSiteManagementClient(this.cred, subscriptionId, {apiVersion: '2024-11-01'})
     const results = await Promise.all(
       Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
-        aasNames.map((aasName) => this.processAas(aasClient, tagClient, config, subscriptionId, resourceGroup, aasName))
+        aasNames.map((aasName) => this.processAas(aasClient, config, resourceGroup, aasName))
       )
     )
 
@@ -109,9 +110,7 @@ export class PluginCommand extends AasInstrumentCommand {
    */
   public async processAas(
     aasClient: WebSiteManagementClient,
-    tagClient: TagsOperations,
     config: AasConfigOptions,
-    subscriptionId: string,
     resourceGroup: string,
     aasName: string
   ): Promise<boolean> {
@@ -130,17 +129,14 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      await this.instrumentSidecar(
-        aasClient,
-        {
-          ...config,
-          isDotnet: config.isDotnet || isDotnet(site),
-          isMusl: config.isMusl && config.isDotnet && isContainer,
-        },
-        resourceGroup,
-        aasName
-      )
-      await this.addTags(tagClient, config, subscriptionId, resourceGroup, aasName, site.tags ?? {})
+      config = {
+        ...config,
+        isDotnet: config.isDotnet || isDotnet(site),
+        isMusl: config.isMusl && config.isDotnet && isContainer,
+        service: config.service ?? aasName,
+      }
+      await this.instrumentSidecar(aasClient, config, resourceGroup, aasName)
+      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
 
@@ -162,18 +158,15 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
 
     return true
   }
+
   public async addTags(
-    tagClient: TagsOperations,
     config: AasConfigOptions,
     subscriptionId: string,
     resourceGroup: string,
     aasName: string,
     tags: Record<string, string>
   ): Promise<void> {
-    const updatedTags = {...tags}
-    if (config.service) {
-      updatedTags.service = config.service
-    }
+    const updatedTags: Record<string, string> = {...tags, service: config.service!}
     if (config.environment) {
       updatedTags.env = config.environment
     }
@@ -184,7 +177,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
-          await tagClient.beginCreateOrUpdateAtScopeAndWait(
+          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
             `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
             {properties: {tags: updatedTags}}
           )

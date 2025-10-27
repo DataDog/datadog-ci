@@ -1,9 +1,11 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
+import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
+import equal from 'fast-deep-equal'
 
 import {
   AAS_DD_SETTING_NAMES,
@@ -16,6 +18,9 @@ import {
 } from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
+  private cred!: DefaultAzureCredential
+  private tagClient!: TagsOperations
+
   public async execute(): Promise<0 | 1> {
     this.enableFips()
     const [appServicesToUninstrument, config, errors] = await this.ensureConfig()
@@ -27,14 +32,15 @@ export class PluginCommand extends AasUninstrumentCommand {
       return 1
     }
 
-    const cred = new DefaultAzureCredential()
-    if (!(await ensureAzureAuth(this.context.stdout.write, cred))) {
+    this.cred = new DefaultAzureCredential()
+    if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
       return 1
     }
+    this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning uninstrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToUninstrument).map(([subscriptionId, resourceGroupToNames]) =>
-        this.processSubscription(cred, subscriptionId, resourceGroupToNames, config)
+        this.processSubscription(subscriptionId, resourceGroupToNames, config)
       )
     )
     const success = results.every((result) => result)
@@ -48,12 +54,11 @@ export class PluginCommand extends AasUninstrumentCommand {
   }
 
   public async processSubscription(
-    cred: DefaultAzureCredential,
     subscriptionId: string,
     resourceGroupToNames: Record<string, string[]>,
     config: AasConfigOptions
   ): Promise<boolean> {
-    const client = new WebSiteManagementClient(cred, subscriptionId, {apiVersion: '2024-11-01'})
+    const client = new WebSiteManagementClient(this.cred, subscriptionId, {apiVersion: '2024-11-01'})
     const results = await Promise.all(
       Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
         aasNames.map((aasName) => this.processAas(client, config, resourceGroup, aasName))
@@ -81,10 +86,11 @@ export class PluginCommand extends AasUninstrumentCommand {
 
       await this.uninstrumentSidecar(
         client,
-        {...config, isDotnet: config.isDotnet || isDotnet(site)},
+        {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? aasName},
         resourceGroup,
         aasName
       )
+      await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(aasName)}: ${formatError(error)}`))
 
@@ -124,6 +130,32 @@ export class PluginCommand extends AasUninstrumentCommand {
       this.context.stdout.write(
         `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
       )
+    }
+  }
+  public async removeTags(
+    subscriptionId: string,
+    resourceGroup: string,
+    aasName: string,
+    tags: Record<string, string>
+  ) {
+    const updatedTags = {...tags}
+    delete updatedTags.service
+    delete updatedTags.env
+    delete updatedTags.version
+    if (!equal(tags, updatedTags)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
+      if (!this.dryRun) {
+        try {
+          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
+            {properties: {tags: updatedTags}}
+          )
+        } catch (error) {
+          this.context.stdout.write(
+            renderError(`Failed to update tags for ${chalk.bold(aasName)}: ${formatError(error)}`)
+          )
+        }
+      }
     }
   }
 }
