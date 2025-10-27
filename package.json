@@ -43,8 +43,9 @@
     "test": "jest --colors",
     "test:windows": "jest --config ./jest.config-windows.mjs --colors",
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
-    "test:lambda": "jest packages/datadog-ci/src/commands/lambda --colors",
-    "test:cloud-run": "jest packages/datadog-ci/src/commands/cloud-run --colors",
+    "test:aas": "jest packages/plugin-aas --colors",
+    "test:lambda": "jest packages/plugin-lambda --colors",
+    "test:cloud-run": "jest packages/plugin-cloud-run --colors",
     "test:dsyms": "jest packages/datadog-ci/src/commands/dsyms --colors",
     "test:helpers": "jest packages/datadog-ci/src/helpers --colors",
     "tsc:build": "tsc --build --verbose"

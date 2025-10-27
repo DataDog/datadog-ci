@@ -258,10 +258,16 @@ export class PluginCommand extends CloudRunInstrumentCommand {
           },
         ]
 
-    // Set service label to match DD_SERVICE value
-    const updatedLabels = {
+    // Set unified service tag labels
+    const updatedLabels: Record<string, string> = {
       ...service.labels,
       service: ddService,
+    }
+    if (!!this.environment) {
+      updatedLabels.env = this.environment
+    }
+    if (!!this.version) {
+      updatedLabels.version = this.version
     }
 
     return {
