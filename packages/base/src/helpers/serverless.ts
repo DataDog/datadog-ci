@@ -5,7 +5,7 @@ import {DATADOG_SITE_US1} from '../constants'
 import {renderSoftWarning} from './renderer'
 
 /**
- * Shared constants for Azure serverless instrumentation
+ * Shared constants for serverless instrumentation
  */
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
@@ -17,16 +17,11 @@ export const SIDECAR_PORT = 8126
 export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
 // Type stubs for Azure SDK types (to avoid importing @azure packages)
-export interface AzureCredential {
-  getToken(scopes: string | string[]): Promise<{token: string; expiresOnTimestamp: number} | null>
+interface AzureCredential {
+  getToken(scopes: string | string[]): Promise<{token: string} | null>
 }
 
-export interface PagedAsyncIterableIterator<T> {
-  [Symbol.asyncIterator](): AsyncIterator<T>
-  next(): Promise<IteratorResult<T>>
-}
-
-export interface AzureError {
+interface AzureError {
   name?: string
 }
 
@@ -79,7 +74,7 @@ export const parseEnvVars = (envVars: string[] | undefined): Record<string, stri
  * @param it - Paged async iterator
  * @returns Array of all items
  */
-export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
+export const collectAsyncIterator = async <T>(it: AsyncIterable<T>): Promise<T[]> => {
   const arr = []
   for await (const x of it) {
     arr.push(x)
@@ -102,9 +97,9 @@ export const formatError = (error: any): string => {
 }
 
 /**
- * Common configuration options for Azure serverless resources
+ * Common configuration options for serverless resources
  */
-export interface AzureServerlessConfigOptions {
+export interface ServerlessConfigOptions {
   service?: string
   environment?: string
   version?: string
@@ -115,11 +110,11 @@ export interface AzureServerlessConfigOptions {
 }
 
 /**
- * Builds base environment variables for Azure serverless instrumentation.
+ * Builds base environment variables for serverless instrumentation.
  * @param config - Configuration options
  * @returns Base environment variables object
  */
-export const getBaseEnvVars = (config: AzureServerlessConfigOptions): Record<string, string> => {
+export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, string> => {
   const envVars: Record<string, string> = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
