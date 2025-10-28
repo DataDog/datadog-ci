@@ -1,7 +1,7 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/azure-utils'
 import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless'
 
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME_CODE = '/home/site/wwwroot/datadog'
