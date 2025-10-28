@@ -30,6 +30,8 @@ jest.mock('../utils', () => ({
   checkAuthentication: jest.fn(),
 }))
 
+jest.mock('@datadog/datadog-ci-base/helpers/git/source-code-integration')
+
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 const mockServicesClient = {
@@ -108,7 +110,7 @@ describe('InstrumentCommand', () => {
         'us-central1',
       ])
       expect(code).toBe(1)
-    }, 20000)
+    })
 
     test('should succeed with valid parameters', async () => {
       const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
@@ -124,7 +126,7 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
-    }, 20000)
+    })
   })
 
   describe('snapshot tests', () => {
