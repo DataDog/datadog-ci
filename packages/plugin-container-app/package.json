@@ -1,0 +1,47 @@
+{
+  "name": "@datadog/datadog-ci-plugin-container-app",
+  "version": "4.0.2",
+  "license": "Apache-2.0",
+  "description": "Datadog CI plugin for `container-app` commands",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-container-app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-container-app"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
+  },
+  "dependencies": {
+    "@azure/arm-appcontainers": "^2.2.0",
+    "@azure/arm-resources": "^6.1.0",
+    "@azure/identity": "^4.10.1",
+    "chalk": "3.0.0",
+    "fast-deep-equal": "^3.1.3"
+  }
+}
