@@ -30,6 +30,8 @@ jest.mock('../utils', () => ({
   checkAuthentication: jest.fn(),
 }))
 
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
+
 const mockServicesClient = {
   servicePath: jest.fn(),
   getService: jest.fn(),
