@@ -4,6 +4,7 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal'
 
@@ -142,6 +143,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     delete updatedTags.service
     delete updatedTags.env
     delete updatedTags.version
+    delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
     if (!equal(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {

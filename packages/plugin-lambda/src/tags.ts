@@ -7,9 +7,8 @@ import {
   UntagResourceCommand,
   ListTagsCommand,
 } from '@aws-sdk/client-lambda'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
+import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
-import {TAG_VERSION_NAME} from './constants'
 import {TagConfiguration} from './interfaces'
 
 export const applyTagConfig = async (lambdaClient: LambdaClient, config: TagConfiguration): Promise<void> => {
@@ -44,7 +43,7 @@ export const calculateTagUpdateRequest = async (
     config.tagResourceCommandInput = {
       Resource: functionARN,
       Tags: {
-        [TAG_VERSION_NAME]: `v${cliVersion}`,
+        [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE,
       },
     }
 
@@ -63,7 +62,7 @@ export const calculateTagRemoveRequest = async (
   if (versionTagPresent) {
     config.untagResourceCommandInput = {
       Resource: functionARN,
-      TagKeys: [TAG_VERSION_NAME],
+      TagKeys: [SERVERLESS_CLI_VERSION_TAG_NAME],
     }
 
     return config
@@ -80,5 +79,5 @@ export const hasVersionTag = async (client: LambdaClient, functionARN: string): 
   const response = await client.send(command)
   const {Tags} = response
 
-  return Tags !== undefined && Tags[TAG_VERSION_NAME] === `v${cliVersion}`
+  return Tags !== undefined && Tags[SERVERLESS_CLI_VERSION_TAG_NAME] === SERVERLESS_CLI_VERSION_TAG_VALUE
 }
