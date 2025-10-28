@@ -211,7 +211,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     if (
       sidecarContainer === undefined ||
       sidecarContainer.image !== SIDECAR_IMAGE ||
-      sidecarContainer.targetPort !== SIDECAR_PORT ||
+      sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
       !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
     ) {
@@ -223,7 +223,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       if (!this.dryRun) {
         await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
           image: SIDECAR_IMAGE,
-          targetPort: SIDECAR_PORT,
+          targetPort: String(SIDECAR_PORT),
           isMain: false,
           // We're allowing access to all env vars since it is simpler
           // and doesn't cause problems, but not all env vars are needed for the sidecar.

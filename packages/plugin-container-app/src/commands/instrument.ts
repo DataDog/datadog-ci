@@ -5,21 +5,18 @@ import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/conta
 import {ContainerAppInstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {
+  ensureAzureAuth,
+  formatError,
+  getBaseEnvVars,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+} from '@datadog/datadog-ci-base/helpers/azure-utils'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
-
-import {
-  ensureAzureAuth,
-  formatError,
-  getEnvVars,
-  isDotnet,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-  SIDECAR_PORT,
-} from '../common'
 
 export class PluginCommand extends ContainerAppInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -116,12 +113,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     try {
       const containerApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
 
-      config = {
-        ...config,
-        isDotnet: config.isDotnet || isDotnet(containerApp),
-        isMusl: config.isMusl && config.isDotnet,
-        service: config.service ?? containerAppName,
-      }
+      config = {...config, service: config.service ?? containerAppName}
 
       await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerAppName, containerApp)
       await this.addTags(
@@ -195,7 +187,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     containerAppName: string,
     containerApp: any
   ) {
-    const envVars = getEnvVars(config)
+    const envVars = getBaseEnvVars(config)
     const containers = containerApp.template?.containers ?? []
     const sidecarContainer = containers.find((c: any) => c.name === SIDECAR_CONTAINER_NAME)
 
