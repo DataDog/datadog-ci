@@ -11,18 +11,6 @@ export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
 export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
 export const SIDECAR_PORT = 8126
 
-// Path to tracing libraries, copied within the Docker file
-const DD_DOTNET_TRACER_HOME = '/home/site/wwwroot/datadog'
-// Where tracer logs are stored
-const DD_TRACE_LOG_DIRECTORY = '/home/LogFiles/dotnet'
-// Instructs the .NET CLR that profiling should be enabled
-const CORECLR_ENABLE_PROFILING = '1'
-// Profiler GUID
-const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
-
-// The profiler binary that the .NET CLR loads into memory, which contains the GUID
-const CORECLR_PROFILER_PATH = '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
-const CORECLR_PROFILER_PATH_MUSL = '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 
 export const CONTAINER_APP_DD_SETTING_NAMES = [
   'DD_API_KEY',
@@ -32,11 +20,6 @@ export const CONTAINER_APP_DD_SETTING_NAMES = [
   'DD_ENV',
   'DD_VERSION',
   'DD_SERVERLESS_LOG_PATH',
-  'DD_DOTNET_TRACER_HOME',
-  'DD_TRACE_LOG_DIRECTORY',
-  'CORECLR_ENABLE_PROFILING',
-  'CORECLR_PROFILER',
-  'CORECLR_PROFILER_PATH',
   'DD_TAGS',
 ] as const
 
@@ -76,7 +59,7 @@ export const parseEnvVars = (envVars: string[] | undefined): Record<string, stri
 }
 
 export const getEnvVars = (config: ContainerAppConfigOptions): Record<string, string> => {
-  let envVars: Record<string, string> = {
+  const envVars: Record<string, string> = {
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_SERVICE: config.service!,
@@ -94,16 +77,6 @@ export const getEnvVars = (config: ContainerAppConfigOptions): Record<string, st
   }
   if (config.extraTags) {
     envVars.DD_TAGS = config.extraTags
-  }
-  if (config.isDotnet) {
-    envVars = {
-      ...envVars,
-      DD_DOTNET_TRACER_HOME,
-      DD_TRACE_LOG_DIRECTORY,
-      CORECLR_ENABLE_PROFILING,
-      CORECLR_PROFILER,
-      CORECLR_PROFILER_PATH: config.isMusl ? CORECLR_PROFILER_PATH_MUSL : CORECLR_PROFILER_PATH,
-    }
   }
 
   return envVars
