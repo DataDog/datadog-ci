@@ -25,12 +25,10 @@
     "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
     "publish:all": "yarn loop-packages --topological --verbose npm publish",
     "test": "jest --colors",
-    "test:aas": "jest packages/plugin-aas --colors",
-    "test:cloud-run": "jest packages/plugin-cloud-run --colors",
+    "test:serverless": "jest --colors packages/plugin-aas packages/plugin-container-app packages/plugin-lambda packages/plugin-cloud-run packages/plugin-stepfunctions",
     "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
     "test:dsyms": "jest packages/datadog-ci/src/commands/dsyms --colors",
     "test:helpers": "jest packages/datadog-ci/src/helpers --colors",
-    "test:lambda": "jest packages/plugin-lambda --colors",
     "test:windows": "jest --config ./jest.config-windows.mjs --colors",
     "tsc:build": "tsc --build --verbose",
     "version:all": "yarn loop-packages version ${0} --immediate"
