@@ -4,11 +4,10 @@ import {EXTRA_TAGS_REG_EXP, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../..
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
+import {ENV_VAR_REGEX} from '../../helpers/serverless-utils'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
-
-export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
 /**
  * Maps Subscription ID to Resource Group to Container App names.
@@ -33,8 +32,6 @@ export type ContainerAppConfigOptions = Partial<{
   isInstanceLoggingEnabled: boolean
   logPath: string
   envVars: string[]
-  isDotnet: boolean
-  isMusl: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   shouldNotRestart: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
@@ -137,17 +134,11 @@ export abstract class ContainerAppCommand extends BaseCommand {
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
-    // Validate musl setting
-    if (config.isMusl && !config.isDotnet) {
-      errors.push(
-        '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
-      )
-    }
-    const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.containerAppName]
-    // all or none of the site args should be specified
-    if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
+    const specifiedAppArgs = [config.subscriptionId, config.resourceGroup, config.containerAppName]
+    // all or none of the app args should be specified
+    if (!(specifiedAppArgs.every((arg) => arg) || specifiedAppArgs.every((arg) => !arg))) {
       errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
-    } else if (specifiedSiteArgs.every((arg) => arg)) {
+    } else if (specifiedAppArgs.every((arg) => arg)) {
       containerApps[config.subscriptionId!] = {[config.resourceGroup!]: [config.containerAppName!]}
     }
     if (this.resourceIds?.length) {
@@ -167,7 +158,7 @@ export abstract class ContainerAppCommand extends BaseCommand {
         }
       }
     }
-    if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
+    if (!this.resourceIds?.length && specifiedAppArgs.every((arg) => !arg)) {
       errors.push('No Container Apps specified to instrument')
     }
 
