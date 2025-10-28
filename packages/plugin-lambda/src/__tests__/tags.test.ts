@@ -24,7 +24,6 @@ import {
 
 import {mockLambdaClientCommands, mockLambdaConfigurations} from './fixtures'
 
-
 describe('tags', () => {
   const lambdaClientMock = mockClient(LambdaClient)
 
