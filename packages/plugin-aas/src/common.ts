@@ -1,22 +1,7 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {
-  collectAsyncIterator,
-  ensureAzureAuth,
-  ENV_VAR_REGEX,
-  formatError,
-  getBaseEnvVars,
-  parseEnvVars,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-  SIDECAR_PORT,
-} from '@datadog/datadog-ci-base/helpers/azure-utils'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/azure-utils'
 import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-
-// Re-export shared utilities
-export {ensureAzureAuth, parseEnvVars, collectAsyncIterator, formatError, ENV_VAR_REGEX}
-// Re-export shared constants
-export {SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE, SIDECAR_PORT}
 
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME_CODE = '/home/site/wwwroot/datadog'
