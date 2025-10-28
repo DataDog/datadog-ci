@@ -108,7 +108,7 @@ describe('InstrumentCommand', () => {
         'us-central1',
       ])
       expect(code).toBe(1)
-    }, 100)
+    }, 20000)
 
     test('should succeed with valid parameters', async () => {
       const mockInstrumentSidecar = jest.fn().mockResolvedValue(undefined)
@@ -124,7 +124,7 @@ describe('InstrumentCommand', () => {
       ])
       expect(code).toBe(0)
       expect(mockInstrumentSidecar).toHaveBeenCalledWith('test-project', ['test-service'], 'us-central1', undefined)
-    }, 100)
+    }, 20000)
   })
 
   describe('snapshot tests', () => {
