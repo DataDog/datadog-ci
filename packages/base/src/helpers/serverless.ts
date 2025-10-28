@@ -16,6 +16,23 @@ export const SIDECAR_PORT = 8126
  */
 export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
 
+interface Resource {
+  subscriptionId: string
+  resourceGroup: string
+  name: string
+}
+
+export const parseResourceId = (resourceId: string): Resource | undefined => {
+  const match = resourceId.match(
+    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.App\/containerApps\/([^/]+)$/i
+  )
+  if (match) {
+    const [, subscriptionId, resourceGroup, name] = match
+
+    return {subscriptionId, resourceGroup, name}
+  }
+}
+
 // Type stubs for Azure SDK types (to avoid importing @azure packages)
 interface AzureCredential {
   getToken(scopes: string | string[]): Promise<{token: string} | null>
