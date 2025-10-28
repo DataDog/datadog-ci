@@ -4,7 +4,7 @@ import {EXTRA_TAGS_REG_EXP, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../..
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
-import {ENV_VAR_REGEX} from '../../helpers/serverless'
+import {ENV_VAR_REGEX, parseResourceId} from '../../helpers/serverless'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -42,23 +42,6 @@ export type AasConfigOptions = Partial<{
   uploadGitMetadata: boolean
   extraTags: string
 }>
-
-interface Resource {
-  subscriptionId: string
-  resourceGroup: string
-  name: string
-}
-
-export const parseResourceId = (resourceId: string): Resource | undefined => {
-  const match = resourceId.match(
-    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.Web\/sites\/([^/]+)$/i
-  )
-  if (match) {
-    const [, subscriptionId, resourceGroup, name] = match
-
-    return {subscriptionId, resourceGroup, name}
-  }
-}
 
 export abstract class AasCommand extends BaseCommand {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
