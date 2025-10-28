@@ -7,23 +7,20 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {
+  collectAsyncIterator,
+  ensureAzureAuth,
+  formatError,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+  SIDECAR_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
 
-import {
-  collectAsyncIterator,
-  ensureAzureAuth,
-  ensureLinux,
-  formatError,
-  getEnvVars,
-  isDotnet,
-  isLinuxContainer,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-  SIDECAR_PORT,
-} from '../common'
+import {ensureLinux, getEnvVars, isDotnet, isLinuxContainer} from '../common'
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
