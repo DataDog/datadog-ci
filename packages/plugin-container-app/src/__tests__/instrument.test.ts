@@ -23,6 +23,7 @@ jest.mock('@azure/identity', () => ({
 const containerAppsOperations = {
   get: jest.fn(),
   beginUpdateAndWait: jest.fn(),
+  listSecrets: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -68,6 +69,7 @@ describe('container-app instrument', () => {
       getToken.mockClear().mockResolvedValue({token: 'token'})
       containerAppsOperations.get.mockReset().mockResolvedValue(DEFAULT_CONTAINER_APP)
       containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: [{name: 'dd-api-key'}]})
       updateTags.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
       handleSourceCodeIntegration
@@ -78,14 +80,16 @@ describe('container-app instrument', () => {
     test('Adds a sidecar and updates the tags', async () => {
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
+Verifying secrets for my-container-app
+All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
-Restarting Azure Container App my-container-app
 🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
+      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
         template: {
@@ -115,14 +119,15 @@ Restarting Azure Container App my-container-app
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)
+[Dry Run] Verifying secrets for my-container-app
 [Dry Run] Creating sidecar container datadog-sidecar on my-container-app
 [Dry Run] Updating tags for my-container-app
-[Dry Run] Restarting Azure Container App my-container-app
 [Dry Run] 🐶 Instrumentation completed successfully!
 `)
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
+      expect(containerAppsOperations.listSecrets).not.toHaveBeenCalled()
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
     })
@@ -162,12 +167,15 @@ Ensure you copied the value and not the Key ID.
       containerAppsOperations.beginUpdateAndWait.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
+Verifying secrets for my-container-app
+All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 [Error] Failed to instrument my-container-app: Error: sidecar error
 🐶 Instrumentation completed with errors, see above for details.
 `)
       expect(code).toEqual(1)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
+      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
       // tags should not be called due to the above failure
       expect(updateTags).not.toHaveBeenCalled()
@@ -210,21 +218,23 @@ Creating sidecar container datadog-sidecar on my-container-app
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
+Verifying secrets for my-container-app
+Verifying secrets for my-container-app2
+All required secrets exist on my-container-app
+All required secrets exist on my-container-app2
 Creating sidecar container datadog-sidecar on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app2
 Updating tags for my-container-app
 Updating tags for my-container-app2
-Restarting Azure Container App my-container-app
-Restarting Azure Container App my-container-app2
 🐶 Instrumentation completed successfully!
 `)
       expect(getToken).toHaveBeenCalled()
-      // Called 4 times total: 2 times initially to get each app, and 2 more times during restart for each app
-      expect(containerAppsOperations.get).toHaveBeenCalledTimes(4)
+      // Called 2 times to get each app
+      expect(containerAppsOperations.get).toHaveBeenCalledTimes(2)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app2')
-      // Called 4 times total: 2 times to create/update sidecar, and 2 more times for restart
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledTimes(4)
+      // Called 2 times to create/update sidecar
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledTimes(2)
       expect(updateTags).toHaveBeenCalledTimes(2)
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID + '2', {
@@ -244,9 +254,10 @@ Restarting Azure Container App my-container-app2
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
+Verifying secrets for my-container-app
+All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
-Restarting Azure Container App my-container-app
 🐶 Instrumentation completed successfully!
 `)
       expect(getToken).toHaveBeenCalled()
@@ -297,9 +308,10 @@ Restarting Azure Container App my-container-app
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
+Verifying secrets for my-container-app
+All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
-Restarting Azure Container App my-container-app
 🐶 Instrumentation completed successfully!
 `)
       expect(getToken).toHaveBeenCalled()
@@ -658,6 +670,7 @@ Restarting Azure Container App my-container-app
       getToken.mockClear().mockResolvedValue({token: 'token'})
       containerAppsOperations.get.mockReset().mockResolvedValue(DEFAULT_CONTAINER_APP)
       containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: [{name: 'dd-api-key'}]})
       updateTags.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
       handleSourceCodeIntegration
@@ -676,8 +689,8 @@ Restarting Azure Container App my-container-app
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toContain('Creating sidecar container datadog-sidecar on app1')
       expect(context.stdout.toString()).toContain('Creating sidecar container datadog-sidecar on app2')
-      // Called 4 times total: 2 times initially to get each app, and 2 more times during restart for each app
-      expect(containerAppsOperations.get).toHaveBeenCalledTimes(4)
+      // Called 2 times to get each app
+      expect(containerAppsOperations.get).toHaveBeenCalledTimes(2)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg1', 'app1')
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg2', 'app2')
     })
