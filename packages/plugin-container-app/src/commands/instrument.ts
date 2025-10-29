@@ -1,4 +1,4 @@
-import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import {ContainerAppsAPIClient, ContainerApp} from '@azure/arm-appcontainers'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
@@ -54,7 +54,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     }
 
     this.cred = new DefaultAzureCredential()
-    if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
+    if (!(await ensureAzureAuth((msg) => this.context.stdout.write(msg), this.cred))) {
       return 1
     }
     this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
@@ -185,18 +185,18 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     config: ContainerAppConfigOptions,
     resourceGroup: string,
     containerAppName: string,
-    containerApp: any
+    containerApp: ContainerApp
   ) {
     const envVars = getBaseEnvVars(config)
     const containers = containerApp.template?.containers ?? []
-    const sidecarContainer = containers.find((c: any) => c.name === SIDECAR_CONTAINER_NAME)
+    const sidecarContainer = containers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
 
     // Check if sidecar needs to be added or updated
     const needsUpdate =
       sidecarContainer === undefined ||
       sidecarContainer.image !== SIDECAR_IMAGE ||
-      !sidecarContainer.env?.every(({name, value}: any) => envVars[name] === value) ||
-      !equal(new Set(sidecarContainer.env?.map(({name}: any) => name)), new Set(Object.keys(envVars)))
+      !sidecarContainer.env?.every(({name, value}) => envVars[name!] === value) ||
+      !equal(new Set(sidecarContainer.env?.map(({name}) => name)), new Set(Object.keys(envVars)))
 
     if (needsUpdate) {
       this.context.stdout.write(
@@ -208,7 +208,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       if (!this.dryRun) {
         // Update the Container App template with the Datadog sidecar
         const updatedContainers = sidecarContainer
-          ? containers.map((c: any) =>
+          ? containers.map((c) =>
               c.name === SIDECAR_CONTAINER_NAME
                 ? {
                     name: SIDECAR_CONTAINER_NAME,

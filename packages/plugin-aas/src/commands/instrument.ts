@@ -58,7 +58,7 @@ export class PluginCommand extends AasInstrumentCommand {
     }
 
     this.cred = new DefaultAzureCredential()
-    if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
+    if (!(await ensureAzureAuth((msg) => this.context.stdout.write(msg), this.cred))) {
       return 1
     }
     this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
@@ -114,7 +114,7 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<boolean> {
     try {
       const site = await aasClient.webApps.get(resourceGroup, aasName)
-      if (!ensureLinux(this.context.stdout.write, site)) {
+      if (!ensureLinux((msg) => this.context.stdout.write(msg), site)) {
         return false
       }
 
