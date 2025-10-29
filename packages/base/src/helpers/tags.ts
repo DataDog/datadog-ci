@@ -5,6 +5,8 @@ import chalk from 'chalk'
 import {BaseContext} from 'clipanion'
 import upath from 'upath'
 
+import {cliVersion} from '../version'
+
 import {getCISpanTags} from './ci'
 import {DatadogCiConfig} from './config'
 import {getGitMetadata} from './git/format-git-span-data'
@@ -49,6 +51,10 @@ export const PR_NUMBER = 'pr.number'
 // Sbom
 export const SBOM_TOOL_GENERATOR_NAME = 'tool.generator.name'
 export const SBOM_TOOL_GENERATOR_VERSION = 'tool.generator.version'
+
+// Serverless
+export const SERVERLESS_CLI_VERSION_TAG_NAME = 'dd_sls_ci'
+export const SERVERLESS_CLI_VERSION_TAG_VALUE = `v${cliVersion}`
 
 // General
 export const SERVICE = 'service'

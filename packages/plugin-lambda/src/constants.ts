@@ -93,7 +93,6 @@ export const NODE_HANDLER_LOCATION = '/opt/nodejs/node_modules/datadog-lambda-js
 export const DEFAULT_LAYER_AWS_ACCOUNT = '464622532012'
 export const GOVCLOUD_LAYER_AWS_ACCOUNT = '002406178527'
 export const SUBSCRIPTION_FILTER_NAME = 'datadog-ci-filter'
-export const TAG_VERSION_NAME = 'dd_sls_ci'
 
 // Env variables for Univeral instrument lambda exec wrapper
 export const AWS_LAMBDA_EXEC_WRAPPER_VAR = 'AWS_LAMBDA_EXEC_WRAPPER'

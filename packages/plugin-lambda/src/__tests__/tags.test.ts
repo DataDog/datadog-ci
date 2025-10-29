@@ -1,6 +1,5 @@
 jest.mock('../loggroup')
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
-
 import {
   LambdaClient,
   ListTagsCommand,
@@ -9,10 +8,10 @@ import {
   UntagResourceCommand,
   UntagResourceCommandInput,
 } from '@aws-sdk/client-lambda'
+import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
-import {TAG_VERSION_NAME} from '../constants'
 import {TagConfiguration} from '../interfaces'
 import {
   applyTagConfig,
@@ -48,7 +47,7 @@ describe('tags', () => {
         tagResourceCommandInput: {
           Resource: functionArn,
           Tags: {
-            [TAG_VERSION_NAME]: 'vXXXX',
+            [SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX',
           },
         },
       }
@@ -85,7 +84,7 @@ describe('tags', () => {
           },
           tags: {
             Tags: {
-              [TAG_VERSION_NAME]: 'vXXXX',
+              [SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX',
             },
           },
         },
@@ -93,7 +92,7 @@ describe('tags', () => {
       const config: TagConfiguration = {
         untagResourceCommandInput: {
           Resource: functionArn,
-          TagKeys: [TAG_VERSION_NAME],
+          TagKeys: [SERVERLESS_CLI_VERSION_TAG_NAME],
         },
       }
       await applyTagConfig(lambdaClientMock as any, config)
@@ -117,7 +116,7 @@ describe('tags', () => {
         tagResourceCommandInput: {
           Resource: functionArn,
           Tags: {
-            [TAG_VERSION_NAME]: 'vXXXX',
+            [SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX',
           },
         },
       })
@@ -135,7 +134,7 @@ describe('tags', () => {
           },
           tags: {
             Tags: {
-              [TAG_VERSION_NAME]: 'v0.0.0',
+              [SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0.0.0',
             },
           },
         },
@@ -146,7 +145,7 @@ describe('tags', () => {
         tagResourceCommandInput: {
           Resource: functionArn,
           Tags: {
-            [TAG_VERSION_NAME]: 'vXXXX',
+            [SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX',
           },
         },
       })
@@ -164,7 +163,7 @@ describe('tags', () => {
           },
           tags: {
             Tags: {
-              [TAG_VERSION_NAME]: 'vXXXX',
+              [SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX',
             },
           },
         },
@@ -185,7 +184,7 @@ describe('tags', () => {
             Runtime: 'nodejs20.x',
           },
           tags: {
-            Tags: {[TAG_VERSION_NAME]: 'vXXXX'},
+            Tags: {[SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX'},
           },
         },
       })
@@ -195,7 +194,7 @@ describe('tags', () => {
           "untagResourceCommandInput": {
             "Resource": "${functionArn}",
             "TagKeys": [
-              "${TAG_VERSION_NAME}",
+              "${SERVERLESS_CLI_VERSION_TAG_NAME}",
             ],
           },
         }
@@ -272,7 +271,7 @@ describe('tags', () => {
             Runtime: 'nodejs20.x',
           },
           tags: {
-            Tags: {[TAG_VERSION_NAME]: 'v0.0.0'},
+            Tags: {[SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0.0.0'},
           },
         },
       })
@@ -291,7 +290,7 @@ describe('tags', () => {
             Runtime: 'nodejs20.x',
           },
           tags: {
-            Tags: {[TAG_VERSION_NAME]: 'vXXXX'},
+            Tags: {[SERVERLESS_CLI_VERSION_TAG_NAME]: 'vXXXX'},
           },
         },
       })

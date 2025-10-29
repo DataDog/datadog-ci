@@ -126,7 +126,9 @@ Restarting Azure App Service my-web-app
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
+        properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
+      })
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -187,7 +189,9 @@ Updating tags for my-web-app
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
+        properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
+      })
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
@@ -392,7 +396,9 @@ Restarting Azure App Service my-web-app2
           DD_SITE: 'datadoghq.com',
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {properties: {tags: {service: 'my-web-app2'}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {
+        properties: {tags: {service: 'my-web-app2', dd_sls_ci: 'vXXXX'}},
+      })
       expect(webAppsOperations.restart).toHaveBeenCalledTimes(2)
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
@@ -454,6 +460,7 @@ Restarting Azure App Service my-web-app
             service: 'my-service',
             env: 'my-env',
             version: '1.0.0',
+            dd_sls_ci: 'vXXXX',
           },
         },
       })
@@ -508,7 +515,9 @@ Restarting Azure App Service my-web-app
           CUSTOM_VAR2: 'value2',
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
+        properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
+      })
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
@@ -551,7 +560,9 @@ Restarting Azure App Service my-web-app
           CUSTOM_VAR1: 'value1',
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {service: 'my-web-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
+        properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
+      })
       expect(webAppsOperations.restart).toHaveBeenCalled()
     })
 
