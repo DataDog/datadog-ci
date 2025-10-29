@@ -1,8 +1,4 @@
-## Troubleshooting Cloud Run Instrumentation
-
 You can use the CLI to [instrument your Cloud Run services](https://docs.datadoghq.com/serverless/google_cloud_run) with Datadog. The CLI enables instrumentation by modifying existing Cloud Run services' configuration.
-
-To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare` command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and configuration information. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
 ## Commands
 
@@ -41,7 +37,7 @@ datadog-ci cloud-run uninstrument -p <gcp-project> -r us-central1 -s <service-na
 
 ## Configuration
 
-### GCP Credentials
+### GCP credentials
 
 You must have valid [GCP credentials][1] configured with access to the Cloud Run services where you are running any `datadog-ci cloud-run` command. You can configure credentials by running `gcloud auth application-default login` and following the prompts in your browser.
 
@@ -101,13 +97,13 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 | `--sidecar-name` | | The name of the container to remove. Specify if you have a different sidecar container name. | `datadog-sidecar` |
 | `--shared-volume-name` | | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
 
-## Troubleshooting Cloud Run Instrumentation
+## Troubleshooting Cloud Run instrumentation
 
-To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare`  command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and the YAML config. These files will be submitted to Datadog support via a ticket matching the provided Zendesk case ID.
+To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run services, run the `datadog-ci cloud-run flare`  command in the root of your project directory. This command collects important data about the Cloud Run service, such as environment variables and the YAML config. These files are submitted to Datadog support via a ticket matching the provided Zendesk case ID.
 
-**Note**: This command works whether your Cloud Run services were instrumented using `datadog-ci cloud-run instrument`.
+**Note**: This command works regardless of whether your Cloud Run services were instrumented using `datadog-ci cloud-run instrument`.
 
-**Examples**
+### Examples
 ```bash
 # Collect and send files to Datadog support for a single service
 datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id>
@@ -119,8 +115,7 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs --dry-run
 ```
 
-
-**Arguments**
+### Arguments
 
 | Argument              | Shorthand | Description                                                                                                                           | Default |
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------- |
@@ -133,7 +128,7 @@ datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id>
 | `--start` and `--end` |           | Only gather logs within the time range (`--with-logs` must be included.) Both arguments are numbers in milliseconds since Unix Epoch. |         |
 | `--dry-run`           | `-d`      | Preview data that will be sent to Datadog support.                                                                                    | `false` |
 
-**Environment Variables**
+### Environment variables
 
 Expose these environment variables in the environment where you are running `datadog-ci cloud-run flare`:
 
