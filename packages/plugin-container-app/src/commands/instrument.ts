@@ -1,4 +1,4 @@
-import {ContainerAppsAPIClient, ContainerApp} from '@azure/arm-appcontainers'
+import {ContainerAppsAPIClient, ContainerApp, Container, Secret} from '@azure/arm-appcontainers'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
@@ -10,13 +10,14 @@ import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/r
 import {
   ensureAzureAuth,
   formatError,
-  getBaseEnvVars,
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
+
+import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from './common'
 
 export class PluginCommand extends ContainerAppInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -111,40 +112,38 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     containerAppName: string
   ): Promise<boolean> {
     try {
-      const containerApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
-
+      const [containerApp, secrets] = await Promise.all([
+        containerAppClient.containerApps.get(resourceGroup, containerAppName),
+        containerAppClient.containerApps.listSecrets(resourceGroup, containerAppName),
+      ])
+      // insert secrets since they're not exposed by the get api
+      containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
       config = {...config, service: config.service ?? containerAppName}
 
-      await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerAppName, containerApp)
-      await this.addTags(
-        config,
-        containerAppClient.subscriptionId,
-        resourceGroup,
-        containerAppName,
-        containerApp.tags ?? {}
-      )
+      await this.instrumentSidecar(containerAppClient, config, resourceGroup, containerApp)
+      await this.addTags(config, containerAppClient.subscriptionId, resourceGroup, containerApp)
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${containerAppName}: ${formatError(error)}`))
 
       return false
     }
 
-    if (!config.shouldNotRestart) {
-      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure Container App ${chalk.bold(containerAppName)}\n`)
-      if (!this.dryRun) {
-        try {
-          // Container Apps automatically create new revisions when updated, which effectively restarts them
-          const updatedApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
-          await containerAppClient.containerApps.beginUpdateAndWait(resourceGroup, containerAppName, updatedApp)
-        } catch (error) {
-          this.context.stdout.write(
-            renderError(`Failed to restart Azure Container App ${chalk.bold(containerAppName)}: ${error}`)
-          )
+    // if (!config.shouldNotRestart) {
+    //   this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure Container App ${chalk.bold(containerAppName)}\n`)
+    //   if (!this.dryRun) {
+    //     try {
+    //       // Container Apps automatically create new revisions when updated, which effectively restarts them
+    //       const updatedApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
+    //       await containerAppClient.containerApps.beginUpdateAndWait(resourceGroup, containerAppName, updatedApp)
+    //     } catch (error) {
+    //       this.context.stdout.write(
+    //         renderError(`Failed to restart Azure Container App ${chalk.bold(containerAppName)}: ${error}`)
+    //       )
 
-          return false
-        }
-      }
-    }
+    //       return false
+    //     }
+    //   }
+    // }
 
     return true
   }
@@ -153,27 +152,26 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     config: ContainerAppConfigOptions,
     subscriptionId: string,
     resourceGroup: string,
-    containerAppName: string,
-    tags: Record<string, string>
+    containerApp: ContainerApp
   ): Promise<void> {
-    const updatedTags: Record<string, string> = {...tags, service: config.service!}
+    const updatedTags: Record<string, string> = {...containerApp.tags, service: config.service!}
     if (config.environment) {
       updatedTags.env = config.environment
     }
     if (config.version) {
       updatedTags.version = config.version
     }
-    if (!equal(tags, updatedTags)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(containerAppName)}\n`)
+    if (!equal(containerApp.tags, updatedTags)) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
         try {
           await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
-            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerAppName}`,
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerApp.name}`,
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
           this.context.stdout.write(
-            renderError(`Failed to update tags for ${chalk.bold(containerAppName)}: ${formatError(error)}`)
+            renderError(`Failed to update tags for ${chalk.bold(containerApp.name)}: ${formatError(error)}`)
           )
         }
       }
@@ -184,71 +182,65 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     client: ContainerAppsAPIClient,
     config: ContainerAppConfigOptions,
     resourceGroup: string,
-    containerAppName: string,
     containerApp: ContainerApp
   ) {
-    const envVars = getBaseEnvVars(config)
+    // TODO add main container env vars (dd service, env, version)
+    const envVarsByName = getEnvVarsByName(config, client.subscriptionId, resourceGroup)
     const containers = containerApp.template?.containers ?? []
     const sidecarContainer = containers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
+    const apiKeySecret = containerApp.configuration?.secrets?.find(({name}) => name === DD_API_KEY_SECRET_NAME)
 
-    // Check if sidecar needs to be added or updated
-    const needsUpdate =
-      sidecarContainer === undefined ||
-      sidecarContainer.image !== SIDECAR_IMAGE ||
-      !sidecarContainer.env?.every(({name, value}) => envVars[name!] === value) ||
-      !equal(new Set(sidecarContainer.env?.map(({name}) => name)), new Set(Object.keys(envVars)))
-
-    if (needsUpdate) {
-      this.context.stdout.write(
-        `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
-          SIDECAR_CONTAINER_NAME
-        )} on ${chalk.bold(containerAppName)}\n`
-      )
-
-      if (!this.dryRun) {
-        // Update the Container App template with the Datadog sidecar
-        const updatedContainers = sidecarContainer
-          ? containers.map((c) =>
-              c.name === SIDECAR_CONTAINER_NAME
-                ? {
-                    name: SIDECAR_CONTAINER_NAME,
-                    image: SIDECAR_IMAGE,
-                    env: Object.entries(envVars).map(([name, value]) => ({name, value})),
-                    resources: {
-                      cpu: 0.25,
-                      memory: '0.5Gi',
-                    },
-                  }
-                : c
-            )
-          : [
-              ...containers,
-              {
-                name: SIDECAR_CONTAINER_NAME,
-                image: SIDECAR_IMAGE,
-                env: Object.entries(envVars).map(([name, value]) => ({name, value})),
-                resources: {
-                  cpu: 0.25,
-                  memory: '0.5Gi',
-                },
-              },
-            ]
-
-        const updatedApp = {
-          ...containerApp,
-          template: {
-            ...containerApp.template,
-            containers: updatedContainers,
-          },
-        }
-        await client.containerApps.beginUpdateAndWait(resourceGroup, containerAppName, updatedApp)
-      }
-    } else {
+    if (
+      sidecarContainer?.image === SIDECAR_IMAGE &&
+      equal(Object.fromEntries((sidecarContainer?.env ?? []).map((env) => [env.name!, env])), envVarsByName) &&
+      apiKeySecret?.value === process.env.DD_API_KEY
+    ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}Sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME
         )} already exists with correct configuration.\n`
       )
+
+      return
+    }
+    this.context.stdout.write(
+      `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
+        SIDECAR_CONTAINER_NAME
+      )} on ${chalk.bold(containerApp.name)}\n`
+    )
+
+    if (!this.dryRun) {
+      // Update the Container App template with the Datadog sidecar
+      const newSidecar: Container = {
+        name: SIDECAR_CONTAINER_NAME,
+        image: SIDECAR_IMAGE,
+        env: Object.values(envVarsByName),
+        resources: {
+          cpu: 0.25,
+          memory: '0.5Gi',
+        },
+      }
+      const newApiKeySecret: Secret = {
+        name: DD_API_KEY_SECRET_NAME,
+        value: process.env.DD_API_KEY,
+      }
+
+      const updatedApp: ContainerApp = {
+        ...containerApp,
+        configuration: {
+          ...containerApp.configuration,
+          secrets: apiKeySecret
+            ? containerApp.configuration?.secrets?.map((s) => (s.name === DD_API_KEY_SECRET_NAME ? newApiKeySecret : s))
+            : [...(containerApp.configuration?.secrets ?? []), newApiKeySecret],
+        },
+        template: {
+          ...containerApp.template,
+          containers: sidecarContainer
+            ? containers.map((c) => (c.name === SIDECAR_CONTAINER_NAME ? newSidecar : c))
+            : [...containers, newSidecar],
+        },
+      }
+      await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedApp)
     }
   }
 }
