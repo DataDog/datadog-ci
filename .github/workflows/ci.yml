@@ -121,6 +121,7 @@ jobs:
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-cloud-run": "file:./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-container-app": "file:./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
