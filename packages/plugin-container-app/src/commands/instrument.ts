@@ -1,4 +1,4 @@
-import {ContainerAppsAPIClient, ContainerApp, Container, Secret} from '@azure/arm-appcontainers'
+import {ContainerAppsAPIClient, ContainerApp, Container, Secret, VolumeMount} from '@azure/arm-appcontainers'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
@@ -184,17 +184,27 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     resourceGroup: string,
     containerApp: ContainerApp
   ) {
-    // TODO add main container env vars (dd service, env, version) and volume mounts
+    // TODO add main container env vars (dd service, env, version)
     const envVarsByName = getEnvVarsByName(config, client.subscriptionId, resourceGroup)
     const containers = containerApp.template?.containers ?? []
+    const secrets = containerApp.configuration?.secrets ?? []
+    const volumes = containerApp.template?.volumes ?? []
     const sidecarContainer = containers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const apiKeySecret = containerApp.configuration?.secrets?.find(({name}) => name === DD_API_KEY_SECRET_NAME)
 
-    if (
-      sidecarContainer?.image === SIDECAR_IMAGE &&
-      equal(Object.fromEntries((sidecarContainer?.env ?? []).map((env) => [env.name!, env])), envVarsByName) &&
-      apiKeySecret?.value === process.env.DD_API_KEY
-    ) {
+    const apiKeySecret = containerApp.configuration?.secrets?.find(({name}) => name === DD_API_KEY_SECRET_NAME)
+    // checks for if we should make changes
+    const sidecarHasCorrectImage = sidecarContainer?.image === SIDECAR_IMAGE
+    const hasCorrectEnvVars = equal(
+      Object.fromEntries((sidecarContainer?.env ?? []).map((env) => [env.name!, env])),
+      envVarsByName
+    )
+    const hasApiKey = apiKeySecret?.value === process.env.DD_API_KEY
+    const hasSharedVolume = volumes.some((v) => v.name === config.sharedVolumeName)
+    const sidecarHasVolumeMount = sidecarContainer?.volumeMounts?.some(
+      (mount) => mount.volumeName === config.sharedVolumeName && mount.mountPath === config.sharedVolumePath
+    )
+
+    if (sidecarHasCorrectImage && hasCorrectEnvVars && hasApiKey && hasSharedVolume && sidecarHasVolumeMount) {
       this.context.stdout.write(
         `${this.dryRunPrefix}Sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME
@@ -203,23 +213,39 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
 
       return
     }
-    this.context.stdout.write(
-      `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
-        SIDECAR_CONTAINER_NAME
-      )} on ${chalk.bold(containerApp.name)}\n`
-    )
+    this.context.stdout.write(`${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
 
     if (!this.dryRun) {
-      // Update the Container App template with the Datadog sidecar
+      const sharedVolume: VolumeMount = {
+        volumeName: config.sharedVolumeName,
+        mountPath: config.sharedVolumePath,
+      }
+      // Update the Container App template with the Datadog sidecar and volume mounts
       const newSidecar: Container = {
         name: SIDECAR_CONTAINER_NAME,
         image: SIDECAR_IMAGE,
         env: Object.values(envVarsByName),
+        volumeMounts: [sharedVolume],
         resources: {
           cpu: 0.25,
           memory: '0.5Gi',
         },
       }
+
+      // add volume mounts to all containers
+      const updatedContainers: Container[] = containers.map((container) => {
+        const volumeMounts = container.volumeMounts ?? []
+        return {
+          ...container,
+          volumeMounts: volumeMounts.some((mount) => mount.volumeName === config.sharedVolumeName)
+            ? volumeMounts
+            : [...volumeMounts, {volumeName: config.sharedVolumeName, mountPath: config.sharedVolumePath}],
+        }
+      })
+      if (!sidecarContainer) {
+        updatedContainers.push(newSidecar)
+      }
+
       const newApiKeySecret: Secret = {
         name: DD_API_KEY_SECRET_NAME,
         value: process.env.DD_API_KEY,
@@ -230,14 +256,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         configuration: {
           ...containerApp.configuration,
           secrets: apiKeySecret
-            ? containerApp.configuration?.secrets?.map((s) => (s.name === DD_API_KEY_SECRET_NAME ? newApiKeySecret : s))
-            : [...(containerApp.configuration?.secrets ?? []), newApiKeySecret],
+            ? secrets.map((s) => (s.name === DD_API_KEY_SECRET_NAME ? newApiKeySecret : s))
+            : [...secrets, newApiKeySecret],
         },
         template: {
           ...containerApp.template,
-          containers: sidecarContainer
-            ? containers.map((c) => (c.name === SIDECAR_CONTAINER_NAME ? newSidecar : c))
-            : [...containers, newSidecar],
+          containers: updatedContainers,
+          volumes: hasSharedVolume ? volumes : [...volumes, {name: config.sharedVolumeName, storageType: 'EmptyDir'}],
         },
       }
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedApp)
