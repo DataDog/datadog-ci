@@ -29,7 +29,6 @@ type CommandScope = {
 type PluginPackage = Package & CommandScope
 
 const fix = process.argv.includes('--fix')
-const isCI = !!process.env.CI
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 
@@ -39,15 +38,9 @@ const upperCamelCase = (str: string) => {
   return camel.charAt(0).toUpperCase() + camel.slice(1)
 }
 
-const exec = (cmd: string, {throwError}: {throwError?: boolean} = {}) => {
+const exec = (cmd: string) => {
   console.log(chalk.bold.blue(`\nRunning ${cmd}...`))
-  try {
-    execSync(cmd, {stdio: 'inherit'})
-  } catch (e) {
-    if (throwError) {
-      throw e
-    }
-  }
+  execSync(cmd, {stdio: 'inherit'})
 }
 
 const loadPackage = (folderName: string): Package => {
@@ -454,25 +447,27 @@ if (Object.keys(versions).length > 1) {
 // #endregion
 
 if (fix) {
-  // Run locally with `yarn lint:packages --fix`
-  exec('yarn syncpack fix', {throwError: true})
+  exec('yarn syncpack fix')
 } else {
-  // Run locally or in CI with `yarn lint:packages`
   try {
-    exec('yarn syncpack lint', {throwError: true})
-  } catch (e) {
+    exec('yarn syncpack lint')
+  } catch {
     console.log()
     console.log(chalk.red('Syncpack detected issues! Run `yarn lint:packages --fix` to fix it.\n'))
     process.exit(1)
   }
 }
 
-try {
-  exec('yarn knip', {throwError: isCI})
-} catch (e) {
-  console.log()
-  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` to fix it.\n'))
-  process.exit(1)
+if (fix) {
+  exec('yarn knip --fix')
+} else {
+  try {
+    exec('yarn knip')
+  } catch {
+    console.log()
+    console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` to fix it.\n'))
+    process.exit(1)
+  }
 }
 
 exec('yarn install')
