@@ -74,8 +74,8 @@ export const githubWellKnownDiagnosticDirsUnix = [
   '/opt/actions-runner/_diag', // self-hosted in some cases
 ]
 export const githubWellKnownDiagnosticDirsWin = [
-  'C:\\actions-runner\\cached\\_diag\\', // for SaaS
-  'C:\\actions-runner\\_diag\\', // for self-hosted
+  'C:/actions-runner/cached/_diag', // for SaaS
+  'C:/actions-runner/_diag', // for self-hosted
 ]
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"([^"]+)"/
