@@ -1479,7 +1479,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-deployment@workspace:packages/plugin-deployment"
   dependencies:
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.16.0"
   peerDependencies:
@@ -1491,7 +1491,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-dora@workspace:packages/plugin-dora"
   dependencies:
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     simple-git: "npm:3.16.0"
   peerDependencies:
@@ -1546,7 +1546,7 @@ __metadata:
     "@types/uuid": "npm:^9.0.2"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     form-data: "npm:^4.0.4"
     simple-git: "npm:3.16.0"
@@ -1564,7 +1564,7 @@ __metadata:
     "@types/jest": "npm:29.5.3"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
-    axios: "npm:^1.11.0"
+    axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     packageurl-js: "npm:^2.0.1"
     simple-git: "npm:3.16.0"
@@ -1630,7 +1630,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
-    "@types/semver": "npm:^7.3.12"
+    "@types/semver": "npm:^7.7.1"
     "@types/uuid": "npm:^9.0.2"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
@@ -3976,13 +3976,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/semver@npm:^7.3.12":
-  version: 7.5.8
-  resolution: "@types/semver@npm:7.5.8"
-  checksum: 10/3496808818ddb36deabfe4974fd343a78101fa242c4690044ccdc3b95dcf8785b494f5d628f2f47f38a702f8db9c53c67f47d7818f2be1b79f2efb09692e1178
-  languageName: node
-  linkType: hard
-
 "@types/semver@npm:^7.7.1":
   version: 7.7.1
   resolution: "@types/semver@npm:7.7.1"
@@ -4824,17 +4817,6 @@ __metadata:
     sinon: "npm:^18.0.1"
     tslib: "npm:^2.1.0"
   checksum: 10/fb855e3817784f81ffa7cf48fae12330284708ff3d266515229103c30d7943cd26680c9911387e6f878841829ebea2164fb8b0bea37dce8957563d50a8eba96b
-  languageName: node
-  linkType: hard
-
-"axios@npm:^1.11.0":
-  version: 1.11.0
-  resolution: "axios@npm:1.11.0"
-  dependencies:
-    follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.4"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/232df4af7a4e4e07baa84621b9cc4b0c518a757b4eacc7f635c0eb3642cb98dff347326739f24b891b3b4481b7b838c79a3a0c4819c9fbc1fc40232431b9c5dc
   languageName: node
   linkType: hard
 
