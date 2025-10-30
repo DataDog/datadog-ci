@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-container-app",
-  "version": "4.0.2",
+  "version": "4.1.0",
   "license": "Apache-2.0",
   "description": "Datadog CI plugin for `container-app` commands",
   "keywords": [
@@ -38,8 +38,8 @@
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@azure/arm-appcontainers": "^2.2.0",
-    "@azure/arm-resources": "^6.1.0",
+    "@azure/arm-appcontainers": "^3.0.0",
+    "@azure/arm-resources": "^7.0.0",
     "@azure/identity": "^4.10.1",
     "chalk": "3.0.0",
     "fast-deep-equal": "^3.1.3"
