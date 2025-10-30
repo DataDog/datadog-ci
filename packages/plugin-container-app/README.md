@@ -87,8 +87,9 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--env` or `--environment` | | The value for the env tag. Use this to separate out your staging, development, and production environments. For example, `prod` | |
 | `--version` | | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0` | |
 | `--instance-logging` | | When enabled, log collection is automatically configured for an additional file path: `/home/LogFiles/*$COMPUTERNAME*.log` | `false` |
-| `--log-path` | | Where you write your logs. For example, `/home/LogFiles/*.log` or `/home/LogFiles/myapp/*.log` | |
-| `--no-restart` | | Do not restart the Container App after applying instrumentation. | `false` |
+| `--shared-volume-name` | | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
+| `--shared-volume-path` | | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
+| `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--source-code-integration` or `--sourceCodeIntegration` | | Enable source code integration to add git metadata as tags. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` | | Upload git metadata to Datadog. Only required if you don't have the Datadog GitHub Integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` | | Additional tags to add to the service in the format `key1:value1,key2:value2` | |
@@ -113,7 +114,6 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "version": "1.0.0",
     "logPath": "/home/LogFiles/*.log",
     "isInstanceLoggingEnabled": false,
-    "shouldNotRestart": false,
     "sourceCodeIntegration": true,
     "uploadGitMetadata": true,
     "extraTags": "team:backend,project:api",
@@ -185,18 +185,6 @@ datadog-ci container-app instrument \
   --instance-logging
 ```
 
-### Instrumentation without restart
-
-```bash
-export DD_BETA_COMMANDS_ENABLED=true
-export DD_API_KEY=your-api-key
-
-datadog-ci container-app instrument \
-  --subscription-id 12345678-1234-1234-1234-123456789012 \
-  --resource-group my-resource-group \
-  --name my-container-app \
-  --no-restart
-```
 
 ### Dry run to preview changes
 

@@ -35,10 +35,6 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
 
-  // private shouldNotRestart = Option.Boolean('--no-restart', false, {
-  //   description: 'Do not restart the Container App after applying instrumentation.',
-  // })
-
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
       'Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable.',
@@ -61,7 +57,6 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       sharedVolumeName: this.sharedVolumeName,
       sharedVolumePath: this.sharedVolumePath,
       logsPath: this.logsPath,
-      // shouldNotRestart: this.shouldNotRestart,
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,

@@ -124,23 +124,6 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       return false
     }
 
-    // if (!config.shouldNotRestart) {
-    //   this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure Container App ${chalk.bold(containerAppName)}\n`)
-    //   if (!this.dryRun) {
-    //     try {
-    //       // Container Apps automatically create new revisions when updated, which effectively restarts them
-    //       const updatedApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
-    //       await containerAppClient.containerApps.beginUpdateAndWait(resourceGroup, containerAppName, updatedApp)
-    //     } catch (error) {
-    //       this.context.stdout.write(
-    //         renderError(`Failed to restart Azure Container App ${chalk.bold(containerAppName)}: ${error}`)
-    //       )
-
-    //       return false
-    //     }
-    //   }
-    // }
-
     return true
   }
 

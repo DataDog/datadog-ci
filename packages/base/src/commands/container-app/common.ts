@@ -36,8 +36,6 @@ export type ContainerAppConfigOptions = Partial<{
   logsPath: string
   envVars: string[]
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
-  shouldNotRestart: boolean
-  // no-dd-sa:typescript-best-practices/boolean-prop-naming
   sourceCodeIntegration: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
