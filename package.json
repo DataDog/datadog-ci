@@ -1,27 +1,11 @@
 {
   "name": "datadog-ci-monorepo",
-  "private": true,
-  "volta": {
-    "node": "20.11.0",
-    "yarn": "4.9.4"
-  },
-  "packageManager": "yarn@4.9.4",
-  "workspaces": [
-    "packages/*"
-  ],
-  "knip": {
-    "ignoreDependencies": [
-      "@microsoft/eslint-formatter-sarif",
-      "dd-trace",
-      "syncpack"
-    ]
-  },
   "scripts": {
     "build": "yarn tsc:build",
-    "check-licenses": "node bin/check-licenses.js",
     "check-junit-upload": "node bin/check-junit-upload.js",
-    "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
+    "check-licenses": "node bin/check-licenses.js",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
+    "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
     "dev": "yarn tsc:build --watch",
     "dist-standalone": "FORCE_COLOR=1 yarn workspace @datadog/datadog-ci bundle && pkg --sea packages/datadog-ci/dist/bundle.js",
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
@@ -31,25 +15,25 @@
     "launch": "tsx --conditions=development packages/datadog-ci/src/cli.ts",
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
-    "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:all": "eslint --cache --quiet '**/*.ts'",
+    "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:packages": "FORCE_COLOR=1 tsx --conditions=development bin/lint-packages.ts",
     "loop-packages": "yarn workspaces foreach --all --no-private",
-    "publish:all": "yarn loop-packages --topological --verbose npm publish --provenance",
-    "version:all": "yarn loop-packages version ${0} --immediate",
     "package:build": "yarn tsc:build $INIT_CWD",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
     "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
+    "publish:all": "yarn loop-packages --topological --verbose npm publish --provenance",
     "test": "jest --colors",
-    "test:windows": "jest --config ./jest.config-windows.mjs --colors",
-    "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
     "test:aas": "jest packages/plugin-aas --colors",
-    "test:lambda": "jest packages/plugin-lambda --colors",
     "test:cloud-run": "jest packages/plugin-cloud-run --colors",
+    "test:debug": "node --inspect-brk node_modules/jest/bin/jest --runInBand",
     "test:dsyms": "jest packages/datadog-ci/src/commands/dsyms --colors",
     "test:helpers": "jest packages/datadog-ci/src/helpers --colors",
-    "tsc:build": "tsc --build --verbose"
+    "test:lambda": "jest packages/plugin-lambda --colors",
+    "test:windows": "jest --config ./jest.config-windows.mjs --colors",
+    "tsc:build": "tsc --build --verbose",
+    "version:all": "yarn loop-packages version ${0} --immediate"
   },
   "devDependencies": {
     "@microsoft/eslint-formatter-sarif": "^3.1.0",
@@ -78,7 +62,23 @@
     "typescript": "5.1.6",
     "typescript-eslint": "^8.42.0"
   },
+  "knip": {
+    "ignoreDependencies": [
+      "@microsoft/eslint-formatter-sarif",
+      "dd-trace",
+      "syncpack"
+    ]
+  },
+  "packageManager": "yarn@4.9.4",
+  "private": true,
   "resolutions": {
     "@yao-pkg/pkg-fetch@npm:3.5.24": "patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch"
-  }
+  },
+  "volta": {
+    "node": "20.11.0",
+    "yarn": "4.9.4"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }
