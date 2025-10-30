@@ -10,7 +10,7 @@ interface Resource {
 
 export const parseResourceId = (resourceId: string): Resource | undefined => {
   const match = resourceId.match(
-    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.App\/containerApps\/([^/]+)$/i
+    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.\w+\/\w+\/([^/]+)$/i
   )
   if (match) {
     const [, subscriptionId, resourceGroup, name] = match
