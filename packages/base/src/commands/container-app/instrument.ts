@@ -1,9 +1,9 @@
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
+import {DEFAULT_VOLUME_PATH, DEFAULT_LOGS_PATH, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/common'
 
 import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
-import {DEFAULT_VOLUME_PATH, DEFAULT_LOGS_PATH, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/common'
 
 export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   public static paths = [['container-app', 'instrument']]
