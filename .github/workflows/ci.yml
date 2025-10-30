@@ -40,6 +40,7 @@ jobs:
           CI: true
           DD_SERVICE: datadog-ci-tests
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_CIVISIBILITY_ITR_ENABLED: 0
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
@@ -81,6 +82,7 @@ jobs:
           CI: true
           DD_SERVICE: datadog-ci-tests
           DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+          DD_CIVISIBILITY_ITR_ENABLED: 0
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
