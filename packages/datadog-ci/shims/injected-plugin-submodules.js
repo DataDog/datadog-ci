@@ -13,7 +13,6 @@ const injectedPluginSubmodules = {
     'uninstrument': require('@datadog/datadog-ci-plugin-cloud-run/commands/uninstrument'),
   },
   'container-app': {
-    'common': require('@datadog/datadog-ci-plugin-container-app/commands/common'),
     'instrument': require('@datadog/datadog-ci-plugin-container-app/commands/instrument'),
   },
   'deployment': {
