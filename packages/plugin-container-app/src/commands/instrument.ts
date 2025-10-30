@@ -7,12 +7,8 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {
-  ensureAzureAuth,
-  formatError,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-} from '@datadog/datadog-ci-base/helpers/serverless'
+import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
+import {SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
@@ -190,8 +186,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     const secrets = containerApp.configuration?.secrets ?? []
     const volumes = containerApp.template?.volumes ?? []
     const sidecarContainer = containers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-
     const apiKeySecret = containerApp.configuration?.secrets?.find(({name}) => name === DD_API_KEY_SECRET_NAME)
+
     // checks for if we should make changes
     const sidecarHasCorrectImage = sidecarContainer?.image === SIDECAR_IMAGE
     const hasCorrectEnvVars = equal(
@@ -232,16 +228,21 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         },
       }
 
-      // add volume mounts to all containers
+      // Update all app containers to add volume mounts
       const updatedContainers: Container[] = containers.map((container) => {
         const volumeMounts = container.volumeMounts ?? []
+        const currentEnvVarsByName = Object.fromEntries((container.env ?? []).map((env) => [env.name, env]))
+
         return {
           ...container,
+          env: Object.values({...currentEnvVarsByName, ...envVarsByName}),
           volumeMounts: volumeMounts.some((mount) => mount.volumeName === config.sharedVolumeName)
             ? volumeMounts
             : [...volumeMounts, {volumeName: config.sharedVolumeName, mountPath: config.sharedVolumePath}],
         }
       })
+
+      // Add sidecar if it doesn't exist
       if (!sidecarContainer) {
         updatedContainers.push(newSidecar)
       }

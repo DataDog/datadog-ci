@@ -3,6 +3,7 @@ import {Command, Option} from 'clipanion'
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
+import {DEFAULT_VOLUME_PATH, DEFAULT_LOGS_PATH, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/common'
 
 export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   public static paths = [['container-app', 'instrument']]
@@ -44,16 +45,14 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
-  private sharedVolumeName = Option.String('--shared-volume-name', 'shared-volume', {
-    description: '(Not recommended) The name to use for the shared volume. Defaults to \'shared-volume\'',
+  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
+    description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
-
-  private sharedVolumePath = Option.String('--shared-volume-path', '/shared-volume', {
-    description: '(Not recommended) The path to use for the shared volume. Defaults to \'/shared-volume\'',
+  private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
+    description: `(Not recommended) The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
   })
-
-  private logsPath = Option.String('--logs-path', '/shared-volume/logs/*.log', {
-    description: '(Not recommended) The path to use for the logs. Defaults to \'/shared-volume/logs/*.log\'. Must begin with the shared volume path.',
+  private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
+    description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
   })
 
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
