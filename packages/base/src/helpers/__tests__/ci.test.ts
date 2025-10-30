@@ -9,7 +9,9 @@ import {
   getCIMetadata,
   getCISpanTags,
   getGithubJobNameFromLogs,
-  githubWellKnownDiagnosticDirs,
+  githubWellKnownDiagnosticDirsUnix,
+  githubWellKnownDiagnosticDirsWin,
+  isGithubWindowsRunner,
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
@@ -496,7 +498,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   }
 
   test('should find and return the job display name (SaaS)', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[0] // SaaS directory
+    const targetDir = githubWellKnownDiagnosticDirsUnix[0] // SaaS directory
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -510,7 +512,51 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should find and return the job display name (self-hosted)', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[1] // self-hosted directory
+    const targetDir = githubWellKnownDiagnosticDirsUnix[1] // self-hosted directory
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find and return the job display name in opt directory', () => {
+    const targetDir = githubWellKnownDiagnosticDirsUnix[2]
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find and return the job display name windows (SaaS)', () => {
+    process.env.RUNNER_OS = 'Windows'
+    const targetDir = githubWellKnownDiagnosticDirsWin[0]
+    const logContent = sampleLogContent(sampleJobDisplayName)
+
+    mockReaddirSync(targetDir, sampleLogFileName)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+    expect(jobName).toBe(sampleJobDisplayName)
+    expect(mockedFs.readdirSync).toHaveBeenCalledWith(targetDir, {withFileTypes: true})
+    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${targetDir}/${sampleLogFileName}`, 'utf-8')
+  })
+
+  test('should find and return the job display name windows (self-hosted)', () => {
+    process.env.RUNNER_OS = 'Windows'
+    const targetDir = githubWellKnownDiagnosticDirsWin[1]
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -565,7 +611,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('log files found but none contain the display name', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[0]
+    const targetDir = githubWellKnownDiagnosticDirsUnix[0]
     const logContent = 'This log does not have the job display name.'
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -639,6 +685,29 @@ describe('shouldGetGitHubJobDisplayName', () => {
       CIRCLECI: 'true',
     }
     expect(shouldGetGithubJobDisplayName()).toBe(false)
+  })
+})
+
+describe('isGithubWindowsRunner', () => {
+  test('linux runner', () => {
+    process.env = {
+      RUNNER_OS: 'Linux',
+    }
+    expect(isGithubWindowsRunner()).toBe(false)
+  })
+
+  test('mac runner', () => {
+    process.env = {
+      RUNNER_OS: 'macOS',
+    }
+    expect(isGithubWindowsRunner()).toBe(false)
+  })
+
+  test('windows runner', () => {
+    process.env = {
+      RUNNER_OS: 'Windows',
+    }
+    expect(isGithubWindowsRunner()).toBe(true)
   })
 })
 
