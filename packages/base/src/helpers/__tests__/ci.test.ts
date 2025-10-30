@@ -1,5 +1,4 @@
 import fs from 'fs'
-jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {BaseContext} from 'clipanion'
 import upath from 'upath'
