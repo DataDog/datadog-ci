@@ -13,7 +13,7 @@ import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
 
-import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from './common'
+import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from '../common'
 
 export class PluginCommand extends ContainerAppInstrumentCommand {
   private cred!: DefaultAzureCredential
