@@ -39,6 +39,9 @@ export type ContainerAppConfigOptions = Partial<{
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
   extraTags: string
+  sharedVolumeName: string
+  sharedVolumePath: string
+  logsPath: string
 }>
 
 export abstract class ContainerAppCommand extends BaseCommand {

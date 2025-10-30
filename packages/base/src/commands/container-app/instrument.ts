@@ -44,6 +44,18 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
+  private sharedVolumeName = Option.String('--shared-volume-name', 'shared-volume', {
+    description: '(Not recommended) The name to use for the shared volume. Defaults to \'shared-volume\'',
+  })
+
+  private sharedVolumePath = Option.String('--shared-volume-path', '/shared-volume', {
+    description: '(Not recommended) The path to use for the shared volume. Defaults to \'/shared-volume\'',
+  })
+
+  private logsPath = Option.String('--logs-path', '/shared-volume/logs/*.log', {
+    description: '(Not recommended) The path to use for the logs. Defaults to \'/shared-volume/logs/*.log\'. Must begin with the shared volume path.',
+  })
+
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
     return {
       service: this.service,
@@ -55,6 +67,9 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      sharedVolumeName: this.sharedVolumeName,
+      sharedVolumePath: this.sharedVolumePath,
+      logsPath: this.logsPath,
     }
   }
 
