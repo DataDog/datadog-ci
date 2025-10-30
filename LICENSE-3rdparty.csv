@@ -94,3 +94,4 @@ typescript-eslint,dev,MIT,Copyright (c) 2019 typescript-eslint and other contrib
 @stylistic/eslint-plugin,dev,MIT,Copyright (c) 2023-PRESENT ESLint Stylistic contributors
 @yao-pkg/pkg,dev,MIT,"Copyright (c) 2021 Vercel, Inc."
 esbuild,dev,MIT,Copyright (c) 2020 Evan Wallace
+syncpack,dev,MIT,Copyright (c) 2017-2023 Jamie Mason
