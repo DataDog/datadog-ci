@@ -9,7 +9,7 @@ import {
   getCIMetadata,
   getCISpanTags,
   getGithubJobNameFromLogs,
-  githubWellKnownDiagnosticDirs,
+  githubWellKnownDiagnosticDirsUnix,
   isInteractive,
   shouldGetGithubJobDisplayName,
 } from '../ci'
@@ -496,7 +496,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   }
 
   test('should find and return the job display name (SaaS)', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[0] // SaaS directory
+    const targetDir = githubWellKnownDiagnosticDirsUnix[0] // SaaS directory
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -510,7 +510,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should find and return the job display name (self-hosted)', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[1] // self-hosted directory
+    const targetDir = githubWellKnownDiagnosticDirsUnix[1] // self-hosted directory
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(targetDir, sampleLogFileName)
@@ -565,7 +565,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('log files found but none contain the display name', () => {
-    const targetDir = githubWellKnownDiagnosticDirs[0]
+    const targetDir = githubWellKnownDiagnosticDirsUnix[0]
     const logContent = 'This log does not have the job display name.'
 
     mockReaddirSync(targetDir, sampleLogFileName)

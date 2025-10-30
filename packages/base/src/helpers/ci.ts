@@ -68,9 +68,14 @@ export const envDDGithubJobName = 'DD_GITHUB_JOB_NAME'
 // to GHA jobs if the 'name' property is used. It's ok for it to be missing in case the name property is not used.
 const envAllowedToBeMissing = [envDDGithubJobName]
 
-export const githubWellKnownDiagnosticDirs = [
+export const githubWellKnownDiagnosticDirsUnix = [
   '/home/runner/actions-runner/cached/_diag', // for SaaS
   '/home/runner/actions-runner/_diag', // for self-hosted
+  '/opt/actions-runner/_diag', // self-hosted in some cases
+]
+export const githubWellKnownDiagnosticDirsWin = [
+  'C:\\actions-runner\\cached\\_diag\\', // for SaaS
+  'C:\\actions-runner\\_diag\\', // for self-hosted
 ]
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"([^"]+)"/
@@ -1036,6 +1041,15 @@ export const shouldGetGithubJobDisplayName = (): boolean => {
   return getCIProvider() === CI_ENGINES.GITHUB && process.env.DD_GITHUB_JOB_NAME === undefined
 }
 
+export const isGithubWindowsRunner = (): boolean => {
+  const os = process.env.RUNNER_OS
+  if (!os) {
+    return false
+  }
+
+  return os.toLowerCase() === 'windows'
+}
+
 /**
  * Extracts the job display name from the GitHub Actions diagnostic log files.
  *
@@ -1058,11 +1072,16 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   }
   context.stdout.write('Determining GitHub job name\n')
 
+  let wellKnownDirs = githubWellKnownDiagnosticDirsUnix
+  if (isGithubWindowsRunner()) {
+    wellKnownDirs = githubWellKnownDiagnosticDirsWin
+  }
+
   let foundDiagDir = ''
   let workerLogFiles: string[] = []
 
   // 1. Iterate through well known directories to check for worker logs
-  for (const currentDir of githubWellKnownDiagnosticDirs) {
+  for (const currentDir of wellKnownDirs) {
     try {
       const files = fs.readdirSync(currentDir, {withFileTypes: true})
       const potentialLogs = files
