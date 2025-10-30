@@ -763,9 +763,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/arm-appcontainers@npm:^2.2.0":
-  version: 2.2.0
-  resolution: "@azure/arm-appcontainers@npm:2.2.0"
+"@azure/arm-appcontainers@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@azure/arm-appcontainers@npm:3.0.0"
   dependencies:
     "@azure/abort-controller": "npm:^2.1.2"
     "@azure/core-auth": "npm:^1.9.0"
@@ -774,7 +774,7 @@ __metadata:
     "@azure/core-paging": "npm:^1.6.2"
     "@azure/core-rest-pipeline": "npm:^1.19.1"
     tslib: "npm:^2.8.1"
-  checksum: 10/b2033a80dbed48ede2bf88866942446a810d20795b77416d066dd6565941fe36e2c71fac9936fcdfaeb7932fc4b18da0a5097fac64289f7685041d4ac5087d41
+  checksum: 10/e28bc7d50aaefd5dc106a52b3d41b9cd145f975a5dcdc55b66d2c284fba666b08aebd40ad4f4684eb15f376431a81e2ed2bb93ba14aea853e4cd5e68acdf0f3d
   languageName: node
   linkType: hard
 
@@ -805,6 +805,21 @@ __metadata:
     "@azure/core-rest-pipeline": "npm:^1.19.0"
     tslib: "npm:^2.8.1"
   checksum: 10/2198337667c797cc00fe8c1b745768f443072bf3079f8dc30887a0573698d817b23921cdf503dafa2e24fa363ec9bbe38fd1958f673d8a77b3947597cc1b0875
+  languageName: node
+  linkType: hard
+
+"@azure/arm-resources@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "@azure/arm-resources@npm:7.0.0"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@azure/core-auth": "npm:^1.9.0"
+    "@azure/core-client": "npm:^1.9.2"
+    "@azure/core-lro": "npm:^2.5.4"
+    "@azure/core-paging": "npm:^1.6.2"
+    "@azure/core-rest-pipeline": "npm:^1.19.0"
+    tslib: "npm:^2.8.1"
+  checksum: 10/8d29ee642bc5d847dbf901eb2a14d3723d426151a0535088a94da53f3ef0d4170e98e6e5492780861e29f218ae9bdffba66176848da32751aa5f11048572dd5d
   languageName: node
   linkType: hard
 
@@ -1497,6 +1512,7 @@ __metadata:
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-container-app": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
@@ -1509,6 +1525,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-aas":
       optional: true
     "@datadog/datadog-ci-plugin-cloud-run":
+      optional: true
+    "@datadog/datadog-ci-plugin-container-app":
       optional: true
     "@datadog/datadog-ci-plugin-deployment":
       optional: true
@@ -1565,8 +1583,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-container-app@workspace:packages/plugin-container-app"
   dependencies:
-    "@azure/arm-appcontainers": "npm:^2.2.0"
-    "@azure/arm-resources": "npm:^6.1.0"
+    "@azure/arm-appcontainers": "npm:^3.0.0"
+    "@azure/arm-resources": "npm:^7.0.0"
     "@azure/identity": "npm:^4.10.1"
     chalk: "npm:3.0.0"
     fast-deep-equal: "npm:^3.1.3"
