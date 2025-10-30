@@ -118,6 +118,14 @@ export abstract class ContainerAppCommand extends BaseCommand {
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
+    // Validate that if isInstanceLoggingEnabled, logsPath starts with sharedVolumePath
+    if (config.isInstanceLoggingEnabled) {
+      if (!config.logsPath || !config.sharedVolumePath) {
+        errors.push('logsPath and sharedVolumePath must be non-empty when instance logging is enabled')
+      } else if (!config.logsPath.startsWith(config.sharedVolumePath)) {
+        errors.push('logsPath must start with sharedVolumePath when instance logging is enabled')
+      }
+    }
     const specifiedAppArgs = [config.subscriptionId, config.resourceGroup, config.containerAppName]
     // all or none of the app args should be specified
     if (!(specifiedAppArgs.every((arg) => arg) || specifiedAppArgs.every((arg) => !arg))) {

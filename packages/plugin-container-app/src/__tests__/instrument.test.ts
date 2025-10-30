@@ -103,7 +103,7 @@ Updating tags for my-container-app
           containers: [
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
-              env: expect.arrayContaining([
+              env: [
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
@@ -111,13 +111,6 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
             },
             {
@@ -130,13 +123,6 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -144,12 +130,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
@@ -320,14 +301,7 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -341,26 +315,14 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
             },
           ]),
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
@@ -415,14 +377,7 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR2', value: 'value2'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -436,13 +391,6 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR2', value: 'value2'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -450,12 +398,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
@@ -496,14 +439,7 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR1', value: 'value1'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -516,13 +452,6 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR1', value: 'value1'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -530,12 +459,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
@@ -568,14 +492,7 @@ Updating tags for my-container-app
                 {name: 'DD_TAGS', value: 'git.commit.sha:test-sha,git.repository_url:test-remote'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -588,13 +505,6 @@ Updating tags for my-container-app
                 {name: 'DD_TAGS', value: 'git.commit.sha:test-sha,git.repository_url:test-remote'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -602,12 +512,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -644,14 +549,7 @@ Updating tags for my-container-app
                 {name: 'DD_TAGS', value: 'custom:tag,another:value'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -664,13 +562,6 @@ Updating tags for my-container-app
                 {name: 'DD_TAGS', value: 'custom:tag,another:value'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -678,12 +569,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -740,14 +626,7 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -759,13 +638,6 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
@@ -773,12 +645,7 @@ Updating tags for my-container-app
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -829,7 +696,7 @@ Updating tags for my-container-app
           containers: [
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
-              env: expect.arrayContaining([
+              env: [
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
@@ -837,13 +704,6 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
             },
             {
@@ -856,24 +716,11 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
               ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-            },
-          ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
             },
           ],
         },
@@ -922,14 +769,7 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -941,26 +781,14 @@ Updating tags for my-container-app
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -998,14 +826,7 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR2', value: 'value2'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -1019,26 +840,14 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR2', value: 'value2'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -1077,14 +886,7 @@ Updating tags for my-container-app
                 {name: 'DD_VERSION', value: '1.2.3'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -1098,26 +900,14 @@ Updating tags for my-container-app
                 {name: 'DD_VERSION', value: '1.2.3'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
@@ -1204,14 +994,7 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
             },
             {
               name: 'datadog-sidecar',
@@ -1225,26 +1008,14 @@ Updating tags for my-container-app
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
-                {name: 'DD_LOGS_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
             },
           ],
-          volumes: [
-            {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
-            },
-          ],
+          volumes: [],
         },
       })
     })
