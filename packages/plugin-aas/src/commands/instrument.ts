@@ -7,14 +7,13 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {
   collectAsyncIterator,
-  ensureAzureAuth,
-  formatError,
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
   SIDECAR_PORT,
-} from '@datadog/datadog-ci-base/helpers/serverless'
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
