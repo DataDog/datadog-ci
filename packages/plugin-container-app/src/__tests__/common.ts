@@ -1,5 +1,10 @@
 import {ContainerApp} from '@azure/arm-appcontainers'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
+import {
+  DEFAULT_LOGS_PATH,
+  DEFAULT_VOLUME_PATH,
+  DEFAULT_VOLUME_NAME,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',
@@ -9,9 +14,10 @@ export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
   environment: undefined,
   version: undefined,
   isInstanceLoggingEnabled: false,
-  logPath: undefined,
+  logsPath: DEFAULT_LOGS_PATH,
+  sharedVolumeName: DEFAULT_VOLUME_NAME,
+  sharedVolumePath: DEFAULT_VOLUME_PATH,
   envVars: undefined,
-  shouldNotRestart: false,
   sourceCodeIntegration: true,
   uploadGitMetadata: true,
   extraTags: undefined,

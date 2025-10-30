@@ -25,12 +25,19 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description:
       'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
   })
-  private logPath = Option.String('--log-path', {
-    description: 'Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log',
+  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
+    description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
-  private shouldNotRestart = Option.Boolean('--no-restart', false, {
-    description: 'Do not restart the Container App after applying instrumentation.',
+  private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
+    description: `(Not recommended) The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
   })
+  private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
+    description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
+  })
+
+  // private shouldNotRestart = Option.Boolean('--no-restart', false, {
+  //   description: 'Do not restart the Container App after applying instrumentation.',
+  // })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
@@ -45,30 +52,19 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
-  private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
-    description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
-  })
-  private sharedVolumePath = Option.String('--shared-volume-path', DEFAULT_VOLUME_PATH, {
-    description: `(Not recommended) The path to use for the shared volume. Defaults to '${DEFAULT_VOLUME_PATH}'`,
-  })
-  private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
-    description: `(Not recommended) The path to use for the logs. Defaults to '${DEFAULT_LOGS_PATH}'. Must begin with the shared volume path.`,
-  })
-
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
     return {
       service: this.service,
       environment: this.environment,
       version: this.version,
       isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
-      logPath: this.logPath,
-      shouldNotRestart: this.shouldNotRestart,
-      sourceCodeIntegration: this.sourceCodeIntegration,
-      uploadGitMetadata: this.uploadGitMetadata,
-      extraTags: this.extraTags,
       sharedVolumeName: this.sharedVolumeName,
       sharedVolumePath: this.sharedVolumePath,
       logsPath: this.logsPath,
+      // shouldNotRestart: this.shouldNotRestart,
+      sourceCodeIntegration: this.sourceCodeIntegration,
+      uploadGitMetadata: this.uploadGitMetadata,
+      extraTags: this.extraTags,
     }
   }
 
