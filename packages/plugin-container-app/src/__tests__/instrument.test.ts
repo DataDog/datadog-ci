@@ -80,8 +80,6 @@ describe('container-app instrument', () => {
     test('Adds a sidecar and updates the tags', async () => {
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Verifying secrets for my-container-app
-All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
 🐶 Instrumentation completed successfully!
@@ -92,6 +90,14 @@ Updating tags for my-container-app
       expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -100,10 +106,12 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ],
               resources: {
                 cpu: 0.25,
@@ -119,7 +127,6 @@ Updating tags for my-container-app
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
       expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)
-[Dry Run] Verifying secrets for my-container-app
 [Dry Run] Creating sidecar container datadog-sidecar on my-container-app
 [Dry Run] Updating tags for my-container-app
 [Dry Run] 🐶 Instrumentation completed successfully!
@@ -127,7 +134,7 @@ Updating tags for my-container-app
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
-      expect(containerAppsOperations.listSecrets).not.toHaveBeenCalled()
+      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
     })
@@ -167,8 +174,6 @@ Ensure you copied the value and not the Key ID.
       containerAppsOperations.beginUpdateAndWait.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Verifying secrets for my-container-app
-All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 [Error] Failed to instrument my-container-app: Error: sidecar error
 🐶 Instrumentation completed with errors, see above for details.
@@ -209,6 +214,9 @@ Creating sidecar container datadog-sidecar on my-container-app
     })
 
     test('Instruments multiple Container Apps in a single subscription', async () => {
+      containerAppsOperations.get.mockImplementation((rg: string, name: string) => {
+        return Promise.resolve({...DEFAULT_CONTAINER_APP, name})
+      })
       const {code, context} = await runCLI([
         '-r',
         CONTAINER_APP_ID,
@@ -218,10 +226,6 @@ Creating sidecar container datadog-sidecar on my-container-app
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Verifying secrets for my-container-app
-Verifying secrets for my-container-app2
-All required secrets exist on my-container-app
-All required secrets exist on my-container-app2
 Creating sidecar container datadog-sidecar on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app2
 Updating tags for my-container-app
@@ -254,8 +258,6 @@ Updating tags for my-container-app2
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Verifying secrets for my-container-app
-All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
 🐶 Instrumentation completed successfully!
@@ -264,6 +266,14 @@ Updating tags for my-container-app
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -272,12 +282,14 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: expect.arrayContaining([
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
                 {name: 'DD_ENV', value: 'my-env'},
                 {name: 'DD_VERSION', value: '1.0.0'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ]),
               resources: {
                 cpu: 0.25,
@@ -308,8 +320,6 @@ Updating tags for my-container-app
       ])
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Verifying secrets for my-container-app
-All required secrets exist on my-container-app
 Creating sidecar container datadog-sidecar on my-container-app
 Updating tags for my-container-app
 🐶 Instrumentation completed successfully!
@@ -318,6 +328,14 @@ Updating tags for my-container-app
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -326,12 +344,14 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
                 {name: 'CUSTOM_VAR2', value: 'value2'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ],
               resources: {
                 cpu: 0.25,
@@ -357,6 +377,14 @@ Updating tags for my-container-app
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -365,11 +393,13 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'true'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ],
               resources: {
                 cpu: 0.25,
@@ -387,6 +417,14 @@ Updating tags for my-container-app
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -395,11 +433,13 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_TAGS', value: 'git.commit.sha:test-sha,git.repository_url:test-remote'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ],
               resources: {
                 cpu: 0.25,
@@ -421,6 +461,14 @@ Updating tags for my-container-app
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -429,11 +477,13 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: 'PLACEHOLDER'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_TAGS', value: 'custom:tag,another:value'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ],
               resources: {
                 cpu: 0.25,
@@ -472,10 +522,18 @@ Updating tags for my-container-app
     })
 
     test('creates sidecar if not present', async () => {
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', DEFAULT_CONTAINER_APP)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', DEFAULT_CONTAINER_APP)
 
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'app', {
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -484,10 +542,12 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: process.env.DD_API_KEY},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
               ],
               resources: {
                 cpu: 0.25,
@@ -523,7 +583,7 @@ Updating tags for my-container-app
         },
       }
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', containerAppWithSidecar)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', containerAppWithSidecar)
 
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
     })
@@ -532,6 +592,14 @@ Updating tags for my-container-app
       const containerAppWithCorrectSidecar = {
         ...DEFAULT_CONTAINER_APP,
         tags: {service: 'my-container-app'},
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -540,10 +608,12 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
-                {name: 'DD_API_KEY', value: process.env.DD_API_KEY},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
               ],
               resources: {
                 cpu: 0.25,
@@ -554,20 +624,14 @@ Updating tags for my-container-app
         },
       }
 
-      await command.instrumentSidecar(
-        client,
-        DEFAULT_CONFIG_WITH_DEFAULT_SERVICE,
-        'rg',
-        'app',
-        containerAppWithCorrectSidecar
-      )
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', containerAppWithCorrectSidecar)
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
     })
 
     test('does not call Azure APIs in dry run mode', async () => {
       command.dryRun = true
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', DEFAULT_CONTAINER_APP)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', DEFAULT_CONTAINER_APP)
 
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
     })
@@ -578,10 +642,18 @@ Updating tags for my-container-app
         service: 'custom-service-name',
       }
 
-      await command.instrumentSidecar(client, customConfig, 'rg', 'app', DEFAULT_CONTAINER_APP)
+      await command.instrumentSidecar(client, customConfig, 'rg', DEFAULT_CONTAINER_APP)
 
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'app', {
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -589,7 +661,14 @@ Updating tags for my-container-app
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: expect.arrayContaining([{name: 'DD_SERVICE', value: 'custom-service-name'}]),
+              env: expect.arrayContaining([
+                {name: 'DD_SERVICE', value: 'custom-service-name'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
@@ -606,10 +685,18 @@ Updating tags for my-container-app
         envVars: ['CUSTOM_VAR1=value1', 'CUSTOM_VAR2=value2'],
       }
 
-      await command.instrumentSidecar(client, customConfig, 'rg', 'app', DEFAULT_CONTAINER_APP)
+      await command.instrumentSidecar(client, customConfig, 'rg', DEFAULT_CONTAINER_APP)
 
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'app', {
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -618,8 +705,14 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: expect.arrayContaining([
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
                 {name: 'CUSTOM_VAR2', value: 'value2'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
               ]),
               resources: {
                 cpu: 0.25,
@@ -638,10 +731,18 @@ Updating tags for my-container-app
         version: '1.2.3',
       }
 
-      await command.instrumentSidecar(client, customConfig, 'rg', 'app', DEFAULT_CONTAINER_APP)
+      await command.instrumentSidecar(client, customConfig, 'rg', DEFAULT_CONTAINER_APP)
 
-      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'app', {
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('rg', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -650,8 +751,14 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: expect.arrayContaining([
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_ENV', value: 'production'},
                 {name: 'DD_VERSION', value: '1.2.3'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
               ]),
               resources: {
                 cpu: 0.25,
@@ -679,6 +786,9 @@ Updating tags for my-container-app
     })
 
     test('Multiple subscriptions', async () => {
+      containerAppsOperations.get.mockImplementation((rg: string, name: string) => {
+        return Promise.resolve({...DEFAULT_CONTAINER_APP, name})
+      })
       const {code, context} = await runCLI([
         '-r',
         '/subscriptions/11111111-1111-1111-1111-111111111111/resourceGroups/rg1/providers/Microsoft.App/containerApps/app1',
@@ -719,6 +829,14 @@ Updating tags for my-container-app
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
         template: {
           ...DEFAULT_CONTAINER_APP.template,
           containers: [
@@ -727,9 +845,14 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: expect.arrayContaining([
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'false'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
               ]),
               resources: {
                 cpu: 0.25,
