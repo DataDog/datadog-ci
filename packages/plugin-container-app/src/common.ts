@@ -21,5 +21,9 @@ export const getEnvVarsByName = (
   envVars.DD_AZURE_SUBSCRIPTION_ID = {name: 'DD_AZURE_SUBSCRIPTION_ID', value: subscriptionId}
   envVars.DD_AZURE_RESOURCE_GROUP = {name: 'DD_AZURE_RESOURCE_GROUP', value: resourceGroup}
 
+  // Add logs path with default value
+  const logsPath = config.logsPath ?? '/shared-volume/logs/*.log'
+  envVars.DD_LOGS_PATH = {name: 'DD_LOGS_PATH', value: logsPath}
+
   return envVars
 }
