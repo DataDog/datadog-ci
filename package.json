@@ -12,7 +12,8 @@
   "knip": {
     "ignoreDependencies": [
       "@microsoft/eslint-formatter-sarif",
-      "dd-trace"
+      "dd-trace",
+      "syncpack"
     ]
   },
   "scripts": {

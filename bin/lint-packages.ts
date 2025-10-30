@@ -451,42 +451,27 @@ if (Object.keys(versions).length > 1) {
 }
 // #endregion
 
-// #region - All packages refer to local packages with `workspace:*`
-const localReferenceRanges = allPackages.reduce<Record<string, string[]>>((acc, p) => {
-  const ranges = new Set(
-    Object.values({...p.packageJson.dependencies, ...p.packageJson.peerDependencies}).filter((range) =>
-      range.startsWith('workspace:')
-    )
-  )
+// #endregion
 
-  return {
-    ...acc,
-    ...Object.fromEntries(Array.from(ranges).map((range) => [range, [...(acc[range] || []), p.packageJson.name]])),
-  }
-}, {})
-if (Object.keys(localReferenceRanges).length > 1) {
-  error(
-    `All packages must refer to local packages with ${chalk.bold('workspace:*')}. Found: ${JSON.stringify(localReferenceRanges, undefined, 2)}`
-  )
-  process.exit(1)
-} else if (Object.keys(localReferenceRanges).length === 1) {
-  const range = Object.keys(localReferenceRanges)[0]
-
-  if (range === 'workspace:*') {
-    success(`All packages refer to local packages with ${chalk.bold('workspace:*')}`)
-  } else {
-    error(`All packages must refer to local packages with ${chalk.bold('workspace:*')}. Found: ${chalk.bold(range)}`)
+if (fix) {
+  // Run locally with `yarn lint:packages --fix`
+  exec('yarn syncpack fix', {throwError: true})
+} else {
+  // Run locally or in CI with `yarn lint:packages`
+  try {
+    exec('yarn syncpack lint', {throwError: true})
+  } catch (e) {
+    console.log()
+    console.log(chalk.red('Syncpack detected issues! Run `yarn lint:packages --fix` to fix it.\n'))
     process.exit(1)
   }
 }
-// #endregion
-
-// #endregion
 
 try {
   exec('yarn knip', {throwError: isCI})
 } catch (e) {
-  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` locally to fix it.\n'))
+  console.log()
+  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` to fix it.\n'))
   process.exit(1)
 }
 
