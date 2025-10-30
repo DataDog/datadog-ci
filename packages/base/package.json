@@ -76,6 +76,9 @@
     "@datadog/datadog-ci-plugin-cloud-run": {
       "optional": true
     },
+    "@datadog/datadog-ci-plugin-container-app": {
+      "optional": true
+    },
     "@datadog/datadog-ci-plugin-deployment": {
       "optional": true
     },
