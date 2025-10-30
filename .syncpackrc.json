@@ -1,5 +1,25 @@
 {
   "$schema": "./node_modules/syncpack/dist/schema.json",
+  "sortFirst": [
+    "name",
+    "version",
+    "description",
+    "license",
+    "keywords",
+    "homepage",
+    "repository",
+    "engines",
+    "bin",
+    "main",
+    "exports",
+    "files",
+    "publishConfig",
+    "scripts",
+    "peerDependencies",
+    "peerDependenciesMeta",
+    "dependencies",
+    "devDependencies"
+  ],
   "versionGroups": [
     {
       "label": "Always use workspace:* for local packages",
