@@ -1,0 +1,9 @@
+{
+  "$schema": "./node_modules/syncpack/dist/schema.json",
+  "versionGroups": [
+    {
+      "label": "Always use workspace:* for local packages",
+      "dependencyTypes": ["local"]
+    }
+  ]
+}
