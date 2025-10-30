@@ -1,6 +1,6 @@
 import {EnvironmentVar} from '@azure/arm-appcontainers'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
-import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 export const DD_API_KEY_SECRET_NAME = 'dd-api-key'
 

@@ -4,7 +4,8 @@ import {EXTRA_TAGS_REG_EXP, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../..
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
-import {ENV_VAR_REGEX, parseResourceId} from '../../helpers/serverless'
+import {parseResourceId} from '../../helpers/serverless/azure'
+import {ENV_VAR_REGEX} from '../../helpers/serverless/common'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
