@@ -1,11 +1,11 @@
 import {EnvironmentVar} from '@azure/arm-appcontainers'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless'
 
 export const DD_API_KEY_SECRET_NAME = 'dd-api-key'
 
 export const getEnvVarsByName = (
-  config: AasConfigOptions,
+  config: ContainerAppConfigOptions,
   subscriptionId: string,
   resourceGroup: string
 ): Record<string, EnvironmentVar> => {

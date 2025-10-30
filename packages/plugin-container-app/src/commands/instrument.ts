@@ -184,7 +184,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     resourceGroup: string,
     containerApp: ContainerApp
   ) {
-    // TODO add main container env vars (dd service, env, version)
+    // TODO add main container env vars (dd service, env, version) and volume mounts
     const envVarsByName = getEnvVarsByName(config, client.subscriptionId, resourceGroup)
     const containers = containerApp.template?.containers ?? []
     const sidecarContainer = containers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
