@@ -146,7 +146,7 @@ describe('git', () => {
   })
 })
 
-describe('parseGitDiff – tree structure', () => {
+describe('parseGitDiff - tree structure', () => {
   const fixtures = (name: string) => fs.readFileSync(path.join(__dirname, 'fixtures', name), 'utf8')
 
   test('modification of a single file', () => {

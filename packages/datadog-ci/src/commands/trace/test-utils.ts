@@ -125,9 +125,9 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
     })
 
     test('should try to infer github job name', async () => {
-      fs.readdirSync = jest.fn().mockReturnValue([
+      jest.spyOn(fs, 'readdirSync').mockReturnValue([
         {
-          name: 'Worker_1.log',
+          name: 'Worker_1.log' as any,
           isFile: () => true,
           isDirectory: () => false,
           isBlockDevice: () => false,
@@ -139,7 +139,7 @@ export const makeCIProviderTests = (runCLI: RunCLIType, runCLIArgs: string[]) =>
           path: '',
         },
       ])
-      fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
       const {context, code} = await runCLI(runCLIArgs, {
         GITHUB_ACTIONS: 'true',
         GITHUB_SERVER_URL: 'http://github',

@@ -114,9 +114,9 @@ describe('execute', () => {
   })
 
   test('should try to determine github job display name', async () => {
-    fs.readdirSync = jest.fn().mockReturnValue([
+    jest.spyOn(fs, 'readdirSync').mockReturnValue([
       {
-        name: 'Worker_1.log',
+        name: 'Worker_1.log' as any,
         isFile: () => true,
         isDirectory: () => false,
         isBlockDevice: () => false,
@@ -128,7 +128,7 @@ describe('execute', () => {
         path: '',
       },
     ])
-    fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
     const result = await runCLI(
       'job',
       ['key:12345'],
