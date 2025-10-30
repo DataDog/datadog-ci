@@ -25,21 +25,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -181,21 +181,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -359,21 +359,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -407,21 +407,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -529,21 +529,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -579,21 +579,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
@@ -629,21 +629,21 @@ GCP credentials verified!
 🔍 Fetching service configuration...
 
 {
-  name: 'projects/mock-project/locations/us-east1/services/mock-service',
-  uid: 'abc1234-def5678',
-  uri: 'https://mock-service-abc12345-ue.a.run.app',
+  name: [32m'projects/mock-project/locations/us-east1/services/mock-service'[39m,
+  uid: [32m'abc1234-def5678'[39m,
+  uri: [32m'https://mock-service-abc12345-ue.a.run.app'[39m,
   containers: [
     {
       env: [
         {
-          name: 'DD_API_KEY',
-          value: '02**********33bd',
-          values: 'value'
+          name: [32m'DD_API_KEY'[39m,
+          value: [32m'02**********33bd'[39m,
+          values: [32m'value'[39m
         },
-        { name: 'DD_TRACE_ENABLED', value: 'true', values: 'value' },
-        { name: 'DD_SITE', value: 'datad0g.com', values: 'value' }
+        { name: [32m'DD_TRACE_ENABLED'[39m, value: [32m'true'[39m, values: [32m'value'[39m },
+        { name: [32m'DD_SITE'[39m, value: [32m'datad0g.com'[39m, values: [32m'value'[39m }
       ],
-      image: 'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'
+      image: [32m'gcr.io/datadog-sandbox/nicholas-hulston-docker-test'[39m
     }
   ]
 }
