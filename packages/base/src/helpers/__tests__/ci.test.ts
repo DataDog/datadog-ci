@@ -9,10 +9,12 @@ import {
   getCIMetadata,
   getCISpanTags,
   getGithubJobNameFromLogs,
-  githubWellKnownDiagnosticDirsUnix, githubWellKnownDiagnosticDirsWin, isGithubWindowsRunner,
+  githubWellKnownDiagnosticDirsUnix,
+  githubWellKnownDiagnosticDirsWin,
+  isGithubWindowsRunner,
   isInteractive,
-  shouldGetGithubJobDisplayName
-} from "../ci";
+  shouldGetGithubJobDisplayName,
+} from '../ci'
 import {SpanTags} from '../interfaces'
 import {
   CI_ENV_VARS,
