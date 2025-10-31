@@ -448,9 +448,11 @@ if (Object.keys(versions).length > 1) {
 
 if (fix) {
   exec('yarn syncpack fix')
+  exec('yarn syncpack format')
 } else {
   try {
     exec('yarn syncpack lint')
+    exec('yarn syncpack format --check')
   } catch {
     console.log()
     console.log(chalk.red('Syncpack detected issues! Run `yarn lint:packages --fix` to fix it.\n'))
