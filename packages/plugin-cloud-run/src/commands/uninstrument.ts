@@ -11,7 +11,8 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
+import {checkAuthentication, fetchServiceConfigs} from '../utils'
+import { generateConfigDiff } from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
   protected fipsConfig = {
