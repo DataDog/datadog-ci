@@ -5,13 +5,14 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {generateConfigDiff} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
+import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
   protected fipsConfig = {

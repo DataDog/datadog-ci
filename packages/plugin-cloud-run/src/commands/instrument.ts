@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount} from '../types'
+import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolumeMount} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -31,10 +31,11 @@ import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
+import {diff} from 'jest-diff'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
-import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
+import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
 const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
@@ -193,7 +194,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     ddService: string
   ) {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
-    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
+    this.context.stdout.write(generateConfigDiff(existingService, updatedService, diff))
     if (this.dryRun) {
       this.context.stdout.write(
         `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
@@ -222,41 +223,25 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
-    const template = service.template || {}
-    const containers: IContainer[] = template.containers || []
-    const volumes: IVolume[] = template.volumes || []
-
-    const existingSidecarContainer = containers.find((c) => c.name === this.sidecarName)
-    const newSidecarContainer = this.buildSidecarContainer(existingSidecarContainer, ddService)
-
-    // Update all app containers to add volume mounts and env vars if they don't have them
-    const updatedContainers = containers.map((container) => {
-      if (container.name === this.sidecarName) {
-        return newSidecarContainer
-      }
-
-      return this.updateAppContainer(container, ddService)
-    })
-
-    // Add sidecar if it doesn't exist
-    if (!existingSidecarContainer) {
-      updatedContainers.push(newSidecarContainer)
-    }
-
-    // Add shared volume if it doesn't exist
-    const hasSharedVolume = volumes.some((volume) => volume.name === this.sharedVolumeName)
-    const updatedVolumes = hasSharedVolume
-      ? volumes
-      : [
-          ...volumes,
-          {
-            name: this.sharedVolumeName,
-            emptyDir: {
-              medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
-            },
-          },
-        ]
-
+    const envVarsByName = getEnvVarsByName()
+    const template: IServiceTemplate = createInstrumentedTemplate(
+      {},
+      service.template || {},
+      {},
+      {
+        name: this.sharedVolumeName,
+        mountPath: this.sharedVolumePath,
+      },
+      {
+        emptyDir: {
+          medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
+        },
+      },
+      'name',
+      envVarsByName
+    )
+    // Let GCR generate the next revision name
+    template.revision = undefined
     // Set unified service tag labels
     const updatedLabels: Record<string, string> = {
       ...service.labels,
@@ -273,13 +258,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     return {
       ...service,
       labels: updatedLabels,
-      template: {
-        ...template,
-        containers: updatedContainers,
-        volumes: updatedVolumes,
-        // Let GCR generate the next revision name
-        revision: undefined,
-      },
+      template,
     }
   }
 

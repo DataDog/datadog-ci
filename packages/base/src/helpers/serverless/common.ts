@@ -1,4 +1,4 @@
-import {DATADOG_SITE_US1} from '../../constants'
+import chalk from 'chalk'
 
 import {
   HEALTH_PORT_ENV_VAR,
@@ -78,4 +78,170 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
   }
 
   return envVars
+}
+/**
+ * Recursively sort object keys to ensure consistent ordering
+ */
+const sortObjectKeys = (obj: any): any => {
+  if (!obj) {
+    return obj
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(sortObjectKeys)
+  }
+
+  if (typeof obj === 'object') {
+    const sorted: any = {}
+    Object.keys(obj)
+      .sort()
+      .forEach((key) => {
+        sorted[key] = sortObjectKeys(obj[key])
+      })
+
+    return sorted
+  }
+
+  return obj
+}
+/**
+ * Obfuscate sensitive values in a line if it contains a key with "_KEY"
+ */
+const obfuscateSensitiveValues = (line: string): string => {
+  // Match hex strings of 16, 32, or 64 characters (common API key/token lengths)
+  return line
+    .replace(/("[0-9a-fA-F]{16}"|"[0-9a-fA-F]{32}"|"[0-9a-fA-F]{64}")/g, '"***"')
+    .replace(/('[0-9a-fA-F]{16}'|'[0-9a-fA-F]{32}'|'[0-9a-fA-F]{64}')/g, "'***'")
+}
+/**
+ * Generate a git diff-style comparison between two configurations
+ * @param original The original configuration object
+ * @param updated The updated configuration object
+ * @returns A formatted diff string with colors
+ */
+
+export const generateConfigDiff = (
+  original: any,
+  updated: any,
+  diff: (a: any, b: any, options?: any) => string | null
+): string => {
+  // Sort keys consistently before comparison
+  const sortedOriginal = sortObjectKeys(original)
+  const sortedUpdated = sortObjectKeys(updated)
+
+  const originalJson = JSON.stringify(sortedOriginal, undefined, 2)
+  const updatedJson = JSON.stringify(sortedUpdated, undefined, 2)
+
+  const obfuscatedOriginal = originalJson.split('\n').map(obfuscateSensitiveValues).join('\n')
+  const obfuscatedUpdated = updatedJson.split('\n').map(obfuscateSensitiveValues).join('\n')
+
+  const configDiff = diff(obfuscatedOriginal, obfuscatedUpdated, {
+    aColor: chalk.red,
+    bColor: chalk.green,
+    omitAnnotationLines: true,
+  })
+  if (!configDiff || configDiff.includes('no visual difference')) {
+    return chalk.gray('No changes detected.')
+  }
+
+  return configDiff
+}
+
+const DEFAULT_HEALTH_CHECK_PORT = 5555
+
+// GCP makes all their types like this so we need to allow it
+type FullyOptional<T> = {
+  [K in keyof T]?: T[K] | null | undefined
+}
+
+type EnvVar = FullyOptional<{name: string; value: string}>
+
+const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = Object.fromEntries(
+  [
+    {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
+    {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+    {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+    {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
+  ].map((env) => [env.name, env])
+)
+
+type Container = FullyOptional<{
+  name: string
+  env: EnvVar[]
+  volumeMounts: Volume[]
+}>
+type Volume = FullyOptional<{
+  mountName: string
+  name: string
+  mountPath: string
+}>
+
+type AppTemplate = FullyOptional<{
+  containers: Container[]
+  volumes: Volume[]
+}>
+
+/**
+ * Given the configuration, an app template, the base sidecar configuration, and base shared volume,
+ */
+export const createInstrumentedTemplate = (
+  config: ServerlessConfigOptions,
+  template: AppTemplate,
+  baseSidecar: Container,
+  sharedVolume: Volume,
+  sharedVolumeOptions: any,
+  volumeNameKey: 'name' | 'mountName',
+  envVarsByName: Record<string, EnvVar>
+): AppTemplate => {
+  const containers = template.containers || []
+  const volumes = template.volumes || []
+
+  const existingSidecarContainer = containers.find((c) => c.name === baseSidecar.name)
+  const newSidecarContainer: Container = {
+    ...baseSidecar,
+    env: Object.values(envVarsByName),
+    volumeMounts: config.isInstanceLoggingEnabled ? [sharedVolume] : [],
+  }
+
+  // Update all app containers to add volume mounts and env vars if they don't have them
+  const updatedContainers: Container[] = containers.map((container) => {
+    if (container.name === baseSidecar.name) {
+      return newSidecarContainer
+    }
+
+    const existingVolumeMounts = container.volumeMounts || []
+    const hasSharedVolumeMount = existingVolumeMounts.some(
+      (mount) => mount[volumeNameKey] === sharedVolume[volumeNameKey]
+    )
+    const existingEnvVarsByName: Record<string, EnvVar> = Object.fromEntries(
+      (container.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
+    )
+
+    return {
+      ...container,
+      volumeMounts: hasSharedVolumeMount ? existingVolumeMounts : [...existingVolumeMounts, sharedVolume],
+      env: Object.values({
+        ...DEFAULT_ENV_VARS_BY_NAME, // Add default vars which can be overridden
+        ...existingEnvVarsByName, // Then add existing env vars
+        ...envVarsByName, // Finally override with any env vars specified in the CLI
+      }),
+    }
+  })
+
+  // Add sidecar if it doesn't exist
+  if (!existingSidecarContainer) {
+    updatedContainers.push(newSidecarContainer)
+  }
+
+  // Add shared volume if it doesn't exist
+  const hasSharedVolume = volumes.some((volume) => volume[volumeNameKey] === sharedVolume[volumeNameKey])
+  const updatedVolumes = hasSharedVolume
+    ? volumes
+    : [...volumes, {name: sharedVolume[volumeNameKey], ...sharedVolumeOptions}]
+
+  return {
+    ...template,
+    containers: updatedContainers,
+    volumes: updatedVolumes,
+  }
 }
