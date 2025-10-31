@@ -808,21 +808,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@azure/arm-resources@npm:^7.0.0":
-  version: 7.0.0
-  resolution: "@azure/arm-resources@npm:7.0.0"
-  dependencies:
-    "@azure/abort-controller": "npm:^2.1.2"
-    "@azure/core-auth": "npm:^1.9.0"
-    "@azure/core-client": "npm:^1.9.2"
-    "@azure/core-lro": "npm:^2.5.4"
-    "@azure/core-paging": "npm:^1.6.2"
-    "@azure/core-rest-pipeline": "npm:^1.19.0"
-    tslib: "npm:^2.8.1"
-  checksum: 10/8d29ee642bc5d847dbf901eb2a14d3723d426151a0535088a94da53f3ef0d4170e98e6e5492780861e29f218ae9bdffba66176848da32751aa5f11048572dd5d
-  languageName: node
-  linkType: hard
-
 "@azure/core-auth@npm:^1.10.0":
   version: 1.10.1
   resolution: "@azure/core-auth@npm:1.10.1"
@@ -1584,7 +1569,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-container-app@workspace:packages/plugin-container-app"
   dependencies:
     "@azure/arm-appcontainers": "npm:^3.0.0"
-    "@azure/arm-resources": "npm:^7.0.0"
+    "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     chalk: "npm:3.0.0"
     fast-deep-equal: "npm:^3.1.3"
