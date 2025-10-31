@@ -10,6 +10,16 @@ import {diff} from 'jest-diff'
 const noPluginExceptions = new Set(['git-metadata', 'plugin', 'tag'])
 // Source of truth for scope-less commands: this should be updated manually.
 const scopeLessCommandExceptions = new Set(['tag'])
+// Scopes that have an associated GitHub Action that doesn't pin the version of @datadog/datadog-ci.
+// https://github.com/DataDog/synthetics-ci-github-action is not included because it does pin a version.
+const scopesWithUnpinnedDatadogCiInGithubAction = {
+  // Strictly unpinned
+  coverage: 'https://github.com/DataDog/coverage-upload-github-action',
+  junit: 'https://github.com/DataDog/junit-upload-github-action',
+  // Only pins the major version
+  sarif: 'https://github.com/DataDog/datadog-static-analyzer-github-action',
+  sbom: 'https://github.com/DataDog/datadog-static-analyzer-github-action',
+}
 
 type Package = {
   folder: string
@@ -479,6 +489,30 @@ if (Object.keys(localReferenceRanges).length > 1) {
     process.exit(1)
   }
 }
+// #endregion
+
+// #region - Guard rail about making some plugins not built-in
+
+const installablePlugins = pluginPackages.filter(
+  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.dependencies)
+)
+const impactedGithubActions = Object.fromEntries(
+  installablePlugins.reduce<[string, string][]>(
+    (acc, p) => [...acc, [p.scope, scopesWithUnpinnedDatadogCiInGithubAction[p.scope]]],
+    []
+  )
+)
+
+if (Object.keys(impactedGithubActions).length > 0) {
+  error(
+    `\n${chalk.bold('Detected newly installable plugin(s) with an associated GitHub Action that does not pin the version of @datadog/datadog-ci:')} ${JSON.stringify(impactedGithubActions, undefined, 2)}`
+  )
+  error(
+    '\nRelying on the automatic installation of plugins in a GitHub Action is not recommended.\nIf you really want to change the list of built-in plugins, consider updating the impacted GitHub Actions with the newly installable plugin(s).'
+  )
+  process.exit(1)
+}
+
 // #endregion
 
 // #endregion
