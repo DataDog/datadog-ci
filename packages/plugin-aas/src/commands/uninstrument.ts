@@ -4,19 +4,13 @@ import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
+import {parseEnvVars, SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal'
 
-import {
-  AAS_DD_SETTING_NAMES,
-  ensureAzureAuth,
-  ensureLinux,
-  formatError,
-  isDotnet,
-  parseEnvVars,
-  SIDECAR_CONTAINER_NAME,
-} from '../common'
+import {AAS_DD_SETTING_NAMES, ensureLinux, isDotnet} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential

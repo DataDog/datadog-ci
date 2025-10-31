@@ -17,6 +17,3 @@ export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([
   'GCP_PUBSUB_PROJECT_ID',
   'GCP_PUBSUB_SUBSCRIBER_ID',
 ])
-
-export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
-export const DEFAULT_VOLUME_NAME = 'shared-volume'

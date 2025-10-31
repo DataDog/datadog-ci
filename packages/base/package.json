@@ -60,6 +60,7 @@
   "peerDependencies": {
     "@datadog/datadog-ci-plugin-aas": "workspace:*",
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*",
+    "@datadog/datadog-ci-plugin-container-app": "workspace:*",
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
@@ -74,6 +75,9 @@
       "optional": true
     },
     "@datadog/datadog-ci-plugin-cloud-run": {
+      "optional": true
+    },
+    "@datadog/datadog-ci-plugin-container-app": {
       "optional": true
     },
     "@datadog/datadog-ci-plugin-deployment": {

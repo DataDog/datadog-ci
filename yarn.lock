@@ -763,6 +763,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/arm-appcontainers@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@azure/arm-appcontainers@npm:3.0.0"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@azure/core-auth": "npm:^1.9.0"
+    "@azure/core-client": "npm:^1.9.3"
+    "@azure/core-lro": "npm:^2.5.4"
+    "@azure/core-paging": "npm:^1.6.2"
+    "@azure/core-rest-pipeline": "npm:^1.19.1"
+    tslib: "npm:^2.8.1"
+  checksum: 10/e28bc7d50aaefd5dc106a52b3d41b9cd145f975a5dcdc55b66d2c284fba666b08aebd40ad4f4684eb15f376431a81e2ed2bb93ba14aea853e4cd5e68acdf0f3d
+  languageName: node
+  linkType: hard
+
 "@azure/arm-appservice@npm:^16.0.0":
   version: 16.0.0
   resolution: "@azure/arm-appservice@npm:16.0.0"
@@ -793,6 +808,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/core-auth@npm:^1.10.0":
+  version: 1.10.1
+  resolution: "@azure/core-auth@npm:1.10.1"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@azure/core-util": "npm:^1.13.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/230c1766d4cb3ac7beac45db65bd5e493e1530f6f1d51dc0fd3537f8144e5c9acfed94700fd28c7aee67bab7502e23a1588adc6aa76f918f08fe40b3b007e2a3
+  languageName: node
+  linkType: hard
+
 "@azure/core-auth@npm:^1.4.0, @azure/core-auth@npm:^1.8.0, @azure/core-auth@npm:^1.9.0":
   version: 1.9.0
   resolution: "@azure/core-auth@npm:1.9.0"
@@ -816,6 +842,21 @@ __metadata:
     "@azure/logger": "npm:^1.0.0"
     tslib: "npm:^2.6.2"
   checksum: 10/e065d547477e9ecaad120ae39ee720e7f2932bdbeea1e50aeb658e70579c7d2dde729c0cac488922b322ee57eb6271e1431d25eab002ad56406ea15b482fc8c4
+  languageName: node
+  linkType: hard
+
+"@azure/core-client@npm:^1.9.3":
+  version: 1.10.1
+  resolution: "@azure/core-client@npm:1.10.1"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@azure/core-auth": "npm:^1.10.0"
+    "@azure/core-rest-pipeline": "npm:^1.22.0"
+    "@azure/core-tracing": "npm:^1.3.0"
+    "@azure/core-util": "npm:^1.13.0"
+    "@azure/logger": "npm:^1.3.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/4a00ec0d11f92274bb79efdea2515a7947b8cfb34cff6570a0813ea2889ab57ddc1f22f232192dee8f918e04ba96de07b7584bf9cbcac03e17cb39e9e399c2e9
   languageName: node
   linkType: hard
 
@@ -855,12 +896,36 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/core-rest-pipeline@npm:^1.19.1, @azure/core-rest-pipeline@npm:^1.22.0":
+  version: 1.22.1
+  resolution: "@azure/core-rest-pipeline@npm:1.22.1"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@azure/core-auth": "npm:^1.10.0"
+    "@azure/core-tracing": "npm:^1.3.0"
+    "@azure/core-util": "npm:^1.13.0"
+    "@azure/logger": "npm:^1.3.0"
+    "@typespec/ts-http-runtime": "npm:^0.3.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/cd43ab320b7e12af96b896d385d038d0bd82d9ae4d19dc9bb2fc04da36aa7cf2596d2e945cc3a3e429de2840ef07896e43067d0b5b1fae09de2a68ab3eea9d8f
+  languageName: node
+  linkType: hard
+
 "@azure/core-tracing@npm:^1.0.0, @azure/core-tracing@npm:^1.0.1":
   version: 1.2.0
   resolution: "@azure/core-tracing@npm:1.2.0"
   dependencies:
     tslib: "npm:^2.6.2"
   checksum: 10/5d63ffc8f6361545b55b108b2898cda2b424db1a533d11a56890d53ba3b385e9be8f50cfd48a21b897351e1f4bbc56ede14d57187ea927d4489637fc93ebe615
+  languageName: node
+  linkType: hard
+
+"@azure/core-tracing@npm:^1.3.0":
+  version: 1.3.1
+  resolution: "@azure/core-tracing@npm:1.3.1"
+  dependencies:
+    tslib: "npm:^2.6.2"
+  checksum: 10/7ef179e0ceb58c76d99c22bb5c5faade6fceaa62a265dcdaf09456e979be716e0249bb952d8000b9502b2194aeccb01454d60b497d4a18755e933cf7b1df919d
   languageName: node
   linkType: hard
 
@@ -872,6 +937,17 @@ __metadata:
     "@typespec/ts-http-runtime": "npm:^0.2.2"
     tslib: "npm:^2.6.2"
   checksum: 10/6a5544451fae579d91f0066807477ee1ffba93b4bf7629e73f53c561560f792770590ebf86d214ff5242ea8a2808c44e48f4188561352d34372734a6affe8e87
+  languageName: node
+  linkType: hard
+
+"@azure/core-util@npm:^1.13.0":
+  version: 1.13.1
+  resolution: "@azure/core-util@npm:1.13.1"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.1.2"
+    "@typespec/ts-http-runtime": "npm:^0.3.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/81ba529bed2fb615836be9425608e012f9bd243881f861c7ac086ea618c5f91129d3088216eee588323ffc3dfc0013706069830c03810f8a0f4591553ef5843b
   languageName: node
   linkType: hard
 
@@ -901,6 +977,16 @@ __metadata:
     "@typespec/ts-http-runtime": "npm:^0.2.2"
     tslib: "npm:^2.6.2"
   checksum: 10/21347e019c7c66be0707968f824210845ea9aa21c96ae8b1075f7a53b6a23c230e631db53ba63696b0ede577f1ca5665e4fc4a346b61896b376d15f0a01717ee
+  languageName: node
+  linkType: hard
+
+"@azure/logger@npm:^1.3.0":
+  version: 1.3.0
+  resolution: "@azure/logger@npm:1.3.0"
+  dependencies:
+    "@typespec/ts-http-runtime": "npm:^0.3.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/7df11bf3b4952207d7355fde3cee223df2e4a64eaafff05a1fcbcb5c870350f1ef726866b771a7520b0e2bb33bfa9c96415b823c4b74e04ad4b755e961634528
   languageName: node
   linkType: hard
 
@@ -1411,6 +1497,7 @@ __metadata:
   peerDependencies:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
+    "@datadog/datadog-ci-plugin-container-app": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
@@ -1423,6 +1510,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-aas":
       optional: true
     "@datadog/datadog-ci-plugin-cloud-run":
+      optional: true
+    "@datadog/datadog-ci-plugin-container-app":
       optional: true
     "@datadog/datadog-ci-plugin-deployment":
       optional: true
@@ -1470,6 +1559,20 @@ __metadata:
     jest-diff: "npm:^30.0.4"
     ora: "npm:5.4.1"
     upath: "npm:^2.0.1"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-container-app@workspace:packages/plugin-container-app":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-container-app@workspace:packages/plugin-container-app"
+  dependencies:
+    "@azure/arm-appcontainers": "npm:^3.0.0"
+    "@azure/arm-resources": "npm:^6.1.0"
+    "@azure/identity": "npm:^4.10.1"
+    chalk: "npm:3.0.0"
+    fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
@@ -4240,6 +4343,17 @@ __metadata:
     https-proxy-agent: "npm:^7.0.0"
     tslib: "npm:^2.6.2"
   checksum: 10/71aa7cea8fee84d3b3f076ab41b2b1b6a4761c2b08e05e475d20a00eeab89739e5d95b96aa633c6ebb33093c2eaeaf9b331c956ff21d3a204adfb1b607a7ba96
+  languageName: node
+  linkType: hard
+
+"@typespec/ts-http-runtime@npm:^0.3.0":
+  version: 0.3.1
+  resolution: "@typespec/ts-http-runtime@npm:0.3.1"
+  dependencies:
+    http-proxy-agent: "npm:^7.0.0"
+    https-proxy-agent: "npm:^7.0.0"
+    tslib: "npm:^2.6.2"
+  checksum: 10/30cdf5f371e0e75a17f33a148942671079abe0bbb8acd8304cc2863a33ae60515a06018d3cdf1a8cc03885fef7d566d45e332434cedab2dce6cf6f0dccee0acc
   languageName: node
   linkType: hard
 

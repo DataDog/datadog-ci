@@ -3,6 +3,7 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 
 import {commands as aasCommands} from './commands/aas/cli'
 import {commands as cloudRunCommands} from './commands/cloud-run/cli'
+import {commands as containerAppCommands} from './commands/container-app/cli'
 import {commands as deploymentCommands} from './commands/deployment/cli'
 import {commands as doraCommands} from './commands/dora/cli'
 import {commands as gateCommands} from './commands/gate/cli'
@@ -19,6 +20,7 @@ import {commands as tagCommands} from './commands/tag/cli'
 export const commands = {
   'aas': aasCommands,
   'cloud-run': cloudRunCommands,
+  'container-app': containerAppCommands,
   'deployment': deploymentCommands,
   'dora': doraCommands,
   'gate': gateCommands,

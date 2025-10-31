@@ -1,15 +1,7 @@
-import type {PagedAsyncIterableIterator} from '@azure/core-paging'
-
 import {Site} from '@azure/arm-appservice'
-import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions, ENV_VAR_REGEX} from '@datadog/datadog-ci-base/commands/aas/common'
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import chalk from 'chalk'
-
-export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
-export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
-export const SIDECAR_PORT = '8126'
+import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME = '/home/site/wwwroot/datadog'
@@ -42,26 +34,6 @@ export const AAS_DD_SETTING_NAMES = [
 
 type Print = (arg: string) => void
 
-export const ensureAzureAuth = async (print: Print, cred: DefaultAzureCredential): Promise<boolean> => {
-  try {
-    await cred.getToken('https://management.azure.com/.default')
-  } catch (error) {
-    print(
-      renderSoftWarning(
-        `Failed to authenticate with Azure: ${
-          error.name
-        }\n\nPlease ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run ${chalk.bold(
-          'az login'
-        )} to authenticate.\n`
-      )
-    )
-
-    return false
-  }
-
-  return true
-}
-
 export const ensureLinux = (print: Print, site: Site): boolean => {
   if (isWindows(site)) {
     print(
@@ -79,39 +51,11 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   return true
 }
 
-export const parseEnvVars = (envVars: string[] | undefined): Record<string, string> => {
-  const result: Record<string, string> = {}
-  envVars?.forEach((e) => {
-    const match = e.match(ENV_VAR_REGEX)
-    if (match) {
-      const [, key, value] = match
-      result[key] = value
-    }
-  })
-
-  return result
-}
-
 export const getEnvVars = (config: AasConfigOptions): Record<string, string> => {
-  let envVars: Record<string, string> = {
-    DD_API_KEY: process.env.DD_API_KEY!,
-    DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
-    DD_SERVICE: config.service!,
-    DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
-    ...parseEnvVars(config.envVars),
-  }
-  if (config.environment) {
-    envVars.DD_ENV = config.environment
-  }
-  if (config.version) {
-    envVars.DD_VERSION = config.version
-  }
-  if (config.logPath) {
-    envVars.DD_SERVERLESS_LOG_PATH = config.logPath
-  }
-  if (config.extraTags) {
-    envVars.DD_TAGS = config.extraTags
-  }
+  // Get base environment variables
+  let envVars = getBaseEnvVars(config)
+
+  // Add .NET-specific environment variables if needed
   if (config.isDotnet) {
     envVars = {
       ...envVars,
@@ -144,23 +88,4 @@ export const isDotnet = (site: Site): boolean => {
 
 export const isLinuxContainer = (site: Site): boolean => {
   return !!site.siteConfig?.linuxFxVersion && site.siteConfig.linuxFxVersion.toLowerCase() === 'sitecontainers'
-}
-export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
-  const arr = []
-  for await (const x of it) {
-    arr.push(x)
-  }
-
-  return arr
-}
-
-/**
- * Formats an error (usually an Azure RestError) object into a string for display.
- */
-// no-dd-sa:typescript-best-practices/no-explicit-any
-export const formatError = (error: any): string => {
-  const errorType = error.code ?? error.name
-  const errorMessage = error.details?.message ?? error.message
-
-  return `${errorType}: ${errorMessage}`
 }
