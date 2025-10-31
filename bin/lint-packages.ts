@@ -29,7 +29,6 @@ type CommandScope = {
 type PluginPackage = Package & CommandScope
 
 const fix = process.argv.includes('--fix')
-const isCI = !!process.env.CI
 
 const camelCase = (str: string) => str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
 
@@ -39,15 +38,9 @@ const upperCamelCase = (str: string) => {
   return camel.charAt(0).toUpperCase() + camel.slice(1)
 }
 
-const exec = (cmd: string, {throwError}: {throwError?: boolean} = {}) => {
+const exec = (cmd: string) => {
   console.log(chalk.bold.blue(`\nRunning ${cmd}...`))
-  try {
-    execSync(cmd, {stdio: 'inherit'})
-  } catch (e) {
-    if (throwError) {
-      throw e
-    }
-  }
+  execSync(cmd, {stdio: 'inherit'})
 }
 
 const loadPackage = (folderName: string): Package => {
@@ -451,43 +444,30 @@ if (Object.keys(versions).length > 1) {
 }
 // #endregion
 
-// #region - All packages refer to local packages with `workspace:*`
-const localReferenceRanges = allPackages.reduce<Record<string, string[]>>((acc, p) => {
-  const ranges = new Set(
-    Object.values({...p.packageJson.dependencies, ...p.packageJson.peerDependencies}).filter((range) =>
-      range.startsWith('workspace:')
-    )
-  )
+// #endregion
 
-  return {
-    ...acc,
-    ...Object.fromEntries(Array.from(ranges).map((range) => [range, [...(acc[range] || []), p.packageJson.name]])),
-  }
-}, {})
-if (Object.keys(localReferenceRanges).length > 1) {
-  error(
-    `All packages must refer to local packages with ${chalk.bold('workspace:*')}. Found: ${JSON.stringify(localReferenceRanges, undefined, 2)}`
-  )
-  process.exit(1)
-} else if (Object.keys(localReferenceRanges).length === 1) {
-  const range = Object.keys(localReferenceRanges)[0]
-
-  if (range === 'workspace:*') {
-    success(`All packages refer to local packages with ${chalk.bold('workspace:*')}`)
-  } else {
-    error(`All packages must refer to local packages with ${chalk.bold('workspace:*')}. Found: ${chalk.bold(range)}`)
+if (fix) {
+  exec('yarn syncpack fix')
+} else {
+  try {
+    exec('yarn syncpack lint')
+  } catch {
+    console.log()
+    console.log(chalk.red('Syncpack detected issues! Run `yarn lint:packages --fix` to fix it.\n'))
     process.exit(1)
   }
 }
-// #endregion
 
-// #endregion
-
-try {
-  exec('yarn knip', {throwError: isCI})
-} catch (e) {
-  console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` locally to fix it.\n'))
-  process.exit(1)
+if (fix) {
+  exec('yarn knip --fix')
+} else {
+  try {
+    exec('yarn knip')
+  } catch {
+    console.log()
+    console.log(chalk.red('Knip detected unused dependencies! Run `yarn lint:packages --fix` to fix it.\n'))
+    process.exit(1)
+  }
 }
 
 exec('yarn install')

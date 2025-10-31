@@ -12,7 +12,8 @@
   "knip": {
     "ignoreDependencies": [
       "@microsoft/eslint-formatter-sarif",
-      "dd-trace"
+      "dd-trace",
+      "syncpack"
     ]
   },
   "scripts": {
@@ -26,7 +27,7 @@
     "dist-standalone:test": "jest --config ./jest.config-standalone.mjs --colors",
     "format": "yarn lint:all --fix",
     "generate-json-schemas:synthetics": "ts-json-schema-generator --markdown-description --no-type-check --no-top-ref --additional-properties --path packages/plugin-synthetics/src/interfaces.ts --type TestConfig > packages/plugin-synthetics/src/test-config.schema.json && prettier --write packages/plugin-synthetics/src/test-config.schema.json",
-    "knip": "knip --include dependencies --fix --no-config-hints",
+    "knip": "knip --include dependencies --no-config-hints",
     "launch": "tsx --conditions=development packages/datadog-ci/src/cli.ts",
     "launch:debug": "tsx --conditions=development --inspect-brk packages/datadog-ci/src/cli.ts",
     "lint": "yarn lint:all $@ || (echo \"\nYou can fix this by running ==> yarn format <==\n\" && false)",
@@ -70,6 +71,7 @@
     "knip": "^5.64.1",
     "prettier": "^3.6.2",
     "rimraf": "^5.0.0",
+    "syncpack": "^14.0.0-alpha.23",
     "ts-jest": "29.1.1",
     "ts-json-schema-generator": "^2.4.0",
     "tsx": "^4.20.6",
