@@ -1,4 +1,9 @@
-jest.mock('fs')
+jest.mock('fs', () => ({
+  ...jest.createMockFromModule<typeof fs>('fs'),
+  promises: {
+    readFile: jest.fn().mockResolvedValue(''),
+  },
+}))
 jest.mock('@aws-sdk/credential-providers', () => ({
   ...jest.requireActual('@aws-sdk/credential-providers'),
   fromIni: jest.fn(),

@@ -1,5 +1,4 @@
 import fs from 'fs'
-jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
@@ -34,9 +33,9 @@ describe('mark', () => {
     })
 
     test('tag command should try to determine github job display name', async () => {
-      fs.readdirSync = jest.fn().mockReturnValue([
+      jest.spyOn(fs, 'readdirSync').mockReturnValue([
         {
-          name: 'Worker_2.log',
+          name: 'Worker_2.log' as any,
           isFile: () => true,
           isDirectory: () => false,
           isBlockDevice: () => false,
@@ -48,7 +47,7 @@ describe('mark', () => {
           path: '',
         },
       ])
-      fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
       const {context, code} = await runCLI([], {
         GITHUB_ACTIONS: 'true',
         GITHUB_SERVER_URL: 'url',

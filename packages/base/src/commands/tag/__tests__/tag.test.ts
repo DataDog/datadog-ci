@@ -1,5 +1,4 @@
 import fs from 'fs'
-jest.mock('fs', () => ({...jest.requireActual('fs')}))
 
 import {Cli} from 'clipanion'
 
@@ -101,9 +100,9 @@ describe('execute', () => {
   })
 
   test('should try to determine github job display name', async () => {
-    fs.readdirSync = jest.fn().mockReturnValue([
+    jest.spyOn(fs, 'readdirSync').mockReturnValue([
       {
-        name: 'Worker_2.log',
+        name: 'Worker_2.log' as any,
         isFile: () => true,
         isDirectory: () => false,
         isBlockDevice: () => false,
@@ -115,7 +114,7 @@ describe('execute', () => {
         path: '',
       },
     ])
-    fs.readFileSync = jest.fn().mockReturnValue(`{"jobDisplayName": "real job name"}`)
+    jest.spyOn(fs, 'readFileSync').mockReturnValue(`{"jobDisplayName": "real job name"}`)
     const result = await runCLI(
       'job',
       ['key:value'],
