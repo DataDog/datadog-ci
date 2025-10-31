@@ -13,15 +13,15 @@ exports[`lambda flare AWS Lambda configuration prints config when running as a d
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -68,15 +68,15 @@ exports[`lambda flare AWS credentials continues when getAWSCredentials() returns
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -113,15 +113,15 @@ exports[`lambda flare AWS credentials requests AWS credentials when none are fou
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -192,15 +192,15 @@ exports[`lambda flare generateInsightsFile prints a warning when generateInsight
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -311,15 +311,15 @@ exports[`lambda flare gets CloudWatch Logs does not get logs when --with-logs is
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -356,15 +356,15 @@ exports[`lambda flare gets CloudWatch Logs gets logs, saves, and sends correctly
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -411,15 +411,15 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogEvents throws
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -450,15 +450,15 @@ exports[`lambda flare gets CloudWatch Logs prints error when getLogStreamNames t
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -489,15 +489,15 @@ exports[`lambda flare gets CloudWatch Logs warns and skips getting logs when get
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -537,15 +537,15 @@ exports[`lambda flare gets CloudWatch Logs warns and skips log when getLogEvents
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -601,15 +601,15 @@ exports[`lambda flare prompts for additional files does not request additional f
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -642,15 +642,15 @@ exports[`lambda flare prompts for additional files requests additional files whe
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -685,15 +685,15 @@ exports[`lambda flare prompts for confirmation before sending does not send when
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -728,15 +728,15 @@ exports[`lambda flare prompts for confirmation before sending sends when user an
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -789,15 +789,15 @@ exports[`lambda flare validates required flags extracts region from function nam
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -904,15 +904,15 @@ exports[`lambda flare validates required flags runs successfully when start and 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -949,15 +949,15 @@ exports[`lambda flare validates required flags runs successfully with all requir
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -994,15 +994,15 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -1039,15 +1039,15 @@ exports[`lambda flare validates required flags uses API key ENV variable and run
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 
@@ -1084,15 +1084,15 @@ exports[`lambda flare validates required flags uses region ENV variable when no 
 {
   Environment: {
     Variables: {
-      DD_API_KEY: '02**********33bd',
-      DD_SITE: 'datadoghq.com',
-      DD_LOG_LEVEL: 'debug'
+      DD_API_KEY: [32m'02**********33bd'[39m,
+      DD_SITE: [32m'datadoghq.com'[39m,
+      DD_LOG_LEVEL: [32m'debug'[39m
     }
   },
-  FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:some-function',
-  FunctionName: 'some-function',
-  Runtime: 'nodejs18.x',
-  Handler: '/path/handler.handler'
+  FunctionArn: [32m'arn:aws:lambda:us-east-1:123456789012:function:some-function'[39m,
+  FunctionName: [32m'some-function'[39m,
+  Runtime: [32m'nodejs18.x'[39m,
+  Handler: [32m'/path/handler.handler'[39m
 }
 (This is a summary of the configuration. The full configuration will be saved in "function_config.json".)
 

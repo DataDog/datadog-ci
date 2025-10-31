@@ -85,7 +85,8 @@ describe('flare', () => {
     const MOCK_API_KEY = 'api-key'
     const MOCK_ROOT_FOLDER_PATH = '/root/folder/path'
     const MOCK_CLI_VERSION = '1.0.0'
-    const MOCK_AXIOS = axios as jest.Mocked<typeof axios>
+
+    const axiosSpy = jest.spyOn(axios, 'post').mockImplementation()
 
     it('should send data to the correct endpoint', async () => {
       await sendToDatadog(
@@ -96,7 +97,7 @@ describe('flare', () => {
         MOCK_ROOT_FOLDER_PATH,
         MOCK_CLI_VERSION
       )
-      expect(MOCK_AXIOS.post).toHaveBeenCalledWith(
+      expect(axiosSpy).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(FormData),
         expect.objectContaining({
@@ -109,7 +110,7 @@ describe('flare', () => {
 
     it('should delete root folder and rethrow error if request fails', async () => {
       const error = new Error('Network error')
-      MOCK_AXIOS.post.mockRejectedValueOnce({
+      axiosSpy.mockRejectedValueOnce({
         isAxiosError: true,
         message: error.message,
         response: {data: {error: 'Server error'}},
@@ -127,7 +128,7 @@ describe('flare', () => {
     })
 
     it('prints correct warning when post fail with error 500', async () => {
-      MOCK_AXIOS.post.mockRejectedValueOnce({
+      axiosSpy.mockRejectedValueOnce({
         isAxiosError: true,
         message: 'Some error',
         response: {status: 500, data: {error: 'Server error'}},
@@ -147,7 +148,7 @@ describe('flare', () => {
     })
 
     it('prints correct warning when post fail with error 403', async () => {
-      MOCK_AXIOS.post.mockRejectedValueOnce({
+      axiosSpy.mockRejectedValueOnce({
         isAxiosError: true,
         message: 'Some error',
         response: {status: 403, data: {error: 'Another error'}},
