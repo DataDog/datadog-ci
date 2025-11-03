@@ -1,21 +1,22 @@
-import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from '../interfaces'
-import type {AxiosResponse} from 'axios'
+import type { APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions } from '../interfaces'
+import type { AxiosResponse } from 'axios'
 
-import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate'
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
-import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
-import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
-import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
+import { GateEvaluateCommand } from '@datadog/datadog-ci-base/commands/gate/evaluate'
+import { FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR } from '@datadog/datadog-ci-base/constants'
+import { getCISpanTags } from '@datadog/datadog-ci-base/helpers/ci'
+import { toBoolean } from '@datadog/datadog-ci-base/helpers/env'
+import { enableFips } from '@datadog/datadog-ci-base/helpers/fips'
+import { ICONS } from '@datadog/datadog-ci-base/helpers/formatting'
+import { getGitMetadata } from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import { SpanTags } from '@datadog/datadog-ci-base/helpers/interfaces'
+import { Logger, LogLevel } from '@datadog/datadog-ci-base/helpers/logger'
+import { retryRequest } from '@datadog/datadog-ci-base/helpers/retry'
+import { GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags } from '@datadog/datadog-ci-base/helpers/tags'
+import { getUserGitSpanTags } from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import chalk from 'chalk'
-import {v4 as uuidv4} from 'uuid'
+import { v4 as uuidv4 } from 'uuid'
 
-import {apiConstructor} from '../api'
+import { apiConstructor } from '../api'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -23,7 +24,7 @@ import {
   renderEvaluationRetry,
   renderWaiting,
 } from '../renderer'
-import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from '../utils'
+import { getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope } from '../utils'
 
 export class PluginCommand extends GateEvaluateCommand {
   private initialRetryMs = 1000
@@ -42,6 +43,11 @@ export class PluginCommand extends GateEvaluateCommand {
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
+    // Deprecation notice for Quality Gates evaluate command
+    this.logger.warn(
+      `${ICONS.WARNING} DEPRECATION: Datadog Quality Gates is being deprecated in 2026 (exact date still to be determined) and replaced by the new PR Gates feature: https://docs.datadoghq.com/pr_gates\n\nDatadog recommends requesting access to PR Gates to transition your Quality Gate rules over to the new system before Quality Gates is deprecated. Please fill out this form to notify the Datadog team that you wish to begin the process: https://forms.gle/qnhANsE1ABtHrjqz9`
+    )
 
     const options: PayloadOptions = {
       dryRun: this.dryRun,
@@ -155,7 +161,7 @@ export class PluginCommand extends GateEvaluateCommand {
     const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
-      const request = {...evaluateRequest, options: {...evaluateRequest.options}}
+      const request = { ...evaluateRequest, options: { ...evaluateRequest.options } }
       if (remainingWait <= 0 || attempt === this.maxRetries + 1) {
         request.options.isLastRetry = true
       }
