@@ -9,6 +9,7 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
@@ -133,7 +134,11 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     resourceGroup: string,
     containerApp: ContainerApp
   ): Promise<void> {
-    const updatedTags: Record<string, string> = {...containerApp.tags, service: config.service!}
+    const updatedTags: Record<string, string> = {
+      ...containerApp.tags,
+      service: config.service!,
+      [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE,
+    }
     if (config.environment) {
       updatedTags.env = config.environment
     }
