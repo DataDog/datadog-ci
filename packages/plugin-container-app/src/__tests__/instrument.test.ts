@@ -133,7 +133,9 @@ Updating tags for my-container-app
           volumes: [],
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {service: 'my-container-app', dd_sls_ci: 'vXXXX'}},
+      })
     })
 
     test('Performs no actions in dry run mode', async () => {
@@ -252,9 +254,11 @@ Updating tags for my-container-app2
       // Called 2 times to create/update sidecar
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledTimes(2)
       expect(updateTags).toHaveBeenCalledTimes(2)
-      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {service: 'my-container-app', dd_sls_ci: 'vXXXX'}},
+      })
       expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID + '2', {
-        properties: {tags: {service: 'my-container-app2'}},
+        properties: {tags: {service: 'my-container-app2', dd_sls_ci: 'vXXXX'}},
       })
     })
 
@@ -331,6 +335,7 @@ Updating tags for my-container-app
             service: 'my-service',
             env: 'my-env',
             version: '1.0.0',
+            dd_sls_ci: 'vXXXX',
           },
         },
       })
@@ -401,7 +406,9 @@ Updating tags for my-container-app
           volumes: [],
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {service: 'my-container-app', dd_sls_ci: 'vXXXX'}},
+      })
     })
 
     test('Overrides default env vars with additional env vars', async () => {
@@ -462,7 +469,9 @@ Updating tags for my-container-app
           volumes: [],
         },
       })
-      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {properties: {tags: {service: 'my-container-app'}}})
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {service: 'my-container-app', dd_sls_ci: 'vXXXX'}},
+      })
     })
 
     test('Adds git metadata tags when source code integration is enabled', async () => {
