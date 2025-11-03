@@ -26,7 +26,7 @@ Thanks for creating a release! 🎉
 
 Some PRs were just merged and you want to release them, but you already started the release process? Follow these instructions.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > If you went through this section, please notify the reviewer so they can ensure everything is correct.
 
 To overwrite a release candidate:
@@ -40,20 +40,3 @@ To overwrite a release candidate:
   - Force push with `git push --force` and `git push --tags --force`.
 - Update your PR description with the new release notes.
 - Continue from step 4 of the Release Process.
-
-# Pre-Release Process
-
-To create a pre-release or releasing in a different channel:
-
-1. Create a new branch for the channel you want to release to (`alpha`, `beta`, and more).
-2. Create a PR for your feature branch with the channel branch as a base.
-3. Pick a version following this format: `<version>-<channel>`. For example, `0.10.9-alpha`, `1-beta`, and more.
-4. Update the `version` field in `package.json`.
-5. Once you've received at least one approval, merge the Pull Request **with the "Create a merge commit" strategy**.
-6. Create a [GitHub Release](https://github.com/DataDog/datadog-ci/releases/new?target=alpha&tag=0.10.9-alpha&prerelease=1&title=Alpha+prerelease):
-   - Target the channel branch.
-   - Pick a tag based on your version `<version>-<channel>`.
-   - Check the `This is a pre-release` checkbox.
-7. Publish the release and an action publishes it on npm.
-
-<img src="./assets/pre-release.png" width="500"/>
