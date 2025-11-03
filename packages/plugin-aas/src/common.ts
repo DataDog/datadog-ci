@@ -115,12 +115,12 @@ export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Reco
   if (config.isDotnet) {
     const tracerHome = isContainer ? DD_DOTNET_TRACER_HOME_CONTAINER : DD_DOTNET_TRACER_HOME_CODE
     envVars = {
+      ...envVars,
       DD_DOTNET_TRACER_HOME: tracerHome,
       CORECLR_PROFILER_PATH: tracerHome + (config.isMusl ? CORECLR_PROFILER_PATH_MUSL : CORECLR_PROFILER_PATH),
       DD_TRACE_LOG_DIRECTORY,
       CORECLR_ENABLE_PROFILING,
       CORECLR_PROFILER,
-      ...envVars,
     }
   }
 
