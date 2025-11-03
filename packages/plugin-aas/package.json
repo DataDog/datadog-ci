@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-aas",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "Datadog CI plugin for `aas` commands",
   "license": "Apache-2.0",
   "keywords": [
