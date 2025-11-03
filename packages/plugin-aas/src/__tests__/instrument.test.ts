@@ -650,7 +650,7 @@ Restarting Azure App Service my-web-app
     })
 
     test('creates sidecar if not present and updates app settings', async () => {
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -674,7 +674,13 @@ Restarting Azure App Service my-web-app
     })
 
     test('adds .NET settings when the config option is specified', async () => {
-      await command.instrumentSidecar(client, {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true}, 'rg', 'app')
+      await command.instrumentSidecar(
+        client,
+        {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true},
+        'rg',
+        'app',
+        false
+      )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -712,7 +718,8 @@ Restarting Azure App Service my-web-app
         client,
         {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true, isMusl: true},
         'rg',
-        'app'
+        'app',
+        false
       )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
@@ -763,7 +770,7 @@ Restarting Azure App Service my-web-app
       webAppsOperations.createOrUpdateSiteContainer.mockResolvedValue({})
       webAppsOperations.updateApplicationSettings.mockResolvedValue({})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalled()
@@ -793,7 +800,7 @@ Restarting Azure App Service my-web-app
         },
       })
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
@@ -804,7 +811,7 @@ Restarting Azure App Service my-web-app
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
       webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
 
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
@@ -821,7 +828,7 @@ Restarting Azure App Service my-web-app
         },
       })
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app')
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
 
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })
