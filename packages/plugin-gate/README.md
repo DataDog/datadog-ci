@@ -1,5 +1,11 @@
 # GATE command
 
+=> ⚠️ **Deprecation Warning**
+>
+> Datadog Quality Gates is being replaced by the new PR Gates in January, 2026. Please initiate the migration process by filling out this form: https://forms.gle/qnhANsE1ABtHrjqz9
+>
+> Learn more about PR Gates: https://docs.datadoghq.com/pr_gates
+
 Evaluate Quality Gates rules in Datadog. The exit status of the command will change depending on the result of the gate evaluation.
 
 ## Usage
@@ -69,5 +75,7 @@ Dry run mode is enabled. Not evaluating the rules.
 Additional helpful documentation, links, and articles:
 
 - [Learn about Quality Gates][1]
+- [Learn about PR Gates][2]
 
 [1]: https://docs.datadoghq.com/quality_gates/
+[2]: https://docs.datadoghq.com/pr_gates
