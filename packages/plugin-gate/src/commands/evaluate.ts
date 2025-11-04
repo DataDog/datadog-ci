@@ -1,22 +1,22 @@
-import type { APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions } from '../interfaces'
-import type { AxiosResponse } from 'axios'
+import type {APIHelper, EvaluationResponse, EvaluationResponsePayload, Payload, PayloadOptions} from '../interfaces'
+import type {AxiosResponse} from 'axios'
 
-import { GateEvaluateCommand } from '@datadog/datadog-ci-base/commands/gate/evaluate'
-import { FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR } from '@datadog/datadog-ci-base/constants'
-import { getCISpanTags } from '@datadog/datadog-ci-base/helpers/ci'
-import { toBoolean } from '@datadog/datadog-ci-base/helpers/env'
-import { enableFips } from '@datadog/datadog-ci-base/helpers/fips'
-import { ICONS } from '@datadog/datadog-ci-base/helpers/formatting'
-import { getGitMetadata } from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
-import { SpanTags } from '@datadog/datadog-ci-base/helpers/interfaces'
-import { Logger, LogLevel } from '@datadog/datadog-ci-base/helpers/logger'
-import { retryRequest } from '@datadog/datadog-ci-base/helpers/retry'
-import { GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags } from '@datadog/datadog-ci-base/helpers/tags'
-import { getUserGitSpanTags } from '@datadog/datadog-ci-base/helpers/user-provided-git'
+import {GateEvaluateCommand} from '@datadog/datadog-ci-base/commands/gate/evaluate'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
+import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
+import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
+import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {GIT_HEAD_SHA, GIT_PULL_REQUEST_BASE_BRANCH, parseTags} from '@datadog/datadog-ci-base/helpers/tags'
+import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import chalk from 'chalk'
-import { v4 as uuidv4 } from 'uuid'
+import {v4 as uuidv4} from 'uuid'
 
-import { apiConstructor } from '../api'
+import {apiConstructor} from '../api'
 import {
   renderEvaluationResponse,
   renderGateEvaluationInput,
@@ -24,7 +24,7 @@ import {
   renderEvaluationRetry,
   renderWaiting,
 } from '../renderer'
-import { getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope } from '../utils'
+import {getBaseIntakeUrl, is4xxError, is5xxError, isTimeout, parseScope} from '../utils'
 
 export class PluginCommand extends GateEvaluateCommand {
   private initialRetryMs = 1000
@@ -161,7 +161,7 @@ export class PluginCommand extends GateEvaluateCommand {
     const remainingWait = timeoutInSeconds * 1000 - timePassed
 
     return new Promise((resolve, reject) => {
-      const request = { ...evaluateRequest, options: { ...evaluateRequest.options } }
+      const request = {...evaluateRequest, options: {...evaluateRequest.options}}
       if (remainingWait <= 0 || attempt === this.maxRetries + 1) {
         request.options.isLastRetry = true
       }
