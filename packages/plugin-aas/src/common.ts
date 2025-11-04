@@ -14,7 +14,7 @@ export const SIDECAR_PORT = '8126'
 // Path to tracing libraries, copied within the Docker file
 const DD_DOTNET_TRACER_HOME_CODE = '/home/site/wwwroot/datadog'
 const DD_DOTNET_TRACER_HOME_CONTAINER = '/datadog/tracer'
-// The profiler binary that the .NET CLR loads into memory, which contains the GUID
+// The instrumentation binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
 const CORECLR_PROFILER_PATH_MUSL = '/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 // Where tracer logs are stored
