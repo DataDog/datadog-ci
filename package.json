@@ -23,7 +23,7 @@
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",
     "package:clean-dist": "cd $INIT_CWD && rimraf --glob 'dist/**/__tests__'",
     "package:lint": "eslint --cache --quiet $INIT_CWD/src/**/*.ts",
-    "publish:all": "yarn loop-packages --topological --verbose npm publish --provenance",
+    "publish:all": "yarn loop-packages --topological --verbose npm publish",
     "test": "jest --colors",
     "test:aas": "jest packages/plugin-aas --colors",
     "test:cloud-run": "jest packages/plugin-cloud-run --colors",
@@ -69,14 +69,14 @@
       "syncpack"
     ]
   },
-  "packageManager": "yarn@4.9.4",
+  "packageManager": "yarn@4.10.3",
   "private": true,
   "resolutions": {
     "@yao-pkg/pkg-fetch@npm:3.5.24": "patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch"
   },
   "volta": {
     "node": "20.11.0",
-    "yarn": "4.9.4"
+    "yarn": "4.10.3"
   },
   "workspaces": [
     "packages/*"

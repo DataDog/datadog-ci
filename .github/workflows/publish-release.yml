@@ -228,12 +228,11 @@ jobs:
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22.19.0
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn publish:all
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.YARN_NPM_AUTH_TOKEN }}
 
   bump-ci-integrations:
     name: Bump datadog-ci in integration
