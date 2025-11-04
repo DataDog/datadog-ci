@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolumeMount} from '../types'
+import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -7,22 +7,14 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
-  API_KEY_ENV_VAR,
-  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ENABLED_ENV_VAR,
-  DD_LLMOBS_ML_APP_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
-  DD_TAGS_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
-  LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
@@ -31,7 +23,6 @@ import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
-import {diff} from 'jest-diff'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
@@ -194,7 +185,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     ddService: string
   ) {
     const updatedService = this.createInstrumentedServiceConfig(existingService, ddService)
-    this.context.stdout.write(generateConfigDiff(existingService, updatedService, diff))
+    this.context.stdout.write(generateConfigDiff(existingService, updatedService))
     if (this.dryRun) {
       this.context.stdout.write(
         `\n\n${dryRunPrefix(this.dryRun)}Would have updated service ${chalk.bold(
@@ -223,20 +214,21 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
-    const envVarsByName = getEnvVarsByName()
+    const config: ServerlessConfigOptions = {
+      service: ddService,
+      environment: this.environment,
+      version: this.version,
+      logPath: this.logsPath,
+      extraTags: this.extraTags,
+      isInstanceLoggingEnabled: true,
+    }
+    const envVarsByName = this.getEnvVarsByName(config)
     const template: IServiceTemplate = createInstrumentedTemplate(
-      {},
+      config,
       service.template || {},
-      {},
-      {
-        name: this.sharedVolumeName,
-        mountPath: this.sharedVolumePath,
-      },
-      {
-        emptyDir: {
-          medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY,
-        },
-      },
+      this.buildBaseSidecarContainer(service.template?.containers?.find((c) => c.name === this.sidecarName)),
+      {name: this.sharedVolumeName, mountPath: this.sharedVolumePath},
+      {emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}},
       'name',
       envVarsByName
     )
@@ -261,54 +253,35 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       template,
     }
   }
+  public getEnvVarsByName(config: ServerlessConfigOptions): Record<string, IEnvVar> {
+    // Get base environment variables
+    const envVars = getBaseEnvVars(config)
 
-  public buildSidecarContainer(existingSidecarContainer: IContainer | undefined, ddService: string): IContainer {
-    const newEnvVars: Record<string, IEnvVar> = Object.fromEntries(
-      (existingSidecarContainer?.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
-    )
-
-    // Add these env vars to the container if they don't already exist,
-    // but leave them unchanged if they already exist in the container.
-    for (const env of DEFAULT_ENV_VARS) {
-      if (env.name && !(env.name in newEnvVars)) {
-        newEnvVars[env.name] = env
+    for (const [name, value] of [
+      [DD_TRACE_ENABLED_ENV_VAR, this.tracing],
+      [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
+      [DD_SOURCE_ENV_VAR, this.language],
+    ] as const) {
+      if (value) {
+        envVars[name] = value
       }
     }
 
-    const setEnv = (name: string, value: string | undefined) => {
-      if (name && value) {
-        newEnvVars[name] = {name, value}
-      }
-    }
+    return Object.fromEntries(Object.entries(envVars).map(([name, value]) => [name, {name, value}]))
+  }
 
-    // Overwrite existing env vars with these if they already exist
-    // and add them to the container if they don't exist yet.
-    setEnv(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
-    setEnv(SERVICE_ENV_VAR, ddService)
-    setEnv(SITE_ENV_VAR, process.env[SITE_ENV_VAR])
-    setEnv(DD_TRACE_ENABLED_ENV_VAR, this.tracing)
-    setEnv(ENVIRONMENT_ENV_VAR, this.environment)
-    setEnv(VERSION_ENV_VAR, this.version)
-    setEnv(DD_LOG_LEVEL_ENV_VAR, this.logLevel)
-    setEnv(DD_TAGS_ENV_VAR, this.extraTags)
-    setEnv(DD_SOURCE_ENV_VAR, this.language)
-    setEnv(LOGS_PATH_ENV_VAR, this.logsPath)
-
+  public buildBaseSidecarContainer(existingSidecarContainer: IContainer | undefined): IContainer {
     // We prioritize in this order: CLI flag, existing setup, default
-    let healthCheckPort = Number(this.healthCheckPort ?? newEnvVars[HEALTH_PORT_ENV_VAR].value)
+    let healthCheckPort = Number(
+      this.healthCheckPort ?? existingSidecarContainer?.env?.find(({name}) => name === HEALTH_PORT_ENV_VAR)?.value
+    )
     healthCheckPort = Number.isNaN(healthCheckPort) ? DEFAULT_HEALTH_CHECK_PORT : healthCheckPort
 
     // Create sidecar container with volume mount and environment variables
     return {
+      ...existingSidecarContainer,
       name: this.sidecarName,
       image: this.sidecarImage,
-      volumeMounts: [
-        {
-          name: this.sharedVolumeName,
-          mountPath: this.sharedVolumePath,
-        },
-      ],
-      env: Object.values(newEnvVars),
       startupProbe: {
         tcpSocket: {
           port: healthCheckPort,
@@ -325,54 +298,5 @@ export class PluginCommand extends CloudRunInstrumentCommand {
         },
       },
     }
-  }
-
-  // Add volume mount and update required env vars
-  private updateAppContainer(appContainer: IContainer, ddService: string) {
-    const existingVolumeMounts = appContainer.volumeMounts || []
-    const hasSharedVolumeMount = existingVolumeMounts.some(
-      (mount: IVolumeMount) => mount.name === this.sharedVolumeName
-    )
-
-    const updatedContainer = {...appContainer}
-    if (!hasSharedVolumeMount) {
-      updatedContainer.volumeMounts = [
-        ...existingVolumeMounts,
-        {
-          name: this.sharedVolumeName,
-          mountPath: this.sharedVolumePath,
-        },
-      ]
-    }
-
-    // Update environment variables
-    const newEnvVars: Record<string, IEnvVar> = Object.fromEntries(
-      (appContainer.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
-    )
-    const setEnv = (name: string, value: string | undefined) => {
-      if (name && value) {
-        newEnvVars[name] = {name, value}
-      }
-    }
-
-    // Default to DD_LOGS_INJECTION=true, but don't overwrite existing value
-    if (!(LOGS_INJECTION_ENV_VAR in newEnvVars)) {
-      setEnv(LOGS_INJECTION_ENV_VAR, 'true')
-    }
-
-    // Replace or add other env vars
-    setEnv(SERVICE_ENV_VAR, ddService)
-    setEnv(API_KEY_ENV_VAR, process.env[API_KEY_ENV_VAR])
-    setEnv(LOGS_PATH_ENV_VAR, this.logsPath)
-    if (this.llmobs) {
-      setEnv(DD_LLMOBS_ENABLED_ENV_VAR, 'true')
-      setEnv(DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs)
-      // serverless-init is installed, so agentless mode should be false
-      setEnv(DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false')
-    }
-
-    updatedContainer.env = Object.values(newEnvVars)
-
-    return updatedContainer
   }
 }

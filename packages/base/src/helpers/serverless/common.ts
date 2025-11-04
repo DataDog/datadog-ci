@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import {diff} from 'jest-diff'
 
 import {
   HEALTH_PORT_ENV_VAR,
@@ -120,11 +121,7 @@ const obfuscateSensitiveValues = (line: string): string => {
  * @returns A formatted diff string with colors
  */
 
-export const generateConfigDiff = (
-  original: any,
-  updated: any,
-  diff: (a: any, b: any, options?: any) => string | null
-): string => {
+export const generateConfigDiff = (original: any, updated: any): string => {
   // Sort keys consistently before comparison
   const sortedOriginal = sortObjectKeys(original)
   const sortedUpdated = sortObjectKeys(updated)
@@ -147,6 +144,10 @@ export const generateConfigDiff = (
   return configDiff
 }
 
+export const byName = <T extends FullyOptional<{name: string}>>(xs: T[]): Record<string, T> => {
+  return Object.fromEntries(xs.filter((x) => x.name).map((x) => [x.name, x]))
+}
+
 const DEFAULT_HEALTH_CHECK_PORT = 5555
 
 // GCP makes all their types like this so we need to allow it
@@ -156,14 +157,12 @@ type FullyOptional<T> = {
 
 type EnvVar = FullyOptional<{name: string; value: string}>
 
-const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = Object.fromEntries(
-  [
-    {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
-    {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-    {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-    {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
-  ].map((env) => [env.name, env])
-)
+const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = byName([
+  {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
+  {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+  {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+  {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
+])
 
 type Container = FullyOptional<{
   name: string
@@ -199,7 +198,7 @@ export const createInstrumentedTemplate = (
   const existingSidecarContainer = containers.find((c) => c.name === baseSidecar.name)
   const newSidecarContainer: Container = {
     ...baseSidecar,
-    env: Object.values(envVarsByName),
+    env: Object.values({...byName(baseSidecar.env ?? []), ...envVarsByName}),
     volumeMounts: config.isInstanceLoggingEnabled ? [sharedVolume] : [],
   }
 
@@ -213,16 +212,13 @@ export const createInstrumentedTemplate = (
     const hasSharedVolumeMount = existingVolumeMounts.some(
       (mount) => mount[volumeNameKey] === sharedVolume[volumeNameKey]
     )
-    const existingEnvVarsByName: Record<string, EnvVar> = Object.fromEntries(
-      (container.env ?? []).filter((env) => env.name).map((env) => [env.name, env])
-    )
 
     return {
       ...container,
       volumeMounts: hasSharedVolumeMount ? existingVolumeMounts : [...existingVolumeMounts, sharedVolume],
       env: Object.values({
         ...DEFAULT_ENV_VARS_BY_NAME, // Add default vars which can be overridden
-        ...existingEnvVarsByName, // Then add existing env vars
+        ...byName(container.env ?? []), // Then add existing env vars
         ...envVarsByName, // Finally override with any env vars specified in the CLI
       }),
     }
