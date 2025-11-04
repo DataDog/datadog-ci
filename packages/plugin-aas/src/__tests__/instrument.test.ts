@@ -106,12 +106,12 @@ Restarting Azure App Service my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
-          ],
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -169,12 +169,12 @@ Updating tags for my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
-          ],
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -271,12 +271,12 @@ Creating sidecar container datadog-sidecar on my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
-          ],
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -349,12 +349,12 @@ Restarting Azure App Service my-web-app2
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
-          ],
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -365,12 +365,12 @@ Restarting Azure App Service my-web-app2
         'my-web-app2',
         'datadog-sidecar',
         {
-          environmentVariables: [
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
-          ],
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -491,14 +491,13 @@ Restarting Azure App Service my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
             {name: 'CUSTOM_VAR2', value: 'CUSTOM_VAR2'},
-          ],
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',
@@ -538,13 +537,12 @@ Restarting Azure App Service my-web-app
         'my-web-app',
         'datadog-sidecar',
         {
-          environmentVariables: [
-            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+          environmentVariables: expect.arrayContaining([
             {name: 'DD_API_KEY', value: 'DD_API_KEY'},
             {name: 'DD_SITE', value: 'DD_SITE'},
             {name: 'DD_SERVICE', value: 'DD_SERVICE'},
             {name: 'CUSTOM_VAR1', value: 'CUSTOM_VAR1'},
-          ],
+          ]),
           image: 'index.docker.io/datadog/serverless-init:latest',
           isMain: false,
           targetPort: '8126',

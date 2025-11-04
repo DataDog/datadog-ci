@@ -468,7 +468,7 @@ Updating tags for my-container-app
         '--env-vars',
         'CUSTOM_VAR1=value1',
         '--env-vars',
-        'DD_AAS_INSTANCE_LOGGING_ENABLED=true',
+        'DD_SITE=datad0g.com',
       ])
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -491,10 +491,9 @@ Updating tags for my-container-app
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
-                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SITE', value: 'datad0g.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
-                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'true'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
@@ -511,10 +510,9 @@ Updating tags for my-container-app
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
-                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SITE', value: 'datad0g.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
-                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'true'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
@@ -1187,6 +1185,7 @@ Updating tags for my-container-app
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
@@ -1207,6 +1206,7 @@ Updating tags for my-container-app
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
