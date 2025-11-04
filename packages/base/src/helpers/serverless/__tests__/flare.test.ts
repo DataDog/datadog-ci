@@ -7,12 +7,16 @@ import FormData from 'form-data'
 import upath from 'upath'
 
 import {MOCK_CWD} from '../../__tests__/testing-tools'
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../../constants'
+
 const getLatestVersion = jest.fn()
 jest.mock('../../get-latest-version', () => ({
   getLatestVersion,
 }))
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
+import {MOCK_CWD} from '../../__tests__/testing-tools'
+
 import {
   getEndpointUrl,
   getProjectFiles,
