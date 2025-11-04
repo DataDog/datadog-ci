@@ -136,7 +136,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         isMusl: config.isMusl && config.isDotnet && isContainer,
         service: config.service ?? aasName,
       }
-      await this.instrumentSidecar(aasClient, config, resourceGroup, aasName)
+      await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
       await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
@@ -199,11 +199,12 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    aasName: string
+    aasName: string,
+    isContainer: boolean
   ) {
     const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
-    const envVars = getEnvVars(config)
+    const envVars = getEnvVars(config, isContainer)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
