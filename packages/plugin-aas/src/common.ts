@@ -19,7 +19,7 @@ const CORECLR_PROFILER_PATH = '/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
 const CORECLR_PROFILER_PATH_MUSL = '/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
 // Where tracer logs are stored
 const DD_TRACE_LOG_DIRECTORY = '/home/LogFiles/dotnet'
-// Instructs the .NET CLR that profiling should be enabled
+// Instructs the .NET CLR that the Profiling APIs should be enabled (used by the .NET instrumentation library, dd-trace-dotnet)
 const CORECLR_ENABLE_PROFILING = '1'
 // Profiler GUID
 const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
