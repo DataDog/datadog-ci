@@ -120,7 +120,7 @@ export class PluginCommand extends AasInstrumentCommand {
       if (!ensureLinux(this.context.stdout.write, site)) {
         return false
       }
-
+      this.context.stdout.write(JSON.stringify(site, undefined, 2) + '\n')
       const isContainer = isLinuxContainer(site)
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
@@ -205,6 +205,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = getEnvVars(config, isContainer)
+    this.context.stdout.write(JSON.stringify(envVars, undefined, 2) + '\n')
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
     // and environment variables. The sidecar environment variables must have matching names and values, as the sidecar
     // env values point to env keys in the main App Settings. (essentially env var forwarding)
