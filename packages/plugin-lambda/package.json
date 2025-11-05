@@ -16,6 +16,10 @@
   },
   "exports": {
     "./package.json": "./package.json",
+    "./functions/*": {
+      "development": "./src/functions/*.ts",
+      "default": "./dist/functions/*.js"
+    },
     "./commands/*": {
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
