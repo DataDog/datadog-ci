@@ -20,9 +20,7 @@ export const getEnvVarsByName = (
 
   envVars.DD_AZURE_SUBSCRIPTION_ID = {name: 'DD_AZURE_SUBSCRIPTION_ID', value: subscriptionId}
   envVars.DD_AZURE_RESOURCE_GROUP = {name: 'DD_AZURE_RESOURCE_GROUP', value: resourceGroup}
-  if (config.isInstanceLoggingEnabled) {
-    envVars.DD_SERVERLESS_LOG_PATH = {name: 'DD_SERVERLESS_LOG_PATH', value: config.logsPath}
-  }
+  envVars.DD_SERVERLESS_LOG_PATH = {name: 'DD_SERVERLESS_LOG_PATH', value: config.logsPath}
 
   return envVars
 }

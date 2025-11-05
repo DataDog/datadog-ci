@@ -58,7 +58,6 @@ export interface ServerlessConfigOptions {
   logPath?: string
   extraTags?: string
   envVars?: string[]
-  isInstanceLoggingEnabled?: boolean
 }
 
 /**
@@ -71,7 +70,6 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
     DD_API_KEY: process.env.DD_API_KEY!,
     DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
     DD_SERVICE: config.service!,
-    DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
     ...parseEnvVars(config.envVars),
   }
   if (config.environment) {

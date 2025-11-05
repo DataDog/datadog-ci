@@ -21,10 +21,6 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   private version = Option.String('--version', {
     description: 'The value for the version tag. For example, `1.0.0`',
   })
-  private isInstanceLoggingEnabled = Option.Boolean('--instance-logging', false, {
-    description:
-      'When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log',
-  })
   private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
     description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
@@ -53,7 +49,6 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       service: this.service,
       environment: this.environment,
       version: this.version,
-      isInstanceLoggingEnabled: this.isInstanceLoggingEnabled,
       sharedVolumeName: this.sharedVolumeName,
       sharedVolumePath: this.sharedVolumePath,
       logsPath: this.logsPath,

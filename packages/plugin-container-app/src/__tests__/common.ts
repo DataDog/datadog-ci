@@ -13,7 +13,6 @@ export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
   service: undefined,
   environment: undefined,
   version: undefined,
-  isInstanceLoggingEnabled: false,
   logsPath: DEFAULT_LOGS_PATH,
   sharedVolumeName: DEFAULT_VOLUME_NAME,
   sharedVolumePath: DEFAULT_VOLUME_PATH,

@@ -183,12 +183,10 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       envVarsByName
     )
     const hasApiKey = apiKeySecret?.value === process.env.DD_API_KEY
-    const hasSharedVolume = !config.isInstanceLoggingEnabled || volumes.some((v) => v.name === config.sharedVolumeName)
-    const sidecarHasVolumeMount =
-      !config.isInstanceLoggingEnabled ||
-      sidecarContainer?.volumeMounts?.some(
-        (mount) => mount.volumeName === config.sharedVolumeName && mount.mountPath === config.sharedVolumePath
-      )
+    const hasSharedVolume = volumes.some((v) => v.name === config.sharedVolumeName)
+    const sidecarHasVolumeMount = sidecarContainer?.volumeMounts?.some(
+      (mount) => mount.volumeName === config.sharedVolumeName && mount.mountPath === config.sharedVolumePath
+    )
 
     if (sidecarHasCorrectImage && hasCorrectEnvVars && hasApiKey && hasSharedVolume && sidecarHasVolumeMount) {
       this.context.stdout.write(
@@ -211,7 +209,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         name: SIDECAR_CONTAINER_NAME,
         image: SIDECAR_IMAGE,
         env: Object.values(envVarsByName),
-        ...(config.isInstanceLoggingEnabled && {volumeMounts: [sharedVolume]}),
+        ...{volumeMounts: [sharedVolume]},
         resources: {
           cpu: 0.25,
           memory: '0.5Gi',
@@ -226,11 +224,11 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         return {
           ...container,
           env: Object.values({...currentEnvVarsByName, ...envVarsByName}),
-          ...(config.isInstanceLoggingEnabled && {
+          ...{
             volumeMounts: volumeMounts.some((mount) => mount.volumeName === config.sharedVolumeName)
               ? volumeMounts
               : [...volumeMounts, {volumeName: config.sharedVolumeName, mountPath: config.sharedVolumePath}],
-          }),
+          },
         }
       })
 
