@@ -214,21 +214,22 @@ export class PluginCommand extends CloudRunInstrumentCommand {
   }
 
   public createInstrumentedServiceConfig(service: IService, ddService: string): IService {
-    const config: ServerlessConfigOptions = {
+    const envVarsByName = this.getEnvVarsByName({
       service: ddService,
       environment: this.environment,
       version: this.version,
       logPath: this.logsPath,
       extraTags: this.extraTags,
-    }
-    const envVarsByName = this.getEnvVarsByName(config)
+    })
     const template: IServiceTemplate = createInstrumentedTemplate(
-      config,
       service.template || {},
       this.buildBaseSidecarContainer(service.template?.containers?.find((c) => c.name === this.sidecarName)),
-      {name: this.sharedVolumeName, mountPath: this.sharedVolumePath},
-      {emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}},
-      'name',
+      {
+        name: this.sharedVolumeName,
+        mountPath: this.sharedVolumePath,
+        mountOptions: {emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}},
+        volumeMountNameKey: 'name',
+      },
       envVarsByName
     )
     // Let GCR generate the next revision name

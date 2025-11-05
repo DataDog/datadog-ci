@@ -152,10 +152,14 @@ const DEFAULT_HEALTH_CHECK_PORT = 5555
 
 // GCP makes all their types like this so we need to allow it
 type FullyOptional<T> = {
-  [K in keyof T]?: T[K] | null | undefined
+  [K in keyof T]?: T[K] extends any[]
+    ? FullyOptional<T[K][number]>[] | null | undefined
+    : T[K] extends object
+      ? FullyOptional<T[K]> | null | undefined
+      : T[K] | null | undefined
 }
 
-type EnvVar = FullyOptional<{name: string; value: string}>
+type EnvVar = {name: string; value: string}
 
 const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = byName([
   {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
@@ -164,80 +168,102 @@ const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = byName([
   {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
 ])
 
-type Container = FullyOptional<{
+type VolumeMount = {
+  mountName?: string // Azure uses mountName instead of name
+  name?: string // GCP uses name
+  mountPath: string
+}
+
+type Container = {
   name: string
   env: EnvVar[]
-  volumeMounts: Volume[]
-}>
-type Volume = FullyOptional<{
-  mountName: string
-  name: string
-  mountPath: string
-}>
+  volumeMounts: VolumeMount[]
+}
 
-type AppTemplate = FullyOptional<{
+type Volume = {name: string}
+
+type AppTemplate = {
   containers: Container[]
   volumes: Volume[]
-}>
+}
+
+interface SharedVolumeOptions {
+  name: string
+  mountPath: string
+  mountOptions: any
+  volumeMountNameKey: 'name' | 'mountName'
+}
 
 /**
  * Given the configuration, an app template, the base sidecar configuration, and base shared volume,
  */
 export const createInstrumentedTemplate = (
-  config: ServerlessConfigOptions,
-  template: AppTemplate,
-  baseSidecar: Container,
-  sharedVolume: Volume,
-  sharedVolumeOptions: any,
-  volumeNameKey: 'name' | 'mountName',
-  envVarsByName: Record<string, EnvVar>
+  template: FullyOptional<AppTemplate>,
+  baseSidecar: FullyOptional<Container>,
+  sharedVolumeOptions: SharedVolumeOptions,
+  envVarsByName: Record<string, FullyOptional<EnvVar>>
 ): AppTemplate => {
-  const containers = template.containers || []
-  const volumes = template.volumes || []
-
-  const existingSidecarContainer = containers.find((c) => c.name === baseSidecar.name)
-  const newSidecarContainer: Container = {
-    ...baseSidecar,
-    env: Object.values({...byName(baseSidecar.env ?? []), ...envVarsByName}),
-    volumeMounts: [sharedVolume],
+  const sharedVolumeMount: VolumeMount = {
+    [sharedVolumeOptions.volumeMountNameKey]: sharedVolumeOptions.name,
+    mountPath: sharedVolumeOptions.mountPath,
   }
 
+  const containers = template.containers || []
+  const hasSidecarContainer = containers.some((c) => c.name === baseSidecar.name)
+  const newSidecarContainer = {
+    ...baseSidecar,
+    env: Object.values({...byName(baseSidecar.env ?? []), ...envVarsByName}) as EnvVar[],
+    volumeMounts: [sharedVolumeMount],
+  } as Container
+
   // Update all app containers to add volume mounts and env vars if they don't have them
-  const updatedContainers: Container[] = containers.map((container) => {
+  const updatedContainers = containers.map((container) => {
     if (container.name === baseSidecar.name) {
       return newSidecarContainer
     }
 
     const existingVolumeMounts = container.volumeMounts || []
     const hasSharedVolumeMount = existingVolumeMounts.some(
-      (mount) => mount[volumeNameKey] === sharedVolume[volumeNameKey]
+      (mount) => mount[sharedVolumeOptions.volumeMountNameKey] === sharedVolumeOptions.name
     )
+    const updatedVolumeMounts = existingVolumeMounts.map((mount) =>
+      mount[sharedVolumeOptions.volumeMountNameKey] === sharedVolumeOptions.name ? sharedVolumeMount : mount
+    )
+    if (!hasSharedVolumeMount) {
+      updatedVolumeMounts.push(sharedVolumeMount)
+    }
 
     return {
       ...container,
-      volumeMounts: hasSharedVolumeMount ? existingVolumeMounts : [...existingVolumeMounts, sharedVolume],
+      volumeMounts: updatedVolumeMounts,
       env: Object.values({
         ...DEFAULT_ENV_VARS_BY_NAME, // Add default vars which can be overridden
         ...byName(container.env ?? []), // Then add existing env vars
         ...envVarsByName, // Finally override with any env vars specified in the CLI
       }),
     }
-  })
+  }) as Container[]
 
   // Add sidecar if it doesn't exist
-  if (!existingSidecarContainer) {
+  if (!hasSidecarContainer) {
     updatedContainers.push(newSidecarContainer)
   }
 
+  const volumes = template.volumes || []
   // Add shared volume if it doesn't exist
-  const hasSharedVolume = volumes.some((volume) => volume[volumeNameKey] === sharedVolume[volumeNameKey])
-  const updatedVolumes = hasSharedVolume
-    ? volumes
-    : [...volumes, {name: sharedVolume[volumeNameKey], ...sharedVolumeOptions}]
+  const sharedVolume: Volume = {
+    ...sharedVolumeOptions.mountOptions,
+    name: sharedVolumeOptions.name,
+  }
+  const hasSharedVolume = volumes.some((volume) => volume.name === sharedVolumeOptions.name)
+  const updatedVolumes = volumes.map((volume) => (volume.name === sharedVolumeOptions.name ? sharedVolume : volume))
+  if (!hasSharedVolume) {
+    updatedVolumes.push(sharedVolume)
+  }
 
   return {
     ...template,
     containers: updatedContainers,
-    volumes: updatedVolumes,
+    volumes: updatedVolumes as Volume[], // we can assume any input volumes are valid
   }
 }
