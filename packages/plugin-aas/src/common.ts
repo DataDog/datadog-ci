@@ -54,6 +54,10 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
 export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Record<string, string> => {
   // Get base environment variables
   let envVars = getBaseEnvVars(config)
+  envVars = {
+    DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
+    ...envVars,
+  }
 
   // Add .NET-specific environment variables if needed
   if (config.isDotnet) {
