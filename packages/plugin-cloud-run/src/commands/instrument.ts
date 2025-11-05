@@ -220,7 +220,6 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       version: this.version,
       logPath: this.logsPath,
       extraTags: this.extraTags,
-      isInstanceLoggingEnabled: true,
     }
     const envVarsByName = this.getEnvVarsByName(config)
     const template: IServiceTemplate = createInstrumentedTemplate(

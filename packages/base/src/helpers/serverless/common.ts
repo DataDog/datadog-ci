@@ -199,7 +199,7 @@ export const createInstrumentedTemplate = (
   const newSidecarContainer: Container = {
     ...baseSidecar,
     env: Object.values({...byName(baseSidecar.env ?? []), ...envVarsByName}),
-    volumeMounts: config.isInstanceLoggingEnabled ? [sharedVolume] : [],
+    volumeMounts: [sharedVolume],
   }
 
   // Update all app containers to add volume mounts and env vars if they don't have them
