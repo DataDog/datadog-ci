@@ -33,13 +33,6 @@ const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
 
 const DEFAULT_HEALTH_CHECK_PORT = 5555
 
-const DEFAULT_ENV_VARS: IEnvVar[] = [
-  {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
-  {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-  {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-  {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
-]
-
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
@@ -261,6 +254,10 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       [DD_TRACE_ENABLED_ENV_VAR, this.tracing],
       [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
       [DD_SOURCE_ENV_VAR, this.language],
+      [DD_LLMOBS_ENABLED_ENV_VAR, 'true'],
+      [DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs],
+      // serverless-init is installed, so agentless mode should be false
+      [DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false'],
     ] as const) {
       if (value) {
         envVars[name] = value

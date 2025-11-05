@@ -72,7 +72,7 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
     envVars.DD_VERSION = config.version
   }
   if (config.logPath) {
-    envVars.DD_SERVERLESS_LOG_PATH = config.logPath
+    envVars[LOGS_PATH_ENV_VAR] = config.logPath
   }
   if (config.extraTags) {
     envVars.DD_TAGS = config.extraTags
