@@ -4,6 +4,8 @@
 
 You can use the CLI to instrument your Azure Container Apps with Datadog. The CLI enables instrumentation by modifying existing Container App configurations to include the Datadog sidecar to enable tracing, log collection, and custom metrics.
 
+See [the docs](https://docs.datadoghq.com/serverless/azure_container_apps/sidecar/) for language-specific application steps needed in addition to these commands.
+
 ## Commands
 
 ### `instrument`
