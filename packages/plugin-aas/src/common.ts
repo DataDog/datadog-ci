@@ -144,7 +144,14 @@ export const isDotnet = (site: Site): boolean => {
 }
 
 export const isLinuxContainer = (site: Site): boolean => {
-  return !!site.siteConfig?.linuxFxVersion && site.siteConfig.linuxFxVersion.toLowerCase() === 'sitecontainers'
+  if (!site.siteConfig?.linuxFxVersion) {
+    return false
+  }
+  const linuxFxVersion = site.siteConfig.linuxFxVersion.toLowerCase()
+
+  return (
+    linuxFxVersion === 'sitecontainers' || linuxFxVersion.startsWith('docker|') || linuxFxVersion.startsWith('compose|')
+  )
 }
 export const collectAsyncIterator = async <T>(it: PagedAsyncIterableIterator<T>): Promise<T[]> => {
   const arr = []

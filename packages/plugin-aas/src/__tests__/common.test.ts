@@ -1,7 +1,7 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 
-import {getEnvVars, isDotnet, isWindows} from '../common'
+import {getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
 
 const DEFAULT_CONFIG: AasConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',
@@ -322,6 +322,116 @@ describe('aas common', () => {
         siteConfig: undefined,
       }
       expect(isDotnet(site)).toBe(false)
+    })
+  })
+
+  describe('isLinuxContainer', () => {
+    test('returns true if linuxFxVersion is "sitecontainers"', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'sitecontainers',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns true if linuxFxVersion is "SITECONTAINERS" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'SITECONTAINERS',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns true if linuxFxVersion starts with "docker|"', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'docker|myregistry.azurecr.io/myimage:latest',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns true if linuxFxVersion starts with "DOCKER|" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'DOCKER|myregistry.azurecr.io/myimage:latest',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns true if linuxFxVersion starts with "compose|"', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'compose|base64encodedcomposefile',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns true if linuxFxVersion starts with "COMPOSE|" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'COMPOSE|base64encodedcomposefile',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(true)
+    })
+
+    test('returns false if linuxFxVersion is a non-container value', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: 'node|18-lts',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(false)
+    })
+
+    test('returns false if linuxFxVersion is undefined', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: undefined,
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(false)
+    })
+
+    test('returns false if siteConfig is undefined', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: undefined,
+      }
+      expect(isLinuxContainer(site)).toBe(false)
+    })
+
+    test('returns false if siteConfig.linuxFxVersion is empty string', () => {
+      const site: Site = {
+        kind: 'app,linux',
+        location: 'East US',
+        siteConfig: {
+          linuxFxVersion: '',
+        },
+      }
+      expect(isLinuxContainer(site)).toBe(false)
     })
   })
 })
