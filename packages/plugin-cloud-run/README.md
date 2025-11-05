@@ -106,13 +106,13 @@ To troubleshoot issues you encounter with Datadog monitoring on your Cloud Run s
 ### Examples
 ```bash
 # Collect and send files to Datadog support for a single service
-datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id>
+datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id>
 
 # Include recent logs
-datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs
+datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs
 
 # Dry run: collect data, but don't send to Datadog support
-datadog-ci cloud-run -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs --dry-run
+datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs --dry-run
 ```
 
 ### Arguments
