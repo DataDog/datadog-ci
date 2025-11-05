@@ -7,23 +7,19 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
+import {
+  collectAsyncIterator,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+  SIDECAR_PORT,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 import equal from 'fast-deep-equal/es6'
 
-import {
-  collectAsyncIterator,
-  ensureAzureAuth,
-  ensureLinux,
-  formatError,
-  getEnvVars,
-  isDotnet,
-  isLinuxContainer,
-  SIDECAR_CONTAINER_NAME,
-  SIDECAR_IMAGE,
-  SIDECAR_PORT,
-} from '../common'
+import {ensureLinux, getEnvVars, isDotnet, isLinuxContainer} from '../common'
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -61,7 +57,7 @@ export class PluginCommand extends AasInstrumentCommand {
     }
 
     this.cred = new DefaultAzureCredential()
-    if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
+    if (!(await ensureAzureAuth((msg) => this.context.stdout.write(msg), this.cred))) {
       return 1
     }
     this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
@@ -117,7 +113,7 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<boolean> {
     try {
       const site = await aasClient.webApps.get(resourceGroup, aasName)
-      if (!ensureLinux(this.context.stdout.write, site)) {
+      if (!ensureLinux((msg) => this.context.stdout.write(msg), site)) {
         return false
       }
 
@@ -211,7 +207,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     if (
       sidecarContainer === undefined ||
       sidecarContainer.image !== SIDECAR_IMAGE ||
-      sidecarContainer.targetPort !== SIDECAR_PORT ||
+      sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
       !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
     ) {
@@ -223,7 +219,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       if (!this.dryRun) {
         await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
           image: SIDECAR_IMAGE,
-          targetPort: SIDECAR_PORT,
+          targetPort: String(SIDECAR_PORT),
           isMain: false,
           // We're allowing access to all env vars since it is simpler
           // and doesn't cause problems, but not all env vars are needed for the sidecar.

@@ -11,32 +11,29 @@ import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 import {BaseCommand} from '../..'
 
 /**
- * Maps Subscription ID to Resource Group to App Service names.
+ * Maps Subscription ID to Resource Group to Container App names.
  */
-export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+export type ContainerAppBySubscriptionAndGroup = Record<string, Record<string, string[]>>
 
 /**
  * Configuration options provided by the user through
  * the CLI in order to instrument properly.
  */
-export type AasConfigOptions = Partial<{
-  // AAS Targeting options
+export type ContainerAppConfigOptions = Partial<{
+  // Container App Targeting options
   subscriptionId: string
   resourceGroup: string
-  aasName: string
+  containerAppName: string
   resourceIds: string[]
 
   // Configuration options
   service: string
   environment: string
   version: string
-  isInstanceLoggingEnabled: boolean
-  logPath: string
+  sharedVolumeName: string
+  sharedVolumePath: string
+  logsPath: string
   envVars: string[]
-  isDotnet: boolean
-  isMusl: boolean
-  // no-dd-sa:typescript-best-practices/boolean-prop-naming
-  shouldNotRestart: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   sourceCodeIntegration: boolean
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
@@ -44,26 +41,26 @@ export type AasConfigOptions = Partial<{
   extraTags: string
 }>
 
-export abstract class AasCommand extends BaseCommand {
+export abstract class ContainerAppCommand extends BaseCommand {
   public dryRun = Option.Boolean('-d,--dry-run', false, {
     description: 'Run the command in dry-run mode, without making any changes',
   })
   private subscriptionId = Option.String('-s,--subscription-id', {
-    description: 'Azure Subscription ID containing the App Service',
+    description: 'Azure Subscription ID containing the Container App',
   })
   private resourceGroup = Option.String('-g,--resource-group', {
-    description: 'Name of the Azure Resource Group containing the App Service',
+    description: 'Name of the Azure Resource Group containing the Container App',
   })
-  private aasName = Option.String('-n,--name', {
-    description: 'Name of the Azure App Service to instrument',
+  private containerAppName = Option.String('-n,--name', {
+    description: 'Name of the Azure Container App to instrument',
   })
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
-      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
+      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.App/containerApps/{containerAppName}"',
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
-      'Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+      'Additional environment variables to set for the Container App. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
 
   private configPath = Option.String('--config', {
@@ -81,7 +78,7 @@ export abstract class AasCommand extends BaseCommand {
     return this.dryRun ? dryRunTag + ' ' : ''
   }
 
-  public get additionalConfig(): Partial<AasConfigOptions> {
+  public get additionalConfig(): Partial<ContainerAppConfigOptions> {
     return {}
   }
 
@@ -89,14 +86,14 @@ export abstract class AasCommand extends BaseCommand {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
   }
 
-  public async ensureConfig(): Promise<[AasBySubscriptionAndGroup, AasConfigOptions, string[]]> {
+  public async ensureConfig(): Promise<[ContainerAppBySubscriptionAndGroup, ContainerAppConfigOptions, string[]]> {
     const config = (
-      await resolveConfigFromFile<{aas: AasConfigOptions}>(
+      await resolveConfigFromFile<{containerApp: ContainerAppConfigOptions}>(
         {
-          aas: {
+          containerApp: {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
-            aasName: this.aasName,
+            containerAppName: this.containerAppName,
             envVars: this.envVars,
             ...this.additionalConfig,
           },
@@ -106,8 +103,8 @@ export abstract class AasCommand extends BaseCommand {
           defaultConfigPaths: DEFAULT_CONFIG_PATHS,
         }
       )
-    ).aas
-    const appServices: AasBySubscriptionAndGroup = {}
+    ).containerApp
+    const containerApps: ContainerAppBySubscriptionAndGroup = {}
     const errors: string[] = []
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
@@ -120,40 +117,40 @@ export abstract class AasCommand extends BaseCommand {
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
-    // Validate musl setting
-    if (config.isMusl && !config.isDotnet) {
-      errors.push(
-        '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
-      )
+    // Validate that logsPath starts with sharedVolumePath
+    if (!config.logsPath || !config.sharedVolumePath) {
+      errors.push('logsPath and sharedVolumePath must be non-empty when instance logging is enabled')
+    } else if (!config.logsPath.startsWith(config.sharedVolumePath)) {
+      errors.push('logsPath must start with sharedVolumePath when instance logging is enabled')
     }
-    const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
-    // all or none of the site args should be specified
-    if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
+    const specifiedAppArgs = [config.subscriptionId, config.resourceGroup, config.containerAppName]
+    // all or none of the app args should be specified
+    if (!(specifiedAppArgs.every((arg) => arg) || specifiedAppArgs.every((arg) => !arg))) {
       errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
-    } else if (specifiedSiteArgs.every((arg) => arg)) {
-      appServices[config.subscriptionId!] = {[config.resourceGroup!]: [config.aasName!]}
+    } else if (specifiedAppArgs.every((arg) => arg)) {
+      containerApps[config.subscriptionId!] = {[config.resourceGroup!]: [config.containerAppName!]}
     }
     if (this.resourceIds?.length) {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
         if (parsed) {
           const {subscriptionId, resourceGroup, name} = parsed
-          if (!appServices[subscriptionId]) {
-            appServices[subscriptionId] = {}
+          if (!containerApps[subscriptionId]) {
+            containerApps[subscriptionId] = {}
           }
-          if (!appServices[subscriptionId][resourceGroup]) {
-            appServices[subscriptionId][resourceGroup] = []
+          if (!containerApps[subscriptionId][resourceGroup]) {
+            containerApps[subscriptionId][resourceGroup] = []
           }
-          appServices[subscriptionId][resourceGroup].push(name)
+          containerApps[subscriptionId][resourceGroup].push(name)
         } else {
-          errors.push(`Invalid AAS resource ID: ${resourceId}`)
+          errors.push(`Invalid Container App resource ID: ${resourceId}`)
         }
       }
     }
-    if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
-      errors.push('No App Services specified to instrument')
+    if (!this.resourceIds?.length && specifiedAppArgs.every((arg) => !arg)) {
+      errors.push('No Container Apps specified to instrument')
     }
 
-    return [appServices, config, errors]
+    return [containerApps, config, errors]
   }
 }

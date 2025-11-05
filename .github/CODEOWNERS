@@ -32,6 +32,8 @@ packages/plugin-aas                                  @DataDog/datadog-ci-admins 
 packages/base/src/commands/aas                       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/plugin-cloud-run                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-container-app                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/commands/container-app             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
