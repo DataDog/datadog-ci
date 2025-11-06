@@ -34,10 +34,7 @@ jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
 jest.mock('jszip')
-const getLatestVersion = jest.fn()
-jest.mock('../../helpers/get-latest-version', () => ({
-  getLatestVersion,
-}))
+jest.mock('../../get-latest-version')
 
 describe('flare', () => {
   describe('getEndpointUrl', () => {
@@ -296,17 +293,16 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     let stdout: Pick<Writable, 'write'>
     beforeEach(() => {
       stdout = {write: jest.fn()}
-      getLatestVersion.mockReset()
     })
 
     it('should print nothing if the CLI version is the latest', async () => {
-      getLatestVersion.mockResolvedValue('1.0.0')
+      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockResolvedValue('1.0.0')
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })
 
     it('should print a warning if the CLI version is outdated', async () => {
-      getLatestVersion.mockResolvedValue('1.1.0')
+      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockResolvedValue('1.1.0')
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).toHaveBeenCalledWith(
         '[!] You are using an outdated version of datadog-ci (1.0.0). The latest version is 1.1.0. Please update for better support.\n'
@@ -314,7 +310,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('should not error if unable to fetch the latest version info', async () => {
-      getLatestVersion.mockRejectedValue(new Error('Network error'))
+      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockRejectedValue(new Error('Network error'))
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })
