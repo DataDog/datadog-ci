@@ -24,45 +24,45 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
       "containers": [
         {
           "env": [
-            {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
-+           },
 +           {
-+             "name": "DD_LOGS_INJECTION",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_TRACE_ENABLED",
-+             "value": "true"
++             "name": "DD_API_KEY",
++             "value": "PLACEHOLDER"
 +           },
 +           {
 +             "name": "DD_HEALTH_PORT",
 +             "value": "5555"
 +           },
 +           {
-              "name": "NODE_ENV",
-              "value": "production"
-+           },
-+           {
-+             "name": "DD_API_KEY",
-+             "value": "PLACEHOLDER"
-+           },
-+           {
-+             "name": "DD_SERVICE",
-+             "value": "interactive-service"
-+           },
-+           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
++             "value": "false"
 +           },
 +           {
 +             "name": "DD_LLMOBS_ENABLED",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "interactive-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
+            {
+              "name": "NODE_ENV",
+              "value": "production"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
@@ -82,24 +82,36 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "value": "PLACEHOLDER"
 +           },
 +           {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
 +           },
 +           {
-+             "name": "DD_SERVICE",
-+             "value": "interactive-service"
-+           },
-+           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
++             "value": "false"
 +           },
 +           {
 +             "name": "DD_LLMOBS_ENABLED",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "interactive-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
 +           }
 +         ],
 +         "image": "gcr.io/datadoghq/serverless-init:latest",
@@ -169,53 +181,53 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
       "containers": [
         {
           "env": [
-            {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
-+           },
-+           {
-+             "name": "DD_LOGS_INJECTION",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_TRACE_ENABLED",
-+             "value": "true"
-+           },
-+           {
-+             "name": "DD_HEALTH_PORT",
-+             "value": "5555"
-+           },
-+           {
-              "name": "NODE_ENV",
-              "value": "production"
-+           },
 +           {
 +             "name": "DD_API_KEY",
 +             "value": "PLACEHOLDER"
-+           },
-+           {
-+             "name": "DD_SERVICE",
-+             "value": "test-service"
 +           },
 +           {
 +             "name": "DD_ENV",
 +             "value": "staging"
 +           },
 +           {
-+             "name": "DD_VERSION",
-+             "value": "1.0.0"
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
++             "value": "false"
 +           },
 +           {
 +             "name": "DD_LLMOBS_ENABLED",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
+            {
++             "name": "DD_SERVICE",
++             "value": "test-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
++           },
++           {
+              "name": "NODE_ENV",
+              "value": "production"
             }
           ],
           "image": "gcr.io/test-project/test-app:latest",
@@ -235,32 +247,44 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "value": "PLACEHOLDER"
 +           },
 +           {
-+             "name": "DD_SITE",
-+             "value": "datadoghq.com"
-+           },
-+           {
-+             "name": "DD_SERVICE",
-+             "value": "test-service"
-+           },
-+           {
 +             "name": "DD_ENV",
 +             "value": "staging"
 +           },
 +           {
-+             "name": "DD_VERSION",
-+             "value": "1.0.0"
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
 +           },
 +           {
-+             "name": "DD_SERVERLESS_LOG_PATH",
-+             "value": "/shared-volume/logs/*.log"
++             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
++             "value": "false"
 +           },
 +           {
 +             "name": "DD_LLMOBS_ENABLED",
 +             "value": "true"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "test-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
 +           }
 +         ],
 +         "image": "gcr.io/datadoghq/serverless-init:latest",

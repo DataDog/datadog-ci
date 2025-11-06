@@ -796,12 +796,12 @@ Updating tags for my-container-app
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: [
+                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_LOGS_INJECTION', value: 'true'},
                 {name: 'DD_TRACE_ENABLED', value: 'true'},
                 {name: 'DD_HEALTH_PORT', value: '5555'},
-                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
-                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
@@ -813,11 +813,11 @@ Updating tags for my-container-app
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
               env: [
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_LOGS_INJECTION', value: 'true'},
                 {name: 'DD_TRACE_ENABLED', value: 'true'},
                 {name: 'DD_HEALTH_PORT', value: '5555'},
-                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
@@ -856,11 +856,11 @@ Updating tags for my-container-app
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: [
+                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_LOGS_INJECTION', value: 'false'},
                 {name: 'DD_TRACE_ENABLED', value: 'false'},
                 {name: 'DD_HEALTH_PORT', value: '12345'},
-                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
