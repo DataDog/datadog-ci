@@ -17,6 +17,7 @@ jest.mock('../../get-latest-version', () => ({
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
 import {MOCK_CWD} from '../../__tests__/testing-tools'
 
+import {FLARE_PROJECT_FILES, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../constants'
 import {
   getEndpointUrl,
   getProjectFiles,
@@ -33,6 +34,10 @@ jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
 jest.mock('jszip')
+const getLatestVersion = jest.fn()
+jest.mock('../../helpers/get-latest-version', () => ({
+  getLatestVersion,
+}))
 
 describe('flare', () => {
   describe('getEndpointUrl', () => {

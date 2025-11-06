@@ -7,7 +7,6 @@ import {
   API_KEY_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
-  DD_TAGS_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   HEALTH_PORT_ENV_VAR,
@@ -19,10 +18,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
-
-import {PluginCommand as InstrumentCommand} from '../commands/instrument'
-import * as cloudRunPromptModule from '../prompt'
-import * as utils from '../utils'
 
 jest.mock('@datadog/datadog-ci-base/helpers/apikey')
 jest.mock('../utils', () => ({

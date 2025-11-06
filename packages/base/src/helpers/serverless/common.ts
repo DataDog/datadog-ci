@@ -1,6 +1,8 @@
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
+import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+
 import {
   HEALTH_PORT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,

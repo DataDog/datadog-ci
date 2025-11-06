@@ -1109,7 +1109,6 @@ Updating tags for my-container-app
         },
       })
     })
-    
   })
 
   describe('edge cases', () => {
