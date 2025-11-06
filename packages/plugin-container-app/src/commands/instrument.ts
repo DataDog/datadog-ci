@@ -217,13 +217,13 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         name: config.sharedVolumeName!,
         mountPath: config.sharedVolumePath!,
         mountOptions: {storageType: 'EmptyDir'},
-        volumeMountNameKey: 'mountName',
+        volumeMountNameKey: 'volumeName',
       },
       envVarsByName
     )
 
     const secrets = containerApp.configuration?.secrets ?? []
-    const hasApiKey = secrets.find(({name}) => name === DD_API_KEY_SECRET_NAME)?.value === process.env.DD_API_KEY
+    const hasApiKey = secrets.some(({name}) => name === DD_API_KEY_SECRET_NAME)
     const updatedSecrets: Secret[] = secrets.map((secret) =>
       secret.name === DD_API_KEY_SECRET_NAME ? {name: DD_API_KEY_SECRET_NAME, value: process.env.DD_API_KEY!} : secret
     )

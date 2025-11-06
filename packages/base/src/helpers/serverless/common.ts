@@ -169,7 +169,7 @@ const DEFAULT_ENV_VARS_BY_NAME: Record<string, EnvVar> = byName([
 ])
 
 type VolumeMount = {
-  mountName?: string // Azure uses mountName instead of name
+  volumeName?: string // Azure uses volumeName instead of name
   name?: string // GCP uses name
   mountPath: string
 }
@@ -191,7 +191,7 @@ interface SharedVolumeOptions {
   name: string
   mountPath: string
   mountOptions: any
-  volumeMountNameKey: 'name' | 'mountName'
+  volumeMountNameKey: 'name' | 'volumeName'
 }
 
 /**
@@ -212,7 +212,11 @@ export const createInstrumentedTemplate = (
   const hasSidecarContainer = containers.some((c) => c.name === baseSidecar.name)
   const newSidecarContainer = {
     ...baseSidecar,
-    env: Object.values({...byName(baseSidecar.env ?? []), ...envVarsByName}) as EnvVar[],
+    env: Object.values({
+      ...DEFAULT_ENV_VARS_BY_NAME,
+      ...byName(baseSidecar.env ?? []),
+      ...envVarsByName,
+    }) as EnvVar[],
     volumeMounts: [sharedVolumeMount],
   } as Container
 

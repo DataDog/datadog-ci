@@ -44,7 +44,6 @@
     "google-auth-library": "^10.2.1",
     "inquirer": "^8.2.5",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
-    "jest-diff": "^30.0.4",
     "ora": "5.4.1",
     "upath": "^2.0.1"
   }
