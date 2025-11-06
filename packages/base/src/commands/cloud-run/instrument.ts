@@ -6,7 +6,7 @@ import {
   DEFAULT_LOGS_PATH,
   DEFAULT_SIDECAR_NAME,
   DEFAULT_VOLUME_NAME,
-} from '../../helpers/serverless/common'
+} from '../../helpers/serverless/constants'
 
 import {BaseCommand} from '../..'
 

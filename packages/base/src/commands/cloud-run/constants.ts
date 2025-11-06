@@ -1,4 +1,5 @@
-import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR, SITE_ENV_VAR} from '../../constants'
+import {ENVIRONMENT_ENV_VAR, SERVICE_ENV_VAR} from '../../helpers/serverless/constants'
+import {SITE_ENV_VAR} from '../../helpers/serverless/constants'
 
 export const SKIP_MASKING_CLOUDRUN_ENV_VARS = new Set([
   SITE_ENV_VAR,
