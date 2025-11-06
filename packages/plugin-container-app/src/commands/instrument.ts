@@ -12,7 +12,6 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serv
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import equal from 'fast-deep-equal/es6'
 
 import {DD_API_KEY_SECRET_NAME, getEnvVarsByName} from '../common'
 
@@ -145,7 +144,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     if (config.version) {
       updatedTags.version = config.version
     }
-    if (!equal(containerApp.tags, updatedTags)) {
+    if (!sortedEqual(containerApp.tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(containerApp.name)}\n`)
       if (!this.dryRun) {
         try {
@@ -174,7 +173,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       resourceGroup,
       containerApp
     )
-    if (equal(containerApp, updatedAppConfig)) {
+    if (sortedEqual(containerApp, updatedAppConfig)) {
       this.context.stdout.write(
         `${this.dryRunPrefix}Sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME

@@ -9,7 +9,6 @@ import {parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
-import equal from 'fast-deep-equal'
 
 import {AAS_DD_SETTING_NAMES, ensureLinux, isDotnet} from '../common'
 
@@ -139,7 +138,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     delete updatedTags.env
     delete updatedTags.version
     delete updatedTags[SERVERLESS_CLI_VERSION_TAG_NAME]
-    if (!equal(tags, updatedTags)) {
+    if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {

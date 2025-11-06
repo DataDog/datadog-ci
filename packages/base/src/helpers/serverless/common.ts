@@ -82,16 +82,19 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
 
   return envVars
 }
+
 /**
  * Recursively sort object keys to ensure consistent ordering
  */
-const sortObjectKeys = (obj: any): any => {
+const sortObject = (obj: any): any => {
   if (!obj) {
     return obj
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(sortObjectKeys)
+    return obj.map(sortObject).sort((a, b) => {
+      return JSON.stringify(a).localeCompare(JSON.stringify(b))
+    })
   }
 
   if (typeof obj === 'object') {
@@ -99,7 +102,7 @@ const sortObjectKeys = (obj: any): any => {
     Object.keys(obj)
       .sort()
       .forEach((key) => {
-        sorted[key] = sortObjectKeys(obj[key])
+        sorted[key] = sortObject(obj[key])
       })
 
     return sorted
@@ -107,6 +110,14 @@ const sortObjectKeys = (obj: any): any => {
 
   return obj
 }
+
+export const sortedEqual = (a: any, b: any): boolean => {
+  const sortedA = sortObject(a)
+  const sortedB = sortObject(b)
+
+  return JSON.stringify(sortedA) === JSON.stringify(sortedB)
+}
+
 /**
  * Obfuscate sensitive values in a line if it contains a key with "_KEY"
  */
@@ -125,8 +136,8 @@ const obfuscateSensitiveValues = (line: string): string => {
 
 export const generateConfigDiff = (original: any, updated: any): string => {
   // Sort keys consistently before comparison
-  const sortedOriginal = sortObjectKeys(original)
-  const sortedUpdated = sortObjectKeys(updated)
+  const sortedOriginal = sortObject(original)
+  const sortedUpdated = sortObject(updated)
 
   const originalJson = JSON.stringify(sortedOriginal, undefined, 2)
   const updatedJson = JSON.stringify(sortedUpdated, undefined, 2)
