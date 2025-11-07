@@ -7,17 +7,12 @@ import FormData from 'form-data'
 import upath from 'upath'
 
 import {MOCK_CWD} from '../../__tests__/testing-tools'
-import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../../constants'
-
 const getLatestVersion = jest.fn()
 jest.mock('../../get-latest-version', () => ({
   getLatestVersion,
 }))
 
 import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
-import {MOCK_CWD} from '../../__tests__/testing-tools'
-
-import {FLARE_PROJECT_FILES, CI_SITE_ENV_VAR, SITE_ENV_VAR} from '../constants'
 import {
   getEndpointUrl,
   getProjectFiles,
@@ -34,7 +29,6 @@ jest.spyOn(process, 'cwd').mockReturnValue(MOCK_CWD)
 jest.spyOn(flareModule, 'getProjectFiles').mockResolvedValue(new Set())
 fs.createReadStream = jest.fn().mockReturnValue('test data')
 jest.mock('jszip')
-jest.mock('../../get-latest-version')
 
 describe('flare', () => {
   describe('getEndpointUrl', () => {
@@ -293,16 +287,17 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     let stdout: Pick<Writable, 'write'>
     beforeEach(() => {
       stdout = {write: jest.fn()}
+      getLatestVersion.mockReset()
     })
 
     it('should print nothing if the CLI version is the latest', async () => {
-      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockResolvedValue('1.0.0')
+      getLatestVersion.mockResolvedValue('1.0.0')
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })
 
     it('should print a warning if the CLI version is outdated', async () => {
-      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockResolvedValue('1.1.0')
+      getLatestVersion.mockResolvedValue('1.1.0')
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).toHaveBeenCalledWith(
         '[!] You are using an outdated version of datadog-ci (1.0.0). The latest version is 1.1.0. Please update for better support.\n'
@@ -310,7 +305,7 @@ https://docs.datadoghq.com/serverless/libraries_integrations/cli/#environment-va
     })
 
     it('should not error if unable to fetch the latest version info', async () => {
-      jest.spyOn(getLatestVersionModule, 'getLatestVersion').mockRejectedValue(new Error('Network error'))
+      getLatestVersion.mockRejectedValue(new Error('Network error'))
       await validateCliVersion('1.0.0', stdout)
       expect(stdout.write).not.toHaveBeenCalled()
     })

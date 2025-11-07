@@ -7,7 +7,7 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {collectAsyncIterator} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {collectAsyncIterator, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,

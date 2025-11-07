@@ -7,6 +7,12 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
+  generateConfigDiff,
+  createInstrumentedTemplate,
+  ServerlessConfigOptions,
+  getBaseEnvVars,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
   DD_LOG_LEVEL_ENV_VAR,
   DD_SOURCE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
@@ -16,6 +22,9 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   CI_SITE_ENV_VAR,
+  DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ENABLED_ENV_VAR,
+  DD_LLMOBS_ML_APP_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
