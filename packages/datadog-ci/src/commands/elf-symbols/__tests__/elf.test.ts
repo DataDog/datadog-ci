@@ -859,6 +859,11 @@ describe('elf', () => {
     }
 
     test('copy debug info from elf files', async () => {
+      if (process.platform === 'win32') {
+        // make the test fail on Windows
+        throw new Error('test failed on Windows')
+      }
+
       const testFiles = [
         'dyn_aarch64',
         'exec_aarch64',
