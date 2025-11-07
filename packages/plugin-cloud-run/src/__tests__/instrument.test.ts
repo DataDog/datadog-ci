@@ -19,6 +19,7 @@ import {
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
+import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'
@@ -32,7 +33,7 @@ jest.mock('../utils', () => ({
 
 jest.mock('@datadog/datadog-ci-base/helpers/git/source-code-integration')
 
-jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
+jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '0.0.0'}))
 
 const mockServicesClient = {
   servicePath: jest.fn(),
@@ -232,6 +233,8 @@ describe('InstrumentCommand', () => {
       ;(command as any).sharedVolumeName = 'shared-volume'
       ;(command as any).sharedVolumePath = '/shared-volume'
       ;(command as any).logsPath = '/shared-volume/logs/*.log'
+      ;(command as any).environment = undefined
+      ;(command as any).version = undefined
     })
 
     test('adds sidecar and shared volume when missing', () => {
@@ -328,6 +331,44 @@ describe('InstrumentCommand', () => {
 
       // Check custom volume is created
       expect(result.template?.volumes?.[0]?.name).toBe('custom-volume')
+    })
+
+    test('sets unified service tag label', () => {
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      expect(result.labels).toEqual({
+        service: 'my-service',
+        [SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0_0_0',
+      })
+    })
+
+    test('preserves existing labels and adds service tag', () => {
+      const service = {
+        labels: {
+          'existing-label': 'existing-value',
+          team: 'backend',
+        },
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      expect(result.labels).toEqual({
+        'existing-label': 'existing-value',
+        team: 'backend',
+        service: 'my-service',
+        [SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0_0_0',
+      })
     })
   })
 

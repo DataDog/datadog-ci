@@ -263,7 +263,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     const updatedLabels: Record<string, string> = {
       ...service.labels,
       service: ddService,
-      [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace('.', '_'),
+      [SERVERLESS_CLI_VERSION_TAG_NAME]: SERVERLESS_CLI_VERSION_TAG_VALUE.replace(/\./g, '_'),
     }
     if (!!this.environment) {
       updatedLabels.env = this.environment

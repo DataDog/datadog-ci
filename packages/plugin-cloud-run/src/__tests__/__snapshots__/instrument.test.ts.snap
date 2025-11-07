@@ -16,7 +16,7 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 🚀 Instrumenting Cloud Run services with sidecar...
   {
 +   "labels": {
-+     "dd_sls_ci": "vXXXX",
++     "dd_sls_ci": "v0_0_0",
 +     "service": "interactive-service"
 +   },
     "name": "projects/interactive-project/locations/us-west1/services/interactive-service",
@@ -143,7 +143,7 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 [Dry Run] 🚀 Instrumenting Cloud Run services with sidecar...
   {
 +   "labels": {
-+     "dd_sls_ci": "vXXXX",
++     "dd_sls_ci": "v0_0_0",
 +     "env": "staging",
 +     "service": "test-service",
 +     "version": "1.0.0"
