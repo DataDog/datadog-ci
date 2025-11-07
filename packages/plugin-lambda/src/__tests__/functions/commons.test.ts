@@ -18,7 +18,7 @@ import {
   CI_SITE_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   DD_TRACE_ENABLED_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {mockClient} from 'aws-sdk-client-mock'
 

@@ -26,10 +26,8 @@ import {
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
-import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'

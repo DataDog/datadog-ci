@@ -11,17 +11,16 @@ import {
 import {FunctionConfiguration, LambdaClient, LambdaClientConfig, ListTagsCommand} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {LambdaFlareCommand} from '@datadog/datadog-ci-base/commands/lambda/flare'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
-  FIPS_ENV_VAR,
-  FIPS_IGNORE_ERROR_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {

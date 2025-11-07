@@ -1,11 +1,25 @@
 // XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 
+import {DATADOG_SITE_EU1} from '@datadog/datadog-ci-base/constants'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
-import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
-import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  API_KEY_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
+  HEALTH_PORT_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
+  LOGS_PATH_ENV_VAR,
+  SERVICE_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
+import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 import * as cloudRunPromptModule from '../prompt'

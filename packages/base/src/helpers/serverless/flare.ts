@@ -9,23 +9,14 @@ import {post as axiosPost, isAxiosError} from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
-import {
-  CI_SITE_ENV_VAR,
-  DATADOG_SITE_EU1,
-  DATADOG_SITE_GOV,
-  DATADOG_SITE_US1,
-  DATADOG_SITES,
-  FLARE_ENDPOINT_PATH,
-  SITE_ENV_VAR,
-} from '../../constants'
+import {DATADOG_SITE_EU1, DATADOG_SITE_GOV, DATADOG_SITE_US1, DATADOG_SITES} from '../../constants'
 
 import {deleteFolder} from '../fs'
 import {getLatestVersion} from '../get-latest-version'
 import * as helpersRenderer from '../renderer'
 import {isValidDatadogSite} from '../validation'
 
-import {CI_SITE_ENV_VAR, SITE_ENV_VAR} from './constants'
-import {FLARE_ENDPOINT_PATH} from './constants'
+import {CI_SITE_ENV_VAR, FLARE_ENDPOINT_PATH, SITE_ENV_VAR} from './constants'
 
 /**
  * Send the zip file to Datadog support

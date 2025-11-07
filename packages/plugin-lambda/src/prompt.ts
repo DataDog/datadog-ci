@@ -1,11 +1,11 @@
+import {DATADOG_SITES} from '@datadog/datadog-ci-base/constants'
 import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
-  DATADOG_SITES,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import chalk from 'chalk'
 import {filter} from 'fuzzy'

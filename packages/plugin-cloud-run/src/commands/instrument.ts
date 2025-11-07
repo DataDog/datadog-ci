@@ -8,24 +8,24 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
-  createInstrumentedTemplate,
-  generateConfigDiff,
-  getBaseEnvVars,
-  ServerlessConfigOptions,
-} from '@datadog/datadog-ci-base/helpers/serverless/common'
-import {
+  API_KEY_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
+  DD_TAGS_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
-  DD_LOG_LEVEL_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
+  LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
-  DD_TRACE_ENABLED_ENV_VAR,
+  SITE_ENV_VAR,
+  VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
-  DD_SOURCE_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
@@ -37,6 +37,16 @@ import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../re
 import {checkAuthentication, fetchServiceConfigs, generateConfigDiff} from '../utils'
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
+const EMPTY_DIR_VOLUME_SOURCE_MEMORY = 1
+
+const DEFAULT_HEALTH_CHECK_PORT = 5555
+
+const DEFAULT_ENV_VARS: IEnvVar[] = [
+  {name: SITE_ENV_VAR, value: DATADOG_SITE_US1},
+  {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
+  {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+  {name: HEALTH_PORT_ENV_VAR, value: DEFAULT_HEALTH_CHECK_PORT.toString()},
+]
 
 export class PluginCommand extends CloudRunInstrumentCommand {
   protected fipsConfig = {
@@ -56,6 +66,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     try {
       const isApiKeyValid = await newApiKeyValidator({
         apiKey: process.env.DD_API_KEY,
+        datadogSite: site,
       }).validateApiKey()
       if (!isApiKeyValid) {
         throw Error()

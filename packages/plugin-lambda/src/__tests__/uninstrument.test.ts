@@ -35,9 +35,7 @@ import {
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'

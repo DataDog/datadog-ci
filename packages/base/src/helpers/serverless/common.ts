@@ -1,7 +1,5 @@
 import {DATADOG_SITE_US1} from '../../constants'
 
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
-
 import {
   HEALTH_PORT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,

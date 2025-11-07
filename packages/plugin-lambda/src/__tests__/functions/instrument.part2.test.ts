@@ -1,7 +1,7 @@
 jest.mock('../../loggroup')
 
 import {Architecture, LambdaClient, Runtime} from '@aws-sdk/client-lambda'
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {mockClient} from 'aws-sdk-client-mock'
 

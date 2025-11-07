@@ -6,7 +6,7 @@ import axios from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
-import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../../constants'
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
 
 import {MOCK_CWD} from '../../__tests__/testing-tools'
 

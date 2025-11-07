@@ -12,7 +12,6 @@ import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/serverless/flare'
 import {Logging} from '@google-cloud/logging'
 import {GoogleAuth} from 'google-auth-library'
 

@@ -1,5 +1,5 @@
 jest.mock('inquirer')
-import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {CI_API_KEY_ENV_VAR, CI_SITE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {prompt} from 'inquirer'
 

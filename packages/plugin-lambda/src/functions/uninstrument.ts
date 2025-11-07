@@ -17,7 +17,7 @@ import {
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
   DD_TAGS_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,
