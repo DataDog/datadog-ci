@@ -3,17 +3,17 @@ import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {LambdaInstrumentCommand} from '@datadog/datadog-ci-base/commands/lambda/instrument'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
-import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
-import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {resolveConfigFromFile, DEFAULT_CONFIG_PATHS} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 

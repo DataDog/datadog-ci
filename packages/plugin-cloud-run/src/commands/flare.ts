@@ -10,6 +10,10 @@ import {CloudRunFlareCommand} from '@datadog/datadog-ci-base/commands/cloud-run/
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
@@ -28,10 +32,6 @@ import {
   validateFilePath,
   validateStartEndFlags,
 } from '@datadog/datadog-ci-base/helpers/serverless/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
-import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
-import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {RevisionsClient, ServicesClient} from '@google-cloud/run'
