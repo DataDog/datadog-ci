@@ -858,12 +858,9 @@ describe('elf', () => {
       })
     }
 
-    test('copy debug info from elf files', async () => {
-      if (process.platform === 'win32') {
-        // make the test fail on Windows
-        throw new Error('test failed on Windows')
-      }
-
+    test.each(Array(100).fill(undefined))('copy debug info from elf files', async () => {
+      // measure the time it takes to run the test
+      const startTime = Date.now()
       const testFiles = [
         'dyn_aarch64',
         'exec_aarch64',
@@ -877,6 +874,8 @@ describe('elf', () => {
       for (const testFile of testFiles) {
         await checkCopyDebugInfo(`${fixtureDir}/${testFile}`)
       }
+      const endTime = Date.now()
+      console.log(`Time taken: ${endTime - startTime}ms`)
     })
 
     test('no zstd support', async () => {

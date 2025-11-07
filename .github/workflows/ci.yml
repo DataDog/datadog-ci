@@ -84,7 +84,7 @@ jobs:
           DD_API_KEY: ${{ secrets.DATADOG_API_KEY_MAIN_ACCOUNT }}
           DD_APP_KEY: ${{ secrets.DATADOG_APP_KEY_MAIN_ACCOUNT }}
           DD_ENV: ci
-          NODE_OPTIONS: -r dd-trace/ci/init
+          # NODE_OPTIONS: -r dd-trace/ci/init
 
   e2e-test:
     strategy:
