@@ -30,7 +30,7 @@ jest.mock('../utils', () => ({
   checkAuthentication: jest.fn(),
 }))
 
-jest.mock('@datadog/datadog-ci-base/helpers/git/source-code-integration')
+jest.mock('@datadog/datadog-ci-base/helpers/serverless/source-code-integration')
 
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: '0.0.0'}))
 
