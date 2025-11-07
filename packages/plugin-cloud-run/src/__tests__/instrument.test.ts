@@ -1,4 +1,3 @@
-// XXX temporary workaround for @google-cloud/run ESM/CJS module issues
 import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 
 import {DATADOG_SITE_EU1} from '@datadog/datadog-ci-base/constants'

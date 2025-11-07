@@ -17,7 +17,7 @@ import {
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
+import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/serverless/flare'
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
 import {mockClient} from 'aws-sdk-client-mock'

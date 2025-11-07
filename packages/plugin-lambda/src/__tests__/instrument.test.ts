@@ -27,7 +27,7 @@ import {
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'

@@ -27,7 +27,7 @@ import {
   validateCliVersion,
   validateFilePath,
   validateStartEndFlags,
-} from '@datadog/datadog-ci-base/helpers/flare'
+} from '@datadog/datadog-ci-base/helpers/serverless/flare'
 import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
 import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
 import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
