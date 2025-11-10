@@ -24,20 +24,12 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
         {
           "env": [
             {
-              "name": "NODE_ENV",
-              "value": "production"
--           },
--           {
--             "name": "DD_TRACE_ENABLED",
--             "value": "true"
--           },
--           {
--             "name": "DD_SERVICE",
--             "value": "test-service"
-            }
-          ],
-          "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
+-             "name": "DD_API_KEY",
+-             "value": "test-api-key"
+-           }
+-         ],
+-         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "name": "datadog-sidecar",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",
@@ -48,12 +40,20 @@ exports[`UninstrumentCommand snapshot tests interactive mode 1`] = `
 -       {
 -         "env": [
 -           {
--             "name": "DD_API_KEY",
--             "value": "test-api-key"
--           }
--         ],
--         "image": "gcr.io/datadoghq/serverless-init:latest",
--         "name": "datadog-sidecar",
+-             "name": "DD_SERVICE",
+-             "value": "test-service"
+-           },
+-           {
+-             "name": "DD_TRACE_ENABLED",
+-             "value": "true"
+-           },
+-           {
+              "name": "NODE_ENV",
+              "value": "production"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",
@@ -101,20 +101,12 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
         {
           "env": [
             {
-              "name": "NODE_ENV",
-              "value": "production"
--           },
--           {
--             "name": "DD_TRACE_ENABLED",
--             "value": "true"
--           },
--           {
--             "name": "DD_SERVICE",
--             "value": "test-service"
-            }
-          ],
-          "image": "gcr.io/test-project/test-app:latest",
-          "name": "main-app",
+-             "name": "DD_API_KEY",
+-             "value": "test-api-key"
+-           }
+-         ],
+-         "image": "gcr.io/datadoghq/serverless-init:latest",
+-         "name": "datadog-sidecar",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",
@@ -125,12 +117,20 @@ exports[`UninstrumentCommand snapshot tests prints dry run data 1`] = `
 -       {
 -         "env": [
 -           {
--             "name": "DD_API_KEY",
--             "value": "test-api-key"
--           }
--         ],
--         "image": "gcr.io/datadoghq/serverless-init:latest",
--         "name": "datadog-sidecar",
+-             "name": "DD_SERVICE",
+-             "value": "test-service"
+-           },
+-           {
+-             "name": "DD_TRACE_ENABLED",
+-             "value": "true"
+-           },
+-           {
+              "name": "NODE_ENV",
+              "value": "production"
+            }
+          ],
+          "image": "gcr.io/test-project/test-app:latest",
+          "name": "main-app",
 -         "volumeMounts": [
 -           {
 -             "mountPath": "/shared-volume",

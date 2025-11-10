@@ -7,7 +7,7 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {collectAsyncIterator} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {collectAsyncIterator, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
@@ -17,7 +17,6 @@ import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serv
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import equal from 'fast-deep-equal/es6'
 
 import {ensureLinux, getEnvVars, isDotnet, isLinuxContainer} from '../common'
 
@@ -174,7 +173,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     if (config.version) {
       updatedTags.version = config.version
     }
-    if (!equal(tags, updatedTags)) {
+    if (!sortedEqual(tags, updatedTags)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
@@ -209,7 +208,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       sidecarContainer.image !== SIDECAR_IMAGE ||
       sidecarContainer.targetPort !== String(SIDECAR_PORT) ||
       !sidecarContainer.environmentVariables?.every(({name, value}) => name === value) ||
-      !equal(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
+      !sortedEqual(new Set(sidecarContainer.environmentVariables.map(({name}) => name)), new Set(Object.keys(envVars)))
     ) {
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
@@ -235,7 +234,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     }
     const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
-    if (!equal(existingEnvVars.properties, updatedEnvVars.properties)) {
+    if (!sortedEqual(existingEnvVars.properties, updatedEnvVars.properties)) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)

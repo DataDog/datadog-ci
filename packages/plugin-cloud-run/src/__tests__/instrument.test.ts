@@ -1,22 +1,8 @@
 import type {IContainer, IEnvVar, IVolumeMount} from '../types'
 
-import {DATADOG_SITE_EU1} from '@datadog/datadog-ci-base/constants'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as apikey from '@datadog/datadog-ci-base/helpers/apikey'
-import {
-  API_KEY_ENV_VAR,
-  DD_LOG_LEVEL_ENV_VAR,
-  DD_SOURCE_ENV_VAR,
-  DD_TAGS_ENV_VAR,
-  DD_TRACE_ENABLED_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
-  HEALTH_PORT_ENV_VAR,
-  LOGS_INJECTION_ENV_VAR,
-  LOGS_PATH_ENV_VAR,
-  SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
-  VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {API_KEY_ENV_VAR, SERVICE_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 
@@ -367,82 +353,6 @@ describe('InstrumentCommand', () => {
         service: 'my-service',
         [SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0_0_0',
       })
-    })
-  })
-
-  describe('buildSidecarContainer', () => {
-    let command: InstrumentCommand
-
-    beforeEach(() => {
-      command = new InstrumentCommand()
-      ;(command as any).tracing = undefined
-      ;(command as any).sidecarImage = 'gcr.io/datadoghq/serverless-init:latest'
-      ;(command as any).sidecarName = 'datadog-sidecar'
-      ;(command as any).sharedVolumeName = 'shared-volume'
-      ;(command as any).sharedVolumePath = '/shared-volume'
-      ;(command as any).logsPath = '/shared-volume/logs/*.log'
-    })
-
-    test('custom flags set correct env vars', () => {
-      ;(command as any).environment = 'dev'
-      ;(command as any).version = 'v123.456'
-      ;(command as any).logLevel = 'debug'
-      ;(command as any).llmobs = 'my-llm-app'
-      ;(command as any).extraTags = 'foo:bar,abc:def'
-      ;(command as any).language = 'nodejs'
-
-      const newSidecarContainer = command.buildSidecarContainer(undefined, 'my-service')
-      const expected: IEnvVar[] = [
-        {name: SERVICE_ENV_VAR, value: 'my-service'},
-        {name: ENVIRONMENT_ENV_VAR, value: 'dev'},
-        {name: VERSION_ENV_VAR, value: 'v123.456'},
-        {name: SITE_ENV_VAR, value: 'datadoghq.com'},
-        {name: LOGS_PATH_ENV_VAR, value: (command as any).logsPath as string},
-        {name: API_KEY_ENV_VAR, value: process.env.DD_API_KEY ?? ''},
-        {name: HEALTH_PORT_ENV_VAR, value: '5555'},
-        {name: LOGS_INJECTION_ENV_VAR, value: 'true'},
-        {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
-        {name: DD_LOG_LEVEL_ENV_VAR, value: 'debug'},
-        {name: DD_TAGS_ENV_VAR, value: 'foo:bar,abc:def'},
-        {name: DD_SOURCE_ENV_VAR, value: 'nodejs'},
-      ]
-      expect(newSidecarContainer.env).toEqual(expect.arrayContaining(expected))
-      expect(newSidecarContainer.env).toHaveLength(expected.length)
-    })
-
-    test('overwrites intended env vars; leaves existing env vars unchanged', () => {
-      process.env[API_KEY_ENV_VAR] = 'mock-api-key'
-      const existingSidecarContainer = {
-        name: 'datadog-sidecar',
-        env: [
-          // Following env vars should be left unchanged
-          {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
-          {name: LOGS_PATH_ENV_VAR, value: 'some-log-path'},
-          {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
-          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
-          {name: HEALTH_PORT_ENV_VAR, value: '12345'},
-          {name: 'CUSTOM_ENV_VAR', value: 'some-value'},
-          // Following env vars should be overwritten
-          {name: API_KEY_ENV_VAR, value: '123'},
-          {name: SERVICE_ENV_VAR, value: 'old-service'},
-        ],
-        volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
-      }
-      const newSidecarContainer = command.buildSidecarContainer(existingSidecarContainer, 'new-service')
-      const expected: IEnvVar[] = [
-        {name: SITE_ENV_VAR, value: DATADOG_SITE_EU1},
-        {name: LOGS_PATH_ENV_VAR, value: '/shared-volume/logs/*.log'},
-        {name: LOGS_INJECTION_ENV_VAR, value: 'false'},
-        {name: DD_TRACE_ENABLED_ENV_VAR, value: 'false'},
-        {name: HEALTH_PORT_ENV_VAR, value: '12345'},
-        {name: 'CUSTOM_ENV_VAR', value: 'some-value'},
-        {name: API_KEY_ENV_VAR, value: 'mock-api-key'},
-        {name: SERVICE_ENV_VAR, value: 'new-service'},
-      ]
-      for (const expectedEnv of expected) {
-        const actual = newSidecarContainer.env?.find((value) => value.name === expectedEnv.name)
-        expect(actual?.value).toBe(expectedEnv.value)
-      }
     })
   })
 })

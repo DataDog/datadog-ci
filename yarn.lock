@@ -1485,6 +1485,7 @@ __metadata:
     form-data: "npm:^4.0.4"
     glob: "npm:^10.4.5"
     inquirer: "npm:^8.2.5"
+    jest-diff: "npm:^30.2.0"
     jszip: "npm:^3.10.1"
     proxy: "npm:^2.1.1"
     proxy-agent: "npm:^6.4.0"
@@ -1540,7 +1541,6 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     chalk: "npm:3.0.0"
-    fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
@@ -1556,7 +1556,6 @@ __metadata:
     google-auth-library: "npm:^10.2.1"
     inquirer: "npm:^8.2.5"
     inquirer-checkbox-plus-prompt: "npm:^1.4.2"
-    jest-diff: "npm:^30.0.4"
     ora: "npm:5.4.1"
     upath: "npm:^2.0.1"
   peerDependencies:
@@ -1572,7 +1571,6 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     chalk: "npm:3.0.0"
-    fast-deep-equal: "npm:^3.1.3"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
@@ -2514,10 +2512,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jest/get-type@npm:30.0.1":
-  version: 30.0.1
-  resolution: "@jest/get-type@npm:30.0.1"
-  checksum: 10/bd6cb2fe1661b652f06e5c6f7ef5aa37247a5b4bf04aad8ce6a8a8ba659efaf983bab9d52755be8cf92478f8d894c024de2fbddf4c3f6be804b808a20dfc347b
+"@jest/get-type@npm:30.1.0":
+  version: 30.1.0
+  resolution: "@jest/get-type@npm:30.1.0"
+  checksum: 10/e2a95fbb49ce2d15547db8af5602626caf9b05f62a5e583b4a2de9bd93a2bfe7175f9bbb2b8a5c3909ce261d467b6991d7265bb1d547cb60e7e97f571f361a70
   languageName: node
   linkType: hard
 
@@ -2570,12 +2568,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@jest/schemas@npm:30.0.1":
-  version: 30.0.1
-  resolution: "@jest/schemas@npm:30.0.1"
+"@jest/schemas@npm:30.0.5":
+  version: 30.0.5
+  resolution: "@jest/schemas@npm:30.0.5"
   dependencies:
     "@sinclair/typebox": "npm:^0.34.0"
-  checksum: 10/067d4c3f38f2d8267d3ed6cc813252c3be580035fe7e2c0fa187323ef4978233ebadb1477808aec048440a8d0f480f71f92c5f02f98bf66c59bf802da1a0b254
+  checksum: 10/40df4db55d4aeed09d1c7e19caf23788309cea34490a1c5d584c913494195e698b9967e996afc27226cac6d76e7512fe73ae6b9584480695c60dd18a5459cdba
   languageName: node
   linkType: hard
 
@@ -5603,7 +5601,7 @@ __metadata:
     eslint-plugin-prefer-arrow: "npm:^1.2.3"
     eslint-plugin-prettier: "npm:^5.5.4"
     jest: "npm:29.6.2"
-    jest-diff: "npm:^30.0.4"
+    jest-diff: "npm:^30.2.0"
     knip: "npm:^5.64.1"
     prettier: "npm:^3.6.2"
     rimraf: "npm:^5.0.0"
@@ -8049,15 +8047,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-diff@npm:^30.0.4":
-  version: 30.0.4
-  resolution: "jest-diff@npm:30.0.4"
+"jest-diff@npm:^30.2.0":
+  version: 30.2.0
+  resolution: "jest-diff@npm:30.2.0"
   dependencies:
     "@jest/diff-sequences": "npm:30.0.1"
-    "@jest/get-type": "npm:30.0.1"
+    "@jest/get-type": "npm:30.1.0"
     chalk: "npm:^4.1.2"
-    pretty-format: "npm:30.0.2"
-  checksum: 10/4501182ea681741e18f594589ae9baa0d889a92b48d477344ab8f1ce943c5988b9361c50a51670afc72a64bf4698622045806d24c3074906bc12760729377186
+    pretty-format: "npm:30.2.0"
+  checksum: 10/1fb9e4fb7dff81814b4f69eaa7db28e184d62306a3a8ea2447d02ca53d2cfa771e83ede513f67ec5239dffacfaac32ff2b49866d211e4c7516f51c1fc06ede42
   languageName: node
   linkType: hard
 
@@ -9877,14 +9875,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pretty-format@npm:30.0.2":
-  version: 30.0.2
-  resolution: "pretty-format@npm:30.0.2"
+"pretty-format@npm:30.2.0":
+  version: 30.2.0
+  resolution: "pretty-format@npm:30.2.0"
   dependencies:
-    "@jest/schemas": "npm:30.0.1"
+    "@jest/schemas": "npm:30.0.5"
     ansi-styles: "npm:^5.2.0"
     react-is: "npm:^18.3.1"
-  checksum: 10/82b2f0c8771fcf072b33ca6a748b95beac589db4f98deafda1a29579ce47adf322909ea2fff9d46672ac075dda1aba2bde7f955609bfdf76f867e0ff77b5c19d
+  checksum: 10/725890d648e3400575eebc99a334a4cd1498e0d36746313913706bbeea20ada27e17c184a3cd45c50f705c16111afa829f3450233fc0fda5eed293c69757e926
   languageName: node
   linkType: hard
 

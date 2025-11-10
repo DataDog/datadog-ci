@@ -34,7 +34,7 @@ jest.mock('@azure/arm-resources', () => ({
   })),
 }))
 
-import {ContainerAppsAPIClient} from '@azure/arm-appcontainers'
+import {ContainerApp, ContainerAppsAPIClient} from '@azure/arm-appcontainers'
 import {DefaultAzureCredential} from '@azure/identity'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
@@ -103,43 +103,42 @@ Updating tags for my-container-app
           containers: [
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
-              env: [
+              env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              ]),
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -314,6 +313,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
@@ -323,12 +325,7 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -347,12 +344,7 @@ Updating tags for my-container-app
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ]),
           volumes: [
@@ -408,6 +400,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -417,17 +412,15 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -436,17 +429,12 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -468,7 +456,7 @@ Updating tags for my-container-app
         '--env-vars',
         'CUSTOM_VAR1=value1',
         '--env-vars',
-        'DD_AAS_INSTANCE_LOGGING_ENABLED=true',
+        'DD_SITE=datad0g.com',
       ])
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
@@ -490,45 +478,39 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
-                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SITE', value: 'datad0g.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
-                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'true'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
-                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SITE', value: 'datad0g.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'CUSTOM_VAR1', value: 'value1'},
-                {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'true'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -564,6 +546,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -572,17 +557,15 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -590,17 +573,12 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -638,6 +616,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -646,17 +627,15 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -664,17 +643,12 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -733,6 +707,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -740,34 +717,27 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
               image: 'index.docker.io/datadog/serverless-init:latest',
-              env: [
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
-              ],
+              ]),
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -809,7 +779,7 @@ Updating tags for my-container-app
     })
 
     test('does not update sidecar if config is correct', async () => {
-      const containerAppWithCorrectSidecar = {
+      const containerAppWithCorrectSidecar: ContainerApp = {
         ...DEFAULT_CONTAINER_APP,
         tags: {service: 'my-container-app'},
         configuration: {
@@ -829,17 +799,15 @@ Updating tags for my-container-app
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ],
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -847,6 +815,9 @@ Updating tags for my-container-app
               env: [
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
@@ -856,20 +827,70 @@ Updating tags for my-container-app
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
-          volumes: [
+          volumes: [{name: 'shared-volume', storageType: 'EmptyDir'}],
+        },
+      }
+
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', containerAppWithCorrectSidecar)
+      expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
+    })
+
+    test('leaves default variables alone on the main container', async () => {
+      const containerAppWithCorrectSidecar: ContainerApp = {
+        ...DEFAULT_CONTAINER_APP,
+        tags: {service: 'my-container-app'},
+        configuration: {
+          secrets: [
             {
-              name: 'shared-volume',
-              storageType: 'EmptyDir',
+              name: 'dd-api-key',
+              value: process.env.DD_API_KEY,
             },
           ],
+        },
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              env: [
+                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_LOGS_INJECTION', value: 'false'},
+                {name: 'DD_TRACE_ENABLED', value: 'false'},
+                {name: 'DD_HEALTH_PORT', value: '12345'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+            {
+              name: 'datadog-sidecar',
+              image: 'index.docker.io/datadog/serverless-init:latest',
+              env: [
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ],
+              resources: {
+                cpu: 0.25,
+                memory: '0.5Gi',
+              },
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+          ],
+          volumes: [{name: 'shared-volume', storageType: 'EmptyDir'}],
         },
       }
 
@@ -910,6 +931,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_SERVICE', value: 'custom-service-name'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
@@ -917,12 +941,7 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -939,12 +958,7 @@ Updating tags for my-container-app
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -982,6 +996,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -991,12 +1008,7 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -1015,12 +1027,7 @@ Updating tags for my-container-app
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -1059,6 +1066,9 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-container-app'},
@@ -1068,12 +1078,7 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'rg'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -1092,12 +1097,7 @@ Updating tags for my-container-app
                 cpu: 0.25,
                 memory: '0.5Gi',
               },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
@@ -1184,21 +1184,20 @@ Updating tags for my-container-app
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
               env: expect.arrayContaining([
                 ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
             {
               name: 'datadog-sidecar',
@@ -1207,22 +1206,15 @@ Updating tags for my-container-app
                 {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
                 {name: 'DD_SITE', value: 'datadoghq.com'},
                 {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
-              resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
-              },
-              volumeMounts: [
-                {
-                  volumeName: 'shared-volume',
-                  mountPath: '/shared-volume',
-                },
-              ],
+              resources: {cpu: 0.25, memory: '0.5Gi'},
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
           ],
           volumes: [
