@@ -213,7 +213,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       },
       probes: [
         {
-          type: 'Liveness',
+          type: 'Startup',
           tcpSocket: {
             port: DEFAULT_HEALTH_CHECK_PORT,
           },

@@ -140,7 +140,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -358,7 +358,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -460,7 +460,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -548,7 +548,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -628,7 +628,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -710,7 +710,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -811,7 +811,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -913,7 +913,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -985,7 +985,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -1068,7 +1068,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -1149,7 +1149,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -1234,7 +1234,7 @@ Updating tags for my-container-app
               },
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
@@ -1364,7 +1364,7 @@ Updating tags for my-container-app
               resources: {cpu: 0.25, memory: '0.5Gi'},
               probes: [
                 {
-                  type: 'Liveness',
+                  type: 'Startup',
                   tcpSocket: {
                     port: 5555,
                   },
