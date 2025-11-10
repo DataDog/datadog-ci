@@ -78,7 +78,9 @@ export const FLARE_PROJECT_FILES = [
   '.babelrc',
   'tsconfig.json',
   'esbuild.config.js',
-] /**
+]
+
+/**
  * Shared constants for serverless instrumentation
  */
 export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
@@ -87,7 +89,10 @@ export const SIDECAR_PORT = 8126
 export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
 export const DEFAULT_VOLUME_NAME = 'shared-volume'
 export const DEFAULT_VOLUME_PATH = '/shared-volume'
-export const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log' /**
+export const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
+export const DEFAULT_HEALTH_CHECK_PORT = 5555
+
+/**
  * Regular expression for parsing environment variables in KEY=VALUE format
  */
 export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/

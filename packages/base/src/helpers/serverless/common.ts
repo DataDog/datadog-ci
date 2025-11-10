@@ -10,6 +10,7 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   LOGS_PATH_ENV_VAR,
   ENV_VAR_REGEX,
+  DEFAULT_HEALTH_CHECK_PORT,
 } from './constants'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
@@ -160,8 +161,6 @@ export const generateConfigDiff = (original: any, updated: any): string => {
 export const byName = <T extends FullyOptional<{name: string}>>(xs: T[]): Record<string, T> => {
   return Object.fromEntries(xs.filter((x) => x.name).map((x) => [x.name, x]))
 }
-
-const DEFAULT_HEALTH_CHECK_PORT = 5555
 
 // GCP makes all their types like this so we need to allow it
 type FullyOptional<T> = {
