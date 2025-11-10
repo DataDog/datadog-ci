@@ -1,33 +1,31 @@
 import type {IContainer, IEnvVar, IService, IVolume, IVolumeMount} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
+import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   API_KEY_ENV_VAR,
-  DATADOG_SITE_US1,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-  ENVIRONMENT_ENV_VAR,
+  DD_LOG_LEVEL_ENV_VAR,
+  DD_SOURCE_ENV_VAR,
   DD_TAGS_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
+  ENVIRONMENT_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
-  DD_LOG_LEVEL_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
   LOGS_PATH_ENV_VAR,
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
-  DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
   CI_SITE_ENV_VAR,
-  DD_SOURCE_ENV_VAR,
-  FIPS_ENV_VAR,
-  FIPS_IGNORE_ERROR_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
-import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
-import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'

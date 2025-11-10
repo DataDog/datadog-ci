@@ -4,7 +4,7 @@ import {
   DEFAULT_LOGS_PATH,
   DEFAULT_VOLUME_PATH,
   DEFAULT_VOLUME_NAME,
-} from '@datadog/datadog-ci-base/helpers/serverless/common'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',

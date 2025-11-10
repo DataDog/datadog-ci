@@ -7,6 +7,7 @@ jest.mock('fs', () => ({
 jest.mock('@aws-sdk/credential-providers', () => ({
   ...jest.requireActual('@aws-sdk/credential-providers'),
   fromIni: jest.fn(),
+  fromNodeProviderChain: jest.fn(),
 }))
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
@@ -16,17 +17,17 @@ jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 import * as fs from 'fs'
 
 import {LambdaClient, ListFunctionsCommand, UpdateFunctionConfigurationCommand} from '@aws-sdk/client-lambda'
-import {fromIni} from '@aws-sdk/credential-providers'
+import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {createCommand, makeRunCLI, MOCK_DATADOG_API_KEY} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/git/source-code-integration'
-import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import * as instrumentHelpers from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 import {Cli} from 'clipanion'
@@ -62,6 +63,10 @@ import {
 describe('lambda', () => {
   const runCLI = makeRunCLI(InstrumentCommand, ['lambda', 'instrument'], {skipResetEnv: true})
   const lambdaClientMock = mockClient(LambdaClient)
+
+  beforeEach(() => {
+    ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(mockAwsCredentials))
+  })
 
   describe('instrument', () => {
     describe('execute', () => {
@@ -629,6 +634,7 @@ describe('lambda', () => {
 
       test('instrument multiple functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
@@ -713,6 +719,7 @@ describe('lambda', () => {
 
       test('instrument multiple specified functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         const node16LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node16-x`
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
@@ -801,6 +808,7 @@ describe('lambda', () => {
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)
@@ -837,6 +845,7 @@ describe('lambda', () => {
 
       test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
@@ -887,6 +896,7 @@ describe('lambda', () => {
 
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 

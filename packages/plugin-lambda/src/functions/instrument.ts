@@ -19,7 +19,7 @@ import {
   SITE_ENV_VAR,
   DD_TRACE_ENABLED_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 
 import {

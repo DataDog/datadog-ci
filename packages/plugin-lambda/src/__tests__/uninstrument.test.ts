@@ -7,6 +7,7 @@ jest.mock('fs', () => ({
 jest.mock('@aws-sdk/credential-providers', () => ({
   ...jest.requireActual('@aws-sdk/credential-providers'),
   fromIni: jest.fn(),
+  fromNodeProviderChain: jest.fn(),
 }))
 jest.mock('../prompt')
 jest.mock('../renderers/instrument-uninstrument-renderer')
@@ -21,7 +22,9 @@ import {
   ListFunctionsCommand,
   UpdateFunctionConfigurationCommand,
 } from '@aws-sdk/client-lambda'
-import {fromIni} from '@aws-sdk/credential-providers'
+import {fromIni, fromNodeProviderChain} from '@aws-sdk/credential-providers'
+import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
 import {
   ENVIRONMENT_ENV_VAR,
   DD_LOG_LEVEL_ENV_VAR,
@@ -32,9 +35,7 @@ import {
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {createCommand, makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import {requestConfirmation} from '@datadog/datadog-ci-base/helpers/prompt'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import 'aws-sdk-client-mock-jest'
@@ -54,6 +55,7 @@ import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 
 import {
   mockAwsAccessKeyId,
+  mockAwsCredentials,
   mockAwsSecretAccessKey,
   mockLambdaClientCommands,
   mockLambdaConfigurations,
@@ -62,6 +64,10 @@ import {
 describe('lambda', () => {
   const runCLI = makeRunCLI(UninstrumentCommand, ['lambda', 'uninstrument'], {skipResetEnv: true})
   const lambdaClientMock = mockClient(LambdaClient)
+
+  beforeEach(() => {
+    ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(mockAwsCredentials))
+  })
 
   describe('uninstrument', () => {
     describe('execute', () => {
@@ -320,6 +326,7 @@ describe('lambda', () => {
 
       test('uninstrument multiple functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -415,6 +422,7 @@ describe('lambda', () => {
 
       test('uninstrument multiple specified functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         mockLambdaConfigurations(lambdaClientMock, {
           'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world': {
             config: {
@@ -516,6 +524,7 @@ describe('lambda', () => {
 
       test('aborts if a problem occurs while setting the AWS credentials interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
         ;(requestAWSCredentials as any).mockImplementation(() => Promise.reject('Unexpected error'))
         const {code, context} = await runCLI(['-i'])
         expect(code).toBe(1)

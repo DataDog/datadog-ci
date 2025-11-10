@@ -10,16 +10,16 @@ import {
   OutputLogEvent,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {LambdaClient, ListTagsCommand} from '@aws-sdk/client-lambda'
-import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {
   makeRunCLI,
   MOCK_CWD,
   MOCK_DATADOG_API_KEY,
   MOCK_FLARE_FOLDER_PATH,
 } from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
-import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/flare'
 import * as fsModule from '@datadog/datadog-ci-base/helpers/fs'
 import * as helpersPromptModule from '@datadog/datadog-ci-base/helpers/prompt'
+import {API_KEY_ENV_VAR, CI_API_KEY_ENV_VAR} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import * as helpersFlareModule from '@datadog/datadog-ci-base/helpers/serverless/flare'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {

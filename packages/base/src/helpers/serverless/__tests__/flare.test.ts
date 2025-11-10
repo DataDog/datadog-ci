@@ -6,13 +6,13 @@ import axios from 'axios'
 import FormData from 'form-data'
 import upath from 'upath'
 
-import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../../constants'
-
+import {MOCK_CWD} from '../../__tests__/testing-tools'
 const getLatestVersion = jest.fn()
-jest.mock('../../helpers/get-latest-version', () => ({
+jest.mock('../../get-latest-version', () => ({
   getLatestVersion,
 }))
 
+import {CI_SITE_ENV_VAR, FLARE_PROJECT_FILES, SITE_ENV_VAR} from '../constants'
 import {
   getEndpointUrl,
   getProjectFiles,
@@ -22,8 +22,6 @@ import {
   validateStartEndFlags,
 } from '../flare'
 import * as flareModule from '../flare'
-
-import {MOCK_CWD} from './testing-tools'
 
 // Mocks
 jest.mock('fs')

@@ -7,20 +7,23 @@ import type {Logging} from '@google-cloud/logging'
 
 import {SKIP_MASKING_CLOUDRUN_ENV_VARS} from '@datadog/datadog-ci-base/commands/cloud-run/constants'
 import {CloudRunFlareCommand} from '@datadog/datadog-ci-base/commands/cloud-run/flare'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
+import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
+import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
 import {
   ADDITIONAL_FILES_DIRECTORY,
   API_KEY_ENV_VAR,
   CI_API_KEY_ENV_VAR,
-  FIPS_ENV_VAR,
-  FIPS_IGNORE_ERROR_ENV_VAR,
   FLARE_OUTPUT_DIRECTORY,
   FLARE_PROJECT_FILES,
   INSIGHTS_FILE_NAME,
   LOGS_DIRECTORY,
   PROJECT_FILES_DIRECTORY,
-} from '@datadog/datadog-ci-base/constants'
-import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
-import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {
   getProjectFiles,
   getUniqueFileNames,
@@ -28,11 +31,7 @@ import {
   validateCliVersion,
   validateFilePath,
   validateStartEndFlags,
-} from '@datadog/datadog-ci-base/helpers/flare'
-import {createDirectories, deleteFolder, writeFile, zipContents} from '@datadog/datadog-ci-base/helpers/fs'
-import {requestConfirmation, requestFilePath} from '@datadog/datadog-ci-base/helpers/prompt'
-import * as helpersRenderer from '@datadog/datadog-ci-base/helpers/renderer'
-import {renderAdditionalFiles, renderProjectFiles} from '@datadog/datadog-ci-base/helpers/renderer'
+} from '@datadog/datadog-ci-base/helpers/serverless/flare'
 import {formatBytes, maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {RevisionsClient, ServicesClient} from '@google-cloud/run'

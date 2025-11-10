@@ -1,21 +1,13 @@
 import {DATADOG_SITE_US1} from '../../constants'
 
-/**
- * Shared constants for serverless instrumentation
- */
-export const SIDECAR_CONTAINER_NAME = 'datadog-sidecar'
-export const SIDECAR_IMAGE = 'index.docker.io/datadog/serverless-init:latest'
-export const SIDECAR_PORT = 8126
-export const DEFAULT_SIDECAR_NAME = 'datadog-sidecar'
-export const DEFAULT_VOLUME_NAME = 'shared-volume'
-export const DEFAULT_VOLUME_PATH = '/shared-volume'
-export const DEFAULT_LOGS_PATH = '/shared-volume/logs/*.log'
-
-/**
- * Regular expression for parsing environment variables in KEY=VALUE format
- */
-export const ENV_VAR_REGEX = /^([\w.]+)=(.*)$/
-
+import {
+  HEALTH_PORT_ENV_VAR,
+  LOGS_INJECTION_ENV_VAR,
+  SITE_ENV_VAR,
+  DD_TRACE_ENABLED_ENV_VAR,
+  LOGS_PATH_ENV_VAR,
+  ENV_VAR_REGEX,
+} from './constants'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
  * @param envVars - Array of environment variables in KEY=VALUE format

@@ -16,7 +16,7 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
   DD_LLMOBS_ML_APP_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {mockClient} from 'aws-sdk-client-mock'
 
 import {FLUSH_TO_LOG_ENV_VAR, LAMBDA_HANDLER_ENV_VAR, MERGE_XRAY_TRACES_ENV_VAR} from '../../constants'

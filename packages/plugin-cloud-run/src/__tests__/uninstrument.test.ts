@@ -1,5 +1,6 @@
 import type {IContainer, IService} from '../types'
 
+import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {
   API_KEY_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
@@ -7,8 +8,7 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   SERVICE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
-import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import * as cloudRunPromptModule from '../prompt'

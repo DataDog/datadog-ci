@@ -38,8 +38,7 @@ packages/plugin-lambda                               @DataDog/datadog-ci-admins 
 packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/helpers/flare.ts                   @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/helpers/git-instrument-helpers.ts  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/base/src/helpers/serverless                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
 
 ## Source Code Integration (label: source-code-integration)
 packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration

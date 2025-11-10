@@ -8,7 +8,7 @@ import {
   SERVICE_ENV_VAR,
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
-} from '@datadog/datadog-ci-base/constants'
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
