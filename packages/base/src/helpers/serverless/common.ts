@@ -1,3 +1,5 @@
+import {isDeepStrictEqual} from 'node:util'
+
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
@@ -116,7 +118,7 @@ export const sortedEqual = (a: any, b: any): boolean => {
   const sortedA = sortObject(a)
   const sortedB = sortObject(b)
 
-  return JSON.stringify(sortedA) === JSON.stringify(sortedB)
+  return isDeepStrictEqual(sortedA, sortedB)
 }
 
 /**
