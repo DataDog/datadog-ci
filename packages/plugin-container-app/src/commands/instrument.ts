@@ -8,7 +8,11 @@ import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {createInstrumentedTemplate, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
-import {SIDECAR_CONTAINER_NAME, SIDECAR_IMAGE} from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {
+  DEFAULT_HEALTH_CHECK_PORT,
+  SIDECAR_CONTAINER_NAME,
+  SIDECAR_IMAGE,
+} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
 import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from '@datadog/datadog-ci-base/helpers/tags'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
@@ -207,6 +211,18 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
         cpu: 0.25,
         memory: '0.5Gi',
       },
+      probes: [
+        {
+          type: 'Startup',
+          tcpSocket: {
+            port: DEFAULT_HEALTH_CHECK_PORT,
+          },
+          initialDelaySeconds: 0,
+          periodSeconds: 10,
+          failureThreshold: 3,
+          timeoutSeconds: 1,
+        },
+      ],
     }
 
     // Use shared helper to create instrumented template
