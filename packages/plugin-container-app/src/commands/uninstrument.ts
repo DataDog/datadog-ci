@@ -1,4 +1,4 @@
-import {ContainerAppsAPIClient, ContainerApp, Container, Volume, VolumeMount} from '@azure/arm-appcontainers'
+import {ContainerAppsAPIClient, ContainerApp, Container, VolumeMount} from '@azure/arm-appcontainers'
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
@@ -136,10 +136,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     }
   }
 
-  public createUninstrumentedAppConfig(
-    config: ContainerAppConfigOptions,
-    containerApp: ContainerApp
-  ): ContainerApp {
+  public createUninstrumentedAppConfig(config: ContainerAppConfigOptions, containerApp: ContainerApp): ContainerApp {
     const containers = containerApp?.template?.containers ?? []
     const volumes = containerApp?.template?.volumes || []
 
@@ -178,7 +175,9 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
   // Remove volume mount, DD_* env vars, and custom env vars
   private updateAppContainer(appContainer: Container, config: ContainerAppConfigOptions): Container {
     const existingVolumeMounts = appContainer.volumeMounts || []
-    const updatedVolumeMounts = existingVolumeMounts.filter((v: VolumeMount) => v.volumeName !== config.sharedVolumeName)
+    const updatedVolumeMounts = existingVolumeMounts.filter(
+      (v: VolumeMount) => v.volumeName !== config.sharedVolumeName
+    )
 
     const customEnvVars = parseEnvVars(config.envVars)
 

@@ -3,7 +3,7 @@ import {isDeepStrictEqual} from 'node:util'
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
-import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {DATADOG_SITE_US1} from '../../constants'
 
 import {
   HEALTH_PORT_ENV_VAR,

@@ -21,20 +21,13 @@ jest.mock('@azure/arm-resources', () => ({
   })),
 }))
 
-import {ContainerApp, ContainerAppsAPIClient, Container} from '@azure/arm-appcontainers'
-import {DefaultAzureCredential} from '@azure/identity'
+import {ContainerApp, Container} from '@azure/arm-appcontainers'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
-import {
-  CONTAINER_APP_ID,
-  DEFAULT_ARGS,
-  DEFAULT_CONFIG,
-  DEFAULT_CONTAINER_APP,
-  NULL_SUBSCRIPTION_ID,
-} from './common'
+import {CONTAINER_APP_ID, DEFAULT_ARGS, DEFAULT_CONFIG, DEFAULT_CONTAINER_APP, NULL_SUBSCRIPTION_ID} from './common'
 
 jest.mock('@azure/arm-appcontainers', () => ({
   ContainerAppsAPIClient: jest.fn().mockImplementation(() => ({
@@ -221,10 +214,7 @@ Removing tags from my-container-app2
           containers: [
             {
               ...DEFAULT_CONTAINER_APP.template!.containers![0],
-              env: [
-                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
-                {name: 'DD_SERVICE', value: 'my-service'},
-              ],
+              env: [...DEFAULT_CONTAINER_APP.template!.containers![0].env!, {name: 'DD_SERVICE', value: 'my-service'}],
               volumeMounts: [{volumeName: customVolumeName, mountPath: '/custom'}],
             },
             {
@@ -240,7 +230,13 @@ Removing tags from my-container-app2
       }
       containerAppsOperations.get.mockReset().mockResolvedValue(customInstrumentedApp)
 
-      const {code} = await runCLI([...DEFAULT_ARGS, '--sidecar-name', customSidecarName, '--shared-volume-name', customVolumeName])
+      const {code} = await runCLI([
+        ...DEFAULT_ARGS,
+        '--sidecar-name',
+        customSidecarName,
+        '--shared-volume-name',
+        customVolumeName,
+      ])
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...customInstrumentedApp,
@@ -283,7 +279,13 @@ Removing tags from my-container-app2
       }
       containerAppsOperations.get.mockReset().mockResolvedValue(appWithCustomEnvVars)
 
-      const {code} = await runCLI([...DEFAULT_ARGS, '--env-vars', 'CUSTOM_VAR1=value1', '--env-vars', 'CUSTOM_VAR2=value2'])
+      const {code} = await runCLI([
+        ...DEFAULT_ARGS,
+        '--env-vars',
+        'CUSTOM_VAR1=value1',
+        '--env-vars',
+        'CUSTOM_VAR2=value2',
+      ])
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...appWithCustomEnvVars,
@@ -310,15 +312,12 @@ Removing tags from my-container-app2
 
   describe('createUninstrumentedAppConfig', () => {
     let command: UninstrumentCommand
-    let client: ContainerAppsAPIClient
 
     beforeEach(() => {
       command = new UninstrumentCommand()
       // no-dd-sa:typescript-best-practices/no-unsafe-assignment
       command.context = {stdout: {write: jest.fn()}} as any
       command.dryRun = false
-
-      client = new ContainerAppsAPIClient(new DefaultAzureCredential(), NULL_SUBSCRIPTION_ID)
 
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})

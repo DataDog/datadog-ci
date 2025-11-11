@@ -1,7 +1,6 @@
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
-import {parseResourceId} from '../../helpers/serverless/azure'
 import {DEFAULT_SIDECAR_NAME, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
 
 import {ContainerAppCommand, ContainerAppConfigOptions, ContainerAppBySubscriptionAndGroup} from './common'
