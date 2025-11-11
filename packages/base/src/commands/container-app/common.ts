@@ -31,6 +31,7 @@ export type ContainerAppConfigOptions = Partial<{
   service: string
   environment: string
   version: string
+  sidecarName: string
   sharedVolumeName: string
   sharedVolumePath: string
   logsPath: string
