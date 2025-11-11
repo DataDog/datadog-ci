@@ -76,12 +76,7 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     subscriptionId: string
   ): Promise<boolean> {
     try {
-      const [containerApp, secrets] = await Promise.all([
-        containerAppClient.containerApps.get(resourceGroup, containerAppName),
-        containerAppClient.containerApps.listSecrets(resourceGroup, containerAppName),
-      ])
-      // insert secrets since they're not exposed by the get api
-      containerApp.configuration = {...containerApp.configuration, secrets: secrets.value}
+      const containerApp = await containerAppClient.containerApps.get(resourceGroup, containerAppName)
 
       await this.uninstrumentSidecar(containerAppClient, config, resourceGroup, containerApp)
       await this.removeTags(subscriptionId, resourceGroup, containerApp)

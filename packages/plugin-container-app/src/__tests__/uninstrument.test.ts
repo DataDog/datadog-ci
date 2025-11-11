@@ -11,7 +11,6 @@ jest.mock('@azure/identity', () => ({
 const containerAppsOperations = {
   get: jest.fn(),
   beginUpdateAndWait: jest.fn(),
-  listSecrets: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -92,7 +91,6 @@ describe('container-app uninstrument', () => {
       getToken.mockClear().mockResolvedValue({token: 'token'})
       containerAppsOperations.get.mockReset().mockResolvedValue(INSTRUMENTED_CONTAINER_APP)
       containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
-      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: INSTRUMENTED_CONTAINER_APP.configuration?.secrets})
       updateTags.mockClear().mockResolvedValue({})
     })
 
@@ -106,7 +104,6 @@ Removing tags from my-container-app
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
-      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...INSTRUMENTED_CONTAINER_APP,
         configuration: {
@@ -139,7 +136,6 @@ Removing tags from my-container-app
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
-      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
     })
@@ -169,7 +165,6 @@ Updating configuration for my-container-app
 `)
       expect(code).toEqual(1)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
-      expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
       // tags should not be called due to the above failure
       expect(updateTags).not.toHaveBeenCalled()
@@ -244,7 +239,6 @@ Removing tags from my-container-app2
         },
       }
       containerAppsOperations.get.mockReset().mockResolvedValue(customInstrumentedApp)
-      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: customInstrumentedApp.configuration?.secrets})
 
       const {code} = await runCLI([...DEFAULT_ARGS, '--sidecar-name', customSidecarName, '--shared-volume-name', customVolumeName])
       expect(code).toEqual(0)
