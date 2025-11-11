@@ -1350,6 +1350,18 @@ Updating tags for my-container-app
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
+              probes: [
+                {
+                  failureThreshold: 3,
+                  initialDelaySeconds: 0,
+                  periodSeconds: 10,
+                  tcpSocket: {
+                    port: 5555,
+                  },
+                  timeoutSeconds: 1,
+                  type: 'Startup',
+                },
+              ],
               resources: {
                 cpu: 0.25,
                 memory: '0.5Gi',
