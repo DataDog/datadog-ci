@@ -1,7 +1,12 @@
 import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
-import {DEFAULT_VOLUME_PATH, DEFAULT_LOGS_PATH, DEFAULT_VOLUME_NAME} from '../../helpers/serverless/constants'
+import {
+  DEFAULT_VOLUME_PATH,
+  DEFAULT_LOGS_PATH,
+  DEFAULT_VOLUME_NAME,
+  DEFAULT_SIDECAR_NAME,
+} from '../../helpers/serverless/constants'
 
 import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
 
@@ -20,6 +25,9 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   })
   private version = Option.String('--version', {
     description: 'The value for the version tag. For example, `1.0.0`',
+  })
+  private sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
+    description: `(Not recommended) The name to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
   })
   private sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
     description: `(Not recommended) The name to use for the shared volume. Defaults to '${DEFAULT_VOLUME_NAME}'`,
@@ -49,6 +57,7 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       service: this.service,
       environment: this.environment,
       version: this.version,
+      sidecarName: this.sidecarName,
       sharedVolumeName: this.sharedVolumeName,
       sharedVolumePath: this.sharedVolumePath,
       logsPath: this.logsPath,

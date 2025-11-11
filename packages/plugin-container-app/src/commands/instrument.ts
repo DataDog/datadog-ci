@@ -181,7 +181,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     if (sortedEqual(containerApp, updatedAppConfig)) {
       this.context.stdout.write(
         `${this.dryRunPrefix}Sidecar container ${chalk.bold(
-          SIDECAR_CONTAINER_NAME
+          config.sidecarName
         )} already exists with correct configuration.\n`
       )
 
@@ -205,7 +205,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     const envVarsByName = getEnvVarsByName(config, subscriptionId, resourceGroup)
     // Build base sidecar container
     const baseSidecar: Container = {
-      name: SIDECAR_CONTAINER_NAME,
+      name: config.sidecarName,
       image: SIDECAR_IMAGE,
       resources: {
         cpu: 0.25,

@@ -4,6 +4,7 @@ import {
   DEFAULT_LOGS_PATH,
   DEFAULT_VOLUME_PATH,
   DEFAULT_VOLUME_NAME,
+  DEFAULT_SIDECAR_NAME,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 
 export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
@@ -13,6 +14,7 @@ export const DEFAULT_CONFIG: ContainerAppConfigOptions = {
   service: undefined,
   environment: undefined,
   version: undefined,
+  sidecarName: DEFAULT_SIDECAR_NAME,
   logsPath: DEFAULT_LOGS_PATH,
   sharedVolumeName: DEFAULT_VOLUME_NAME,
   sharedVolumePath: DEFAULT_VOLUME_PATH,
