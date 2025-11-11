@@ -260,6 +260,52 @@ Removing tags from my-container-app2
         },
       })
     })
+
+    test('Removes custom env vars provided via --env-vars', async () => {
+      const appWithCustomEnvVars: ContainerApp = {
+        ...INSTRUMENTED_CONTAINER_APP,
+        template: {
+          ...INSTRUMENTED_CONTAINER_APP.template,
+          containers: [
+            {
+              ...INSTRUMENTED_CONTAINER_APP.template!.containers![0],
+              env: [
+                {name: 'PORT', value: '8080'},
+                {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'CUSTOM_VAR1', value: 'value1'},
+                {name: 'CUSTOM_VAR2', value: 'value2'},
+                {name: 'PRESERVE_ME', value: 'keep'},
+              ],
+            },
+            INSTRUMENTED_CONTAINER_APP.template!.containers![1],
+          ],
+        },
+      }
+      containerAppsOperations.get.mockReset().mockResolvedValue(appWithCustomEnvVars)
+
+      const {code} = await runCLI([...DEFAULT_ARGS, '--env-vars', 'CUSTOM_VAR1=value1', '--env-vars', 'CUSTOM_VAR2=value2'])
+      expect(code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
+        ...appWithCustomEnvVars,
+        configuration: {
+          secrets: [{name: 'other-secret', value: 'OTHER'}],
+        },
+        template: {
+          ...appWithCustomEnvVars.template,
+          containers: [
+            {
+              ...appWithCustomEnvVars.template!.containers![0],
+              env: [
+                {name: 'PORT', value: '8080'},
+                {name: 'PRESERVE_ME', value: 'keep'},
+              ],
+              volumeMounts: [],
+            },
+          ],
+          volumes: [],
+        },
+      })
+    })
   })
 
   describe('createUninstrumentedAppConfig', () => {
@@ -348,6 +394,41 @@ Removing tags from my-container-app2
       const result = command.createUninstrumentedAppConfig(config, INSTRUMENTED_CONTAINER_APP)
 
       expect(result.configuration?.secrets).toEqual([{name: 'other-secret', value: 'OTHER'}])
+    })
+
+    test('removes custom env vars from config.envVars', () => {
+      const appWithCustomEnvVars: ContainerApp = {
+        ...DEFAULT_CONTAINER_APP,
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              env: [
+                {name: 'PORT', value: '8080'},
+                {name: 'DD_SERVICE', value: 'my-service'},
+                {name: 'CUSTOM_VAR1', value: 'value1'},
+                {name: 'CUSTOM_VAR2', value: 'value2'},
+                {name: 'PRESERVE_ME', value: 'keep'},
+              ],
+            },
+          ],
+        },
+      }
+
+      const config = {
+        ...DEFAULT_CONFIG,
+        sidecarName: DEFAULT_SIDECAR_NAME,
+        sharedVolumeName: DEFAULT_VOLUME_NAME,
+        envVars: ['CUSTOM_VAR1=value1', 'CUSTOM_VAR2=value2'],
+      }
+      const result = command.createUninstrumentedAppConfig(config, appWithCustomEnvVars)
+
+      const main = result.template?.containers?.find((c: Container) => c.name === 'main-container')
+      expect(main?.env).toEqual([
+        {name: 'PORT', value: '8080'},
+        {name: 'PRESERVE_ME', value: 'keep'},
+      ])
     })
   })
 

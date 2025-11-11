@@ -5,6 +5,7 @@ import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/conta
 import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
+import {parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -139,37 +140,25 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
     config: ContainerAppConfigOptions,
     containerApp: ContainerApp
   ): ContainerApp {
-    const template = containerApp.template || {}
-    const containers: Container[] = template.containers || []
-    const volumes: Volume[] = template.volumes || []
-
-    const sidecarName = config.sidecarName!
-    const sharedVolumeName = config.sharedVolumeName!
+    const containers = containerApp?.template?.containers ?? []
+    const volumes = containerApp?.template?.volumes || []
 
     // Remove sidecar container
-    let updatedContainers = containers.filter((c) => c.name !== sidecarName)
+    let updatedContainers = containers.filter((c) => c.name !== config.sidecarName)
 
     if (updatedContainers.length === containers.length) {
       this.context.stdout.write(
         renderSoftWarning(
-          `Sidecar container '${sidecarName}' not found, so no container was removed. Specify the container name with --sidecar-name.\n`
+          `Sidecar container '${config.sidecarName}' not found, so no container was removed. Specify the container name with --sidecar-name.\n`
         )
       )
     }
 
     // Remove shared volume
-    const updatedVolumes = volumes.filter((v) => v.name !== sharedVolumeName)
-
-    if (updatedVolumes.length === volumes.length) {
-      this.context.stdout.write(
-        renderSoftWarning(
-          `Shared volume '${sharedVolumeName}' not found, so no shared volume was removed. Specify the shared volume name with --shared-volume-name.\n`
-        )
-      )
-    }
+    const updatedVolumes = volumes.filter((v) => v.name !== config.sharedVolumeName)
 
     // Update app containers to remove volume mounts and DD_* env vars
-    updatedContainers = updatedContainers.map((c) => this.updateAppContainer(c, sharedVolumeName))
+    updatedContainers = updatedContainers.map((c) => this.updateAppContainer(c, config))
 
     // Remove DD_API_KEY secret
     const secrets = containerApp.configuration?.secrets ?? []
@@ -179,21 +168,25 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
       ...containerApp,
       configuration: {...containerApp.configuration, secrets: updatedSecrets},
       template: {
-        ...template,
+        ...containerApp.template,
         containers: updatedContainers,
         volumes: updatedVolumes,
       },
     }
   }
 
-  // Remove volume mount and DD_* env vars
-  private updateAppContainer(appContainer: Container, sharedVolumeName: string): Container {
+  // Remove volume mount, DD_* env vars, and custom env vars
+  private updateAppContainer(appContainer: Container, config: ContainerAppConfigOptions): Container {
     const existingVolumeMounts = appContainer.volumeMounts || []
-    const updatedVolumeMounts = existingVolumeMounts.filter((v: VolumeMount) => v.volumeName !== sharedVolumeName)
+    const updatedVolumeMounts = existingVolumeMounts.filter((v: VolumeMount) => v.volumeName !== config.sharedVolumeName)
+
+    const customEnvVars = parseEnvVars(config.envVars)
 
     const existingEnvVars = appContainer.env || []
-    // Remove env vars beginning with DD_
-    const updatedEnvVars = existingEnvVars.filter((v) => v.name && !v.name.startsWith('DD_'))
+    // Remove env vars beginning with DD_ and custom env vars
+    const updatedEnvVars = existingEnvVars.filter(
+      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars)
+    )
 
     return {
       ...appContainer,
