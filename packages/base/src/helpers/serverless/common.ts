@@ -152,6 +152,7 @@ export const generateConfigDiff = (original: any, updated: any): string => {
     aColor: chalk.red,
     bColor: chalk.green,
     omitAnnotationLines: true,
+    expand: false,
   })
   if (!configDiff || configDiff.includes('no visual difference')) {
     return chalk.gray('No changes detected.')

@@ -192,10 +192,10 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       return
     }
 
-    this.context.stdout.write(generateConfigDiff(containerApp, updatedAppConfig))
-
-    // Update configuration
-    this.context.stdout.write(`\n${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
+    const configDiff = generateConfigDiff(containerApp, updatedAppConfig)
+    this.context.stdout.write(
+      `${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}:\n${configDiff}\n`
+    )
 
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)

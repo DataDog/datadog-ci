@@ -2,6 +2,8 @@
 
 exports[`container-app uninstrument snapshot tests prints configuration diff 1`] = `
 "🐶 Beginning uninstrumentation of Azure Container App(s)
+Updating configuration for my-container-app:
+@@ -1,13 +1,9 @@
   {
     "configuration": {
       "secrets": [
@@ -15,15 +17,7 @@ exports[`container-app uninstrument snapshot tests prints configuration diff 1`]
         }
       ]
     },
-    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
-    "location": "East US",
-    "name": "my-container-app",
-    "tags": {
-      "dd_sls_ci": "vXXXX",
-      "env": "staging",
-      "service": "my-service",
-      "version": "1.0.0"
-    },
+@@ -23,80 +19,26 @@
     "template": {
       "containers": [
         {
@@ -106,7 +100,6 @@ exports[`container-app uninstrument snapshot tests prints configuration diff 1`]
     },
     "type": "Microsoft.App/containerApps"
   }
-Updating configuration for my-container-app
 Removing tags from my-container-app
 🐶 Uninstrumentation completed successfully!
 "
@@ -114,6 +107,8 @@ Removing tags from my-container-app
 
 exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
 "[Dry Run] 🐶 Beginning uninstrumentation of Azure Container App(s)
+[Dry Run] Updating configuration for my-container-app:
+@@ -1,13 +1,9 @@
   {
     "configuration": {
       "secrets": [
@@ -127,15 +122,7 @@ exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
         }
       ]
     },
-    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
-    "location": "East US",
-    "name": "my-container-app",
-    "tags": {
-      "dd_sls_ci": "vXXXX",
-      "env": "staging",
-      "service": "my-service",
-      "version": "1.0.0"
-    },
+@@ -23,80 +19,26 @@
     "template": {
       "containers": [
         {
@@ -218,7 +205,6 @@ exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
     },
     "type": "Microsoft.App/containerApps"
   }
-[Dry Run] Updating configuration for my-container-app
 [Dry Run] Removing tags from my-container-app
 [Dry Run] 🐶 Uninstrumentation completed successfully!
 "

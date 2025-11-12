@@ -2,6 +2,7 @@
 
 exports[`container-app instrument snapshot tests prints configuration diff 1`] = `
 "🐶 Beginning instrumentation of Azure Container App(s)
+Updating configuration for my-container-app:
   {
     "configuration": {
 -     "secrets": []
@@ -153,7 +154,6 @@ exports[`container-app instrument snapshot tests prints configuration diff 1`] =
     },
     "type": "Microsoft.App/containerApps"
   }
-Updating configuration for my-container-app
 Updating tags for my-container-app
 🐶 Instrumentation completed successfully!
 "
@@ -161,6 +161,7 @@ Updating tags for my-container-app
 
 exports[`container-app instrument snapshot tests prints dry run data with basic flags 1`] = `
 "[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)
+[Dry Run] Updating configuration for my-container-app:
   {
     "configuration": {
 -     "secrets": []
@@ -336,7 +337,6 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
     },
     "type": "Microsoft.App/containerApps"
   }
-[Dry Run] Updating configuration for my-container-app
 [Dry Run] Updating tags for my-container-app
 [Dry Run] 🐶 Instrumentation completed successfully!
 "
