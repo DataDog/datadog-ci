@@ -1303,6 +1303,85 @@ Updating tags for my-container-app
       expect(updateTags).toHaveBeenCalled()
     })
 
+    test('Uses custom sidecar name', async () => {
+      const customSidecarName = 'custom-dd-sidecar'
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-name', customSidecarName])
+      expect(code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
+        ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              env: expect.arrayContaining([
+                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ]),
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+            {
+              name: customSidecarName,
+              image: 'index.docker.io/datadog/serverless-init:latest',
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ]),
+              probes: [
+                {
+                  failureThreshold: 3,
+                  initialDelaySeconds: 0,
+                  periodSeconds: 10,
+                  tcpSocket: {
+                    port: 5555,
+                  },
+                  timeoutSeconds: 1,
+                  type: 'Startup',
+                },
+              ],
+              resources: {
+                cpu: 0.25,
+                memory: '0.5Gi',
+              },
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+          ],
+          volumes: [
+            {
+              name: 'shared-volume',
+              storageType: 'EmptyDir',
+            },
+          ],
+        },
+      })
+      expect(updateTags).toHaveBeenCalledWith(CONTAINER_APP_ID, {
+        properties: {tags: {service: 'my-container-app', dd_sls_ci: 'vXXXX'}},
+      })
+    })
+
     test('Environment variables are properly merged', async () => {
       const {code} = await runCLI([
         ...DEFAULT_INSTRUMENT_ARGS,
