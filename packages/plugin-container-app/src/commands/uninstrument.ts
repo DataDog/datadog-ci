@@ -5,7 +5,7 @@ import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/conta
 import {ContainerAppUninstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
@@ -128,8 +128,10 @@ export class PluginCommand extends ContainerAppUninstrumentCommand {
   ) {
     const updatedAppConfig = this.createUninstrumentedAppConfig(config, containerApp)
 
+    this.context.stdout.write(generateConfigDiff(containerApp, updatedAppConfig))
+
     // Update configuration
-    this.context.stdout.write(`${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
+    this.context.stdout.write(`\n${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
 
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)

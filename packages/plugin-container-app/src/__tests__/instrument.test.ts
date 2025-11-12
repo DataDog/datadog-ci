@@ -79,11 +79,11 @@ describe('container-app instrument', () => {
 
     test('Adds a sidecar and updates the tags', async () => {
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Updating tags for my-container-app
-🐶 Instrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Updating tags for my-container-app')
+      expect(output).toContain('🐶 Instrumentation completed successfully!')
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -168,11 +168,11 @@ Updating tags for my-container-app
 
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
-      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)
-[Dry Run] Updating configuration for my-container-app
-[Dry Run] Updating tags for my-container-app
-[Dry Run] 🐶 Instrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('[Dry Run] Updating configuration for my-container-app')
+      expect(output).toContain('[Dry Run] Updating tags for my-container-app')
+      expect(output).toContain('[Dry Run] 🐶 Instrumentation completed successfully!')
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -215,11 +215,11 @@ Ensure you copied the value and not the Key ID.
     test('Handles errors during sidecar instrumentation', async () => {
       containerAppsOperations.beginUpdateAndWait.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-[Error] Failed to instrument my-container-app: Error: sidecar error
-🐶 Instrumentation completed with errors, see above for details.
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('[Error] Failed to instrument my-container-app: Error: sidecar error')
+      expect(output).toContain('🐶 Instrumentation completed with errors, see above for details.')
       expect(code).toEqual(1)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.listSecrets).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -267,13 +267,13 @@ Updating configuration for my-container-app
         '--no-source-code-integration',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Updating configuration for my-container-app2
-Updating tags for my-container-app
-Updating tags for my-container-app2
-🐶 Instrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Updating configuration for my-container-app2')
+      expect(output).toContain('Updating tags for my-container-app')
+      expect(output).toContain('Updating tags for my-container-app2')
+      expect(output).toContain('🐶 Instrumentation completed successfully!')
       expect(getToken).toHaveBeenCalled()
       // Called 2 times to get each app
       expect(containerAppsOperations.get).toHaveBeenCalledTimes(2)
@@ -301,11 +301,11 @@ Updating tags for my-container-app2
         '1.0.0',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Updating tags for my-container-app
-🐶 Instrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Updating tags for my-container-app')
+      expect(output).toContain('🐶 Instrumentation completed successfully!')
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
@@ -400,11 +400,11 @@ Updating tags for my-container-app
         'CUSTOM_VAR2=value2',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Updating tags for my-container-app
-🐶 Instrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning instrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Updating tags for my-container-app')
+      expect(output).toContain('🐶 Instrumentation completed successfully!')
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
@@ -1258,6 +1258,45 @@ Updating tags for my-container-app
     })
   })
 
+  describe('snapshot tests', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      containerAppsOperations.get.mockReset().mockResolvedValue(DEFAULT_CONTAINER_APP)
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      containerAppsOperations.listSecrets.mockReset().mockResolvedValue({value: []})
+      updateTags.mockClear().mockResolvedValue({})
+      validateApiKey.mockClear().mockResolvedValue(true)
+      handleSourceCodeIntegration.mockClear().mockResolvedValue(undefined)
+    })
+
+    test('prints dry run data with basic flags', async () => {
+      const {code, context} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--dry-run',
+        '--service',
+        'my-service',
+        '--environment',
+        'staging',
+        '--version',
+        '1.0.0',
+        '--extra-tags',
+        'team:backend,service:api',
+        '--no-source-code-integration',
+      ])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+
+    test('prints configuration diff', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--no-source-code-integration'])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+  })
+
   describe('edge cases', () => {
     beforeEach(() => {
       jest.resetModules()
@@ -1284,8 +1323,9 @@ Updating tags for my-container-app
         '--no-source-code-integration',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toContain('Updating configuration for app1')
-      expect(context.stdout.toString()).toContain('Updating configuration for app2')
+      const output = context.stdout.toString()
+      expect(output).toContain('Updating configuration for app1')
+      expect(output).toContain('Updating configuration for app2')
       // Called 2 times to get each app
       expect(containerAppsOperations.get).toHaveBeenCalledTimes(2)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('rg1', 'app1')
@@ -1297,8 +1337,9 @@ Updating tags for my-container-app
 
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toContain('Updating configuration for my-container-app')
-      expect(context.stdout.toString()).toContain('[Error] Failed to update tags for my-container-app')
+      const output = context.stdout.toString()
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('[Error] Failed to update tags for my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
       expect(updateTags).toHaveBeenCalled()
     })

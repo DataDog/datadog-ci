@@ -1,0 +1,225 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`container-app uninstrument snapshot tests prints configuration diff 1`] = `
+"🐶 Beginning uninstrumentation of Azure Container App(s)
+  {
+    "configuration": {
+      "secrets": [
+        {
+-         "name": "dd-api-key",
+-         "value": "PLACEHOLDER"
+-       },
+-       {
+          "name": "other-secret",
+          "value": "OTHER"
+        }
+      ]
+    },
+    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
+    "location": "East US",
+    "name": "my-container-app",
+    "tags": {
+      "dd_sls_ci": "vXXXX",
+      "env": "staging",
+      "service": "my-service",
+      "version": "1.0.0"
+    },
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+-             "name": "DD_API_KEY",
+-             "secretRef": "dd-api-key"
+-           },
+-           {
+-             "name": "DD_ENV",
+-             "value": "staging"
+-           },
+-           {
+-             "name": "DD_SERVICE",
+-             "value": "my-service"
+-           },
+-           {
+-             "name": "DD_SITE",
+-             "value": "datadoghq.com"
+-           },
+-           {
+-             "name": "DD_VERSION",
+-             "value": "1.0.0"
+-           },
+-           {
+              "name": "PORT",
+              "value": "8080"
+            }
+          ],
+          "image": "myregistry.azurecr.io/myapp:latest",
+          "name": "main-container",
+          "resources": {
+            "cpu": 0.5,
+            "memory": "1Gi"
+          },
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "volumeName": "shared-volume"
+-           }
+-         ]
+-       },
+-       {
+-         "env": [
+-           {
+-             "name": "DD_API_KEY",
+-             "secretRef": "dd-api-key"
+-           },
+-           {
+-             "name": "DD_SITE",
+-             "value": "datadoghq.com"
+-           }
+-         ],
+-         "image": "index.docker.io/datadog/serverless-init:latest",
+-         "name": "datadog-sidecar",
+-         "resources": {
+-           "cpu": 0.25,
+-           "memory": "0.5Gi"
+-         },
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "volumeName": "shared-volume"
+-           }
+-         ]
++         "volumeMounts": []
+        }
+      ],
+      "scale": {
+        "maxReplicas": 10,
+        "minReplicas": 1
+      },
+-     "volumes": [
+-       {
+-         "name": "shared-volume",
+-         "storageType": "EmptyDir"
+-       }
+-     ]
++     "volumes": []
+    },
+    "type": "Microsoft.App/containerApps"
+  }
+Updating configuration for my-container-app
+Removing tags from my-container-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`container-app uninstrument snapshot tests prints dry run data 1`] = `
+"[Dry Run] 🐶 Beginning uninstrumentation of Azure Container App(s)
+  {
+    "configuration": {
+      "secrets": [
+        {
+-         "name": "dd-api-key",
+-         "value": "PLACEHOLDER"
+-       },
+-       {
+          "name": "other-secret",
+          "value": "OTHER"
+        }
+      ]
+    },
+    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
+    "location": "East US",
+    "name": "my-container-app",
+    "tags": {
+      "dd_sls_ci": "vXXXX",
+      "env": "staging",
+      "service": "my-service",
+      "version": "1.0.0"
+    },
+    "template": {
+      "containers": [
+        {
+          "env": [
+            {
+-             "name": "DD_API_KEY",
+-             "secretRef": "dd-api-key"
+-           },
+-           {
+-             "name": "DD_ENV",
+-             "value": "staging"
+-           },
+-           {
+-             "name": "DD_SERVICE",
+-             "value": "my-service"
+-           },
+-           {
+-             "name": "DD_SITE",
+-             "value": "datadoghq.com"
+-           },
+-           {
+-             "name": "DD_VERSION",
+-             "value": "1.0.0"
+-           },
+-           {
+              "name": "PORT",
+              "value": "8080"
+            }
+          ],
+          "image": "myregistry.azurecr.io/myapp:latest",
+          "name": "main-container",
+          "resources": {
+            "cpu": 0.5,
+            "memory": "1Gi"
+          },
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "volumeName": "shared-volume"
+-           }
+-         ]
+-       },
+-       {
+-         "env": [
+-           {
+-             "name": "DD_API_KEY",
+-             "secretRef": "dd-api-key"
+-           },
+-           {
+-             "name": "DD_SITE",
+-             "value": "datadoghq.com"
+-           }
+-         ],
+-         "image": "index.docker.io/datadog/serverless-init:latest",
+-         "name": "datadog-sidecar",
+-         "resources": {
+-           "cpu": 0.25,
+-           "memory": "0.5Gi"
+-         },
+-         "volumeMounts": [
+-           {
+-             "mountPath": "/shared-volume",
+-             "volumeName": "shared-volume"
+-           }
+-         ]
++         "volumeMounts": []
+        }
+      ],
+      "scale": {
+        "maxReplicas": 10,
+        "minReplicas": 1
+      },
+-     "volumes": [
+-       {
+-         "name": "shared-volume",
+-         "storageType": "EmptyDir"
+-       }
+-     ]
++     "volumes": []
+    },
+    "type": "Microsoft.App/containerApps"
+  }
+[Dry Run] Updating configuration for my-container-app
+[Dry Run] Removing tags from my-container-app
+[Dry Run] 🐶 Uninstrumentation completed successfully!
+"
+`;

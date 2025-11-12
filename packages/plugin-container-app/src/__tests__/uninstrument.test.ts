@@ -89,11 +89,11 @@ describe('container-app uninstrument', () => {
 
     test('Removes sidecar, volume, DD env vars, secret, and tags', async () => {
       const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Removing tags from my-container-app
-🐶 Uninstrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning uninstrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Removing tags from my-container-app')
+      expect(output).toContain('🐶 Uninstrumentation completed successfully!')
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -121,11 +121,11 @@ Removing tags from my-container-app
 
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
-      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning uninstrumentation of Azure Container App(s)
-[Dry Run] Updating configuration for my-container-app
-[Dry Run] Removing tags from my-container-app
-[Dry Run] 🐶 Uninstrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('[Dry Run] 🐶 Beginning uninstrumentation of Azure Container App(s)')
+      expect(output).toContain('[Dry Run] Updating configuration for my-container-app')
+      expect(output).toContain('[Dry Run] Removing tags from my-container-app')
+      expect(output).toContain('[Dry Run] 🐶 Uninstrumentation completed successfully!')
       expect(code).toEqual(0)
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -151,11 +151,11 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
     test('Handles errors during uninstrumentation', async () => {
       containerAppsOperations.beginUpdateAndWait.mockClear().mockRejectedValue(new Error('uninstrument error'))
       const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-[Error] Failed to uninstrument my-container-app: Error: uninstrument error
-🐶 Uninstrumentation completed with errors, see above for details.
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning uninstrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('[Error] Failed to uninstrument my-container-app: Error: uninstrument error')
+      expect(output).toContain('🐶 Uninstrumentation completed with errors, see above for details.')
       expect(code).toEqual(1)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalled()
@@ -186,13 +186,13 @@ Updating configuration for my-container-app
         '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app2',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure Container App(s)
-Updating configuration for my-container-app
-Updating configuration for my-container-app2
-Removing tags from my-container-app
-Removing tags from my-container-app2
-🐶 Uninstrumentation completed successfully!
-`)
+      const output = context.stdout.toString()
+      expect(output).toContain('🐶 Beginning uninstrumentation of Azure Container App(s)')
+      expect(output).toContain('Updating configuration for my-container-app')
+      expect(output).toContain('Updating configuration for my-container-app2')
+      expect(output).toContain('Removing tags from my-container-app')
+      expect(output).toContain('Removing tags from my-container-app2')
+      expect(output).toContain('🐶 Uninstrumentation completed successfully!')
       expect(getToken).toHaveBeenCalled()
       expect(containerAppsOperations.get).toHaveBeenCalledTimes(2)
       expect(containerAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-container-app')
@@ -307,6 +307,30 @@ Removing tags from my-container-app2
           volumes: [],
         },
       })
+    })
+  })
+
+  describe('snapshot tests', () => {
+    beforeEach(() => {
+      jest.resetModules()
+      getToken.mockClear().mockResolvedValue({token: 'token'})
+      containerAppsOperations.get.mockReset().mockResolvedValue(INSTRUMENTED_CONTAINER_APP)
+      containerAppsOperations.beginUpdateAndWait.mockReset().mockResolvedValue({})
+      updateTags.mockClear().mockResolvedValue({})
+    })
+
+    test('prints dry run data', async () => {
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+
+    test('prints configuration diff', async () => {
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+
+      expect(code).toBe(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
   })
 

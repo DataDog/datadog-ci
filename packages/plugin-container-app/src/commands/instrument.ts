@@ -7,7 +7,11 @@ import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {createInstrumentedTemplate, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {
+  createInstrumentedTemplate,
+  generateConfigDiff,
+  sortedEqual,
+} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DEFAULT_HEALTH_CHECK_PORT,
   SIDECAR_CONTAINER_NAME,
@@ -188,8 +192,10 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       return
     }
 
+    this.context.stdout.write(generateConfigDiff(containerApp, updatedAppConfig))
+
     // Update configuration
-    this.context.stdout.write(`${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
+    this.context.stdout.write(`\n${this.dryRunPrefix}Updating configuration for ${chalk.bold(containerApp.name)}\n`)
 
     if (!this.dryRun) {
       await client.containerApps.beginUpdateAndWait(resourceGroup, containerApp.name!, updatedAppConfig)
