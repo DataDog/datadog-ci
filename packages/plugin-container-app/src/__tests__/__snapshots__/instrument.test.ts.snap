@@ -1,0 +1,343 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`container-app instrument snapshot tests prints configuration diff 1`] = `
+"🐶 Beginning instrumentation of Azure Container App(s)
+Updating configuration for my-container-app:
+  {
+    "configuration": {
+-     "secrets": []
++     "secrets": [
++       {
++         "name": "dd-api-key",
++         "value": "PLACEHOLDER"
++       }
++     ]
+    },
+    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
+    "location": "East US",
+    "name": "my-container-app",
+    "template": {
+      "containers": [
+        {
+          "env": [
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
+            {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "my-container-app"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
+              "name": "PORT",
+              "value": "8080"
+            }
+          ],
+          "image": "myregistry.azurecr.io/myapp:latest",
+          "name": "main-container",
+          "resources": {
+            "cpu": 0.5,
+            "memory": "1Gi"
+-         }
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "volumeName": "shared-volume"
++           }
++         ]
++       },
++       {
++         "env": [
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "my-container-app"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           }
++         ],
++         "image": "index.docker.io/datadog/serverless-init:latest",
++         "name": "datadog-sidecar",
++         "probes": [
++           {
++             "failureThreshold": 3,
++             "initialDelaySeconds": 0,
++             "periodSeconds": 10,
++             "tcpSocket": {
++               "port": 5555
++             },
++             "timeoutSeconds": 1,
++             "type": "Startup"
++           }
++         ],
++         "resources": {
++           "cpu": 0.25,
++           "memory": "0.5Gi"
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "volumeName": "shared-volume"
++           }
++         ]
+        }
+      ],
+      "scale": {
+        "maxReplicas": 10,
+        "minReplicas": 1
+-     }
++     },
++     "volumes": [
++       {
++         "name": "shared-volume",
++         "storageType": "EmptyDir"
++       }
++     ]
+    },
+    "type": "Microsoft.App/containerApps"
+  }
+Updating tags for my-container-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`container-app instrument snapshot tests prints dry run data with basic flags 1`] = `
+"[Dry Run] 🐶 Beginning instrumentation of Azure Container App(s)
+[Dry Run] Updating configuration for my-container-app:
+  {
+    "configuration": {
+-     "secrets": []
++     "secrets": [
++       {
++         "name": "dd-api-key",
++         "value": "PLACEHOLDER"
++       }
++     ]
+    },
+    "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.App/containerApps/my-container-app",
+    "location": "East US",
+    "name": "my-container-app",
+    "template": {
+      "containers": [
+        {
+          "env": [
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
++           },
+            {
++             "name": "DD_ENV",
++             "value": "staging"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "my-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TAGS",
++             "value": "team:backend,service:api"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
++           },
++           {
+              "name": "PORT",
+              "value": "8080"
+            }
+          ],
+          "image": "myregistry.azurecr.io/myapp:latest",
+          "name": "main-container",
+          "resources": {
+            "cpu": 0.5,
+            "memory": "1Gi"
+-         }
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "volumeName": "shared-volume"
++           }
++         ]
++       },
++       {
++         "env": [
++           {
++             "name": "DD_API_KEY",
++             "secretRef": "dd-api-key"
++           },
++           {
++             "name": "DD_AZURE_RESOURCE_GROUP",
++             "value": "my-resource-group"
++           },
++           {
++             "name": "DD_AZURE_SUBSCRIPTION_ID",
++             "value": "00000000-0000-0000-0000-000000000000"
++           },
++           {
++             "name": "DD_ENV",
++             "value": "staging"
++           },
++           {
++             "name": "DD_HEALTH_PORT",
++             "value": "5555"
++           },
++           {
++             "name": "DD_LOGS_INJECTION",
++             "value": "true"
++           },
++           {
++             "name": "DD_SERVERLESS_LOG_PATH",
++             "value": "/shared-volume/logs/*.log"
++           },
++           {
++             "name": "DD_SERVICE",
++             "value": "my-service"
++           },
++           {
++             "name": "DD_SITE",
++             "value": "datadoghq.com"
++           },
++           {
++             "name": "DD_TAGS",
++             "value": "team:backend,service:api"
++           },
++           {
++             "name": "DD_TRACE_ENABLED",
++             "value": "true"
++           },
++           {
++             "name": "DD_VERSION",
++             "value": "1.0.0"
++           }
++         ],
++         "image": "index.docker.io/datadog/serverless-init:latest",
++         "name": "datadog-sidecar",
++         "probes": [
++           {
++             "failureThreshold": 3,
++             "initialDelaySeconds": 0,
++             "periodSeconds": 10,
++             "tcpSocket": {
++               "port": 5555
++             },
++             "timeoutSeconds": 1,
++             "type": "Startup"
++           }
++         ],
++         "resources": {
++           "cpu": 0.25,
++           "memory": "0.5Gi"
++         },
++         "volumeMounts": [
++           {
++             "mountPath": "/shared-volume",
++             "volumeName": "shared-volume"
++           }
++         ]
+        }
+      ],
+      "scale": {
+        "maxReplicas": 10,
+        "minReplicas": 1
+-     }
++     },
++     "volumes": [
++       {
++         "name": "shared-volume",
++         "storageType": "EmptyDir"
++       }
++     ]
+    },
+    "type": "Microsoft.App/containerApps"
+  }
+[Dry Run] Updating tags for my-container-app
+[Dry Run] 🐶 Instrumentation completed successfully!
+"
+`;
