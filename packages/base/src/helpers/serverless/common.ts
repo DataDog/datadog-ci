@@ -122,7 +122,7 @@ export const sortedEqual = (a: any, b: any): boolean => {
 }
 
 /**
- * Obfuscate sensitive values in a line if it contains a key with "_KEY"
+ * Obfuscate sensitive values in a line if it contains a key-like pattern
  */
 const obfuscateSensitiveValues = (line: string): string => {
   // Match hex strings of 16, 32, or 64 characters (common API key/token lengths)
@@ -145,10 +145,7 @@ export const generateConfigDiff = (original: any, updated: any): string => {
   const originalJson = JSON.stringify(sortedOriginal, undefined, 2)
   const updatedJson = JSON.stringify(sortedUpdated, undefined, 2)
 
-  const obfuscatedOriginal = originalJson.split('\n').map(obfuscateSensitiveValues).join('\n')
-  const obfuscatedUpdated = updatedJson.split('\n').map(obfuscateSensitiveValues).join('\n')
-
-  const configDiff = diff(obfuscatedOriginal, obfuscatedUpdated, {
+  const configDiff = diff(originalJson, updatedJson, {
     aColor: chalk.red,
     bColor: chalk.green,
     omitAnnotationLines: true,
@@ -158,7 +155,7 @@ export const generateConfigDiff = (original: any, updated: any): string => {
     return chalk.gray('No changes detected.')
   }
 
-  return configDiff
+  return configDiff.split('\n').map(obfuscateSensitiveValues).join('\n')
 }
 
 export const byName = <T extends FullyOptional<{name: string}>>(xs: T[]): Record<string, T> => {
