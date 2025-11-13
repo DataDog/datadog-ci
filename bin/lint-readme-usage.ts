@@ -16,14 +16,12 @@ type OptionDefinition = {
 }
 
 const error = (message: string): 1 => {
-  // eslint-disable-next-line no-console
   console.log(chalk.red(message))
 
   return 1
 }
 
 const success = (message: string): 0 => {
-  // eslint-disable-next-line no-console
   console.log(chalk.green(message))
 
   return 0
@@ -148,6 +146,25 @@ const extractDescription = (optionsObject: ts.ObjectLiteralExpression): string =
       if (ts.isStringLiteral(prop.initializer)) {
         return prop.initializer.text
       }
+
+      // Handle template literals (e.g., `text ${var}`)
+      if (ts.isTemplateExpression(prop.initializer) || ts.isNoSubstitutionTemplateLiteral(prop.initializer)) {
+        // For template literals, we'll extract the raw text and convert ${...} to literal text
+        const sourceFile = prop.getSourceFile()
+        let text = prop.initializer.getText(sourceFile)
+        // Remove backticks
+        text = text.slice(1, -1)
+        // Remove "Defaults to '${...}'" parts since we have a Default column
+        text = text.replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
+        text = text.replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
+        text = text.replace(/\s*Defaults to '[^']*'/g, '')
+        // Clean up any double spaces or trailing/leading spaces
+        text = text.replace(/\s+/g, ' ').trim()
+        // Clean up double periods
+        text = text.replace(/\.\s*\./g, '.')
+
+        return text
+      }
     }
   }
 
@@ -158,11 +175,15 @@ const extractDescription = (optionsObject: ts.ObjectLiteralExpression): string =
  * Generate markdown table from options
  */
 const generateTable = (options: OptionDefinition[]): string => {
+  // Filter out universal options that shouldn't be in individual READMEs
+  const excludedFlags = ['--fips', '--fips-ignore-error']
+  const filteredOptions = options.filter((option) => !option.flags.some((flag) => excludedFlags.includes(flag)))
+
   const rows: string[] = []
   rows.push('| Argument | Shorthand | Description | Default |')
   rows.push('| -------- | --------- | ----------- | ------- |')
 
-  for (const option of options) {
+  for (const option of filteredOptions) {
     const argument = option.flags.length > 0 ? `\`${option.flags.join('` or `')}\`` : ''
     const shorthand = option.shorthand ? `\`${option.shorthand}\`` : ''
     const description = option.description || ''
@@ -213,7 +234,6 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
     const endIndex = newContent.indexOf(endMarker)
 
     if (beginIndex === -1 || endIndex === -1) {
-      // eslint-disable-next-line no-console
       console.log(chalk.yellow(`Markers not found for command '${commandName}' in ${readmePath}, skipping...`))
       continue
     }
@@ -234,7 +254,6 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
     omitAnnotationLines: true,
   })
 
-  // eslint-disable-next-line no-console
   console.log(`${chalk.bold(readmePath)} should be updated:\n${delta}\n`)
 
   if (fix) {
@@ -247,7 +266,7 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
 }
 
 // Main execution
-// eslint-disable-next-line no-console
+
 console.log(chalk.bold.blue('Linting README usage tables...\n'))
 
 const pluginPackages = fs
@@ -292,11 +311,10 @@ for (const {scope, packagePath} of pluginPackages) {
 const sum = TO_APPLY.map((apply) => apply()).reduce<number>((acc, result) => acc + result, 0)
 
 if (sum > 0) {
-  // eslint-disable-next-line no-console
   console.error(
     chalk.red(`\nFound ${chalk.bold(sum)} errors. Run ${chalk.bold('yarn lint:readme-usage --fix')} to fix them.`)
   )
   process.exit(1)
 }
 
-console.log(chalk.green.bold('\n All README usage tables are up to date!\n'))
+console.log(chalk.green.bold('\n✅ All README usage tables are up to date!\n'))
