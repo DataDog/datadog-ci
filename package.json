@@ -18,6 +18,7 @@
     "lint:all": "eslint --cache --quiet '**/*.ts'",
     "lint:ci": "yarn lint:all -f @microsoft/sarif -o 'sarif-datadog-ci.sarif'",
     "lint:packages": "FORCE_COLOR=1 tsx --conditions=development bin/lint-packages.ts",
+    "lint:readme-usage": "FORCE_COLOR=1 tsx --conditions=development bin/lint-readme-usage.ts",
     "loop-packages": "yarn workspaces foreach --all --no-private",
     "package:build": "yarn tsc:build $INIT_CWD",
     "package:clean": "cd $INIT_CWD && rimraf dist tsconfig.tsbuildinfo",

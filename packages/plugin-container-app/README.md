@@ -79,6 +79,7 @@ Configuration can be done using command-line arguments or a JSON configuration f
 #### `instrument`
 You can pass the following arguments to `instrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
 
+<!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. | |
