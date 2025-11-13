@@ -94,11 +94,11 @@ az login
 
 You must expose these environment variables in the environment where you are running `datadog-ci container-app instrument`:
 
-| Environment Variable       | Description                                                                                                                                                                                                                       | Example                                |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| `DD_BETA_COMMANDS_ENABLED` | **Required**. Must be set to `true` to enable beta commands.                                                                                                                                                                      | `export DD_BETA_COMMANDS_ENABLED=true` |
-| `DD_API_KEY`               | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1].                                        | `export DD_API_KEY=<API_KEY>`          |
-| `DD_SITE`                  | Set which Datadog site to send data. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com`         |
+| Environment Variable | Description | Example |
+| -------------------- | ----------- | ------- |
+| `DD_BETA_COMMANDS_ENABLED` | **Required**. Must be set to `true` to enable beta commands. | `export DD_BETA_COMMANDS_ENABLED=true` |
+| `DD_API_KEY` | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1]. | `export DD_API_KEY=<API_KEY>` |
+| `DD_SITE` | Set which Datadog site to send data to. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
 
 ### Arguments
 
