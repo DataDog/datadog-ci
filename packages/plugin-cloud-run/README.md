@@ -70,7 +70,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--log-level` | | Specify your Datadog log level. | |
 | `--llmobs` | | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. | |
 | `--extra-tags` | | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. | |
-| `--source-code-integration` | | Whether to enable Datadog Source Code Integration. This will tag your service(s) with the Git respository and the latest commit hash of the local direectory. | `true` |
+| `--source-code-integration` | | Whether to enable Datadog Source Code Integration. This will tag your service(s) with the Git respository and the latest commit hash of the local directory. | `true` |
 | `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
 | `--upload-git-metadata` | | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` |
 | `--no-upload-git-metadata` | | Disables Git metadata uploading. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary. | |

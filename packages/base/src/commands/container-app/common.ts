@@ -5,8 +5,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
-import {ENV_VAR_REGEX} from '../../helpers/serverless/constants'
-import {EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -44,29 +43,34 @@ export type ContainerAppConfigOptions = Partial<{
 }>
 
 export abstract class ContainerAppCommand extends BaseCommand {
-  public dryRun = Option.Boolean('-d,--dry-run', false, {
-    description: 'Run the command in dry-run mode, without making any changes',
-  })
   private subscriptionId = Option.String('-s,--subscription-id', {
-    description: 'Azure Subscription ID containing the Container App',
+    description:
+      'Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`.',
   })
   private resourceGroup = Option.String('-g,--resource-group', {
-    description: 'Name of the Azure Resource Group containing the Container App',
+    description:
+      'Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`.',
   })
   private containerAppName = Option.String('-n,--name', {
-    description: 'Name of the Azure Container App to instrument',
+    description:
+      'Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`.',
   })
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
-      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.App/containerApps/{containerAppName}"',
+      'Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`',
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
-      'Additional environment variables to set for the Container App. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+      'Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`',
   })
 
   private configPath = Option.String('--config', {
-    description: 'Path to the configuration file',
+    description: 'Path to the configuration file.',
+  })
+
+  // eslint-disable-next-line @typescript-eslint/member-ordering -- needed for ordering of arguments in readme
+  public dryRun = Option.Boolean('-d,--dry-run', false, {
+    description: 'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
   })
 
   private fips = Option.Boolean('--fips', false)
