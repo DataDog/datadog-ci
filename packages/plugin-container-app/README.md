@@ -45,6 +45,34 @@ datadog-ci container-app instrument \
   --dry-run
 ```
 
+### `uninstrument`
+
+Run `datadog-ci container-app uninstrument` to remove Datadog instrumentation from an Azure Container App. This command reverts the Container App configuration to its pre-instrumented state by removing the Datadog sidecar and associated environment variables.
+
+```bash
+# Uninstrument a Container App using subscription ID, resource group, and name
+datadog-ci container-app uninstrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group> \
+  --name <container-app-name>
+
+# Uninstrument a Container App using a full resource ID
+datadog-ci container-app uninstrument \
+  --resource-id "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.App/containerApps/{containerAppName}"
+
+# Uninstrument multiple Container Apps using resource IDs
+datadog-ci container-app uninstrument \
+  --resource-id <resource-id-1> \
+  --resource-id <resource-id-2>
+
+# Dry run to preview changes
+datadog-ci container-app uninstrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group> \
+  --name <container-app-name> \
+  --dry-run
+```
+
 ## Configuration
 
 ### Azure Credentials
