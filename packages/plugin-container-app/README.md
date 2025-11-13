@@ -110,25 +110,41 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 <!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. | |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. | |
-| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. | |
-| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>` | |
-| `--service` | | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service` | |
-| `--env` or `--environment` | | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod` | |
-| `--version` | | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0` | |
-| `--instance-logging` | | When enabled, log collection is automatically configured for an additional file path: `/home/LogFiles/*$COMPUTERNAME*.log` | `false` |
-| `--shared-volume-name` | | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
-| `--shared-volume-path` | | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
-| `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--source-code-integration` or `--sourceCodeIntegration` | | Enable source code integration to add Git metadata as tags. Specify `--no-source-code-integration` to disable. | `true` |
-| `--upload-git-metadata` or `--uploadGitMetadata` | | Upload Git metadata to Datadog. Only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--extra-tags` or `--extraTags` | | Additional tags to add to the service in the format `key1:value1,key2:value2` | |
-| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` | |
+| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
+| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
+| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>` |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` |  |
+| `--config` |  | Path to the configuration file. |  |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
-| `--config` | | Path to a configuration file. See the configuration file section below. | |
-| `--fips` | | Enable FIPS support for the Container App. | `false` |
-| `--fips-ignore-error` | | Ignore errors when enabling FIPS support. | `false` |
+| `--service` |  | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service`. If not provided, the Container App name will be used. |  |
+| `--env` or `--environment` |  | he value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod` |  |
+| `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0` |  |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
+| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `DEFAULT_VOLUME_NAME` |
+| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `DEFAULT_VOLUME_PATH` |
+| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. Must begin with the shared volume path. | `DEFAULT_LOGS_PATH` |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable Datadog Source Code integration. This will tag your service(s) with the Git respository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
+<!-- END_USAGE:instrument -->
+
+#### `uninstrument`
+You can pass the following arguments to `uninstrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
+
+<!-- BEGIN_USAGE:uninstrument -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
+| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
+| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>` |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` |  |
+| `--config` |  | Path to the configuration file. |  |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |
+| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `DEFAULT_VOLUME_NAME` |
+<!-- END_USAGE:uninstrument -->
 
 ### Configuration file
 
