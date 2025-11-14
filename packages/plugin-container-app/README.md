@@ -1,7 +1,5 @@
 ## Azure Container Apps
 
-> **BETA**: This feature is in beta. To use it, you must set the environment variable `DD_BETA_COMMANDS_ENABLED=true`.
-
 You can use the CLI to instrument your Azure Container Apps with Datadog. The CLI enables instrumentation by modifying existing Container App configurations to include the Datadog sidecar, which enables tracing, log collection, and custom metrics.
 
 See [the docs](https://docs.datadoghq.com/serverless/azure_container_apps/sidecar/) for language-specific application steps needed in addition to these commands.
@@ -96,7 +94,6 @@ You must expose these environment variables in the environment where you are run
 
 | Environment Variable | Description | Example |
 | -------------------- | ----------- | ------- |
-| `DD_BETA_COMMANDS_ENABLED` | **Required**. Must be set to `true` to enable beta commands. | `export DD_BETA_COMMANDS_ENABLED=true` |
 | `DD_API_KEY` | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1]. | `export DD_API_KEY=<API_KEY>` |
 | `DD_SITE` | Set which Datadog site to send data to. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
 
@@ -191,7 +188,6 @@ Alternatively, you can use resource IDs:
 ### Basic instrumentation
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 export DD_SITE=datadoghq.com
 
@@ -204,7 +200,6 @@ datadog-ci container-app instrument \
 ### Instrumentation with tags and version
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \
@@ -220,7 +215,6 @@ datadog-ci container-app instrument \
 ### Instrumentation with custom logging
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \
@@ -234,7 +228,6 @@ datadog-ci container-app instrument \
 ### Dry run to preview changes
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \
