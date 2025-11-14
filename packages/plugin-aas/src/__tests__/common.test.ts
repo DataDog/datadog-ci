@@ -268,6 +268,34 @@ describe('aas common', () => {
       const envVars = getEnvVars(DEFAULT_CONFIG, false)
       expect(envVars.DD_TAGS).toBeUndefined()
     })
+
+    test('includes DD_PROFILING_ENABLED when profiling is true', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        profiling: true,
+      }
+      const envVars = getEnvVars(config, false)
+      expect(envVars.DD_PROFILING_ENABLED).toEqual('true')
+    })
+
+    test('does not include DD_PROFILING_ENABLED when profiling is false', () => {
+      const envVars = getEnvVars(DEFAULT_CONFIG, false)
+      expect(envVars.DD_PROFILING_ENABLED).toBeUndefined()
+    })
+
+    test('includes DD_APPSEC_ENABLED when appsec is true', () => {
+      const config: AasConfigOptions = {
+        ...DEFAULT_CONFIG,
+        appsec: true,
+      }
+      const envVars = getEnvVars(config, false)
+      expect(envVars.DD_APPSEC_ENABLED).toEqual('true')
+    })
+
+    test('does not include DD_APPSEC_ENABLED when appsec is false', () => {
+      const envVars = getEnvVars(DEFAULT_CONFIG, false)
+      expect(envVars.DD_APPSEC_ENABLED).toBeUndefined()
+    })
   })
 
   describe('isDotnet', () => {
