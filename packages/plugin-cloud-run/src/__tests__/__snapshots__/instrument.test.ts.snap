@@ -33,14 +33,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +             "value": "5555"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
-+           },
-+           {
-+             "name": "DD_LLMOBS_ENABLED",
-+             "value": "true"
-+           },
-+           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
@@ -84,14 +76,6 @@ exports[`InstrumentCommand snapshot tests interactive mode 1`] = `
 +           {
 +             "name": "DD_HEALTH_PORT",
 +             "value": "5555"
-+           },
-+           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
-+           },
-+           {
-+             "name": "DD_LLMOBS_ENABLED",
-+             "value": "true"
 +           },
 +           {
 +             "name": "DD_LOGS_INJECTION",
@@ -194,14 +178,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "value": "5555"
 +           },
 +           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
-+           },
-+           {
-+             "name": "DD_LLMOBS_ENABLED",
-+             "value": "true"
-+           },
-+           {
 +             "name": "DD_LOGS_INJECTION",
 +             "value": "true"
 +           },
@@ -209,11 +185,11 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +             "name": "DD_SERVERLESS_LOG_PATH",
 +             "value": "/shared-volume/logs/*.log"
 +           },
-            {
++           {
 +             "name": "DD_SERVICE",
 +             "value": "test-service"
 +           },
-+           {
+            {
 +             "name": "DD_SITE",
 +             "value": "datadoghq.com"
 +           },
@@ -253,14 +229,6 @@ exports[`InstrumentCommand snapshot tests prints dry run data with basic flags 1
 +           {
 +             "name": "DD_HEALTH_PORT",
 +             "value": "5555"
-+           },
-+           {
-+             "name": "DD_LLMOBS_AGENTLESS_ENABLED",
-+             "value": "false"
-+           },
-+           {
-+             "name": "DD_LLMOBS_ENABLED",
-+             "value": "true"
 +           },
 +           {
 +             "name": "DD_LOGS_INJECTION",
