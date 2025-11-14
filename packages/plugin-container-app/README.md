@@ -53,7 +53,7 @@ Run `datadog-ci container-app uninstrument` to remove Datadog instrumentation fr
 # Uninstrument a Container App using subscription ID, resource group, and name
 datadog-ci container-app uninstrument \
   --subscription-id <subscription-id> \
-  --resource-group <resource-group> \
+  --resource-group <resource-group-name> \
   --name <container-app-name>
 
 # Uninstrument a Container App using a full resource ID
@@ -68,7 +68,7 @@ datadog-ci container-app uninstrument \
 # Dry run to preview changes
 datadog-ci container-app uninstrument \
   --subscription-id <subscription-id> \
-  --resource-group <resource-group> \
+  --resource-group <resource-group-name> \
   --name <container-app-name> \
   --dry-run
 ```
