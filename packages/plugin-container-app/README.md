@@ -156,7 +156,7 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "service": "my-service",
     "environment": "prod",
     "version": "1.0.0",
-    "logPath": "/home/LogFiles/*.log",
+    "logPath": "/custom-path/*.log",
     "sourceCodeIntegration": true,
     "uploadGitMetadata": true,
     "extraTags": "team:backend,project:api",
