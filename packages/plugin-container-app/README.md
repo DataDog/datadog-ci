@@ -114,7 +114,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
 | `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
 | `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file. |  |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--service` |  | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service`. If not provided, the Container App name is used. |  |
@@ -139,7 +139,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
 | `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
 | `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file. |  |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |

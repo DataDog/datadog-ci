@@ -61,7 +61,7 @@ export abstract class ContainerAppCommand extends BaseCommand {
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
-      'Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`',
+      'Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
 
   private configPath = Option.String('--config', {
