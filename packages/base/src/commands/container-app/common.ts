@@ -57,7 +57,7 @@ export abstract class ContainerAppCommand extends BaseCommand {
   })
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
-      'Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`',
+      'Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`.',
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
