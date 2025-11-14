@@ -18,9 +18,7 @@ import {
   DD_TRACE_ENABLED_ENV_VAR,
   EXTRA_TAGS_REG_EXP,
   HEALTH_PORT_ENV_VAR,
-  LOGS_INJECTION_ENV_VAR,
   SERVICE_ENV_VAR,
-  SITE_ENV_VAR,
   CI_SITE_ENV_VAR,
   DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR,
   DD_LLMOBS_ENABLED_ENV_VAR,
@@ -262,10 +260,14 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       [DD_TRACE_ENABLED_ENV_VAR, this.tracing],
       [DD_LOG_LEVEL_ENV_VAR, this.logLevel],
       [DD_SOURCE_ENV_VAR, this.language],
-      [DD_LLMOBS_ENABLED_ENV_VAR, 'true'],
-      [DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs],
-      // serverless-init is installed, so agentless mode should be false
-      [DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false'],
+      ...(this.llmobs
+        ? [
+            [DD_LLMOBS_ENABLED_ENV_VAR, 'true'],
+            [DD_LLMOBS_ML_APP_ENV_VAR, this.llmobs],
+            // serverless-init is installed, so agentless mode should be false
+            [DD_LLMOBS_AGENTLESS_ENABLED_ENV_VAR, 'false'],
+          ]
+        : []),
     ] as const) {
       if (value) {
         envVars[name] = value
