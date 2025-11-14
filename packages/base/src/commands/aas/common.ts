@@ -60,7 +60,7 @@ export abstract class AasCommand extends BaseCommand {
   })
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
-      'Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
+      'Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:

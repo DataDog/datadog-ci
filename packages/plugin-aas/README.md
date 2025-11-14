@@ -84,7 +84,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
 | `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 | `--service` |  | The value for the service tag. For example, `my-service` |  |
@@ -110,7 +110,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
 | `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 <!-- END_USAGE:uninstrument -->
