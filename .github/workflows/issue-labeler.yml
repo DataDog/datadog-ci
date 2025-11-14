@@ -8,8 +8,13 @@ jobs:
   label-component:
     runs-on: ubuntu-latest
     permissions:
-      issues: write
+      id-token: write # To federate tokens
     steps:
+      - uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        id: octo-sts
+        with:
+          scope: DataDog/datadog-ci
+          policy: self.issue-labeler
       - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
       - name: Parse issue form
         uses: stefanbuck/github-issue-parser@2ea9b35a8c584529ed00891a8f7e41dc46d0441e # v3.2.1
@@ -18,4 +23,4 @@ jobs:
         uses: redhat-plumbers-in-action/advanced-issue-labeler@9e55064634b67244f7deb4211452b4a7217b93de # v3.0.0
         with:
           issue-form: ${{ steps.issue-parser.outputs.jsonString }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.octo-sts.outputs.token }}
