@@ -13,6 +13,8 @@ import {
   LOGS_PATH_ENV_VAR,
   ENV_VAR_REGEX,
   DEFAULT_HEALTH_CHECK_PORT,
+  DD_PROFILING_ENABLED_ENV_VAR,
+  DD_APPSEC_ENABLED_ENV_VAR,
 } from './constants'
 /**
  * Parses environment variables from array format (KEY=VALUE) to object format.
@@ -56,6 +58,8 @@ export interface ServerlessConfigOptions {
   logPath?: string
   extraTags?: string
   envVars?: string[]
+  profiling?: boolean
+  appsec?: boolean
 }
 
 /**
@@ -81,6 +85,12 @@ export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, 
   }
   if (config.extraTags) {
     envVars.DD_TAGS = config.extraTags
+  }
+  if (config.profiling) {
+    envVars[DD_PROFILING_ENABLED_ENV_VAR] = 'true'
+  }
+  if (config.appsec) {
+    envVars[DD_APPSEC_ENABLED_ENV_VAR] = 'true'
   }
 
   return envVars

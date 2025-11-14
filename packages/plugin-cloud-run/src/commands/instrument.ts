@@ -221,6 +221,8 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       version: this.version,
       logPath: this.logsPath,
       extraTags: this.extraTags,
+      profiling: this.profiling,
+      appsec: this.appsec,
     })
     const template: IServiceTemplate = createInstrumentedTemplate(
       service.template || {},

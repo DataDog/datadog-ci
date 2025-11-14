@@ -30,6 +30,8 @@ export const AAS_DD_SETTING_NAMES = [
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
   'DD_TAGS',
+  'DD_PROFILING_ENABLED',
+  'DD_APPSEC_ENABLED',
 ] as const
 
 type Print = (arg: string) => void
