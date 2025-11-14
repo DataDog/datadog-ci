@@ -96,6 +96,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--upload-git-metadata` or `--uploadGitMetadata` | | Upload Git metadata to Datadog. Only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` | | Additional tags to add to the service in the format `key1:value1,key2:value2` | |
 | `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` | |
+| `--profiling` | | Enable profiling by setting `DD_PROFILING_ENABLED=true`. | `false` |
+| `--appsec` | | Enable Application Security by setting `DD_APPSEC_ENABLED=true`. | `false` |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--config` | | Path to a configuration file. See the configuration file section below. | |
 | `--fips` | | Enable FIPS support for the Container App. | `false` |
@@ -187,6 +189,19 @@ datadog-ci container-app instrument \
   --instance-logging
 ```
 
+### Instrumentation with profiling and Application Security
+
+```bash
+export DD_BETA_COMMANDS_ENABLED=true
+export DD_API_KEY=<your-api-key>
+
+datadog-ci container-app instrument \
+  --subscription-id 12345678-1234-1234-1234-123456789012 \
+  --resource-group my-resource-group \
+  --name my-container-app \
+  --profiling \
+  --appsec
+```
 
 ### Dry run to preview changes
 

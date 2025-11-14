@@ -83,6 +83,8 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--sidecar-cpus` | | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` | | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` | | Set the language used in your container or function for advanced log parsing. Sets the `DD_SOURCE` env var. Possible values: `nodejs`, `python`, `go`, `java`, `csharp`, `ruby`, or `php`. | |
+| `--profiling` | | Enable profiling by setting `DD_PROFILING_ENABLED=true`. | `false` |
+| `--appsec` | | Enable Application Security by setting `DD_APPSEC_ENABLED=true`. | `false` |
 
 #### `uninstrument`
 You can pass the following arguments to `uninstrument` to specify its behavior.
