@@ -69,3 +69,88 @@ datadog-ci aas uninstrument \
 # Remove previously set additional app settings/env vars 
 datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
 ```
+
+### Arguments
+
+Configuration can be done using command-line arguments or a JSON configuration file (see the next section).
+
+#### `instrument`
+You can pass the following arguments to `instrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
+
+<!-- BEGIN_USAGE:instrument -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
+| `--name` | `-n` | Name of the Azure App Service to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--config` |  | Path to the configuration file |  |
+| `--service` |  | The value for the service tag. For example, `my-service` |  |
+| `--env` or `--environment` |  | The value for the env tag. For example, `prod` |  |
+| `--version` |  | The value for the version tag. For example, `1.0.0` |  |
+| `--instance-logging` |  | When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log | `false` |
+| `--log-path` |  | Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log |  |
+| `--no-restart` |  | Do not restart the App Service after applying instrumentation. | `false` |
+| `--dotnet` |  | Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app. | `false` |
+| `--musl` |  | Add in required .NET-specific configuration options for musl-based .NET apps. This should be specified if you are using a containerized .NET app on a musl-based distribution like Alpine Linux. | `false` |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
+<!-- END_USAGE:instrument -->
+
+#### `uninstrument`
+You can pass the following arguments to `uninstrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
+
+<!-- BEGIN_USAGE:uninstrument -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
+| `--name` | `-n` | Name of the Azure App Service to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, eg "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--config` |  | Path to the configuration file |  |
+<!-- END_USAGE:uninstrument -->
+
+### Configuration file
+
+Instead of supplying arguments, you can create a configuration file in your project and run the `datadog-ci container-app instrument --config datadog-ci.json` command. Specify the `datadog-ci.json` file using the `--config` argument, and use this configuration file structure:
+
+```json
+{
+  "aas": {
+    "subscriptionId": "your-subscription-id",
+    "resourceGroup": "your-resource-group",
+    "aasName": "your-web-app-name",
+    "service": "my-service",
+    "environment": "prod",
+    "version": "1.0.0",
+    "logPath": "/home/LogFiles/*.log",
+    "sourceCodeIntegration": true,
+    "uploadGitMetadata": true,
+    "extraTags": "team:backend,project:api",
+    "envVars": [
+      "CUSTOM_VAR1=value1",
+      "CUSTOM_VAR2=value2"
+    ]
+  }
+}
+```
+
+Alternatively, you can use resource IDs:
+
+```json
+{
+  "aas": {
+    "resourceIds": [
+      "/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name1>",
+      "/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name2>"
+    ],
+    "service": "my-service",
+    "environment": "prod"
+  }
+}
+```
