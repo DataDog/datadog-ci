@@ -41,6 +41,8 @@ export type ContainerAppConfigOptions = Partial<{
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
   extraTags: string
+  profiling: boolean
+  appsec: boolean
 }>
 
 export abstract class ContainerAppCommand extends BaseCommand {
