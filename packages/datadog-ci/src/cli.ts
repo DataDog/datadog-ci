@@ -9,7 +9,7 @@ import {dependencies} from '@datadog/datadog-ci/package.json'
 
 import {commands as commandsToMigrate} from './commands/cli'
 
-export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols', 'container-app'])
+export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
 
 const betaCommandsEnabled =
   process.env.DD_BETA_COMMANDS_ENABLED === '1' || process.env.DD_BETA_COMMANDS_ENABLED === 'true'

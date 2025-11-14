@@ -1,7 +1,5 @@
 ## Azure Container Apps
 
-> **BETA**: This feature is in beta. To use it, you must set the environment variable `DD_BETA_COMMANDS_ENABLED=true`.
-
 You can use the CLI to instrument your Azure Container Apps with Datadog. The CLI enables instrumentation by modifying existing Container App configurations to include the Datadog sidecar, which enables tracing, log collection, and custom metrics.
 
 See [the docs](https://docs.datadoghq.com/serverless/azure_container_apps/sidecar/) for language-specific application steps needed in addition to these commands.
@@ -45,6 +43,34 @@ datadog-ci container-app instrument \
   --dry-run
 ```
 
+### `uninstrument`
+
+Run `datadog-ci container-app uninstrument` to remove Datadog instrumentation from an Azure Container App. This command reverts the Container App configuration to its pre-instrumented state by removing the Datadog sidecar and associated environment variables.
+
+```bash
+# Uninstrument a Container App using subscription ID, resource group, and name
+datadog-ci container-app uninstrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group-name> \
+  --name <container-app-name>
+
+# Uninstrument a Container App using a full resource ID
+datadog-ci container-app uninstrument \
+  --resource-id "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.App/containerApps/{containerAppName}"
+
+# Uninstrument multiple Container Apps using resource IDs
+datadog-ci container-app uninstrument \
+  --resource-id <resource-id-1> \
+  --resource-id <resource-id-2>
+
+# Dry run to preview changes
+datadog-ci container-app uninstrument \
+  --subscription-id <subscription-id> \
+  --resource-group <resource-group-name> \
+  --name <container-app-name> \
+  --dry-run
+```
+
 ## Configuration
 
 ### Azure Credentials
@@ -68,7 +94,6 @@ You must expose these environment variables in the environment where you are run
 
 | Environment Variable | Description | Example |
 | -------------------- | ----------- | ------- |
-| `DD_BETA_COMMANDS_ENABLED` | **Required**. Must be set to `true` to enable beta commands. | `export DD_BETA_COMMANDS_ENABLED=true` |
 | `DD_API_KEY` | **Required**. Datadog API Key. Sets the `DD_API_KEY` environment variable on your Container App. For more information about getting a Datadog API key, see the [API key documentation][1]. | `export DD_API_KEY=<API_KEY>` |
 | `DD_SITE` | Set which Datadog site to send data to. Possible values are `datadoghq.com`, `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE=datadoghq.com` |
 
@@ -79,29 +104,44 @@ Configuration can be done using command-line arguments or a JSON configuration f
 #### `instrument`
 You can pass the following arguments to `instrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
 
+<!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. | |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. | |
-| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. | |
-| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>` | |
-| `--service` | | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service` | |
-| `--env` or `--environment` | | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod` | |
-| `--version` | | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0` | |
-| `--instance-logging` | | When enabled, log collection is automatically configured for an additional file path: `/home/LogFiles/*$COMPUTERNAME*.log` | `false` |
-| `--shared-volume-name` | | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
-| `--shared-volume-path` | | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
-| `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--source-code-integration` or `--sourceCodeIntegration` | | Enable source code integration to add Git metadata as tags. Specify `--no-source-code-integration` to disable. | `true` |
-| `--upload-git-metadata` or `--uploadGitMetadata` | | Upload Git metadata to Datadog. Only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--extra-tags` or `--extraTags` | | Additional tags to add to the service in the format `key1:value1,key2:value2` | |
-| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2` | |
-| `--profiling` | | Enable profiling by setting `DD_PROFILING_ENABLED=true`. | `false` |
-| `--appsec` | | Enable Application Security by setting `DD_APPSEC_ENABLED=true`. | `false` |
+| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
+| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
+| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--config` |  | Path to the configuration file. |  |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
-| `--config` | | Path to a configuration file. See the configuration file section below. | |
-| `--fips` | | Enable FIPS support for the Container App. | `false` |
-| `--fips-ignore-error` | | Ignore errors when enabling FIPS support. | `false` |
+| `--service` |  | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service`. If not provided, the Container App name is used. |  |
+| `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
+| `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
+| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `DEFAULT_VOLUME_NAME` |
+| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `DEFAULT_VOLUME_PATH` |
+| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `DEFAULT_LOGS_PATH` |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2". |  |
+<!-- END_USAGE:instrument -->
+
+#### `uninstrument`
+You can pass the following arguments to `uninstrument` to specify its behavior. These arguments override the values set in the configuration file, if any.
+
+<!-- BEGIN_USAGE:uninstrument -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--subscription-id` | `-s` | Subscription ID of the Azure subscription containing the Container App. Must be used with `--resource-group` and `--name`. |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Container App. Must be used with `--subscription-id` and `--name`. |  |
+| `--name` | `-n` | Name of the Azure Container App to instrument. Must be used with `--subscription-id` and `--resource-group`. |  |
+| `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--config` |  | Path to the configuration file. |  |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |
+| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `DEFAULT_VOLUME_NAME` |
+<!-- END_USAGE:uninstrument -->
 
 ### Configuration file
 
@@ -117,7 +157,6 @@ Instead of supplying arguments, you can create a configuration file in your proj
     "environment": "prod",
     "version": "1.0.0",
     "logPath": "/home/LogFiles/*.log",
-    "isInstanceLoggingEnabled": false,
     "sourceCodeIntegration": true,
     "uploadGitMetadata": true,
     "extraTags": "team:backend,project:api",
@@ -149,7 +188,6 @@ Alternatively, you can use resource IDs:
 ### Basic instrumentation
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 export DD_SITE=datadoghq.com
 
@@ -162,7 +200,6 @@ datadog-ci container-app instrument \
 ### Instrumentation with tags and version
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \
@@ -178,7 +215,6 @@ datadog-ci container-app instrument \
 ### Instrumentation with custom logging
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \
@@ -186,27 +222,12 @@ datadog-ci container-app instrument \
   --resource-group my-resource-group \
   --name my-container-app \
   --log-path /home/LogFiles/myapp/*.log \
-  --instance-logging
 ```
 
-### Instrumentation with profiling and Application Security
-
-```bash
-export DD_BETA_COMMANDS_ENABLED=true
-export DD_API_KEY=<your-api-key>
-
-datadog-ci container-app instrument \
-  --subscription-id 12345678-1234-1234-1234-123456789012 \
-  --resource-group my-resource-group \
-  --name my-container-app \
-  --profiling \
-  --appsec
-```
 
 ### Dry run to preview changes
 
 ```bash
-export DD_BETA_COMMANDS_ENABLED=true
 export DD_API_KEY=<your-api-key>
 
 datadog-ci container-app instrument \

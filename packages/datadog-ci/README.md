@@ -74,6 +74,13 @@ The following `<scope>` and `<command>` values are available.
 - `instrument`: Apply Datadog instrumentation to the given Cloud Run Services.
 - `uninstrument`: Revert Datadog instrumentation from the given Cloud Run Services.
 
+#### `container-app`
+
+<sub>**README:** [📚](/packages/plugin-container-app) | **Documentation:** [🔗](https://docs.datadoghq.com/serverless/azure_container_apps/sidecar/) | **Plugin:** `@datadog/datadog-ci-plugin-container-app`</sub>
+
+- `instrument`: Apply Datadog instrumentation to Azure Container Apps.
+- `uninstrument`: Revert Datadog instrumentation from Azure Container Apps.
+
 #### `coverage`
 
 <sub>**README:** [📚](/packages/plugin-coverage) | **Documentation:** [🔗](https://docs.datadoghq.com/code_coverage/)</sub>
