@@ -44,12 +44,12 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
-      'Whether to enable the Datadog Source Code integration. This will tag your service(s) with the Git respository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable.',
+      'Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable.',
   })
 
   private uploadGitMetadata = Option.Boolean('--upload-git-metadata,--uploadGitMetadata', true, {
     description:
-      "Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog Github integration installed. Specify `--no-upload-git-metadata` to disable.",
+      "Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable.",
   })
 
   private extraTags = Option.String('--extra-tags,--extraTags', {
