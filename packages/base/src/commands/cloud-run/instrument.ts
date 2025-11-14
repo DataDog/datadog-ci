@@ -74,6 +74,12 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  protected profiling = Option.Boolean('--profiling', false, {
+    description: 'Enable profiling.',
+  })
+  protected appsec = Option.Boolean('--appsec', false, {
+    description: 'Enable Application Security.',
+  })
 
   public async execute(): Promise<number | void> {
     return executePluginCommand(this)

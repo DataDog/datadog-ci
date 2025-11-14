@@ -40,8 +40,11 @@ datadog-ci aas instrument \
   -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name> \
   -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>
 
-# Enable specific features via app settings/env vars 
-datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
+# Enable profiling and Application Security
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --profiling --appsec
+
+# Enable specific features via app settings/env vars
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_LOGS_INJECTION=true
 
 # Specify Unified Service Tagging
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --service <service-name> --env <environment-name> --version <version-name>

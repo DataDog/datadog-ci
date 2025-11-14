@@ -56,6 +56,14 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2".',
   })
 
+  private profiling = Option.Boolean('--profiling', false, {
+    description: 'Enable profiling.',
+  })
+
+  private appsec = Option.Boolean('--appsec', false, {
+    description: 'Enable Application Security.',
+  })
+
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
     return {
       service: this.service,
@@ -68,6 +76,8 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      profiling: this.profiling,
+      appsec: this.appsec,
     }
   }
 

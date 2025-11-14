@@ -53,6 +53,14 @@ export class AasInstrumentCommand extends AasCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
+  private profiling = Option.Boolean('--profiling', false, {
+    description: 'Enable profiling.',
+  })
+
+  private appsec = Option.Boolean('--appsec', false, {
+    description: 'Enable Application Security.',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -66,6 +74,8 @@ export class AasInstrumentCommand extends AasCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      profiling: this.profiling,
+      appsec: this.appsec,
     }
   }
 
