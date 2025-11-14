@@ -22,6 +22,7 @@ jobs:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
       - run: yarn lint:packages
+      - run: yarn lint:readme-usage
       - run: yarn build
       - name: Run yarn lint:ci
         run: |
