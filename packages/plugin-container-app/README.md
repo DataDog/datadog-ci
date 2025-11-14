@@ -124,6 +124,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2". |  |
+| `--profiling` |  | Enable profiling. | `false` |
+| `--appsec` |  | Enable Application Security. | `false` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`

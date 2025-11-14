@@ -57,34 +57,34 @@ Configuration can be done using command-line arguments.
 #### `instrument`
 You can pass the following arguments to `instrument` to specify its behavior.
 
+<!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--project` | `-p` | The GCP project ID where your Cloud Run service is located. | |
-| `--service` | `-s` | The name of your Cloud Run service. | |
-| `--region` | `-r` | The GCP region where your service(s) are deployed in. | |
-| `--dry` | `-d` | Preview the changes that running the command would apply. | `false` |
-| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags | `false` |
-| `--env` | | Separate out your staging, development, and production environments. | |
-| `--version` | | Add the `--version` tag to correlate spikes in latency, load, or errors to new versions. | |
-| `--tracing` | | Disable tracing by setting `--tracing false`. | `true` |
-| `--log-level` | | Specify your Datadog log level. | |
-| `--llmobs` | | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. | |
-| `--extra-tags` | | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. | |
-| `--source-code-integration` | | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. | `true` |
-| `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
-| `--upload-git-metadata` | | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` |
-| `--no-upload-git-metadata` | | Disables Git metadata uploading. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary. | |
-| `--health-check-port` | | Specify the health check port of your sidecar container. | `5555` |
-| `--sidecar-image` | | Specify a custom sidecar image. | `gcr.io/datadoghq/serverless-init:latest` |
-| `--sidecar-name` | | (Not recommended) Specify a custom sidecar container name. | `datadog-sidecar` |
-| `--shared-volume-name` | | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
-| `--shared-volume-path` | | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
-| `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--sidecar-cpus` | | The number of CPUs to allocate to the sidecar container. | `1` |
-| `--sidecar-memory` | | The amount of memory to allocate to the sidecar container. | `512Mi` |
-| `--language` | | Set the language used in your container or function for advanced log parsing. Sets the `DD_SOURCE` env var. Possible values: `nodejs`, `python`, `go`, `java`, `csharp`, `ruby`, or `php`. | |
-| `--profiling` | | Enable profiling by setting `DD_PROFILING_ENABLED=true`. | `false` |
-| `--appsec` | | Enable Application Security by setting `DD_APPSEC_ENABLED=true`. | `false` |
+| `--dry` or `--dry-run` | `-d` |  | `false` |
+| `--env` |  |  |  |
+| `--extra-tags` or `--extraTags` |  |  |  |
+| `--project` | `-p` | GCP project ID |  |
+| `--service` or `--services` | `-s` |  |  |
+| `--interactive` | `-i` | Prompt for flags one at a time | `false` |
+| `--region` | `-r` | GCP region your service(s) are deployed in |  |
+| `--log-level` or `--logLevel` |  |  |  |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--tracing` |  |  |  |
+| `--version` |  |  |  |
+| `--llmobs` |  |  |  |
+| `--port` or `--health-check-port` or `--healthCheckPort` |  |  |  |
+| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `DEFAULT_SIDECAR_IMAGE` |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
+| `--shared-volume-name` |  | (Not recommended) The name to use for the shared volume. | `DEFAULT_VOLUME_NAME` |
+| `--shared-volume-path` |  | (Not recommended) The path to use for the shared volume. | `DEFAULT_VOLUME_PATH` |
+| `--logs-path` |  | (Not recommended) The path to use for the logs. Must begin with the shared volume path. | `DEFAULT_LOGS_PATH` |
+| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. Defaults to 1. | `1` |
+| `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
+| `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
+| `--profiling` |  | Enable profiling. | `false` |
+| `--appsec` |  | Enable Application Security. | `false` |
+<!-- END_USAGE:instrument -->
 
 #### `uninstrument`
 You can pass the following arguments to `uninstrument` to specify its behavior.
