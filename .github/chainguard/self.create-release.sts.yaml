@@ -1,0 +1,12 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject: repo:DataDog/datadog-ci:ref:refs/tags/v.*
+claim_pattern:
+  event_name: "push"
+  job_workflow_ref: DataDog/datadog-ci/\.github/workflows/publish-release\.yml@refs/tags/v.*
+  ref: refs/tags/v.*
+
+# https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#create-a-release
+# https://docs.github.com/en/rest/releases/releases?apiVersion=2022-11-28#generate-release-notes-content-for-a-release
+permissions:
+  contents: write

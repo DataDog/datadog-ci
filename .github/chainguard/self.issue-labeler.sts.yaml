@@ -1,0 +1,13 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject: repo:DataDog/datadog-ci:ref:refs/heads/master
+
+claim_pattern:
+  event_name: issues
+  ref: refs/heads/master
+  ref_protected: "true"
+  job_workflow_ref: DataDog/datadog-ci/\.github/workflows/issue-labeler\.yml@refs/heads/master
+
+# https://docs.github.com/en/rest/issues/labels?apiVersion=2022-11-28#add-labels-to-an-issue
+permissions:
+  issues: write
