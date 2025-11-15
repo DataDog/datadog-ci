@@ -92,7 +92,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
     "jest-diff": "^30.0.4",
-    "js-yaml": "3.13.1",
+    "js-yaml": "4.1.1",
     "ora": "5.4.1",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
