@@ -52,7 +52,7 @@
     "clipanion": "^3.2.1",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
-    "js-yaml": "3.13.1",
+    "js-yaml": "4.1.1",
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "typanion": "^3.14.0",
