@@ -61,20 +61,20 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
-| `--extra-tags` or `--extraTags` |  | Additional tags to add to the app in the format "key1:value1,key2:value2". |  |
+| `--extra-tags` or `--extraTags` |  | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
-| `--service` or `--services` | `-s` |  |  |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
 | `--interactive` | `-i` | Prompt for flags one at a time | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
-| `--log-level` or `--logLevel` |  |  |  |
+| `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
-| `--tracing` |  |  |  |
+| `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
 | `--service-tag` or `--serviceTag` |  | The value for the service tag. Use this to group related Cloud Run services belonging to similar workloads. For example, `my-service`. If not provided, the Cloud Run service name is used. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
-| `--llmobs` |  |  |  |
+| `--llmobs` |  | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. |  |
 | `--port` or `--health-check-port` or `--healthCheckPort` |  |  |  |
 | `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `DEFAULT_SIDECAR_IMAGE` |
 | `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
@@ -93,10 +93,10 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
-| `--project` | `-p` | GCP project ID |  |
-| `--service` or `--services` | `-s` |  |  |
+| `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
 | `--interactive` | `-i` | Prompt for flags one at a time | `false` |
-| `--region` | `-r` | GCP region your service(s) are deployed in |  |
+| `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
 | `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |
 | `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `DEFAULT_VOLUME_NAME` |
 | `--env-vars` | `-e` | Additional environment variables to remove from the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
@@ -112,7 +112,7 @@ You can pass the following arguments to `flare` to specify its behavior.
 | `--with-logs` |  | Collect recent logs for the specified service. | `false` |
 | `--service` | `-s` | The name of the Cloud Run service. |  |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
-| `--region` or `--location` | `-r` | The region where the Cloud Run service is hosted. |  |
+| `--region` or `--location` | `-r` or `-l` | The region where the Cloud Run service is hosted. |  |
 | `--case-id` | `-c` | The Datadog case ID to send the files to. |  |
 | `--email` | `-e` | The email associated with the specified case ID. |  |
 | `--start` |  | Only gather logs after the time in milliseconds since Unix Epoch. (`--with-logs` must be specified.) |  |

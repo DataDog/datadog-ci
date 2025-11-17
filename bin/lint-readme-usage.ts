@@ -12,7 +12,7 @@ type OptionDefinition = {
   flags: string[]
   description: string
   defaultValue: string | undefined
-  shorthand: string | undefined
+  shorthands: string[]
 }
 
 const error = (message: string): 1 => {
@@ -113,13 +113,17 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
     if (ts.isObjectLiteralExpression(args[1])) {
       // No default, just options
       description = extractDescription(args[1])
-    } else if (ts.isStringLiteral(args[1]) || ts.isIdentifier(args[1])) {
+    } else if (ts.isStringLiteral(args[1]) || ts.isIdentifier(args[1]) || ts.isArrayLiteralExpression(args[1])) {
       // Has default value
       if (ts.isStringLiteral(args[1])) {
         defaultValue = args[1].text
       } else if (ts.isIdentifier(args[1])) {
         // It's a constant reference, we'll use the identifier name
         defaultValue = args[1].text
+      } else if (ts.isArrayLiteralExpression(args[1])) {
+        // It's an array literal like []
+        const sourceFile = args[1].getSourceFile()
+        defaultValue = args[1].getText(sourceFile)
       }
 
       // Check for options object
@@ -133,7 +137,7 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
     flags: longFlags,
     description: description || '',
     defaultValue,
-    shorthand: shortFlags[0],
+    shorthands: shortFlags,
   }
 }
 
@@ -185,7 +189,7 @@ const generateTable = (options: OptionDefinition[]): string => {
 
   for (const option of filteredOptions) {
     const argument = option.flags.length > 0 ? `\`${option.flags.join('` or `')}\`` : ''
-    const shorthand = option.shorthand ? `\`${option.shorthand}\`` : ''
+    const shorthand = option.shorthands.length > 0 ? `\`${option.shorthands.join('` or `')}\`` : ''
     const description = option.description || ''
     const defaultVal = option.defaultValue ? `\`${option.defaultValue}\`` : ''
 

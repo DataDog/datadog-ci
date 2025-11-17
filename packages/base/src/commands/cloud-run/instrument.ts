@@ -27,7 +27,8 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   })
 
   protected extraTags = Option.String('--extra-tags,--extraTags', {
-    description: 'Additional tags to add to the app in the format "key1:value1,key2:value2".',
+    description:
+      'Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas.',
   })
   protected envVars = Option.Array('-e,--env-vars', {
     description:
@@ -45,7 +46,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   protected region = Option.String('-r,--region', {
     description: 'The region where the Cloud Run service is hosted.',
   })
-  protected logLevel = Option.String('--log-level,--logLevel')
+  protected logLevel = Option.String('--log-level,--logLevel', {description: 'Specify your Datadog log level.'})
   protected sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
     description:
       'Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable.',
@@ -54,7 +55,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description:
       "Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable.",
   })
-  protected tracing = Option.String('--tracing')
+  protected tracing = Option.String('--tracing', {
+    description:
+      'Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`.',
+  })
   protected serviceTag = Option.String('--service-tag,--serviceTag', {
     description:
       'The value for the service tag. Use this to group related Cloud Run services belonging to similar workloads. For example, `my-service`. If not provided, the Cloud Run service name is used.',
@@ -67,7 +71,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description:
       'The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`.',
   })
-  protected llmobs = Option.String('--llmobs')
+  protected llmobs = Option.String('--llmobs', {
+    description:
+      'If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name.',
+  })
   protected healthCheckPort = Option.String('--port,--health-check-port,--healthCheckPort')
   protected sidecarImage = Option.String('--image,--sidecar-image', DEFAULT_SIDECAR_IMAGE, {
     description: `The image to use for the sidecar container. Defaults to '${DEFAULT_SIDECAR_IMAGE}'`,

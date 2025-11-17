@@ -18,7 +18,7 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
       'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
   })
   protected project = Option.String('-p,--project', {
-    description: 'GCP project ID',
+    description: 'The name of the Google Cloud project where the Cloud Run service is hosted.',
   })
   protected services = Option.Array('-s,--service,--services', [], {
     description: 'Cloud Run service(s) to instrument',
@@ -27,7 +27,7 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
     description: 'Prompt for flags one at a time',
   })
   protected region = Option.String('-r,--region', {
-    description: 'GCP region your service(s) are deployed in',
+    description: 'The region where the Cloud Run service is hosted.',
   })
   protected sidecarName = Option.String('--sidecar-name', DEFAULT_SIDECAR_NAME, {
     description: `The name of the sidecar container to remove. Specify if you have a different sidecar name. Defaults to '${DEFAULT_SIDECAR_NAME}'`,
