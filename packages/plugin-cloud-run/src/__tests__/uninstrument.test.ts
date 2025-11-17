@@ -161,6 +161,7 @@ describe('UninstrumentCommand', () => {
       command = new UninstrumentCommand()
       ;(command as any).sidecarName = 'datadog-sidecar'
       ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).envVars = []
       ;(command as any).context = {
         stdout: {write: jest.fn()},
         stderr: {write: jest.fn()},
@@ -253,6 +254,7 @@ describe('UninstrumentCommand', () => {
     beforeEach(() => {
       command = new UninstrumentCommand()
       ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).envVars = []
       ;(command as any).context = {
         stdout: {write: jest.fn()},
         stderr: {write: jest.fn()},
@@ -289,6 +291,67 @@ describe('UninstrumentCommand', () => {
 
       expect(result.volumeMounts).toEqual([])
       expect(result.env).toEqual([])
+    })
+
+    test('removes custom environment variables specified via envVars', () => {
+      ;(command as any).envVars = ['CUSTOM_VAR=value1', 'ANOTHER_VAR=value2']
+
+      const appContainer = {
+        name: 'main',
+        env: [
+          {name: 'NODE_ENV', value: 'production'},
+          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+          {name: 'CUSTOM_VAR', value: 'custom-value'},
+          {name: 'ANOTHER_VAR', value: 'another-value'},
+          {name: 'KEEP_THIS', value: 'keep-me'},
+        ],
+        volumeMounts: [],
+      }
+
+      const result = (command as any).updateAppContainer(appContainer)
+
+      expect(result.env).toEqual([
+        {name: 'NODE_ENV', value: 'production'},
+        {name: 'KEEP_THIS', value: 'keep-me'},
+      ])
+    })
+
+    test('handles empty envVars array', () => {
+      ;(command as any).envVars = []
+
+      const appContainer = {
+        name: 'main',
+        env: [
+          {name: 'NODE_ENV', value: 'production'},
+          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+          {name: 'CUSTOM_VAR', value: 'custom-value'},
+        ],
+        volumeMounts: [],
+      }
+
+      const result = (command as any).updateAppContainer(appContainer)
+
+      expect(result.env).toEqual([
+        {name: 'NODE_ENV', value: 'production'},
+        {name: 'CUSTOM_VAR', value: 'custom-value'},
+      ])
+    })
+
+    test('handles undefined envVars', () => {
+      ;(command as any).envVars = undefined
+
+      const appContainer = {
+        name: 'main',
+        env: [
+          {name: 'NODE_ENV', value: 'production'},
+          {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+        ],
+        volumeMounts: [],
+      }
+
+      const result = (command as any).updateAppContainer(appContainer)
+
+      expect(result.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
     })
   })
 })

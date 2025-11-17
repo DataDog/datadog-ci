@@ -13,17 +13,27 @@ export class CloudRunFlareCommand extends BaseCommand {
   })
 
   protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {
-    description:
-      'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
+    description: 'Preview data that will be sent to Datadog support.',
   })
-  protected withLogs = Option.Boolean('--with-logs', false)
-  protected service = Option.String('-s,--service')
-  protected project = Option.String('-p,--project')
-  protected region = Option.String('-r,--region,-l,--location')
-  protected caseId = Option.String('-c,--case-id')
-  protected email = Option.String('-e,--email')
-  protected start = Option.String('--start')
-  protected end = Option.String('--end')
+  protected withLogs = Option.Boolean('--with-logs', false, {
+    description: 'Collect recent logs for the specified service.',
+  })
+  protected service = Option.String('-s,--service', {description: 'The name of the Cloud Run service.'})
+  protected project = Option.String('-p,--project', {
+    description: 'The name of the Google Cloud project where the Cloud Run service is hosted.',
+  })
+  protected region = Option.String('-r,--region,-l,--location', {
+    description: 'The region where the Cloud Run service is hosted.',
+  })
+  protected caseId = Option.String('-c,--case-id', {description: 'The Datadog case ID to send the files to.'})
+  protected email = Option.String('-e,--email', {description: 'The email associated with the specified case ID.'})
+  protected start = Option.String('--start', {
+    description: 'Only gather logs after the time in milliseconds since Unix Epoch. (`--with-logs` must be specified.)',
+  })
+  protected end = Option.String('--end', {
+    description:
+      'Only gather logs before the time in milliseconds since Unix Epoch. (`--with-logs` must be specified.)',
+  })
 
   protected apiKey?: string
 

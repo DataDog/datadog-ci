@@ -35,6 +35,10 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
   protected sharedVolumeName = Option.String('--shared-volume-name', DEFAULT_VOLUME_NAME, {
     description: `The name of the shared volume to remove. Specify if you have a different shared volume name. Defaults to '${DEFAULT_VOLUME_NAME}'`,
   })
+  protected envVars = Option.Array('-e,--env-vars', {
+    description:
+      'Additional environment variables to remove from the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+  })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 

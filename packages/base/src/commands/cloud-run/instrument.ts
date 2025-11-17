@@ -32,7 +32,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
       'Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
   protected project = Option.String('-p,--project', {
-    description: 'GCP project ID',
+    description: 'The name of the Google Cloud project where the Cloud Run service is hosted.',
   })
   protected services = Option.Array('-s,--service,--services', [], {
     description: 'Cloud Run service(s) to instrument',
@@ -41,7 +41,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: 'Prompt for flags one at a time',
   })
   protected region = Option.String('-r,--region', {
-    description: 'GCP region your service(s) are deployed in',
+    description: 'The region where the Cloud Run service is hosted.',
   })
   protected logLevel = Option.String('--log-level,--logLevel')
   protected sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {

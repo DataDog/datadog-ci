@@ -219,6 +219,7 @@ describe('InstrumentCommand', () => {
       ;(command as any).logsPath = '/shared-volume/logs/*.log'
       ;(command as any).environment = undefined
       ;(command as any).version = undefined
+      ;(command as any).envVars = []
     })
 
     test('adds sidecar and shared volume when missing', () => {
@@ -353,6 +354,40 @@ describe('InstrumentCommand', () => {
         service: 'my-service',
         [SERVERLESS_CLI_VERSION_TAG_NAME]: 'v0_0_0',
       })
+    })
+
+    test('adds custom environment variables to main container', () => {
+      ;(command as any).envVars = ['CUSTOM_VAR=custom-value', 'ANOTHER_VAR=another-value']
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [{name: 'EXISTING_VAR', value: 'existing-value'}], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      const mainContainer = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(mainContainer?.env).toContainEqual({name: 'CUSTOM_VAR', value: 'custom-value'})
+      expect(mainContainer?.env).toContainEqual({name: 'ANOTHER_VAR', value: 'another-value'})
+      expect(mainContainer?.env).toContainEqual({name: 'EXISTING_VAR', value: 'existing-value'})
+    })
+
+    test('handles empty envVars array', () => {
+      ;(command as any).envVars = []
+
+      const service = {
+        template: {
+          containers: [{name: 'main', env: [], volumeMounts: []}],
+          volumes: [],
+        },
+      }
+
+      const result = command.createInstrumentedServiceConfig(service, 'my-service')
+
+      // Should not throw and should work normally
+      expect(result.template?.containers).toHaveLength(2)
     })
   })
 })
