@@ -13,7 +13,10 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
     description: 'Revert Datadog instrumentation in a Cloud Run app.',
   })
 
-  protected dryRun = Option.Boolean('-d,--dry,--dry-run', false)
+  protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {
+    description:
+      'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
+  })
   protected project = Option.String('-p,--project', {
     description: 'GCP project ID',
   })

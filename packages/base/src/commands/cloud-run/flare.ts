@@ -12,7 +12,10 @@ export class CloudRunFlareCommand extends BaseCommand {
     description: 'Gather Cloud Run service configuration and sends it to Datadog.',
   })
 
-  protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false)
+  protected isDryRun = Option.Boolean('-d,--dry,--dry-run', false, {
+    description:
+      'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
+  })
   protected withLogs = Option.Boolean('--with-logs', false)
   protected service = Option.String('-s,--service')
   protected project = Option.String('-p,--project')

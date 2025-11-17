@@ -53,7 +53,7 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   })
 
   private extraTags = Option.String('--extra-tags,--extraTags', {
-    description: 'Additional tags to add to the service in the format "key1:value1,key2:value2".',
+    description: 'Additional tags to add to the app in the format "key1:value1,key2:value2".',
   })
 
   public get additionalConfig(): Partial<ContainerAppConfigOptions> {
