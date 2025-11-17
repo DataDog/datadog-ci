@@ -61,7 +61,7 @@ export class PluginCommand extends SarifUploadCommand {
     if (gitlabEvent === 'merge_request_event') {
       this.context.stderr.write(
         'The `merge_request_event` pipeline source is not supported by Datadog Code Security and will cause issues with the product. ' +
-          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/generic_ci_providers/ for more information.'
       )
 
       return 1
@@ -71,7 +71,7 @@ export class PluginCommand extends SarifUploadCommand {
       // https://learn.microsoft.com/en-us/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#logging-commands-for-build-pipelines
       this.context.stdout.write(
         '##vso[task.logissue type=error]The `PullRequest` build reason is not supported by Datadog Code Security and will cause issues with the product. ' +
-          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow for more information.'
+          'To continue using Datadog Code Security, use `push` instead. See: https://docs.datadoghq.com/security/code_security/static_analysis/generic_ci_providers/ for more information.'
       )
 
       return 1
