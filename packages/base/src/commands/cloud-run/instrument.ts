@@ -41,7 +41,7 @@ export class CloudRunInstrumentCommand extends BaseCommand {
     description: 'Cloud Run service(s) to instrument',
   })
   protected interactive = Option.Boolean('-i,--interactive', false, {
-    description: 'Prompt for flags one at a time',
+    description: 'Interactively choose which service gets instrumented. No need for other flags.',
   })
   protected region = Option.String('-r,--region', {
     description: 'The region where the Cloud Run service is hosted.',

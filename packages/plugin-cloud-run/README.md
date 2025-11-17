@@ -65,7 +65,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--env-vars` | `-e` | Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
 | `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
-| `--interactive` | `-i` | Prompt for flags one at a time | `false` |
+| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
@@ -95,7 +95,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 | `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
 | `--service` or `--services` | `-s` | Cloud Run service(s) to revert instrumentation | `[]` |
-| `--interactive` | `-i` | Prompt for flags one at a time | `false` |
+| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
 | `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |
 | `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
