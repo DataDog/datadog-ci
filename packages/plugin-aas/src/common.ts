@@ -78,7 +78,6 @@ export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
   return undefined
 }
 
-
 export const SITE_EXTENSION_IDS: Record<WindowsRuntime, string> = {
   node: 'Datadog.AzureAppServices.Node.Apm',
   dotnet: 'Datadog.AzureAppServices.DotNet',
