@@ -10,7 +10,14 @@ import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverles
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {AAS_DD_SETTING_NAMES, getWindowsRuntime, isDotnet, isWindows, SITE_EXTENSION_IDS} from '../common'
+import {
+  AAS_DD_SETTING_NAMES,
+  getWindowsRuntime,
+  isDotnet,
+  isWindows,
+  SITE_EXTENSION_IDS,
+  WindowsRuntime,
+} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -122,17 +129,9 @@ export class PluginCommand extends AasUninstrumentCommand {
     config: AasConfigOptions,
     resourceGroup: string,
     aasName: string,
-    runtime: 'node' | 'dotnet' | 'java'
+    runtime: WindowsRuntime
   ) {
     const extensionId = SITE_EXTENSION_IDS[runtime]
-
-    // Stop the app before removing the extension
-    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${chalk.bold(aasName)}\n`)
-    if (!this.dryRun) {
-      await client.webApps.stop(resourceGroup, aasName)
-    }
-
-    // Remove the site extension
     this.context.stdout.write(
       `${this.dryRunPrefix}Removing site extension ${chalk.bold(extensionId)} from ${chalk.bold(
         aasName
@@ -148,31 +147,8 @@ export class PluginCommand extends AasUninstrumentCommand {
         )
       }
     }
-
-    // Remove Datadog environment variables
-    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
-    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
-    const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
-    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
-      if (!this.dryRun) {
-        await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
-          properties: Object.fromEntries(
-            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
-          ),
-        })
-      }
-    } else {
-      this.context.stdout.write(
-        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
-      )
-    }
-
-    // Start the app after removing the extension
-    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${chalk.bold(aasName)}\n`)
-    if (!this.dryRun) {
-      await client.webApps.start(resourceGroup, aasName)
-    }
+    // Updaing the environment variables will trigger a restart
+    await this.removeEnvVars(config, aasName, client, resourceGroup)
   }
 
   public async uninstrumentSidecar(
@@ -189,6 +165,15 @@ export class PluginCommand extends AasUninstrumentCommand {
     if (!this.dryRun) {
       await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
     }
+    await this.removeEnvVars(config, aasName, client, resourceGroup)
+  }
+
+  public async removeEnvVars(
+    config: AasConfigOptions,
+    aasName: string,
+    client: WebSiteManagementClient,
+    resourceGroup: string
+  ) {
     const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
     this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
     const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
@@ -207,6 +192,7 @@ export class PluginCommand extends AasUninstrumentCommand {
       )
     }
   }
+
   public async removeTags(
     subscriptionId: string,
     resourceGroup: string,
