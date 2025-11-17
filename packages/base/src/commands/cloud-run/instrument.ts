@@ -26,7 +26,9 @@ export class CloudRunInstrumentCommand extends BaseCommand {
       'Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply.',
   })
 
-  protected extraTags = Option.String('--extra-tags,--extraTags')
+  protected extraTags = Option.String('--extra-tags,--extraTags',{
+    description: 'Additional tags to add to the app in the format "key1:value1,key2:value2".',
+  })
   protected envVars = Option.Array('-e,--env-vars', {
     description:
       'Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
