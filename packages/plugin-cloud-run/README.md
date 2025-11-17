@@ -76,11 +76,11 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. |  |
 | `--port` or `--health-check-port` or `--healthCheckPort` |  |  |  |
-| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `DEFAULT_SIDECAR_IMAGE` |
-| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
-| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `DEFAULT_VOLUME_NAME` |
-| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `DEFAULT_VOLUME_PATH` |
-| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `DEFAULT_LOGS_PATH` |
+| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `gcr.io/datadoghq/serverless-init:latest` |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `datadog-sidecar` |
+| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
+| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
+| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. Defaults to 1. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
@@ -94,11 +94,11 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 | -------- | --------- | ----------- | ------- |
 | `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
-| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to revert instrumentation | `[]` |
 | `--interactive` | `-i` | Prompt for flags one at a time | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
-| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |
-| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `DEFAULT_VOLUME_NAME` |
+| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |
+| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
 | `--env-vars` | `-e` | Additional environment variables to remove from the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 <!-- END_USAGE:uninstrument -->
 

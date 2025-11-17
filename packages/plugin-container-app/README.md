@@ -117,10 +117,10 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--service` |  | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service`. If not provided, the Container App name is used. |  |
 | `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
-| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `DEFAULT_SIDECAR_NAME` |
-| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `DEFAULT_VOLUME_NAME` |
-| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `DEFAULT_VOLUME_PATH` |
-| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `DEFAULT_LOGS_PATH` |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `datadog-sidecar` |
+| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
+| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
+| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the app in the format "key1:value1,key2:value2". |  |
@@ -139,8 +139,8 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file. |  |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
-| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `DEFAULT_SIDECAR_NAME` |
-| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `DEFAULT_VOLUME_NAME` |
+| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |
+| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
 <!-- END_USAGE:uninstrument -->
 
 ### Configuration file

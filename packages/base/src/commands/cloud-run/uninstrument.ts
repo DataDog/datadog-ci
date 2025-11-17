@@ -21,7 +21,7 @@ export class CloudRunUninstrumentCommand extends BaseCommand {
     description: 'The name of the Google Cloud project where the Cloud Run service is hosted.',
   })
   protected services = Option.Array('-s,--service,--services', [], {
-    description: 'Cloud Run service(s) to instrument',
+    description: 'Cloud Run service(s) to revert instrumentation',
   })
   protected interactive = Option.Boolean('-i,--interactive', false, {
     description: 'Prompt for flags one at a time',

@@ -34,6 +34,38 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
   const sourceCode = fs.readFileSync(filePath, 'utf8')
   const sourceFile = ts.createSourceFile(filePath, sourceCode, ts.ScriptTarget.Latest, true)
 
+  // Build a map of constants
+  const constants = new Map<string, string>()
+
+  const collectConstants = (file: ts.SourceFile) => {
+    const visit = (node: ts.Node) => {
+      if (ts.isVariableStatement(node)) {
+        for (const declaration of node.declarationList.declarations) {
+          if (ts.isIdentifier(declaration.name) && declaration.initializer) {
+            if (ts.isStringLiteral(declaration.initializer)) {
+              constants.set(declaration.name.text, declaration.initializer.text)
+            } else if (ts.isNumericLiteral(declaration.initializer)) {
+              constants.set(declaration.name.text, declaration.initializer.text)
+            }
+          }
+        }
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(file)
+  }
+
+  // Collect constants from current file
+  collectConstants(sourceFile)
+
+  // Also collect from constants.ts if it exists
+  const constantsFilePath = path.join(path.dirname(filePath), '..', '..', 'helpers', 'serverless', 'constants.ts')
+  if (fs.existsSync(constantsFilePath)) {
+    const constantsSource = fs.readFileSync(constantsFilePath, 'utf8')
+    const constantsFile = ts.createSourceFile(constantsFilePath, constantsSource, ts.ScriptTarget.Latest, true)
+    collectConstants(constantsFile)
+  }
+
   const options: OptionDefinition[] = []
 
   const visit = (node: ts.Node) => {
@@ -52,7 +84,7 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
           const args = initializer.arguments
 
           if (args.length > 0) {
-            const option = parseOptionDefinition(args, optionType)
+            const option = parseOptionDefinition(args, optionType, constants)
             if (option) {
               options.push(option)
             }
@@ -72,7 +104,7 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
 /**
  * Parse Option.* call arguments to extract flag, default, and description
  */
-const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: string): OptionDefinition | undefined => {
+const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: string, constants: Map<string, string>): OptionDefinition | undefined => {
   if (args.length === 0) {
     return undefined
   }
@@ -104,7 +136,8 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
 
     // args[2] is options object for Boolean
     if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
-      description = extractDescription(args[2])
+      const result = extractDescription(args[2], constants)
+      description = result.description
     }
   }
 
@@ -112,14 +145,18 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
   if (optionType !== 'Boolean' && args.length > 1) {
     if (ts.isObjectLiteralExpression(args[1])) {
       // No default, just options
-      description = extractDescription(args[1])
+      const result = extractDescription(args[1], constants)
+      description = result.description
+      if (result.extractedDefault) {
+        defaultValue = result.extractedDefault
+      }
     } else if (ts.isStringLiteral(args[1]) || ts.isIdentifier(args[1]) || ts.isArrayLiteralExpression(args[1])) {
       // Has default value
       if (ts.isStringLiteral(args[1])) {
         defaultValue = args[1].text
       } else if (ts.isIdentifier(args[1])) {
-        // It's a constant reference, we'll use the identifier name
-        defaultValue = args[1].text
+        // It's a constant reference - will try to get from description
+        defaultValue = undefined
       } else if (ts.isArrayLiteralExpression(args[1])) {
         // It's an array literal like []
         const sourceFile = args[1].getSourceFile()
@@ -128,7 +165,12 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
 
       // Check for options object
       if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
-        description = extractDescription(args[2])
+        const result = extractDescription(args[2], constants)
+        description = result.description
+        // If we didn't get a default value from the argument, try to extract from description
+        if (!defaultValue && result.extractedDefault) {
+          defaultValue = result.extractedDefault
+        }
       }
     }
   }
@@ -142,37 +184,79 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
 }
 
 /**
- * Extract description from options object literal
+ * Extract description from options object literal and optionally extract default value
  */
-const extractDescription = (optionsObject: ts.ObjectLiteralExpression): string => {
+const extractDescription = (optionsObject: ts.ObjectLiteralExpression, constants: Map<string, string>): {description: string; extractedDefault?: string} => {
   for (const prop of optionsObject.properties) {
     if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'description') {
       if (ts.isStringLiteral(prop.initializer)) {
-        return prop.initializer.text
+        return {description: prop.initializer.text}
       }
 
       // Handle template literals (e.g., `text ${var}`)
       if (ts.isTemplateExpression(prop.initializer) || ts.isNoSubstitutionTemplateLiteral(prop.initializer)) {
-        // For template literals, we'll extract the raw text and convert ${...} to literal text
+        let extractedDefault: string | undefined
+
+        // For template expressions, extract values from ${...} in "Defaults to '${...}'" pattern
+        if (ts.isTemplateExpression(prop.initializer)) {
+          let fullText = prop.initializer.head.text
+          for (const span of prop.initializer.templateSpans) {
+            // Check if this span is in a "Defaults to '...'" pattern
+            const textBefore = fullText
+            if (textBefore.includes("Defaults to '") && !extractedDefault) {
+              // This is the default value - resolve it from constants
+              if (ts.isIdentifier(span.expression)) {
+                const constantName = span.expression.text
+                extractedDefault = constants.get(constantName) || constantName
+              } else {
+                const sourceFile = span.expression.getSourceFile()
+                extractedDefault = span.expression.getText(sourceFile)
+              }
+            }
+            fullText += span.literal.text
+          }
+
+          // Build cleaned description
+          let text = prop.initializer.head.text
+          for (const span of prop.initializer.templateSpans) {
+            text += span.literal.text
+          }
+
+          // Remove "Defaults to '...'" parts
+          text = text.replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
+          text = text.replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
+          text = text.replace(/\s*Defaults to '[^']*'/g, '')
+          text = text.replace(/\s+/g, ' ').trim()
+          text = text.replace(/\.\s*\./g, '.')
+
+          return {description: text, extractedDefault}
+        }
+
+        // For non-substitution template literals
         const sourceFile = prop.getSourceFile()
         let text = prop.initializer.getText(sourceFile)
         // Remove backticks
         text = text.slice(1, -1)
-        // Remove "Defaults to '${...}'" parts since we have a Default column
+
+        // Extract default value from "Defaults to '...'" pattern
+        const defaultMatch = text.match(/Defaults to '([^']*)'/)
+        if (defaultMatch) {
+          extractedDefault = defaultMatch[1]
+        }
+
+        // Remove "Defaults to '...'" parts
         text = text.replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
         text = text.replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
         text = text.replace(/\s*Defaults to '[^']*'/g, '')
-        // Clean up any double spaces or trailing/leading spaces
         text = text.replace(/\s+/g, ' ').trim()
-        // Clean up double periods
         text = text.replace(/\.\s*\./g, '.')
 
-        return text
+        return {description: text, extractedDefault}
       }
     }
   }
 
-  return ''
+  return {description: ''}
 }
 
 /**
