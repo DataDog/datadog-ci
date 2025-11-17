@@ -38,7 +38,7 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
   const constants = new Map<string, string>()
 
   const collectConstants = (file: ts.SourceFile) => {
-    const visit = (node: ts.Node) => {
+    const visitNode = (node: ts.Node) => {
       if (ts.isVariableStatement(node)) {
         for (const declaration of node.declarationList.declarations) {
           if (ts.isIdentifier(declaration.name) && declaration.initializer) {
@@ -50,9 +50,9 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
           }
         }
       }
-      ts.forEachChild(node, visit)
+      ts.forEachChild(node, visitNode)
     }
-    visit(file)
+    visitNode(file)
   }
 
   // Collect constants from current file
@@ -104,7 +104,11 @@ const parseCommandFile = (filePath: string): OptionDefinition[] => {
 /**
  * Parse Option.* call arguments to extract flag, default, and description
  */
-const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: string, constants: Map<string, string>): OptionDefinition | undefined => {
+const parseOptionDefinition = (
+  args: ts.NodeArray<ts.Expression>,
+  optionType: string,
+  constants: Map<string, string>
+): OptionDefinition | undefined => {
   if (args.length === 0) {
     return undefined
   }
@@ -186,7 +190,10 @@ const parseOptionDefinition = (args: ts.NodeArray<ts.Expression>, optionType: st
 /**
  * Extract description from options object literal and optionally extract default value
  */
-const extractDescription = (optionsObject: ts.ObjectLiteralExpression, constants: Map<string, string>): {description: string; extractedDefault?: string} => {
+const extractDescription = (
+  optionsObject: ts.ObjectLiteralExpression,
+  constants: Map<string, string>
+): {description: string; extractedDefault?: string} => {
   for (const prop of optionsObject.properties) {
     if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'description') {
       if (ts.isStringLiteral(prop.initializer)) {
@@ -209,27 +216,27 @@ const extractDescription = (optionsObject: ts.ObjectLiteralExpression, constants
                 const constantName = span.expression.text
                 extractedDefault = constants.get(constantName) || constantName
               } else {
-                const sourceFile = span.expression.getSourceFile()
-                extractedDefault = span.expression.getText(sourceFile)
+                const exprSourceFile = span.expression.getSourceFile()
+                extractedDefault = span.expression.getText(exprSourceFile)
               }
             }
             fullText += span.literal.text
           }
 
           // Build cleaned description
-          let text = prop.initializer.head.text
+          let descriptionText = prop.initializer.head.text
           for (const span of prop.initializer.templateSpans) {
-            text += span.literal.text
+            descriptionText += span.literal.text
           }
 
           // Remove "Defaults to '...'" parts
-          text = text.replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
-          text = text.replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
-          text = text.replace(/\s*Defaults to '[^']*'/g, '')
-          text = text.replace(/\s+/g, ' ').trim()
-          text = text.replace(/\.\s*\./g, '.')
+          descriptionText = descriptionText.replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
+          descriptionText = descriptionText.replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
+          descriptionText = descriptionText.replace(/\s*Defaults to '[^']*'/g, '')
+          descriptionText = descriptionText.replace(/\s+/g, ' ').trim()
+          descriptionText = descriptionText.replace(/\.\s*\./g, '.')
 
-          return {description: text, extractedDefault}
+          return {description: descriptionText, extractedDefault}
         }
 
         // For non-substitution template literals
