@@ -135,11 +135,7 @@ export class PluginCommand extends AasInstrumentCommand {
           return false
         }
 
-        config = {
-          ...config,
-          isDotnet: runtime === 'dotnet',
-          service: config.service ?? aasName,
-        }
+        config = {...config, service: config.service ?? aasName}
 
         await this.instrumentSiteExtension(aasClient, config, resourceGroup, aasName, runtime)
         await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
