@@ -1,6 +1,5 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 // Path to tracing libraries, copied within the Docker file
@@ -33,25 +32,6 @@ export const AAS_DD_SETTING_NAMES = [
 ] as const
 
 export type WindowsRuntime = 'node' | 'dotnet' | 'java'
-
-type Print = (arg: string) => void
-
-export const ensureLinux = (print: Print, site: Site): boolean => {
-  if (isWindows(site)) {
-    print(
-      renderSoftWarning(
-        `Unable to instrument ${site.name}. Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-      )
-    )
-
-    return false
-  }
-
-  return true
-}
 
 /**
  * Detects the runtime of a Windows-based Azure App Service
