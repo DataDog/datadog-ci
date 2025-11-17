@@ -92,7 +92,7 @@ export class PluginCommand extends AasUninstrumentCommand {
 
         await this.uninstrumentSiteExtension(
           client,
-          {...config, isDotnet: runtime === 'dotnet', service: config.service ?? aasName},
+          {...config, service: config.service ?? aasName},
           resourceGroup,
           aasName,
           runtime
