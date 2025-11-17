@@ -32,6 +32,8 @@ export const AAS_DD_SETTING_NAMES = [
   'DD_TAGS',
 ] as const
 
+export type WindowsRuntime = 'node' | 'dotnet' | 'java'
+
 type Print = (arg: string) => void
 
 export const ensureLinux = (print: Print, site: Site): boolean => {
@@ -49,6 +51,38 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
   }
 
   return true
+}
+
+/**
+ * Detects the runtime of a Windows-based Azure App Service
+ * @param site The Azure App Service site
+ * @returns The detected runtime or undefined if unable to detect
+ */
+export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
+  const windowsFxVersion = site.siteConfig?.windowsFxVersion
+  if (!windowsFxVersion) {
+    return undefined
+  }
+
+  const version = windowsFxVersion.toLowerCase()
+  if (version.startsWith('node')) {
+    return 'node'
+  }
+  if (version.startsWith('dotnet')) {
+    return 'dotnet'
+  }
+  if (version.startsWith('java')) {
+    return 'java'
+  }
+
+  return undefined
+}
+
+
+export const SITE_EXTENSION_IDS: Record<WindowsRuntime, string> = {
+  node: 'Datadog.AzureAppServices.Node.Apm',
+  dotnet: 'Datadog.AzureAppServices.DotNet',
+  java: 'Datadog.AzureAppServices.Java.Apm',
 }
 
 export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Record<string, string> => {

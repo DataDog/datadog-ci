@@ -1,7 +1,7 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 
-import {getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
+import {getWindowsRuntime, getEnvVars, SITE_EXTENSION_IDS, isDotnet, isLinuxContainer, isWindows} from '../common'
 
 const DEFAULT_CONFIG: AasConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',
@@ -432,6 +432,105 @@ describe('aas common', () => {
         },
       }
       expect(isLinuxContainer(site)).toBe(false)
+    })
+  })
+
+  describe('getWindowsRuntime', () => {
+    test('returns "node" if windowsFxVersion starts with "node"', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'node|18',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('node')
+    })
+
+    test('returns "node" if windowsFxVersion starts with "NODE" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'NODE|18',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('node')
+    })
+
+    test('returns "dotnet" if windowsFxVersion starts with "dotnet"', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'dotnet|6.0',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('dotnet')
+    })
+
+    test('returns "dotnet" if windowsFxVersion starts with "DOTNET" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'DOTNET|7.0',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('dotnet')
+    })
+
+    test('returns "java" if windowsFxVersion starts with "java"', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'java|11',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('java')
+    })
+
+    test('returns "java" if windowsFxVersion starts with "JAVA" (case insensitive)', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'JAVA|17',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBe('java')
+    })
+
+    test('returns undefined if windowsFxVersion is not a recognized runtime', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: 'python|3.9',
+        },
+      }
+      expect(getWindowsRuntime(site)).toBeUndefined()
+    })
+
+    test('returns undefined if windowsFxVersion is not set', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: {
+          windowsFxVersion: undefined,
+        },
+      }
+      expect(getWindowsRuntime(site)).toBeUndefined()
+    })
+
+    test('returns undefined if siteConfig is undefined', () => {
+      const site: Site = {
+        kind: 'app,windows',
+        location: 'East US',
+        siteConfig: undefined,
+      }
+      expect(getWindowsRuntime(site)).toBeUndefined()
     })
   })
 })

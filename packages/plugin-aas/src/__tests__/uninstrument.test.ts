@@ -215,14 +215,11 @@ Updating tags for my-web-app
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
     })
 
-    test('Warns and exits if App Service is not Linux', async () => {
+    test('Warns and exits if App Service is Windows but runtime cannot be detected', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_ARGS)
       expect(context.stdout.toString()).toEqual(`🐶 Beginning uninstrumentation of Azure App Service(s)
-[!] Unable to instrument my-web-app. Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows
+[!] Unable to detect runtime for Windows App Service my-web-app. Skipping uninstrumentation.
 🐶 Uninstrumentation completed with errors, see above for details.
 `)
       expect(code).toEqual(1)

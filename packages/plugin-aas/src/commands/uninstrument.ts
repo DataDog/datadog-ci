@@ -3,14 +3,14 @@ import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
-import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {AAS_DD_SETTING_NAMES, ensureLinux, isDotnet} from '../common'
+import {AAS_DD_SETTING_NAMES, getWindowsRuntime, isDotnet, isWindows, SITE_EXTENSION_IDS} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -75,17 +75,39 @@ export class PluginCommand extends AasUninstrumentCommand {
   ): Promise<boolean> {
     try {
       const site = await client.webApps.get(resourceGroup, aasName)
-      if (!ensureLinux(this.context.stdout.write, site)) {
-        return false
-      }
 
-      await this.uninstrumentSidecar(
-        client,
-        {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? aasName},
-        resourceGroup,
-        aasName
-      )
-      await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+      // Determine uninstrumentation method based on platform
+      if (isWindows(site)) {
+        // Windows uninstrumentation via site extension
+        const runtime = getWindowsRuntime(site)
+        if (!runtime) {
+          this.context.stdout.write(
+            renderSoftWarning(
+              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping uninstrumentation.`
+            )
+          )
+
+          return false
+        }
+
+        await this.uninstrumentSiteExtension(
+          client,
+          {...config, isDotnet: runtime === 'dotnet', service: config.service ?? aasName},
+          resourceGroup,
+          aasName,
+          runtime
+        )
+        await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+      } else {
+        // Linux uninstrumentation via sidecar
+        await this.uninstrumentSidecar(
+          client,
+          {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? aasName},
+          resourceGroup,
+          aasName
+        )
+        await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+      }
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(aasName)}: ${formatError(error)}`))
 
@@ -93,6 +115,64 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
 
     return true
+  }
+
+  public async uninstrumentSiteExtension(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    aasName: string,
+    runtime: 'node' | 'dotnet' | 'java'
+  ) {
+    const extensionId = SITE_EXTENSION_IDS[runtime]
+
+    // Stop the app before removing the extension
+    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${chalk.bold(aasName)}\n`)
+    if (!this.dryRun) {
+      await client.webApps.stop(resourceGroup, aasName)
+    }
+
+    // Remove the site extension
+    this.context.stdout.write(
+      `${this.dryRunPrefix}Removing site extension ${chalk.bold(extensionId)} from ${chalk.bold(
+        aasName
+      )} (if it exists)\n`
+    )
+    if (!this.dryRun) {
+      try {
+        await client.webApps.deleteSiteExtension(resourceGroup, aasName, extensionId)
+      } catch (error) {
+        // Extension may not exist, which is fine
+        this.context.stdout.write(
+          `${this.dryRunPrefix}Site extension ${chalk.bold(extensionId)} not found or already removed.\n`
+        )
+      }
+    }
+
+    // Remove Datadog environment variables
+    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
+    this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
+    const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
+    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
+      if (!this.dryRun) {
+        await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
+          properties: Object.fromEntries(
+            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
+          ),
+        })
+      }
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
+      )
+    }
+
+    // Start the app after removing the extension
+    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${chalk.bold(aasName)}\n`)
+    if (!this.dryRun) {
+      await client.webApps.start(resourceGroup, aasName)
+    }
   }
 
   public async uninstrumentSidecar(

@@ -18,7 +18,15 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {ensureLinux, getEnvVars, isDotnet, isLinuxContainer} from '../common'
+import {
+  getWindowsRuntime,
+  getEnvVars,
+  isDotnet,
+  isLinuxContainer,
+  isWindows,
+  SITE_EXTENSION_IDS,
+  WindowsRuntime,
+} from '../common'
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -112,27 +120,49 @@ export class PluginCommand extends AasInstrumentCommand {
   ): Promise<boolean> {
     try {
       const site = await aasClient.webApps.get(resourceGroup, aasName)
-      if (!ensureLinux((msg) => this.context.stdout.write(msg), site)) {
-        return false
-      }
 
-      const isContainer = isLinuxContainer(site)
-      if (config.isMusl && !isContainer) {
-        this.context.stdout.write(
-          renderSoftWarning(
-            `The --musl flag is set, but the App Service ${chalk.bold(aasName)} is not a containerized app. \
-This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.`
+      // Determine instrumentation method based on platform
+      if (isWindows(site)) {
+        // Windows instrumentation via site extension
+        const runtime = getWindowsRuntime(site)
+        if (!runtime) {
+          this.context.stdout.write(
+            renderSoftWarning(
+              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping instrumentation.`
+            )
           )
-        )
+
+          return false
+        }
+
+        config = {
+          ...config,
+          isDotnet: runtime === 'dotnet',
+          service: config.service ?? aasName,
+        }
+
+        await this.instrumentSiteExtension(aasClient, config, resourceGroup, aasName, runtime)
+        await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+      } else {
+        // Linux instrumentation via sidecar
+        const isContainer = isLinuxContainer(site)
+        if (config.isMusl && !isContainer) {
+          this.context.stdout.write(
+            renderSoftWarning(
+              `The --musl flag is set, but the App Service ${chalk.bold(aasName)} is not a containerized app. \
+This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.`
+            )
+          )
+        }
+        config = {
+          ...config,
+          isDotnet: config.isDotnet || isDotnet(site),
+          isMusl: config.isMusl && config.isDotnet && isContainer,
+          service: config.service ?? aasName,
+        }
+        await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
+        await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
       }
-      config = {
-        ...config,
-        isDotnet: config.isDotnet || isDotnet(site),
-        isMusl: config.isMusl && config.isDotnet && isContainer,
-        service: config.service ?? aasName,
-      }
-      await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
-      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
 
@@ -190,6 +220,50 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     }
   }
 
+  public async instrumentSiteExtension(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    aasName: string,
+    runtime: WindowsRuntime
+  ) {
+    const extensionId = SITE_EXTENSION_IDS[runtime]
+
+    // Check if the extension is already installed
+    const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))
+    const extensionInstalled = existingExtensions.some((ext) => ext.id === extensionId)
+    const envVars = getEnvVars(config, false)
+
+    if (extensionInstalled) {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}Site extension ${chalk.bold(extensionId)} already installed on ${chalk.bold(aasName)}.\n`
+      )
+      await this.updateEnvVars(client, resourceGroup, aasName, envVars)
+
+      return
+    }
+
+    const envVarsPromise = this.updateEnvVars(client, resourceGroup, aasName, envVars)
+
+    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${chalk.bold(aasName)}\n`)
+    if (!this.dryRun) {
+      await client.webApps.stop(resourceGroup, aasName)
+    }
+
+    this.context.stdout.write(
+      `${this.dryRunPrefix}Installing site extension ${chalk.bold(extensionId)} on ${chalk.bold(aasName)}\n`
+    )
+    if (!this.dryRun) {
+      await client.webApps.beginInstallSiteExtensionAndWait(resourceGroup, aasName, extensionId)
+    }
+    await envVarsPromise
+
+    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${chalk.bold(aasName)}\n`)
+    if (!this.dryRun) {
+      await client.webApps.start(resourceGroup, aasName)
+    }
+  }
+
   public async instrumentSidecar(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
@@ -232,6 +306,15 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         )} already exists with correct configuration.\n`
       )
     }
+    await this.updateEnvVars(client, resourceGroup, aasName, envVars)
+  }
+
+  private async updateEnvVars(
+    client: WebSiteManagementClient,
+    resourceGroup: string,
+    aasName: string,
+    envVars: Record<string, string>
+  ) {
     const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
     if (!sortedEqual(existingEnvVars.properties, updatedEnvVars.properties)) {
