@@ -81,8 +81,12 @@ export class PluginCommand extends AasUninstrumentCommand {
     aasName: string
   ): Promise<boolean> {
     try {
-      const site = await client.webApps.get(resourceGroup, aasName)
-
+      const [site, siteConfig] = await Promise.all([
+        client.webApps.get(resourceGroup, aasName),
+        client.webApps.getConfiguration(resourceGroup, aasName),
+      ])
+      // patch in the site config which is the real source of truth
+      site.siteConfig = siteConfig
       // Determine uninstrumentation method based on platform
       if (isWindows(site)) {
         // Windows uninstrumentation via site extension

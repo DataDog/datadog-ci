@@ -39,20 +39,16 @@ export type WindowsRuntime = 'node' | 'dotnet' | 'java'
  * @returns The detected runtime or undefined if unable to detect
  */
 export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
-  const windowsFxVersion = site.siteConfig?.windowsFxVersion
-  if (!windowsFxVersion) {
-    return undefined
-  }
-
-  const version = windowsFxVersion.toLowerCase()
-  if (version.startsWith('node')) {
-    return 'node'
-  }
-  if (version.startsWith('dotnet')) {
+  if (!!site.siteConfig?.netFrameworkVersion) {
     return 'dotnet'
   }
-  if (version.startsWith('java')) {
+  if (!!site.siteConfig?.javaVersion) {
     return 'java'
+  }
+  // Needed because node isn't always configured the traditional way
+  // https://learn.microsoft.com/en-us/azure/app-service/configure-language-nodejs?pivots=platform-windows
+  if (!!site.siteConfig?.nodeVersion || site.siteConfig?.appSettings?.some(({name}) => name?.toLowerCase() === 'website_node_default_version')) {
+    return 'node'
   }
 
   return undefined
