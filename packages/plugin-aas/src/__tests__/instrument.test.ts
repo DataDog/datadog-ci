@@ -27,6 +27,7 @@ jest.mock('@azure/identity', () => ({
 
 const webAppsOperations = {
   get: jest.fn(),
+  getConfiguration: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
@@ -35,10 +36,12 @@ const webAppsOperations = {
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
+const createAzureResource = jest.fn().mockResolvedValue({})
 
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
     tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+    resources: {beginCreateOrUpdateByIdAndWait: createAzureResource},
   })),
 }))
 
