@@ -1,6 +1,6 @@
 issuer: https://token.actions.githubusercontent.com
 
-subject: repo:DataDog/datadog-ci:ref:refs/tags/v.*
+subject_pattern: repo:DataDog/datadog-ci:ref:refs/tags/v.*
 claim_pattern:
   event_name: "push"
   job_workflow_ref: DataDog/datadog-ci/\.github/workflows/publish-release\.yml@refs/tags/v.*
