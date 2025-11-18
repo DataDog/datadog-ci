@@ -32,6 +32,9 @@ const webAppsOperations = {
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
   updateApplicationSettings: jest.fn(),
+  listSiteExtensions: jest.fn(),
+  stop: jest.fn(),
+  start: jest.fn(),
   restart: jest.fn(),
 }
 
@@ -51,7 +54,16 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID, NULL_SUBSCRIPTION_ID} from './common'
+import {
+  CONTAINER_WEB_APP,
+  WINDOWS_DOTNET_WEB_APP,
+  WINDOWS_NODE_WEB_APP,
+  WINDOWS_JAVA_WEB_APP,
+  DEFAULT_INSTRUMENT_ARGS,
+  DEFAULT_CONFIG,
+  WEB_APP_ID,
+  NULL_SUBSCRIPTION_ID,
+} from './common'
 
 jest.mock('@azure/arm-appservice', () => ({
   WebSiteManagementClient: jest.fn().mockImplementation(() => ({
@@ -79,12 +91,17 @@ describe('aas instrument', () => {
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
       webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
+      webAppsOperations.listSiteExtensions.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.stop.mockReset().mockResolvedValue({})
+      webAppsOperations.start.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
+      createAzureResource.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
       handleSourceCodeIntegration
         .mockClear()
@@ -253,6 +270,157 @@ Ensure you copied the value and not the Key ID.
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
+    })
+
+    test('Installs .NET extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls in correct order and with correct arguments
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        expect.any(String),
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            DD_API_KEY: process.env.DD_API_KEY,
+            DD_SITE: 'datadoghq.com',
+            DD_SERVICE: 'my-web-app',
+            DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          }),
+        })
+      )
+      expect(updateTags).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, expect.objectContaining({
+        properties: expect.objectContaining({
+          tags: expect.objectContaining({service: 'my-web-app'}),
+        }),
+      }))
+    })
+
+    test('Installs Node.js extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_NODE_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        expect.any(String),
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Installs Java extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_JAVA_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Java.Apm`,
+        expect.any(String),
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Skips extension installation if already present', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(context.stdout.toString()).toContain('Site extension Datadog.AzureAppServices.DotNet already installed')
+      expect(code).toEqual(0)
+
+      // Verify extension installation was skipped
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).not.toHaveBeenCalled()
+      expect(createAzureResource).not.toHaveBeenCalled()
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
+
+      // But env vars and tags still updated
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Dry run mode for Windows extension installation', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
+      expect(context.stdout.toString()).toContain('[Dry Run] Stopping Azure App Service my-web-app')
+      expect(context.stdout.toString()).toContain('[Dry Run] Installing extension Datadog.AzureAppServices.DotNet')
+      expect(context.stdout.toString()).toContain('[Dry Run] Starting Azure App Service my-web-app')
+      expect(code).toEqual(0)
+
+      // Verify read-only operations still happen
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+
+      // Verify no write operations occurred
+      expect(webAppsOperations.stop).not.toHaveBeenCalled()
+      expect(createAzureResource).not.toHaveBeenCalled()
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
+    })
+
+    test('Handles error during Windows extension installation', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      createAzureResource.mockClear().mockRejectedValue(new Error('extension installation failed'))
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(context.stdout.toString()).toContain('[Error] Failed to instrument my-web-app')
+      expect(context.stdout.toString()).toContain('extension installation failed')
+      expect(code).toEqual(1)
+
+      // Verify operations up to the error occurred
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+
+      // Start should not be called if extension installation fails
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
     })
 
     test('Handles errors during sidecar instrumentation', async () => {

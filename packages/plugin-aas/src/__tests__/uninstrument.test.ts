@@ -19,6 +19,7 @@ const webAppsOperations = {
   deleteSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
   updateApplicationSettings: jest.fn(),
+  listSiteExtensions: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -35,7 +36,15 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_ARGS, NULL_SUBSCRIPTION_ID, WEB_APP_ID} from './common'
+import {
+  CONTAINER_WEB_APP,
+  WINDOWS_DOTNET_WEB_APP,
+  WINDOWS_NODE_WEB_APP,
+  WINDOWS_JAVA_WEB_APP,
+  DEFAULT_ARGS,
+  NULL_SUBSCRIPTION_ID,
+  WEB_APP_ID,
+} from './common'
 
 jest.mock('@azure/arm-appservice', () => ({
   WebSiteManagementClient: jest.fn().mockImplementation(() => ({
@@ -55,10 +64,13 @@ describe('aas instrument', () => {
         ...CONTAINER_WEB_APP,
         tags: {service: CONTAINER_WEB_APP.name},
       })
+      webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.deleteSiteContainer.mockReset().mockResolvedValue(undefined)
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue(undefined)
+      webAppsOperations.listSiteExtensions.mockReset().mockResolvedValue([])
       updateTags.mockClear().mockResolvedValue({})
+      deleteAzureResource.mockClear().mockResolvedValue({})
     })
 
     test('Fails if not authenticated with Azure', async () => {
@@ -230,6 +242,173 @@ Updating tags for my-web-app
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
+    })
+
+    test('Removes .NET extension from Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_API_KEY: 'test-key',
+          DD_SITE: 'datadoghq.com',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toContain('🐶 Beginning uninstrumentation of Azure App Service(s)')
+      expect(context.stdout.toString()).toContain('Removing extension Datadog.AzureAppServices.DotNet from my-web-app')
+      expect(context.stdout.toString()).toContain('Checking Application Settings on my-web-app')
+      expect(context.stdout.toString()).toContain('Updating Application Settings for my-web-app')
+      expect(context.stdout.toString()).toContain('Updating tags for my-web-app')
+      expect(code).toEqual(0)
+
+      // Verify API calls with correct arguments
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(deleteAzureResource).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        '2024-11-01'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'},
+      })
+      expect(updateTags).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, expect.objectContaining({
+        properties: expect.objectContaining({
+          tags: {},
+        }),
+      }))
+    })
+
+    test('Removes Node.js extension from Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_NODE_WEB_APP,
+        tags: {service: WINDOWS_NODE_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_NODE_WEB_APP.siteConfig)
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_SERVICE: 'my-web-app',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toContain('Removing extension Datadog.AzureAppServices.Node.Apm from my-web-app')
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        '2024-11-01'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'},
+      })
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Removes Java extension from Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_JAVA_WEB_APP,
+        tags: {service: WINDOWS_JAVA_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_JAVA_WEB_APP.siteConfig)
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_ENV: 'production',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toContain('Removing extension Datadog.AzureAppServices.Java.Apm from my-web-app')
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Java.Apm`,
+        '2024-11-01'
+      )
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app', {
+        properties: {hello: 'world'},
+      })
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Handles extension not found gracefully', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_API_KEY: 'test-key',
+          hello: 'world',
+        },
+      })
+      deleteAzureResource
+        .mockClear()
+        .mockRejectedValue(new Error('Extension is not installed locally'))
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(context.stdout.toString()).toContain('Extension Datadog.AzureAppServices.DotNet not found or already removed')
+      expect(code).toEqual(0)
+
+      // Verify extension deletion was attempted but error handled gracefully
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledTimes(1)
+
+      // Verify cleanup still proceeds after error
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Dry run mode for Windows extension removal', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_API_KEY: 'test-key',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
+      expect(context.stdout.toString()).toContain('[Dry Run] Removing extension Datadog.AzureAppServices.DotNet')
+      expect(context.stdout.toString()).toContain('[Dry Run] Updating Application Settings')
+      expect(code).toEqual(0)
+
+      // Verify read-only operations still happen
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.getConfiguration).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+
+      // Verify no write operations occurred
+      expect(deleteAzureResource).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
     })
