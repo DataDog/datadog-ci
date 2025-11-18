@@ -1,5 +1,5 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
-import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
+import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
@@ -21,7 +21,7 @@ import {
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
-  private tagClient!: TagsOperations
+  private resourceClient!: ResourceManagementClient
 
   public async execute(): Promise<0 | 1> {
     this.enableFips()
@@ -38,7 +38,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
       return 1
     }
-    this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
+    this.resourceClient = new ResourceManagementClient(this.cred)
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning uninstrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToUninstrument).map(([subscriptionId, resourceGroupToNames]) =>
@@ -89,7 +89,7 @@ export class PluginCommand extends AasUninstrumentCommand {
       site.siteConfig = siteConfig
       // Determine uninstrumentation method based on platform
       if (isWindows(site)) {
-        // Windows uninstrumentation via site extension
+        // Windows uninstrumentation via extension
         const runtime = getWindowsRuntime(site)
         if (!runtime) {
           this.context.stdout.write(
@@ -101,7 +101,7 @@ export class PluginCommand extends AasUninstrumentCommand {
           return false
         }
 
-        await this.uninstrumentSiteExtension(
+        await this.uninstrumentExtension(
           client,
           {...config, service: config.service ?? aasName},
           resourceGroup,
@@ -128,7 +128,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     return true
   }
 
-  public async uninstrumentSiteExtension(
+  public async uninstrumentExtension(
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
@@ -137,18 +137,20 @@ export class PluginCommand extends AasUninstrumentCommand {
   ) {
     const extensionId = SITE_EXTENSION_IDS[runtime]
     this.context.stdout.write(
-      `${this.dryRunPrefix}Removing site extension ${chalk.bold(extensionId)} from ${chalk.bold(
-        aasName
-      )} (if it exists)\n`
+      `${this.dryRunPrefix}Removing extension ${chalk.bold(extensionId)} from ${chalk.bold(aasName)} (if it exists)\n`
     )
     if (!this.dryRun) {
       try {
-        await client.webApps.deleteSiteExtension(resourceGroup, aasName, extensionId)
-      } catch (error) {
-        // Extension may not exist, which is fine
-        this.context.stdout.write(
-          `${this.dryRunPrefix}Site extension ${chalk.bold(extensionId)} not found or already removed.\n`
+        // We make this call with the regular resources client because `client.webApps.deleteSiteExtension` doesn't work
+        await this.resourceClient.resources.beginDeleteByIdAndWait(
+          `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}/siteextensions/${extensionId}`,
+          '2024-11-01'
         )
+      } catch (error) {
+        const message = String(error).includes('not installed locally')
+          ? `Extension ${chalk.bold(extensionId)} not found or already removed.\n`
+          : `Unable to install extension: ${error}\n`
+        this.context.stdout.write(message)
       }
     }
     // Updaing the environment variables will trigger a restart
@@ -212,7 +214,7 @@ export class PluginCommand extends AasUninstrumentCommand {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
-          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
+          await this.resourceClient.tagsOperations.beginCreateOrUpdateAtScopeAndWait(
             `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
             {properties: {tags: updatedTags}}
           )
