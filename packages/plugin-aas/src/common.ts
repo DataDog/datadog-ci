@@ -94,7 +94,7 @@ export const isWindows = (site: Site): boolean => {
     return !!site.siteConfig?.windowsFxVersion
   }
 
-  return site.kind.includes('windows')
+  return !site.kind.includes('linux')
 }
 
 export const isDotnet = (site: Site): boolean => {
