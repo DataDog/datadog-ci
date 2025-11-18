@@ -57,45 +57,67 @@ Configuration can be done using command-line arguments.
 #### `instrument`
 You can pass the following arguments to `instrument` to specify its behavior.
 
+<!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--project` | `-p` | The GCP project ID where your Cloud Run service is located. | |
-| `--service` | `-s` | The name of your Cloud Run service. | |
-| `--region` | `-r` | The GCP region where your service(s) are deployed in. | |
-| `--dry` | `-d` | Preview the changes that running the command would apply. | `false` |
-| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags | `false` |
-| `--env` | | Separate out your staging, development, and production environments. | |
-| `--version` | | Add the `--version` tag to correlate spikes in latency, load, or errors to new versions. | |
-| `--tracing` | | Disable tracing by setting `--tracing false`. | `true` |
-| `--log-level` | | Specify your Datadog log level. | |
-| `--llmobs` | | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. | |
-| `--extra-tags` | | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. | |
-| `--source-code-integration` | | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. | `true` |
-| `--no-source-code-integration` | | Disables Datadog Source Code Integration. | |
-| `--upload-git-metadata` | | Whether to enable Git metadata uploading, as a part of source code integration. Git metadata uploading is only required if you don't have the Datadog Github Integration installed. | `true` |
-| `--no-upload-git-metadata` | | Disables Git metadata uploading. Use this flag if you have the Datadog Github Integration installed, as it renders Git metadata uploading unnecessary. | |
-| `--health-check-port` | | Specify the health check port of your sidecar container. | `5555` |
-| `--sidecar-image` | | Specify a custom sidecar image. | `gcr.io/datadoghq/serverless-init:latest` |
-| `--sidecar-name` | | (Not recommended) Specify a custom sidecar container name. | `datadog-sidecar` |
-| `--shared-volume-name` | | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
-| `--shared-volume-path` | | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
-| `--logs-path` | | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--sidecar-cpus` | | The number of CPUs to allocate to the sidecar container. | `1` |
-| `--sidecar-memory` | | The amount of memory to allocate to the sidecar container. | `512Mi` |
-| `--language` | | Set the language used in your container or function for advanced log parsing. Sets the `DD_SOURCE` env var. Possible values: `nodejs`, `python`, `go`, `java`, `csharp`, `ruby`, or `php`. | |
+| `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--extra-tags` or `--extraTags` |  | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
+| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
+| `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
+| `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--tracing` |  | Enables tracing of your application if the tracer is installed. Disable tracing by setting `--tracing false`. |  |
+| `--service-tag` or `--serviceTag` |  | The value for the service tag. Use this to group related Cloud Run services belonging to similar workloads. For example, `my-service`. If not provided, the Cloud Run service name is used. |  |
+| `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
+| `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
+| `--llmobs` |  | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. |  |
+| `--port` or `--health-check-port` or `--healthCheckPort` |  |  |  |
+| `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `gcr.io/datadoghq/serverless-init:latest` |
+| `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `datadog-sidecar` |
+| `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
+| `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
+| `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
+| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. Defaults to 1. | `1` |
+| `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
+| `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
+<!-- END_USAGE:instrument -->
 
 #### `uninstrument`
 You can pass the following arguments to `uninstrument` to specify its behavior.
 
+<!-- BEGIN_USAGE:uninstrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--project` | `-p` | The GCP project ID where your Cloud Run service is located. | |
-| `--service` | `-s` | The name of your Cloud Run service. | |
-| `--region` | `-r` | The GCP region where your service(s) are deployed in. | |
-| `--dry` | `-d` | Preview the changes that running the command would apply. | `false` |
-| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags | `false` |
-| `--sidecar-name` | | The name of the container to remove. Specify if you have a different sidecar container name. | `datadog-sidecar` |
-| `--shared-volume-name` | | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
+| `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to revert instrumentation | `[]` |
+| `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
+| `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
+| `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |
+| `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
+| `--env-vars` | `-e` | Additional environment variables to remove from the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+<!-- END_USAGE:uninstrument -->
+
+#### `flare`
+You can pass the following arguments to `flare` to specify its behavior.
+
+<!-- BEGIN_USAGE:flare -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `--dry` or `--dry-run` | `-d` | Preview data that will be sent to Datadog support. | `false` |
+| `--with-logs` |  | Collect recent logs for the specified service. | `false` |
+| `--service` | `-s` | The name of the Cloud Run service. |  |
+| `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
+| `--region` or `--location` | `-r` or `-l` | The region where the Cloud Run service is hosted. |  |
+| `--case-id` | `-c` | The Datadog case ID to send the files to. |  |
+| `--email` | `-e` | The email associated with the specified case ID. |  |
+| `--start` |  | Only gather logs after the time in milliseconds since Unix Epoch. (`--with-logs` must be specified.) |  |
+| `--end` |  | Only gather logs before the time in milliseconds since Unix Epoch. (`--with-logs` must be specified.) |  |
+<!-- END_USAGE:flare -->
 
 ## Troubleshooting Cloud Run instrumentation
 
@@ -114,28 +136,6 @@ datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <ca
 # Dry run: collect data, but don't send to Datadog support
 datadog-ci cloud-run flare -s <service> -p <project> -r <region/location> -c <case-id> -e <email-on-case-id> --with-logs --dry-run
 ```
-
-### Arguments
-
-| Argument              | Shorthand | Description                                                                                                                           | Default |
-| --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `--service`           | `-s`      | The name of the Cloud Run service.                                                                                                    |         |
-| `--project`           | `-p`      | The name of the Google Cloud project where the Cloud Run service is hosted.                                                           |         |
-| `--region`            | `-r`      | The region where the Cloud Run service is hosted.                                                                                     |         |
-| `--case-id`           | `-c`      | The Datadog case ID to send the files to.                                                                                             |         |
-| `--email`             | `-e`      | The email associated with the specified case ID.                                                                                      |         |
-| `--with-logs`         |           | Collect recent logs for the specified service.                                                                                        | `false` |
-| `--start` and `--end` |           | Only gather logs within the time range (`--with-logs` must be included.) Both arguments are numbers in milliseconds since Unix Epoch. |         |
-| `--dry-run`           | `-d`      | Preview data that will be sent to Datadog support.                                                                                    | `false` |
-
-### Environment variables
-
-Expose these environment variables in the environment where you are running `datadog-ci cloud-run flare`:
-
-| Environment Variable | Description                                                                                                                                                                                                                                      | Example                          |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| `DD_API_KEY`         | Datadog API Key. Used to attach the flare files to your Zendesk ticket. For more information about getting a Datadog API key, see the [API key documentation][2].                                                                                | `export DD_API_KEY=<API_KEY>`    |
-| `DD_SITE`            | Optional. Set which Datadog site to send the flare for lower latency. Possible values are  `datadoghq.com` , `datadoghq.eu` , `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`, `ap2.datadoghq.com`, and `ddog-gov.com`. The default is `datadoghq.com`. | `export DD_SITE="datadoghq.com"` |
 
 ## Community
 

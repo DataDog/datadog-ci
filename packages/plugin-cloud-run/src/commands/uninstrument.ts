@@ -5,7 +5,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
-import {generateConfigDiff} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {generateConfigDiff, parseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import {ServicesClient} from '@google-cloud/run'
 import chalk from 'chalk'
@@ -186,9 +186,13 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     const existingVolumeMounts = appContainer.volumeMounts || []
     const updatedVolumeMounts = existingVolumeMounts.filter((v) => v.name !== this.sharedVolumeName)
 
+    const customEnvVars = parseEnvVars(this.envVars)
+
     const existingEnvVars = appContainer.env || []
-    // Remove env vars beginning with DD_
-    const updatedEnvVars = existingEnvVars.filter((v) => v.name && !v.name.startsWith('DD_'))
+    // Remove env vars beginning with DD_ and custom env vars
+    const updatedEnvVars = existingEnvVars.filter(
+      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars)
+    )
 
     return {
       ...appContainer,

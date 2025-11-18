@@ -105,7 +105,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stdout.write(chalk.yellow('Invalid or missing region. Please use the --region flag.\n'))
     }
 
-    const ddService = process.env[SERVICE_ENV_VAR]
+    const ddService = this.serviceTag ?? process.env[SERVICE_ENV_VAR]
     if (!ddService) {
       this.context.stdout.write(renderSoftWarning('No DD_SERVICE env var found. Will default to the service name.'))
     }
@@ -219,6 +219,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       version: this.version,
       logPath: this.logsPath,
       extraTags: this.extraTags,
+      envVars: this.envVars,
     })
     const template: IServiceTemplate = createInstrumentedTemplate(
       service.template || {},
