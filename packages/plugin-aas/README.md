@@ -93,7 +93,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--instance-logging` |  | When enabled, log collection is automatically configured for an additional file path: /home/LogFiles/*$COMPUTERNAME*.log | `false` |
 | `--log-path` |  | Where you write your logs. For example, /home/LogFiles/*.log or /home/LogFiles/myapp/*.log |  |
 | `--no-restart` |  | Do not restart the App Service after applying instrumentation. | `false` |
-| `--dotnet` |  | Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app. | `false` |
+| `--dotnet` or `--dotnet-container` |  | Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app. | `false` |
 | `--musl` |  | Add in required .NET-specific configuration options for musl-based .NET apps. This should be specified if you are using a containerized .NET app on a musl-based distribution like Alpine Linux. | `false` |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable. | `true` |

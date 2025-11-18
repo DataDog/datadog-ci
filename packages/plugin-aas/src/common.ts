@@ -47,7 +47,10 @@ export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
   }
   // Needed because node isn't always configured the traditional way
   // https://learn.microsoft.com/en-us/azure/app-service/configure-language-nodejs?pivots=platform-windows
-  if (!!site.siteConfig?.nodeVersion || site.siteConfig?.appSettings?.some(({name}) => name?.toLowerCase() === 'website_node_default_version')) {
+  if (
+    !!site.siteConfig?.nodeVersion ||
+    site.siteConfig?.appSettings?.some(({name}) => name?.toLowerCase() === 'website_node_default_version')
+  ) {
     return 'node'
   }
 

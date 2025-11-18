@@ -436,99 +436,85 @@ describe('aas common', () => {
   })
 
   describe('getWindowsRuntime', () => {
-    test('returns "node" if windowsFxVersion starts with "node"', () => {
+    test('returns "node" if nodeVersion is set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'node|18',
+          nodeVersion: '18',
         },
       }
       expect(getWindowsRuntime(site)).toBe('node')
     })
 
-    test('returns "node" if windowsFxVersion starts with "NODE" (case insensitive)', () => {
+    test('returns "node" if WEBSITE_NODE_DEFAULT_VERSION is set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'NODE|18',
+          appSettings: [{name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'}],
         },
       }
       expect(getWindowsRuntime(site)).toBe('node')
     })
 
-    test('returns "dotnet" if windowsFxVersion starts with "dotnet"', () => {
+    test('returns "dotnet" if netFrameworkVersion is set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'dotnet|6.0',
+          netFrameworkVersion: 'v6.0',
         },
       }
       expect(getWindowsRuntime(site)).toBe('dotnet')
     })
 
-    test('returns "dotnet" if windowsFxVersion starts with "DOTNET" (case insensitive)', () => {
+    test('returns "dotnet" if netFrameworkVersion is set (case check)', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'DOTNET|7.0',
+          netFrameworkVersion: 'v7.0',
         },
       }
       expect(getWindowsRuntime(site)).toBe('dotnet')
     })
 
-    test('returns "java" if windowsFxVersion starts with "java"', () => {
+    test('returns "java" if javaVersion is set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'java|11',
+          javaVersion: '11',
         },
       }
       expect(getWindowsRuntime(site)).toBe('java')
     })
 
-    test('returns "java" if windowsFxVersion starts with "JAVA" (case insensitive)', () => {
+    test('returns "java" if javaVersion is set (another version)', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
         siteConfig: {
-          windowsFxVersion: 'JAVA|17',
+          javaVersion: '17',
         },
       }
       expect(getWindowsRuntime(site)).toBe('java')
     })
 
-    test('returns undefined if windowsFxVersion is not a recognized runtime', () => {
+    test('returns undefined if no runtime version is set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
-        siteConfig: {
-          windowsFxVersion: 'python|3.9',
-        },
+        siteConfig: {},
       }
       expect(getWindowsRuntime(site)).toBeUndefined()
     })
 
-    test('returns undefined if windowsFxVersion is not set', () => {
+    test('returns undefined if siteConfig is not set', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
-        siteConfig: {
-          windowsFxVersion: undefined,
-        },
-      }
-      expect(getWindowsRuntime(site)).toBeUndefined()
-    })
-
-    test('returns undefined if siteConfig is undefined', () => {
-      const site: Site = {
-        kind: 'app,windows',
-        location: 'East US',
-        siteConfig: undefined,
       }
       expect(getWindowsRuntime(site)).toBeUndefined()
     })

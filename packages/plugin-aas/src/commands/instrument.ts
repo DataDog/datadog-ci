@@ -162,9 +162,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
       await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
-      this.context.stdout.write(
-        renderError(`Failed to instrument ${aasName}: ${formatError(error)}`)
-      )
+      this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
 
       return false
     }
