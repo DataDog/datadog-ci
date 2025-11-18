@@ -24,7 +24,7 @@ describe('evaluate', () => {
 
       const output = write.mock.calls.map((c) => c[0]).join('\n')
       expect(output).toContain(
-        'Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in January, 2026'
+        'Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in 2026'
       )
       expect(output).toContain('https://forms.gle/qnhANsE1ABtHrjqz9')
       expect(output).toContain('https://docs.datadoghq.com/pr_gates')

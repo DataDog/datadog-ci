@@ -46,7 +46,7 @@ export class PluginCommand extends GateEvaluateCommand {
 
     // Deprecation notice for Quality Gates evaluate command
     this.logger.warn(
-      `${ICONS.WARNING} Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in January, 2026. Please initiate the migration process by filling out this form: https://forms.gle/qnhANsE1ABtHrjqz9 \n\nLearn more about PR Gates in https://docs.datadoghq.com/pr_gates`
+      `${ICONS.WARNING} Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in 2026. To start the migration, please fill out this form: https://forms.gle/qnhANsE1ABtHrjqz9 \n\nLearn more about PR Gates in https://docs.datadoghq.com/pr_gates`
     )
 
     const options: PayloadOptions = {
