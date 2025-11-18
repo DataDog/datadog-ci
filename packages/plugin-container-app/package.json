@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-container-app",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "Datadog CI plugin for `container-app` commands",
   "license": "Apache-2.0",
   "keywords": [
