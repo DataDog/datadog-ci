@@ -1,7 +1,7 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {AasConfigOptions, WINDOWS_RUNTIME_EXTENSIONS, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -18,15 +18,7 @@ import {SERVERLESS_CLI_VERSION_TAG_NAME, SERVERLESS_CLI_VERSION_TAG_VALUE} from 
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
 
-import {
-  getWindowsRuntime,
-  getEnvVars,
-  isDotnet,
-  isLinuxContainer,
-  isWindows,
-  SITE_EXTENSION_IDS,
-  WindowsRuntime,
-} from '../common'
+import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
 
 export class PluginCommand extends AasInstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -118,13 +110,15 @@ export class PluginCommand extends AasInstrumentCommand {
     resourceGroup: string,
     aasName: string
   ): Promise<boolean> {
+    // make config a copy with the default service added
+    config = {...config, service: config.service ?? aasName}
     try {
       const site = await aasClient.webApps.get(resourceGroup, aasName)
 
       // Determine instrumentation method based on platform
       if (isWindows(site)) {
         // Windows instrumentation via extension
-        const runtime = getWindowsRuntime(site)
+        const runtime = config.windowsRuntime ?? getWindowsRuntime(site)
         if (!runtime) {
           this.context.stdout.write(
             renderSoftWarning(
@@ -134,9 +128,6 @@ export class PluginCommand extends AasInstrumentCommand {
 
           return false
         }
-
-        config = {...config, service: config.service ?? aasName}
-
         await this.instrumentExtension(aasClient, config, resourceGroup, aasName, runtime)
         await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
 
@@ -153,12 +144,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
           )
         )
       }
-      config = {
-        ...config,
-        isDotnet: config.isDotnet || isDotnet(site),
-        isMusl: config.isMusl && config.isDotnet && isContainer,
-        service: config.service ?? aasName,
-      }
+      config.isDotnet ||= isDotnet(site)
+      config.isMusl &&= config.isDotnet && isContainer
       await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
       await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
@@ -225,7 +212,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     aasName: string,
     runtime: WindowsRuntime
   ) {
-    const extensionId = SITE_EXTENSION_IDS[runtime]
+    const extensionId = WINDOWS_RUNTIME_EXTENSIONS[runtime]
 
     // Check if the extension is already installed
     const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))

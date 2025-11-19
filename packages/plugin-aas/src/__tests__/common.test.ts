@@ -616,7 +616,10 @@ describe('aas common', () => {
           kind: 'app,windows',
           location: 'East US',
           siteConfig: {
-            appSettings: [{name: 'OTHER_SETTING', value: 'foo'}, {name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'}],
+            appSettings: [
+              {name: 'OTHER_SETTING', value: 'foo'},
+              {name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'},
+            ],
           },
         }
         expect(getWindowsRuntime(site)).toBe('node')
@@ -627,7 +630,10 @@ describe('aas common', () => {
           kind: 'app,windows',
           location: 'East US',
           siteConfig: {
-            appSettings: [{name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'}, {name: 'OTHER_SETTING', value: 'foo'}],
+            appSettings: [
+              {name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'},
+              {name: 'OTHER_SETTING', value: 'foo'},
+            ],
           },
         }
         expect(getWindowsRuntime(site)).toBe('node')

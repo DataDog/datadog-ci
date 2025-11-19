@@ -16,6 +16,18 @@ import {BaseCommand} from '../..'
  */
 export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
 
+
+export const WINDOWS_RUNTIME_EXTENSIONS = {
+    node: 'Datadog.AzureAppServices.Node.Apm',
+    dotnet: 'Datadog.AzureAppServices.DotNet',
+    java: 'Datadog.AzureAppServices.Java.Apm',
+} as const
+
+/**
+ * Supported Windows Web App runtimes
+ */
+export type WindowsRuntime = keyof typeof WINDOWS_RUNTIME_EXTENSIONS
+
 /**
  * Configuration options provided by the user through
  * the CLI in order to instrument properly.
@@ -43,6 +55,7 @@ export type AasConfigOptions = Partial<{
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
   extraTags: string
+  windowsRuntime: WindowsRuntime
 }>
 
 export abstract class AasCommand extends BaseCommand {
@@ -126,6 +139,9 @@ export abstract class AasCommand extends BaseCommand {
       errors.push(
         '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
       )
+    }
+    if (config.windowsRuntime && !(config.windowsRuntime in WINDOWS_RUNTIME_EXTENSIONS)) {
+      errors.push('--windows-runtime must be one of: node, dotnet, java')
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified

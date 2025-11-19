@@ -1,5 +1,5 @@
 import {Site} from '@azure/arm-appservice'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 // Path to tracing libraries, copied within the Docker file
@@ -31,8 +31,6 @@ export const AAS_DD_SETTING_NAMES = [
   'DD_TAGS',
 ] as const
 
-export type WindowsRuntime = 'node' | 'dotnet' | 'java'
-
 /**
  * Detects the runtime of a Windows-based Azure App Service
  * @param site The Azure App Service site
@@ -55,12 +53,6 @@ export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
   }
 
   return undefined
-}
-
-export const SITE_EXTENSION_IDS: Record<WindowsRuntime, string> = {
-  node: 'Datadog.AzureAppServices.Node.Apm',
-  dotnet: 'Datadog.AzureAppServices.DotNet',
-  java: 'Datadog.AzureAppServices.Java.Apm',
 }
 
 export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Record<string, string> => {

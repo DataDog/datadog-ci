@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-import {AasCommand, AasConfigOptions} from './common'
+import {AasCommand, AasConfigOptions, WindowsRuntime} from './common'
 
 export class AasInstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -53,6 +53,10 @@ export class AasInstrumentCommand extends AasCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
+  private windowsRuntime = Option.String('--windows-runtime', {
+    description: 'Manually specify Windows runtime (node, dotnet, or java) to override automatic detection for the extension to use.',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -66,6 +70,7 @@ export class AasInstrumentCommand extends AasCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      windowsRuntime: this.windowsRuntime as WindowsRuntime | undefined,
     }
   }
 

@@ -261,7 +261,7 @@ describe('aas instrument', () => {
       expect(createAzureResource).toHaveBeenCalledTimes(1)
       expect(createAzureResource).toHaveBeenCalledWith(
         `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
-        expect.any(String),
+        '2024-11-01',
         expect.any(Object)
       )
       expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
@@ -280,11 +280,14 @@ describe('aas instrument', () => {
         })
       )
       expect(updateTags).toHaveBeenCalledTimes(1)
-      expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, expect.objectContaining({
-        properties: expect.objectContaining({
-          tags: expect.objectContaining({service: 'my-web-app'}),
-        }),
-      }))
+      expect(updateTags).toHaveBeenCalledWith(
+        WEB_APP_ID,
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            tags: expect.objectContaining({service: 'my-web-app'}),
+          }),
+        })
+      )
     })
 
     test('Installs Node.js extension on Windows app', async () => {
@@ -302,7 +305,7 @@ describe('aas instrument', () => {
       expect(createAzureResource).toHaveBeenCalledTimes(1)
       expect(createAzureResource).toHaveBeenCalledWith(
         `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
-        expect.any(String),
+        '2024-11-01',
         expect.any(Object)
       )
       expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
@@ -326,13 +329,27 @@ describe('aas instrument', () => {
       expect(createAzureResource).toHaveBeenCalledTimes(1)
       expect(createAzureResource).toHaveBeenCalledWith(
         `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Java.Apm`,
-        expect.any(String),
+        '2024-11-01',
         expect.any(Object)
       )
       expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
       expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
       expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Uses manual Windows runtime override', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--windows-runtime', 'node'])
+      expect(code).toEqual(0)
+
+      // Verify Node extension is installed despite .NET runtime detected
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        '2024-11-01',
+        expect.any(Object)
+      )
     })
 
     test('Skips extension installation if already present', async () => {
@@ -708,6 +725,12 @@ describe('aas instrument', () => {
 
     test('Validates extra tags format', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--extra-tags', 'invalid-tag-format'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+
+    test('Validates windows runtime parameter', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--windows-runtime', 'invalid'])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toMatchSnapshot()
     })
