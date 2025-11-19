@@ -6,6 +6,7 @@ import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
@@ -42,6 +43,11 @@ export class PluginCommand extends GateEvaluateCommand {
 
   public async execute() {
     enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
+    // Deprecation notice for Quality Gates evaluate command
+    this.logger.warn(
+      `${ICONS.WARNING} Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in 2026. To start the migration, please fill out this form: https://forms.gle/qnhANsE1ABtHrjqz9 \n\nLearn more about PR Gates in https://docs.datadoghq.com/pr_gates`
+    )
 
     const options: PayloadOptions = {
       dryRun: this.dryRun,

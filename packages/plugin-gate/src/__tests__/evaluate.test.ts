@@ -9,6 +9,27 @@ import {PluginCommand as GateEvaluateCommand} from '../commands/evaluate'
 import {EvaluationResponse, EvaluationResponsePayload, Payload} from '../interfaces'
 
 describe('evaluate', () => {
+  describe('deprecation notice', () => {
+    test('prints deprecation warning at start of execute()', async () => {
+      process.env = {DD_API_KEY: 'PLACEHOLDER', DD_APP_KEY: 'PLACEHOLDER'}
+
+      const write = jest.fn()
+      const command = createCommand(GateEvaluateCommand, {stdout: {write}})
+
+      // Avoid running the real evaluation logic; we only care about the notice
+      command['getApiHelper'] = jest.fn().mockReturnValue({})
+      command['evaluateRules'] = jest.fn().mockResolvedValue(0)
+
+      await command.execute()
+
+      const output = write.mock.calls.map((c) => c[0]).join('\n')
+      expect(output).toContain(
+        'Deprecation Warning: Datadog Quality Gates is being replaced by the new PR Gates in 2026'
+      )
+      expect(output).toContain('https://forms.gle/qnhANsE1ABtHrjqz9')
+      expect(output).toContain('https://docs.datadoghq.com/pr_gates')
+    })
+  })
   describe('getApiHelper', () => {
     test('should throw an error if API key is undefined', () => {
       process.env = {}

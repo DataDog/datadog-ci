@@ -109,6 +109,12 @@ The following `<scope>` and `<command>` values are available.
 
 <sub>**README:** [📚](/packages/plugin-gate) | **Documentation:** [🔗](https://docs.datadoghq.com/quality_gates/)</sub>
 
+> [!WARNING]
+>
+> **Deprecated:** Datadog Quality Gates is being replaced by the new PR Gates in 2026. To start the migration, please fill out this form: https://forms.gle/qnhANsE1ABtHrjqz9
+>
+> Learn more about PR Gates: https://docs.datadoghq.com/pr_gates
+
 - `evaluate`: Evaluate Quality Gates rules in Datadog.
 
 #### `git-metadata`
