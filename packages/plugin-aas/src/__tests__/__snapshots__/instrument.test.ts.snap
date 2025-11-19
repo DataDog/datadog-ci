@@ -1,0 +1,155 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`aas instrument execute Adds a sidecar and updates the application settings and tags 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Adds core tags to the Azure App Service 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Does not restart when specified 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Dry run mode for Windows extension installation 1`] = `
+"[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
+[Dry Run] Stopping Azure App Service my-web-app
+[Dry Run] Installing extension Datadog.AzureAppServices.DotNet on my-web-app
+[Dry Run] Updating Application Settings for my-web-app
+[Dry Run] Starting Azure App Service my-web-app
+[Dry Run] Updating tags for my-web-app
+[Dry Run] 🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Errors if no Azure App Service is specified 1`] = `
+"[Error] No App Services specified to instrument
+"
+`;
+
+exports[`aas instrument execute Errors if the resource ID is invalid 1`] = `
+"[Error] Invalid AAS resource ID: not-a-valid-resource-id
+"
+`;
+
+exports[`aas instrument execute Errors include all resource IDs that are invalid 1`] = `
+"[Error] Invalid AAS resource ID: not-a-valid-resource-id
+[Error] Invalid AAS resource ID: another-invalid-id
+"
+`;
+
+exports[`aas instrument execute Fails if datadog API key is invalid 1`] = `
+"[!] Invalid API Key stored in the environment variable DD_API_KEY: ****************
+Ensure you copied the value and not the Key ID.
+"
+`;
+
+exports[`aas instrument execute Fails if not authenticated with Azure 1`] = `
+"[!] Failed to authenticate with Azure: Error
+
+Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
+
+"
+`;
+
+exports[`aas instrument execute Handles error during Windows extension installation 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Stopping Azure App Service my-web-app
+Updating Application Settings for my-web-app
+Installing extension Datadog.AzureAppServices.DotNet on my-web-app
+[Error] Failed to instrument my-web-app: Error: extension installation failed
+🐶 Instrumentation completed with errors, see above for details.
+"
+`;
+
+exports[`aas instrument execute Handles errors during sidecar instrumentation 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+[Error] Failed to instrument my-web-app: Error: sidecar error
+🐶 Instrumentation completed with errors, see above for details.
+"
+`;
+
+exports[`aas instrument execute Ignores --musl flag and warns on non-containerized dotnet apps 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+[!] The --musl flag is set, but the App Service my-web-app is not a containerized app. This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Instruments multiple App Services in a single subscription 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Creating sidecar container datadog-sidecar on my-web-app2
+Updating Application Settings for my-web-app
+Updating Application Settings for my-web-app2
+Updating tags for my-web-app
+Updating tags for my-web-app2
+Restarting Azure App Service my-web-app
+Restarting Azure App Service my-web-app2
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Performs no actions in dry run mode 1`] = `
+"[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
+[Dry Run] Creating sidecar container datadog-sidecar on my-web-app
+[Dry Run] Updating Application Settings for my-web-app
+[Dry Run] Updating tags for my-web-app
+[Dry Run] Restarting Azure App Service my-web-app
+[Dry Run] 🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Sets additional environment variables from config 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+Restarting Azure App Service my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Skips extension installation if already present 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Site extension Datadog.AzureAppServices.DotNet already installed on my-web-app.
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Validates extra tags format 1`] = `
+"[Error] Extra tags do not comply with the <key>:<value> array.
+"
+`;
+
+exports[`aas instrument execute Warns and exits if App Service is Windows but runtime cannot be detected 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+[!] Unable to detect runtime for Windows App Service my-web-app. Skipping instrumentation.
+🐶 Instrumentation completed with errors, see above for details.
+"
+`;
