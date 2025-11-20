@@ -30,7 +30,7 @@ export type WindowsRuntime = keyof typeof WINDOWS_RUNTIME_EXTENSIONS
  * Parses the extension Id from an extension name/id
  * Ex: "myapp/siteextensions/some.extension.id" -> "some.extension.id"
  */
-export function getExtensionId(extension: string): string {
+export const getExtensionId = (extension: string): string => {
   const parts = extension.split('/')
 
   return parts[parts.length - 1]
