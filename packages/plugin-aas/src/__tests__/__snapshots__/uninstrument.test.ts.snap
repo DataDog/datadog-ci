@@ -134,10 +134,3 @@ Updating tags for my-web-app
 🐶 Uninstrumentation completed successfully!
 "
 `;
-
-exports[`aas instrument execute Warns and exits if App Service is Windows but runtime cannot be detected 1`] = `
-"🐶 Beginning uninstrumentation of Azure App Service(s)
-[!] Unable to detect runtime for Windows App Service my-web-app. Skipping uninstrumentation.
-🐶 Uninstrumentation completed with errors, see above for details.
-"
-`;

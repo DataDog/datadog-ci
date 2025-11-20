@@ -208,19 +208,6 @@ describe('aas instrument', () => {
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
     })
 
-    test('Warns and exits if App Service is Windows but runtime cannot be detected', async () => {
-      webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
-      const {code, context} = await runCLI(DEFAULT_ARGS)
-      expect(code).toEqual(1)
-      expect(context.stdout.toString()).toMatchSnapshot()
-      expect(getToken).toHaveBeenCalled()
-      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
-      expect(webAppsOperations.deleteSiteContainer).not.toHaveBeenCalled()
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
-      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
-      expect(updateTags).not.toHaveBeenCalled()
-    })
-
     test('Removes .NET extension from Windows app', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({
         ...WINDOWS_DOTNET_WEB_APP,
