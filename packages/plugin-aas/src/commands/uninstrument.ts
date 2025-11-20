@@ -3,14 +3,14 @@ import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {AasConfigOptions, getExtensionId} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
-import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
 import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {AAS_DD_SETTING_NAMES, getWindowsRuntime, isDotnet, isWindows} from '../common'
+import {AAS_DD_SETTING_NAMES, isDotnet, isWindows} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -82,25 +82,12 @@ export class PluginCommand extends AasUninstrumentCommand {
       site.siteConfig = siteConfig
       // Determine uninstrumentation method based on platform
       if (isWindows(site)) {
-        // Windows uninstrumentation via extension
-        const runtime = getWindowsRuntime(site)
-        if (!runtime) {
-          this.context.stdout.write(
-            renderSoftWarning(
-              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping uninstrumentation.`
-            )
-          )
-
-          return false
-        }
-
         await this.uninstrumentExtension(
           client,
           {...config, service: config.service ?? aasName},
           resourceGroup,
           aasName
         )
-        await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
       } else {
         // Linux uninstrumentation via sidecar
         await this.uninstrumentSidecar(
@@ -109,8 +96,8 @@ export class PluginCommand extends AasUninstrumentCommand {
           resourceGroup,
           aasName
         )
-        await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
       }
+      await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(aasName)}: ${formatError(error)}`))
 

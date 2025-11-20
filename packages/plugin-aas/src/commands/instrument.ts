@@ -127,7 +127,7 @@ export class PluginCommand extends AasInstrumentCommand {
         if (!runtime) {
           this.context.stdout.write(
             renderSoftWarning(
-              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping instrumentation.`
+              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping instrumentation. Try manually specifying your runtime with \`--windows-runtime\``
             )
           )
 

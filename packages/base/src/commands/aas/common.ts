@@ -149,7 +149,7 @@ export abstract class AasCommand extends BaseCommand {
       )
     }
     if (config.windowsRuntime && !(config.windowsRuntime in WINDOWS_RUNTIME_EXTENSIONS)) {
-      errors.push('--windows-runtime must be one of: node, dotnet, java')
+      errors.push(`--windows-runtime must be one of: ${Object.keys(WINDOWS_RUNTIME_EXTENSIONS).join(', ')}`)
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified
