@@ -98,7 +98,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
-| `--windows-runtime` |  | Manually specify Windows runtime (node, dotnet, or java) to override automatic detection for the extension to use. |  |
+| `--windows-runtime` |  | Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection. |  |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`
