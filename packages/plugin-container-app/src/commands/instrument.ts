@@ -2,7 +2,11 @@ import {ContainerAppsAPIClient, ContainerApp, Container, Secret} from '@azure/ar
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
-import {ContainerAppInstrumentCommand, DEFAULT_SIDECAR_CPU, DEFAULT_SIDECAR_MEMORY} from '@datadog/datadog-ci-base/commands/container-app/instrument'
+import {
+  ContainerAppInstrumentCommand,
+  DEFAULT_SIDECAR_CPU,
+  DEFAULT_SIDECAR_MEMORY,
+} from '@datadog/datadog-ci-base/commands/container-app/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'

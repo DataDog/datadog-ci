@@ -13,7 +13,6 @@ import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
 export const DEFAULT_SIDECAR_CPU = '0.5'
 export const DEFAULT_SIDECAR_MEMORY = '1Gi'
 
-
 export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   public static paths = [['container-app', 'instrument']]
   public static usage = Command.Usage({
