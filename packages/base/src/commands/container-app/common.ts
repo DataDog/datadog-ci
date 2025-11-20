@@ -31,6 +31,8 @@ export type ContainerAppConfigOptions = Partial<{
   environment: string
   version: string
   sidecarName: string
+  sidecarCpu: string
+  sidecarMemory: string
   sharedVolumeName: string
   sharedVolumePath: string
   logsPath: string
@@ -123,6 +125,17 @@ export abstract class ContainerAppCommand extends BaseCommand {
     // Validate that extraTags, if provided, comply with the expected format
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
+    }
+    // Validate that sidecarCpu is a valid number
+    if (config.sidecarCpu) {
+      const cpu = parseFloat(config.sidecarCpu)
+      if (isNaN(cpu) || cpu <= 0) {
+        errors.push('sidecarCpu must be a valid positive number')
+      }
+    }
+    // Validate that sidecarMemory has valid format
+    if (config.sidecarMemory && !/^\d+(\.\d+)?(Gi|Mi|G|M)$/.test(config.sidecarMemory)) {
+      errors.push('sidecarMemory must be in format like "0.5Gi", "512Mi", "1Gi", etc.')
     }
     // Validate that logsPath starts with sharedVolumePath
     if (!config.logsPath || !config.sharedVolumePath) {

@@ -2,7 +2,7 @@ import {ContainerAppsAPIClient, ContainerApp, Container, Secret} from '@azure/ar
 import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {ContainerAppConfigOptions} from '@datadog/datadog-ci-base/commands/container-app/common'
-import {ContainerAppInstrumentCommand} from '@datadog/datadog-ci-base/commands/container-app/instrument'
+import {ContainerAppInstrumentCommand, DEFAULT_SIDECAR_CPU, DEFAULT_SIDECAR_MEMORY} from '@datadog/datadog-ci-base/commands/container-app/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
@@ -214,8 +214,8 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       name: config.sidecarName,
       image: SIDECAR_IMAGE,
       resources: {
-        cpu: 0.25,
-        memory: '0.5Gi',
+        cpu: parseFloat(config.sidecarCpu ?? DEFAULT_SIDECAR_CPU),
+        memory: config.sidecarMemory ?? DEFAULT_SIDECAR_MEMORY,
       },
       probes: [
         {

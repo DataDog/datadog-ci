@@ -135,8 +135,8 @@ describe('container-app instrument', () => {
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -353,8 +353,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -455,8 +455,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -543,8 +543,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -623,8 +623,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -705,8 +705,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -737,6 +737,26 @@ Ensure you copied the value and not the Key ID.
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--extra-tags', 'invalid-tag-format'])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
+    })
+
+    test('Validates sidecar CPU is a valid number', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', 'invalid'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a valid positive number\n')
+    })
+
+    test('Validates sidecar CPU is positive', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', '0'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a valid positive number\n')
+    })
+
+    test('Validates sidecar memory format', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-memory', 'invalid'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain(
+        '[Error] sidecarMemory must be in format like "0.5Gi", "512Mi", "1Gi", etc.\n'
+      )
     })
   })
 
@@ -806,8 +826,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -849,8 +869,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SITE', value: 'datadoghq.com'},
               ],
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
             },
           ],
@@ -908,8 +928,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ],
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -980,8 +1000,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ],
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -1063,8 +1083,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -1144,8 +1164,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -1229,8 +1249,8 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
               ]),
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               probes: [
                 {
@@ -1404,8 +1424,8 @@ Ensure you copied the value and not the Key ID.
                 },
               ],
               resources: {
-                cpu: 0.25,
-                memory: '0.5Gi',
+                cpu: 0.5,
+                memory: '1Gi',
               },
               volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
             },
@@ -1477,6 +1497,78 @@ Ensure you copied the value and not the Key ID.
                 {name: 'DD_SERVICE', value: 'my-service'},
                 {name: 'DD_ENV', value: 'staging'},
                 {name: 'CUSTOM_VAR', value: 'custom_value'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ]),
+              resources: {cpu: 0.5, memory: '1Gi'},
+              probes: [
+                {
+                  type: 'Startup',
+                  tcpSocket: {
+                    port: 5555,
+                  },
+                  initialDelaySeconds: 0,
+                  periodSeconds: 10,
+                  failureThreshold: 3,
+                  timeoutSeconds: 1,
+                },
+              ],
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+          ],
+          volumes: [
+            {
+              name: 'shared-volume',
+              storageType: 'EmptyDir',
+            },
+          ],
+        },
+      })
+    })
+
+    test('Uses custom sidecar CPU and memory', async () => {
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', '0.25', '--sidecar-memory', '0.5Gi'])
+      expect(code).toEqual(0)
+      expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
+        ...DEFAULT_CONTAINER_APP,
+        configuration: {
+          secrets: [
+            {
+              name: 'dd-api-key',
+              value: 'PLACEHOLDER',
+            },
+          ],
+        },
+        template: {
+          ...DEFAULT_CONTAINER_APP.template,
+          containers: [
+            {
+              ...DEFAULT_CONTAINER_APP.template!.containers![0],
+              env: expect.arrayContaining([
+                ...DEFAULT_CONTAINER_APP.template!.containers![0].env!,
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
+                {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
+                {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
+                {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},
+              ]),
+              volumeMounts: [{volumeName: 'shared-volume', mountPath: '/shared-volume'}],
+            },
+            {
+              name: 'datadog-sidecar',
+              image: 'index.docker.io/datadog/serverless-init:latest',
+              env: expect.arrayContaining([
+                {name: 'DD_LOGS_INJECTION', value: 'true'},
+                {name: 'DD_TRACE_ENABLED', value: 'true'},
+                {name: 'DD_HEALTH_PORT', value: '5555'},
+                {name: 'DD_API_KEY', secretRef: 'dd-api-key'},
+                {name: 'DD_SITE', value: 'datadoghq.com'},
+                {name: 'DD_SERVICE', value: 'my-container-app'},
                 {name: 'DD_AZURE_SUBSCRIPTION_ID', value: '00000000-0000-0000-0000-000000000000'},
                 {name: 'DD_AZURE_RESOURCE_GROUP', value: 'my-resource-group'},
                 {name: 'DD_SERVERLESS_LOG_PATH', value: '/shared-volume/logs/*.log'},

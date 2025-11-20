@@ -129,8 +129,8 @@ Updating configuration for my-container-app:
 +           }
 +         ],
 +         "resources": {
-+           "cpu": 0.25,
-+           "memory": "0.5Gi"
++           "cpu": 0.5,
++           "memory": "1Gi"
 +         },
 +         "volumeMounts": [
 +           {
@@ -312,8 +312,8 @@ exports[`container-app instrument snapshot tests prints dry run data with basic 
 +           }
 +         ],
 +         "resources": {
-+           "cpu": 0.25,
-+           "memory": "0.5Gi"
++           "cpu": 0.5,
++           "memory": "1Gi"
 +         },
 +         "volumeMounts": [
 +           {

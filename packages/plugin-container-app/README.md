@@ -121,6 +121,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
 | `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
+| `--sidecar-cpu` |  | The number of CPUs to allocate to the sidecar container. | `0.25` |
+| `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `0.5Gi` |
 | `--source-code-integration` or `--sourceCodeIntegration` |  | Whether to enable the Datadog Source Code integration. This tags your service(s) with the Git repository and the latest commit hash of the local directory. Specify `--no-source-code-integration` to disable. | `true` |
 | `--upload-git-metadata` or `--uploadGitMetadata` |  | Whether to enable Git metadata uploading, as a part of the source code integration. Git metadata uploading is only required if you don't have the Datadog GitHub integration installed. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the app in the format "key1:value1,key2:value2". |  |
