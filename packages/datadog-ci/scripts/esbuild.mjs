@@ -20,7 +20,7 @@ try {
     legalComments: 'none',
     sourcemap: false,
     metafile: true,
-    // Allows to do `strings <standalone-binary> | grep STANDALONE_BINARY_VERSION`
+    // Allows to do `strings <standalone-binary> | grep STANDALONE_BINARY_VERSION` or `grep --text STANDALONE_BINARY_VERSION <standalone-binary>`
     banner: {
       js: `// STANDALONE_BINARY_VERSION=${cliVersion}`,
     },
