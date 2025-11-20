@@ -1,3 +1,17 @@
+diff --git a/lib-es5/build.js b/lib-es5/build.js
+index 595ffced210b76d21bb9348cb4f201b1cf7052ca..12a55e61055909e34e12527339ab25f092b33dc6 100644
+--- a/lib-es5/build.js
++++ b/lib-es5/build.js
+@@ -130,7 +130,8 @@ function tarFetch(nodeVersion) {
+         return __generator(this, function (_c) {
+             switch (_c.label) {
+                 case 0:
+-                    log_1.log.info('Fetching Node.js source archive from nodejs.org...');
++                    log_1.log.error('Aborting before fetching Node.js source archive from nodejs.org. The above error should be transient, you can retry the CI job.');
++                    process.exit(1)
+                     distUrl = "".concat(nodeRepo, "/").concat(nodeVersion);
+                     tarName = "node-".concat(nodeVersion, ".tar.gz");
+                     archivePath = path_1.default.join(nodeArchivePath, tarName);
 diff --git a/lib-es5/expected-shas.json b/lib-es5/expected-shas.json
 index 62cc3245a0c3c56580e069de4e40caf330a6d601..309bb600921ddd9c890137ebab621cc670925ea5 100644
 --- a/lib-es5/expected-shas.json
