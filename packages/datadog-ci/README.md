@@ -257,9 +257,19 @@ CLI param: `--fips-ignore-error`
 
 ### Standalone binary
 
-If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _linux-arm64_, _darwin-x64_, _darwin-arm64_ (MacOS) and _win-x64_ (Windows) are supported.
+If installing NodeJS in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
 
-To install:
+Supported architectures are:
+- `linux-x64`
+- `linux-arm64`
+- `darwin-x64` (MacOS)
+- `darwin-arm64` (MacOS)
+- `win-x64` (Windows)
+
+> [!WARNING]  
+> Using `strip` to remove debugging symbols from the standalone binary as an attempt to make it smaller may cause segmentation faults when running `datadog-ci`. See https://github.com/nodejs/postject/issues/90.
+
+To install the standalone binary:
 
 #### Linux
 
