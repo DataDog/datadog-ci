@@ -5,8 +5,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
-import {ENV_VAR_REGEX} from '../../helpers/serverless/constants'
-import {EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -15,6 +14,27 @@ import {BaseCommand} from '../..'
  * Maps Subscription ID to Resource Group to App Service names.
  */
 export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+
+export const WINDOWS_RUNTIME_EXTENSIONS = {
+  node: 'Datadog.AzureAppServices.Node.Apm',
+  dotnet: 'Datadog.AzureAppServices.DotNet',
+  java: 'Datadog.AzureAppServices.Java.Apm',
+} as const
+
+/**
+ * Supported Windows Web App runtimes
+ */
+export type WindowsRuntime = keyof typeof WINDOWS_RUNTIME_EXTENSIONS
+
+/**
+ * Parses the extension Id from an extension name/id
+ * Ex: "myapp/siteextensions/some.extension.id" -> "some.extension.id"
+ */
+export const getExtensionId = (extension: string): string => {
+  const parts = extension.split('/')
+
+  return parts[parts.length - 1]
+}
 
 /**
  * Configuration options provided by the user through
@@ -43,6 +63,7 @@ export type AasConfigOptions = Partial<{
   // no-dd-sa:typescript-best-practices/boolean-prop-naming
   uploadGitMetadata: boolean
   extraTags: string
+  windowsRuntime: WindowsRuntime
 }>
 
 export abstract class AasCommand extends BaseCommand {
@@ -126,6 +147,9 @@ export abstract class AasCommand extends BaseCommand {
       errors.push(
         '--musl can only be set if --dotnet is also set, as it is only relevant for containerized .NET applications.'
       )
+    }
+    if (config.windowsRuntime && !(config.windowsRuntime in WINDOWS_RUNTIME_EXTENSIONS)) {
+      errors.push(`--windows-runtime must be one of: ${Object.keys(WINDOWS_RUNTIME_EXTENSIONS).join(', ')}`)
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified

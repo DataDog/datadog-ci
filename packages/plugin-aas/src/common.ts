@@ -1,6 +1,5 @@
 import {Site} from '@azure/arm-appservice'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
-import {renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
+import {AasConfigOptions, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
 import {getBaseEnvVars} from '@datadog/datadog-ci-base/helpers/serverless/common'
 
 // Path to tracing libraries, copied within the Docker file
@@ -32,23 +31,28 @@ export const AAS_DD_SETTING_NAMES = [
   'DD_TAGS',
 ] as const
 
-type Print = (arg: string) => void
-
-export const ensureLinux = (print: Print, site: Site): boolean => {
-  if (isWindows(site)) {
-    print(
-      renderSoftWarning(
-        `Unable to instrument ${site.name}. Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows`
-      )
-    )
-
-    return false
+/**
+ * Detects the runtime of a Windows-based Azure App Service
+ * @param site The Azure App Service site
+ * @returns The detected runtime or undefined if unable to detect
+ */
+export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
+  if (!!site.siteConfig?.netFrameworkVersion) {
+    return 'dotnet'
+  }
+  if (!!site.siteConfig?.javaVersion) {
+    return 'java'
+  }
+  // Needed because node isn't always configured the traditional way
+  // https://learn.microsoft.com/en-us/azure/app-service/configure-language-nodejs?pivots=platform-windows
+  if (
+    !!site.siteConfig?.nodeVersion ||
+    site.siteConfig?.appSettings?.some(({name}) => name?.toLowerCase() === 'website_node_default_version')
+  ) {
+    return 'node'
   }
 
-  return true
+  return undefined
 }
 
 export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Record<string, string> => {
@@ -81,7 +85,7 @@ export const isWindows = (site: Site): boolean => {
     return !!site.siteConfig?.windowsFxVersion
   }
 
-  return site.kind.includes('windows')
+  return !site.kind.includes('linux')
 }
 
 export const isDotnet = (site: Site): boolean => {

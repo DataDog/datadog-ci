@@ -2,7 +2,7 @@ import {Command, Option} from 'clipanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
-import {AasCommand, AasConfigOptions} from './common'
+import {AasCommand, AasConfigOptions, WindowsRuntime} from './common'
 
 export class AasInstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
@@ -31,7 +31,7 @@ export class AasInstrumentCommand extends AasCommand {
     description: 'Do not restart the App Service after applying instrumentation.',
   })
 
-  private isDotnet = Option.Boolean('--dotnet', false, {
+  private isDotnet = Option.Boolean('--dotnet,--dotnet-container', false, {
     description:
       'Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app.',
   })
@@ -53,6 +53,11 @@ export class AasInstrumentCommand extends AasCommand {
     description: 'Additional tags to add to the service in the format "key1:value1,key2:value2"',
   })
 
+  private windowsRuntime = Option.String('--windows-runtime', {
+    description:
+      'Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection.',
+  })
+
   public get additionalConfig(): Partial<AasConfigOptions> {
     return {
       service: this.service,
@@ -66,6 +71,7 @@ export class AasInstrumentCommand extends AasCommand {
       sourceCodeIntegration: this.sourceCodeIntegration,
       uploadGitMetadata: this.uploadGitMetadata,
       extraTags: this.extraTags,
+      windowsRuntime: this.windowsRuntime as WindowsRuntime | undefined,
     }
   }
 

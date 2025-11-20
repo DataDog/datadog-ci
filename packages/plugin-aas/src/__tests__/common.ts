@@ -70,6 +70,39 @@ export const CONTAINER_WEB_APP: Site = {
   sku: 'PremiumV2',
 }
 
+export const WINDOWS_DOTNET_WEB_APP: Site = {
+  ...CONTAINER_WEB_APP,
+  kind: 'app,windows',
+  siteConfig: {
+    ...CONTAINER_WEB_APP.siteConfig,
+    linuxFxVersion: undefined,
+    windowsFxVersion: undefined,
+    netFrameworkVersion: 'v6.0',
+  },
+}
+
+export const WINDOWS_NODE_WEB_APP: Site = {
+  ...CONTAINER_WEB_APP,
+  kind: 'app,windows',
+  siteConfig: {
+    ...CONTAINER_WEB_APP.siteConfig,
+    linuxFxVersion: undefined,
+    windowsFxVersion: undefined,
+    nodeVersion: '18',
+  },
+}
+
+export const WINDOWS_JAVA_WEB_APP: Site = {
+  ...CONTAINER_WEB_APP,
+  kind: 'app,windows',
+  siteConfig: {
+    ...CONTAINER_WEB_APP.siteConfig,
+    linuxFxVersion: undefined,
+    windowsFxVersion: undefined,
+    javaVersion: '11',
+  },
+}
+
 export const DEFAULT_ARGS = [
   '-s',
   '00000000-0000-0000-0000-000000000000',

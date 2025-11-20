@@ -1,20 +1,20 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
-import {ResourceManagementClient, TagsOperations} from '@azure/arm-resources'
+import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {AasConfigOptions, getExtensionId} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {AAS_DD_SETTING_NAMES, ensureLinux, isDotnet} from '../common'
+import {AAS_DD_SETTING_NAMES, isDotnet, isWindows} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
-  private tagClient!: TagsOperations
+  private resourceClient!: ResourceManagementClient
 
   public async execute(): Promise<0 | 1> {
     this.enableFips()
@@ -31,7 +31,7 @@ export class PluginCommand extends AasUninstrumentCommand {
     if (!(await ensureAzureAuth(this.context.stdout.write, this.cred))) {
       return 1
     }
-    this.tagClient = new ResourceManagementClient(this.cred).tagsOperations
+    this.resourceClient = new ResourceManagementClient(this.cred)
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning uninstrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToUninstrument).map(([subscriptionId, resourceGroupToNames]) =>
@@ -74,17 +74,29 @@ export class PluginCommand extends AasUninstrumentCommand {
     aasName: string
   ): Promise<boolean> {
     try {
-      const site = await client.webApps.get(resourceGroup, aasName)
-      if (!ensureLinux(this.context.stdout.write, site)) {
-        return false
+      const [site, siteConfig] = await Promise.all([
+        client.webApps.get(resourceGroup, aasName),
+        client.webApps.getConfiguration(resourceGroup, aasName),
+      ])
+      // patch in the site config which is the real source of truth
+      site.siteConfig = siteConfig
+      // Determine uninstrumentation method based on platform
+      if (isWindows(site)) {
+        await this.uninstrumentExtension(
+          client,
+          {...config, service: config.service ?? aasName},
+          resourceGroup,
+          aasName
+        )
+      } else {
+        // Linux uninstrumentation via sidecar
+        await this.uninstrumentSidecar(
+          client,
+          {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? aasName},
+          resourceGroup,
+          aasName
+        )
       }
-
-      await this.uninstrumentSidecar(
-        client,
-        {...config, isDotnet: config.isDotnet || isDotnet(site), service: config.service ?? aasName},
-        resourceGroup,
-        aasName
-      )
       await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
     } catch (error) {
       this.context.stdout.write(renderError(`Failed to uninstrument ${chalk.bold(aasName)}: ${formatError(error)}`))
@@ -93,6 +105,51 @@ export class PluginCommand extends AasUninstrumentCommand {
     }
 
     return true
+  }
+
+  public async uninstrumentExtension(
+    client: WebSiteManagementClient,
+    config: AasConfigOptions,
+    resourceGroup: string,
+    aasName: string
+  ) {
+    // List all currently installed extensions
+    const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))
+
+    // Filter for any Datadog extensions
+    const datadogExtensions = existingExtensions
+      .map(({name}) => name && getExtensionId(name))
+      .filter((ext) => ext?.startsWith('Datadog.AzureAppServices.'))
+
+    if (datadogExtensions.length === 0) {
+      this.context.stdout.write(`${this.dryRunPrefix}No Datadog extensions found on ${chalk.bold(aasName)}.\n`)
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}Removing ${datadogExtensions.length} Datadog extension(s) from ${chalk.bold(aasName)}: ${datadogExtensions.map((e) => chalk.bold(e)).join(', ')}\n`
+      )
+
+      if (!this.dryRun) {
+        await Promise.all(
+          datadogExtensions.map(async (extensionId) => {
+            try {
+              // We make this call with the regular resources client because `client.webApps.deleteSiteExtension` doesn't work
+              await this.resourceClient.resources.beginDeleteByIdAndWait(
+                `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}/siteextensions/${extensionId}`,
+                '2024-11-01'
+              )
+            } catch (error) {
+              const message = String(error).includes('not installed locally')
+                ? `Extension ${chalk.bold(extensionId)} not found or already removed.\n`
+                : `Unable to remove extension ${chalk.bold(extensionId)}: ${error}\n`
+              this.context.stdout.write(message)
+            }
+          })
+        )
+      }
+    }
+
+    // Updaing the environment variables will trigger a restart
+    await this.removeEnvVars(config, aasName, client, resourceGroup)
   }
 
   public async uninstrumentSidecar(
@@ -109,6 +166,15 @@ export class PluginCommand extends AasUninstrumentCommand {
     if (!this.dryRun) {
       await client.webApps.deleteSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME)
     }
+    await this.removeEnvVars(config, aasName, client, resourceGroup)
+  }
+
+  public async removeEnvVars(
+    config: AasConfigOptions,
+    aasName: string,
+    client: WebSiteManagementClient,
+    resourceGroup: string
+  ) {
     const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
     this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
     const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
@@ -127,6 +193,7 @@ export class PluginCommand extends AasUninstrumentCommand {
       )
     }
   }
+
   public async removeTags(
     subscriptionId: string,
     resourceGroup: string,
@@ -142,7 +209,7 @@ export class PluginCommand extends AasUninstrumentCommand {
       this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         try {
-          await this.tagClient.beginCreateOrUpdateAtScopeAndWait(
+          await this.resourceClient.tagsOperations.beginCreateOrUpdateAtScopeAndWait(
             `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
             {properties: {tags: updatedTags}}
           )

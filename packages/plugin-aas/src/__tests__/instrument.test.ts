@@ -27,18 +27,24 @@ jest.mock('@azure/identity', () => ({
 
 const webAppsOperations = {
   get: jest.fn(),
+  getConfiguration: jest.fn(),
   listSiteContainers: jest.fn(),
   createOrUpdateSiteContainer: jest.fn(),
   listApplicationSettings: jest.fn(),
   updateApplicationSettings: jest.fn(),
+  listSiteExtensions: jest.fn(),
+  stop: jest.fn(),
+  start: jest.fn(),
   restart: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
+const createAzureResource = jest.fn().mockResolvedValue({})
 
 jest.mock('@azure/arm-resources', () => ({
   ResourceManagementClient: jest.fn().mockImplementation(() => ({
     tagsOperations: {beginCreateOrUpdateAtScopeAndWait: updateTags},
+    resources: {beginCreateOrUpdateByIdAndWait: createAzureResource},
   })),
 }))
 
@@ -48,7 +54,16 @@ import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-too
 
 import {PluginCommand as InstrumentCommand} from '../commands/instrument'
 
-import {CONTAINER_WEB_APP, DEFAULT_INSTRUMENT_ARGS, DEFAULT_CONFIG, WEB_APP_ID, NULL_SUBSCRIPTION_ID} from './common'
+import {
+  CONTAINER_WEB_APP,
+  WINDOWS_DOTNET_WEB_APP,
+  WINDOWS_NODE_WEB_APP,
+  WINDOWS_JAVA_WEB_APP,
+  DEFAULT_INSTRUMENT_ARGS,
+  DEFAULT_CONFIG,
+  WEB_APP_ID,
+  NULL_SUBSCRIPTION_ID,
+} from './common'
 
 jest.mock('@azure/arm-appservice', () => ({
   WebSiteManagementClient: jest.fn().mockImplementation(() => ({
@@ -76,12 +91,17 @@ describe('aas instrument', () => {
       jest.resetModules()
       getToken.mockClear().mockResolvedValue({token: 'token'})
       webAppsOperations.get.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.getConfiguration.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
       webAppsOperations.listSiteContainers.mockReset().mockReturnValue(asyncIterable())
       webAppsOperations.createOrUpdateSiteContainer.mockReset().mockResolvedValue({})
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
+      webAppsOperations.listSiteExtensions.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.stop.mockReset().mockResolvedValue({})
+      webAppsOperations.start.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
+      createAzureResource.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
       handleSourceCodeIntegration
         .mockClear()
@@ -90,14 +110,8 @@ describe('aas instrument', () => {
 
     test('Adds a sidecar and updates the application settings and tags', async () => {
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-Updating Application Settings for my-web-app
-Updating tags for my-web-app
-Restarting Azure App Service my-web-app
-🐶 Instrumentation completed successfully!
-`)
       expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -134,14 +148,8 @@ Restarting Azure App Service my-web-app
 
     test('Performs no actions in dry run mode', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
-      expect(context.stdout.toString()).toEqual(`[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
-[Dry Run] Creating sidecar container datadog-sidecar on my-web-app
-[Dry Run] Updating Application Settings for my-web-app
-[Dry Run] Updating tags for my-web-app
-[Dry Run] Restarting Azure App Service my-web-app
-[Dry Run] 🐶 Instrumentation completed successfully!
-`)
       expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -154,13 +162,8 @@ Restarting Azure App Service my-web-app
 
     test('Does not restart when specified', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--no-restart'])
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-Updating Application Settings for my-web-app
-Updating tags for my-web-app
-🐶 Instrumentation completed successfully!
-`)
       expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -199,12 +202,8 @@ Updating tags for my-web-app
       getToken.mockClear().mockRejectedValue(new Error())
 
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`[!] Failed to authenticate with Azure: Error
-
-Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
-
-`)
       expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).not.toHaveBeenCalled()
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
@@ -218,12 +217,8 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
       validateApiKey.mockClear().mockResolvedValue(false)
 
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(
-        `[!] Invalid API Key stored in the environment variable DD_API_KEY: ****************
-Ensure you copied the value and not the Key ID.
-`
-      )
       expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).not.toHaveBeenCalled()
       expect(webAppsOperations.get).not.toHaveBeenCalled()
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
@@ -234,17 +229,11 @@ Ensure you copied the value and not the Key ID.
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
-    test('Warns and exits if App Service is not Linux', async () => {
+    test('Warns and exits if App Service is Windows but runtime cannot be detected', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-[!] Unable to instrument my-web-app. Only Linux-based Azure App Services are currently supported.
-Please see the documentation for information on
-how to instrument Windows-based App Services:
-https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_windows
-🐶 Instrumentation completed with errors, see above for details.
-`)
       expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
@@ -255,15 +244,176 @@ https://docs.datadoghq.com/serverless/azure_app_services/azure_app_services_wind
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
+    test('Installs .NET extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls in correct order and with correct arguments
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        '2024-11-01',
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            DD_API_KEY: process.env.DD_API_KEY,
+            DD_SITE: 'datadoghq.com',
+            DD_SERVICE: 'my-web-app',
+            DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          }),
+        })
+      )
+      expect(updateTags).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledWith(
+        WEB_APP_ID,
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            tags: expect.objectContaining({service: 'my-web-app'}),
+          }),
+        })
+      )
+    })
+
+    test('Installs Node.js extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_NODE_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        '2024-11-01',
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Installs Java extension on Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_JAVA_WEB_APP)
+      const {code} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      // Verify API calls
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Java.Apm`,
+        '2024-11-01',
+        expect.any(Object)
+      )
+      expect(webAppsOperations.start).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.start).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Uses manual Windows runtime override', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--windows-runtime', 'node'])
+      expect(code).toEqual(0)
+
+      // Verify Node extension is installed despite .NET runtime detected
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        '2024-11-01',
+        expect.any(Object)
+      )
+    })
+
+    test('Skips extension installation if already present', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(context.stdout.toString()).toMatchSnapshot()
+      expect(code).toEqual(0)
+
+      // Verify extension installation was skipped
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).not.toHaveBeenCalled()
+      expect(createAzureResource).not.toHaveBeenCalled()
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
+
+      // But env vars and tags still updated
+      expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledTimes(1)
+    })
+
+    test('Dry run mode for Windows extension installation', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--dry-run'])
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+
+      // Verify read-only operations still happen
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledTimes(1)
+
+      // Verify no write operations occurred
+      expect(webAppsOperations.stop).not.toHaveBeenCalled()
+      expect(createAzureResource).not.toHaveBeenCalled()
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
+      expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
+      expect(updateTags).not.toHaveBeenCalled()
+    })
+
+    test('Handles error during Windows extension installation', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      createAzureResource.mockClear().mockRejectedValue(new Error('extension installation failed'))
+      const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
+
+      // Verify operations up to the error occurred
+      expect(webAppsOperations.get).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.listSiteExtensions).toHaveBeenCalledTimes(1)
+      expect(webAppsOperations.stop).toHaveBeenCalledTimes(1)
+      expect(createAzureResource).toHaveBeenCalledTimes(1)
+
+      // Start should not be called if extension installation fails
+      expect(webAppsOperations.start).not.toHaveBeenCalled()
+    })
+
     test('Handles errors during sidecar instrumentation', async () => {
       webAppsOperations.createOrUpdateSiteContainer.mockClear().mockRejectedValue(new Error('sidecar error'))
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-[Error] Failed to instrument my-web-app: Error: sidecar error
-🐶 Instrumentation completed with errors, see above for details.
-`)
       expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith(
@@ -292,13 +442,13 @@ Creating sidecar container datadog-sidecar on my-web-app
     test('Errors if no Azure App Service is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toEqual('[Error] No App Services specified to instrument\n')
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
 
     test('Errors if the resource ID is invalid', async () => {
       const {code, context} = await runCLI(['-r', 'not-a-valid-resource-id'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toEqual('[Error] Invalid AAS resource ID: not-a-valid-resource-id\n')
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
 
     test('Errors include all resource IDs that are invalid', async () => {
@@ -311,9 +461,7 @@ Creating sidecar container datadog-sidecar on my-web-app
         WEB_APP_ID,
       ])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toEqual(`[Error] Invalid AAS resource ID: not-a-valid-resource-id
-[Error] Invalid AAS resource ID: another-invalid-id
-`)
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
 
     test('Instruments multiple App Services in a single subscription', async () => {
@@ -325,17 +473,7 @@ Creating sidecar container datadog-sidecar on my-web-app
         '--no-source-code-integration',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-Creating sidecar container datadog-sidecar on my-web-app2
-Updating Application Settings for my-web-app
-Updating Application Settings for my-web-app2
-Updating tags for my-web-app
-Updating tags for my-web-app2
-Restarting Azure App Service my-web-app
-Restarting Azure App Service my-web-app2
-🐶 Instrumentation completed successfully!
-`)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledTimes(2)
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -415,13 +553,7 @@ Restarting Azure App Service my-web-app2
         '1.0.0',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-Updating Application Settings for my-web-app
-Updating tags for my-web-app
-Restarting Azure App Service my-web-app
-🐶 Instrumentation completed successfully!
-`)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -476,13 +608,7 @@ Restarting Azure App Service my-web-app
         'CUSTOM_VAR2=value2',
       ])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-Creating sidecar container datadog-sidecar on my-web-app
-Updating Application Settings for my-web-app
-Updating tags for my-web-app
-Restarting Azure App Service my-web-app
-🐶 Instrumentation completed successfully!
-`)
+      expect(context.stdout.toString()).toMatchSnapshot()
       expect(getToken).toHaveBeenCalled()
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
@@ -600,7 +726,13 @@ Restarting Azure App Service my-web-app
     test('Validates extra tags format', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--extra-tags', 'invalid-tag-format'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
+      expect(context.stdout.toString()).toMatchSnapshot()
+    })
+
+    test('Validates windows runtime parameter', async () => {
+      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--windows-runtime', 'invalid'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
 
     test('Ignores --musl flag and warns on non-containerized dotnet apps', async () => {
@@ -612,15 +744,7 @@ Restarting Azure App Service my-web-app
       })
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--musl', '--dotnet'])
       expect(code).toEqual(0)
-      expect(context.stdout.toString()).toEqual(`🐶 Beginning instrumentation of Azure App Service(s)
-[!] The --musl flag is set, but the App Service my-web-app is not a containerized app. \
-This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
-Creating sidecar container datadog-sidecar on my-web-app
-Updating Application Settings for my-web-app
-Updating tags for my-web-app
-Restarting Azure App Service my-web-app
-🐶 Instrumentation completed successfully!
-`)
+      expect(context.stdout.toString()).toMatchSnapshot()
     })
   })
 

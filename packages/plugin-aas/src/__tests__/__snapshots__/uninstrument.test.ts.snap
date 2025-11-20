@@ -1,0 +1,136 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`aas instrument execute Dry run uninstrumenting doesnt change settings 1`] = `
+"[Dry Run] 🐶 Beginning uninstrumentation of Azure App Service(s)
+[Dry Run] Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+[Dry Run] Checking Application Settings on my-web-app
+[Dry Run] Updating Application Settings for my-web-app
+[Dry Run] Updating tags for my-web-app
+[Dry Run] 🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Errors if no Azure App Service is specified 1`] = `
+"[Error] No App Services specified to instrument
+"
+`;
+
+exports[`aas instrument execute Errors if the resource ID is invalid 1`] = `
+"[Error] Invalid AAS resource ID: not-a-valid-resource-id
+"
+`;
+
+exports[`aas instrument execute Errors include all resource IDs that are invalid 1`] = `
+"[Error] Invalid AAS resource ID: not-a-valid-resource-id
+[Error] Invalid AAS resource ID: another-invalid-id
+"
+`;
+
+exports[`aas instrument execute Exits properly if the AAS does not exist 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+[Error] Failed to uninstrument my-web-app: ResourceNotFound: Could not find my-web-app
+🐶 Uninstrumentation completed with errors, see above for details.
+"
+`;
+
+exports[`aas instrument execute Fails if not authenticated with Azure 1`] = `
+"[!] Failed to authenticate with Azure: Error
+
+Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) and have run az login to authenticate.
+
+"
+`;
+
+exports[`aas instrument execute Handles errors during sidecar uninstrumentation 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Checking Application Settings on my-web-app
+[Error] Failed to uninstrument my-web-app: SettingsError: unable to list settings
+🐶 Uninstrumentation completed with errors, see above for details.
+"
+`;
+
+exports[`aas instrument execute Handles extension not found gracefully 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.DotNet
+Extension Datadog.AzureAppServices.DotNet not found or already removed.
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Instruments multiple App Services in a single subscription 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Removing sidecar container datadog-sidecar from my-web-app2 (if it exists)
+Checking Application Settings on my-web-app
+Checking Application Settings on my-web-app2
+No Application Settings changes needed for my-web-app.
+No Application Settings changes needed for my-web-app2.
+Updating tags for my-web-app
+Updating tags for my-web-app2
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Removes .NET extension from Windows app 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.DotNet
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Removes Java extension from Windows app 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.Java.Apm
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Removes Node.js extension from Windows app 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.Node.Apm
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Uninstrument sidecar and updates app settings 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Uninstrument sidecar and updates app settings with .NET settings 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Uninstrument sidecar and updates custom app settings from config 1`] = `
+"🐶 Beginning uninstrumentation of Azure App Service(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Checking Application Settings on my-web-app
+Updating Application Settings for my-web-app
+Updating tags for my-web-app
+🐶 Uninstrumentation completed successfully!
+"
+`;

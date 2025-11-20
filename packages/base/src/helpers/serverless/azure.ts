@@ -60,5 +60,5 @@ export const formatError = (error: any): string => {
   const errorType = error.code ?? error.name
   const errorMessage = error.details?.message ?? error.message
 
-  return `${errorType}: ${errorMessage}`
+  return errorType && errorMessage ? `${errorType}: ${errorMessage}` : String(error)
 }
