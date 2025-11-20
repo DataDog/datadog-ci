@@ -1,7 +1,7 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
+import {AasConfigOptions, getExtensionId} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
@@ -131,7 +131,7 @@ export class PluginCommand extends AasUninstrumentCommand {
 
     // Filter for any Datadog extensions
     const datadogExtensions = existingExtensions
-      .map((ext) => ext.name?.split('/')[1])
+      .map(({name}) => name && getExtensionId(name))
       .filter((ext) => ext?.startsWith('Datadog.AzureAppServices.'))
 
     if (datadogExtensions.length === 0) {

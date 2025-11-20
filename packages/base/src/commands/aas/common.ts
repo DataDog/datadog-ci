@@ -5,8 +5,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {dryRunTag} from '../../helpers/renderer'
 import {parseResourceId} from '../../helpers/serverless/azure'
-import {ENV_VAR_REGEX} from '../../helpers/serverless/constants'
-import {EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
+import {ENV_VAR_REGEX, EXTRA_TAGS_REG_EXP} from '../../helpers/serverless/constants'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -26,6 +25,16 @@ export const WINDOWS_RUNTIME_EXTENSIONS = {
  * Supported Windows Web App runtimes
  */
 export type WindowsRuntime = keyof typeof WINDOWS_RUNTIME_EXTENSIONS
+
+/**
+ * Parses the extension Id from an extension name/id
+ * Ex: "myapp/siteextensions/some.extension.id" -> "some.extension.id"
+ */
+export function getExtensionId(extension: string): string {
+  const parts = extension.split('/')
+
+  return parts[parts.length - 1]
+}
 
 /**
  * Configuration options provided by the user through

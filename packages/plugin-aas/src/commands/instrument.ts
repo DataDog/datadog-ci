@@ -3,6 +3,7 @@ import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {
   AasConfigOptions,
+  getExtensionId,
   WINDOWS_RUNTIME_EXTENSIONS,
   WindowsRuntime,
 } from '@datadog/datadog-ci-base/commands/aas/common'
@@ -220,9 +221,8 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
 
     // Check if the extension is already installed
     const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))
-    // this.context.stdout.write(JSON.stringify(existingExtensions, undefined, 2))
     const extensionInstalled = existingExtensions.some(
-      (ext) => ext.name?.split('/')[1].toLowerCase() === extensionId.toLowerCase()
+      (ext) => ext.name && getExtensionId(ext.name).toLowerCase() === extensionId.toLowerCase()
     )
     const envVars = getEnvVars(config, false)
 
