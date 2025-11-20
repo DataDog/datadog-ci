@@ -241,16 +241,16 @@ The released `datadog-ci` binary now uses Node.js version 18 to be compatible wi
 Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
 If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
 
-ENV variable: `DATADOG_FIPS=true`
-CLI param: `--fips`
+- ENV variable: `DATADOG_FIPS=true`
+- CLI param: `--fips`
 
 #### `fips-ignore-error`
 Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 **Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
 
-ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
-CLI param: `--fips-ignore-error`
+- ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
+- CLI param: `--fips-ignore-error`
 
 
 ## More ways to install the CLI
