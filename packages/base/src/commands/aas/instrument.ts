@@ -54,7 +54,8 @@ export class AasInstrumentCommand extends AasCommand {
   })
 
   private windowsRuntime = Option.String('--windows-runtime', {
-    description: 'Manually specify Windows runtime (node, dotnet, or java) to override automatic detection for the extension to use.',
+    description:
+      'Manually specify Windows runtime (node, dotnet, or java) to override automatic detection for the extension to use.',
   })
 
   public get additionalConfig(): Partial<AasConfigOptions> {

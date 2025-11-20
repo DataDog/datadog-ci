@@ -53,6 +53,12 @@ jest.mock('@azure/arm-appservice', () => ({
   })),
 }))
 
+async function* asyncIterable<T>(...items: T[]): AsyncGenerator<T> {
+  for (const item of items) {
+    yield item
+  }
+}
+
 describe('aas instrument', () => {
   const runCLI = makeRunCLI(UninstrumentCommand, ['aas', 'uninstrument'])
 
@@ -68,7 +74,7 @@ describe('aas instrument', () => {
       webAppsOperations.deleteSiteContainer.mockReset().mockResolvedValue(undefined)
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue(undefined)
-      webAppsOperations.listSiteExtensions.mockReset().mockResolvedValue([])
+      webAppsOperations.listSiteExtensions.mockReset().mockReturnValue(asyncIterable())
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
     })
@@ -221,6 +227,9 @@ describe('aas instrument', () => {
         tags: {service: WINDOWS_DOTNET_WEB_APP.name},
       })
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
       webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
         properties: {
           DD_API_KEY: 'test-key',
@@ -265,6 +274,9 @@ describe('aas instrument', () => {
         tags: {service: WINDOWS_NODE_WEB_APP.name},
       })
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_NODE_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.Node.Apm'}))
       webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
         properties: {
           DD_SERVICE: 'my-web-app',
@@ -297,6 +309,9 @@ describe('aas instrument', () => {
         tags: {service: WINDOWS_JAVA_WEB_APP.name},
       })
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_JAVA_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.Java.Apm'}))
       webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
         properties: {
           DD_ENV: 'production',
@@ -329,6 +344,9 @@ describe('aas instrument', () => {
         tags: {service: WINDOWS_DOTNET_WEB_APP.name},
       })
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
       webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
         properties: {
           DD_API_KEY: 'test-key',
@@ -351,12 +369,54 @@ describe('aas instrument', () => {
       expect(updateTags).toHaveBeenCalledTimes(1)
     })
 
+    test('Removes all Datadog extensions from Windows app', async () => {
+      webAppsOperations.get.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(
+          asyncIterable(
+            {name: 'my-web-app/Datadog.AzureAppServices.DotNet'},
+            {name: 'my-web-app/Datadog.AzureAppServices.Node.Apm'},
+            {name: 'my-web-app/SomeOtherExtension'}
+          )
+        )
+      webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
+        properties: {
+          DD_API_KEY: 'test-key',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(DEFAULT_ARGS)
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toContain('Removing 2 Datadog extension(s)')
+      expect(context.stdout.toString()).toContain('Datadog.AzureAppServices.DotNet')
+      expect(context.stdout.toString()).toContain('Datadog.AzureAppServices.Node.Apm')
+
+      // Verify both Datadog extensions were removed
+      expect(deleteAzureResource).toHaveBeenCalledTimes(2)
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        '2024-11-01'
+      )
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_ID}/siteextensions/Datadog.AzureAppServices.Node.Apm`,
+        '2024-11-01'
+      )
+    })
+
     test('Dry run mode for Windows extension removal', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({
         ...WINDOWS_DOTNET_WEB_APP,
         tags: {service: WINDOWS_DOTNET_WEB_APP.name},
       })
       webAppsOperations.getConfiguration.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensions
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
       webAppsOperations.listApplicationSettings.mockClear().mockResolvedValue({
         properties: {
           DD_API_KEY: 'test-key',
@@ -364,7 +424,9 @@ describe('aas instrument', () => {
         },
       })
       const {code, context} = await runCLI([...DEFAULT_ARGS, '--dry-run'])
-      expect(context.stdout.toString()).toContain('[Dry Run] Removing extension Datadog.AzureAppServices.DotNet')
+      expect(context.stdout.toString()).toContain(
+        '[Dry Run] Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.DotNet'
+      )
       expect(context.stdout.toString()).toContain('[Dry Run] Updating Application Settings')
       expect(code).toEqual(0)
 

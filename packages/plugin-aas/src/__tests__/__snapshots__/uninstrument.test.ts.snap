@@ -52,7 +52,7 @@ Checking Application Settings on my-web-app
 
 exports[`aas instrument execute Handles extension not found gracefully 1`] = `
 "🐶 Beginning uninstrumentation of Azure App Service(s)
-Removing extension Datadog.AzureAppServices.DotNet from my-web-app (if it exists)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.DotNet
 Extension Datadog.AzureAppServices.DotNet not found or already removed.
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
@@ -77,7 +77,7 @@ Updating tags for my-web-app2
 
 exports[`aas instrument execute Removes .NET extension from Windows app 1`] = `
 "🐶 Beginning uninstrumentation of Azure App Service(s)
-Removing extension Datadog.AzureAppServices.DotNet from my-web-app (if it exists)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.DotNet
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
@@ -87,7 +87,7 @@ Updating tags for my-web-app
 
 exports[`aas instrument execute Removes Java extension from Windows app 1`] = `
 "🐶 Beginning uninstrumentation of Azure App Service(s)
-Removing extension Datadog.AzureAppServices.Java.Apm from my-web-app (if it exists)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.Java.Apm
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
@@ -97,7 +97,7 @@ Updating tags for my-web-app
 
 exports[`aas instrument execute Removes Node.js extension from Windows app 1`] = `
 "🐶 Beginning uninstrumentation of Azure App Service(s)
-Removing extension Datadog.AzureAppServices.Node.Apm from my-web-app (if it exists)
+Removing 1 Datadog extension(s) from my-web-app: Datadog.AzureAppServices.Node.Apm
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app

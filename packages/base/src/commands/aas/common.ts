@@ -16,11 +16,10 @@ import {BaseCommand} from '../..'
  */
 export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
 
-
 export const WINDOWS_RUNTIME_EXTENSIONS = {
-    node: 'Datadog.AzureAppServices.Node.Apm',
-    dotnet: 'Datadog.AzureAppServices.DotNet',
-    java: 'Datadog.AzureAppServices.Java.Apm',
+  node: 'Datadog.AzureAppServices.Node.Apm',
+  dotnet: 'Datadog.AzureAppServices.DotNet',
+  java: 'Datadog.AzureAppServices.Java.Apm',
 } as const
 
 /**

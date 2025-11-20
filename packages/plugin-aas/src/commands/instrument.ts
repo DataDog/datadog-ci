@@ -1,7 +1,11 @@
 import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions, WINDOWS_RUNTIME_EXTENSIONS, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+import {
+  AasConfigOptions,
+  WINDOWS_RUNTIME_EXTENSIONS,
+  WindowsRuntime,
+} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'

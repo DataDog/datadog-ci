@@ -1,11 +1,11 @@
 import {WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
-import {AasConfigOptions, WINDOWS_RUNTIME_EXTENSIONS, WindowsRuntime} from '@datadog/datadog-ci-base/commands/aas/common'
+import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasUninstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/uninstrument'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
-import {parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
+import {collectAsyncIterator, parseEnvVars, sortedEqual} from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
@@ -98,8 +98,7 @@ export class PluginCommand extends AasUninstrumentCommand {
           client,
           {...config, service: config.service ?? aasName},
           resourceGroup,
-          aasName,
-          runtime
+          aasName
         )
         await this.removeTags(client.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
       } else {
@@ -125,27 +124,43 @@ export class PluginCommand extends AasUninstrumentCommand {
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    aasName: string,
-    runtime: WindowsRuntime
+    aasName: string
   ) {
-    const extensionId = WINDOWS_RUNTIME_EXTENSIONS[runtime]
-    this.context.stdout.write(
-      `${this.dryRunPrefix}Removing extension ${chalk.bold(extensionId)} from ${chalk.bold(aasName)} (if it exists)\n`
-    )
-    if (!this.dryRun) {
-      try {
-        // We make this call with the regular resources client because `client.webApps.deleteSiteExtension` doesn't work
-        await this.resourceClient.resources.beginDeleteByIdAndWait(
-          `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}/siteextensions/${extensionId}`,
-          '2024-11-01'
+    // List all currently installed extensions
+    const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))
+
+    // Filter for any Datadog extensions
+    const datadogExtensions = existingExtensions
+      .map((ext) => ext.name?.split('/')[1])
+      .filter((ext) => ext?.startsWith('Datadog.AzureAppServices.'))
+
+    if (datadogExtensions.length === 0) {
+      this.context.stdout.write(`${this.dryRunPrefix}No Datadog extensions found on ${chalk.bold(aasName)}.\n`)
+    } else {
+      this.context.stdout.write(
+        `${this.dryRunPrefix}Removing ${datadogExtensions.length} Datadog extension(s) from ${chalk.bold(aasName)}: ${datadogExtensions.map((e) => chalk.bold(e)).join(', ')}\n`
+      )
+
+      if (!this.dryRun) {
+        await Promise.all(
+          datadogExtensions.map(async (extensionId) => {
+            try {
+              // We make this call with the regular resources client because `client.webApps.deleteSiteExtension` doesn't work
+              await this.resourceClient.resources.beginDeleteByIdAndWait(
+                `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}/siteextensions/${extensionId}`,
+                '2024-11-01'
+              )
+            } catch (error) {
+              const message = String(error).includes('not installed locally')
+                ? `Extension ${chalk.bold(extensionId)} not found or already removed.\n`
+                : `Unable to remove extension ${chalk.bold(extensionId)}: ${error}\n`
+              this.context.stdout.write(message)
+            }
+          })
         )
-      } catch (error) {
-        const message = String(error).includes('not installed locally')
-          ? `Extension ${chalk.bold(extensionId)} not found or already removed.\n`
-          : `Unable to install extension: ${error}\n`
-        this.context.stdout.write(message)
       }
     }
+
     // Updaing the environment variables will trigger a restart
     await this.removeEnvVars(config, aasName, client, resourceGroup)
   }

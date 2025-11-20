@@ -1,7 +1,7 @@
 import {Site} from '@azure/arm-appservice'
 import {AasConfigOptions} from '@datadog/datadog-ci-base/commands/aas/common'
 
-import {getWindowsRuntime, getEnvVars, SITE_EXTENSION_IDS, isDotnet, isLinuxContainer, isWindows} from '../common'
+import {getWindowsRuntime, getEnvVars, isDotnet, isLinuxContainer, isWindows} from '../common'
 
 const DEFAULT_CONFIG: AasConfigOptions = {
   subscriptionId: '00000000-0000-0000-0000-000000000000',
