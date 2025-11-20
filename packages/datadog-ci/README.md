@@ -259,7 +259,7 @@ Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 If installing NodeJS in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
 
-Supported architectures are:
+Supported architectures:
 - `linux-x64`
 - `linux-arm64`
 - `darwin-x64` (MacOS)
@@ -270,7 +270,7 @@ Supported architectures are:
 > Using `strip` to remove debugging symbols from the standalone binary as an attempt to make it smaller may cause segmentation faults when running `datadog-ci`. See https://github.com/nodejs/postject/issues/90.
 
 > [!NOTE]  
-> To determine the version when unable to run `datadog-ci --version` (for example because of segmentation faults or architecture mismatch), run `grep --text STANDALONE_BINARY_VERSION path/to/datadog-ci`.
+> To determine the version when unable to run `datadog-ci --version` (for example, because of segmentation faults or an architecture mismatch), run `grep --text STANDALONE_BINARY_VERSION path/to/datadog-ci`.
 
 To install the standalone binary:
 
