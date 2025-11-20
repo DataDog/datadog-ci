@@ -270,8 +270,7 @@ Supported architectures are:
 > Using `strip` to remove debugging symbols from the standalone binary as an attempt to make it smaller may cause segmentation faults when running `datadog-ci`. See https://github.com/nodejs/postject/issues/90.
 
 > [!NOTE]  
-> To determine the version when unable to run `datadog-ci --version` (for example because of segmentation faults or architecture mismatch),
-> you can run `strings path/to/datadog-ci | grep STANDALONE_BINARY_VERSION` or `grep --text STANDALONE_BINARY_VERSION path/to/datadog-ci`.
+> To determine the version when unable to run `datadog-ci --version` (for example because of segmentation faults or architecture mismatch), run `grep --text STANDALONE_BINARY_VERSION path/to/datadog-ci`.
 
 To install the standalone binary:
 
