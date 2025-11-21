@@ -127,7 +127,7 @@ export abstract class ContainerAppCommand extends BaseCommand {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
     // Validate that sidecarCpu is a number
-    if (config.sidecarCpu &&isNaN(parseFloat(config.sidecarCpu))) {
+    if (config.sidecarCpu && isNaN(parseFloat(config.sidecarCpu))) {
       errors.push('sidecarCpu must be a number')
     }
     // Validate that sidecarMemory has valid format

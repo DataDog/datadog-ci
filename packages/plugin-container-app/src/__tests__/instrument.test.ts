@@ -1520,13 +1520,7 @@ Ensure you copied the value and not the Key ID.
     })
 
     test('Uses custom sidecar CPU and memory', async () => {
-      const {code} = await runCLI([
-        ...DEFAULT_INSTRUMENT_ARGS,
-        '--sidecar-cpu',
-        '0.25',
-        '--sidecar-memory',
-        '0.5',
-      ])
+      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', '0.25', '--sidecar-memory', '0.5'])
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,

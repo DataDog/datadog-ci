@@ -48,7 +48,7 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_CPU}'.`,
   })
   private sidecarMemory = Option.String('--sidecar-memory', {
-    description: `The amount of memory (in Gibibytes) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
+    description: `The amount of memory (in GiB) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
