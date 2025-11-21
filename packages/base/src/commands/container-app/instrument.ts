@@ -1,4 +1,5 @@
 import {Command, Option} from 'clipanion'
+import {isNumber} from 'typanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 import {
@@ -10,8 +11,8 @@ import {
 
 import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
 
-export const DEFAULT_SIDECAR_CPU = '0.5'
-export const DEFAULT_SIDECAR_MEMORY = '1'
+export const DEFAULT_SIDECAR_CPU = 0.5
+export const DEFAULT_SIDECAR_MEMORY = 1
 
 export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   public static paths = [['container-app', 'instrument']]
@@ -46,9 +47,11 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   })
   private sidecarCpu = Option.String('--sidecar-cpu', {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_CPU}'.`,
+    validator: isNumber(),
   })
   private sidecarMemory = Option.String('--sidecar-memory', {
     description: `The amount of memory (in GiB) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
+    validator: isNumber(),
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {

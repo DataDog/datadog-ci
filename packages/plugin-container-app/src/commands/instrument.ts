@@ -18,7 +18,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/serverless/common'
 import {
   DEFAULT_HEALTH_CHECK_PORT,
-  SIDECAR_CONTAINER_NAME,
   SIDECAR_IMAGE,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
 import {handleSourceCodeIntegration} from '@datadog/datadog-ci-base/helpers/serverless/source-code-integration'
@@ -218,7 +217,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       name: config.sidecarName,
       image: SIDECAR_IMAGE,
       resources: {
-        cpu: parseFloat(config.sidecarCpu ?? DEFAULT_SIDECAR_CPU),
+        cpu: config.sidecarCpu ?? DEFAULT_SIDECAR_CPU,
         memory: (config.sidecarMemory ?? DEFAULT_SIDECAR_MEMORY) + 'Gi',
       },
       probes: [
