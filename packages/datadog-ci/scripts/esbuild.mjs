@@ -3,6 +3,8 @@ import {writeFile} from 'fs/promises'
 import chalk from 'chalk'
 import {build} from 'esbuild'
 
+const {cliVersion} = await import('@datadog/datadog-ci-base/version')
+
 try {
   const result = await build({
     entryPoints: ['dist/cli.js'],
@@ -18,6 +20,10 @@ try {
     legalComments: 'none',
     sourcemap: false,
     metafile: true,
+    // Allows to do `strings <standalone-binary> | grep STANDALONE_BINARY_VERSION` or `grep --text STANDALONE_BINARY_VERSION <standalone-binary>`
+    banner: {
+      js: `// STANDALONE_BINARY_VERSION=${cliVersion}`,
+    },
     // logLevel: 'debug',
   })
 

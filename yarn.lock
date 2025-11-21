@@ -4557,7 +4557,7 @@ __metadata:
 
 "@yao-pkg/pkg-fetch@patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch":
   version: 3.5.24
-  resolution: "@yao-pkg/pkg-fetch@patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch::version=3.5.24&hash=49e69c"
+  resolution: "@yao-pkg/pkg-fetch@patch:@yao-pkg/pkg-fetch@npm%3A3.5.24#~/.yarn/patches/@yao-pkg-pkg-fetch-npm-3.5.24-3b96980136.patch::version=3.5.24&hash=7bc45c"
   dependencies:
     https-proxy-agent: "npm:^5.0.0"
     node-fetch: "npm:^2.6.6"
@@ -4568,7 +4568,7 @@ __metadata:
     yargs: "npm:^16.2.0"
   bin:
     pkg-fetch: lib-es5/bin.js
-  checksum: 10/5e25d31929146c5a0a091cb08f82a82c789dbf9189c9defe94c39a80780543a05b92b6bc1221481e2114478bae3b9a34e5a5c05fe68439f3426ca49415b838ad
+  checksum: 10/95e07eb4deb244c1ecc38b748c03b70b8e01e4d526e0c84a0ebface827e9f2ddb35c4f4f24008e555131494c608cad985210a2063c7602e7732cf025541e002e
   languageName: node
   linkType: hard
 

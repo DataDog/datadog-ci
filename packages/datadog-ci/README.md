@@ -241,41 +241,63 @@ The released `datadog-ci` binary now uses Node.js version 18 to be compatible wi
 Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
 If you do not have a FIPS provider installed, `datadog-ci` does not raise an error.
 
-ENV variable: `DATADOG_FIPS=true`
-CLI param: `--fips`
+- ENV variable: `DATADOG_FIPS=true`
+- CLI param: `--fips`
 
 #### `fips-ignore-error`
 Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 **Note**: the absence of an error doesn't indicate that FIPS is enabled successfully.
 
-ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
-CLI param: `--fips-ignore-error`
+- ENV variable: `DATADOG_FIPS_IGNORE_ERROR=true`
+- CLI param: `--fips-ignore-error`
 
 
 ## More ways to install the CLI
 
 ### Standalone binary
 
-If installing NodeJS in the CI is an issue, standalone binaries are provided with [releases](https://github.com/DataDog/datadog-ci/releases). _linux-x64_, _linux-arm64_, _darwin-x64_, _darwin-arm64_ (MacOS) and _win-x64_ (Windows) are supported.
+If installing NodeJS in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
 
-To install:
+Supported architectures:
+- `linux-x64`
+- `linux-arm64`
+- `darwin-x64` (MacOS)
+- `darwin-arm64` (MacOS)
+- `win-x64` (Windows)
+
+> [!WARNING]  
+> Using `strip` to remove debugging symbols from the standalone binary as an attempt to make it smaller may cause segmentation faults when running `datadog-ci`. See https://github.com/nodejs/postject/issues/90.
+
+> [!NOTE]  
+> To determine the version when unable to run `datadog-ci --version` (for example, because of segmentation faults or an architecture mismatch), run `grep --text STANDALONE_BINARY_VERSION path/to/datadog-ci`.
+
+To install the standalone binary:
 
 #### Linux
 
 ```sh
+# Linux x64
 curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+
+# Linux arm64
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-arm64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
 ```
 
 #### MacOS
 
 ```sh
+# MacOS x64
 curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
+
+# MacOS arm64
+curl -L --fail "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-arm64" --output "/usr/local/bin/datadog-ci" && chmod +x /usr/local/bin/datadog-ci
 ```
 
 #### Windows
 
 ```sh
+# Windows x64
 Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64" -OutFile "datadog-ci.exe"
 ```
 
