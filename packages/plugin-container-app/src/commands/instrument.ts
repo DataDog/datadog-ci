@@ -219,7 +219,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
       image: SIDECAR_IMAGE,
       resources: {
         cpu: parseFloat(config.sidecarCpu ?? DEFAULT_SIDECAR_CPU),
-        memory: config.sidecarMemory ?? DEFAULT_SIDECAR_MEMORY,
+        memory: (config.sidecarMemory ?? DEFAULT_SIDECAR_MEMORY) + 'Gi',
       },
       probes: [
         {

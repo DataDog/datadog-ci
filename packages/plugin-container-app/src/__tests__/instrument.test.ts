@@ -739,24 +739,16 @@ Ensure you copied the value and not the Key ID.
       expect(context.stdout.toString()).toContain('[Error] Extra tags do not comply with the <key>:<value> array.\n')
     })
 
-    test('Validates sidecar CPU is a valid number', async () => {
+    test('Validates sidecar CPU is a number', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', 'invalid'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a valid positive number\n')
+      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a number\n')
     })
 
-    test('Validates sidecar CPU is positive', async () => {
-      const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', '0'])
-      expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a valid positive number\n')
-    })
-
-    test('Validates sidecar memory format', async () => {
+    test('Validates sidecar memory is a number', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-memory', 'invalid'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain(
-        '[Error] sidecarMemory must be in format like "0.5Gi", "512Mi", "1Gi", etc.\n'
-      )
+      expect(context.stdout.toString()).toContain('[Error] sidecarMemory must be a number\n')
     })
   })
 
@@ -1528,7 +1520,13 @@ Ensure you copied the value and not the Key ID.
     })
 
     test('Uses custom sidecar CPU and memory', async () => {
-      const {code} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', '0.25', '--sidecar-memory', '0.5Gi'])
+      const {code} = await runCLI([
+        ...DEFAULT_INSTRUMENT_ARGS,
+        '--sidecar-cpu',
+        '0.25',
+        '--sidecar-memory',
+        '0.5',
+      ])
       expect(code).toEqual(0)
       expect(containerAppsOperations.beginUpdateAndWait).toHaveBeenCalledWith('my-resource-group', 'my-container-app', {
         ...DEFAULT_CONTAINER_APP,

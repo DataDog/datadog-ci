@@ -126,16 +126,13 @@ export abstract class ContainerAppCommand extends BaseCommand {
     if (config.extraTags && !config.extraTags.match(EXTRA_TAGS_REG_EXP)) {
       errors.push('Extra tags do not comply with the <key>:<value> array.')
     }
-    // Validate that sidecarCpu is a valid number
-    if (config.sidecarCpu) {
-      const cpu = parseFloat(config.sidecarCpu)
-      if (isNaN(cpu) || cpu <= 0) {
-        errors.push('sidecarCpu must be a valid positive number')
-      }
+    // Validate that sidecarCpu is a number
+    if (config.sidecarCpu &&isNaN(parseFloat(config.sidecarCpu))) {
+      errors.push('sidecarCpu must be a number')
     }
     // Validate that sidecarMemory has valid format
-    if (config.sidecarMemory && !/^\d+(\.\d+)?(Gi|Mi|G|M)$/.test(config.sidecarMemory)) {
-      errors.push('sidecarMemory must be in format like "0.5Gi", "512Mi", "1Gi", etc.')
+    if (config.sidecarMemory && isNaN(parseFloat(config.sidecarMemory))) {
+      errors.push('sidecarMemory must be a number')
     }
     // Validate that logsPath starts with sharedVolumePath
     if (!config.logsPath || !config.sharedVolumePath) {

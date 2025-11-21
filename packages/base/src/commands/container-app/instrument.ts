@@ -11,7 +11,7 @@ import {
 import {ContainerAppCommand, ContainerAppConfigOptions} from './common'
 
 export const DEFAULT_SIDECAR_CPU = '0.5'
-export const DEFAULT_SIDECAR_MEMORY = '1Gi'
+export const DEFAULT_SIDECAR_MEMORY = '1'
 
 export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   public static paths = [['container-app', 'instrument']]
@@ -44,11 +44,11 @@ export class ContainerAppInstrumentCommand extends ContainerAppCommand {
   private logsPath = Option.String('--logs-path', DEFAULT_LOGS_PATH, {
     description: `(Not recommended) Specify a custom log file path. Must begin with the shared volume path. Defaults to '${DEFAULT_LOGS_PATH}'`,
   })
-  private sidecarCpu = Option.String('--sidecar-cpu', DEFAULT_SIDECAR_CPU, {
+  private sidecarCpu = Option.String('--sidecar-cpu', {
     description: `The number of CPUs to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_CPU}'.`,
   })
-  private sidecarMemory = Option.String('--sidecar-memory', DEFAULT_SIDECAR_MEMORY, {
-    description: `The amount of memory to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
+  private sidecarMemory = Option.String('--sidecar-memory', {
+    description: `The amount of memory (in Gibibytes) to allocate to the sidecar container. Defaults to '${DEFAULT_SIDECAR_MEMORY}'.`,
   })
 
   private sourceCodeIntegration = Option.Boolean('--source-code-integration,--sourceCodeIntegration', true, {
