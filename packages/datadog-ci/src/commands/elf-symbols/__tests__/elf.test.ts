@@ -872,7 +872,7 @@ describe('elf', () => {
       for (const testFile of testFiles) {
         await checkCopyDebugInfo(`${fixtureDir}/${testFile}`)
       }
-    })
+    }, 1000)
 
     test('no zstd support', async () => {
       const executeSpy = jest.spyOn(utils, 'execute').mockImplementation(async (cmd) => {
