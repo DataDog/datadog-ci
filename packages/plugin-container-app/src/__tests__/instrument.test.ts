@@ -742,13 +742,15 @@ Ensure you copied the value and not the Key ID.
     test('Validates sidecar CPU is a number', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-cpu', 'invalid'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain('[Error] sidecarCpu must be a number\n')
+      expect(context.stdout.toString()).toContain('Invalid value for --sidecar-cpu: expected a number (got "invalid")')
     })
 
     test('Validates sidecar memory is a number', async () => {
       const {code, context} = await runCLI([...DEFAULT_INSTRUMENT_ARGS, '--sidecar-memory', 'invalid'])
       expect(code).toEqual(1)
-      expect(context.stdout.toString()).toContain('[Error] sidecarMemory must be a number\n')
+      expect(context.stdout.toString()).toContain(
+        'Invalid value for --sidecar-memory: expected a number (got "invalid")'
+      )
     })
   })
 
