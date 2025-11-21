@@ -68,6 +68,9 @@ dist
 # JetBrains files
 .idea
 
+# Claude local settings
+.claude
+
 # Test generated files
 packages/datadog-ci/src/commands/react-native/__tests__/fixtures/with-sources-content/main.jsbundle.map.no-sources-content
 

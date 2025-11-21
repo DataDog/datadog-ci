@@ -1,0 +1,20 @@
+repos:
+  - repo: local
+    hooks:
+      - id: format
+        name: format
+        entry: yarn format
+        language: system
+        types: [ts]
+      - id: lint-packages
+        name: lint packages
+        entry: yarn lint:packages --fix
+        language: system
+        types: [json]
+        pass_filenames: false
+      - id: lint-readmes
+        name: lint readme usage
+        entry: yarn lint:readme-usage --fix
+        language: system
+        types: [ts, markdown]
+        pass_filenames: false
