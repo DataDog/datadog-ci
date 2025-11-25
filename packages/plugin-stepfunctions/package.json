@@ -39,8 +39,8 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.922.0",
-    "@aws-sdk/client-iam": "^3.709.0",
-    "@aws-sdk/client-sfn": "^3.709.0",
+    "@aws-sdk/client-iam": "^3.922.0",
+    "@aws-sdk/client-sfn": "^3.922.0",
     "deep-object-diff": "^1.1.9"
   },
   "devDependencies": {
