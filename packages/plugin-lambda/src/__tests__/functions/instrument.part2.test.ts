@@ -71,6 +71,7 @@ describe('instrument', () => {
       [Runtime.python311, 'Datadog-Python311'],
       [Runtime.python312, 'Datadog-Python312'],
       [Runtime.python313, 'Datadog-Python313'],
+      [Runtime.python314, 'Datadog-Python314'],
     ])('calculates an update request for %s', async (runtime: Runtime, layer: string) => {
       const config = {
         FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
@@ -115,6 +116,7 @@ describe('instrument', () => {
       [Runtime.python311, 'Datadog-Python311-ARM'],
       [Runtime.python312, 'Datadog-Python312-ARM'],
       [Runtime.python313, 'Datadog-Python313-ARM'],
+      [Runtime.python314, 'Datadog-Python314-ARM'],
     ])(
       'calculates an update request with just lambda library layers in arm architecture',
       async (runtime: Runtime, layer: string) => {
