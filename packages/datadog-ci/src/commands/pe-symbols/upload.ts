@@ -25,6 +25,7 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
+import {getBreakpadSymMetadata} from './breakpad'
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
 import {PE_DEBUG_INFOS_FILENAME, MappingMetadata, TYPE_PE_DEBUG_INFOS, VALUE_NAME_PE_DEBUG_INFOS} from './interfaces'
 import {getBuildId, getPEFileMetadata, PEFileMetadata} from './pe'
@@ -248,6 +249,17 @@ export class PeSymbolsUploadCommand extends BaseCommand {
           reportFailure(`Skipped directory ${p} because it is not readable`)
         })
       } else if (pathStat.isFile()) {
+        if (this.isBreakpadSymFile(p)) {
+          try {
+            const metadata = await getBreakpadSymMetadata(p)
+            filesMetadata.push(metadata)
+          } catch (err) {
+            const message = err instanceof Error ? err.message : `${err}`
+            reportFailure(`Error reading Breakpad symbol file ${p}: ${message}`)
+          }
+          continue
+        }
+
         // check that path is a file and is a PE file
         const metadata = await getPEFileMetadata(p)
 
@@ -280,6 +292,16 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
+        if (metadata.sourceType === 'breakpad_sym' && existing.sourceType !== 'breakpad_sym') {
+          this.context.stderr.write(
+            renderWarning(
+              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - preferring Breakpad symbol ${metadata.filename}`
+            )
+          )
+          buildIds.set(buildId, metadata)
+          continue
+        }
+
         // if both files have debug info and symbols, we keep the first one
         this.context.stderr.write(
           renderWarning(
@@ -299,6 +321,10 @@ export class PeSymbolsUploadCommand extends BaseCommand {
     const newPathname = upath.join(dirname, upath.basename(newFilename))
 
     return newPathname
+  }
+
+  private isBreakpadSymFile(pathname: string): boolean {
+    return upath.extname(pathname).toLowerCase() === '.sym'
   }
 
   private getAssociatedPdbFilename(pathname: string): string {
@@ -339,22 +365,35 @@ export class PeSymbolsUploadCommand extends BaseCommand {
         //     3. if it is not there, look in the same folder for a file with the same name as .dll but with a .pdb extension
         //     4. if it is there, upload it; if not generate a skip warning
         //
-        let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
-        // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`)
-
-        if (!fs.existsSync(pdbFilename)) {
-          pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
-
-          if (!fs.existsSync(pdbFilename)) {
-            this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+        let symbolFilePath: string | undefined
+        if (fileMetadata.sourceType === 'breakpad_sym') {
+          symbolFilePath = fileMetadata.symbolPath
+          if (!symbolFilePath || !fs.existsSync(symbolFilePath)) {
+            this.context.stdout.write(
+              renderWarning(`Skipped ${fileMetadata.filename} because the Breakpad .sym file is not readable`)
+            )
 
             return UploadStatus.Skipped
           }
-        }
+        } else {
+          let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
+          // TODO: remove this log after debugging
+          this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`)
 
-        // TODO: remove this log after debugging
-        this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`)
+          if (!fs.existsSync(pdbFilename)) {
+            pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
+
+            if (!fs.existsSync(pdbFilename)) {
+              this.context.stdout.write(renderMissingPdbFile(fileMetadata.pdbFilename, fileMetadata.filename))
+
+              return UploadStatus.Skipped
+            }
+          }
+
+          // TODO: remove this log after debugging
+          this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`)
+          symbolFilePath = pdbFilename
+        }
 
         const eventValue = JSON.stringify(metadata)
         this.context.stdout.write(renderEventPayload(eventValue))
@@ -373,7 +412,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
               VALUE_NAME_PE_DEBUG_INFOS,
               {
                 type: 'file',
-                path: pdbFilename,
+                path: symbolFilePath!,
                 options: {filename: PE_DEBUG_INFOS_FILENAME},
               },
             ],
