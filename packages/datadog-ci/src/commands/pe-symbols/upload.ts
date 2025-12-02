@@ -207,6 +207,20 @@ export class PeSymbolsUploadCommand extends BaseCommand {
     }
   }
 
+  private getSymbolSourcePriority(symbolSource: string | undefined): number {
+    if (symbolSource === 'debug_info') {
+      return 3
+    }
+    if (symbolSource === 'symbol_table') {
+      return 2
+    }
+    if (symbolSource === 'dynamic_symbol_table') {
+      return 1
+    }
+
+    return 0
+  }
+
   private getMetricsLogger() {
     const metricsLogger = getMetricsLogger({
       apiKey: this.config.apiKey,
@@ -301,17 +315,23 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       const buildId = getBuildId(metadata)
       const existing = buildIds.get(buildId)
       if (existing) {
-        if (metadata.sourceType === 'breakpad_sym' && existing.sourceType !== 'breakpad_sym') {
+        const newSymbolSource = metadata.symbolSource ?? this.getPESymbolSource(metadata)
+        const existingSymbolSource = existing.symbolSource ?? this.getPESymbolSource(existing)
+        const newPriority = this.getSymbolSourcePriority(newSymbolSource)
+        const existingPriority = this.getSymbolSourcePriority(existingSymbolSource)
+
+        if (newPriority > existingPriority) {
           this.context.stderr.write(
             renderWarning(
-              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - preferring Breakpad symbol ${metadata.filename}`
+              `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - keeping ${metadata.filename} because it has richer symbols (${newSymbolSource})`
             )
           )
           buildIds.set(buildId, metadata)
+
           continue
         }
 
-        // if both files have debug info and symbols, we keep the first one
+        // if both files have the same quality (or the existing one is better), keep the existing entry
         this.context.stderr.write(
           renderWarning(
             `Duplicate build_id found: ${buildId} in ${metadata.filename} and ${existing.filename} - skipping ${metadata.filename}`
