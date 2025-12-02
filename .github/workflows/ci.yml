@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [18, 20, 22]
+        version: [18, 20, 22, 24]
 
     name: Build and test
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [18, 20, 22]
+        version: [18, 20, 22, 24]
 
     name: Unit tests (Windows)
     runs-on: windows-latest
@@ -90,7 +90,7 @@ jobs:
   e2e-test:
     strategy:
       matrix:
-        version: [18, 20, 22]
+        version: [18, 20, 22, 24]
 
     name: End-to-end test the package
     runs-on: ubuntu-latest

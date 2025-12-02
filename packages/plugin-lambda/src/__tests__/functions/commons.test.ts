@@ -856,6 +856,14 @@ describe('commons', () => {
             Runtime: 'nodejs20.x',
           },
         },
+        {
+          functionARN: 'arn:aws:lambda:us-east-1:000000000000:function:func6',
+          lambdaConfig: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:000000000000:function:func6',
+            Handler: 'index.handler',
+            Runtime: 'nodejs24.x',
+          },
+        },
       ]
       expect(checkRuntimeTypesAreUniform(configs)).toBe(true)
     })
