@@ -267,15 +267,15 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       } else if (pathStat.isFile()) {
         if (this.isBreakpadSymFile(p)) {
           try {
-            const metadata = await getBreakpadSymMetadata(p)
-            if (metadata.moduleOs && metadata.moduleOs.toLowerCase() !== 'windows') {
+            const breakpadMetadata = await getBreakpadSymMetadata(p)
+            if (breakpadMetadata.moduleOs && breakpadMetadata.moduleOs.toLowerCase() !== 'windows') {
               this.context.stdout.write(
                 renderWarning(
-                  `Breakpad symbol ${p} declares module OS "${metadata.moduleOs}" which is not Windows - uploading anyway`
+                  `Breakpad symbol ${p} declares module OS "${breakpadMetadata.moduleOs}" which is not Windows - uploading anyway`
                 )
               )
             }
-            filesMetadata.push(metadata)
+            filesMetadata.push(breakpadMetadata)
           } catch (err) {
             const message = err instanceof Error ? err.message : `${err}`
             reportFailure(`Error reading Breakpad symbol file ${p}: ${message}`)
@@ -284,22 +284,22 @@ export class PeSymbolsUploadCommand extends BaseCommand {
         }
 
         // check that path is a file and is a PE file
-        const metadata = await getPEFileMetadata(p)
+        const peMetadata = await getPEFileMetadata(p)
 
         // handle all possible failures
-        if (!metadata.isPE) {
+        if (!peMetadata.isPE) {
           reportFailure(`Input location ${p} is not a PE file`)
           continue
         }
-        if (metadata.error) {
-          reportFailure(`Error reading PE file ${p}: ${metadata.error.message}`)
+        if (peMetadata.error) {
+          reportFailure(`Error reading PE file ${p}: ${peMetadata.error.message}`)
           continue
         }
-        if (!metadata.hasPdbInfo) {
+        if (!peMetadata.hasPdbInfo) {
           reportFailure(`Skipped ${p} because it has no debug info, nor symbols`)
           continue
         }
-        filesMetadata.push(metadata)
+        filesMetadata.push(peMetadata)
       }
     }
 
@@ -436,7 +436,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
               VALUE_NAME_PE_DEBUG_INFOS,
               {
                 type: 'file',
-                path: symbolFilePath!,
+                path: symbolFilePath,
                 options: {filename: PE_DEBUG_INFOS_FILENAME},
               },
             ],

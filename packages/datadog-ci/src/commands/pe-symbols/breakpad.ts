@@ -1,8 +1,8 @@
 import fs from 'fs'
 import readline from 'readline'
 
-import {MachineArchitecture} from './pe-constants'
 import {PEFileMetadata} from './pe'
+import {MachineArchitecture} from './pe-constants'
 
 type ModuleHeader = {
   os: string
@@ -76,14 +76,14 @@ const analyzeBreakpadFile = async (pathname: string): Promise<BreakpadFileAnalys
   try {
     for await (const line of rl) {
       if (!header) {
-        const trimmed = line.trim()
-        if (!trimmed) {
+        const headerLine = line.trim()
+        if (!headerLine) {
           continue
         }
         if (!isAscii(line)) {
           throw new Error('Unsupported symbol file: Breakpad .sym files must be ASCII encoded')
         }
-        if (!trimmed.startsWith('MODULE ')) {
+        if (!headerLine.startsWith('MODULE ')) {
           throw new Error('Unsupported symbol file: first non-empty line must be a Breakpad MODULE header')
         }
         const parsed = parseModuleHeader(line)
@@ -93,13 +93,13 @@ const analyzeBreakpadFile = async (pathname: string): Promise<BreakpadFileAnalys
         continue
       }
 
-      const trimmed = line.trim()
-      if (!hasFileRecords && trimmed.startsWith('FILE ')) {
+      const dataLine = line.trim()
+      if (!hasFileRecords && dataLine.startsWith('FILE ')) {
         hasFileRecords = true
         break
       }
       // we hit the functions, so we won't find any more file records
-      if (!hasFileRecords && (trimmed.startsWith('FUNC ') || trimmed.startsWith('PUBLIC '))) {
+      if (!hasFileRecords && (dataLine.startsWith('FUNC ') || dataLine.startsWith('PUBLIC '))) {
         break
       }
     }
@@ -152,4 +152,3 @@ export const getBreakpadSymMetadata = async (pathname: string): Promise<PEFileMe
 
   return metadata
 }
-

@@ -1,6 +1,6 @@
 import {getBreakpadSymMetadata} from '../breakpad'
-import {MachineArchitecture} from '../pe-constants'
 import {getPEFileMetadata} from '../pe'
+import {MachineArchitecture} from '../pe-constants'
 
 const fixtureDir = './src/commands/pe-symbols/__tests__/fixtures'
 
