@@ -438,6 +438,7 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
     case 'nodejs18.x':
     case 'nodejs20.x':
     case 'nodejs22.x':
+    case 'nodejs24.x':
     case 'ruby3.2':
     case 'ruby3.3':
       return false

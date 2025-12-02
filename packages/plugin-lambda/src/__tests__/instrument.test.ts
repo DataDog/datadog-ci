@@ -90,7 +90,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
@@ -127,7 +127,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
@@ -168,7 +168,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
@@ -299,7 +299,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
@@ -345,7 +345,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
@@ -635,6 +635,7 @@ describe('lambda', () => {
       test('instrument multiple functions interactively', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
+        const node24LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node24-x`
         const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
         const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
@@ -674,6 +675,14 @@ describe('lambda', () => {
               Runtime: 'nodejs22.x',
             },
           },
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5',
+              FunctionName: 'lambda-hello-world-5',
+              Handler: 'index.handler',
+              Runtime: 'nodejs24.x',
+            },
+          },
         })
         mockLambdaLayers(lambdaClientMock, {
           [`${node16LibraryLayer}:1`]: {
@@ -690,6 +699,10 @@ describe('lambda', () => {
           },
           [`${node22LibraryLayer}:1`]: {
             LayerName: `${node22LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node24LibraryLayer}:1`]: {
+            LayerName: `${node24LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -724,6 +737,7 @@ describe('lambda', () => {
         const node18LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node18-x`
         const node20LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
         const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
+        const node24LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node24-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -759,6 +773,14 @@ describe('lambda', () => {
               Runtime: 'nodejs22.x',
             },
           },
+          'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-5',
+              FunctionName: 'lambda-hello-world-5',
+              Handler: 'index.handler',
+              Runtime: 'nodejs24.x',
+            },
+          },
         })
         mockLambdaLayers(lambdaClientMock, {
           [`${node16LibraryLayer}:1`]: {
@@ -775,6 +797,10 @@ describe('lambda', () => {
           },
           [`${node22LibraryLayer}:1`]: {
             LayerName: `${node22LibraryLayer}`,
+            VersionNumber: 1,
+          },
+          [`${node24LibraryLayer}:1`]: {
+            LayerName: `${node24LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -846,7 +872,7 @@ describe('lambda', () => {
       test('when provided it sets DD_ENV, DD_SERVICE, and DD_VERSION environment variables in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
-        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
+        const node24LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node24-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -855,14 +881,14 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
 
         mockLambdaLayers(lambdaClientMock, {
-          [`${node22LibraryLayer}:1`]: {
-            LayerName: `${node22LibraryLayer}`,
+          [`${node24LibraryLayer}:1`]: {
+            LayerName: `${node24LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -897,7 +923,7 @@ describe('lambda', () => {
       test('when not provided it does not set DD_ENV, DD_SERVICE, and DD_VERSION tags in interactive mode', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         ;(fromNodeProviderChain as jest.Mock).mockReturnValue(jest.fn().mockResolvedValue(undefined))
-        const node22LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node22-x`
+        const node24LibraryLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node24-x`
         const extensionLayer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Extension`
 
         mockLambdaConfigurations(lambdaClientMock, {
@@ -906,13 +932,13 @@ describe('lambda', () => {
               FunctionArn: 'arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world',
               FunctionName: 'lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
         mockLambdaLayers(lambdaClientMock, {
-          [`${node22LibraryLayer}:1`]: {
-            LayerName: `${node22LibraryLayer}`,
+          [`${node24LibraryLayer}:1`]: {
+            LayerName: `${node24LibraryLayer}`,
             VersionNumber: 1,
           },
           [`${extensionLayer}:1`]: {
@@ -1180,7 +1206,7 @@ describe('lambda', () => {
             config: {
               FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
               Handler: 'index.handler',
-              Runtime: 'nodejs22.x',
+              Runtime: 'nodejs24.x',
             },
           },
         })
