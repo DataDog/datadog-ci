@@ -424,6 +424,7 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
     case 'python3.11':
     case 'python3.12':
     case 'python3.13':
+    case 'python3.14':
     case 'python3.8':
     case 'python3.9':
       return layerVersion >= 114
