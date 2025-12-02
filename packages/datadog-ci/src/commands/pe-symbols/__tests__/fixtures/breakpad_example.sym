@@ -1,3 +1,5 @@
 MODULE windows x86 00112233445566778899AABBCCDDEEFF2A example.pdb
+FILE 0 C:\source\example.cc
 FUNC 1000 30 0 Example::Func
-
+1000 5 0 0
+1010 5 0 0

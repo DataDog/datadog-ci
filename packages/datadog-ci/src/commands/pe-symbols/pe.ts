@@ -75,6 +75,8 @@ export type PEFileMetadata = {
   pdbFilename: string // name of the corresponding .pdb file
   sourceType: SymbolSourceType
   symbolPath?: string
+  symbolSource?: string
+  moduleOs?: string
   error?: Error
 }
 

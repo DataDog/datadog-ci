@@ -80,7 +80,7 @@ describe('pe', () => {
   })
 
   describe('breakpad symbols', () => {
-    test('extract metadata from MODULE header', async () => {
+    test('extract metadata with line info', async () => {
       expect(await getBreakpadSymMetadata(`${fixtureDir}/breakpad_example.sym`)).toEqual({
         filename: './src/commands/pe-symbols/__tests__/fixtures/breakpad_example.sym',
         isPE: false,
@@ -91,6 +91,24 @@ describe('pe', () => {
         pdbFilename: 'example.pdb',
         sourceType: 'breakpad_sym',
         symbolPath: './src/commands/pe-symbols/__tests__/fixtures/breakpad_example.sym',
+        symbolSource: 'debug_info',
+        moduleOs: 'windows',
+      })
+    })
+
+    test('extract metadata without line info', async () => {
+      expect(await getBreakpadSymMetadata(`${fixtureDir}/breakpad_public_only.sym`)).toEqual({
+        filename: './src/commands/pe-symbols/__tests__/fixtures/breakpad_public_only.sym',
+        isPE: false,
+        hasPdbInfo: true,
+        arch: MachineArchitecture.x64,
+        pdbAge: 0x1,
+        pdbSig: 'DEADBEEF-DEAD-BEEF-DEAD-BEEFDEADBEEF',
+        pdbFilename: 'sample.pdb',
+        sourceType: 'breakpad_sym',
+        symbolPath: './src/commands/pe-symbols/__tests__/fixtures/breakpad_public_only.sym',
+        symbolSource: 'symbol_table',
+        moduleOs: 'windows',
       })
     })
   })

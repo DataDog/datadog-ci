@@ -189,6 +189,8 @@ export class PeSymbolsUploadCommand extends BaseCommand {
   }
 
   private getMappingMetadata(peFileMetadata: PEFileMetadata): MappingMetadata {
+    const symbolSource = peFileMetadata.symbolSource ?? this.getPESymbolSource(peFileMetadata)
+
     return {
       cli_version: this.cliVersion,
       origin_version: this.cliVersion,
@@ -198,7 +200,7 @@ export class PeSymbolsUploadCommand extends BaseCommand {
       pdb_sig: peFileMetadata?.pdbSig,
       git_commit_sha: this.gitData?.hash,
       git_repository_url: this.gitData?.remote,
-      symbol_source: this.getPESymbolSource(peFileMetadata),
+      symbol_source: symbolSource,
       filename: upath.basename(peFileMetadata.pdbFilename),
       overwrite: this.replaceExisting,
       type: TYPE_PE_DEBUG_INFOS,
@@ -252,6 +254,13 @@ export class PeSymbolsUploadCommand extends BaseCommand {
         if (this.isBreakpadSymFile(p)) {
           try {
             const metadata = await getBreakpadSymMetadata(p)
+            if (metadata.moduleOs && metadata.moduleOs.toLowerCase() !== 'windows') {
+              this.context.stdout.write(
+                renderWarning(
+                  `Breakpad symbol ${p} declares module OS "${metadata.moduleOs}" which is not Windows - uploading anyway`
+                )
+              )
+            }
             filesMetadata.push(metadata)
           } catch (err) {
             const message = err instanceof Error ? err.message : `${err}`

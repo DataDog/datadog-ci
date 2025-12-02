@@ -16,7 +16,7 @@ const cpuToArchitecture = (cpu: string): MachineArchitecture => {
   if (normalized === 'x86') {
     return MachineArchitecture.x86
   }
-  if (normalized === 'x86_64' || normalized === 'amd64') {
+  if (normalized === 'x86_64' || normalized === 'amd64' || normalized === 'x64') {
     return MachineArchitecture.x64
   }
   if (normalized === 'arm64') {
@@ -50,15 +50,37 @@ const parseModuleHeader = (line: string): ModuleHeader | undefined => {
   return {os, cpu, id, name}
 }
 
-const readModuleHeader = async (pathname: string): Promise<ModuleHeader> => {
+type BreakpadFileAnalysis = {
+  header: ModuleHeader
+  hasFileRecords: boolean
+}
+
+const analyzeBreakpadFile = async (pathname: string): Promise<BreakpadFileAnalysis> => {
+  // heuristic to figure out if we have debug info or not
   const stream = fs.createReadStream(pathname, {encoding: 'utf8'})
   const rl = readline.createInterface({input: stream, crlfDelay: Infinity})
 
+  let header: ModuleHeader | undefined
+  let hasFileRecords = false
+
   try {
     for await (const line of rl) {
-      const header = parseModuleHeader(line)
-      if (header) {
-        return header
+      if (!header) {
+        const parsed = parseModuleHeader(line)
+        if (parsed) {
+          header = parsed
+        }
+        continue
+      }
+
+      const trimmed = line.trim()
+      if (!hasFileRecords && trimmed.startsWith('FILE ')) {
+        hasFileRecords = true
+        break
+      }
+      // we hit the functions, so we won't find any more file records
+      if (!hasFileRecords && (trimmed.startsWith('FUNC ') || trimmed.startsWith('PUBLIC '))) {
+        break
       }
     }
   } finally {
@@ -66,11 +88,15 @@ const readModuleHeader = async (pathname: string): Promise<ModuleHeader> => {
     stream.close()
   }
 
-  throw new Error('Breakpad symbol file is missing MODULE header')
+  if (!header) {
+    throw new Error('Breakpad symbol file is missing MODULE header')
+  }
+
+  return {header, hasFileRecords}
 }
 
 export const getBreakpadSymMetadata = async (pathname: string): Promise<PEFileMetadata> => {
-  const header = await readModuleHeader(pathname)
+  const {header, hasFileRecords} = await analyzeBreakpadFile(pathname)
   const identifier = header.id.toUpperCase()
   if (identifier.length <= 32) {
     throw new Error('Breakpad MODULE identifier is malformed')
@@ -100,6 +126,8 @@ export const getBreakpadSymMetadata = async (pathname: string): Promise<PEFileMe
     pdbFilename: header.name,
     sourceType: 'breakpad_sym',
     symbolPath: pathname,
+    symbolSource: hasFileRecords ? 'debug_info' : 'symbol_table',
+    moduleOs: header.os,
   }
 
   return metadata
