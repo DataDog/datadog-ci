@@ -34,6 +34,7 @@ export const LAYER_LOOKUP = {
   'python3.11': 'Datadog-Python311',
   'python3.12': 'Datadog-Python312',
   'python3.13': 'Datadog-Python313',
+  'python3.14': 'Datadog-Python314',
   'ruby3.2': 'Datadog-Ruby3-2',
   'ruby3.3': 'Datadog-Ruby3-3',
 } as const
@@ -68,6 +69,7 @@ export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   'python3.11': RuntimeType.PYTHON,
   'python3.12': RuntimeType.PYTHON,
   'python3.13': RuntimeType.PYTHON,
+  'python3.14': RuntimeType.PYTHON,
   'ruby3.2': RuntimeType.RUBY,
   'ruby3.3': RuntimeType.RUBY,
 }
@@ -83,6 +85,7 @@ export const ARM_LAYERS = [
   'python3.11',
   'python3.12',
   'python3.13',
+  'python3.14',
   'ruby3.2',
   'ruby3.3',
 ]
