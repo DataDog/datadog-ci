@@ -8,7 +8,7 @@ import {buildPath} from '@datadog/datadog-ci-base/helpers/utils'
 import {Cli} from 'clipanion'
 import upath from 'upath'
 
-import {Dsym} from '../interfaces'
+import {CompressedDsym, Dsym, GitData} from '../interfaces'
 import {DsymsUploadCommand} from '../upload'
 import {createUniqueTmpDirectory, deleteDirectory} from '../utils'
 
@@ -405,5 +405,70 @@ describe('execute', () => {
     })
     expect(output).toContain('API keys were specified both in a configuration file and in the environment.')
     expect(output).toContain('The environment API key ending in _key will be used.')
+  })
+})
+
+describe('git data', () => {
+  describe('CompressedDsym with git data', () => {
+    test('Should include git information in metadata payload when gitData is provided', () => {
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {
+            object: '/path/to/test.dSYM/Contents/Resources/DWARF/test',
+            uuid: 'ABC123-DEF456-789012',
+            arch: 'arm64',
+          },
+        ],
+      }
+
+      const gitData: GitData = {
+        repositoryURL: 'https://github.com/DataDog/dd-sdk-ios',
+        commitSHA: 'abc123def456789',
+      }
+
+      const compressed = new CompressedDsym('/tmp/test.zip', dsym, gitData)
+      const payload = compressed.asMultipartPayload()
+
+      const eventContent = payload.content.get('event')
+      expect(eventContent).toBeDefined()
+      expect(eventContent?.type).toBe('string')
+
+      if (eventContent && eventContent.type === 'string') {
+        const metadata = JSON.parse(eventContent.value)
+        expect(metadata.type).toBe('ios_symbols')
+        expect(metadata.uuids).toBe('ABC123-DEF456-789012')
+        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+        expect(metadata.git_commit_sha).toBe('abc123def456789')
+      }
+    })
+
+    test('Should not include git information in metadata payload when gitData is not provided', () => {
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {
+            object: '/path/to/test.dSYM/Contents/Resources/DWARF/test',
+            uuid: 'ABC123-DEF456-789012',
+            arch: 'arm64',
+          },
+        ],
+      }
+
+      const compressed = new CompressedDsym('/tmp/test.zip', dsym)
+      const payload = compressed.asMultipartPayload()
+
+      const eventContent = payload.content.get('event')
+      expect(eventContent).toBeDefined()
+      expect(eventContent?.type).toBe('string')
+
+      if (eventContent && eventContent.type === 'string') {
+        const metadata = JSON.parse(eventContent.value)
+        expect(metadata.type).toBe('ios_symbols')
+        expect(metadata.uuids).toBe('ABC123-DEF456-789012')
+        expect(metadata.git_repository_url).toBeUndefined()
+        expect(metadata.git_commit_sha).toBeUndefined()
+      }
+    })
   })
 })
