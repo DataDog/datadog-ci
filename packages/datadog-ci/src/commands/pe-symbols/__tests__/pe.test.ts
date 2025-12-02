@@ -111,5 +111,17 @@ describe('pe', () => {
         moduleOs: 'windows',
       })
     })
+
+    test('rejects files without MODULE header', async () => {
+      await expect(getBreakpadSymMetadata(`${fixtureDir}/breakpad_invalid_no_module.sym`)).rejects.toThrow(
+        'first non-empty line must be a Breakpad MODULE header'
+      )
+    })
+
+    test('rejects files with non ASCII characters', async () => {
+      await expect(getBreakpadSymMetadata(`${fixtureDir}/breakpad_invalid_non_ascii.sym`)).rejects.toThrow(
+        'Breakpad .sym files must be ASCII encoded'
+      )
+    })
   })
 })

@@ -406,8 +406,6 @@ export class PeSymbolsUploadCommand extends BaseCommand {
           }
         } else {
           let pdbFilename = this.getFileInSameFolder(fileMetadata.filename, fileMetadata.pdbFilename)
-          // TODO: remove this log after debugging
-          this.context.stdout.write(`[LOG] Look for pdb file = ${pdbFilename}\n`)
 
           if (!fs.existsSync(pdbFilename)) {
             pdbFilename = this.getAssociatedPdbFilename(fileMetadata.filename)
@@ -418,9 +416,6 @@ export class PeSymbolsUploadCommand extends BaseCommand {
               return UploadStatus.Skipped
             }
           }
-
-          // TODO: remove this log after debugging
-          this.context.stdout.write(`[LOG]      Use pdb file = ${pdbFilename}\n`)
           symbolFilePath = pdbFilename
         }
 

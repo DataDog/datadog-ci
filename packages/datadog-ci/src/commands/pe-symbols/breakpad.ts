@@ -50,6 +50,16 @@ const parseModuleHeader = (line: string): ModuleHeader | undefined => {
   return {os, cpu, id, name}
 }
 
+const isAscii = (line: string): boolean => {
+  for (let i = 0; i < line.length; i++) {
+    if (line.charCodeAt(i) > 127) {
+      return false
+    }
+  }
+
+  return true
+}
+
 type BreakpadFileAnalysis = {
   header: ModuleHeader
   hasFileRecords: boolean
@@ -66,6 +76,16 @@ const analyzeBreakpadFile = async (pathname: string): Promise<BreakpadFileAnalys
   try {
     for await (const line of rl) {
       if (!header) {
+        const trimmed = line.trim()
+        if (!trimmed) {
+          continue
+        }
+        if (!isAscii(line)) {
+          throw new Error('Unsupported symbol file: Breakpad .sym files must be ASCII encoded')
+        }
+        if (!trimmed.startsWith('MODULE ')) {
+          throw new Error('Unsupported symbol file: first non-empty line must be a Breakpad MODULE header')
+        }
         const parsed = parseModuleHeader(line)
         if (parsed) {
           header = parsed
