@@ -131,6 +131,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--region` | `-r` | Default region to use, when --function is specified by the function name instead of the ARN |  |
 <!-- END_USAGE:uninstrument -->
 
+<br/>
 
 ### Configuration file
 
