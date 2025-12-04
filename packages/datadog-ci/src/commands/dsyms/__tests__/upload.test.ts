@@ -436,13 +436,11 @@ describe('git data', () => {
       expect(eventContent).toBeDefined()
       expect(eventContent?.type).toBe('string')
 
-      if (eventContent && eventContent.type === 'string') {
-        const metadata = JSON.parse(eventContent.value)
-        expect(metadata.type).toBe('ios_symbols')
-        expect(metadata.uuids).toBe('ABC123-DEF456-789012')
-        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
-        expect(metadata.git_commit_sha).toBe('abc123def456789')
-      }
+      const metadata = JSON.parse((eventContent as any).value)
+      expect(metadata.type).toBe('ios_symbols')
+      expect(metadata.uuids).toBe('ABC123-DEF456-789012')
+      expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+      expect(metadata.git_commit_sha).toBe('abc123def456789')
     })
 
     test('Should not include git information in metadata payload when gitData is not provided', () => {
@@ -464,13 +462,11 @@ describe('git data', () => {
       expect(eventContent).toBeDefined()
       expect(eventContent?.type).toBe('string')
 
-      if (eventContent && eventContent.type === 'string') {
-        const metadata = JSON.parse(eventContent.value)
-        expect(metadata.type).toBe('ios_symbols')
-        expect(metadata.uuids).toBe('ABC123-DEF456-789012')
-        expect(metadata.git_repository_url).toBeUndefined()
-        expect(metadata.git_commit_sha).toBeUndefined()
-      }
+      const metadata = JSON.parse((eventContent as any).value)
+      expect(metadata.type).toBe('ios_symbols')
+      expect(metadata.uuids).toBe('ABC123-DEF456-789012')
+      expect(metadata.git_repository_url).toBeUndefined()
+      expect(metadata.git_commit_sha).toBeUndefined()
     })
 
     test('Should include repository blob in multipart payload when gitRepositoryPayload is provided', () => {
@@ -512,26 +508,22 @@ describe('git data', () => {
       expect(repositoryContent).toBeDefined()
       expect(repositoryContent?.type).toBe('string')
 
-      if (repositoryContent && repositoryContent.type === 'string') {
-        expect(repositoryContent.options?.contentType).toBe('application/json')
-        expect(repositoryContent.options?.filename).toBe('repository')
+      expect((repositoryContent as any).options?.contentType).toBe('application/json')
+      expect((repositoryContent as any).options?.filename).toBe('repository')
 
-        const repositoryData = JSON.parse(repositoryContent.value)
-        expect(repositoryData.version).toBe(1)
-        expect(repositoryData.data).toHaveLength(1)
-        expect(repositoryData.data[0].repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
-        expect(repositoryData.data[0].hash).toBe('abc123def456789')
-        expect(repositoryData.data[0].files).toEqual(['src/AppDelegate.swift', 'src/ViewController.swift'])
-      }
+      const repositoryData = JSON.parse((repositoryContent as any).value)
+      expect(repositoryData.version).toBe(1)
+      expect(repositoryData.data).toHaveLength(1)
+      expect(repositoryData.data[0].repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+      expect(repositoryData.data[0].hash).toBe('abc123def456789')
+      expect(repositoryData.data[0].files).toEqual(['src/AppDelegate.swift', 'src/ViewController.swift'])
 
       // Check metadata still includes git information
       const eventContent = payload.content.get('event')
       expect(eventContent).toBeDefined()
-      if (eventContent && eventContent.type === 'string') {
-        const metadata = JSON.parse(eventContent.value)
-        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
-        expect(metadata.git_commit_sha).toBe('abc123def456789')
-      }
+      const metadata = JSON.parse((eventContent as any).value)
+      expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+      expect(metadata.git_commit_sha).toBe('abc123def456789')
     })
 
     test('Should not include repository blob when gitRepositoryPayload is not provided', () => {
@@ -563,11 +555,9 @@ describe('git data', () => {
 
       // But metadata should still include git URL and SHA
       const eventContent = payload.content.get('event')
-      if (eventContent && eventContent.type === 'string') {
-        const metadata = JSON.parse(eventContent.value)
-        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
-        expect(metadata.git_commit_sha).toBe('abc123def456789')
-      }
+      const metadata = JSON.parse((eventContent as any).value)
+      expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+      expect(metadata.git_commit_sha).toBe('abc123def456789')
     })
   })
 })
