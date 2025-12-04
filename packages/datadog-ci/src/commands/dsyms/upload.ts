@@ -7,6 +7,11 @@ import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {InvalidConfigurationError} from '@datadog/datadog-ci-base/helpers/errors'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
+import {
+  getRepositoryData,
+  newSimpleGit,
+  RepositoryData,
+} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {globSync} from '@datadog/datadog-ci-base/helpers/glob'
 import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {getMetricsLogger, MetricsLogger} from '@datadog/datadog-ci-base/helpers/metrics'
@@ -65,6 +70,9 @@ export class DsymsUploadCommand extends BaseCommand {
   private configPath = Option.String('--config')
   private dryRun = Option.Boolean('--dry-run', false)
   private maxConcurrency = Option.String('--max-concurrency', '20', {validator: validation.isInteger()})
+  private repositoryURL = Option.String('--repository-url', {required: false})
+  private commitSHA = Option.String('--commit', {required: false})
+  private disableGit = Option.Boolean('--disable-git', false)
 
   private cliVersion = cliVersion
   private fips = Option.Boolean('--fips', false)
@@ -172,7 +180,13 @@ export class DsymsUploadCommand extends BaseCommand {
     const dsyms = await this.findDsyms(searchDirectory)
 
     const thinDsyms = await this.processDsyms(dsyms, intermediateDirectory)
+
     const compressedDsyms = await this.compressDsyms(thinDsyms, uploadDirectory)
+
+    // Add repository data to all payloads if git is enabled
+    if (!this.disableGit) {
+      await this.addRepositoryDataToPayloads(compressedDsyms)
+    }
 
     const requestBuilder = this.createRequestBuilder()
     const uploadFunction = this.createUploadFunction(requestBuilder, metricsLogger, apiKeyValidator)
@@ -308,6 +322,49 @@ export class DsymsUploadCommand extends BaseCommand {
 
     await promises.mkdir(upath.dirname(newInfoPlistPath), {recursive: true})
     await promises.copyFile(infoPlistPath, newInfoPlistPath)
+  }
+
+  private async addRepositoryDataToPayloads(payloads: CompressedDsym[]) {
+    try {
+      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryPayload = this.getRepositoryPayload(repositoryData)
+
+      payloads.forEach((payload) => {
+        payload.gitData = {
+          gitCommitSha: this.commitSHA || repositoryData.hash,
+          gitRepositoryPayload: repositoryPayload,
+          gitRepositoryURL: this.repositoryURL || repositoryData.remote,
+        }
+      })
+    } catch (error) {
+      // Log warning but don't fail the upload
+      this.context.stdout.write(`Warning: Failed to collect git information: ${error}\n`)
+    }
+  }
+
+  private getRepositoryPayload = (repositoryData: RepositoryData): string | undefined => {
+    try {
+      // Get ALL tracked files (no filtering needed for dSYMs unlike sourcemaps)
+      const files = repositoryData.trackedFilesMatcher.rawTrackedFilesList()
+
+      if (files) {
+        return JSON.stringify({
+          data: [
+            {
+              files,
+              hash: repositoryData.hash,
+              repository_url: repositoryData.remote,
+            },
+          ],
+          // Make sure to update the version if the format of the JSON payloads changes in any way.
+          version: 1,
+        })
+      }
+    } catch (error) {
+      this.context.stdout.write(`Warning: Failed to create repository payload: ${error}\n`)
+    }
+
+    return undefined
   }
 
   private async compressDsyms(dsyms: Dsym[], output: string): Promise<CompressedDsym[]> {
