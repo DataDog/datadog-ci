@@ -12,14 +12,30 @@ export class LambdaUninstrumentCommand extends BaseCommand {
     description: 'Revert Datadog instrumentation in a Lambda.',
   })
 
-  protected configPath = Option.String('--config')
-  protected dryRun = Option.Boolean('-d,--dry,--dry-run', false)
-  protected forwarder = Option.String('--forwarder')
-  protected functions = Option.Array('-f,--function', [])
-  protected interactive = Option.Boolean('-i,--interactive', false)
-  protected profile = Option.String('--profile')
-  protected regExPattern = Option.String('--functions-regex,--functionsRegex')
-  protected region = Option.String('-r,--region')
+  protected configPath = Option.String('--config', {
+    description: 'Path to the configuration file',
+  })
+  protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {
+    description: 'Preview changes running command would apply',
+  })
+  protected forwarder = Option.String('--forwarder', {
+    description: `The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to remove from this function`,
+  })
+  protected functions = Option.Array('-f,--function', [], {
+    description: `The ARN of the Lambda function to be uninstrumented, or the name of the Lambda function (--region must be defined)`,
+  })
+  protected interactive = Option.Boolean('-i,--interactive', false, {
+    description: `Allows the user to interactively choose how their function gets uninstrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead`,
+  })
+  protected profile = Option.String('--profile', {
+    description: `Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles`,
+  })
+  protected regExPattern = Option.String('--functions-regex,--functionsRegex', {
+    description: 'A regex pattern to match with the Lambda function name to be uninstrumented',
+  })
+  protected region = Option.String('-r,--region', {
+    description: 'Default region to use, when --function is specified by the function name instead of the ARN',
+  })
 
   /**
    * Arguments that are not really in use, but to
