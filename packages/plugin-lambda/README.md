@@ -90,10 +90,10 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--config` |  | Path to the configuration file |  |
 | `--dry` or `--dry-run` | `-d` | Preview changes running command would apply | `false` |
 | `--env` |  | Use --env to separate out your staging, development, and production environments. Learn more about the env tag here: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-env-tag |  |
-| `--extension-version` or `--extensionVersion` | `-e` | Version of the Datadog Lambda Extension layer to apply. When extension-version is set, make sure to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN) in your environment as well. While using extension-version, leave out forwarder. Learn more about the Lambda Extension here: https://docs.datadoghq.com/serverless/datadog_lambda_library/extension |  |
+| `--extension-version` or `--extensionVersion` | `-e` | Version of the Datadog Lambda Extension layer to apply. When extension-version is set, make sure to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN) in your environment as well. While using extension-version, leave out forwarder. Learn more about the Lambda Extension here: https://docs.datadoghq.com/serverless/libraries_integrations/extension |  |
 | `--extra-tags` or `--extraTags` |  | Add custom tags to your Lambda function in Datadog. Must be a list of <key>:<value> separated by commas such as: layer:api,team:intake |  |
 | `--flush-metrics-to-logs` or `--flushMetricsToLogs` |  | Whether to send metrics via the Datadog Forwarder asynchronously (https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics). If you disable this parameter, it's required to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN). | `true` |
-| `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/serverless/forwarder/) to attach this function's LogGroup to |  |
+| `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to attach this function's LogGroup to |  |
 | `--function` | `-f` | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) | `[]` |
 | `--interactive` | `-i` | Allows the user to interactively choose how their function gets instrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead | `false` |
 | `--layer-account` or `--layerAccount` | `-a` |  |  |
@@ -124,7 +124,7 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | -------- | --------- | ----------- | ------- |
 | `--config` |  | Path to the configuration file |  |
 | `--dry` or `--dry-run` | `-d` | Preview changes running command would apply | `false` |
-| `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/serverless/forwarder/) to remove from this function |  |
+| `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to remove from this function |  |
 | `--function` | `-f` | The ARN of the Lambda function to be uninstrumented, or the name of the Lambda function (--region must be defined) | `[]` |
 | `--interactive` | `-i` | Allows the user to interactively choose how their function gets uninstrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead | `false` |
 | `--profile` |  | Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
@@ -219,12 +219,12 @@ For product feedback and questions, join the `#serverless` channel in the [Datad
 [1]: https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-credentials-node.html
 [2]: https://github.com/DataDog/datadog-lambda-layer-js/releases
 [3]: https://github.com/DataDog/datadog-lambda-layer-python/releases
-[4]: https://docs.datadoghq.com/serverless/datadog_lambda_library/extension
+[4]: https://docs.datadoghq.com/serverless/libraries_integrations/extension
 [5]: https://docs.datadoghq.com/account_management/api-app-keys/#api-keys
 [6]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-env-tag
 [7]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-version-tag
 [8]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag
-[9]: https://docs.datadoghq.com/serverless/forwarder/
+[9]: https://docs.datadoghq.com/logs/guide/forwarder/
 [10]: https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics
 [11]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles
 [12]: https://docs.datadoghq.com/integrations/guide/source-code-integration
