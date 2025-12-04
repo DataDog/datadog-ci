@@ -11,8 +11,9 @@ export interface DWARF {
 }
 
 export interface GitData {
-  repositoryURL: string
-  commitSHA: string
+  gitCommitSha: string
+  gitRepositoryPayload?: string
+  gitRepositoryURL: string
 }
 
 export class CompressedDsym {
@@ -20,10 +21,9 @@ export class CompressedDsym {
   public dsym: Dsym
   public gitData?: GitData
 
-  constructor(archivePath: string, dsym: Dsym, gitData?: GitData) {
+  constructor(archivePath: string, dsym: Dsym) {
     this.archivePath = archivePath
     this.dsym = dsym
-    this.gitData = gitData
   }
 
   public asMultipartPayload(): MultipartPayload {
@@ -31,6 +31,17 @@ export class CompressedDsym {
       ['symbols_archive', {type: 'file', path: this.archivePath, options: {filename: 'ios_symbols_archive'}}],
       ['event', this.getMetadataPayload()],
     ])
+
+    if (this.gitData !== undefined && this.gitData.gitRepositoryPayload !== undefined) {
+      content.set('repository', {
+        type: 'string',
+        options: {
+          contentType: 'application/json',
+          filename: 'repository',
+        },
+        value: this.gitData.gitRepositoryPayload,
+      })
+    }
 
     return {
       content,
@@ -46,8 +57,8 @@ export class CompressedDsym {
     }
 
     if (this.gitData) {
-      metadata.git_repository_url = this.gitData.repositoryURL
-      metadata.git_commit_sha = this.gitData.commitSHA
+      metadata.git_repository_url = this.gitData.gitRepositoryURL
+      metadata.git_commit_sha = this.gitData.gitCommitSha
     }
 
     return {

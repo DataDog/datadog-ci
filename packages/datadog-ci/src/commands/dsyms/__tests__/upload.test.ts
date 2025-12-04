@@ -423,11 +423,13 @@ describe('git data', () => {
       }
 
       const gitData: GitData = {
-        repositoryURL: 'https://github.com/DataDog/dd-sdk-ios',
-        commitSHA: 'abc123def456789',
+        gitRepositoryURL: 'https://github.com/DataDog/dd-sdk-ios',
+        gitCommitSha: 'abc123def456789',
       }
 
-      const compressed = new CompressedDsym('/tmp/test.zip', dsym, gitData)
+      const compressed = new CompressedDsym('/tmp/test.zip', dsym)
+      compressed.gitData = gitData
+
       const payload = compressed.asMultipartPayload()
 
       const eventContent = payload.content.get('event')
@@ -468,6 +470,103 @@ describe('git data', () => {
         expect(metadata.uuids).toBe('ABC123-DEF456-789012')
         expect(metadata.git_repository_url).toBeUndefined()
         expect(metadata.git_commit_sha).toBeUndefined()
+      }
+    })
+
+    test('Should include repository blob in multipart payload when gitRepositoryPayload is provided', () => {
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {
+            object: '/path/to/test.dSYM/Contents/Resources/DWARF/test',
+            uuid: 'ABC123-DEF456-789012',
+            arch: 'arm64',
+          },
+        ],
+      }
+
+      const repositoryBlob = JSON.stringify({
+        version: 1,
+        data: [
+          {
+            repository_url: 'https://github.com/DataDog/dd-sdk-ios',
+            hash: 'abc123def456789',
+            files: ['src/AppDelegate.swift', 'src/ViewController.swift'],
+          },
+        ],
+      })
+
+      const gitData: GitData = {
+        gitRepositoryURL: 'https://github.com/DataDog/dd-sdk-ios',
+        gitCommitSha: 'abc123def456789',
+        gitRepositoryPayload: repositoryBlob,
+      }
+
+      const compressed = new CompressedDsym('/tmp/test.zip', dsym)
+      compressed.gitData = gitData
+
+      const payload = compressed.asMultipartPayload()
+
+      // Check repository blob is included in multipart payload
+      const repositoryContent = payload.content.get('repository')
+      expect(repositoryContent).toBeDefined()
+      expect(repositoryContent?.type).toBe('string')
+
+      if (repositoryContent && repositoryContent.type === 'string') {
+        expect(repositoryContent.options?.contentType).toBe('application/json')
+        expect(repositoryContent.options?.filename).toBe('repository')
+
+        const repositoryData = JSON.parse(repositoryContent.value)
+        expect(repositoryData.version).toBe(1)
+        expect(repositoryData.data).toHaveLength(1)
+        expect(repositoryData.data[0].repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+        expect(repositoryData.data[0].hash).toBe('abc123def456789')
+        expect(repositoryData.data[0].files).toEqual(['src/AppDelegate.swift', 'src/ViewController.swift'])
+      }
+
+      // Check metadata still includes git information
+      const eventContent = payload.content.get('event')
+      expect(eventContent).toBeDefined()
+      if (eventContent && eventContent.type === 'string') {
+        const metadata = JSON.parse(eventContent.value)
+        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+        expect(metadata.git_commit_sha).toBe('abc123def456789')
+      }
+    })
+
+    test('Should not include repository blob when gitRepositoryPayload is not provided', () => {
+      const dsym: Dsym = {
+        bundle: '/path/to/test.dSYM',
+        dwarf: [
+          {
+            object: '/path/to/test.dSYM/Contents/Resources/DWARF/test',
+            uuid: 'ABC123-DEF456-789012',
+            arch: 'arm64',
+          },
+        ],
+      }
+
+      const gitData: GitData = {
+        gitRepositoryURL: 'https://github.com/DataDog/dd-sdk-ios',
+        gitCommitSha: 'abc123def456789',
+        // No gitRepositoryPayload
+      }
+
+      const compressed = new CompressedDsym('/tmp/test.zip', dsym)
+      compressed.gitData = gitData
+
+      const payload = compressed.asMultipartPayload()
+
+      // Repository blob should not be included
+      const repositoryContent = payload.content.get('repository')
+      expect(repositoryContent).toBeUndefined()
+
+      // But metadata should still include git URL and SHA
+      const eventContent = payload.content.get('event')
+      if (eventContent && eventContent.type === 'string') {
+        const metadata = JSON.parse(eventContent.value)
+        expect(metadata.git_repository_url).toBe('https://github.com/DataDog/dd-sdk-ios')
+        expect(metadata.git_commit_sha).toBe('abc123def456789')
       }
     })
   })

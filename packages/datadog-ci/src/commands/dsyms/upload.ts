@@ -24,7 +24,7 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {CompressedDsym, Dsym, DWARF, GitData} from './interfaces'
+import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {
   renderCommandDetail,
   renderCommandInfo,
@@ -181,10 +181,12 @@ export class DsymsUploadCommand extends BaseCommand {
 
     const thinDsyms = await this.processDsyms(dsyms, intermediateDirectory)
 
-    // Collect git information
-    const gitData = await this.collectGitData()
+    const compressedDsyms = await this.compressDsyms(thinDsyms, uploadDirectory)
 
-    const compressedDsyms = await this.compressDsyms(thinDsyms, uploadDirectory, gitData)
+    // Add repository data to all payloads if git is enabled
+    if (!this.disableGit) {
+      await this.addRepositoryDataToPayloads(compressedDsyms)
+    }
 
     const requestBuilder = this.createRequestBuilder()
     const uploadFunction = this.createUploadFunction(requestBuilder, metricsLogger, apiKeyValidator)
@@ -322,28 +324,50 @@ export class DsymsUploadCommand extends BaseCommand {
     await promises.copyFile(infoPlistPath, newInfoPlistPath)
   }
 
-  private async collectGitData(): Promise<GitData | undefined> {
-    if (this.disableGit) {
-      return undefined
-    }
-
+  private async addRepositoryDataToPayloads(payloads: CompressedDsym[]) {
     try {
-      const git = await newSimpleGit()
-      const repositoryData: RepositoryData = await getRepositoryData(git, this.repositoryURL)
+      const repositoryData = await getRepositoryData(await newSimpleGit(), this.repositoryURL)
+      const repositoryPayload = this.getRepositoryPayload(repositoryData)
 
-      return {
-        repositoryURL: this.repositoryURL || repositoryData.remote,
-        commitSHA: this.commitSHA || repositoryData.hash,
-      }
+      payloads.forEach((payload) => {
+        payload.gitData = {
+          gitCommitSha: this.commitSHA || repositoryData.hash,
+          gitRepositoryPayload: repositoryPayload,
+          gitRepositoryURL: this.repositoryURL || repositoryData.remote,
+        }
+      })
     } catch (error) {
       // Log warning but don't fail the upload
       this.context.stdout.write(`Warning: Failed to collect git information: ${error}\n`)
-
-      return undefined
     }
   }
 
-  private async compressDsyms(dsyms: Dsym[], output: string, gitData?: GitData): Promise<CompressedDsym[]> {
+  private getRepositoryPayload = (repositoryData: RepositoryData): string | undefined => {
+    try {
+      // Get ALL tracked files (no filtering needed for dSYMs unlike sourcemaps)
+      const files = repositoryData.trackedFilesMatcher.rawTrackedFilesList()
+
+      if (files) {
+        return JSON.stringify({
+          data: [
+            {
+              files,
+              hash: repositoryData.hash,
+              repository_url: repositoryData.remote,
+            },
+          ],
+          // Make sure to update the version if the format of the JSON payloads changes in any way.
+          version: 1,
+        })
+      }
+    } catch (error) {
+      this.context.stdout.write(`Warning: Failed to create repository payload: ${error}\n`)
+    }
+
+    return undefined
+  }
+
+  private async compressDsyms(dsyms: Dsym[], output: string): Promise<CompressedDsym[]> {
     await promises.mkdir(output, {recursive: true})
 
     return Promise.all(
@@ -351,7 +375,7 @@ export class DsymsUploadCommand extends BaseCommand {
         const archivePath = buildPath(output, `${dsym.dwarf[0].uuid}.zip`)
         await zipDirectoryToArchive(dsym.bundle, archivePath)
 
-        return new CompressedDsym(archivePath, dsym, gitData)
+        return new CompressedDsym(archivePath, dsym)
       })
     )
   }
