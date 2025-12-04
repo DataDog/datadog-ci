@@ -1,4 +1,6 @@
+import {getBreakpadSymMetadata} from '../breakpad'
 import {getPEFileMetadata} from '../pe'
+import {MachineArchitecture} from '../pe-constants'
 
 const fixtureDir = './src/commands/pe-symbols/__tests__/fixtures'
 
@@ -33,6 +35,7 @@ describe('pe', () => {
         pdbSig: 'E37085B2-4E2C-4BF4-B83F-84F16BC71B74',
         pdbFilename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\Release\\Exports.pdb',
         filename: './src/commands/pe-symbols/__tests__/fixtures/exports_with_pdb_32.dll',
+        sourceType: 'pe_binary',
       })
     })
 
@@ -45,6 +48,7 @@ describe('pe', () => {
         pdbSig: undefined,
         filename: './src/commands/pe-symbols/__tests__/fixtures/exports_without_pdb_32.dll',
         pdbFilename: '',
+        sourceType: 'pe_binary',
       })
     })
 
@@ -57,6 +61,7 @@ describe('pe', () => {
         pdbSig: '3E3A3E3A-1C05-4E67-B9B7-99D781E5FB5C',
         filename: './src/commands/pe-symbols/__tests__/fixtures/exports_with_pdb_64.dll',
         pdbFilename: 'C:\\Users\\Christophe Nasarre\\source\\repos\\Exports\\x64\\Release\\Exports.pdb',
+        sourceType: 'pe_binary',
       })
     })
 
@@ -69,7 +74,54 @@ describe('pe', () => {
         pdbSig: undefined,
         filename: './src/commands/pe-symbols/__tests__/fixtures/exports_without_pdb_64.dll',
         pdbFilename: '',
+        sourceType: 'pe_binary',
       })
+    })
+  })
+
+  describe('breakpad symbols', () => {
+    test('extract metadata with line info', async () => {
+      expect(await getBreakpadSymMetadata(`${fixtureDir}/breakpad_example.sym`)).toEqual({
+        filename: './src/commands/pe-symbols/__tests__/fixtures/breakpad_example.sym',
+        isPE: false,
+        hasPdbInfo: true,
+        arch: MachineArchitecture.x86,
+        pdbAge: 0x2a,
+        pdbSig: '00112233-4455-6677-8899-AABBCCDDEEFF',
+        pdbFilename: 'example.pdb',
+        sourceType: 'breakpad_sym',
+        symbolPath: './src/commands/pe-symbols/__tests__/fixtures/breakpad_example.sym',
+        symbolSource: 'debug_info',
+        moduleOs: 'windows',
+      })
+    })
+
+    test('extract metadata without line info', async () => {
+      expect(await getBreakpadSymMetadata(`${fixtureDir}/breakpad_public_only.sym`)).toEqual({
+        filename: './src/commands/pe-symbols/__tests__/fixtures/breakpad_public_only.sym',
+        isPE: false,
+        hasPdbInfo: true,
+        arch: MachineArchitecture.x64,
+        pdbAge: 0x1,
+        pdbSig: 'DEADBEEF-DEAD-BEEF-DEAD-BEEFDEADBEEF',
+        pdbFilename: 'sample.pdb',
+        sourceType: 'breakpad_sym',
+        symbolPath: './src/commands/pe-symbols/__tests__/fixtures/breakpad_public_only.sym',
+        symbolSource: 'symbol_table',
+        moduleOs: 'windows',
+      })
+    })
+
+    test('rejects files without MODULE header', async () => {
+      await expect(getBreakpadSymMetadata(`${fixtureDir}/breakpad_invalid_no_module.sym`)).rejects.toThrow(
+        'first non-empty line must be a Breakpad MODULE header'
+      )
+    })
+
+    test('rejects files with non ASCII characters', async () => {
+      await expect(getBreakpadSymMetadata(`${fixtureDir}/breakpad_invalid_non_ascii.sym`)).rejects.toThrow(
+        'Breakpad .sym files must be ASCII encoded'
+      )
     })
   })
 })

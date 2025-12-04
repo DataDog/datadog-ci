@@ -63,6 +63,8 @@ export type PEHeader = {
   sectionHeadersOffset: number
 }
 
+export type SymbolSourceType = 'pe_binary' | 'breakpad_sym'
+
 export type PEFileMetadata = {
   filename: string // name of the .dll file
   isPE: boolean
@@ -71,6 +73,10 @@ export type PEFileMetadata = {
   pdbAge: number
   pdbSig: string | undefined
   pdbFilename: string // name of the corresponding .pdb file
+  sourceType: SymbolSourceType
+  symbolPath?: string
+  symbolSource?: string
+  moduleOs?: string
   error?: Error
 }
 
@@ -232,6 +238,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
     pdbAge: 0,
     pdbSig: undefined,
     pdbFilename: '',
+    sourceType: 'pe_binary',
   }
 
   let fileHandle: fs.promises.FileHandle | undefined
@@ -345,7 +352,7 @@ export const getPEFileMetadata = async (filename: string): Promise<PEFileMetadat
 }
 
 export const getBuildId = (fileMetadata: PEFileMetadata): string => {
-  if (fileMetadata.isPE && fileMetadata.hasPdbInfo) {
+  if (fileMetadata.pdbSig !== undefined) {
     return `${fileMetadata.pdbSig}_${fileMetadata.pdbAge}`
   }
 
