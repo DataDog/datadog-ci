@@ -19,7 +19,7 @@ export class LambdaUninstrumentCommand extends BaseCommand {
     description: 'Preview changes running command would apply',
   })
   protected forwarder = Option.String('--forwarder', {
-    description: `The ARN of the datadog forwarder (https://docs.datadoghq.com/serverless/forwarder/) to remove from this function`,
+    description: `The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to remove from this function`,
   })
   protected functions = Option.Array('-f,--function', [], {
     description: `The ARN of the Lambda function to be uninstrumented, or the name of the Lambda function (--region must be defined)`,

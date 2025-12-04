@@ -62,7 +62,7 @@ For product feedback and questions, join the `#serverless` channel in the [Datad
 [2]: https://github.com/DataDog/datadog-ci
 [3]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-env-tag
 [4]: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-service-tag
-[5]: https://docs.datadoghq.com/serverless/forwarder/
+[5]: https://docs.datadoghq.com/logs/guide/forwarder/
 [6]: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles
 [7]: https://docs.datadoghq.com/serverless/libraries_integrations/cli/
 

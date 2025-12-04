@@ -96,7 +96,6 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to attach this function's LogGroup to |  |
 | `--function` | `-f` | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) | `[]` |
 | `--interactive` | `-i` | Allows the user to interactively choose how their function gets instrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead | `false` |
-| `--layer-account` or `--layerAccount` | `-a` |  |  |
 | `--layer-version` or `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the JS (https://github.com/DataDog/datadog-lambda-layer-js/releases) or python (https://github.com/DataDog/datadog-lambda-layer-python/releases) datadog-lambda-layer repo release notes |  |
 | `--logging` |  | Whether to collect logs using the Lambda Extension. | `true` |
 | `--log-level` or `--logLevel` |  | Set to debug to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes |  |
@@ -130,19 +129,6 @@ Any other argument stated on the `instrument` table, but not below, will be igno
 | `--profile` |  | Specify the AWS named profile credentials to use to uninstrument. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
 | `--functions-regex` or `--functionsRegex` |  | A regex pattern to match with the Lambda function name to be uninstrumented |  |
 | `--region` | `-r` | Default region to use, when --function is specified by the function name instead of the ARN |  |
-| `--layer-version` or `--layerVersion` | `-v` |  |  |
-| `--tracing` |  |  |  |
-| `--log-level` or `--logLevel` |  |  |  |
-| `--service` |  |  |  |
-| `--env` |  |  |  |
-| `--version` |  |  |  |
-| `--appsec` |  |  |  |
-| `--apm-flush-deadline` |  |  |  |
-| `--extra-tags` or `--extraTags` |  |  |  |
-| `--extension-version` or `--extensionVersion` | `-e` |  |  |
-| `--merge-xray-traces` or `--mergeXrayTraces` |  |  |  |
-| `--flush-metrics-to-logs` or `--flushMetricsToLogs` |  |  |  |
-| `--capture-lambda-payload` or `--captureLambdaPayload` |  |  |  |
 <!-- END_USAGE:uninstrument -->
 
 

@@ -31,7 +31,7 @@ export class LambdaInstrumentCommand extends BaseCommand {
     description: `Use --env to separate out your staging, development, and production environments. Learn more about the env tag here: https://docs.datadoghq.com/serverless/troubleshooting/serverless_tagging/#the-env-tag`,
   })
   protected extensionVersion = Option.String('-e,--extension-version,--extensionVersion', {
-    description: `Version of the Datadog Lambda Extension layer to apply. When extension-version is set, make sure to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN) in your environment as well. While using extension-version, leave out forwarder. Learn more about the Lambda Extension here: https://docs.datadoghq.com/serverless/datadog_lambda_library/extension`,
+    description: `Version of the Datadog Lambda Extension layer to apply. When extension-version is set, make sure to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN) in your environment as well. While using extension-version, leave out forwarder. Learn more about the Lambda Extension here: https://docs.datadoghq.com/serverless/libraries_integrations/extension`,
   })
   protected extraTags = Option.String('--extra-tags,--extraTags', {
     description: `Add custom tags to your Lambda function in Datadog. Must be a list of <key>:<value> separated by commas such as: layer:api,team:intake`,
@@ -40,7 +40,7 @@ export class LambdaInstrumentCommand extends BaseCommand {
     description: `Whether to send metrics via the Datadog Forwarder asynchronously (https://docs.datadoghq.com/serverless/custom_metrics?tab=python#enabling-asynchronous-custom-metrics). If you disable this parameter, it's required to export DATADOG_API_KEY (or if encrypted, DATADOG_KMS_API_KEY or DATADOG_API_KEY_SECRET_ARN). Defaults to 'true'`,
   })
   protected forwarder = Option.String('--forwarder', {
-    description: `The ARN of the datadog forwarder (https://docs.datadoghq.com/serverless/forwarder/) to attach this function's LogGroup to`,
+    description: `The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to attach this function's LogGroup to`,
   })
   protected functions = Option.Array('-f,--function', [], {
     description: `The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined)`,
