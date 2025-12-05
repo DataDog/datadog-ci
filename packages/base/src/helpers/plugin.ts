@@ -195,6 +195,8 @@ const handlePluginAutoInstall = async (scope: string) => {
       throw error
     }
 
+    debug('Auto-install check detected an error, installing plugin with npx', error)
+
     const pluginName = scopeToPackageName(scope)
     console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
     await temporarilyInstallPluginWithNpx(pluginName)
