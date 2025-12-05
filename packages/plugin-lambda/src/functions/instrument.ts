@@ -62,7 +62,7 @@ import {calculateTagUpdateRequest} from '../tags'
 
 import {
   addLayerArn,
-  findLatestLayerVersion,
+  getLatestLayerVersion,
   getLambdaFunctionConfigs,
   getLambdaFunctionConfigsFromRegex,
   getLayerArn,
@@ -183,7 +183,7 @@ export const calculateUpdateRequest = async (
   const runtimeType = RUNTIME_LOOKUP[runtime]
 
   if (runtimeType === RuntimeType.CUSTOM) {
-    if (settings.layerVersion !== undefined) {
+    if (settings.layerVersion !== 'none') {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
       )
@@ -191,7 +191,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Python Handler
-  if (runtimeType === RuntimeType.PYTHON && (settings.layerVersion !== undefined || settings.interactive)) {
+  if (runtimeType === RuntimeType.PYTHON && (settings.layerVersion !== 'none' || settings.interactive)) {
     const expectedHandler = PYTHON_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -200,7 +200,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Update Node Handler
-  if (runtimeType === RuntimeType.NODE && (settings.layerVersion !== undefined || settings.interactive)) {
+  if (runtimeType === RuntimeType.NODE && (settings.layerVersion !== 'none' || settings.interactive)) {
     const expectedHandler = NODE_HANDLER_LOCATION
     if (config.Handler !== expectedHandler) {
       needsUpdate = true
@@ -222,7 +222,7 @@ export const calculateUpdateRequest = async (
     changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
   } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
     const isNode = runtimeType === RuntimeType.NODE
-    const isSendingSynchronousMetrics = settings.extensionVersion === undefined && !settings.flushMetricsToLogs
+    const isSendingSynchronousMetrics = settings.extensionVersion === 'none' && !settings.flushMetricsToLogs
     if (isSendingSynchronousMetrics && isNode) {
       throw new Error(
         '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
@@ -271,7 +271,7 @@ export const calculateUpdateRequest = async (
   }
 
   // Skip adding DD_FLUSH_TO_LOGS when using Extension
-  const isUsingExtension = settings.extensionVersion !== undefined
+  const isUsingExtension = settings.extensionVersion !== 'none'
   if (
     !isUsingExtension &&
     settings.flushMetricsToLogs !== undefined &&
@@ -311,10 +311,15 @@ export const calculateUpdateRequest = async (
     const lambdaLibraryLayerArn = getLayerArn(config, config.Runtime as LayerKey, region, settings)
     const lambdaLibraryLayerName = LAYER_LOOKUP[runtime as LayerKey]
     let fullLambdaLibraryLayerARN: string | undefined
-    if (settings.layerVersion !== undefined || settings.interactive) {
-      layerOrTraceVersion = settings.layerVersion
-      if (settings.interactive && !settings.layerVersion) {
-        layerOrTraceVersion = await findLatestLayerVersion(config.Runtime as LayerKey, region)
+
+    // In interactive mode, always set versions from file (unless explicit number given)
+    // In non-interactive mode, only set if not 'none'
+    if (settings.interactive || settings.layerVersion !== 'none') {
+      // Resolve 'latest' to actual version number from file, and interactive mode without a version will add latest
+      if (settings.layerVersion === 'latest' || (settings.interactive && settings.layerVersion === 'none')) {
+        layerOrTraceVersion = getLatestLayerVersion(config.Runtime as LayerKey)
+      } else if (typeof settings.layerVersion === 'number') {
+        layerOrTraceVersion = settings.layerVersion
       }
       fullLambdaLibraryLayerARN = `${lambdaLibraryLayerArn}:${layerOrTraceVersion}`
     }
@@ -334,10 +339,15 @@ export const calculateUpdateRequest = async (
   const lambdaExtensionLayerArn = getLayerArn(config, EXTENSION_LAYER_KEY as LayerKey, region, settings)
   let fullExtensionLayerARN: string | undefined
   let extensionVersion: number | undefined
-  if (settings.extensionVersion !== undefined || settings.interactive) {
-    extensionVersion = settings.extensionVersion
-    if (settings.interactive && !settings.extensionVersion) {
-      extensionVersion = await findLatestLayerVersion(EXTENSION_LAYER_KEY as LayerKey, region)
+
+  // In interactive mode, always set versions from file (unless explicit number given)
+  // In non-interactive mode, only set if not 'none'
+  if (settings.interactive || settings.extensionVersion !== 'none') {
+    // Resolve 'latest' to actual version number from file, and interactive mode without a version will add latest
+    if (settings.extensionVersion === 'latest' || (settings.interactive && settings.extensionVersion === 'none')) {
+      extensionVersion = getLatestLayerVersion(EXTENSION_LAYER_KEY)
+    } else if (typeof settings.extensionVersion === 'number') {
+      extensionVersion = settings.extensionVersion
     }
 
     if (settings.lambdaFips) {

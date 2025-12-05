@@ -37,6 +37,7 @@ import {
   InstrumentationSettings,
   InstrumentedConfigurationGroup,
   LambdaConfigOptions,
+  Version,
 } from '../interfaces'
 import {
   requestAWSCredentials,
@@ -319,30 +320,34 @@ export class PluginCommand extends LambdaInstrumentCommand {
   }
 
   private getSettings(): InstrumentationSettings | undefined {
-    const layerVersionStr = this.layerVersion ?? this.config.layerVersion
-    const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion
+    const layerVersionStr = this.layerVersion ?? this.config.layerVersion ?? 'none'
+    const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion ?? 'none'
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
     const forwarderARN = this.forwarder ?? this.config.forwarder
 
-    let layerVersion
-    if (layerVersionStr !== undefined) {
+    let layerVersion: Version
+
+    if (layerVersionStr === 'latest' || layerVersionStr === 'none') {
+      layerVersion = layerVersionStr
+    } else {
       layerVersion = parseInt(layerVersionStr, 10)
-    }
-    if (Number.isNaN(layerVersion)) {
-      this.context.stdout.write(instrumentRenderer.renderInvalidLayerVersionError(layerVersion?.toString()))
+      if (Number.isNaN(layerVersion)) {
+        this.context.stdout.write(instrumentRenderer.renderInvalidLayerVersionError(layerVersionStr))
 
-      return
+        return
+      }
     }
 
-    let extensionVersion: number | undefined
-    if (extensionVersionStr !== undefined) {
+    let extensionVersion: Version
+    if (extensionVersionStr === 'latest' || extensionVersionStr === 'none') {
+      extensionVersion = extensionVersionStr
+    } else {
       extensionVersion = parseInt(extensionVersionStr, 10)
-    }
+      if (Number.isNaN(extensionVersion)) {
+        this.context.stdout.write(instrumentRenderer.renderInvalidExtensionVersionError(extensionVersionStr))
 
-    if (Number.isNaN(extensionVersion)) {
-      this.context.stdout.write(instrumentRenderer.renderInvalidExtensionVersionError(extensionVersion?.toString()))
-
-      return
+        return
+      }
     }
 
     const stringBooleansMap: {[key: string]: string | undefined} = {

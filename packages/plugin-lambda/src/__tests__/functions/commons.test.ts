@@ -29,7 +29,6 @@ import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
@@ -42,9 +41,9 @@ import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
   collectFunctionsByRegion,
-  findLatestLayerVersion,
   getLayerArn,
   getLayerNameWithVersion,
+  getLatestLayerVersion,
   getRegion,
   handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
@@ -62,7 +61,6 @@ import {
   mockAwsAccount,
   mockAwsSecretAccessKey,
   mockLambdaClientCommands,
-  mockLambdaLayers,
 } from '../fixtures'
 
 describe('commons', () => {
@@ -216,100 +214,6 @@ describe('commons', () => {
     })
   })
 
-  describe('findLatestLayerVersion', () => {
-    beforeEach(() => {
-      lambdaClientMock.reset()
-      mockLambdaClientCommands(lambdaClientMock)
-    })
-
-    test('finds latests version for Python39', async () => {
-      const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
-      mockLambdaLayers(lambdaClientMock, {
-        [`${layer}:1`]: {
-          LayerName: layer,
-          VersionNumber: 1,
-        },
-        [`${layer}:2`]: {
-          LayerName: layer,
-          VersionNumber: 2,
-        },
-        [`${layer}:10`]: {
-          LayerName: layer,
-          VersionNumber: 10,
-        },
-        [`${layer}:20`]: {
-          LayerName: layer,
-          VersionNumber: 20,
-        },
-        [`${layer}:30`]: {
-          LayerName: layer,
-          VersionNumber: 30,
-        },
-        [`${layer}:31`]: {
-          LayerName: layer,
-          VersionNumber: 31,
-        },
-        [`${layer}:32`]: {
-          LayerName: layer,
-          VersionNumber: 32,
-        },
-      })
-
-      const runtime: Runtime = 'python3.9'
-      const region = 'sa-east-1'
-      const expectedLatestVersion = 32
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
-    })
-
-    test('finds latests version for Node20', async () => {
-      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
-      mockLambdaLayers(lambdaClientMock, {
-        [`${layer}:1`]: {
-          LayerName: layer,
-          VersionNumber: 1,
-        },
-        [`${layer}:2`]: {
-          LayerName: layer,
-          VersionNumber: 2,
-        },
-        [`${layer}:10`]: {
-          LayerName: layer,
-          VersionNumber: 10,
-        },
-        [`${layer}:20`]: {
-          LayerName: layer,
-          VersionNumber: 20,
-        },
-        [`${layer}:30`]: {
-          LayerName: layer,
-          VersionNumber: 30,
-        },
-        [`${layer}:40`]: {
-          LayerName: layer,
-          VersionNumber: 40,
-        },
-        [`${layer}:41`]: {
-          LayerName: layer,
-          VersionNumber: 41,
-        },
-      })
-      const runtime: Runtime = 'nodejs20.x'
-      const region = 'us-east-1'
-      const expectedLatestVersion = 41
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
-    })
-
-    test('returns 0 when no layer can be found', async () => {
-      const runtime: Runtime = 'python3.12'
-      const region = 'us-east-1'
-      const expectedLatestVersion = 0
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
-    })
-  })
-
   describe('getAWSCredentials', () => {
     const OLD_ENV = process.env
 
@@ -460,6 +364,8 @@ describe('commons', () => {
     test('gets sa-east-1 Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -476,6 +382,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -489,6 +397,8 @@ describe('commons', () => {
     test('gets us-gov-1 gov cloud Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -505,6 +415,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -524,6 +436,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -541,6 +455,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -557,6 +473,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -575,6 +493,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -595,6 +515,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -902,6 +824,30 @@ describe('commons', () => {
       delete lambdaConfigCopy.Environment.Variables
       const maskedConfig = maskConfig(lambdaConfigCopy)
       expect(maskedConfig).toMatchSnapshot()
+    })
+  })
+
+  describe('getLatestLayerVersionFromFile', () => {
+    it('returns correct version for extension layer', () => {
+      const version = getLatestLayerVersion('extension' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('returns correct version for python runtime', () => {
+      const version = getLatestLayerVersion('python3.9' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('returns correct version for nodejs runtime', () => {
+      const version = getLatestLayerVersion('nodejs20.x' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('throws error for unsupported runtime', () => {
+      expect(() => getLatestLayerVersion('provided.al2' as LayerKey)).toThrow()
     })
   })
 })

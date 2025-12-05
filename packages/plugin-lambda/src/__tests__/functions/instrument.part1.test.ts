@@ -60,6 +60,8 @@ describe('instrument', () => {
       })
 
       const settings = {
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         // No layerVersion specified
         mergeXrayTraces: false,
@@ -90,6 +92,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
@@ -125,6 +128,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 23,
         mergeXrayTraces: false,
@@ -173,6 +177,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 22,
         logLevel: 'debug',
@@ -202,6 +207,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 30,
         mergeXrayTraces: false,
@@ -238,6 +244,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         forwarderARN: 'my-forwarder',
         layerVersion: 22,
@@ -285,6 +292,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         environment: 'staging',
         flushMetricsToLogs: false,
         layerVersion: 22,
@@ -356,6 +364,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         environment: 'staging',
         flushMetricsToLogs: false,
         layerVersion: 23,
@@ -411,6 +420,7 @@ describe('instrument', () => {
       })
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 22,
         logLevel: 'debug',
@@ -450,6 +460,7 @@ describe('instrument', () => {
       lambdaClientMock.on(ListFunctionsCommand).rejects('ListFunctionsError')
 
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerVersion: 22,
         logLevel: 'debug',
