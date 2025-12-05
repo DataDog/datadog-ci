@@ -32,7 +32,16 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
 
     return pluginCommand.execute()
   } catch (error) {
-    handleErrorGeneric(error, scope, command)
+    debug('Error in executePluginCommand:', error)
+
+    if (isModuleNotFoundError(error)) {
+      console.log()
+      showPluginNotInstalledMessageBox(scope, command)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else {
+      console.log(chalk.bold.red('Unexpected error when executing the plugin command:\n'), error)
+    }
 
     console.log(
       [
@@ -93,10 +102,22 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
       ].join('\n')
     )
   } catch (error) {
-    handleErrorGeneric(error, scope, command)
+    debug('Error in checkPlugin:', error)
 
-    if (isModuleNotFoundError(error)) {
-      console.log(chalk.bold.red('Original Node.js error:\n'), error)
+    if (isPnpModuleNotFoundError(error) && error.pnpCode === 'MISSING_PEER_DEPENDENCY') {
+      // This error is verbose and gives a lot of information about the PnP error, so we log it as is.
+      console.log(error)
+      console.log()
+      showPnpPeerDependencyErrorMessageBox(scope)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else if (isModuleNotFoundError(error)) {
+      console.log()
+      showPluginNotInstalledMessageBox(scope, command)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else {
+      console.log(chalk.bold.red('Unexpected error when checking the plugin:\n'), error)
     }
 
     return false
@@ -191,11 +212,18 @@ const handlePluginAutoInstall = async (scope: string) => {
 
     debug('Auto-install check: plugin is installed, skipping installation')
   } catch (error) {
+    debug('Error in handlePluginAutoInstall:', error)
+
     if (!isModuleNotFoundError(error)) {
+      // Re-throw unexpected errors.
       throw error
     }
 
-    debug('Auto-install check detected an error, installing plugin with npx', error)
+    if (isPnpModuleNotFoundError(error) && error.pnpCode === 'MISSING_PEER_DEPENDENCY') {
+      // Re-throw PnP errors.
+      console.log(chalk.red(`The plugin auto-install feature is not supported with Yarn Plug'n'Play (PnP).`))
+      throw error
+    }
 
     const pluginName = scopeToPackageName(scope)
     console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
@@ -284,41 +312,43 @@ const extractPackageJson = (content: unknown): PluginPackageJson => {
   return {name, version}
 }
 
-const handleErrorGeneric = (error: unknown, scope: string, command?: string) => {
-  debug('Original error:', error)
+const showPluginNotInstalledMessageBox = (scope: string, command?: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
 
-  console.log()
-
-  if (isModuleNotFoundError(error)) {
-    const packageName = `@datadog/datadog-ci-plugin-${scope}`
-
-    if (command) {
-      messageBox('Plugin not installed 🔌', 'red', [
-        `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command could not be found.`,
-        `To use this command, please install ${chalk.bold.magenta(packageName)} alongside datadog-ci.`,
-      ])
-    } else {
-      messageBox('Plugin not installed 🔌', 'red', [
-        `The ${chalk.bold.magenta(packageName)} package could not be found.`,
-        `To use the any command in this plugin, please install it alongside datadog-ci.`,
-      ])
-    }
-
-    console.log(
-      [
-        '',
-        `You can install the plugin using:`,
-        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
-        `or`,
-        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(packageName)}`,
-        '',
-      ].join('\n')
-    )
-
-    return
+  if (command) {
+    messageBox('Plugin not installed 🔌', 'red', [
+      `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command could not be found.`,
+      `To use this command, please install ${chalk.bold.magenta(packageName)} alongside datadog-ci.`,
+    ])
+  } else {
+    messageBox('Plugin not installed 🔌', 'red', [
+      `The ${chalk.bold.magenta(packageName)} package could not be found.`,
+      `To use the any command in this plugin, please install it alongside datadog-ci.`,
+    ])
   }
+}
 
-  console.log()
+const showPnpPeerDependencyErrorMessageBox = (scope: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
+
+  messageBox("Yarn Plug'n'Play (PnP) error 🔌", 'red', [
+    `Yarn Plug'n'Play (PnP) detected that ${chalk.bold.magenta(packageName)} was not installed alongside datadog-ci.`,
+  ])
+}
+
+const showInstallPluginInstructions = (scope: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
+
+  console.log(
+    [
+      '',
+      `You can install the plugin using:`,
+      `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
+      `or`,
+      `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(packageName)}`,
+      '',
+    ].join('\n')
+  )
 }
 
 const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException => {
@@ -326,6 +356,20 @@ const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException =
     error instanceof Error &&
     ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes((error as NodeJS.ErrnoException).code ?? '')
   )
+}
+
+// See: https://github.com/yarnpkg/berry/blob/571363e6d64044b85a1f8885491c7f3b84c09f4b/packages/yarnpkg-pnp/sources/loader/internalTools.ts#L15-L23
+interface PnpModuleNotFoundError extends NodeJS.ErrnoException {
+  pnpCode:
+    | 'BUILTIN_NODE_RESOLUTION_FAILED'
+    | 'MISSING_DEPENDENCY'
+    | 'MISSING_PEER_DEPENDENCY'
+    | 'QUALIFIED_PATH_RESOLUTION_FAILED'
+    | 'UNDECLARED_DEPENDENCY'
+}
+
+const isPnpModuleNotFoundError = (error: unknown): error is PnpModuleNotFoundError => {
+  return isModuleNotFoundError(error) && (error as PnpModuleNotFoundError).pnpCode !== undefined
 }
 
 const NPX_PATH_REGEX = /\.npm\/_npx\//
