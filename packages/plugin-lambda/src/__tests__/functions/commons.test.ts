@@ -29,7 +29,6 @@ import {
   CI_API_KEY_SECRET_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   DD_LAMBDA_EXTENSION_LAYER_NAME,
-  DEFAULT_LAYER_AWS_ACCOUNT,
   EXTENSION_LAYER_KEY,
   GOVCLOUD_LAYER_AWS_ACCOUNT,
   LAMBDA_HANDLER_ENV_VAR,
@@ -42,7 +41,6 @@ import {
   checkRuntimeTypesAreUniform,
   coerceBoolean,
   collectFunctionsByRegion,
-  findLatestLayerVersion,
   getLayerArn,
   getLayerNameWithVersion,
   getLatestLayerVersion,
@@ -51,7 +49,6 @@ import {
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
-  readLayerVersionsFromFile,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
   maskConfig,
@@ -64,7 +61,6 @@ import {
   mockAwsAccount,
   mockAwsSecretAccessKey,
   mockLambdaClientCommands,
-  mockLambdaLayers,
 } from '../fixtures'
 
 describe('commons', () => {
@@ -215,100 +211,6 @@ describe('commons', () => {
         // Do nothing
       }
       expect(functionsGroup).toBeUndefined()
-    })
-  })
-
-  describe('findLatestLayerVersion', () => {
-    beforeEach(() => {
-      lambdaClientMock.reset()
-      mockLambdaClientCommands(lambdaClientMock)
-    })
-
-    test('finds latests version for Python39', async () => {
-      const layer = `arn:aws:lambda:sa-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Python39`
-      mockLambdaLayers(lambdaClientMock, {
-        [`${layer}:1`]: {
-          LayerName: layer,
-          VersionNumber: 1,
-        },
-        [`${layer}:2`]: {
-          LayerName: layer,
-          VersionNumber: 2,
-        },
-        [`${layer}:10`]: {
-          LayerName: layer,
-          VersionNumber: 10,
-        },
-        [`${layer}:20`]: {
-          LayerName: layer,
-          VersionNumber: 20,
-        },
-        [`${layer}:30`]: {
-          LayerName: layer,
-          VersionNumber: 30,
-        },
-        [`${layer}:31`]: {
-          LayerName: layer,
-          VersionNumber: 31,
-        },
-        [`${layer}:32`]: {
-          LayerName: layer,
-          VersionNumber: 32,
-        },
-      })
-
-      const runtime: Runtime = 'python3.9'
-      const region = 'sa-east-1'
-      const expectedLatestVersion = 32
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
-    })
-
-    test('finds latests version for Node20', async () => {
-      const layer = `arn:aws:lambda:us-east-1:${DEFAULT_LAYER_AWS_ACCOUNT}:layer:Datadog-Node20-x`
-      mockLambdaLayers(lambdaClientMock, {
-        [`${layer}:1`]: {
-          LayerName: layer,
-          VersionNumber: 1,
-        },
-        [`${layer}:2`]: {
-          LayerName: layer,
-          VersionNumber: 2,
-        },
-        [`${layer}:10`]: {
-          LayerName: layer,
-          VersionNumber: 10,
-        },
-        [`${layer}:20`]: {
-          LayerName: layer,
-          VersionNumber: 20,
-        },
-        [`${layer}:30`]: {
-          LayerName: layer,
-          VersionNumber: 30,
-        },
-        [`${layer}:40`]: {
-          LayerName: layer,
-          VersionNumber: 40,
-        },
-        [`${layer}:41`]: {
-          LayerName: layer,
-          VersionNumber: 41,
-        },
-      })
-      const runtime: Runtime = 'nodejs20.x'
-      const region = 'us-east-1'
-      const expectedLatestVersion = 41
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
-    })
-
-    test('returns 0 when no layer can be found', async () => {
-      const runtime: Runtime = 'python3.12'
-      const region = 'us-east-1'
-      const expectedLatestVersion = 0
-      const latestVersionFound = await findLatestLayerVersion(runtime, region)
-      expect(latestVersionFound).toBe(expectedLatestVersion)
     })
   })
 
@@ -922,22 +824,6 @@ describe('commons', () => {
       delete lambdaConfigCopy.Environment.Variables
       const maskedConfig = maskConfig(lambdaConfigCopy)
       expect(maskedConfig).toMatchSnapshot()
-    })
-  })
-
-  describe('readLayerVersionsFromFile', () => {
-    it('reads and parses layer versions from file', () => {
-      const versions = readLayerVersionsFromFile()
-      expect(versions).toBeDefined()
-      expect(versions.extension).toBeDefined()
-      expect(typeof versions.extension).toBe('number')
-      expect(versions.extension).toBeGreaterThan(0)
-      expect(versions.python).toBeDefined()
-      expect(typeof versions.python).toBe('number')
-      expect(versions.python).toBeGreaterThan(0)
-      expect(versions.nodejs).toBeDefined()
-      expect(typeof versions.nodejs).toBe('number')
-      expect(versions.nodejs).toBeGreaterThan(0)
     })
   })
 

@@ -6,7 +6,6 @@ import {
   FunctionConfiguration as LFunctionConfiguration,
   GetFunctionCommandInput,
   ListFunctionsCommandOutput,
-  GetLayerVersionCommand,
   ListFunctionsCommand,
   GetFunctionCommand,
   UpdateFunctionConfigurationCommand,
@@ -155,67 +154,6 @@ export const getLatestLayerVersion = (layer: LayerKey): number => {
   }
 
   return layerVersions[runtimeType]
-}
-
-/**
- * Given a layer runtime, return its latest version.
- *
- * @param runtime the runtime of the layer.
- * @param region the region where the layer is stored.
- * @returns the latest version of the layer to find.
- */
-export const findLatestLayerVersion = async (layer: LayerKey, region: string): Promise<number> => {
-  let latestVersion = 0
-
-  let searchStep = latestVersion > 0 ? 1 : 100
-  let layerVersion = latestVersion + searchStep
-  const account = region.startsWith('us-gov') ? GOVCLOUD_LAYER_AWS_ACCOUNT : DEFAULT_LAYER_AWS_ACCOUNT
-  const layerName = LAYER_LOOKUP[layer]
-  let foundLatestVersion = false
-  const lambdaClient = new LambdaClient({region, retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY})
-  while (!foundLatestVersion) {
-    try {
-      // Search next version
-      const command = new GetLayerVersionCommand({
-        LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-        VersionNumber: layerVersion,
-      })
-      await lambdaClient.send(command)
-      latestVersion = layerVersion
-      // Increase layer version
-      layerVersion += searchStep
-    } catch {
-      // Search step is too big, reset target to previous version
-      // with a smaller search step
-      if (searchStep > 1) {
-        layerVersion -= searchStep
-        searchStep /= 10
-        layerVersion += searchStep
-      } else {
-        // Search step is 1, current version was not found.
-        // It is likely that the last checked is the latest.
-        // Check the next version to be certain, since
-        // current version could've been deleted by accident.
-        try {
-          layerVersion += searchStep
-          const command = new GetLayerVersionCommand({
-            LayerName: `arn:aws:lambda:${region}:${account}:layer:${layerName}`,
-            VersionNumber: layerVersion,
-          })
-          await lambdaClient.send(command)
-
-          latestVersion = layerVersion
-          // Continue the search if the next version does exist (unlikely event)
-          layerVersion += searchStep
-        } catch {
-          // The next version doesn't exist either, so the previous version is indeed the latest
-          foundLatestVersion = true
-        }
-      }
-    }
-  }
-
-  return latestVersion
 }
 
 export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
