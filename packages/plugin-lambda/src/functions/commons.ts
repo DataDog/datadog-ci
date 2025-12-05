@@ -39,10 +39,12 @@ import {
   LayerKey,
   LAYER_LOOKUP,
   EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+  RuntimeType,
   RUNTIME_LOOKUP,
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
+import layerVersions from '../layer-versions.json'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
@@ -135,6 +137,24 @@ export const collectFunctionsByRegion = (
   }
 
   return groups
+}
+
+/**
+ * Get the latest layer version from the layer-versions.json file for a given runtime
+ *
+ * @param layer the layer key (runtime or 'extension')
+ * @returns the latest version number for that layer
+ */
+export const getLatestLayerVersion = (layer: LayerKey): number => {
+  if (layer === 'extension') {
+    return layerVersions[layer]
+  }
+  const runtimeType = RUNTIME_LOOKUP[layer]
+  if (runtimeType === undefined || runtimeType === RuntimeType.CUSTOM) {
+    throw new Error(`No layer version found for ${runtimeType}`)
+  }
+
+  return layerVersions[runtimeType]
 }
 
 /**
