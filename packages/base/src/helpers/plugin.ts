@@ -151,7 +151,8 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   })
   debug('Output:', output)
 
-  const tempPath = getTempPath(output)
+  const isWindows = process.platform === 'win32'
+  const tempPath = getTempPath(output, isWindows)
 
   // Expecting the path ends with node_modules/.bin
   const nodeModulesPath = path.resolve(tempPath, '..')
@@ -161,7 +162,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
     )
   }
 
-  const installInstructions = isNpx()
+  const installInstructions = isNpx(isWindows)
     ? undefined
     : `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
 
@@ -333,13 +334,13 @@ const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/
  *
  * https://github.com/geelen/npx-import/blob/8a1e17ca4f88981b11be5090e20871f8704166b8/src/index.ts#L221-L250
  */
-export const getTempPath = (stdout: string): string => {
-  if (process.platform === 'win32') {
+export const getTempPath = (stdout: string, isWindows: boolean): string => {
+  if (isWindows) {
     const paths = stdout
       .replace(/^PATH=/i, '')
       .replace(/\\r\\n/g, ';')
       .split(';')
-    const tempPath = paths.find((p) => /\\npm[-\\]+cache\\_npx\\/.exec(p))
+    const tempPath = paths.find((p) => NPX_PATH_WIN_REGEX.exec(p))
 
     if (!tempPath) {
       const list = paths.map((p) => ` - ${p}`).join('\n')
@@ -351,7 +352,7 @@ export const getTempPath = (stdout: string): string => {
     return tempPath
   } else {
     const paths = stdout.split(':')
-    const tempPath = paths.find((p) => /\/\.npm\/_npx\//.exec(p))
+    const tempPath = paths.find((p) => NPX_PATH_REGEX.exec(p))
 
     if (!tempPath) {
       const list = paths.map((p) => ` - ${p}`).join('\n')
@@ -367,8 +368,8 @@ export const getTempPath = (stdout: string): string => {
 /**
  * Check if the current process was started in an NPX context, with a temporary `node_modules/.bin` folder.
  */
-export const isNpx = (): boolean => {
-  const regex = process.platform === 'win32' ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
+export const isNpx = (isWindows: boolean): boolean => {
+  const regex = isWindows ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
 
   return (process.env['PATH'] ?? '').split(path.delimiter).some((p) => regex.test(p))
 }
