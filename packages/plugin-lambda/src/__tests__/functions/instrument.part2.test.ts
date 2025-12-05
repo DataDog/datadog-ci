@@ -750,7 +750,7 @@ describe('instrument', () => {
           extensionVersion | traceVersion | outputResult
           ${25}            | ${4}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
-          ${15}            | ${undefined} | ${traceUndefined}
+          ${15}            | ${'none'}    | ${traceUndefined}
         `(
           'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
@@ -823,7 +823,7 @@ describe('instrument', () => {
           extensionVersion | traceVersion | outputResult
           ${25}            | ${5}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
-          ${15}            | ${undefined} | ${traceUndefined}
+          ${15}            | ${'none'}    | ${traceUndefined}
         `(
           'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
