@@ -45,11 +45,13 @@ import {
   findLatestLayerVersion,
   getLayerArn,
   getLayerNameWithVersion,
+  getLatestLayerVersion,
   getRegion,
   handleLambdaFunctionUpdates,
   isMissingAnyDatadogApiKeyEnvVar,
   getAWSCredentials,
   isMissingDatadogEnvVars,
+  readLayerVersionsFromFile,
   sentenceMatchesRegEx,
   updateLambdaFunctionConfig,
   maskConfig,
@@ -460,6 +462,8 @@ describe('commons', () => {
     test('gets sa-east-1 Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -476,6 +480,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -489,6 +495,8 @@ describe('commons', () => {
     test('gets us-gov-1 gov cloud Lambda Extension layer ARN', async () => {
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -505,6 +513,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -524,6 +534,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -541,6 +553,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -557,6 +571,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -575,6 +591,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -595,6 +613,8 @@ describe('commons', () => {
       }
       const settings = {
         flushMetricsToLogs: false,
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -902,6 +922,46 @@ describe('commons', () => {
       delete lambdaConfigCopy.Environment.Variables
       const maskedConfig = maskConfig(lambdaConfigCopy)
       expect(maskedConfig).toMatchSnapshot()
+    })
+  })
+
+  describe('readLayerVersionsFromFile', () => {
+    it('reads and parses layer versions from file', () => {
+      const versions = readLayerVersionsFromFile()
+      expect(versions).toBeDefined()
+      expect(versions.extension).toBeDefined()
+      expect(typeof versions.extension).toBe('number')
+      expect(versions.extension).toBeGreaterThan(0)
+      expect(versions.python).toBeDefined()
+      expect(typeof versions.python).toBe('number')
+      expect(versions.python).toBeGreaterThan(0)
+      expect(versions.nodejs).toBeDefined()
+      expect(typeof versions.nodejs).toBe('number')
+      expect(versions.nodejs).toBeGreaterThan(0)
+    })
+  })
+
+  describe('getLatestLayerVersionFromFile', () => {
+    it('returns correct version for extension layer', () => {
+      const version = getLatestLayerVersion('extension' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('returns correct version for python runtime', () => {
+      const version = getLatestLayerVersion('python3.9' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('returns correct version for nodejs runtime', () => {
+      const version = getLatestLayerVersion('nodejs20.x' as LayerKey)
+      expect(typeof version).toBe('number')
+      expect(version).toBeGreaterThan(0)
+    })
+
+    it('throws error for unsupported runtime', () => {
+      expect(() => getLatestLayerVersion('provided.al2' as LayerKey)).toThrow()
     })
   })
 })

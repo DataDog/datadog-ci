@@ -60,6 +60,8 @@ export interface InstrumentedConfigurationGroup {
   region: string
 }
 
+export type Version = number | 'latest' | 'none'
+
 /**
  * Basic settings to use in every specified
  * lambda to be instrumented.
@@ -68,13 +70,13 @@ export interface InstrumentationSettings extends InstrumentationTags {
   apmFlushDeadline?: string
   appsecEnabled?: boolean
   captureLambdaPayload?: boolean
-  extensionVersion?: number
+  extensionVersion: Version
   lambdaFips?: boolean
   flushMetricsToLogs: boolean
   forwarderARN?: string
   interactive?: boolean
   layerAWSAccount?: string
-  layerVersion?: number
+  layerVersion: Version
   loggingEnabled?: boolean
   logLevel?: string
   mergeXrayTraces: boolean
