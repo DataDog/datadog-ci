@@ -96,7 +96,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to attach this function's LogGroup to |  |
 | `--function` | `-f` | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) | `[]` |
 | `--interactive` | `-i` | Allows the user to interactively choose how their function gets instrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead | `false` |
-| `--layer-version` or `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the JS (https://github.com/DataDog/datadog-lambda-layer-js/releases) or python (https://github.com/DataDog/datadog-lambda-layer-python/releases) datadog-lambda-layer repo release notes |  |
+| `--layer-version` or `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. This varies between runtimes. |  |
 | `--logging` |  | Whether to collect logs using the Lambda Extension. | `true` |
 | `--log-level` or `--logLevel` |  | Set to debug to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes |  |
 | `--merge-xray-traces` or `--mergeXrayTraces` |  | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | `false` |

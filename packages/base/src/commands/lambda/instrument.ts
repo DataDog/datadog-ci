@@ -50,7 +50,7 @@ export class LambdaInstrumentCommand extends BaseCommand {
   })
   protected layerAWSAccount = Option.String('-a,--layer-account,--layerAccount', {hidden: true})
   protected layerVersion = Option.String('-v,--layer-version,--layerVersion', {
-    description: `Version of the Datadog Lambda Library layer to apply. This varies between runtimes. To see the latest layer version check the JS (https://github.com/DataDog/datadog-lambda-layer-js/releases) or python (https://github.com/DataDog/datadog-lambda-layer-python/releases) datadog-lambda-layer repo release notes`,
+    description: `Version of the Datadog Lambda Library layer to apply. This varies between runtimes.`,
   })
   protected logging = Option.String('--logging', {
     description: `Whether to collect logs using the Lambda Extension. Defaults to 'true'`,

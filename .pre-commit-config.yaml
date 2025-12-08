@@ -16,5 +16,5 @@ repos:
         name: lint readme usage
         entry: yarn lint:readme-usage --fix
         language: system
-        types: [ts, markdown]
+        types: [ts]
         pass_filenames: false
