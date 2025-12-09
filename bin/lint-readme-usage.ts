@@ -13,6 +13,7 @@ type OptionDefinition = {
   description: string
   defaultValue: string | undefined
   shorthands: string[]
+  hidden?: boolean
 }
 
 const error = (message: string): 1 => {
@@ -125,23 +126,35 @@ const parseOptionDefinition = (
 
   let defaultValue: string | undefined
   let description = ''
+  let hidden = false
 
-  // For Boolean options: Option.Boolean(flags, default, options)
+  // For Boolean options: Option.Boolean(flags, default, options) or Option.Boolean(flags, options)
   // For String/Array options: Option.String(flags, default?, options)
   if (optionType === 'Boolean') {
-    // args[1] is default value for Boolean
+    // Check if args[1] is options object or default value
     if (args.length > 1) {
-      if (args[1].kind === ts.SyntaxKind.TrueKeyword) {
+      if (ts.isObjectLiteralExpression(args[1])) {
+        // args[1] is options object (no default specified)
+        const result = extractDescription(args[1], constants)
+        description = result.description
+        hidden = result.hidden || false
+      } else if (args[1].kind === ts.SyntaxKind.TrueKeyword) {
         defaultValue = 'true'
+        // args[2] might be options object
+        if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
+          const result = extractDescription(args[2], constants)
+          description = result.description
+          hidden = result.hidden || false
+        }
       } else if (args[1].kind === ts.SyntaxKind.FalseKeyword) {
         defaultValue = 'false'
+        // args[2] might be options object
+        if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
+          const result = extractDescription(args[2], constants)
+          description = result.description
+          hidden = result.hidden || false
+        }
       }
-    }
-
-    // args[2] is options object for Boolean
-    if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
-      const result = extractDescription(args[2], constants)
-      description = result.description
     }
   }
 
@@ -151,6 +164,7 @@ const parseOptionDefinition = (
       // No default, just options
       const result = extractDescription(args[1], constants)
       description = result.description
+      hidden = result.hidden || false
       if (result.extractedDefault) {
         defaultValue = result.extractedDefault
       }
@@ -171,6 +185,7 @@ const parseOptionDefinition = (
       if (args.length > 2 && ts.isObjectLiteralExpression(args[2])) {
         const result = extractDescription(args[2], constants)
         description = result.description
+        hidden = result.hidden || false
         // If we didn't get a default value from the argument, try to extract from description
         if (!defaultValue && result.extractedDefault) {
           defaultValue = result.extractedDefault
@@ -184,20 +199,27 @@ const parseOptionDefinition = (
     description: description || '',
     defaultValue,
     shorthands: shortFlags,
+    hidden,
   }
 }
 
 /**
- * Extract description from options object literal and optionally extract default value
+ * Extract description and hidden flag from options object literal and optionally extract default value
  */
 const extractDescription = (
   optionsObject: ts.ObjectLiteralExpression,
   constants: Map<string, string>
-): {description: string; extractedDefault?: string} => {
+): {description: string; extractedDefault?: string; hidden?: boolean} => {
+  let hidden = false
   for (const prop of optionsObject.properties) {
+    if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'hidden') {
+      if (prop.initializer.kind === ts.SyntaxKind.TrueKeyword) {
+        hidden = true
+      }
+    }
     if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name) && prop.name.text === 'description') {
       if (ts.isStringLiteral(prop.initializer)) {
-        return {description: prop.initializer.text}
+        return {description: prop.initializer.text, hidden}
       }
 
       // Handle template literals (e.g., `text ${var}`)
@@ -236,7 +258,7 @@ const extractDescription = (
           descriptionText = descriptionText.replace(/\s+/g, ' ').trim()
           descriptionText = descriptionText.replace(/\.\s*\./g, '.')
 
-          return {description: descriptionText, extractedDefault}
+          return {description: descriptionText, extractedDefault, hidden}
         }
 
         // For non-substitution template literals
@@ -258,21 +280,23 @@ const extractDescription = (
         text = text.replace(/\s+/g, ' ').trim()
         text = text.replace(/\.\s*\./g, '.')
 
-        return {description: text, extractedDefault}
+        return {description: text, extractedDefault, hidden}
       }
     }
   }
 
-  return {description: ''}
+  return {description: '', hidden}
 }
 
 /**
  * Generate markdown table from options
  */
 const generateTable = (options: OptionDefinition[]): string => {
-  // Filter out universal options that shouldn't be in individual READMEs
+  // Filter out universal options that shouldn't be in individual READMEs and hidden options
   const excludedFlags = ['--fips', '--fips-ignore-error']
-  const filteredOptions = options.filter((option) => !option.flags.some((flag) => excludedFlags.includes(flag)))
+  const filteredOptions = options.filter(
+    (option) => !option.hidden && !option.flags.some((flag) => excludedFlags.includes(flag))
+  )
 
   const rows: string[] = []
   rows.push('| Argument | Shorthand | Description | Default |')
