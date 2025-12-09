@@ -113,7 +113,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file. |  |
-| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. |  |
 | `--service` |  | The value for the service tag. Use this to group related Container Apps belonging to similar workloads. For example, `my-service`. If not provided, the Container App name is used. |  |
 | `--env` or `--environment` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
@@ -140,7 +140,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | `--resource-id` | `-r` | Full Azure resource ID to instrument. Can be specified multiple times. Format: `/subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.App/containerApps/<container-app-name>`. |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the Container App. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file. |  |
-| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. |  |
 | `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |
 | `--shared-volume-name` |  | The name of the shared volume to remove. Specify if you have a different shared volume name. | `shared-volume` |
 <!-- END_USAGE:uninstrument -->

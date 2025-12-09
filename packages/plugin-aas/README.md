@@ -80,7 +80,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 <!-- BEGIN_USAGE:instrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes |  |
 | `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
 | `--name` | `-n` | Name of the Azure App Service to instrument |  |
@@ -107,7 +107,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 <!-- BEGIN_USAGE:uninstrument -->
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
-| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
+| `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes |  |
 | `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
 | `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
 | `--name` | `-n` | Name of the Azure App Service to instrument |  |
