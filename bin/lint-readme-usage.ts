@@ -96,30 +96,50 @@ const extractOptionsFromCommand = (
     const longFlags = flags.filter((f: string) => f.startsWith('--'))
     const shortFlags = flags.filter((f: string) => f.startsWith('-') && !f.startsWith('--'))
 
-    // Extract default value from description if present (e.g., "Defaults to 'true'")
+    // Extract default value from description if present
+    // Handles both "Defaults to 'value'" and "Defaults to value."
     let defaultValue: string | undefined
-    const defaultMatch = opt.description?.match(/Defaults to '([^']*)'/)
-    if (defaultMatch) {
-      defaultValue = defaultMatch[1]
-    }
+    let defaultMatch: RegExpMatchArray | undefined
 
-    // If no default found in description, check Boolean defaults map
-    if (!defaultValue) {
-      for (const flag of flags) {
-        if (booleanDefaults.has(flag)) {
-          defaultValue = booleanDefaults.get(flag)
-          break
-        }
+    // Check Boolean defaults map first (more reliable than text extraction)
+    for (const flag of flags) {
+      if (booleanDefaults.has(flag)) {
+        defaultValue = booleanDefaults.get(flag)
+        break
       }
     }
 
-    // Clean "Defaults to '...'" from description after extraction
+    // If no Boolean default found, try extracting from description
+    if (!defaultValue) {
+      // Try matching with quotes first: "Defaults to 'value'"
+      defaultMatch = opt.description?.match(/Defaults to '([^']*)'/) || undefined
+      if (defaultMatch) {
+        defaultValue = defaultMatch[1]
+      } else {
+        // Try matching without quotes: "Defaults to value." or "Defaults to value"
+        const unquotedMatch = opt.description?.match(/Defaults to ([\w-]+)\.?/)
+        if (unquotedMatch) {
+          defaultValue = unquotedMatch[1]
+          defaultMatch = unquotedMatch
+        }
+      }
+    } else {
+      // If we have a Boolean default, still check if description mentions it for cleaning
+      defaultMatch = opt.description?.match(/Defaults to [^.]+\.?/) || undefined
+    }
+
+    // Clean "Defaults to ..." from description after extraction
     let cleanedDescription = opt.description || ''
     if (defaultMatch && cleanedDescription) {
       cleanedDescription = cleanedDescription
+        // Remove "Defaults to 'value'" patterns
         .replace(/\.\s*Defaults to '[^']*'\s*/g, '. ')
         .replace(/\s*Defaults to '[^']*'\.\s*/g, '. ')
         .replace(/\s*Defaults to '[^']*'/g, '')
+        // Remove "Defaults to value." patterns (unquoted)
+        .replace(/\.\s*Defaults to [\w.-]+\.\s*/g, '. ')
+        .replace(/\s*Defaults to [\w.-]+\.\s*/g, '. ')
+        .replace(/\s*Defaults to [\w.-]+/g, '')
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/\.\s*\./g, '.')
@@ -189,13 +209,16 @@ const findCommandFiles = (scope: string): {commandName: string; filePath: string
 /**
  * Extract options from a command file by dynamically importing its command class
  */
-const extractOptionsFromFile = async (filePath: string): Promise<OptionDefinition[]> => {
+const extractOptionsFromFile = async (
+  filePath: string,
+  booleanDefaults?: Map<string, string>
+): Promise<OptionDefinition[]> => {
   // Convert file path to import path
   // e.g., packages/base/src/commands/lambda/instrument.ts -> @datadog/datadog-ci-base/commands/lambda/instrument
   const importPath = filePath.replace('packages/base/src/', '@datadog/datadog-ci-base/').replace('.ts', '')
 
-  // Extract Boolean defaults from source file
-  const booleanDefaults = extractBooleanDefaults(filePath)
+  // Extract Boolean defaults from source file if not provided
+  const defaults = booleanDefaults || extractBooleanDefaults(filePath)
 
   try {
     const module = await import(importPath)
@@ -211,7 +234,7 @@ const extractOptionsFromFile = async (filePath: string): Promise<OptionDefinitio
       return []
     }
 
-    return extractOptionsFromCommand(commandClass, booleanDefaults)
+    return extractOptionsFromCommand(commandClass, defaults)
   } catch (err) {
     console.error(`Error importing ${importPath}:`, err)
 
@@ -294,12 +317,19 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
 
     // Extract options from common.ts if it exists (shared options from parent class)
     const commonPath = path.join('packages/base/src/commands', scope, 'common.ts')
+    const commonBooleanDefaults = fs.existsSync(commonPath) ? extractBooleanDefaults(commonPath) : new Map()
     const commonOptions = fs.existsSync(commonPath) ? await extractOptionsFromFile(commonPath) : []
 
     const commandOptionsMap = new Map<string, OptionDefinition[]>()
 
     for (const {commandName, filePath} of commandFiles) {
-      const commandSpecificOptions = await extractOptionsFromFile(filePath)
+      // Merge Boolean defaults from common.ts and command-specific file
+      const commandBooleanDefaults = extractBooleanDefaults(filePath)
+      const mergedBooleanDefaults = new Map([...commonBooleanDefaults, ...commandBooleanDefaults])
+
+      // Extract command-specific options with merged Boolean defaults
+      const commandSpecificOptions = await extractOptionsFromFile(filePath, mergedBooleanDefaults)
+
       // Merge common options with command-specific options
       const allOptions = [...commonOptions, ...commandSpecificOptions]
       if (allOptions.length > 0) {

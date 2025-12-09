@@ -80,7 +80,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
 | `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. Defaults to 1. |  |
+| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
 <!-- END_USAGE:instrument -->
