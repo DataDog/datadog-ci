@@ -310,6 +310,8 @@ exports[`lambda instrument execute instruments Ruby application properly 1`] = `
 	- arn:aws:lambda:us-east-1:123456789012:function:ruby33
 	- arn:aws:lambda:us-east-1:123456789012:function:ruby32arm
 	- arn:aws:lambda:us-east-1:123456789012:function:ruby33arm
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby34
+	- arn:aws:lambda:us-east-1:123456789012:function:ruby34arm
 
 [Dry Run] Will apply the following updates:
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby32
@@ -413,6 +415,58 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ru
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby33arm
+{
+  "dd_sls_ci": "vXXXX"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby34
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby34",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
+    }
+  },
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-4:19"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby34
+{
+  "dd_sls_ci": "vXXXX"
+}
+UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:ruby34arm
+{
+  "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:ruby34arm",
+  "Environment": {
+    "Variables": {
+      "DD_API_KEY": "02**********33bd",
+      "DD_SITE": "datadoghq.com",
+      "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
+      "DD_ENV": "staging",
+      "DD_TAGS": "layer:api,team:intake",
+      "DD_SERVERLESS_LOGS_ENABLED": "true",
+      "DD_MERGE_XRAY_TRACES": "false",
+      "DD_SERVICE": "middletier",
+      "DD_TRACE_ENABLED": "true",
+      "DD_VERSION": "0.2"
+    }
+  },
+  "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension-ARM:40",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Ruby3-4-ARM:19"
+  ]
+}
+TagResource -> arn:aws:lambda:us-east-1:123456789012:function:ruby34arm
 {
   "dd_sls_ci": "vXXXX"
 }

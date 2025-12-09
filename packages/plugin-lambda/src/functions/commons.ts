@@ -441,6 +441,7 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
     case 'nodejs24.x':
     case 'ruby3.2':
     case 'ruby3.3':
+    case 'ruby3.4':
       return false
   }
 }
