@@ -21,6 +21,7 @@ import {
   CI_API_KEY_ENV_VAR,
   CI_SITE_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
+import {LAMBDA_LAYER_VERSIONS} from '@datadog/datadog-ci-base/helpers/serverless/lambda-layer-versions'
 import {maskString} from '@datadog/datadog-ci-base/helpers/utils'
 import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 import {CredentialsProviderError} from '@smithy/property-provider'
@@ -43,7 +44,6 @@ import {
   SKIP_MASKING_LAMBDA_ENV_VARS,
 } from '../constants'
 import {FunctionConfiguration, InstrumentationSettings, InstrumentedConfigurationGroup} from '../interfaces'
-import layerVersions from '../layer-versions.json'
 import {applyLogGroupConfig} from '../loggroup'
 import {awsProfileQuestion} from '../prompt'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
@@ -146,14 +146,14 @@ export const collectFunctionsByRegion = (
  */
 export const getLatestLayerVersion = (layer: LayerKey): number => {
   if (layer === 'extension') {
-    return layerVersions[layer]
+    return LAMBDA_LAYER_VERSIONS[layer]
   }
   const runtimeType = RUNTIME_LOOKUP[layer]
   if (runtimeType === undefined || runtimeType === RuntimeType.CUSTOM) {
     throw new Error(`No layer version found for ${runtimeType}`)
   }
 
-  return layerVersions[runtimeType]
+  return LAMBDA_LAYER_VERSIONS[runtimeType]
 }
 
 export const getAWSFileCredentialsParams = (profile: string): FromIniInit => {
