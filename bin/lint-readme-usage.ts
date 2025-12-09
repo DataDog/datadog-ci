@@ -229,8 +229,6 @@ const extractOptionsFromFile = async (
     )
 
     if (!commandClass) {
-      console.warn(`Warning: Could not find command class in ${importPath}`)
-
       return []
     }
 
