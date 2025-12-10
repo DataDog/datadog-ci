@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
+import {createUniqueTmpDirectory, deleteDirectory} from '@datadog/datadog-ci-base/commands/dsyms/utils'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -25,8 +26,6 @@ import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
-
-import {createUniqueTmpDirectory, deleteDirectory} from '../dsyms/utils'
 
 import {
   ElfFileMetadata,

@@ -1,6 +1,7 @@
 import fs from 'fs'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
+import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -24,7 +25,6 @@ import {Command, Option} from 'clipanion'
 import yaml from 'js-yaml'
 import semver from 'semver'
 
-import {DsymsUploadCommand} from '../dsyms/upload'
 import {SourcemapsUploadCommand} from '../sourcemaps/upload'
 
 import {getArchInfoFromFilename, getFlutterRequestBuilder, uploadMultipartHelper} from './helpers'

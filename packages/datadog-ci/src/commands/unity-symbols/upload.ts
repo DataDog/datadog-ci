@@ -1,6 +1,8 @@
 import fs from 'fs'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
+import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
+import {createUniqueTmpDirectory} from '@datadog/datadog-ci-base/commands/dsyms/utils'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -26,8 +28,6 @@ import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command, Option} from 'clipanion'
 import upath from 'upath'
 
-import {DsymsUploadCommand} from '../dsyms/upload'
-import {createUniqueTmpDirectory} from '../dsyms/utils'
 import * as elf from '../elf-symbols/elf'
 
 import {getUnityRequestBuilder, uploadMultipartHelper} from './helpers'
