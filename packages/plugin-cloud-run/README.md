@@ -64,7 +64,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--extra-tags` or `--extraTags` |  | Add custom tags to your Cloud Run service in Datadog. Must be a list of `<key:><value>` separated by commas. |  |
 | `--env-vars` | `-e` | Additional environment variables to set for the Cloud Run service. Can specify multiple variables in the format `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
-| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument | `[]` |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to instrument |  |
 | `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
 | `--log-level` or `--logLevel` |  | Specify your Datadog log level. |  |
@@ -75,13 +75,12 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--version` |  | The value for the version tag. Use this to correlate spikes in latency, load, or errors to new versions. For example, `1.0.0`. |  |
 | `--env` |  | The value for the env tag. Use this to separate your staging, development, and production environments. For example, `prod`. |  |
 | `--llmobs` |  | If specified, enables LLM Observability for the instrumented service(s) with the provided ML application name. |  |
-| `--port` or `--health-check-port` or `--healthCheckPort` |  |  |  |
 | `--image` or `--sidecar-image` |  | The image to use for the sidecar container. | `gcr.io/datadoghq/serverless-init:latest` |
 | `--sidecar-name` |  | (Not recommended) The name to use for the sidecar container. | `datadog-sidecar` |
 | `--shared-volume-name` |  | (Not recommended) Specify a custom shared volume name. | `shared-volume` |
 | `--shared-volume-path` |  | (Not recommended) Specify a custom shared volume path. | `/shared-volume` |
 | `--logs-path` |  | (Not recommended) Specify a custom log file path. Must begin with the shared volume path. | `/shared-volume/logs/*.log` |
-| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. Defaults to 1. | `1` |
+| `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
 <!-- END_USAGE:instrument -->
@@ -94,7 +93,7 @@ You can pass the following arguments to `uninstrument` to specify its behavior.
 | -------- | --------- | ----------- | ------- |
 | `--dry` or `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes. Preview the changes that running the command would apply. | `false` |
 | `--project` | `-p` | The name of the Google Cloud project where the Cloud Run service is hosted. |  |
-| `--service` or `--services` | `-s` | Cloud Run service(s) to revert instrumentation | `[]` |
+| `--service` or `--services` | `-s` | Cloud Run service(s) to revert instrumentation |  |
 | `--interactive` | `-i` | Interactively choose which service gets instrumented. No need for other flags. | `false` |
 | `--region` | `-r` | The region where the Cloud Run service is hosted. |  |
 | `--sidecar-name` |  | The name of the sidecar container to remove. Specify if you have a different sidecar name. | `datadog-sidecar` |

@@ -41,12 +41,12 @@ export const LAYER_LOOKUP = {
 } as const
 
 export enum RuntimeType {
-  DOTNET,
-  CUSTOM,
-  JAVA,
-  NODE,
-  PYTHON,
-  RUBY,
+  DOTNET = 'dotnet',
+  CUSTOM = 'custom',
+  JAVA = 'java',
+  NODE = 'node',
+  PYTHON = 'python',
+  RUBY = 'ruby',
 }
 
 // Lookup table for runtimes that are currently supported by the CLI

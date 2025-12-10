@@ -95,8 +95,8 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--no-restart` |  | Do not restart the App Service after applying instrumentation. | `false` |
 | `--dotnet` or `--dotnet-container` |  | Add in required .NET-specific configuration options, is automatically inferred for code runtimes. This should be specified if you are using a containerized .NET app. | `false` |
 | `--musl` |  | Add in required .NET-specific configuration options for musl-based .NET apps. This should be specified if you are using a containerized .NET app on a musl-based distribution like Alpine Linux. | `false` |
-| `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Defaults to enabled. Specify `--no-source-code-integration` to disable. | `true` |
-| `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Defaults to enabled. Specify `--no-upload-git-metadata` to disable. | `true` |
+| `--source-code-integration` or `--sourceCodeIntegration` |  | Enable source code integration to add git metadata as tags. Specify `--no-source-code-integration` to disable. | `true` |
+| `--upload-git-metadata` or `--uploadGitMetadata` |  | Upload git metadata to Datadog. Specify `--no-upload-git-metadata` to disable. | `true` |
 | `--extra-tags` or `--extraTags` |  | Additional tags to add to the service in the format "key1:value1,key2:value2" |  |
 | `--windows-runtime` |  | Manually specify the Windows runtime (`node`, `dotnet`, or `java`) used by the extension to override automatic detection. |  |
 <!-- END_USAGE:instrument -->

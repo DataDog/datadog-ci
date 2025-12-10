@@ -31,6 +31,7 @@ describe('instrument', () => {
         Runtime: runtime,
       }
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 5,
@@ -80,6 +81,7 @@ describe('instrument', () => {
         Runtime: runtime,
       }
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 71,
@@ -128,6 +130,7 @@ describe('instrument', () => {
           Runtime: runtime,
         }
         const settings = {
+          extensionVersion: 'none' as const,
           flushMetricsToLogs: false,
           layerAWSAccount: mockAwsAccount,
           layerVersion: 11,
@@ -336,14 +339,24 @@ describe('instrument', () => {
       }
       const runtime = 'python3.9'
       const region = 'sa-east-1'
-      const updateRequest = await calculateUpdateRequest(config, {} as any, region, runtime)
+      const settings: InstrumentationSettings = {
+        extensionVersion: 'none' as const,
+        layerVersion: 'none' as const,
+        flushMetricsToLogs: false,
+        mergeXrayTraces: false,
+        tracingEnabled: false,
+      }
+      const updateRequest = await calculateUpdateRequest(config, settings, region, runtime)
       expect(updateRequest).toMatchInlineSnapshot(`
         {
           "Environment": {
             "Variables": {
+              "DD_FLUSH_TO_LOG": "false",
               "DD_KMS_API_KEY": "should-be-selected",
               "DD_LAMBDA_HANDLER": "index.handler",
+              "DD_MERGE_XRAY_TRACES": "false",
               "DD_SITE": "datadoghq.com",
+              "DD_TRACE_ENABLED": "false",
             },
           },
           "FunctionName": "arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world",
@@ -363,6 +376,7 @@ describe('instrument', () => {
       const region = 'sa-east-1'
       const settings: InstrumentationSettings = {
         extensionVersion: 13,
+        layerVersion: 'none' as const,
         flushMetricsToLogs: true,
         mergeXrayTraces: false,
         tracingEnabled: false,
@@ -396,6 +410,8 @@ describe('instrument', () => {
         Runtime: runtime,
       }
       const settings = {
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
@@ -428,6 +444,8 @@ describe('instrument', () => {
         Layers: [],
       }
       const settings = {
+        layerVersion: 'none' as const,
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         mergeXrayTraces: false,
@@ -461,6 +479,7 @@ describe('instrument', () => {
         Layers: [],
       }
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         interactive: false,
         layerAWSAccount: mockAwsAccount,
@@ -523,6 +542,7 @@ describe('instrument', () => {
         Runtime: runtime,
       }
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 13,
@@ -552,6 +572,7 @@ describe('instrument', () => {
       }
       const settings: InstrumentationSettings = {
         appsecEnabled: true,
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 114,
@@ -592,6 +613,7 @@ describe('instrument', () => {
       }
       const settings: InstrumentationSettings = {
         appsecEnabled: true,
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 113,
@@ -632,6 +654,7 @@ describe('instrument', () => {
         Runtime: 'runtime',
       }
       const settings = {
+        extensionVersion: 'none' as const,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
         layerVersion: 13,
@@ -727,7 +750,7 @@ describe('instrument', () => {
           extensionVersion | traceVersion | outputResult
           ${25}            | ${4}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
-          ${15}            | ${undefined} | ${traceUndefined}
+          ${15}            | ${'none'}    | ${traceUndefined}
         `(
           'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
@@ -800,7 +823,7 @@ describe('instrument', () => {
           extensionVersion | traceVersion | outputResult
           ${25}            | ${5}         | ${compatibleTracerAndExtension}
           ${23}            | ${2}         | ${oldExtensionVersion}
-          ${15}            | ${undefined} | ${traceUndefined}
+          ${15}            | ${'none'}    | ${traceUndefined}
         `(
           'should the output match the expected if extensionVersion=$extensionVersion and traceVersion=$traceVersion',
           async ({extensionVersion, traceVersion, outputResult}) => {
@@ -823,6 +846,7 @@ describe('instrument', () => {
         Runtime: runtime,
       }
       const settings = {
+        layerVersion: 'none' as const,
         extensionVersion: 6,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
@@ -862,6 +886,7 @@ describe('instrument', () => {
       }
       const settings = {
         extensionVersion: 6,
+        layerVersion: 'none' as const,
         fips: false,
         flushMetricsToLogs: false,
         layerAWSAccount: mockAwsAccount,
@@ -951,6 +976,8 @@ describe('instrument', () => {
 
           const settings = {
             flushMetricsToLogs: false,
+            layerVersion: 'none' as const,
+            extensionVersion: 'none' as const,
             interactive: true, // Interactive mode
             mergeXrayTraces: false,
             tracingEnabled: false,
