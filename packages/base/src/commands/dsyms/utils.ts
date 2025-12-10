@@ -1,8 +1,9 @@
 import fs from 'fs/promises'
 import {tmpdir} from 'os'
 
-import {buildPath, execute} from '@datadog/datadog-ci-base/helpers/utils'
 import upath from 'upath'
+
+import {buildPath, execute} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
   try {
