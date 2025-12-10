@@ -1046,6 +1046,19 @@ describe('lambda', () => {
               Architectures: ['arm64'],
             },
           },
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby34': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby34',
+              Runtime: 'ruby3.4',
+            },
+          },
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby34arm': {
+            config: {
+              FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:ruby34arm',
+              Runtime: 'ruby3.4',
+              Architectures: ['arm64'],
+            },
+          },
         })
 
         process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
@@ -1058,6 +1071,10 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:ruby32arm',
           '-f',
           'arn:aws:lambda:us-east-1:123456789012:function:ruby33arm',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby34',
+          '-f',
+          'arn:aws:lambda:us-east-1:123456789012:function:ruby34arm',
           '--dry-run',
           '-e',
           '40',
