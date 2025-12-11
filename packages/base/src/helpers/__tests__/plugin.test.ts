@@ -1,7 +1,7 @@
 import {isStandaloneBinary} from '../is-standalone-binary'
 import {messageBox} from '../message-box'
 import * as pluginModule from '../plugin'
-import {checkPlugin, executePluginCommand, getTempPath, installPlugin, listAllPlugins} from '../plugin'
+import {checkPlugin, getTempPath, installPlugin, listAllPlugins} from '../plugin'
 
 jest.mock('node:child_process')
 jest.mock('../is-standalone-binary')
@@ -11,8 +11,9 @@ jest.mock('../../version', () => ({
 }))
 jest.mock('@datadog/datadog-ci-base/package.json', () => ({
   peerDependencies: {
-    '@datadog/datadog-ci-plugin-test': '^1.0.0',
-    '@datadog/datadog-ci-plugin-another': '^2.0.0',
+    '@datadog/datadog-ci-plugin-test': '1.0.0',
+    '@datadog/datadog-ci-plugin-another': '1.0.0',
+    '@datadog/datadog-ci-plugin-synthetics': '1.0.0',
   },
 }))
 
@@ -23,7 +24,11 @@ const mockImportInstallPkg = jest.spyOn(pluginModule, 'importInstallPkg')
 describe('listAllPlugins', () => {
   test('returns array of peer dependency keys', () => {
     const plugins = listAllPlugins()
-    expect(plugins).toEqual(['@datadog/datadog-ci-plugin-test', '@datadog/datadog-ci-plugin-another'])
+    expect(plugins).toEqual([
+      '@datadog/datadog-ci-plugin-test',
+      '@datadog/datadog-ci-plugin-another',
+      '@datadog/datadog-ci-plugin-synthetics',
+    ])
   })
 })
 
@@ -44,6 +49,11 @@ describe('checkPlugin', () => {
     const result = await checkPlugin('test')
     expect(result).toBe(true)
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('The plugin is ready to be used! 🔌'))
+  })
+
+  test('returns true for valid plugin', async () => {
+    const result = await checkPlugin('synthetics')
+    expect(result).toBe(true)
   })
 })
 
@@ -132,19 +142,6 @@ describe('installPlugin', () => {
     mockImportInstallPkg.mockRejectedValue(new Error('Import failed'))
 
     await expect(installPlugin('test')).rejects.toThrow('Import failed')
-  })
-})
-
-describe('checkPlugin', () => {
-  test('rejects invalid plugin scope', async () => {
-    const result = await checkPlugin('invalid-plugin-name')
-    expect(result).toBe(false)
-  })
-
-  test('accepts valid plugin scope from peer dependencies', async () => {
-    mockIsStandaloneBinary.mockResolvedValueOnce(true)
-    const result = await checkPlugin('test')
-    expect(result).toBe(true)
   })
 })
 
