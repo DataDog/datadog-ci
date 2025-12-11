@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 
-import {checkPlugin} from '../../helpers/plugin'
+import {messageBox} from '../../helpers/message-box'
+import {checkPlugin, scopeToPackageName} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
 
@@ -22,6 +23,16 @@ export class PluginCheckCommand extends BaseCommand {
   public command = Option.String({required: false})
 
   public async execute() {
+    const packageName = scopeToPackageName(this.packageOrScope)
+
+    if (this.context.builtinPlugins.includes(packageName)) {
+      console.log()
+      messageBox('Built-in plugin 🔌', 'green', [`The plugin ${packageName} is built-in!`])
+      console.log()
+
+      return 0
+    }
+
     const succeeded = await checkPlugin(this.packageOrScope, this.command)
 
     return succeeded ? 0 : 1
