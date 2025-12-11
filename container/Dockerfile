@@ -10,6 +10,7 @@ RUN npm install -g @datadog/datadog-ci@$VERSION \
     @datadog/datadog-ci-plugin-container-app@$VERSION \
     @datadog/datadog-ci-plugin-lambda@$VERSION \
     @datadog/datadog-ci-plugin-stepfunctions@$VERSION \
+    @datadog/datadog-ci-plugin-synthetics@$VERSION \
     && echo -e "Installed packages:\n$(npm list -g | grep -o '@datadog/.*')"
 
 COPY entrypoint.sh /entrypoint.sh

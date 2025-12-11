@@ -47,7 +47,6 @@
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
-    "@datadog/datadog-ci-plugin-synthetics": "workspace:*",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
