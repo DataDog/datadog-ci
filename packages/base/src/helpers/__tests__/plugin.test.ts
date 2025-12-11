@@ -1,7 +1,7 @@
 import {isStandaloneBinary} from '../is-standalone-binary'
 import {messageBox} from '../message-box'
 import * as pluginModule from '../plugin'
-import {checkPlugin, executePluginCommand, getTempPath, installPlugin, isNpx, listAllPlugins} from '../plugin'
+import {checkPlugin, executePluginCommand, getTempPath, installPlugin, listAllPlugins} from '../plugin'
 
 jest.mock('node:child_process')
 jest.mock('../is-standalone-binary')
@@ -192,46 +192,5 @@ describe('getTempPath', () => {
     test('throw if not found', () => {
       expect(() => getTempPath('', true)).toThrow('Failed to find temporary install directory.')
     })
-  })
-})
-
-describe('isNpx', () => {
-  const originalPath = process.env.PATH
-
-  afterEach(() => {
-    process.env.PATH = originalPath
-  })
-
-  test('windows - returns true', () => {
-    process.env.PATH =
-      'C:\\Users\\john.doe\\npm-cache\\_npx\\abcdef123456\\node_modules\\.bin;C:\\Users\\john.doe\\node_modules\\.bin'
-    expect(isNpx(true)).toBe(true)
-  })
-
-  test('windows - returns false', () => {
-    process.env.PATH = 'C:\\Users\\john.doe\\node_modules\\.bin'
-    expect(isNpx(true)).toBe(false)
-  })
-
-  test('unix - returns true', () => {
-    process.env.PATH = '/Users/john.doe/.npm/_npx/abcdef123456/node_modules/.bin:/Users/john.doe/node_modules/.bin'
-    expect(isNpx(false)).toBe(true)
-  })
-
-  test('unix - returns false', () => {
-    process.env.PATH = '/Users/john.doe/node_modules/.bin'
-    expect(isNpx(false)).toBe(false)
-  })
-
-  test('handles undefined PATH', () => {
-    delete process.env.PATH
-    expect(isNpx(false)).toBe(false)
-    expect(isNpx(true)).toBe(false)
-  })
-
-  test('handles empty PATH', () => {
-    process.env.PATH = ''
-    expect(isNpx(false)).toBe(false)
-    expect(isNpx(true)).toBe(false)
   })
 })

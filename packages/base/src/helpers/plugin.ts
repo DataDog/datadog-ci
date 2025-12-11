@@ -205,7 +205,7 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   const isWindows = process.platform === 'win32'
   const tempPath = getTempPath(output, isWindows)
 
-  // Expecting the path ends with node_modules/.bin
+  // The path should end with `node_modules/.bin`
   const nodeModulesPath = path.resolve(tempPath, '..')
   if (!nodeModulesPath.endsWith('node_modules')) {
     throw new Error(
@@ -213,21 +213,16 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
     )
   }
 
-  const installInstructions = isNpx(isWindows)
-    ? undefined
-    : `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
-
   console.log()
   messageBox('Installed plugin 🔌', 'green', [
     `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
-    ...(installInstructions ? ['', installInstructions] : []),
+    '',
+    `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)} in your project.`,
   ])
   console.log()
 
-  // Add the temporary npx `node_modules` path to make the plugin resolvable.
-  process.env['NODE_PATH'] = [process.env['NODE_PATH'], nodeModulesPath].filter(Boolean).join(path.delimiter)
-  require('module').Module._initPaths()
-  debug('NODE_PATH set to:', process.env['NODE_PATH'])
+  // Make the plugin resolvable.
+  patchModulePaths(nodeModulesPath)
 }
 
 const handlePluginAutoInstall = async (scope: string) => {
@@ -273,6 +268,10 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
     return __INJECTED_PLUGIN_SUBMODULES__[scope][command]
   }
 
+  // Add current working directory's `node_modules` to the module resolution paths
+  // in case the command is running in NPX.
+  patchModulePaths()
+
   await handlePluginAutoInstall(scope)
 
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
@@ -295,6 +294,17 @@ const scopeToPackageName = (scope: string): string => {
   }
 
   return `@datadog/datadog-ci-plugin-${scope}`
+}
+
+const patchModulePaths = (preferredPath?: string) => {
+  const workingDirNodeModules = path.join(process.cwd(), 'node_modules')
+
+  process.env['NODE_PATH'] = [process.env['NODE_PATH'], workingDirNodeModules, preferredPath]
+    .filter(Boolean)
+    .join(path.delimiter)
+
+  require('module').Module._initPaths()
+  debug('Module resolution paths set to:', process.env['NODE_PATH'])
 }
 
 const isValidScope = (scope: string): boolean => {
@@ -439,13 +449,4 @@ export const getTempPath = (stdout: string, isWindows: boolean): string => {
 
     return tempPath
   }
-}
-
-/**
- * Check if the current process was started in an NPX context, with a temporary `node_modules/.bin` folder.
- */
-export const isNpx = (isWindows: boolean): boolean => {
-  const regex = isWindows ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
-
-  return (process.env['PATH'] ?? '').split(path.delimiter).some((p) => regex.test(p))
 }
