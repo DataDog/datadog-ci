@@ -11,6 +11,7 @@
     "engines",
     "bin",
     "main",
+    "types",
     "exports",
     "files",
     "publishConfig",
