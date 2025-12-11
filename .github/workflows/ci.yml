@@ -191,6 +191,113 @@ jobs:
           rm -rf .git
           yarn datadog-ci version
 
+  # We only test with a single plugin and a single Node.js version.
+  test-plugin-auto-install-during-npx:
+    name: Test plugin auto-install during npx
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - name: Install node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: artifacts-20
+          path: artifacts/
+      - name: Override base package with artifacts
+        run: |
+          TMP_PATH=$(npx -p @datadog/datadog-ci printenv PATH | cut -d ':' -f 1)
+          echo "Initial TMP_PATH: $TMP_PATH"
+          TMP_PATH=$(realpath $TMP_PATH/../..)
+          echo "NPX project path: $TMP_PATH"
+
+          echo "Extracting base package from artifacts"
+          tar -xzf ./artifacts/@datadog-datadog-ci-base-20.tgz
+
+          echo "Moving base package to temporary node_modules"
+          rm -rf $TMP_PATH/node_modules/@datadog/datadog-ci-base
+          mv package/ $TMP_PATH/node_modules/@datadog/datadog-ci-base
+      - name: Run AAS command with auto-install
+        env:
+          DEBUG: plugins
+        run: |
+          output=$(npx @datadog/datadog-ci aas instrument || true)
+          if echo "$output" | grep "Successfully installed"; then
+            echo "AAS plugin was automatically installed"
+            exit 0
+          else
+            echo "AAS plugin was not automatically installed"
+            echo "Output: $output"
+            exit 1
+          fi
+
+  test-plugin-auto-install-in-project:
+    name: Test plugin auto-install in existing project
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - name: Install node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: artifacts-20
+          path: artifacts/
+      - name: Create test project
+        run: |
+          echo '{
+            "name": "datadog-ci-plugin-auto-install",
+            "resolutions": {
+              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+            },
+            "dependencies": {
+              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-20.tgz"
+            }
+          }' > package.json
+
+          yarn set version stable
+          yarn config set nodeLinker node-modules
+          yarn install --no-immutable
+      - name: Check that AAS plugin is not installed
+        run: |
+          if yarn datadog-ci plugin check aas; then
+            echo "Checking for AAS plugin should have failed, but it succeeded"
+            exit 1
+          else
+            echo "Checking for AAS plugin failed as expected"
+            exit 0
+          fi
+      - name: Run AAS command with auto-install
+        run: |
+          output=$(yarn datadog-ci aas instrument || true)
+          if echo "$output" | grep "Successfully installed"; then
+            echo "AAS plugin was automatically installed"
+            exit 0
+          else
+            echo "AAS plugin was not automatically installed"
+            echo "Output: $output"
+            exit 1
+          fi
+      - name: Install AAS plugin
+        run: yarn datadog-ci plugin install aas
+      - name: Check that AAS plugin is installed
+        run: |
+          if yarn datadog-ci plugin check aas; then
+            echo "AAS plugin was successfully installed"
+            exit 0
+          else
+            echo "AAS plugin was not installed"
+            exit 1
+          fi
+
   standalone-binary-test-ubuntu:
     name: Test standalone binary in ubuntu
     runs-on: ubuntu-latest

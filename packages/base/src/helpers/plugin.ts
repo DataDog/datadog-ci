@@ -1,3 +1,5 @@
+import {exec} from 'node:child_process'
+import path from 'node:path'
 import {inspect} from 'node:util'
 
 import chalk from 'chalk'
@@ -7,6 +9,7 @@ import createDebug from 'debug'
 import {peerDependencies} from '@datadog/datadog-ci-base/package.json'
 
 import {CommandContext} from '..'
+import {cliVersion} from '../version'
 
 import {isStandaloneBinary} from './is-standalone-binary'
 import {messageBox} from './message-box'
@@ -29,7 +32,16 @@ export const executePluginCommand = async <T extends Command>(instance: T): Prom
 
     return pluginCommand.execute()
   } catch (error) {
-    handleErrorGeneric(error, scope, command)
+    debug('Error in executePluginCommand:', error)
+
+    if (isModuleNotFoundError(error)) {
+      console.log()
+      showPluginNotInstalledMessageBox(scope, command)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else {
+      console.log(chalk.bold.red('Unexpected error when executing the plugin command:\n'), error)
+    }
 
     console.log(
       [
@@ -51,7 +63,7 @@ export const listAllPlugins = (): string[] => {
 }
 
 export const checkPlugin = async (scope: string, command?: string): Promise<boolean> => {
-  if (!(scopeToPackageName(scope) in peerDependencies)) {
+  if (!isValidScope(scope)) {
     console.log(
       [
         '',
@@ -90,10 +102,22 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
       ].join('\n')
     )
   } catch (error) {
-    handleErrorGeneric(error, scope, command)
+    debug('Error in checkPlugin:', error)
 
-    if (isModuleNotFoundError(error)) {
-      console.log(chalk.bold.red('Original Node.js error:\n'), error)
+    if (isPnpModuleNotFoundError(error) && error.pnpCode === 'MISSING_PEER_DEPENDENCY') {
+      // This error is verbose and gives a lot of information about the PnP error, so we log it as is.
+      console.log(error)
+      console.log()
+      showPnpPeerDependencyErrorMessageBox(scope)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else if (isModuleNotFoundError(error)) {
+      console.log()
+      showPluginNotInstalledMessageBox(scope, command)
+      showInstallPluginInstructions(scope)
+      console.log()
+    } else {
+      console.log(chalk.bold.red('Unexpected error when checking the plugin:\n'), error)
     }
 
     return false
@@ -102,14 +126,26 @@ export const checkPlugin = async (scope: string, command?: string): Promise<bool
   return true
 }
 
+/**
+ * Installs a plugin and the base package as `devDependencies` in the current project with the right package manager.
+ */
 export const installPlugin = async (packageOrScope: string): Promise<boolean> => {
-  const pluginName = scopeToPackageName(packageOrScope)
-  const version = peerDependencies[pluginName as keyof typeof peerDependencies]
-  const basePackage = `@datadog/datadog-ci-base@${version}`
-  const pluginPackage = `${pluginName}@${version}`
+  if (!isValidScope(packageOrScope)) {
+    console.log(
+      [
+        '',
+        chalk.bold.red("This plugin is not listed as a possible peer dependency. Make sure you didn't make a typo."),
+        '',
+      ].join('\n')
+    )
+
+    return false
+  }
+
+  const {basePackage, pluginPackage} = getPackagesToInstall(packageOrScope)
 
   // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
-  const {installPackage} = await import('@antfu/install-pkg')
+  const {installPackage} = await importInstallPkg()
   const output = await installPackage([basePackage, pluginPackage], {
     silent: true,
     dev: true,
@@ -130,6 +166,70 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
   }
 }
 
+interface InstallPackageOptions {
+  silent: boolean
+  dev: boolean
+}
+
+interface InstallPackageOutput {
+  exitCode: number
+  stdout: string
+  stderr: string
+}
+
+type InstallPackageFn = (names: string[], options: InstallPackageOptions) => Promise<InstallPackageOutput>
+
+// Wrapper function to be mocked in tests
+export const importInstallPkg = async () => {
+  return import('@antfu/install-pkg') as Promise<{installPackage: InstallPackageFn}>
+}
+
+const temporarilyInstallPluginWithNpx = async (scope: string) => {
+  const {basePackage, pluginPackage} = getPackagesToInstall(scope)
+
+  const emitPath = process.platform === 'win32' ? 'set PATH' : 'printenv PATH'
+  const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
+
+  debug('Using npx to install the missing plugin:', cmd)
+  const output = await new Promise<string>((resolve, reject) => {
+    exec(cmd, (error, stdout) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve(stdout)
+      }
+    })
+  })
+  debug('Output:', output)
+
+  const isWindows = process.platform === 'win32'
+  const tempPath = getTempPath(output, isWindows)
+
+  // Expecting the path ends with node_modules/.bin
+  const nodeModulesPath = path.resolve(tempPath, '..')
+  if (!nodeModulesPath.endsWith('node_modules')) {
+    throw new Error(
+      `Found NPX temporary path of '${tempPath}' but expected to be able to find a 'node_modules' directory by looking in '..'.`
+    )
+  }
+
+  const installInstructions = isNpx(isWindows)
+    ? undefined
+    : `To skip this step in the future, run ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`
+
+  console.log()
+  messageBox('Installed plugin 🔌', 'green', [
+    `Successfully installed ${chalk.bold(pluginPackage)} into ${chalk.dim(nodeModulesPath)}`,
+    ...(installInstructions ? ['', installInstructions] : []),
+  ])
+  console.log()
+
+  // Add the temporary npx `node_modules` path to make the plugin resolvable.
+  process.env['NODE_PATH'] = [process.env['NODE_PATH'], nodeModulesPath].filter(Boolean).join(path.delimiter)
+  require('module').Module._initPaths()
+  debug('NODE_PATH set to:', process.env['NODE_PATH'])
+}
+
 const handlePluginAutoInstall = async (scope: string) => {
   if (!!process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
     debug('Found DISABLE_PLUGIN_AUTO_INSTALL env variable, skipping auto-install')
@@ -142,25 +242,30 @@ const handlePluginAutoInstall = async (scope: string) => {
 
     debug('Auto-install check: plugin is installed, skipping installation')
   } catch (error) {
+    debug('Error in handlePluginAutoInstall:', error)
+
     if (!isModuleNotFoundError(error)) {
+      // Re-throw unexpected errors.
+      throw error
+    }
+
+    if (isPnpModuleNotFoundError(error) && error.pnpCode === 'MISSING_PEER_DEPENDENCY') {
+      // Re-throw PnP errors.
+      console.log(chalk.red(`The plugin auto-install feature is not supported with Yarn Plug'n'Play (PnP).`))
       throw error
     }
 
     const pluginName = scopeToPackageName(scope)
     console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
-    await installPlugin(pluginName)
-  }
-}
-
-const handleSimulateMissingPlugin = () => {
-  if (!!process.env['SIMULATE_MISSING_PLUGIN']) {
-    const error: NodeJS.ErrnoException = new Error('Simulated "Module not found" error')
-    error.code = 'MODULE_NOT_FOUND'
-    throw error
+    await temporarilyInstallPluginWithNpx(pluginName)
   }
 }
 
 const importPluginSubmodule = async (scope: string, command: string): Promise<PluginSubModule> => {
+  if (!isValidScope(scope)) {
+    throw new Error(`Invalid scope: ${scope}`)
+  }
+
   if (await isStandaloneBinary()) {
     debug(`Loading plugin injected in the standalone binary`)
 
@@ -170,20 +275,18 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
 
   await handlePluginAutoInstall(scope)
 
-  // Only handle `SIMULATE_MISSING_PLUGIN` when used in combination with `DISABLE_PLUGIN_AUTO_INSTALL`.
-  if (process.env['DISABLE_PLUGIN_AUTO_INSTALL']) {
-    handleSimulateMissingPlugin()
-  }
-
-  const submodulePath = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
+  const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
+  debug('Resolving submodule:', submoduleName)
+  let resolvedPath = submoduleName
   try {
-    const resolvedPath = require.resolve(submodulePath)
-    debug(`The ${submodulePath} submodule resolves to ${resolvedPath}`)
+    resolvedPath = require.resolve(submoduleName)
+    debug(`Resolved to: ${resolvedPath}`)
   } catch (error) {
-    debug(`Could not require.resolve() the ${submodulePath} submodule: ${error}`)
+    debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
   }
+  debug('Importing submodule:', resolvedPath)
 
-  return (await import(`@datadog/datadog-ci-plugin-${scope}/commands/${command}`)) as PluginSubModule
+  return (await import(resolvedPath)) as PluginSubModule
 }
 
 const scopeToPackageName = (scope: string): string => {
@@ -194,9 +297,20 @@ const scopeToPackageName = (scope: string): string => {
   return `@datadog/datadog-ci-plugin-${scope}`
 }
 
-const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
-  handleSimulateMissingPlugin()
+const isValidScope = (scope: string): boolean => {
+  return scopeToPackageName(scope) in peerDependencies
+}
 
+const getPackagesToInstall = (scope: string) => {
+  const pluginName = scopeToPackageName(scope)
+  const versionOverride = process.env['PLUGIN_AUTO_INSTALL_VERSION_OVERRIDE']
+  const basePackage = `@datadog/datadog-ci-base@${versionOverride ?? cliVersion}`
+  const pluginPackage = `${pluginName}@${versionOverride ?? cliVersion}`
+
+  return {basePackage, pluginPackage}
+}
+
+const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
     // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
     return extractPackageJson(require(`${scope}/package.json`))
@@ -228,41 +342,43 @@ const extractPackageJson = (content: unknown): PluginPackageJson => {
   return {name, version}
 }
 
-const handleErrorGeneric = (error: unknown, scope: string, command?: string) => {
-  debug('Original error:', error)
+const showPluginNotInstalledMessageBox = (scope: string, command?: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
 
-  console.log()
-
-  if (isModuleNotFoundError(error)) {
-    const packageName = `@datadog/datadog-ci-plugin-${scope}`
-
-    if (command) {
-      messageBox('Plugin not installed 🔌', 'red', [
-        `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command could not be found.`,
-        `To use this command, please install ${chalk.bold.magenta(packageName)} alongside datadog-ci.`,
-      ])
-    } else {
-      messageBox('Plugin not installed 🔌', 'red', [
-        `The ${chalk.bold.magenta(packageName)} package could not be found.`,
-        `To use the any command in this plugin, please install it alongside datadog-ci.`,
-      ])
-    }
-
-    console.log(
-      [
-        '',
-        `You can install the plugin using:`,
-        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
-        `or`,
-        `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(packageName)}`,
-        '',
-      ].join('\n')
-    )
-
-    return
+  if (command) {
+    messageBox('Plugin not installed 🔌', 'red', [
+      `The ${chalk.cyan(`datadog-ci ${scope} ${command}`)} command could not be found.`,
+      `To use this command, please install ${chalk.bold.magenta(packageName)} alongside datadog-ci.`,
+    ])
+  } else {
+    messageBox('Plugin not installed 🔌', 'red', [
+      `The ${chalk.bold.magenta(packageName)} package could not be found.`,
+      `To use the any command in this plugin, please install it alongside datadog-ci.`,
+    ])
   }
+}
 
-  console.log()
+const showPnpPeerDependencyErrorMessageBox = (scope: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
+
+  messageBox("Yarn Plug'n'Play (PnP) error 🔌", 'red', [
+    `Yarn Plug'n'Play (PnP) detected that ${chalk.bold.magenta(packageName)} was not installed alongside datadog-ci.`,
+  ])
+}
+
+const showInstallPluginInstructions = (scope: string) => {
+  const packageName = `@datadog/datadog-ci-plugin-${scope}`
+
+  console.log(
+    [
+      '',
+      `You can install the plugin using:`,
+      `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(scope)}`,
+      `or`,
+      `  ${chalk.bold.cyan('datadog-ci plugin install')} ${chalk.magenta(packageName)}`,
+      '',
+    ].join('\n')
+  )
 }
 
 const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException => {
@@ -270,4 +386,66 @@ const isModuleNotFoundError = (error: unknown): error is NodeJS.ErrnoException =
     error instanceof Error &&
     ['MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes((error as NodeJS.ErrnoException).code ?? '')
   )
+}
+
+// See: https://github.com/yarnpkg/berry/blob/571363e6d64044b85a1f8885491c7f3b84c09f4b/packages/yarnpkg-pnp/sources/loader/internalTools.ts#L15-L23
+interface PnpModuleNotFoundError extends NodeJS.ErrnoException {
+  pnpCode:
+    | 'BUILTIN_NODE_RESOLUTION_FAILED'
+    | 'MISSING_DEPENDENCY'
+    | 'MISSING_PEER_DEPENDENCY'
+    | 'QUALIFIED_PATH_RESOLUTION_FAILED'
+    | 'UNDECLARED_DEPENDENCY'
+}
+
+const isPnpModuleNotFoundError = (error: unknown): error is PnpModuleNotFoundError => {
+  return isModuleNotFoundError(error) && (error as PnpModuleNotFoundError).pnpCode !== undefined
+}
+
+const NPX_PATH_REGEX = /\.npm\/_npx\//
+const NPX_PATH_WIN_REGEX = /\\npm[-\\]+cache\\_npx\\/
+
+/**
+ * Find where NPX just installed the package.
+ *
+ * https://github.com/geelen/npx-import/blob/8a1e17ca4f88981b11be5090e20871f8704166b8/src/index.ts#L221-L250
+ */
+export const getTempPath = (stdout: string, isWindows: boolean): string => {
+  if (isWindows) {
+    const paths = stdout
+      .replace(/^PATH=/i, '')
+      .replace(/\\r\\n/g, ';')
+      .split(';')
+    const tempPath = paths.find((p) => NPX_PATH_WIN_REGEX.exec(p))
+
+    if (!tempPath) {
+      const list = paths.map((p) => ` - ${p}`).join('\n')
+      throw new Error(
+        `Failed to find temporary install directory. Looking for paths matching '\\npm-cache\\_npx\\' in:\n${list}`
+      )
+    }
+
+    return tempPath
+  } else {
+    const paths = stdout.split(':')
+    const tempPath = paths.find((p) => NPX_PATH_REGEX.exec(p))
+
+    if (!tempPath) {
+      const list = paths.map((p) => ` - ${p}`).join('\n')
+      throw new Error(
+        `Failed to find temporary install directory. Looking for paths matching '/.npm/_npx/' in:\n${list}`
+      )
+    }
+
+    return tempPath
+  }
+}
+
+/**
+ * Check if the current process was started in an NPX context, with a temporary `node_modules/.bin` folder.
+ */
+export const isNpx = (isWindows: boolean): boolean => {
+  const regex = isWindows ? NPX_PATH_WIN_REGEX : NPX_PATH_REGEX
+
+  return (process.env['PATH'] ?? '').split(path.delimiter).some((p) => regex.test(p))
 }
