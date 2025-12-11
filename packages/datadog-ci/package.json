@@ -18,6 +18,7 @@
   },
   "bin": "dist/cli.js",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     "./package.json": "./package.json",
     ".": {

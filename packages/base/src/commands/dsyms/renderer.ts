@@ -1,7 +1,8 @@
-import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
-import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import chalk from 'chalk'
 import upath from 'upath'
+
+import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
+import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 
 import {CompressedDsym, Dsym, DWARF} from './interfaces'
 import {pluralize} from './utils'

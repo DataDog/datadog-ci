@@ -1,3 +1,4 @@
+import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher, getRepositoryData} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {
@@ -8,8 +9,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/upload'
 import {performSubCommand} from '@datadog/datadog-ci-base/helpers/utils'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-
-import {DsymsUploadCommand} from '../../dsyms/upload'
 
 import {uploadMultipartHelper} from '../helpers'
 import {

@@ -1,10 +1,9 @@
 import {ExecException} from 'child_process'
 
+import {createUniqueTmpDirectory, deleteDirectory} from '@datadog/datadog-ci-base/commands/dsyms/utils'
 import {createReaderFromFile} from '@datadog/datadog-ci-base/helpers/filereader'
 import * as utils from '@datadog/datadog-ci-base/helpers/utils'
 import upath from 'upath'
-
-import {createUniqueTmpDirectory, deleteDirectory} from '../../dsyms/utils'
 
 import {
   copyElfDebugInfo,

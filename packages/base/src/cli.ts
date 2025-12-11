@@ -6,6 +6,7 @@ import {commands as cloudRunCommands} from './commands/cloud-run/cli'
 import {commands as containerAppCommands} from './commands/container-app/cli'
 import {commands as deploymentCommands} from './commands/deployment/cli'
 import {commands as doraCommands} from './commands/dora/cli'
+import {commands as dsymsCommands} from './commands/dsyms/cli'
 import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
@@ -23,6 +24,7 @@ export const commands = {
   'container-app': containerAppCommands,
   'deployment': deploymentCommands,
   'dora': doraCommands,
+  'dsyms': dsymsCommands,
   'gate': gateCommands,
   'git-metadata': gitMetadataCommands,
   'lambda': lambdaCommands,
@@ -37,6 +39,6 @@ export const commands = {
 /**
  * Some command scopes do not have a plugin package, and their logic is entirely included in `@datadog/datadog-ci-base`.
  */
-export const noPluginExceptions: Set<string> = new Set(['git-metadata', 'plugin', 'tag']) satisfies Set<
+export const noPluginExceptions: Set<string> = new Set(['dsyms', 'git-metadata', 'plugin', 'tag']) satisfies Set<
   keyof typeof commands
 >
