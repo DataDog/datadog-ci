@@ -1,6 +1,6 @@
 # Datadog CI
 
-[![NPM Version](https://img.shields.io/npm/v/@datadog/datadog-ci)](https://www.npmjs.com/package/@datadog/datadog-ci) [![Continuous Integration](https://github.com/DataDog/datadog-ci/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/DataDog/datadog-ci/actions/workflows/ci.yml?query=branch%3Amaster) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![NodeJS Version](https://img.shields.io/badge/Node.js-18+-green)
+[![NPM Version](https://img.shields.io/npm/v/@datadog/datadog-ci)](https://www.npmjs.com/package/@datadog/datadog-ci) [![Continuous Integration](https://github.com/DataDog/datadog-ci/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/DataDog/datadog-ci/actions/workflows/ci.yml?query=branch%3Amaster) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Node.js Version](https://img.shields.io/badge/Node.js-20+-green)
 
 Execute commands from your Continuous Integration (CI) and Continuous Delivery (CD) pipelines to integrate with existing Datadog products.
 
@@ -235,7 +235,6 @@ The `fips` option allows `datadog-ci` to use a FIPS cryptographic module provide
 Node.js versions below 17 are incompatible with OpenSSL 3, which provides FIPS support.
 If you are using a Node.js version below 17, enabling the `fips` option causes the command to throw an error.
 The option `fips-ignore-error` ignores this error.
-The released `datadog-ci` binary now uses Node.js version 18 to be compatible with OpenSSL 3.
 
 #### `fips`
 Enable `datadog-ci` FIPS support if a FIPS validated provider is installed on the host system.
@@ -257,7 +256,7 @@ Ignore Node.js errors if FIPS cannot be enabled on the host system.
 
 ### Standalone binary
 
-If installing NodeJS in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
+If installing Node.js in the CI is an issue, standalone binaries are attached to each [GitHub release](https://github.com/DataDog/datadog-ci/releases).
 
 Supported architectures:
 - `linux-x64`

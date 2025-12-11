@@ -14,7 +14,7 @@
     "directory": "packages/datadog-ci"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "bin": "dist/cli.js",
   "main": "dist/index.js",
