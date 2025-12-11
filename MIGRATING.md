@@ -24,6 +24,8 @@ The `sbom upload` command no longer supports pull request triggers in CI platfor
 
 The `--layer-version` and `--extension-version` CLI parameters now default to `latest` instead of `none`. (https://github.com/DataDog/datadog-ci/pull/2012)
 
+**Migration**: To keep the previous behavior, explicitly add `--layer-version none --extension-version none`.
+
 ### Plugin updates
 
 In 5.0, we moved the `synthetics` commands into the `@datadog/datadog-ci-plugin-synthetics` plugin.
@@ -31,6 +33,10 @@ In 5.0, we moved the `synthetics` commands into the `@datadog/datadog-ci-plugin-
 | Moved commands                                                                   | Destination plugin                      |
 | -------------------------------------------------------------------------------- | --------------------------------------- |
 | <ul><li>`synthetics run-tests`</li><li>`synthetics upload-application`</li></ul> | `@datadog/datadog-ci-plugin-synthetics` |
+
+By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+
+More information in the [README](/#installing-a-plugin).
 
 ## 3.0 to 4.0
 
@@ -44,7 +50,7 @@ The `sarif upload` command no longer supports pull request triggers in CI platfo
 
 **Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow) for more information.
 
-### Using plugins
+### New: Plugins
 
 In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/datadog-ci` package:
 
