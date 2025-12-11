@@ -320,8 +320,8 @@ export class PluginCommand extends LambdaInstrumentCommand {
   }
 
   private getSettings(): InstrumentationSettings | undefined {
-    const layerVersionStr = this.layerVersion ?? this.config.layerVersion ?? 'none'
-    const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion ?? 'none'
+    const layerVersionStr = this.layerVersion ?? this.config.layerVersion ?? 'latest'
+    const extensionVersionStr = this.extensionVersion ?? this.config.extensionVersion ?? 'latest'
     const layerAWSAccount = this.layerAWSAccount ?? this.config.layerAWSAccount
     const forwarderARN = this.forwarder ?? this.config.forwarder
 

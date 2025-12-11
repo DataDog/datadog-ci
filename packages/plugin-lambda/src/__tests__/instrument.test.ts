@@ -102,6 +102,8 @@ describe('lambda', () => {
           '--dry-run',
           '--layerVersion',
           '10',
+          '--extensionVersion',
+          'none',
           '--logLevel',
           'debug',
           '--service',
@@ -443,6 +445,8 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world',
           '--layerVersion',
           '10',
+          '--extensionVersion',
+          'none',
           '--no-source-code-integration',
         ])
         expect(lambdaClientMock).toHaveReceivedCommand(UpdateFunctionConfigurationCommand)
@@ -1123,6 +1127,8 @@ describe('lambda', () => {
           '--dry-run',
           '-e',
           '40',
+          '--layerVersion',
+          'none',
           '--extra-tags',
           'layer:api,team:intake',
           '--service',
@@ -1195,6 +1201,8 @@ describe('lambda', () => {
           '--dry-run',
           '-v',
           '6',
+          '--extensionVersion',
+          '20',
           '--extra-tags',
           'layer:api,team:intake',
           '--service',
@@ -1234,6 +1242,10 @@ describe('lambda', () => {
           functionARN,
           '--profile',
           'SOME-AWS-PROFILE',
+          '--extensionVersion',
+          'none',
+          '--layerVersion',
+          'none',
           '--no-source-code-integration',
         ])
         expect(code).toBe(0)
@@ -1322,6 +1334,10 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
           '-f',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-2-us-east-2',
+          '--extensionVersion',
+          'none',
+          '--layerVersion',
+          'none',
         ])
         expect(code).toBe(0)
         expect(context.stdout.toString()).toMatchSnapshot()
@@ -1355,6 +1371,10 @@ describe('lambda', () => {
           'arn:aws:lambda:us-east-1:123456789012:function:lambda-1-us-east-1',
           '-f',
           'arn:aws:lambda:us-east-2:123456789012:function:lambda-1-us-east-2',
+          '--extensionVersion',
+          'none',
+          '--layerVersion',
+          'none',
         ])
         expect(code).toBe(1)
         expect(context.stdout.toString()).toMatchSnapshot()
@@ -1432,7 +1452,7 @@ describe('lambda', () => {
           apmFlushDeadline: '20',
           captureLambdaPayload: false,
           environment: undefined,
-          extensionVersion: 'none',
+          extensionVersion: 'latest',
           extraTags: undefined,
           lambdaFips: false,
           flushMetricsToLogs: false,
@@ -1482,14 +1502,14 @@ describe('lambda', () => {
           appsecEnabled: false,
           captureLambdaPayload: true,
           environment: undefined,
-          extensionVersion: 'none',
+          extensionVersion: 'latest',
           extraTags: undefined,
           lambdaFips: false,
           flushMetricsToLogs: false,
           forwarderARN: undefined,
           interactive: false,
           layerAWSAccount: undefined,
-          layerVersion: 'none',
+          layerVersion: 'latest',
           llmobsMlApp: undefined,
           loggingEnabled: true,
           logLevel: undefined,
