@@ -292,6 +292,8 @@ jobs:
       - name: Install AAS plugin
         run: npx datadog-ci plugin install aas
       - name: Check that AAS plugin is installed
+        env:
+          DEBUG: plugins
         run: |
           if npx datadog-ci plugin check aas; then
             echo "AAS plugin was successfully installed"
