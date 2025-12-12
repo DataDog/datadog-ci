@@ -29,10 +29,6 @@
       "development": "./src/commands/*.ts",
       "default": "./dist/commands/*.js"
     },
-    "./commands/git-metadata": {
-      "development": "./src/commands/git-metadata/index.ts",
-      "default": "./dist/commands/git-metadata/index.js"
-    },
     "./constants": {
       "development": "./src/constants.ts",
       "default": "./dist/constants.js"
