@@ -3,6 +3,41 @@
 This guide describes the steps to upgrade datadog-ci from a major version to the next.
 If you are having any issues related to migrating, please feel free to open an issue or contact our [support](https://www.datadoghq.com/support/) team.
 
+## 4.0 to 5.0
+
+### Node 18 is no longer supported
+
+Node.js 18 has reached EOL in April 2025.
+Generally speaking, we highly recommend always keeping Node.js up to date regardless of our support policy.
+
+### SBOM upload no longer supports pull request triggers
+
+The `sbom upload` command no longer supports pull request triggers in CI platforms. This affects:
+
+- **GitHub Actions**: The `pull_request` event is not supported.
+- **GitLab CI**: The `merge_request_event` pipeline source is not supported.
+- **Azure Pipelines**: The `PullRequest` build reason is not supported.
+
+**Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static?tab=github#scan-in-ci-pipelines) for more information.
+
+### Default values for `lambda instrument` command
+
+The `--layer-version` and `--extension-version` CLI parameters now default to `latest` instead of `none`. (https://github.com/DataDog/datadog-ci/pull/2012)
+
+**Migration**: To keep the previous behavior, explicitly add `--layer-version none --extension-version none`.
+
+### Plugin updates
+
+In 5.0, we moved the `synthetics` commands into the `@datadog/datadog-ci-plugin-synthetics` plugin.
+
+| Moved commands                                                                   | Destination plugin                      |
+| -------------------------------------------------------------------------------- | --------------------------------------- |
+| <ul><li>`synthetics run-tests`</li><li>`synthetics upload-application`</li></ul> | `@datadog/datadog-ci-plugin-synthetics` |
+
+By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
+
+More information in the [README](/#installing-a-plugin).
+
 ## 3.0 to 4.0
 
 ### SARIF upload no longer supports pull request triggers
@@ -15,7 +50,7 @@ The `sarif upload` command no longer supports pull request triggers in CI platfo
 
 **Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow) for more information.
 
-### Using plugins
+### New: Plugins
 
 In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/datadog-ci` package:
 
@@ -25,7 +60,6 @@ In 4.0, we moved some commands into plugins to reduce the size of the `@datadog/
 | <ul><li>`cloud-run flare`</li><li>`cloud-run instrument`</li><li>`cloud-run uninstrument`</li></ul> | `@datadog/datadog-ci-plugin-cloud-run`     |
 | <ul><li>`lambda flare`</li><li>`lambda instrument`</li><li>`lambda uninstrument`</li></ul>          | `@datadog/datadog-ci-plugin-lambda`        |
 | <ul><li>`stepfunctions instrument`</li><li>`stepfunctions uninstrument`</li></ul>                   | `@datadog/datadog-ci-plugin-stepfunctions` |
-| <ul><li>`synthetics run-tests`</li><li>`synthetics upload-application`</li></ul>                    | `@datadog/datadog-ci-plugin-synthetics`    |
 
 By default, running a command that requires a plugin will **automatically install the plugin** if it is not already installed. You can disable this behavior with `DISABLE_PLUGIN_AUTO_INSTALL=1`.
 
