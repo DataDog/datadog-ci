@@ -1,6 +1,7 @@
 import {Command, Option} from 'clipanion'
 
-import {installPlugin} from '../../helpers/plugin'
+import {messageBox} from '../../helpers/message-box'
+import {installPlugin, scopeToPackageName} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
 
@@ -23,7 +24,17 @@ export class PluginInstallCommand extends BaseCommand {
   public packageOrScope = Option.String()
 
   public async execute() {
-    const succeeded = await installPlugin(this.packageOrScope)
+    const packageName = scopeToPackageName(this.packageOrScope)
+
+    if (this.context.builtinPlugins.includes(packageName)) {
+      console.log()
+      messageBox('Built-in plugin 🔌', 'green', [`The plugin ${packageName} is already built-in!`])
+      console.log()
+
+      return 0
+    }
+
+    const succeeded = await installPlugin(packageName)
 
     return succeeded ? 0 : 1
   }

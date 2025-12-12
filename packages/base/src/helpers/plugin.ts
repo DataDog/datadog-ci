@@ -288,7 +288,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   return (await import(resolvedPath)) as PluginSubModule
 }
 
-const scopeToPackageName = (scope: string): string => {
+export const scopeToPackageName = (scope: string): string => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
     return scope
   }

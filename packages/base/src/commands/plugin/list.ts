@@ -14,14 +14,16 @@ export class PluginListCommand extends BaseCommand {
     description: 'List the available plugins.',
     details: `
       This command lists the plugins that can be installed with the \`datadog-ci plugin install\` command.
-
-      All other plugins are **built-in** and are not listed here.
     `,
-    examples: [['List the available plugins', 'datadog-ci plugin list']],
+    examples: [
+      ['List the available plugins', 'datadog-ci plugin list'],
+      ['List all plugins, including built-in plugins', 'datadog-ci plugin list --all'],
+    ],
   })
 
   // Positional
   public json = Option.Boolean('--json', {required: false})
+  public all = Option.Boolean('-a,--all', {required: false})
 
   private logger: Logger = new Logger((s: string) => {
     this.context.stdout.write(s)
@@ -30,14 +32,22 @@ export class PluginListCommand extends BaseCommand {
   public async execute() {
     const allPlugins = listAllPlugins()
     const builtinPlugins = new Set(this.context.builtinPlugins)
-    const installablePlugins = allPlugins.filter((plugin) => !builtinPlugins.has(plugin))
+    const installablePlugins = allPlugins.filter((name) => !builtinPlugins.has(name))
+
+    const plugins: {name: string; isBuiltin: boolean}[] = this.all
+      ? [
+          ...installablePlugins.map((name) => ({name, isBuiltin: false})),
+          ...Array.from(builtinPlugins).map((name) => ({name, isBuiltin: true})),
+        ]
+      : installablePlugins.map((name) => ({name, isBuiltin: false}))
 
     if (this.json) {
       this.logger.info(
         JSON.stringify(
-          installablePlugins.map((plugin) => ({
-            name: plugin,
-            scope: getScope(plugin),
+          plugins.map(({name, isBuiltin}) => ({
+            name,
+            scope: getScope(name),
+            isBuiltin,
           }))
         )
       )
@@ -45,18 +55,13 @@ export class PluginListCommand extends BaseCommand {
       return 0
     }
 
-    if (installablePlugins.length === 0) {
-      this.logger.info('All plugins are currently built-in. We will start splitting them in next major release.')
-
-      return 0
-    }
-
     this.logger.info(`The following plugins are available:\n`)
     this.logger.info(
-      installablePlugins
-        .map(
-          (plugin) =>
-            ` - ${chalk.bold.magenta(plugin)} (install with ${chalk.bold.cyan(`datadog-ci plugin install ${getScope(plugin)}`)})`
+      plugins
+        .map(({name, isBuiltin}) =>
+          isBuiltin
+            ? ` - ${chalk.bold('(built-in)')} ${chalk.magenta(name)}`
+            : ` - ${chalk.bold.magenta(name)} (install with ${chalk.bold.cyan(`datadog-ci plugin install ${getScope(name)}`)})`
         )
         .join('\n')
     )
