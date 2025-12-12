@@ -128,6 +128,7 @@ jobs:
             },
             "dependencies": {
               "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-base": "./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-aas": "./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-cloud-run": "./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",

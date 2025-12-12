@@ -340,7 +340,11 @@ const resolutions = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
 
-const dependencies = ['@datadog/datadog-ci', ...installablePlugins.map((p) => p.packageJson.name)]
+const dependencies = [
+  '@datadog/datadog-ci',
+  '@datadog/datadog-ci-base',
+  ...installablePlugins.map((p) => p.packageJson.name),
+]
   .map((name) => `    "${name}": "./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
 
