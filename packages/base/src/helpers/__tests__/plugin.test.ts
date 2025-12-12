@@ -65,9 +65,7 @@ describe('installPlugin', () => {
       stderr: '',
     })
 
-    mockImportInstallPkg.mockResolvedValue({
-      installPackage: mockInstallPackage,
-    } as any)
+    mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     const result = await installPlugin('test')
     expect(result).toBe(true)
@@ -87,9 +85,7 @@ describe('installPlugin', () => {
       stderr: 'error message',
     })
 
-    mockImportInstallPkg.mockResolvedValue({
-      installPackage: mockInstallPackage,
-    } as any)
+    mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     const result = await installPlugin('test')
     expect(result).toBe(false)
@@ -107,9 +103,7 @@ describe('installPlugin', () => {
       stderr: '',
     })
 
-    mockImportInstallPkg.mockResolvedValue({
-      installPackage: mockInstallPackage,
-    } as any)
+    mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     await installPlugin('test')
     expect(mockInstallPackage).toHaveBeenCalledWith(
@@ -127,9 +121,7 @@ describe('installPlugin', () => {
       stderr: '',
     })
 
-    mockImportInstallPkg.mockResolvedValue({
-      installPackage: mockInstallPackage,
-    } as any)
+    mockImportInstallPkg.mockResolvedValue({installPackage: mockInstallPackage})
 
     await installPlugin('@datadog/datadog-ci-plugin-test')
     expect(mockInstallPackage).toHaveBeenCalledWith(
