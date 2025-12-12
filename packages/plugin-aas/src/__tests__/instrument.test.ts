@@ -814,7 +814,6 @@ describe('aas instrument', () => {
           {name: 'DD_SITE', value: 'DD_SITE'},
           {name: 'DD_SERVICE', value: 'DD_SERVICE'},
           {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
-          {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
           {name: 'CORECLR_ENABLE_PROFILING', value: 'CORECLR_ENABLE_PROFILING'},
           {name: 'CORECLR_PROFILER', value: 'CORECLR_PROFILER'},
           {name: 'CORECLR_PROFILER_PATH', value: 'CORECLR_PROFILER_PATH'},
@@ -830,7 +829,6 @@ describe('aas instrument', () => {
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
-          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
         },
       })
     })
@@ -854,7 +852,6 @@ describe('aas instrument', () => {
           {name: 'DD_SITE', value: 'DD_SITE'},
           {name: 'DD_SERVICE', value: 'DD_SERVICE'},
           {name: 'DD_DOTNET_TRACER_HOME', value: 'DD_DOTNET_TRACER_HOME'},
-          {name: 'DD_TRACE_LOG_DIRECTORY', value: 'DD_TRACE_LOG_DIRECTORY'},
           {name: 'CORECLR_ENABLE_PROFILING', value: 'CORECLR_ENABLE_PROFILING'},
           {name: 'CORECLR_PROFILER', value: 'CORECLR_PROFILER'},
           {name: 'CORECLR_PROFILER_PATH', value: 'CORECLR_PROFILER_PATH'},
@@ -870,7 +867,6 @@ describe('aas instrument', () => {
           CORECLR_PROFILER: '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}',
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
-          DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
         },
       })
     })

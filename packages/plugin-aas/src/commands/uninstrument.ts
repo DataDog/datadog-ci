@@ -10,7 +10,7 @@ import {SIDECAR_CONTAINER_NAME} from '@datadog/datadog-ci-base/helpers/serverles
 import {SERVERLESS_CLI_VERSION_TAG_NAME} from '@datadog/datadog-ci-base/helpers/tags'
 import chalk from 'chalk'
 
-import {AAS_DD_SETTING_NAMES, isDotnet, isWindows} from '../common'
+import {AAS_ADDITIONAL_CONFIGURED_SETTING_NAMES, isDotnet, isWindows} from '../common'
 
 export class PluginCommand extends AasUninstrumentCommand {
   private cred!: DefaultAzureCredential
@@ -175,15 +175,21 @@ export class PluginCommand extends AasUninstrumentCommand {
     client: WebSiteManagementClient,
     resourceGroup: string
   ) {
-    const configuredSettings = new Set([...AAS_DD_SETTING_NAMES, ...Object.keys(parseEnvVars(config.envVars))])
+    const configuredSettings = new Set([
+      ...AAS_ADDITIONAL_CONFIGURED_SETTING_NAMES,
+      ...Object.keys(parseEnvVars(config.envVars)),
+    ])
     this.context.stdout.write(`${this.dryRunPrefix}Checking Application Settings on ${chalk.bold(aasName)}\n`)
     const currentEnvVars = (await client.webApps.listApplicationSettings(resourceGroup, aasName)).properties
-    if (currentEnvVars !== undefined && Object.keys(currentEnvVars).some((key) => configuredSettings.has(key))) {
+    if (
+      currentEnvVars !== undefined &&
+      Object.keys(currentEnvVars).some((key) => key.startsWith('DD_') || configuredSettings.has(key))
+    ) {
       this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
       if (!this.dryRun) {
         await client.webApps.updateApplicationSettings(resourceGroup, aasName, {
           properties: Object.fromEntries(
-            Object.entries(currentEnvVars).filter(([key]) => !configuredSettings.has(key))
+            Object.entries(currentEnvVars).filter(([key]) => !key.startsWith('DD_') && !configuredSettings.has(key))
           ),
         })
       }

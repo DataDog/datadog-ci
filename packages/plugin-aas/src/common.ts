@@ -8,27 +8,15 @@ const DD_DOTNET_TRACER_HOME_CONTAINER = '/datadog/tracer'
 // The instrumentation binary that the .NET CLR loads into memory, which contains the GUID
 const CORECLR_PROFILER_PATH = '/linux-x64/Datadog.Trace.ClrProfiler.Native.so'
 const CORECLR_PROFILER_PATH_MUSL = '/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so'
-// Where tracer logs are stored
-const DD_TRACE_LOG_DIRECTORY = '/home/LogFiles/dotnet'
 // Instructs the .NET CLR that the Profiling APIs should be enabled (used by the .NET instrumentation library, dd-trace-dotnet)
 const CORECLR_ENABLE_PROFILING = '1'
 // GUID of .NET instrumentation library (dd-trace-dotnet)
 const CORECLR_PROFILER = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}'
 
-export const AAS_DD_SETTING_NAMES = [
-  'DD_API_KEY',
-  'DD_SITE',
-  'DD_AAS_INSTANCE_LOGGING_ENABLED',
-  'DD_SERVICE',
-  'DD_ENV',
-  'DD_VERSION',
-  'DD_SERVERLESS_LOG_PATH',
-  'DD_DOTNET_TRACER_HOME',
-  'DD_TRACE_LOG_DIRECTORY',
+export const AAS_ADDITIONAL_CONFIGURED_SETTING_NAMES = [
   'CORECLR_ENABLE_PROFILING',
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
-  'DD_TAGS',
 ] as const
 
 /**
@@ -70,7 +58,6 @@ export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Reco
       ...envVars,
       DD_DOTNET_TRACER_HOME: tracerHome,
       CORECLR_PROFILER_PATH: tracerHome + (config.isMusl ? CORECLR_PROFILER_PATH_MUSL : CORECLR_PROFILER_PATH),
-      DD_TRACE_LOG_DIRECTORY,
       CORECLR_ENABLE_PROFILING,
       CORECLR_PROFILER,
     }
