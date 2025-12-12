@@ -185,9 +185,10 @@ export const importInstallPkg = async () => {
 }
 
 const temporarilyInstallPluginWithNpx = async (scope: string) => {
+  const isWindows = process.platform === 'win32'
   const {basePackage, pluginPackage} = getPackagesToInstall(scope)
 
-  const emitPath = process.platform === 'win32' ? 'set PATH' : 'printenv PATH'
+  const emitPath = isWindows ? 'set PATH' : 'printenv PATH'
   const cmd = `npx -y -p ${basePackage} -p ${pluginPackage} ${emitPath}`
 
   debug('Using npx to install the missing plugin:', cmd)
@@ -202,7 +203,6 @@ const temporarilyInstallPluginWithNpx = async (scope: string) => {
   })
   debug('Output:', output)
 
-  const isWindows = process.platform === 'win32'
   const tempPath = getTempPath(output, isWindows)
 
   // The path should end with `node_modules/.bin`
