@@ -18,7 +18,7 @@ The `sbom upload` command no longer supports pull request triggers in CI platfor
 - **GitLab CI**: The `merge_request_event` pipeline source is not supported.
 - **Azure Pipelines**: The `PullRequest` build reason is not supported.
 
-**Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/static_analysis/github_actions/#workflow) for more information.
+**Migration**: Configure your CI workflow to use `push` instead. See the [documentation](https://docs.datadoghq.com/security/code_security/software_composition_analysis/setup_static?tab=github#scan-in-ci-pipelines) for more information.
 
 ### Default values for `lambda instrument` command
 
