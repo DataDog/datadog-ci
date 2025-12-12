@@ -13,7 +13,6 @@
     {"path": "../plugin-dora"},
     {"path": "../plugin-gate"},
     {"path": "../plugin-sarif"},
-    {"path": "../plugin-sbom"},
-    {"path": "../plugin-synthetics"}
+    {"path": "../plugin-sbom"}
   ]
 }
