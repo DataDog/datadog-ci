@@ -85,11 +85,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "dummy",
       "DD_TRACE_ENABLED": "true",
-      "DD_VERSION": "0.1",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_VERSION": "0.1"
     }
   },
   "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:90",
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:10"
   ]
 }
@@ -128,11 +128,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "dummy",
       "DD_TRACE_ENABLED": "true",
-      "DD_VERSION": "0.1",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_VERSION": "0.1"
     }
   },
   "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:90",
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:10"
   ]
 }
@@ -177,8 +177,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_TRACE_ENABLED": "true"
     }
   },
   "Layers": [
@@ -202,8 +201,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_TRACE_ENABLED": "true"
     }
   },
   "Layers": [
@@ -254,8 +252,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_TRACE_ENABLED": "true"
     }
   },
   "Layers": [
@@ -279,8 +276,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_TRACE_ENABLED": "true"
     }
   },
   "Layers": [
@@ -562,14 +558,11 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
       "DD_SERVICE": "middletier",
       "DD_TRACE_ENABLED": "true",
       "DD_VERSION": "0.2",
-      "DD_FLUSH_TO_LOG": "true",
-      "CORECLR_ENABLE_PROFILING": "1",
-      "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-      "CORECLR_PROFILER_PATH": "/opt/datadog/Datadog.Trace.ClrProfiler.Native.so",
-      "DD_DOTNET_TRACER_HOME": "/opt/datadog"
+      "AWS_LAMBDA_EXEC_WRAPPER": "/opt/datadog_wrapper"
     }
   },
   "Layers": [
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:90",
     "arn:aws:lambda:us-east-1:464622532012:layer:dd-trace-dotnet:129"
   ]
 }
@@ -593,6 +586,7 @@ exports[`lambda instrument execute prints dry run data for lambda extension laye
 UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
 {
   "FunctionName": "arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world",
+  "Handler": "/opt/nodejs/node_modules/datadog-lambda-js/handler.handler",
   "Environment": {
     "Variables": {
       "DD_LAMBDA_HANDLER": "index.handler",
@@ -609,7 +603,8 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
     }
   },
   "Layers": [
-    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6"
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6",
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:131"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
@@ -855,8 +850,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_CAPTURE_LAMBDA_PAYLOAD": "false",
       "DD_SERVERLESS_LOGS_ENABLED": "true",
       "DD_MERGE_XRAY_TRACES": "false",
-      "DD_TRACE_ENABLED": "true",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_TRACE_ENABLED": "true"
     }
   },
   "Layers": [
@@ -906,8 +900,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
       "DD_MERGE_XRAY_TRACES": "false",
       "DD_SERVICE": "testServiceName",
       "DD_TRACE_ENABLED": "true",
-      "DD_VERSION": "1.0.0",
-      "DD_FLUSH_TO_LOG": "true"
+      "DD_VERSION": "1.0.0"
     }
   },
   "Layers": [
