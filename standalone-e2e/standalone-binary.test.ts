@@ -134,7 +134,7 @@ describe('standalone binary', () => {
       const result = await execPromise(`${STANDALONE_BINARY_PATH} plugin check synthetics run-tests`)
       expect(result).toStrictEqual({
         exitCode: 0,
-        stdout: expect.stringContaining('The plugin @datadog/datadog-ci-plugin-synthetics is built-in!') as string,
+        stdout: expect.stringContaining('All plugins are already baked into the standalone binary.') as string,
         stderr: '',
       })
     })
