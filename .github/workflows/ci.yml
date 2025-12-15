@@ -120,20 +120,21 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-cloud-run": "file:./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-container-app": "file:./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-lambda": "file:./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-stepfunctions": "file:./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-synthetics": "file:./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz"
             },
             "dependencies": {
-              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-base": "./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-aas": "./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-cloud-run": "./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-stepfunctions": "./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
             }
           }' > package.json
 
@@ -256,14 +257,16 @@ jobs:
         run: |
           echo '{
             "name": "datadog-ci-plugin-auto-install",
+            "overrides": {
+              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base"
+            },
             "dependencies": {
               "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
             }
           }' > package.json
 
-          # Use `--legacy-peer-deps` because `overrides` do not work in our case.
-          npm install --legacy-peer-deps
+          npm install
       - name: Check that AAS plugin is not installed
         run: |
           if npx datadog-ci plugin check aas; then
@@ -286,6 +289,9 @@ jobs:
           fi
       - name: Install AAS plugin
         run: npx datadog-ci plugin install aas
+        env:
+          DEBUG: plugins
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if npx datadog-ci plugin check aas; then

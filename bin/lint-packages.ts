@@ -219,6 +219,11 @@ const pluginPackages = fs
   })
   .filter((p): p is PluginPackage => p !== undefined)
 
+const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
+const installablePlugins = pluginPackages.filter(
+  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.dependencies)
+)
+
 const exceptionScopes: CommandScope[] = [...noPluginExceptions].map((scope) => ({
   scope,
   commands: findCommands(path.join('packages/base/src/commands', scope), scope),
@@ -331,22 +336,32 @@ const matchAndReplace = (file: string): Replacer => {
 const TO_APPLY: ApplyChanges[] = []
 
 // #region - Format file: .github/workflows/ci.yml
-const resolutions = ['@datadog/datadog-ci-base', ...pluginPackages.map((p) => p.packageJson.name)]
-  .map((name) => `"${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
+const resolutions = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
+  .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
   .join(',\n')
+
+const dependencies = [
+  '@datadog/datadog-ci',
+  '@datadog/datadog-ci-base',
+  ...installablePlugins.map((p) => p.packageJson.name),
+]
+  .map((name) => `    "${name}": "./artifacts/${name.replace('/', '-')}-\${{ matrix.version }}.tgz"`)
+  .join(',\n')
+
+const e2eProjectPackageJson = `{
+  "name": "datadog-ci-e2e-tests",
+  "resolutions": {
+${resolutions}
+  },
+  "dependencies": {
+${dependencies}
+  }
+}`
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
         run: |
-          echo '{
-            "name": "datadog-ci-e2e-tests",
-            "resolutions": {
-              ${resolutions}
-            },
-            "dependencies": {
-              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-\${{ matrix.version }}.tgz"
-            }
-          }' > package.json
+          echo '${e2eProjectPackageJson}' > package.json
 `)
 // #endregion
 
@@ -381,11 +396,6 @@ TO_APPLY.push(matchAndReplace('tsconfig.json')`
 // #endregion
 
 // #region - Format file: packages/datadog-ci/tsconfig.json
-const builtinPlugins = pluginPackages.filter((p) => p.packageJson.name in datadogCiPackage.packageJson.dependencies)
-const installablePlugins = pluginPackages.filter(
-  (p) => !(p.packageJson.name in datadogCiPackage.packageJson.dependencies)
-)
-
 TO_APPLY.push(matchAndReplace('packages/datadog-ci/tsconfig.json')`
   "references": [
     {"path": "../base"},
