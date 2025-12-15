@@ -257,14 +257,16 @@ jobs:
         run: |
           echo '{
             "name": "datadog-ci-plugin-auto-install",
+            "overrides": {
+              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base"
+            },
             "dependencies": {
               "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
             }
           }' > package.json
 
-          # Use `--legacy-peer-deps` because `overrides` do not work in our case.
-          npm install --legacy-peer-deps
+          npm install
       - name: Check that AAS plugin is not installed
         run: |
           if npx datadog-ci plugin check aas; then
@@ -287,6 +289,9 @@ jobs:
           fi
       - name: Install AAS plugin
         run: npx datadog-ci plugin install aas
+        env:
+          DEBUG: plugins
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if npx datadog-ci plugin check aas; then

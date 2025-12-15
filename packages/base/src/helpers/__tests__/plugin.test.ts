@@ -94,8 +94,9 @@ describe('installPlugin', () => {
     expect(consoleLogSpy).toHaveBeenCalledWith('Stderr:', 'error message')
   })
 
-  test('uses version override when provided', async () => {
-    process.env['PLUGIN_AUTO_INSTALL_VERSION_OVERRIDE'] = '2.0.0'
+  test('uses version overrides when provided', async () => {
+    process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE'] = 'foo'
+    process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE'] = 'bar'
 
     const mockInstallPackage = jest.fn().mockResolvedValue({
       exitCode: 0,
@@ -107,11 +108,12 @@ describe('installPlugin', () => {
 
     await installPlugin('test')
     expect(mockInstallPackage).toHaveBeenCalledWith(
-      ['@datadog/datadog-ci-base@2.0.0', '@datadog/datadog-ci-plugin-test@2.0.0'],
+      ['@datadog/datadog-ci-base@foo', '@datadog/datadog-ci-plugin-test@bar'],
       {silent: true, dev: true}
     )
 
-    delete process.env['PLUGIN_AUTO_INSTALL_VERSION_OVERRIDE']
+    delete process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
+    delete process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
   })
 
   test('handles full package name', async () => {
