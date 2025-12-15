@@ -182,7 +182,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -206,7 +206,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
@@ -257,7 +257,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node16-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -281,7 +281,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node18-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world-2
@@ -604,7 +604,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:us-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Extension:6",
-    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:131"
+    "arn:aws:lambda:us-east-1:464622532012:layer:Datadog-Node24-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world
@@ -855,7 +855,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
@@ -905,7 +905,7 @@ UpdateFunctionConfiguration -> arn:aws:lambda:sa-east-1:123456789012:function:la
   },
   "Layers": [
     "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Extension:90",
-    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:131"
+    "arn:aws:lambda:sa-east-1:464622532012:layer:Datadog-Node24-x:132"
   ]
 }
 TagResource -> arn:aws:lambda:sa-east-1:123456789012:function:lambda-hello-world
