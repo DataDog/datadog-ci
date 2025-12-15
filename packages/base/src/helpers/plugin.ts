@@ -147,7 +147,7 @@ export const installPlugin = async (packageOrScope: string): Promise<boolean> =>
   // We need to install the base package as well in order to satisfy the plugin's peerDependencies.
   const {installPackage} = await importInstallPkg()
   const output = await installPackage([basePackage, pluginPackage], {
-    silent: true,
+    silent: !debug.enabled,
     dev: true,
   })
 
@@ -313,9 +313,14 @@ const isValidScope = (scope: string): boolean => {
 
 const getPackagesToInstall = (scope: string) => {
   const pluginName = scopeToPackageName(scope)
-  const versionOverride = process.env['PLUGIN_AUTO_INSTALL_VERSION_OVERRIDE']
-  const basePackage = `@datadog/datadog-ci-base@${versionOverride ?? cliVersion}`
-  const pluginPackage = `${pluginName}@${versionOverride ?? cliVersion}`
+
+  // Useful for testing with different versions than the current CLI version.
+  // This supports any format that the current package manager supports.
+  const baseVersionOverride = process.env['PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE']
+  const pluginVersionOverride = process.env['PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE']
+
+  const basePackage = `@datadog/datadog-ci-base@${baseVersionOverride ?? cliVersion}`
+  const pluginPackage = `${pluginName}@${pluginVersionOverride ?? cliVersion}`
 
   return {basePackage, pluginPackage}
 }
