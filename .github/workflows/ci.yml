@@ -209,24 +209,18 @@ jobs:
         with:
           name: artifacts-20
           path: artifacts/
-      - name: Override base package with artifacts
+      - name: Run AAS command with auto-install (NPX)
         run: |
-          TMP_PATH=$(npx -p @datadog/datadog-ci printenv PATH | cut -d ':' -f 1)
-          echo "Initial TMP_PATH: $TMP_PATH"
-          TMP_PATH=$(realpath $TMP_PATH/../..)
-          echo "NPX project path: $TMP_PATH"
-
-          echo "Extracting base package from artifacts"
-          tar -xzf ./artifacts/@datadog-datadog-ci-base-20.tgz
-
-          echo "Moving base package to temporary node_modules"
-          rm -rf $TMP_PATH/node_modules/@datadog/datadog-ci-base
-          mv package/ $TMP_PATH/node_modules/@datadog/datadog-ci-base
-      - name: Run AAS command with auto-install
-        env:
-          DEBUG: plugins
-        run: |
-          output=$(npx @datadog/datadog-ci aas instrument || true)
+          output=$(npx \
+              -p ./artifacts/@datadog-datadog-ci-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-base-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz \
+              datadog-ci aas instrument || true
+          )
           if echo "$output" | grep "Successfully installed"; then
             echo "AAS plugin was automatically installed"
             exit 0
@@ -235,6 +229,11 @@ jobs:
             echo "Output: $output"
             exit 1
           fi
+        env:
+          DEBUG: plugins
+          # Needed during releases, to avoid a "No matching version found" errors
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
 
   # Using `npx datadog-ci` only runs the binary without fetching any package.
   test-plugin-auto-install-in-project-npm:
@@ -253,12 +252,17 @@ jobs:
         with:
           name: artifacts-20
           path: artifacts/
-      - name: Create test project
+      - name: Create test project (NPM)
         run: |
           echo '{
-            "name": "datadog-ci-plugin-auto-install",
+            "name": "datadog-ci-plugin-auto-install-npm",
             "overrides": {
-              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base"
+              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
+              "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
+              "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
+              "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz",
+              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
@@ -266,6 +270,8 @@ jobs:
             }
           }' > package.json
 
+          # Ignore peer dependencies to fix infinite loop and ignore warnings about tarballs
+          npm config set legacy-peer-deps true
           npm install
       - name: Check that AAS plugin is not installed
         run: |
@@ -277,6 +283,11 @@ jobs:
             exit 0
           fi
       - name: Run AAS command with auto-install
+        env:
+          DEBUG: plugins
+          # Needed during releases, to avoid a "No matching version found" errors
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
         run: |
           output=$(npx datadog-ci aas instrument || true)
           if echo "$output" | grep "Successfully installed"; then
@@ -291,7 +302,9 @@ jobs:
         run: npx datadog-ci plugin install aas
         env:
           DEBUG: plugins
+          # Needed during releases, to avoid a "No matching version found" errors
           PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if npx datadog-ci plugin check aas; then
@@ -318,15 +331,20 @@ jobs:
         with:
           name: artifacts-20
           path: artifacts/
-      - name: Create test project
+      - name: Create test project (Yarn)
         run: |
           echo '{
-            "name": "datadog-ci-plugin-auto-install",
+            "name": "datadog-ci-plugin-auto-install-yarn",
             "resolutions": {
-              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz",
+              "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
+              "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
+              "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz",
+              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
             "dependencies": {
-              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-20.tgz"
+              "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
             }
           }' > package.json
 
@@ -343,6 +361,11 @@ jobs:
             exit 0
           fi
       - name: Run AAS command with auto-install
+        env:
+          DEBUG: plugins
+          # Needed during releases, to avoid a "No matching version found" errors
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
         run: |
           output=$(yarn datadog-ci aas instrument || true)
           if echo "$output" | grep "Successfully installed"; then
@@ -355,6 +378,11 @@ jobs:
           fi
       - name: Install AAS plugin
         run: yarn datadog-ci plugin install aas
+        env:
+          DEBUG: plugins
+          # Needed during releases, to avoid a "No matching version found" errors
+          PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if yarn datadog-ci plugin check aas; then
