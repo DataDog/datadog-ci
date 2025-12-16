@@ -358,6 +358,14 @@ ${dependencies}
   }
 }`
 
+const npxArguments = [
+  '@datadog/datadog-ci',
+  '@datadog/datadog-ci-base',
+  ...builtinPlugins.map((p) => p.packageJson.name),
+]
+  .map((name) => `-p ./artifacts/${name.replace('/', '-')}-20.tgz \\`)
+  .join('\n')
+
 // No matrix version for auto-install e2e tests.
 const overridesNode20 = builtinPlugins
   .map((p) => p.packageJson.name)
@@ -399,6 +407,16 @@ TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
         run: |
           echo '${e2eProjectPackageJson}' > package.json
+`)
+
+TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
+      - name: Override base package with artifacts
+        run: |
+          TMP_PATH=$(
+            npx \\
+              ${npxArguments}
+              printenv PATH | cut -d ':' -f 1
+          )
 `)
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`

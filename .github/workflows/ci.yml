@@ -211,17 +211,20 @@ jobs:
           path: artifacts/
       - name: Override base package with artifacts
         run: |
-          TMP_PATH=$(npx -p @datadog/datadog-ci printenv PATH | cut -d ':' -f 1)
+          TMP_PATH=$(
+            npx \
+              -p ./artifacts/@datadog-datadog-ci-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-base-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz \
+              printenv PATH | cut -d ':' -f 1
+          )
           echo "Initial TMP_PATH: $TMP_PATH"
           TMP_PATH=$(realpath $TMP_PATH/../..)
           echo "NPX project path: $TMP_PATH"
-
-          echo "Extracting base package from artifacts"
-          tar -xzf ./artifacts/@datadog-datadog-ci-base-20.tgz
-
-          echo "Moving base package to temporary node_modules"
-          rm -rf $TMP_PATH/node_modules/@datadog/datadog-ci-base
-          mv package/ $TMP_PATH/node_modules/@datadog/datadog-ci-base
       - name: Run AAS command with auto-install
         env:
           DEBUG: plugins
