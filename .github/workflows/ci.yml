@@ -328,7 +328,6 @@ jobs:
             "name": "datadog-ci-plugin-auto-install-yarn",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz",
-              "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
@@ -365,6 +364,9 @@ jobs:
           fi
       - name: Install AAS plugin
         run: yarn datadog-ci plugin install aas
+        env:
+          DEBUG: plugins
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if yarn datadog-ci plugin check aas; then
