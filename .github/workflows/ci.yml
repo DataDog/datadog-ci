@@ -328,6 +328,7 @@ jobs:
             "name": "datadog-ci-plugin-auto-install-yarn",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz",
+              "@datadog/datadog-ci-plugin-aas": "file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",

@@ -375,7 +375,11 @@ ${overridesNode20}
 }`
 
 // No matrix version for auto-install e2e tests.
-const resolutionsNode20 = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
+const resolutionsNode20 = [
+  '@datadog/datadog-ci-base',
+  '@datadog/datadog-ci-plugin-aas', // Explicit resolution for AAS auto-install only.
+  ...builtinPlugins.map((p) => p.packageJson.name),
+]
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
   .join(',\n')
 
