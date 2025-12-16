@@ -352,6 +352,9 @@ jobs:
             exit 0
           fi
       - name: Run AAS command with auto-install
+        env:
+          DEBUG: plugins
+          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
         run: |
           output=$(yarn datadog-ci aas instrument || true)
           if echo "$output" | grep "Successfully installed"; then
@@ -364,9 +367,6 @@ jobs:
           fi
       - name: Install AAS plugin
         run: yarn datadog-ci plugin install aas
-        env:
-          DEBUG: plugins
-          PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
       - name: Check that AAS plugin is installed
         run: |
           if yarn datadog-ci plugin check aas; then
