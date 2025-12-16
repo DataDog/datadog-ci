@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-base",
-  "version": "4.4.0",
+  "version": "5.0.0",
   "description": "Base package for Datadog CI",
   "license": "Apache-2.0",
   "keywords": [
