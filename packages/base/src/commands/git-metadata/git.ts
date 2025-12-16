@@ -101,6 +101,10 @@ export const getGitDiff = async (git: simpleGit.SimpleGit, from: string, to: str
   }
 }
 
+export const getGitFileHash = async (git: simpleGit.SimpleGit, path: string): Promise<string> => {
+  return git.revparse([`HEAD:${path}`])
+}
+
 export interface DiffData {
   head_sha: string
   base_sha: string
