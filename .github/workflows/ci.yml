@@ -231,9 +231,8 @@ jobs:
           fi
         env:
           DEBUG: plugins
-          # Needed during releases, to avoid a "No matching version found for @datadog/datadog-ci-base@x.x.x" error
+          # Needed during releases, to avoid a "No matching version found" errors
           PLUGIN_AUTO_INSTALL_BASE_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-base-20.tgz
-          # Needed during releases, to avoid a "No matching version found for @datadog/datadog-ci-plugin-aas@x.x.x" error
           PLUGIN_AUTO_INSTALL_PLUGIN_VERSION_OVERRIDE: file:./artifacts/@datadog-datadog-ci-plugin-aas-20.tgz
 
   # Using `npx datadog-ci` only runs the binary without fetching any package.
@@ -271,8 +270,9 @@ jobs:
             }
           }' > package.json
 
-          # Ignore peer dependencies to fix infinite loop and ignore warnings
-          npm install --legacy-peer-deps
+          # Ignore peer dependencies to fix infinite loop and ignore warnings about tarballs
+          npm config set legacy-peer-deps true
+          npm install
       - name: Check that AAS plugin is not installed
         run: |
           if npx datadog-ci plugin check aas; then
