@@ -370,7 +370,7 @@ const npmTestProjectPackageJson = `{
 ${overridesNode20}
   },
   "dependencies": {
-    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
+    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
   }
 }`
 

@@ -266,7 +266,7 @@ jobs:
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
             "dependencies": {
-              "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
+              "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
             }
           }' > package.json
 
