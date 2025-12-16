@@ -271,7 +271,8 @@ jobs:
             }
           }' > package.json
 
-          npm install
+          # Ignore peer dependencies to fix infinite loop and ignore warnings
+          npm install --legacy-peer-deps
       - name: Check that AAS plugin is not installed
         run: |
           if npx datadog-ci plugin check aas; then
