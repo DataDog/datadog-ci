@@ -359,8 +359,7 @@ ${dependencies}
 }`
 
 // No matrix version for auto-install e2e tests.
-const overridesNode20 = builtinPlugins
-  .map((p) => p.packageJson.name)
+const overridesNode20 = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
   .join(',\n')
 
@@ -368,12 +367,10 @@ const overridesNode20 = builtinPlugins
 const npmTestProjectPackageJson = `{
   "name": "datadog-ci-plugin-auto-install-npm",
   "overrides": {
-    "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
 ${overridesNode20}
   },
   "dependencies": {
     "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
-    "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
   }
 }`
 
