@@ -358,10 +358,35 @@ ${dependencies}
   }
 }`
 
+// No matrix version for auto-install e2e tests.
+const overrides = builtinPlugins
+  .map((p) => p.packageJson.name)
+  .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
+  .join(',\n')
+
+// No plugins installed. Only the built-in plugins are overridden.
+const npmTestProjectPackageJson = `{
+  "name": "datadog-ci-plugin-auto-install-npm",
+  "overrides": {
+    "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
+${overrides}
+  },
+  "dependencies": {
+    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
+    "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+  }
+}`
+
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create e2e project
         run: |
           echo '${e2eProjectPackageJson}' > package.json
+`)
+
+TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
+      - name: Create test project (NPM)
+        run: |
+          echo '${npmTestProjectPackageJson}' > package.json
 `)
 // #endregion
 

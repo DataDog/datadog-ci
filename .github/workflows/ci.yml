@@ -253,12 +253,17 @@ jobs:
         with:
           name: artifacts-20
           path: artifacts/
-      - name: Create test project
+      - name: Create test project (NPM)
         run: |
           echo '{
-            "name": "datadog-ci-plugin-auto-install",
+            "name": "datadog-ci-plugin-auto-install-npm",
             "overrides": {
-              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base"
+              "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
+              "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
+              "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
+              "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz",
+              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
             "dependencies": {
               "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
