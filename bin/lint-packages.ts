@@ -359,7 +359,7 @@ ${dependencies}
 }`
 
 // No matrix version for auto-install e2e tests.
-const overrides = builtinPlugins
+const overridesNode20 = builtinPlugins
   .map((p) => p.packageJson.name)
   .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
   .join(',\n')
@@ -369,11 +369,27 @@ const npmTestProjectPackageJson = `{
   "name": "datadog-ci-plugin-auto-install-npm",
   "overrides": {
     "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
-${overrides}
+${overridesNode20}
   },
   "dependencies": {
     "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz",
     "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz"
+  }
+}`
+
+// No matrix version for auto-install e2e tests.
+const resolutionsNode20 = ['@datadog/datadog-ci-base', ...builtinPlugins.map((p) => p.packageJson.name)]
+  .map((name) => `    "${name}": "file:./artifacts/${name.replace('/', '-')}-20.tgz"`)
+  .join(',\n')
+
+// No plugins installed. Only the built-in plugins are overridden.
+const yarnTestProjectPackageJson = `{
+  "name": "datadog-ci-plugin-auto-install-yarn",
+  "resolutions": {
+${resolutionsNode20}
+  },
+  "dependencies": {
+    "@datadog/datadog-ci": "file:./artifacts/@datadog-datadog-ci-20.tgz"
   }
 }`
 
@@ -387,6 +403,12 @@ TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Create test project (NPM)
         run: |
           echo '${npmTestProjectPackageJson}' > package.json
+`)
+
+TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
+      - name: Create test project (Yarn)
+        run: |
+          echo '${yarnTestProjectPackageJson}' > package.json
 `)
 // #endregion
 
