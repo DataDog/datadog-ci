@@ -410,12 +410,11 @@ TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
 `)
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
-      - name: Override base package with artifacts
+      - name: Run AAS command with auto-install (NPX)
         run: |
-          TMP_PATH=$(
-            npx \\
+          output=$(npx \\
               ${npxArguments}
-              printenv PATH | cut -d ':' -f 1
+              datadog-ci aas instrument || true
           )
 `)
 
