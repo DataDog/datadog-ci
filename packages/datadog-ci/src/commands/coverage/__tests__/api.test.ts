@@ -48,12 +48,26 @@ describe('uploadCodeCoverageReport', () => {
       commitDiff: undefined,
       paths: ['/my/path/.resultset.json'],
       basePath: '/my/base/path',
+      codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
+      coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
     await uploader(payload)
 
     expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/coverage_report/), {filename: 'event.json'})
+    expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/"codeowners.path":"CODEOWNERS"/), {
+      filename: 'event.json',
+    })
+    expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/"codeowners.sha":"abc123"/), {
+      filename: 'event.json',
+    })
+    expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/"config.path":"coverage.yml"/), {
+      filename: 'event.json',
+    })
+    expect(appendMock).toHaveBeenCalledWith('event', expect.stringMatching(/"config.sha":"bef456"/), {
+      filename: 'event.json',
+    })
     expect(appendMock).toHaveBeenCalledWith('code_coverage_report_file', mockStream, {filename: 'resultset.json.gz'})
 
     expect(requestMock).toHaveBeenCalledWith(
@@ -97,6 +111,8 @@ describe('uploadCodeCoverageReport', () => {
       commitDiff: undefined,
       paths: ['/my/path/.resultset.json'],
       basePath: '/my/base/path',
+      codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
+      coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)

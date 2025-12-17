@@ -13,6 +13,13 @@ export interface Payload {
   basePath: string | undefined
   commitDiff: DiffData | undefined
   prDiff: DiffData | undefined
+  coverageConfig: RepoFile | undefined
+  codeowners: RepoFile | undefined
+}
+
+export interface RepoFile {
+  path: string
+  sha: string
 }
 
 export interface APIHelper {

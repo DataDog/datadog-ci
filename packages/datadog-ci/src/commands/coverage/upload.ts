@@ -1,7 +1,13 @@
 import os from 'os'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
-import {DiffData, getGitDiff, getMergeBase, newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
+import {
+  DiffData,
+  getGitDiff,
+  getGitFileHash,
+  getMergeBase,
+  newSimpleGit,
+} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -35,7 +41,7 @@ import upath from 'upath'
 import {apiUrl} from '../junit/api'
 
 import {apiConstructor, intakeUrl} from './api'
-import {APIHelper, Payload} from './interfaces'
+import {APIHelper, Payload, RepoFile} from './interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -55,6 +61,10 @@ const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
 const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
+
+const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
+
+const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
 export class CoverageUploadCommand extends BaseCommand {
   public static paths = [['coverage', 'upload']]
@@ -239,6 +249,8 @@ export class CoverageUploadCommand extends BaseCommand {
       throw new Error('"resolved" is a reserved tag name, please avoid using it in your custom tags')
     }
 
+    const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS)
+    const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
     const reports = this.getMatchingCoverageReportFilesByFormat()
@@ -258,11 +270,32 @@ export class CoverageUploadCommand extends BaseCommand {
           hostname: os.hostname(),
           commitDiff,
           prDiff,
+          coverageConfig,
+          codeowners,
         }))
       })
     }
 
     return payloads
+  }
+
+  private async getRepoFile(possiblePaths: string[]): Promise<RepoFile | undefined> {
+    if (!this.git) {
+      return undefined
+    }
+
+    for (const path of possiblePaths) {
+      try {
+        const sha = await getGitFileHash(this.git, path)
+        if (sha) {
+          return {path, sha}
+        }
+      } catch (e) {
+        this.logger.debug(`Error while trying to get repo file ${path} details: ${e}`)
+      }
+    }
+
+    return undefined
   }
 
   private async getPrDiff(spanTags: SpanTags): Promise<DiffData | undefined> {

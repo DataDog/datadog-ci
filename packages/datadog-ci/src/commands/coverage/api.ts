@@ -15,7 +15,6 @@ const maxBodyLength = Infinity
 
 export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
 export const intakeUrl = `https://ci-intake.${datadogSite}`
-export const apiUrl = `https://api.${datadogSite}`
 
 export const uploadCodeCoverageReport =
   (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: Payload) => {
@@ -29,6 +28,16 @@ export const uploadCodeCoverageReport =
       ...payload.spanTags,
       ...payload.customTags,
       ...payload.customMeasures,
+    }
+
+    if (payload.codeowners) {
+      event['codeowners.path'] = payload.codeowners.path
+      event['codeowners.sha'] = payload.codeowners.sha
+    }
+
+    if (payload.coverageConfig) {
+      event['config.path'] = payload.coverageConfig.path
+      event['config.sha'] = payload.coverageConfig.sha
     }
 
     form.append('event', JSON.stringify(event), {filename: 'event.json'})
