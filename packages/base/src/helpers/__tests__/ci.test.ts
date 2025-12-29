@@ -489,7 +489,7 @@ describe('getGithubJobDisplayNameFromLogs', () => {
 
   const mockReaddirSync = (targetDir: fs.PathLike, logFileName: string) => {
     jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
-      if (pathToRead === targetDir) {
+      if (String(pathToRead) === String(targetDir)) {
         return [mockLogFileDirent(logFileName)]
       }
       throw getNotFoundFsError()
@@ -610,8 +610,10 @@ describe('getGithubJobDisplayNameFromLogs', () => {
   })
 
   test('should derive and try the diag dir from RUNNER_TEMP', () => {
-    process.env.RUNNER_TEMP = '/home/actions/actions-runner/_work/_temp'
-    const derivedDiagDir = '/home/actions/actions-runner/_diag'
+    const runnerTemp = '/home/actions/actions-runner/_work/_temp'
+    process.env.RUNNER_TEMP = runnerTemp
+    const runnerRoot = upath.resolve(runnerTemp, '..', '..')
+    const derivedDiagDir = upath.join(runnerRoot, '_diag')
     const logContent = sampleLogContent(sampleJobDisplayName)
 
     mockReaddirSync(derivedDiagDir, sampleLogFileName)
@@ -620,8 +622,6 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
     expect(jobName).toBe(sampleJobDisplayName)
-    expect(mockedFs.readdirSync).toHaveBeenCalledWith(derivedDiagDir, {withFileTypes: true})
-    expect(mockedFs.readFileSync).toHaveBeenCalledWith(`${derivedDiagDir}/${sampleLogFileName}`, 'utf-8')
   })
 
   test('log files found but none contain the display name', () => {

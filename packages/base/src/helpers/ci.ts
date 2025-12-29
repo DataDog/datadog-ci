@@ -1109,8 +1109,8 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     try {
       const files = fs.readdirSync(currentDir, {withFileTypes: true})
       const potentialLogs = files
-        .filter((file: {isFile(): boolean; name: string}) => file.isFile() && file.name.startsWith('Worker_') && file.name.endsWith('.log'))
-        .map((file: {name: string}) => file.name)
+        .filter((file) => file.isFile() && file.name.startsWith('Worker_') && file.name.endsWith('.log'))
+        .map((file) => file.name)
 
       if (potentialLogs.length > 0) {
         foundDiagDir = currentDir
