@@ -4,9 +4,9 @@ Upload your code coverage report files.
 
 ## Usage
 
-#### Commands
+### Commands
 
-##### `upload`
+#### `upload`
 
 This command uploads your code coverage reports to Datadog.
 

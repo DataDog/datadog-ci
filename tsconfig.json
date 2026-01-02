@@ -10,6 +10,7 @@
     {"path": "./packages/plugin-aas"},
     {"path": "./packages/plugin-cloud-run"},
     {"path": "./packages/plugin-container-app"},
+    {"path": "./packages/plugin-coverage"},
     {"path": "./packages/plugin-deployment"},
     {"path": "./packages/plugin-dora"},
     {"path": "./packages/plugin-gate"},
