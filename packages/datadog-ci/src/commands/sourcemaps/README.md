@@ -59,6 +59,8 @@ When these requirements are met, the upload command reports Git information such
 - for each sourcemap, the list of file paths that are tracked in the repository. Only tracked file paths that could be related to a sourcemap are gathered.
 For example, for a sourcemap referencing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute, the command will gather all file paths with `example.ts` as filename.
 
+When those requirements are not met (or `--disable-git` is set), your errors are displayed in Datadog with a minified stack trace and no context. See [Troubleshoot errors with ease][2].
+
 #### Override repository URL
 
 The repository URL is inferred
@@ -121,3 +123,4 @@ Additional helpful documentation, links, and articles:
 - [Learn about Uploading JavaScript Source Maps][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/
+[2]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/#troubleshoot-errors-with-ease
