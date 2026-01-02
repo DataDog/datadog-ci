@@ -6,7 +6,7 @@ import chalk from 'chalk'
 import {RNSourcemap} from './interfaces'
 
 export const renderGitWarning = (errorMessage: string) =>
-  chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
+  chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
 To ignore this warning use the --disable-git flag.\n`)
 
@@ -43,12 +43,12 @@ export const renderRemoveSourcesContentWarning = () =>
   )}`
 
 export const renderFailedSourcesContentRemovalError = (payload: RNSourcemap, errorMessage: string) => `${chalk.red(
-  `An error occured while removing the "sourcesContent" part of the sourcemap file ${payload.sourcemapPath}": ${errorMessage}`
+  `An error occurred while removing the "sourcesContent" part of the sourcemap file ${payload.sourcemapPath}": ${errorMessage}`
 )}.
   Trying to upload the full sourcemap with the "sourcesContent".`
 
 /**
- * As of now, this command takes an array of one signe UploadStatus element since we only support upload
+ * As of now, this command takes an array of one single UploadStatus element since we only support upload
  * of a single sourcemap.
  * We considered it was preferable to leave it this way so it's ready for multiple sourcemaps uploads,
  * rather than investing into adapting it for this purpose.

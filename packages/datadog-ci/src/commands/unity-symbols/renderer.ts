@@ -81,7 +81,7 @@ export const renderMissingBuildId = (path: string) =>
   chalk.red(`${ICONS.FAILED} Error: Invalid or missing 'build_id' file. Expected at path ${path}\n`)
 
 export const renderGitWarning = (errorMessage: string) =>
-  chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
+  chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
 To ignore this warning use the --disable-git flag.\n`)
 
