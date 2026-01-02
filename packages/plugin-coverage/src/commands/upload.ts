@@ -1,6 +1,6 @@
 import os from 'os'
 
-import {BaseCommand} from '@datadog/datadog-ci-base'
+import {CoverageUploadCommand} from '@datadog/datadog-ci-base/commands/coverage/upload'
 import {
   DiffData,
   getGitDiff,
@@ -34,14 +34,11 @@ import {
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
 import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
-import {apiUrl} from '../junit/api'
-
-import {apiConstructor, intakeUrl} from './api'
-import {APIHelper, Payload, RepoFile} from './interfaces'
+import {apiConstructor, apiUrl, intakeUrl} from '../api'
+import {APIHelper, Payload, RepoFile} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -53,8 +50,8 @@ import {
   renderSuccessfulUpload,
   renderSuccessfulUploadCommand,
   renderUpload,
-} from './renderer'
-import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from './utils'
+} from '../renderer'
+import {coverageFormats, detectFormat, isCoverageFormat, toCoverageFormat, validateCoverageReport} from '../utils'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
@@ -66,65 +63,7 @@ const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datad
 
 const CODEOWNERS_PATHS = ['.github/CODEOWNERS', 'CODEOWNERS', 'docs/CODEOWNERS']
 
-export class CoverageUploadCommand extends BaseCommand {
-  public static paths = [['coverage', 'upload']]
-
-  public static usage = Command.Usage({
-    category: 'CI Visibility',
-    description: 'Upload code coverage reports files to Datadog.',
-    details: `
-      This command will upload code coverage report files to Datadog.\n
-      See README for details.
-    `,
-    examples: [
-      ['Upload all code coverage report files in current directory and its subfolders', 'datadog-ci coverage upload .'],
-      [
-        'Upload all code coverage report files in current directory and its subfolders, ignoring src/ignored-module-a and src/ignored-module-b',
-        'datadog-ci coverage upload --ignored-paths src/ignored-module-a,src/ignored-module-b .',
-      ],
-      [
-        'Upload all code coverage report files in src/unit-test-coverage and src/acceptance-test-coverage',
-        'datadog-ci coverage upload src/unit-test-coverage src/acceptance-test-coverage',
-      ],
-      [
-        'Upload all XML code coverage report files in /coverage/ folders, ignoring src/ignored-module-a',
-        'datadog-ci coverage upload **/coverage/*.xml --ignored-paths src/ignored-module-a',
-      ],
-      [
-        'Upload all code coverage report files in current directory and add extra tags globally',
-        'datadog-ci coverage upload --tags key1:value1 --tags key2:value2 .',
-      ],
-      [
-        'Upload all code coverage report files in current directory and add extra measures globally',
-        'datadog-ci coverage upload --measures key1:123 --measures key2:321 .',
-      ],
-      [
-        'Upload all code coverage report files in current directory to the datadoghq.eu site',
-        'DD_SITE=datadoghq.eu datadog-ci coverage upload .',
-      ],
-      [
-        'Upload all code coverage report files in current directory with extra verbosity',
-        'datadog-ci coverage upload --verbose .',
-      ],
-    ],
-  })
-
-  private reportPaths = Option.Rest({required: 1})
-  private verbose = Option.Boolean('--verbose', false)
-  private dryRun = Option.Boolean('--dry-run', false)
-  private measures = Option.Array('--measures')
-  private tags = Option.Array('--tags')
-  private format = Option.String('--format')
-  private uploadGitDiff = Option.Boolean('--upload-git-diff', true)
-  private skipGitMetadataUpload = Option.Boolean('--skip-git-metadata-upload', false)
-  private gitRepositoryURL = Option.String('--git-repository-url')
-  private basePath = Option.String('--base-path')
-
-  private ignoredPaths = Option.String('--ignored-paths')
-
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-
+export class PluginCommand extends CoverageUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,

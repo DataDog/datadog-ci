@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@datadog/datadog-ci-base": "workspace:*",
+    "@datadog/datadog-ci-plugin-coverage": "workspace:*",
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
