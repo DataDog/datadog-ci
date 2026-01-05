@@ -285,7 +285,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
   debug('Importing submodule:', resolvedPath)
 
-  return (await import(resolvedPath)) as PluginSubModule
+  return require(resolvedPath) as PluginSubModule
 }
 
 export const scopeToPackageName = (scope: string): string => {
@@ -327,12 +327,12 @@ const getPackagesToInstall = (scope: string) => {
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
+    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error when importing JSON.
     return extractPackageJson(require(`${scope}/package.json`))
   }
 
   if (!command) {
-    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error.
+    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error when importing JSON.
     return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
   }
 
