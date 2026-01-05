@@ -41,7 +41,7 @@ Example: if you're uploading `dist/file.js` to `https://example.com/static/file.
 In addition, some optional parameters are available:
 
 * `--max-concurrency` (default: `20`): number of concurrent upload to the API.
-* `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository related data to Datadog (hash, remote URL and the paths within the repository of the sources referenced in the sourcemap).
+* `--disable-git` (default: false): prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the sourcemap).
 * `--quiet` (default: false): suppresses individual line output for each upload. Success and error logs are never suppressed.
 * `--dry-run` (default: `false`): it will run the command without the final step of upload. All other checks are performed.
 * `--project-path` (default: empty): the path of the project where the sourcemaps were built. This will be stripped off from sources paths referenced in the sourcemap so they can be properly matched against tracked files paths. See details in the [dedicated section](#setting-the-project-path).
@@ -49,9 +49,10 @@ In addition, some optional parameters are available:
 
 ### Link errors with your source code
 
-Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket/Azure DevOps if these requirements are met:
+Errors in Datadog UI can be enriched with direct links to your repository if these requirements are met:
 - `git` executable is installed
 - `datadog-ci` is run within the git repository
+- `--disable-git` is not set
 
 When these requirements are met, the upload command reports Git information such as:
 - the current commit hash

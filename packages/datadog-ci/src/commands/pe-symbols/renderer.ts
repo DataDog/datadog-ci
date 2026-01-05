@@ -77,7 +77,7 @@ export const renderMissingPdbFile = (pdbFilename: string, dllPath: string) =>
   chalk.yellow(`${ICONS.WARNING} Error: Missing '${pdbFilename}' file expected for ${dllPath}`)
 
 export const renderGitWarning = (errorMessage: string) =>
-  chalk.yellow(`${ICONS.WARNING} An error occured while invoking git: ${errorMessage}
+  chalk.yellow(`${ICONS.WARNING} An error occurred while invoking git: ${errorMessage}
 Make sure the command is running within your git repository to fully leverage Datadog's git integration.
 To ignore this warning use the --disable-git flag.\n`)
 
