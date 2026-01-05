@@ -1,5 +1,6 @@
 import {exec} from 'node:child_process'
 import path from 'node:path'
+import url from 'node:url'
 import {inspect} from 'node:util'
 
 import chalk from 'chalk'
@@ -276,17 +277,17 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
 
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
   debug('Resolving submodule:', submoduleName)
-  let resolvedPath = submoduleName
+  let submodulePath = submoduleName
   try {
-    resolvedPath = require.resolve(submoduleName)
-    debug(`Resolved to: ${resolvedPath}`)
+    const resolvedPath = require.resolve(submoduleName)
+    const absolutePath = url.pathToFileURL(resolvedPath).href
+    submodulePath = absolutePath
   } catch (error) {
     debug(`Could not require.resolve() the ${submoduleName} submodule: ${error}`)
   }
-  debug('Importing submodule:', resolvedPath)
+  debug('Importing submodule:', submodulePath)
 
-  // Use `require()` instead of `await import()` to avoid a `ERR_UNSUPPORTED_ESM_URL_SCHEME` error for absolute paths on Windows.
-  return require(resolvedPath) as PluginSubModule
+  return (await import(submodulePath)) as PluginSubModule
 }
 
 export const scopeToPackageName = (scope: string): string => {
@@ -328,12 +329,14 @@ const getPackagesToInstall = (scope: string) => {
 
 const importPlugin = async (scope: string, command?: string): Promise<PluginPackageJson | PluginSubModule> => {
   if (scope.match(/^@datadog\/datadog-ci-plugin-[a-z-]+$/)) {
-    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error when importing JSON.
+    // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
+    // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
     return extractPackageJson(require(`${scope}/package.json`))
   }
 
   if (!command) {
-    // Use `require()` instead of `await import()` to avoid a `ERR_IMPORT_ATTRIBUTE_MISSING` error when importing JSON.
+    // Use `require()` instead of `await import()` to avoid `ERR_IMPORT_ATTRIBUTE_MISSING` due to missing `{with: {type: 'json'}}`.
+    // This is only supported with `--module` set to `esnext`, `node16`, or `nodenext`.
     return extractPackageJson(require(`@datadog/datadog-ci-plugin-${scope}/package.json`))
   }
 
