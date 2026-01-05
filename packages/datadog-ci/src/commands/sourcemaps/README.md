@@ -49,17 +49,16 @@ In addition, some optional parameters are available:
 
 ### Link errors with your source code
 
-Errors in Datadog UI can be enriched with links to GitHub/GitLab/Bitbucket/Azure DevOps if these requirements are met:
+Errors in Datadog UI can be enriched with direct links to your repository if these requirements are met:
 - `git` executable is installed
 - `datadog-ci` is run within the git repository
+- `--disable-git` is not set
 
 When these requirements are met, the upload command reports Git information such as:
 - the current commit hash
 - the repository URL
 - for each sourcemap, the list of file paths that are tracked in the repository. Only tracked file paths that could be related to a sourcemap are gathered.
 For example, for a sourcemap referencing `["webpack:///./src/folder/example.ts"]` inside its `sources` attribute, the command will gather all file paths with `example.ts` as filename.
-
-When those requirements are not met (or `--disable-git` is set), your errors are displayed in Datadog with a minified stack trace and no context. See [Troubleshoot errors with ease][2].
 
 #### Override repository URL
 
