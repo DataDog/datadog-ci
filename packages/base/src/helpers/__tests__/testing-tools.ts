@@ -129,6 +129,7 @@ export const createCommand = <T extends Command>(
   // Create a new instance of commandClass and pass in the parameters
   const command = new commandClass()
   command.context = {...createMockContext(), ...context} as BaseContext
+  command.path = (command.constructor as CommandClass).paths?.[0] ?? []
 
   resolveCommandOptionsDefaults(command)
 

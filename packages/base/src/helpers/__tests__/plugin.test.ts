@@ -1,7 +1,11 @@
+import {SyntheticsRunTestsCommand} from '../../commands/synthetics/run-tests'
+
 import {isStandaloneBinary} from '../is-standalone-binary'
 import {messageBox} from '../message-box'
 import * as pluginModule from '../plugin'
 import {checkPlugin, getTempPath, installPlugin, listAllPlugins, executePluginCommand} from '../plugin'
+
+import {createCommand} from './testing-tools'
 
 jest.mock('node:child_process')
 jest.mock('../is-standalone-binary')
@@ -15,11 +19,6 @@ jest.mock('@datadog/datadog-ci-base/package.json', () => ({
     '@datadog/datadog-ci-plugin-another': '1.0.0',
     '@datadog/datadog-ci-plugin-synthetics': '1.0.0',
   },
-}))
-jest.mock('@datadog/datadog-ci-base/commands/synthetics/run-tests', () => ({
-  SyntheticsRunTestsCommand: jest.fn().mockImplementation(() => ({
-    execute: jest.fn().mockResolvedValue(0),
-  })),
 }))
 
 const mockIsStandaloneBinary = isStandaloneBinary as jest.MockedFunction<typeof isStandaloneBinary>
@@ -64,7 +63,8 @@ describe('checkPlugin', () => {
 
 describe('executePluginCommand', () => {
   test('executes plugin command successfully', async () => {
-    const result = await executePluginCommand({path: ['synthetics', 'run-tests']} as any)
+    const command = createCommand(SyntheticsRunTestsCommand)
+    const result = await executePluginCommand(command)
     expect(result).toBe(0)
   })
 })
