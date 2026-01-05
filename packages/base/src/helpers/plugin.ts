@@ -286,6 +286,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
   }
   debug('Importing submodule:', resolvedPath)
 
+  // Use `require()` instead of `await import()` to avoid a `ERR_UNSUPPORTED_ESM_URL_SCHEME` error for absolute paths on Windows.
   return require(resolvedPath) as PluginSubModule
 }
 
