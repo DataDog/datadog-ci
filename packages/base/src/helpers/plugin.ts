@@ -274,6 +274,7 @@ const importPluginSubmodule = async (scope: string, command: string): Promise<Pl
 
   await handlePluginAutoInstall(scope)
 
+  // We decompose the resolution & import in 2 steps to have more debug information.
   const submoduleName = `@datadog/datadog-ci-plugin-${scope}/commands/${command}`
   debug('Resolving submodule:', submoduleName)
   let resolvedPath = submoduleName
