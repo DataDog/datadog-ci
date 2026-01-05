@@ -295,7 +295,7 @@ jobs:
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
       - name: Check that version can be run without git repository
         run: |
-          rm -rf .git
+          rmdir /s /q .git
           yarn datadog-ci version
 
   # We only test with a single plugin and a single Node.js version.
