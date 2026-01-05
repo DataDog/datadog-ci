@@ -122,4 +122,3 @@ Additional helpful documentation, links, and articles:
 - [Learn about Uploading JavaScript Source Maps][1]
 
 [1]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/
-[2]: https://docs.datadoghq.com/real_user_monitoring/guide/upload-javascript-source-maps/#troubleshoot-errors-with-ease
