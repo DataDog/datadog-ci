@@ -1,3 +1,4 @@
+import {openSync, fstatSync, readSync, closeSync} from 'fs'
 import {URL} from 'url'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
@@ -186,6 +187,75 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
+    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
+    const sourcemaps: Sourcemap[] = []
+
+    for (const minifiedFilePath of jsFiles) {
+      try {
+        // Read only the last line from the file using a buffer from the end
+        let fd: number | undefined
+        let lastLine = ''
+
+        try {
+          fd = openSync(minifiedFilePath, 'r')
+          const stats = fstatSync(fd)
+          const fileSize = stats.size
+
+          // Read up to 1KB from the end (should be enough for sourceMappingURL comment)
+          const bufferSize = Math.min(1024, fileSize)
+          const buffer = Buffer.alloc(bufferSize)
+          const position = Math.max(0, fileSize - bufferSize)
+
+          readSync(fd, buffer, 0, bufferSize, position)
+          const tailContent = buffer.toString('utf-8')
+
+          // Get the last non-empty line (handle multiple trailing newlines)
+          const lines = tailContent.split('\n')
+          for (const line of lines.reverse()) {
+            if (line.trim().length !== 0) {
+              lastLine = line
+              break
+            }
+          }
+        } finally {
+          if (fd !== undefined) {
+            closeSync(fd)
+          }
+        }
+
+        // Look for sourceMappingURL comment
+        const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
+
+        if (sourceMappingMatch) {
+          const sourcemapUrl = sourceMappingMatch[1].trim()
+
+          // Join the sourcemap path relative to the minified file's directory
+          const minifiedFileDir = upath.dirname(minifiedFilePath)
+          const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
+
+          const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
+
+          sourcemaps.push(
+            new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
+          )
+        }
+      } catch (error) {
+        // Skip files that can't be read
+        continue
+      }
+    }
+
+    // Fall back to legacy method if no sourcemaps were found
+    if (sourcemaps.length === 0) {
+      return this.getLegacyMatchingSourcemapFiles()
+    }
+
+    return sourcemaps
+  }
+
+  // Looks for the sourcemaps and minified files on disk and returns
+  // the associated payloads.
+  private getLegacyMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
     const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(

@@ -225,6 +225,22 @@ describe('execute', () => {
     })
   })
 
+  test('using sourceMappingURL comment in JS file', async () => {
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url'])
+    const output = context.stdout.toString().split('\n')
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/bundle.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: ['src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url/some-random-hash.js.map'],
+      version: '1234',
+    })
+  })
+
   test('all files are skipped', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped'])
     const output = context.stdout.toString().split('\n')
