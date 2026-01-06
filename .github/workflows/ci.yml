@@ -219,7 +219,7 @@ jobs:
           name: artifacts-${{ matrix.version }}
           path: artifacts/
       # Force all dependencies to be installed from the artifacts
-      - name: Create e2e project
+      - name: Create e2e project (Windows)
         run: |
           echo '{
             "name": "datadog-ci-e2e-tests",

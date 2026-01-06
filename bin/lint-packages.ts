@@ -410,6 +410,12 @@ TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
 `)
 
 TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
+      - name: Create e2e project (Windows)
+        run: |
+          echo '${e2eProjectPackageJson}' > package.json
+`)
+
+TO_APPLY.push(matchAndReplace('.github/workflows/ci.yml')`
       - name: Run AAS command with auto-install (NPX)
         run: |
           output=$(npx \\
