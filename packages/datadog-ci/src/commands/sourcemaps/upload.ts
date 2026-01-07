@@ -1,4 +1,3 @@
-import {openSync, fstatSync, readSync, closeSync} from 'fs'
 import {URL} from 'url'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
@@ -38,7 +37,7 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getMinifiedFilePath} from './utils'
+import {getMinifiedFilePath, readLastLine} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class SourcemapsUploadCommand extends BaseCommand {
@@ -188,63 +187,34 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
     const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
-    const sourcemaps: Sourcemap[] = []
 
-    for (const minifiedFilePath of jsFiles) {
-      try {
-        // Read only the last line from the file using a buffer from the end
-        let fd: number | undefined
-        let lastLine = ''
-
+    const sourcemaps = (
+      await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
         try {
-          fd = openSync(minifiedFilePath, 'r')
-          const stats = fstatSync(fd)
-          const fileSize = stats.size
+          const lastLine = readLastLine(minifiedFilePath)
 
-          // Read up to 1KB from the end (should be enough for sourceMappingURL comment)
-          const bufferSize = Math.min(1024, fileSize)
-          const buffer = Buffer.alloc(bufferSize)
-          const position = Math.max(0, fileSize - bufferSize)
+          // Look for sourceMappingURL comment
+          const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
 
-          readSync(fd, buffer, 0, bufferSize, position)
-          const tailContent = buffer.toString('utf-8')
+          if (sourceMappingMatch) {
+            // mert: nextjs/turbopack uses url-percent encoding
+            const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
 
-          // Get the last non-empty line (handle multiple trailing newlines)
-          const lines = tailContent.split('\n')
-          for (const line of lines.reverse()) {
-            if (line.trim().length !== 0) {
-              lastLine = line
-              break
-            }
+            // Join the sourcemap path relative to the minified file's directory
+            const minifiedFileDir = upath.dirname(minifiedFilePath)
+            const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
+
+            const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
+
+            return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
           }
-        } finally {
-          if (fd !== undefined) {
-            closeSync(fd)
-          }
+        } catch (error) {
+          return undefined
         }
 
-        // Look for sourceMappingURL comment
-        const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
-
-        if (sourceMappingMatch) {
-          // mert: nextjs/turbopack uses url-percent encoding
-          const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
-
-          // Join the sourcemap path relative to the minified file's directory
-          const minifiedFileDir = upath.dirname(minifiedFilePath)
-          const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
-
-          const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
-
-          sourcemaps.push(
-            new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
-          )
-        }
-      } catch (error) {
-        // Skip files that can't be read
-        continue
-      }
-    }
+        return undefined
+      })
+    ).filter((sourcemap): sourcemap is Sourcemap => sourcemap !== undefined)
 
     // Fall back to legacy method if no sourcemaps were found
     if (sourcemaps.length === 0) {

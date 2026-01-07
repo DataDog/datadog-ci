@@ -1,4 +1,41 @@
+import {openSync, fstatSync, readSync, closeSync} from 'fs'
+
 import upath from 'upath'
+
+// Reads the last non-empty line from a file using a buffer from the end
+export const readLastLine = (filePath: string): string => {
+  let fd: number | undefined
+  let lastLine = ''
+
+  try {
+    fd = openSync(filePath, 'r')
+    const stats = fstatSync(fd)
+    const fileSize = stats.size
+
+    // Read up to 1KB from the end (should be enough for sourceMappingURL comment)
+    const bufferSize = Math.min(1024, fileSize)
+    const buffer = Buffer.alloc(bufferSize)
+    const position = Math.max(0, fileSize - bufferSize)
+
+    readSync(fd, buffer, 0, bufferSize, position)
+    const tailContent = buffer.toString('utf-8')
+
+    // Get the last non-empty line (handle multiple trailing newlines)
+    const lines = tailContent.split('\n')
+    for (const line of lines.reverse()) {
+      if (line.trim().length !== 0) {
+        lastLine = line
+        break
+      }
+    }
+  } finally {
+    if (fd !== undefined) {
+      closeSync(fd)
+    }
+  }
+
+  return lastLine
+}
 
 export const getMinifiedFilePath = (sourcemapPath: string) => {
   if (upath.extname(sourcemapPath) !== '.map') {
