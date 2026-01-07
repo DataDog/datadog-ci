@@ -1197,6 +1197,31 @@ describe('lambda', () => {
         expect(code).toBe(0)
       })
 
+      test('fails when custom runtime is used with a numeric layer version', async () => {
+        ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
+        const functionARN = 'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world'
+        mockLambdaConfigurations(lambdaClientMock, {
+          'arn:aws:lambda:us-east-1:123456789012:function:lambda-hello-world': {
+            config: {
+              FunctionArn: functionARN,
+              Runtime: 'provided.al2',
+            },
+          },
+        })
+        process.env.DATADOG_API_KEY = MOCK_DATADOG_API_KEY
+        const {code, context} = await runCLI([
+          '-f',
+          functionARN,
+          '--no-source-code-integration',
+          '--layer-version',
+          '10',
+        ])
+        expect(code).toBe(1)
+        expect(context.stdout.toString()).toContain(
+          "[Error] Couldn't fetch Lambda functions. Error: Only the --extension-version argument should be set for the provided.al2 runtime. Please remove the --layer-version argument from the instrument command."
+        )
+      })
+
       test('aborts early when .NET is using ARM64 architecture', async () => {
         ;(fs.readFile as any).mockImplementation((a: any, b: any, callback: any) => callback({code: 'ENOENT'}))
         mockLambdaConfigurations(lambdaClientMock, {
