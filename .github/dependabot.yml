@@ -12,3 +12,10 @@ updates:
     open-pull-requests-limit: 0
     # Update both `package.json` and `yarn.lock`
     versioning-strategy: increase
+  - package-ecosystem: github-actions
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: '[chore] '
