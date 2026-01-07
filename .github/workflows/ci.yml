@@ -192,6 +192,111 @@ jobs:
           rm -rf .git
           yarn datadog-ci version
 
+  e2e-test-windows:
+    strategy:
+      matrix:
+        version: [20, 22, 24]
+
+    name: End-to-end test the package (Windows)
+    runs-on: windows-latest
+    needs: build-and-test
+    env:
+      FORCE_COLOR: 1
+
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          # Only checkout the files we need from the `DataDog/datadog-ci` repo.
+          # See https://github.com/actions/checkout#fetch-only-a-single-file
+          sparse-checkout: bin/check-junit-upload.js
+          sparse-checkout-cone-mode: false
+      - name: Install node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ matrix.version }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: artifacts-${{ matrix.version }}
+          path: artifacts/
+      # Force all dependencies to be installed from the artifacts
+      - name: Create e2e project (Windows)
+        run: |
+          echo '{
+            "name": "datadog-ci-e2e-tests",
+            "resolutions": {
+              "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz"
+            },
+            "dependencies": {
+              "@datadog/datadog-ci": "./artifacts/@datadog-datadog-ci-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-base": "./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-aas": "./artifacts/@datadog-datadog-ci-plugin-aas-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-cloud-run": "./artifacts/@datadog-datadog-ci-plugin-cloud-run-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-stepfunctions": "./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
+            }
+          }' > package.json
+
+          yarn set version stable
+          yarn install --no-immutable
+      - name: Run synthetics test
+        run: yarn datadog-ci synthetics run-tests --config artifacts/e2e/global.config.json
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+      - name: Run sourcemaps upload test
+        run: yarn datadog-ci sourcemaps upload artifacts/e2e/sourcemaps/ --release-version=e2e --service=e2e-tests --minified-path-prefix=https://e2e-tests.datadoghq.com/static/
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY_E2E }}
+          DATADOG_APP_KEY: ${{ secrets.DATADOG_APP_KEY_E2E }}
+      - name: Run junit upload test (measures)
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit **/junit-reports/**/*.xml --measures testmeasure1:20 --report-measures sessionmeasure1:40
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Check that test data can be queried (measures)
+        run: |
+          yarn add @datadog/datadog-api-client
+          yarn node bin/check-junit-upload.js
+        env:
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          DD_SERVICE: datadog-ci-e2e-tests-junit
+      - name: Run junit upload test (measures), passing glob as literal string
+        run: yarn datadog-ci junit upload --service=datadog-ci-e2e-tests-junit '**/junit-reports/**' --measures testmeasure2:60 --report-measures sessionmeasure2:80
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Check that test data can be queried (measures)
+        run: |
+          yarn add @datadog/datadog-api-client
+          yarn node bin/check-junit-upload.js
+        env:
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+          DD_SERVICE: datadog-ci-e2e-tests-junit
+      - name: Run sarif upload test
+        run: yarn datadog-ci sarif upload --service=datadog-ci-e2e-tests-sarif artifacts/e2e/sarif-reports
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+      - name: Run sbom upload test
+        run: yarn datadog-ci sbom upload --service=datadog-ci-e2e-tests-sbom --env test artifacts/e2e/sbom-reports/sbom.json
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
+      - name: Check that version can be run without git repository
+        run: |
+          Remove-Item -Recurse -Force .git
+          yarn datadog-ci version
+
   # We only test with a single plugin and a single Node.js version.
   test-plugin-auto-install-during-npx:
     name: Test plugin auto-install during npx

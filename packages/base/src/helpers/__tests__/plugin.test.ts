@@ -1,7 +1,11 @@
+import {SyntheticsRunTestsCommand} from '../../commands/synthetics/run-tests'
+
 import {isStandaloneBinary} from '../is-standalone-binary'
 import {messageBox} from '../message-box'
 import * as pluginModule from '../plugin'
-import {checkPlugin, getTempPath, installPlugin, listAllPlugins} from '../plugin'
+import {checkPlugin, getTempPath, installPlugin, listAllPlugins, executePluginCommand} from '../plugin'
+
+import {createCommand} from './testing-tools'
 
 jest.mock('node:child_process')
 jest.mock('../is-standalone-binary')
@@ -54,6 +58,14 @@ describe('checkPlugin', () => {
   test('returns true for valid plugin', async () => {
     const result = await checkPlugin('synthetics')
     expect(result).toBe(true)
+  })
+})
+
+describe('executePluginCommand', () => {
+  test('executes plugin command successfully', async () => {
+    const command = createCommand(SyntheticsRunTestsCommand)
+    const result = await executePluginCommand(command)
+    expect(result).toBe(0)
   })
 })
 
