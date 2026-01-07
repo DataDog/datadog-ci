@@ -183,7 +183,7 @@ export const calculateUpdateRequest = async (
   const runtimeType = RUNTIME_LOOKUP[runtime]
 
   if (runtimeType === RuntimeType.CUSTOM) {
-    if (settings.layerVersion !== 'none') {
+    if (typeof settings.layerVersion === 'number') {
       throw new Error(
         `Only the --extension-version argument should be set for the ${runtime} runtime. Please remove the --layer-version argument from the instrument command.`
       )
