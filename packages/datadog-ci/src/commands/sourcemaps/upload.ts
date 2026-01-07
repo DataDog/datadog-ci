@@ -227,7 +227,8 @@ export class SourcemapsUploadCommand extends BaseCommand {
         const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
 
         if (sourceMappingMatch) {
-          const sourcemapUrl = sourceMappingMatch[1].trim()
+          // mert: nextjs/turbopack uses url-percent encoding
+          const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
 
           // Join the sourcemap path relative to the minified file's directory
           const minifiedFileDir = upath.dirname(minifiedFilePath)
