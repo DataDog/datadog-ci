@@ -28,17 +28,17 @@ packages/datadog-ci/src/commands/sourcemaps       @DataDog/datadog-ci-admins @Da
 packages/datadog-ci/src/commands/unity-symbols    @DataDog/datadog-ci-admins @Datadog/rum-mobile
 
 ## Serverless (label: serverless)
-packages/plugin-aas                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/commands/aas                       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/plugin-cloud-run                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/plugin-container-app                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/commands/container-app             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
-packages/base/src/helpers/serverless                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-enablement
+packages/plugin-aas                                  @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/aas                       @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-cloud-run                            @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/cloud-run                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-container-app                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/container-app             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-lambda                               @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/lambda                    @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/plugin-stepfunctions                        @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/commands/stepfunctions             @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
+packages/base/src/helpers/serverless                 @DataDog/datadog-ci-admins @DataDog/serverless-onboarding-and-enablement
 
 ## Source Code Integration (label: source-code-integration)
 packages/base/src/commands/git-metadata         @DataDog/datadog-ci-admins @DataDog/source-code-integration
