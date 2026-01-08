@@ -37,7 +37,7 @@ import {
   renderSuccessfulCommand,
   renderUpload,
 } from './renderer'
-import {getMinifiedFilePath} from './utils'
+import {getMinifiedFilePath, readLastLine} from './utils'
 import {InvalidPayload, validatePayload} from './validation'
 
 export class SourcemapsUploadCommand extends BaseCommand {
@@ -186,6 +186,47 @@ export class SourcemapsUploadCommand extends BaseCommand {
   // Looks for the sourcemaps and minified files on disk and returns
   // the associated payloads.
   private getMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
+    const jsFiles = globSync(buildPath(this.basePath, '**/*.js'))
+
+    const sourcemaps = (
+      await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
+        try {
+          const lastLine = await readLastLine(minifiedFilePath)
+
+          // Look for sourceMappingURL comment
+          const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)
+
+          if (sourceMappingMatch) {
+            // mert: nextjs/turbopack uses url-percent encoding
+            const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
+
+            // Join the sourcemap path relative to the minified file's directory
+            const minifiedFileDir = upath.dirname(minifiedFilePath)
+            const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
+
+            const [minifiedURL, relativePath] = this.getMinifiedURLAndRelativePath(minifiedFilePath)
+
+            return new Sourcemap(minifiedFilePath, minifiedURL, sourcemapPath, relativePath, this.minifiedPathPrefix)
+          }
+        } catch (error) {
+          return undefined
+        }
+
+        return undefined
+      })
+    ).filter((sourcemap): sourcemap is Sourcemap => sourcemap !== undefined)
+
+    // Fall back to legacy method if no sourcemaps were found
+    if (sourcemaps.length === 0) {
+      return this.getLegacyMatchingSourcemapFiles()
+    }
+
+    return sourcemaps
+  }
+
+  // Looks for the sourcemaps and minified files on disk and returns
+  // the associated payloads.
+  private getLegacyMatchingSourcemapFiles = async (): Promise<Sourcemap[]> => {
     const sourcemapFiles = globSync(buildPath(this.basePath, '**/*js.map'))
 
     return Promise.all(

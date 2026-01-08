@@ -1,4 +1,41 @@
+import {open, FileHandle} from 'fs/promises'
+
 import upath from 'upath'
+
+// Reads the last non-empty line from a file using a buffer from the end
+export const readLastLine = async (filePath: string): Promise<string> => {
+  let fh: FileHandle | undefined
+  let lastLine = ''
+
+  try {
+    fh = await open(filePath, 'r')
+    const stats = await fh.stat()
+    const fileSize = stats.size
+
+    // Read up to 1KB from the end (should be enough for sourceMappingURL comment)
+    const bufferSize = Math.min(1024, fileSize)
+    const buffer = Buffer.alloc(bufferSize)
+    const position = Math.max(0, fileSize - bufferSize)
+
+    await fh.read(buffer, 0, bufferSize, position)
+    const tailContent = buffer.toString('utf-8')
+
+    // Get the last non-empty line (handle multiple trailing newlines)
+    const lines = tailContent.split('\n')
+    for (const line of lines.reverse()) {
+      if (line.trim().length !== 0) {
+        lastLine = line
+        break
+      }
+    }
+  } finally {
+    if (fh !== undefined) {
+      await fh.close()
+    }
+  }
+
+  return lastLine
+}
 
 export const getMinifiedFilePath = (sourcemapPath: string) => {
   if (upath.extname(sourcemapPath) !== '.map') {
