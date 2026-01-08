@@ -547,10 +547,11 @@ if (Object.keys(versions).length > 1) {
 
 // #region - Guard rail about making some plugins not built-in
 const impactedGithubActions = Object.fromEntries(
-  installablePlugins.reduce<[string, string][]>(
-    (acc, p) => [...acc, [p.scope, scopesWithUnpinnedDatadogCiInGithubAction[p.scope]]],
-    []
-  )
+  installablePlugins.reduce<[string, string][]>((acc, p) => {
+    const impactedGithubAction = scopesWithUnpinnedDatadogCiInGithubAction[p.scope]
+
+    return impactedGithubAction ? [...acc, [p.scope, impactedGithubAction]] : acc
+  }, [])
 )
 
 if (Object.keys(impactedGithubActions).length > 0) {
