@@ -1,15 +1,15 @@
-import {openSync, fstatSync, readSync, closeSync} from 'fs'
+import {open, FileHandle} from 'fs/promises'
 
 import upath from 'upath'
 
 // Reads the last non-empty line from a file using a buffer from the end
-export const readLastLine = (filePath: string): string => {
-  let fd: number | undefined
+export const readLastLine = async (filePath: string): Promise<string> => {
+  let fh: FileHandle | undefined
   let lastLine = ''
 
   try {
-    fd = openSync(filePath, 'r')
-    const stats = fstatSync(fd)
+    fh = await open(filePath, 'r')
+    const stats = await fh.stat()
     const fileSize = stats.size
 
     // Read up to 1KB from the end (should be enough for sourceMappingURL comment)
@@ -17,7 +17,7 @@ export const readLastLine = (filePath: string): string => {
     const buffer = Buffer.alloc(bufferSize)
     const position = Math.max(0, fileSize - bufferSize)
 
-    readSync(fd, buffer, 0, bufferSize, position)
+    await fh.read(buffer, 0, bufferSize, position)
     const tailContent = buffer.toString('utf-8')
 
     // Get the last non-empty line (handle multiple trailing newlines)
@@ -29,8 +29,8 @@ export const readLastLine = (filePath: string): string => {
       }
     }
   } finally {
-    if (fd !== undefined) {
-      closeSync(fd)
+    if (fh !== undefined) {
+      await fh.close()
     }
   }
 

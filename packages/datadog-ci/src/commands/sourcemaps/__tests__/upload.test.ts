@@ -241,6 +241,24 @@ describe('execute', () => {
     })
   })
 
+  test('using URL-encoded sourceMappingURL comment in JS file', async () => {
+    const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/with-encoded-sourcemap-url'])
+    const output = context.stdout.toString().split('\n')
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures/with-encoded-sourcemap-url',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/runtime.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: [
+        'src/commands/sourcemaps/__tests__/fixtures/with-encoded-sourcemap-url/[some-bundler]_runtime.js.map',
+      ],
+      version: '1234',
+    })
+  })
+
   test('all files are skipped', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/stdout-output/all-skipped'])
     const output = context.stdout.toString().split('\n')

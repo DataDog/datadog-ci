@@ -191,7 +191,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
     const sourcemaps = (
       await doWithMaxConcurrency(this.maxConcurrency, jsFiles, async (minifiedFilePath) => {
         try {
-          const lastLine = readLastLine(minifiedFilePath)
+          const lastLine = await readLastLine(minifiedFilePath)
 
           // Look for sourceMappingURL comment
           const sourceMappingMatch = lastLine.match(/\/\/# sourceMappingURL=(.+\.map)/)

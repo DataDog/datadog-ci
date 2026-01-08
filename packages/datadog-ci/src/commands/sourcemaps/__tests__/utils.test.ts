@@ -2,13 +2,13 @@ import {extractRepeatedPath, getMinifiedFilePath, readLastLine} from '../utils'
 
 describe('utils', () => {
   describe('readLastLine', () => {
-    test('should return the last non-empty line from a file', () => {
-      const result = readLastLine('./src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js')
+    test('should return the last non-empty line from a file', async () => {
+      const result = await readLastLine('./src/commands/sourcemaps/__tests__/fixtures/basic/common.min.js')
       expect(result).toBe('/* not empty */')
     })
 
-    test('should handle files with trailing newlines', () => {
-      const result = readLastLine('./src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url/bundle.min.js')
+    test('should handle files with trailing newlines', async () => {
+      const result = await readLastLine('./src/commands/sourcemaps/__tests__/fixtures/with-sourcemap-url/bundle.min.js')
       expect(result).toBe('//# sourceMappingURL=some-random-hash.js.map')
     })
   })
