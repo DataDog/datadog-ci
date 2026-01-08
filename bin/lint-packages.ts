@@ -559,7 +559,7 @@ if (Object.keys(impactedGithubActions).length > 0) {
     `\n${chalk.bold('Detected newly installable plugin(s) with an associated GitHub Action that does not pin the version of @datadog/datadog-ci:')} ${JSON.stringify(impactedGithubActions, undefined, 2)}`
   )
   error(
-    '\nRelying on the automatic installation of plugins in a GitHub Action is not recommended.\nIf you really want to change the list of built-in plugins, consider updating the impacted GitHub Actions with the newly installable plugin(s).'
+    '\nRelying on the automatic installation of plugins in a GitHub Action is not recommended.\nIf you really want to change the list of built-in plugins, consider adding them as dependencies of the impacted GitHub Actions.'
   )
   process.exit(1)
 }
