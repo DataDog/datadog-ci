@@ -21,7 +21,8 @@ export const readLastLine = async (filePath: string): Promise<string> => {
     const tailContent = buffer.toString('utf-8')
 
     // Get the last non-empty line (handle multiple trailing newlines)
-    const lines = tailContent.split('\n')
+    // note: windows uses \r\n as line separator while unix uses \n
+    const lines = tailContent.split(/\r?\n/)
     for (const line of lines.reverse()) {
       if (line.trim().length !== 0) {
         lastLine = line
