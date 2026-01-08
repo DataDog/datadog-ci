@@ -6,10 +6,29 @@ import path from 'path'
 import chalk from 'chalk'
 import {diff} from 'jest-diff'
 
-// Source of truth for command scopes without plugins: this should be updated manually.
+/**
+ * Source of truth for command scopes without plugins: this should be updated manually.
+ */
 const noPluginExceptions = new Set(['dsyms', 'git-metadata', 'plugin', 'tag'])
-// Source of truth for scope-less commands: this should be updated manually.
+
+/**
+ * Source of truth for scope-less commands: this should be updated manually.
+ */
 const scopeLessCommandExceptions = new Set(['tag'])
+
+/**
+ * Scopes with an associated GitHub Action that doesn't pin the version of `@datadog/datadog-ci`.
+ *
+ * See https://datadoghq.atlassian.net/wiki/x/awnBVgE
+ */
+const scopesWithUnpinnedDatadogCiInGithubAction = {
+  // `datadog-ci-version` input defaulting to `latest`
+  coverage: 'https://github.com/DataDog/coverage-upload-github-action',
+  junit: 'https://github.com/DataDog/junit-upload-github-action',
+  // Pins the major version
+  sarif: 'https://github.com/DataDog/datadog-static-analyzer-github-action',
+  sbom: 'https://github.com/DataDog/datadog-static-analyzer-github-action',
+}
 
 type Package = {
   folder: string
@@ -523,6 +542,26 @@ if (Object.keys(versions).length > 1) {
   process.exit(1)
 } else {
   success(`All packages have the same version: ${chalk.bold(Object.keys(versions)[0])}`)
+}
+// #endregion
+
+// #region - Guard rail about making some plugins not built-in
+const impactedGithubActions = Object.fromEntries(
+  installablePlugins.reduce<[string, string][]>((acc, p) => {
+    const impactedGithubAction = scopesWithUnpinnedDatadogCiInGithubAction[p.scope]
+
+    return impactedGithubAction ? [...acc, [p.scope, impactedGithubAction]] : acc
+  }, [])
+)
+
+if (Object.keys(impactedGithubActions).length > 0) {
+  error(
+    `\n${chalk.bold('Detected newly installable plugin(s) with an associated GitHub Action that does not pin the version of @datadog/datadog-ci:')} ${JSON.stringify(impactedGithubActions, undefined, 2)}`
+  )
+  error(
+    '\nRelying on the automatic installation of plugins in a GitHub Action is not recommended.\nIf you really want to change the list of built-in plugins, consider adding them as dependencies of the impacted GitHub Actions.'
+  )
+  process.exit(1)
 }
 // #endregion
 
