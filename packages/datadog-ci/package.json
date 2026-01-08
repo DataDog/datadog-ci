@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "5.1.0",
+  "version": "5.2.0",
   "description": "Use Datadog from your CI.",
   "license": "Apache-2.0",
   "keywords": [
