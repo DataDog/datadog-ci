@@ -2,6 +2,7 @@ import {
   cloverFormat,
   coberturaFormat,
   detectFormat,
+  goCoverprofileFormat,
   jacocoFormat,
   lcovFormat,
   opencoverFormat,
@@ -102,6 +103,16 @@ describe('utils', () => {
       expect(validateCoverageReport(filePath, cloverFormat)).toBeUndefined()
     })
 
+    test('Returns error message for an invalid go-coverprofile report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage-invalid.out'
+      expect(validateCoverageReport(filePath, goCoverprofileFormat)).toMatch(/.+/)
+    })
+
+    test('Returns undefined for a valid go-coverprofile report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage.out'
+      expect(validateCoverageReport(filePath, goCoverprofileFormat)).toBeUndefined()
+    })
+
     test('Returns error message for an invalid clover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/clover-invalid.xml'
       expect(validateCoverageReport(filePath, cloverFormat)).toMatch(/.+/)
@@ -147,6 +158,11 @@ describe('utils', () => {
     test('Detects clover format for a PHP clover report', async () => {
       const filePath = './src/commands/coverage/__tests__/fixtures/clover-php.xml'
       expect(detectFormat(filePath)).toEqual(cloverFormat)
+    })
+
+    test('Detects go-coverprofile format for a valid go-coverprofile report', async () => {
+      const filePath = './src/commands/coverage/__tests__/fixtures/coverage.out'
+      expect(detectFormat(filePath)).toEqual(goCoverprofileFormat)
     })
 
     test('Returns undefined for an XML file that is not a coverage report', async () => {

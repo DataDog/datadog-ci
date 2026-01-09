@@ -17,6 +17,7 @@ export const coberturaFormat = 'cobertura' as const
 export const simplecovFormat = 'simplecov' as const
 export const simplecovInternalFormat = 'simplecov-internal' as const
 export const cloverFormat = 'clover' as const
+export const goCoverprofileFormat = 'go-coverprofile' as const
 
 export const coverageFormats = [
   jacocoFormat,
@@ -26,6 +27,7 @@ export const coverageFormats = [
   simplecovFormat,
   simplecovInternalFormat,
   cloverFormat,
+  goCoverprofileFormat,
 ] as const
 export type CoverageFormat = (typeof coverageFormats)[number]
 
@@ -98,6 +100,13 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
   ) {
     return readFirstKb(filePath, (data) => {
       return data.startsWith('TN:') || data.startsWith('SF:') ? lcovFormat : undefined
+    })
+  } else if (extension === '.out' || filename.includes('coverage')) {
+    return readFirstKb(filePath, (data) => {
+      const hasCorrectMode =
+        data.startsWith('mode: set') || data.startsWith('mode: count') || data.startsWith('mode: atomic')
+
+      return hasCorrectMode ? goCoverprofileFormat : undefined
     })
   }
 
@@ -239,6 +248,15 @@ export const validateCoverageReport = (filePath: string, format: CoverageFormat)
     const endsCorrectly = lines[lines.length - 1] === 'end_of_record'
     if (!endsCorrectly) {
       return 'Invalid LCOV report: does not end with "end_of_record"'
+    }
+  }
+
+  if (format === goCoverprofileFormat) {
+    const content = fs.readFileSync(filePath, 'utf8')
+    const hasCorrectMode =
+      content.startsWith('mode: set') || content.startsWith('mode: count') || content.startsWith('mode: atomic')
+    if (!hasCorrectMode) {
+      return 'Invalid Go coverage report: must start with "mode: set|count|atomic"'
     }
   }
 
