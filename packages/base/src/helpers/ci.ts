@@ -80,6 +80,30 @@ export const githubWellKnownDiagnosticDirsWin = [
 
 const githubJobDisplayNameRegex = /"jobDisplayName":\s*"([^"]+)"/
 
+const uniq = <T>(items: T[]): T[] => Array.from(new Set(items))
+
+/**
+ * GitHub runner diagnostic logs live under the runner installation directory in `_diag`.
+ * On many runners, we can derive the installation directory from RUNNER_TEMP:
+ *   <runnerRoot>/_work/_temp  ->  <runnerRoot>/_diag
+ *
+ * This is much more robust than relying on hardcoded paths, especially on self-hosted runners
+ * and GHES environments where the runner may be installed under arbitrary directories/users.
+ */
+const getGithubDiagnosticDirsFromEnv = (): string[] => {
+  const dirs: string[] = []
+
+  const runnerTemp = process.env.RUNNER_TEMP
+  if (runnerTemp) {
+    // RUNNER_TEMP is typically: <runnerRoot>/_work/_temp
+    const runnerRoot = upath.resolve(runnerTemp, '..', '..')
+    dirs.push(upath.join(runnerRoot, 'cached', '_diag'))
+    dirs.push(upath.join(runnerRoot, '_diag'))
+  }
+
+  return uniq(dirs.filter(Boolean))
+}
+
 // Receives a string with the form 'John Doe <john.doe@gmail.com>'
 // and returns { name: 'John Doe', email: 'john.doe@gmail.com' }
 const parseEmailAndName = (emailAndName: string | undefined) => {
@@ -1072,9 +1096,9 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   }
   context.stdout.write('Determining GitHub job name\n')
 
-  let wellKnownDirs = githubWellKnownDiagnosticDirsUnix
+  let wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsUnix])
   if (isGithubWindowsRunner()) {
-    wellKnownDirs = githubWellKnownDiagnosticDirsWin
+    wellKnownDirs = uniq([...getGithubDiagnosticDirsFromEnv(), ...githubWellKnownDiagnosticDirsWin])
   }
 
   let foundDiagDir = ''
@@ -1110,7 +1134,11 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     }
   }
   if (workerLogFiles.length === 0 || foundDiagDir === '') {
-    context.stderr.write(`${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files`)
+    context.stderr.write(
+      `${chalk.yellow.bold('[WARNING]')} could not find GitHub diagnostic log files (Worker_*.log). Looked in: ${wellKnownDirs.join(
+        ', '
+      )}`
+    )
 
     return
   }
