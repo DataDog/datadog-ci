@@ -235,7 +235,7 @@ describe('getSpanTags', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
 
@@ -304,7 +304,7 @@ describe('sarif and sbom upload required git tags', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
     const spanTags: SpanTags = await getSpanTags(
@@ -415,7 +415,7 @@ describe('sarif and sbom upload required git tags', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
 

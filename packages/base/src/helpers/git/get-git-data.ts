@@ -3,6 +3,8 @@ import {URL} from 'url'
 import * as simpleGit from 'simple-git'
 import {BranchSummary} from 'simple-git'
 
+import {GitAuthorAndCommitterMetadata} from '../interfaces'
+
 // Returns the remote of the current repository.
 export const gitRemote = async (git: simpleGit.SimpleGit): Promise<string> => {
   const remotes = await git.getRemotes(true)
@@ -62,12 +64,22 @@ export const gitCurrentBranch = async (git: simpleGit.SimpleGit): Promise<string
 
 export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => git.show(['-s', '--format=%s'])
 
-// Returns the author and committer information of the current commit in JSON format to avoid parsing issues with values that contain commas.
-export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<string> =>
-  git.show([
+// Returns the author and committer information of the current commit.
+export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<GitAuthorAndCommitterMetadata> => {
+  const info = await git.show([
     '-s',
-    '--format={"authorName":"%an","authorEmail":"%ae","authorDate":"%aI","committerName":"%cn","committerEmail":"%ce","committerDate":"%cI"}',
+    '--format=authorName:%an%nauthorEmail:%ae%nauthorDate:%aI%ncommitterName:%cn%ncommitterEmail:%ce%ncommitterDate:%cI',
   ])
+  const output: {[_: string]: any} = {}
+  for (const line of info.split('\n')) {
+    const idx = line.indexOf(':')
+    if (idx > 0) {
+      output[line.substring(0, idx)] = line.substring(idx + 1)
+    }
+  }
+
+  return output as GitAuthorAndCommitterMetadata
+}
 
 export const gitRepositoryURL = async (git: simpleGit.SimpleGit): Promise<string> =>
   git.listRemote(['--get-url']).then((url) => url.trim())
