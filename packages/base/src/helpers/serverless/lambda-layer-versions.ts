@@ -5,6 +5,6 @@ export const LAMBDA_LAYER_VERSIONS = {
   dotnet: 23,
   java: 25,
   node: 132,
-  python: 120,
+  python: 121,
   ruby: 27,
 } as const
