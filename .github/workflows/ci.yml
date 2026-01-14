@@ -226,6 +226,7 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
@@ -320,6 +321,7 @@ jobs:
           output=$(npx \
               -p ./artifacts/@datadog-datadog-ci-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-base-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz \

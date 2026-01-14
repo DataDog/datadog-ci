@@ -1788,7 +1788,6 @@ __metadata:
     form-data: "npm:^4.0.4"
     js-yaml: "npm:4.1.1"
     semver: "npm:^7.5.3"
-    simple-git: "npm:3.16.0"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
