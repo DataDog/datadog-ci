@@ -28,7 +28,7 @@ describe('getGitMetadata', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
     const result = await getGitMetadata()
@@ -76,7 +76,7 @@ describe('getGitMetadata', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
     const result = await getGitMetadata()
@@ -104,7 +104,7 @@ describe('getGitMetadata', () => {
           return 'commit message'
         }
 
-        return '{"authorName":"authorName","authorEmail":"authorEmail","authorDate":"authorDate","committerName":"committerName","committerEmail":"committerEmail","committerDate":"committerDate"}'
+        return 'authorName:authorName\nauthorEmail:authorEmail\nauthorDate:authorDate\ncommitterName:committerName\ncommitterEmail:committerEmail\ncommitterDate:committerDate'
       },
     }))
     const result = await getGitMetadata()
