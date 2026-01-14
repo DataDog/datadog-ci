@@ -68,7 +68,7 @@ export const gitMessage = async (git: simpleGit.SimpleGit): Promise<string> => g
 export const gitAuthorAndCommitter = async (git: simpleGit.SimpleGit): Promise<GitAuthorAndCommitterMetadata> => {
   const info = await git.show([
     '-s',
-    '--format=authorName:%an%nauthorEmail:%ae%nauthorDate:%aI%ncommitterName:%cn%ncommitterEmail:%ce%ncommitterDate:%cI',
+    `--format=${['authorName:%an', 'authorEmail:%ae', 'authorDate:%aI', 'committerName:%cn', 'committerEmail:%ce', 'committerDate:%cI'].join('%n')}`,
   ])
   const output: {[_: string]: any} = {}
   for (const line of info.split('\n')) {
