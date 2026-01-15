@@ -5,8 +5,8 @@ import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
+import {PluginCommand as JunitUploadCommand} from '../commands/upload'
 import {renderInvalidFile} from '../renderer'
-import {PluginCommand as JunitUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
@@ -239,7 +239,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['**/junit/**/*.xml'],
+          basePaths: ['**/*.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -267,7 +267,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['**/junit/**'],
+          basePaths: ['**'],
           config: {},
           context: command.context,
           service: 'service',

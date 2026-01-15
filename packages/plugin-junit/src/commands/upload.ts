@@ -24,8 +24,8 @@ import chalk from 'chalk'
 import {XMLParser, XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 
-import {apiConstructor, apiUrl, intakeUrl} from './api'
-import {APIHelper, Payload} from './interfaces'
+import {apiConstructor, apiUrl, intakeUrl} from '../api'
+import {APIHelper, Payload} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -37,7 +37,7 @@ import {
   renderSuccessfulGitDBSync,
   renderSuccessfulUpload,
   renderUpload,
-} from './renderer'
+} from '../renderer'
 
 const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
