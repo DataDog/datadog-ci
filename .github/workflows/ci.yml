@@ -123,6 +123,7 @@ jobs:
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-junit": "file:./artifacts/@datadog-datadog-ci-plugin-junit-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz"
             },
@@ -228,6 +229,7 @@ jobs:
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-junit": "file:./artifacts/@datadog-datadog-ci-plugin-junit-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-${{ matrix.version }}.tgz"
             },
@@ -322,6 +324,7 @@ jobs:
               -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-junit-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz \
               datadog-ci aas instrument || true
@@ -366,6 +369,7 @@ jobs:
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
+              "@datadog/datadog-ci-plugin-junit": "file:./artifacts/@datadog-datadog-ci-plugin-junit-20.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
@@ -445,6 +449,7 @@ jobs:
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
+              "@datadog/datadog-ci-plugin-junit": "file:./artifacts/@datadog-datadog-ci-plugin-junit-20.tgz",
               "@datadog/datadog-ci-plugin-sarif": "file:./artifacts/@datadog-datadog-ci-plugin-sarif-20.tgz",
               "@datadog/datadog-ci-plugin-sbom": "file:./artifacts/@datadog-datadog-ci-plugin-sbom-20.tgz"
             },
