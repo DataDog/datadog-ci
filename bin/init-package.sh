@@ -43,7 +43,7 @@ NC='\033[0m' # No Color
 
 echo -e "This script will initialize and publish an empty package for ${BLUE}${BOLD}$PLUGIN_PKG${NC}"
 echo
-echo -e "${BOLD}Please follow the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before running this script."
+echo -e "${BOLD}Please read the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before running this script."
 echo
 
 read -rsp "Enter your NPM auth token: " INIT_NPM_AUTH_TOKEN
@@ -60,7 +60,7 @@ export INIT_NPM_AUTH_TOKEN
 yarn config set npmAuthToken '${INIT_NPM_AUTH_TOKEN}'
 echo
 
-echo "1. Creating plugin directory structure"
+echo -e "${BOLD}1. Creating plugin directory structure${NC}"
 mkdir -p "$PLUGIN_DIR"
 env cp LICENSE "$PLUGIN_DIR"
 echo "Empty package" > "$PLUGIN_DIR/README.md"
@@ -107,7 +107,8 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
 }
 EOF
 
-echo "2. Publishing empty package to npm"
+echo
+echo -e "${BOLD}2. Publishing empty package to npm${NC}"
 echo
 yarn
 if [ "$DRY_RUN" = true ]; then
@@ -117,10 +118,6 @@ else
 fi
 
 echo
-echo "3. Cleaning up"
-yarn config unset npmAuthToken
-
-echo
 if [ "$DRY_RUN" = true ]; then
 	echo -e "${GREEN}[DRY-RUN] Would have published ${BOLD}$PLUGIN_PKG@0.0.1${NC}${NC}"
 else
@@ -128,4 +125,14 @@ else
 fi
 
 echo
-echo -e "If needed, you can now run: ${BLUE}bin/migrate.sh $SCOPE${NC}"
+echo -e "${BOLD}3. Aligning package version with base package version${NC}"
+BASE_VERSION=$(jq -r .version packages/base/package.json)
+jq --arg version "$BASE_VERSION" '.version = $version' "$PLUGIN_DIR/package.json" | sponge "$PLUGIN_DIR/package.json"
+echo "Updated $PLUGIN_DIR/package.json to version $BASE_VERSION"
+
+echo
+echo -e "${BOLD}4. Cleaning up${NC}"
+yarn config unset npmAuthToken
+
+echo
+echo -e "${BLUE}If needed, you can now run: ${BOLD}bin/migrate.sh $SCOPE${NC}"

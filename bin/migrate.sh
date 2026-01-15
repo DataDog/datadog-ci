@@ -64,12 +64,7 @@ mv "$DST_DIR/cli.ts" "$BASE_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
-echo 2. Align package.json version with base package version
-BASE_VERSION=$(jq -r .version packages/base/package.json)
-jq --arg version "$BASE_VERSION" '.version = $version' "$PLUGIN_DIR/package.json" | sponge "$PLUGIN_DIR/package.json"
-echo "Updated $PLUGIN_DIR/package.json to version $BASE_VERSION"
-
-echo 3. Create tsconfig.json
+echo 2. Create tsconfig.json
 cat > "$PLUGIN_DIR/tsconfig.json" <<EOF
 {
   "extends": "../../tsconfig.base.json",
@@ -84,7 +79,7 @@ EOF
 
 echo "Created $PLUGIN_DIR/tsconfig.json"
 
-echo 4. Add "$PLUGIN_PKG" to dependencies and peerDependencies.
+echo 3. Add "$PLUGIN_PKG" to dependencies and peerDependencies.
 yarn workspace @datadog/datadog-ci add -E "$PLUGIN_PKG"
 yarn workspace @datadog/datadog-ci-base add -E -P -O "$PLUGIN_PKG"
 jq 'del(.optionalDependencies)' packages/base/package.json | sponge packages/base/package.json
@@ -95,7 +90,7 @@ print-files() {
   git ls-files ':!:*symlink*' ":!:$SRC_DIR/*" "${1:-.}"
 }
 
-echo 5. Update string references
+echo 4. Update string references
 git add -A
 print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/README.md|$PLUGIN_DIR/README.md|g"
 print-files | xargs sed -i -e "s|packages/datadog-ci/src/commands/$SCOPE/|$PLUGIN_DIR/|g"
@@ -104,12 +99,12 @@ echo Updating known shared imports...
 print-files "$DST_DIR" | xargs sed -i -e "s|import {cliVersion} from '../../version'|import {cliVersion} from '@datadog/datadog-ci/src/version'|g"
 echo Done
 
-echo 6. Update CODEOWNERS
+echo 5. Update CODEOWNERS
 CODEOWNERS=$(grep "$SRC_DIR" .github/CODEOWNERS | sed 's|\s\+| |g' | cut -d' ' -f 2-)
 sed -i -e "s|$SRC_DIR|$PLUGIN_DIR   $CODEOWNERS\n$BASE_DIR|" .github/CODEOWNERS
 echo Done
 
-echo "7. Run \`yarn lint:packages --fix\`"
+echo "6. Run \`yarn lint:packages --fix\`"
 yarn lint:packages --fix
 
 if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
