@@ -185,10 +185,7 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
       return INVALID_KEY_MESSAGE
     }
 
-    if (
-      datadogApiKeyType.envVar === CI_API_KEY_SSM_ARN_ENV_VAR &&
-      !sentenceMatchesRegEx(value, AWS_SSM_ARN_REG_EXP)
-    ) {
+    if (datadogApiKeyType.envVar === CI_API_KEY_SSM_ARN_ENV_VAR && !sentenceMatchesRegEx(value, AWS_SSM_ARN_REG_EXP)) {
       return INVALID_KEY_MESSAGE
     }
 
