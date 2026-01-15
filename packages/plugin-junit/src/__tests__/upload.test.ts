@@ -6,7 +6,7 @@ import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
 import {renderInvalidFile} from '../renderer'
-import {JunitUploadCommand} from '../upload'
+import {PluginCommand as JunitUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
@@ -47,9 +47,7 @@ describe('upload', () => {
       expect(filePaths).toContain('src/__tests__/fixtures/java-report.xml')
 
       const output = command.context.stdout.toString()
-      expect(output).toContain(
-        renderInvalidFile('src/__tests__/fixtures/empty.xml', 'Start tag expected.')
-      )
+      expect(output).toContain(renderInvalidFile('src/__tests__/fixtures/empty.xml', 'Start tag expected.'))
       expect(output).toContain(
         renderInvalidFile(
           'src/__tests__/fixtures/invalid.xml',
@@ -104,10 +102,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: [
-            'src/__tests__/fixtures',
-            'src/__tests__/fixtures/subfolder/js-report.xml',
-          ],
+          basePaths: ['src/__tests__/fixtures', 'src/__tests__/fixtures/subfolder/js-report.xml'],
           config: {},
           context: command.context,
           service: 'service',
