@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-junit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Datadog CI plugin for `junit` commands",
   "license": "Apache-2.0",
   "keywords": [
