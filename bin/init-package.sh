@@ -36,7 +36,14 @@ if [ -d "$PLUGIN_DIR" ]; then
 	exit 1
 fi
 
-echo "This script will initialize and publish an empty package for $PLUGIN_PKG"
+BOLD='\033[1m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "This script will initialize and publish an empty package for ${BLUE}${BOLD}$PLUGIN_PKG${NC}"
+echo
+echo -e "${BOLD}Please follow the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before running this script."
 echo
 
 read -rsp "Enter your NPM auth token: " INIT_NPM_AUTH_TOKEN
@@ -115,10 +122,10 @@ yarn config unset npmAuthToken
 
 echo
 if [ "$DRY_RUN" = true ]; then
-	echo "[DRY-RUN] Would have published $PLUGIN_PKG@0.0.1"
+	echo -e "${GREEN}[DRY-RUN] Would have published ${BOLD}$PLUGIN_PKG@0.0.1${NC}${NC}"
 else
-	echo "Successfully published $PLUGIN_PKG@0.0.1"
+	echo -e "${GREEN}Successfully published ${BOLD}$PLUGIN_PKG@0.0.1${NC}${NC}"
 fi
 
 echo
-echo "If needed, you can now run: ./bin/migrate.sh $SCOPE"
+echo -e "If needed, you can now run: ${BLUE}bin/migrate.sh $SCOPE${NC}"

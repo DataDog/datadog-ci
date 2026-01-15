@@ -25,17 +25,25 @@ SRC_DIR="packages/datadog-ci/src/commands/$SCOPE"
 DST_DIR="$PLUGIN_DIR/src"
 BASE_DIR="packages/base/src/commands/$SCOPE"
 
+BOLD='\033[1m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
 # Check that init-package.sh was run first
 if [ ! -d "$PLUGIN_DIR" ]; then
-  echo "Plugin directory $PLUGIN_DIR does not exist!"
-  echo "Please run ./bin/init-package.sh $SCOPE first to initialize and publish the empty package."
+  echo -e "${RED}Plugin directory ${BOLD}$PLUGIN_DIR${NC} does not exist!${NC}"
+  echo
+  echo -e "${BLUE}To initialize and ${BOLD}publish an initial version${NC}${BLUE} of the package, please run ${BOLD}bin/init-package.sh $SCOPE${NC}"
   exit 1
 fi
 
 # Check that this script wasn't already run (tsconfig.json is created by migrate.sh)
 if [ -f "$PLUGIN_DIR/tsconfig.json" ]; then
-  echo "Plugin directory $PLUGIN_DIR already has a tsconfig.json file!"
-  echo "This indicates the package was already migrated."
+  echo -e "${RED}Plugin directory ${BOLD}$PLUGIN_DIR${NC}${RED} already has a tsconfig.json file!${NC}"
+  echo
+  echo -e "${BLUE}This indicates the package was already migrated.${NC}"
   exit 1
 fi
 
@@ -105,16 +113,16 @@ echo "7. Run \`yarn lint:packages --fix\`"
 yarn lint:packages --fix
 
 if yarn workspace @datadog/datadog-ci-base build && yarn workspace "$PLUGIN_PKG" build && yarn workspace "$PLUGIN_PKG" lint --fix; then
-  echo Done
+  echo -e "${GREEN}Done${NC}"
 else
-  echo "Linting failed. Please fix the issues manually."
+  echo -e "${RED}Linting failed. Please fix the issues manually.${NC}"
 fi
 git add -A
 
 echo
-echo "Manual steps remaining:"
-echo "- Commit the changes, then make the following manual changes:"
-echo "- Move any shared helpers to @datadog/datadog-ci-base if needed."
-echo "- Split FooCommand/PluginCommand classes as described in https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor"
-echo "- Run yarn build and yarn lint as needed to ensure everything works."
-echo "- **Important:** Update any outdated links in the Documentation repo. See https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Update-links-pointing-to-the-package"
+echo -e "${BOLD}Manual steps remaining:${NC}"
+echo -e "- ${BLUE}Commit${NC} the changes, then make the following manual changes."
+echo -e "- Move any shared helpers to ${BLUE}@datadog/datadog-ci-base${NC} if needed."
+echo -e "- Split FooCommand/PluginCommand classes as described in ${BLUE}https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Refactor${NC}"
+echo -e "- Run ${BLUE}yarn build${NC} and ${BLUE}yarn lint${NC} as needed to ensure everything works."
+echo -e "- ${BOLD}Important:${NC} Update any outdated links in the Documentation repo. See ${BLUE}https://datadoghq.atlassian.net/wiki/spaces/dtdci/pages/5472846600/How+to+Split+a+command+scope+into+a+plugin+package#Update-links-pointing-to-the-package${NC}"
