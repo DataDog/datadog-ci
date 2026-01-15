@@ -1651,10 +1651,8 @@ __metadata:
   dependencies:
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
-    clipanion: "npm:^3.2.1"
     fast-xml-parser: "npm:^4.4.1"
     form-data: "npm:^4.0.4"
-    typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
   peerDependencies:

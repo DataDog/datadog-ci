@@ -40,10 +40,8 @@
   "dependencies": {
     "axios": "^1.12.1",
     "chalk": "3.0.0",
-    "clipanion": "^3.2.1",
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
-    "typanion": "^3.14.0",
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
   }
