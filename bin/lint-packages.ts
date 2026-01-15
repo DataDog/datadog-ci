@@ -568,6 +568,7 @@ if (Object.keys(impactedGithubActions).length > 0) {
 // #endregion
 
 if (fix) {
+  // Both commands always exit with 0, even when they make changes
   exec('yarn syncpack fix')
   exec('yarn syncpack format')
 } else {
@@ -582,7 +583,12 @@ if (fix) {
 }
 
 if (fix) {
-  exec('yarn knip --fix')
+  try {
+    // This command exits with 1 when it makes changes
+    exec('yarn knip --fix')
+  } catch {
+    // ignore error
+  }
 } else {
   try {
     exec('yarn knip')
