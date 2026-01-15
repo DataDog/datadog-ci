@@ -6,7 +6,7 @@ on:
       - v* # Any version tag
 
 permissions:
-  id-token: write # To publish on NPM with provenance and to federate tokens
+  id-token: write # For OIDC publishing with provenance and to federate tokens
   contents: write # Required for the draft release
 
 jobs:
@@ -258,11 +258,11 @@ jobs:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
         with:
-          node-version: 24.11.1 # Version supporting OIDC
-          registry-url: "https://registry.npmjs.org"
+          node-version: '24' # Needed for OIDC publishing
+          registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn publish:all
+      - run: yarn publish:all --provenance
 
   bump-ci-integrations:
     name: Bump datadog-ci in integration
