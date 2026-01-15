@@ -25,6 +25,20 @@ SRC_DIR="packages/datadog-ci/src/commands/$SCOPE"
 DST_DIR="$PLUGIN_DIR/src"
 BASE_DIR="packages/base/src/commands/$SCOPE"
 
+# Check that init-package.sh was run first
+if [ ! -d "$PLUGIN_DIR" ]; then
+  echo "Plugin directory $PLUGIN_DIR does not exist!"
+  echo "Please run ./bin/init-package.sh $SCOPE first to initialize and publish the empty package."
+  exit 1
+fi
+
+# Check that this script wasn't already run (tsconfig.json is created by migrate.sh)
+if [ -f "$PLUGIN_DIR/tsconfig.json" ]; then
+  echo "Plugin directory $PLUGIN_DIR already has a tsconfig.json file!"
+  echo "This indicates the package was already migrated."
+  exit 1
+fi
+
 echo 1. Move the folder
 if [ ! -d "$SRC_DIR" ]; then
   echo "Source directory $SRC_DIR does not exist!"
@@ -32,78 +46,20 @@ if [ ! -d "$SRC_DIR" ]; then
 fi
 if [ -d "$DST_DIR" ]; then
   echo "Destination directory $DST_DIR already exists!"
-  echo "You can run \`rm -rf packages/plugin-$SCOPE && rm -rf $BASE_DIR\` to clean up a previous run of this script."
+  echo "You can run \`rm -rf packages/plugin-$SCOPE/src && rm -rf $BASE_DIR\` to clean up a previous run of this script."
   exit 1
 fi
-mkdir -p "$PLUGIN_DIR"
 env mv "$SRC_DIR" "$DST_DIR"
 env mv "$DST_DIR/README.md" "$PLUGIN_DIR"
-env cp LICENSE "$PLUGIN_DIR"
 mkdir -p "$BASE_DIR"
 mv "$DST_DIR/cli.ts" "$BASE_DIR/cli.ts"
 
 echo "Moved $SRC_DIR to $DST_DIR"
 
-echo 2. Create package.json
-cat > "$PLUGIN_DIR/package.json" <<EOF
-{
-  "name": "$PLUGIN_PKG",
-  "version": "$(jq -r .version packages/base/package.json)",
-  "license": "Apache-2.0",
-  "description": "Datadog CI plugin for \`$SCOPE\` commands",
-  "keywords": [
-    "datadog",
-    "datadog-ci",
-    "plugin"
-  ],
-  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/$PLUGIN_DIR",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/DataDog/datadog-ci.git",
-    "directory": "$PLUGIN_DIR"
-  },
-  "exports": {
-    "./package.json": "./package.json",
-    "./commands/*": {
-      "development": "./src/commands/*.ts",
-      "default": "./dist/commands/*.js"
-    }
-  },
-  "files": [
-    "dist/**/*",
-    "README",
-    "LICENSE"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "scripts": {
-    "build": "yarn package:clean; yarn package:build",
-    "lint": "yarn package:lint",
-    "prepack": "yarn package:clean-dist"
-  },
-  "peerDependencies": {
-    "@datadog/datadog-ci-base": "workspace:*"
-  },
-  "dependencies": {
-    "axios": "^1.12.1",
-    "chalk": "3.0.0",
-    "clipanion": "^3.2.1",
-    "fast-xml-parser": "^4.4.1",
-    "form-data": "^4.0.4",
-    "jest-diff": "^30.0.4",
-    "js-yaml": "4.1.1",
-    "ora": "5.4.1",
-    "semver": "^7.5.3",
-    "simple-git": "3.16.0",
-    "typanion": "^3.14.0",
-    "upath": "^2.0.1",
-    "uuid": "^9.0.0"
-  }
-}
-EOF
-
-echo "Created $PLUGIN_DIR/package.json"
+echo 2. Align package.json version with base package version
+BASE_VERSION=$(jq -r .version packages/base/package.json)
+jq --arg version "$BASE_VERSION" '.version = $version' "$PLUGIN_DIR/package.json" | sponge "$PLUGIN_DIR/package.json"
+echo "Updated $PLUGIN_DIR/package.json to version $BASE_VERSION"
 
 echo 3. Create tsconfig.json
 cat > "$PLUGIN_DIR/tsconfig.json" <<EOF
