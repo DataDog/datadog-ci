@@ -527,7 +527,7 @@ describe('instrument', () => {
         }
       }
       expect(error?.message).toBe(
-        "When 'extensionLayer' is set, DATADOG_API_KEY, DATADOG_KMS_API_KEY, or DATADOG_API_KEY_SECRET_ARN must also be set"
+        "When 'extensionLayer' is set, DATADOG_API_KEY, DATADOG_KMS_API_KEY, DATADOG_API_KEY_SECRET_ARN, or DATADOG_API_KEY_SSM_ARN must also be set"
       )
     })
 
