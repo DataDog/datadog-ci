@@ -1642,6 +1642,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda"
