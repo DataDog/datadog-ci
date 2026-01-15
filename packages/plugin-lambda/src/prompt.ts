@@ -19,7 +19,9 @@ import {
   AWS_SECRET_ACCESS_KEY_REG_EXP,
   AWS_SECRET_ARN_REG_EXP,
   AWS_SESSION_TOKEN_ENV_VAR,
+  AWS_SSM_ARN_REG_EXP,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_API_KEY_SSM_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   DATADOG_API_KEY_REG_EXP,
 } from './constants'
@@ -110,6 +112,13 @@ export const datadogApiKeyTypeQuestion = (datadogSite: string): inquirer.ListQue
         message: 'API Key Secret ARN:',
       },
     },
+    {
+      name: `AWS Systems Manager Parameter Store ${chalk.bold('API Key SSM ARN')}`,
+      value: {
+        envVar: CI_API_KEY_SSM_ARN_ENV_VAR,
+        message: 'API Key SSM Parameter ARN:',
+      },
+    },
   ],
   message: `Which type of Datadog API Key you want to set? \nLearn more at ${chalk.blueBright(
     `https://app.${datadogSite}/organization-settings/api-keys`
@@ -172,6 +181,13 @@ export const datadogEnvVarsQuestions = (datadogApiKeyType: Record<string, any>):
     if (
       datadogApiKeyType.envVar === CI_API_KEY_SECRET_ARN_ENV_VAR &&
       !sentenceMatchesRegEx(value, AWS_SECRET_ARN_REG_EXP)
+    ) {
+      return INVALID_KEY_MESSAGE
+    }
+
+    if (
+      datadogApiKeyType.envVar === CI_API_KEY_SSM_ARN_ENV_VAR &&
+      !sentenceMatchesRegEx(value, AWS_SSM_ARN_REG_EXP)
     ) {
       return INVALID_KEY_MESSAGE
     }
