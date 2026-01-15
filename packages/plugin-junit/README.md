@@ -66,7 +66,7 @@ To verify this command works as expected, you can use `--dry-run`:
 ```bash
 export DD_API_KEY='<API key>'
 
-yarn launch junit upload ./packages/datadog-ci/src/commands/junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
+yarn launch junit upload ./packages/plugin-junit/__tests__/fixtures/java-report.xml --service example-upload --dry-run
 ```
 
 Successful output should look like this:
@@ -74,9 +74,9 @@ Successful output should look like this:
 ```bash
 ⚠️ DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML
 Starting upload with concurrency 20.
-Will upload jUnit XML file src/commands/junit/__tests__/fixtures/java-report.xml
+Will upload jUnit XML file src/__tests__/fixtures/java-report.xml
 service: example-upload
-[DRYRUN] Uploading jUnit XML test report file in src/commands/junit/__tests__/fixtures/java-report.xml
+[DRYRUN] Uploading jUnit XML test report file in src/__tests__/fixtures/java-report.xml
 ✅ Uploaded 1 files in 0 seconds.
 ```
 

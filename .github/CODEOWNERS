@@ -9,7 +9,8 @@ packages/plugin-deployment                     @DataDog/datadog-ci-admins @DataD
 packages/base/src/commands/deployment          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/plugin-dora                           @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/base/src/commands/dora                @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
-packages/datadog-ci/src/commands/junit         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/plugin-junit                          @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
+packages/base/src/commands/junit               @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/measure       @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/base/src/commands/tag                 @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
 packages/datadog-ci/src/commands/trace         @DataDog/datadog-ci-admins @DataDog/ci-app-libraries @DataDog/ci-app-backend
