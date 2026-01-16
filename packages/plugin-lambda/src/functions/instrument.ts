@@ -233,16 +233,6 @@ export const calculateUpdateRequest = async (
     }
     needsUpdate = true
     changedEnvVars[API_KEY_SECRET_ARN_ENV_VAR] = apiKeySecretArn
-  } else if (apiKeySsmArn !== undefined && oldEnvVars[API_KEY_SSM_ARN_ENV_VAR] !== apiKeySsmArn) {
-    const isNode = runtimeType === RuntimeType.NODE
-    const isSendingSynchronousMetrics = settings.extensionVersion === 'none' && !settings.flushMetricsToLogs
-    if (isSendingSynchronousMetrics && isNode) {
-      throw new Error(
-        '`apiKeySsmArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
-      )
-    }
-    needsUpdate = true
-    changedEnvVars[API_KEY_SSM_ARN_ENV_VAR] = apiKeySsmArn
   } else if (apiKey !== undefined && oldEnvVars[API_KEY_ENV_VAR] !== apiKey) {
     needsUpdate = true
     changedEnvVars[API_KEY_ENV_VAR] = apiKey
