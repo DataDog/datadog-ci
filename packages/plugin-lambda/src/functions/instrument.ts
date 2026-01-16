@@ -226,6 +226,7 @@ export const calculateUpdateRequest = async (
   } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
     const isNode = runtimeType === RuntimeType.NODE
     const isSendingSynchronousMetrics = settings.extensionVersion === 'none' && !settings.flushMetricsToLogs
+    // TODO: remove this in cleanup PR, we now support `apiKeySsmArn` for Node runtimes using Synchronous Metrics
     if (isSendingSynchronousMetrics && isNode) {
       throw new Error(
         '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
