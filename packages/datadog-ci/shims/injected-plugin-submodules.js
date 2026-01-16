@@ -16,6 +16,9 @@ const injectedPluginSubmodules = {
     'instrument': require('@datadog/datadog-ci-plugin-container-app/commands/instrument'),
     'uninstrument': require('@datadog/datadog-ci-plugin-container-app/commands/uninstrument'),
   },
+  'coverage': {
+    'upload': require('@datadog/datadog-ci-plugin-coverage/commands/upload'),
+  },
   'deployment': {
     'correlate-image': require('@datadog/datadog-ci-plugin-deployment/commands/correlate-image'),
     'correlate': require('@datadog/datadog-ci-plugin-deployment/commands/correlate'),
