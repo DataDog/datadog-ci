@@ -24,11 +24,13 @@ import {isValidDatadogSite} from '@datadog/datadog-ci-base/helpers/validation'
 
 import {
   API_KEY_SECRET_ARN_ENV_VAR,
+  API_KEY_SSM_ARN_ENV_VAR,
   ARM64_ARCHITECTURE,
   AWS_LAMBDA_EXEC_WRAPPER,
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   CAPTURE_LAMBDA_PAYLOAD_ENV_VAR,
   CI_API_KEY_SECRET_ARN_ENV_VAR,
+  CI_API_KEY_SSM_ARN_ENV_VAR,
   CI_KMS_API_KEY_ENV_VAR,
   CORECLR_ENABLE_PROFILING,
   CORECLR_PROFILER,
@@ -216,13 +218,14 @@ export const calculateUpdateRequest = async (
     }
   }
 
-  // KMS > Secrets Manager > API Key
+  // KMS > Secrets Manager > SSM Parameter Store > API Key
   if (apiKmsKey !== undefined && oldEnvVars[KMS_API_KEY_ENV_VAR] !== apiKmsKey) {
     needsUpdate = true
     changedEnvVars[KMS_API_KEY_ENV_VAR] = apiKmsKey
   } else if (apiKeySecretArn !== undefined && oldEnvVars[API_KEY_SECRET_ARN_ENV_VAR] !== apiKeySecretArn) {
     const isNode = runtimeType === RuntimeType.NODE
     const isSendingSynchronousMetrics = settings.extensionVersion === 'none' && !settings.flushMetricsToLogs
+    // TODO: remove this in cleanup PR, we now support `apiKeySsmArn` for Node runtimes using Synchronous Metrics
     if (isSendingSynchronousMetrics && isNode) {
       throw new Error(
         '`apiKeySecretArn` is not supported for Node runtimes when using Synchronous Metrics. Use either `apiKey` or `apiKmsKey`.'
@@ -409,10 +412,11 @@ export const calculateUpdateRequest = async (
       layerARN.includes(DD_LAMBDA_EXTENSION_LAYER_NAME) &&
       newEnvVars[API_KEY_ENV_VAR] === undefined &&
       newEnvVars[API_KEY_SECRET_ARN_ENV_VAR] === undefined &&
+      newEnvVars[API_KEY_SSM_ARN_ENV_VAR] === undefined &&
       newEnvVars[KMS_API_KEY_ENV_VAR] === undefined
     ) {
       throw new Error(
-        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR}, ${CI_KMS_API_KEY_ENV_VAR}, or ${CI_API_KEY_SECRET_ARN_ENV_VAR} must also be set`
+        `When 'extensionLayer' is set, ${CI_API_KEY_ENV_VAR}, ${CI_KMS_API_KEY_ENV_VAR}, ${CI_API_KEY_SECRET_ARN_ENV_VAR}, or ${CI_API_KEY_SSM_ARN_ENV_VAR} must also be set`
       )
     }
   })
