@@ -171,7 +171,6 @@ export const calculateUpdateRequest = async (
 
   const apiKey: string | undefined = process.env[CI_API_KEY_ENV_VAR] ?? process.env[API_KEY_ENV_VAR]
   const apiKeySecretArn: string | undefined = process.env[CI_API_KEY_SECRET_ARN_ENV_VAR]
-  const apiKeySsmArn: string | undefined = process.env[CI_API_KEY_SSM_ARN_ENV_VAR]
   const apiKmsKey: string | undefined = process.env[CI_KMS_API_KEY_ENV_VAR]
   const site: string | undefined = process.env[CI_SITE_ENV_VAR]
 
