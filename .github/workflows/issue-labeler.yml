@@ -17,7 +17,7 @@ jobs:
           policy: self.issue-labeler
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Parse issue form
-        uses: stefanbuck/github-issue-parser@25f1485edffc1fee3ea68eb9f59a72e58720ffc4 # v3.2.2
+        uses: stefanbuck/github-issue-parser@10dcc54158ba4c137713d9d69d70a2da63b6bda3 # v3.2.3
         id: issue-parser
       - name: Set labels based on command
         uses: redhat-plumbers-in-action/advanced-issue-labeler@b80ae64e3e156e9c111b075bfa04b295d54e8e2e # v3.2.4
