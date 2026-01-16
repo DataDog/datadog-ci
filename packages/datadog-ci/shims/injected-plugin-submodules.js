@@ -28,6 +28,9 @@ const injectedPluginSubmodules = {
   'gate': {
     'evaluate': require('@datadog/datadog-ci-plugin-gate/commands/evaluate'),
   },
+  'junit': {
+    'upload': require('@datadog/datadog-ci-plugin-junit/commands/upload'),
+  },
   'lambda': {
     'flare': require('@datadog/datadog-ci-plugin-lambda/commands/flare'),
     'instrument': require('@datadog/datadog-ci-plugin-lambda/commands/instrument'),

@@ -38,9 +38,7 @@ import {Command, Option} from 'clipanion'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
-import {apiUrl} from '../junit/api'
-
-import {apiConstructor, intakeUrl} from './api'
+import {apiConstructor, apiUrl, intakeUrl} from './api'
 import {APIHelper, Payload, RepoFile} from './interfaces'
 import {
   renderCommandInfo,

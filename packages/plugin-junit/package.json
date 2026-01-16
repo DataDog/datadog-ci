@@ -1,0 +1,48 @@
+{
+  "name": "@datadog/datadog-ci-plugin-junit",
+  "version": "5.2.1",
+  "description": "Datadog CI plugin for `junit` commands",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-junit",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-junit"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
+  },
+  "dependencies": {
+    "axios": "^1.12.1",
+    "chalk": "3.0.0",
+    "fast-xml-parser": "^4.4.1",
+    "form-data": "^4.0.4",
+    "upath": "^2.0.1",
+    "uuid": "^9.0.0"
+  }
+}

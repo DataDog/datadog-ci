@@ -45,6 +45,7 @@
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
+    "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
     "axios": "^1.12.1",
@@ -56,14 +57,12 @@
     "semver": "^7.5.3",
     "simple-git": "3.16.0",
     "typanion": "^3.14.0",
-    "upath": "^2.0.1",
-    "uuid": "^9.0.0"
+    "upath": "^2.0.1"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.7.1",
-    "@types/uuid": "^9.0.2",
     "esbuild": "^0.25.9"
   }
 }
