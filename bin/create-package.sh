@@ -2,18 +2,13 @@
 
 set -euo pipefail
 
-DRY_RUN=false
 SCOPE=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
-	--dry-run)
-		DRY_RUN=true
-		shift
-		;;
 	-*)
 		echo "Unknown option: $1"
-		echo "Usage: $0 [--dry-run] <scope>"
+		echo "Usage: $0 <scope>"
 		exit 1
 		;;
 	*)
@@ -24,7 +19,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$SCOPE" ]; then
-	echo "Usage: $0 [--dry-run] <scope>"
+	echo "Usage: $0 <scope>"
 	exit 1
 fi
 PLUGIN_PKG="@datadog/datadog-ci-plugin-$SCOPE"
@@ -41,23 +36,7 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "This script will initialize and publish an empty package for ${BLUE}${BOLD}$PLUGIN_PKG${NC}"
-echo
-echo -e "${BOLD}Please read the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before running this script."
-echo
-
-read -rsp "Enter your NPM auth token: " INIT_NPM_AUTH_TOKEN
-echo
-if [ -z "$INIT_NPM_AUTH_TOKEN" ]; then
-	echo "Error: NPM auth token cannot be empty"
-	exit 1
-fi
-
-# Export this for subsequent yarn commands in the script
-export INIT_NPM_AUTH_TOKEN
-
-# Do not hardcode the token in .yarnrc.yml, it will be read from the environment variable
-yarn config set npmAuthToken '${INIT_NPM_AUTH_TOKEN}'
+echo -e "This script will initialize an empty package for ${BLUE}${BOLD}$PLUGIN_PKG${NC}"
 echo
 
 echo -e "${BOLD}1. Creating plugin directory structure${NC}"
@@ -67,7 +46,7 @@ echo "Empty package" > "$PLUGIN_DIR/README.md"
 cat > "$PLUGIN_DIR/package.json" <<EOF
 {
   "name": "$PLUGIN_PKG",
-  "version": "0.0.1",
+  "version": "$(jq -r .version packages/base/package.json)",
   "description": "Datadog CI plugin for \`$SCOPE\` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -108,31 +87,7 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
 EOF
 
 echo
-echo -e "${BOLD}2. Publishing empty package to npm${NC}"
-echo
-yarn
-if [ "$DRY_RUN" = true ]; then
-	yarn workspace "$PLUGIN_PKG" npm publish --dry-run
-else
-	yarn workspace "$PLUGIN_PKG" npm publish
-fi
-
-echo
-if [ "$DRY_RUN" = true ]; then
-	echo -e "${GREEN}[DRY-RUN] Would have published ${BOLD}$PLUGIN_PKG@0.0.1${NC}${NC}"
-else
-	echo -e "${GREEN}Successfully published ${BOLD}$PLUGIN_PKG@0.0.1${NC}${NC}"
-fi
-
-echo
-echo -e "${BOLD}3. Aligning package version with base package version${NC}"
-BASE_VERSION=$(jq -r .version packages/base/package.json)
-jq --arg version "$BASE_VERSION" '.version = $version' "$PLUGIN_DIR/package.json" | sponge "$PLUGIN_DIR/package.json"
-echo "Updated $PLUGIN_DIR/package.json to version $BASE_VERSION"
-
-echo
-echo -e "${BOLD}4. Cleaning up${NC}"
-yarn config unset npmAuthToken
+echo -e "${GREEN}Package created successfully${NC}"
 
 echo
 echo -e "${BLUE}If needed, you can now run: ${BOLD}bin/migrate.sh $SCOPE${NC}"
