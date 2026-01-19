@@ -285,7 +285,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn build
-      - run: yarn publish:all --provenance
+      - run: yarn publish:all --provenance --tolerate-republish
 
   bump-ci-integrations:
     name: Bump datadog-ci in integration
