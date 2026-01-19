@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: 22.19.0
       - name: Install project dependencies
-        run: yarn install --immutable
+        run: yarn install --immutable --mode=skip-build
       - name: Check NPM packages
         run: yarn check-npm-packages
         env:

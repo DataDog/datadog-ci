@@ -63,12 +63,13 @@ while IFS= read -r pkg; do
 	fi
 done <<< "$local_packages"
 
+# Exit early if everything is good
 if [ ${#missing_packages[@]} -eq 0 ]; then
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
 	exit 0
 fi
 
-# Report missing packages
+# Otherwise, report missing packages
 echo -e "${RED}The following packages are not published to NPM yet:${NC}"
 for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
@@ -76,23 +77,25 @@ done
 
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	# Find the PR associated with this commit
-	PR_NUMBER=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
-		| jq -r '.[0].number // empty')
+	# Get the PR number and author associated with this commit
+	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
 
-	if [ -n "$PR_NUMBER" ]; then
-		DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
-			<(echo "$remote_packages") <(echo "$local_packages")) || true
+	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
+	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
-		COMMENT_BODY="### Some local packages were not published to NPM yet ❌
+	DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
+		<(echo "$remote_packages") <(echo "$local_packages")) || true
+
+	COMMENT_BODY="### Some packages were not first-time published to NPM yet ❌
 
 \`\`\`diff
 $DIFF_OUTPUT
 \`\`\`
 
-**Please follow the instructions** at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
+Hi @$PR_AUTHOR, please **ask an admin** to follow the instructions at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
 
+	if [ -n "$PR_NUMBER" ]; then
 		# Post comment on the PR
 		curl -s -X POST \
 			-H "Authorization: token $GITHUB_TOKEN" \
@@ -100,10 +103,16 @@ $DIFF_OUTPUT
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
 			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
 
-		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER${NC}"
+		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER (author: @$PR_AUTHOR)${NC}"
+	else
+		# Fallback when PR is not found
+		echo -e "${RED}No PR found for commit $GITHUB_SHA${NC}"
+		echo -e "${BLUE}This would be the comment body:${NC}"
+		echo "$COMMENT_BODY"
 	fi
 fi
 
+# Do not continue if we are in check mode
 if [ "$MODE" = "check" ]; then
 	echo
 	echo -e "${BOLD}Run with --fix to publish these packages${NC}"
@@ -117,6 +126,11 @@ echo -e "${BOLD}Publishing missing packages to NPM...${NC}"
 echo
 echo -e "${BOLD}Please read the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before proceeding."
 echo
+
+if [ "$DRY_RUN" = true ]; then
+	echo -e "${BOLD}[DRY-RUN]${NC} None of the packages will actually be published."
+	echo
+fi
 
 read -rsp "Enter your NPM auth token: " INIT_NPM_AUTH_TOKEN
 echo
