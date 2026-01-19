@@ -102,8 +102,8 @@ const findCommands = (folder: string, scope: string): string[] => {
   } catch (e) {
     if (e instanceof Error && e.message.includes('no such file or directory')) {
       const alternateFile = path.join('packages/base/src/commands', scope, 'cli.ts')
-      console.log(chalk.yellow(`Could not find commands in ${chalk.bold(folder)}, this means it's being migrated...`))
-      console.log(chalk.yellow(`Reading imports in ${chalk.bold(alternateFile)} instead.\n`))
+      console.log(chalk.yellow(`Could not find commands in ${chalk.bold(folder)}. A migration may be in progress...`))
+      console.log(chalk.yellow(`Trying to read imports in ${chalk.bold(alternateFile)} instead.\n`))
 
       const content = fs.readFileSync(alternateFile, 'utf8')
 
@@ -218,10 +218,19 @@ const pluginPackages = fs
   .readdirSync('packages')
   .filter((dir) => dir.startsWith('plugin-'))
   .map((dir) => {
+    let loadedPackage: Package
     try {
-      const {folder, packageJson} = loadPackage(dir)
+      loadedPackage = loadPackage(dir)
+    } catch {
+      console.log(chalk.yellow(`Could not load ${chalk.bold(dir)} package. Skipping it...\n`))
 
-      const scope = dir.replace('plugin-', '')
+      return undefined
+    }
+
+    const {folder, packageJson} = loadedPackage
+    const scope = dir.replace('plugin-', '')
+
+    try {
       const commands = findCommands(folder, scope)
 
       return {
@@ -231,9 +240,11 @@ const pluginPackages = fs
         commands,
       }
     } catch {
-      console.log(chalk.yellow(`Could not load ${chalk.bold(dir)} package. Skipping it...\n`))
-
-      return undefined
+      console.log(chalk.bold.red(`Invalid state for ${folder}.`))
+      console.log(
+        `Did you recently run ${chalk.bold(`yarn plugin:create ${scope}`)}? Please either run ${chalk.bold(`bin/migrate.sh ${scope}`)} and finish the migration, or complete the structure of the plugin before merging your PR.`
+      )
+      process.exit(1)
     }
   })
   .filter((p): p is PluginPackage => p !== undefined)
@@ -568,6 +579,7 @@ if (Object.keys(impactedGithubActions).length > 0) {
 // #endregion
 
 if (fix) {
+  // Both commands always exit with 0, even when they make changes
   exec('yarn syncpack fix')
   exec('yarn syncpack format')
 } else {
@@ -582,7 +594,12 @@ if (fix) {
 }
 
 if (fix) {
-  exec('yarn knip --fix')
+  try {
+    // This command exits with 1 when it makes changes
+    exec('yarn knip --fix')
+  } catch {
+    // ignore error
+  }
 } else {
   try {
     exec('yarn knip')

@@ -3,6 +3,26 @@
 Pull requests for bug fixes are welcome, but before submitting new features or changes to current functionality, [open an issue](https://github.com/DataDog/datadog-ci/issues/new)
 and discuss your ideas or propose the changes you wish to make. After a resolution is reached, a PR can be submitted for review.
 
+### Listing NPM packages
+
+This repository is a monorepo containing multiple packages published to NPM. You can list all packages with the following command:
+
+```sh
+npm search 'maintainer:datadog keywords:datadog-ci'
+```
+
+To only list the plugins:
+
+```sh
+npm search 'maintainer:datadog keywords:datadog-ci,plugin'
+```
+
+You can also use the following datadog-ci command to get more information:
+
+```sh
+yarn launch plugin list --all
+```
+
 ### Running command in development environment
 
 When developing the tool, it is possible to run commands using `yarn launch`. It relies on `tsx`, so it does not require building the project for every new change.
