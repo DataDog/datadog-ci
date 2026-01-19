@@ -78,6 +78,12 @@ fi
 
 # In CI, check the labels on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	# Fail if `Do Not Merge` is set
+	if echo "$PR_LABELS" | grep -q "Do Not Merge"; then
+		echo -e "${RED}This PR is marked as \"Do Not Merge\" ❌${NC}"
+		exit 1
+	fi
+
 	# Fail if the PR has `oidc-setup-required ⚠️` WITHOUT `oidc-setup-done ✅`
 	if echo "$PR_LABELS" | grep -q "oidc-setup-required ⚠️"; then
 		if ! echo "$PR_LABELS" | grep -q "oidc-setup-done ✅"; then
