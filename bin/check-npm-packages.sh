@@ -12,6 +12,7 @@ set -euo pipefail
 
 MODE="check"
 DRY_RUN=false
+GITHUB_REPOSITORY=DataDog/datadog-ci
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -63,7 +64,35 @@ while IFS= read -r pkg; do
 	fi
 done <<< "$local_packages"
 
-# Exit early if everything is good
+# Fetch PR information
+PR_RESPONSE=""
+PR_LABELS=""
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
+	PR_LABELS=$(echo "$PR_RESPONSE" | jq '[.[0].labels[].name]' 2>/dev/null || true)
+
+	echo -e "${BLUE}PR labels:${NC} $PR_LABELS"
+	echo
+fi
+
+# In CI, check the labels on the PR
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	# Fail if the PR has `oidc-setup-required ⚠️` WITHOUT `oidc-setup-done ✅`
+	if echo "$PR_LABELS" | grep -q "oidc-setup-required ⚠️"; then
+		if ! echo "$PR_LABELS" | grep -q "oidc-setup-done ✅"; then
+			echo -e "${RED}This PR requires OIDC setup on some packages. Please ask an admin to follow the instructions at https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC}"
+			exit 1
+		else
+			echo 'Continuing... No need to remove the `oidc-setup-required ⚠️` label.'
+		fi
+	else
+		echo 'Continuing... for the `oidc-setup-required ⚠️` label to possibly be added.'
+	fi
+	echo
+fi
+
+# Everything is good.
 if [ ${#missing_packages[@]} -eq 0 ]; then
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
 	exit 0
@@ -74,13 +103,11 @@ echo -e "${RED}The following packages are not published to NPM yet:${NC}"
 for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
+echo
 
 # In CI environment, post a comment on the PR
-if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	# Get the PR number and author associated with this commit
-	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
-
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	# PR_RESPONSE was already fetched above
 	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
@@ -99,11 +126,18 @@ Hi @$PR_AUTHOR, please **ask an admin** to follow the instructions at https://da
 		# Post comment on the PR
 		curl -s -X POST \
 			-H "Authorization: token $GITHUB_TOKEN" \
-			-H "Accept: application/vnd.github.v3+json" \
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
 			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
 
 		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER (author: @$PR_AUTHOR)${NC}"
+
+		# Add the 'oidc-setup-required ⚠️' label to the PR
+		curl -s -X POST \
+			-H "Authorization: token $GITHUB_TOKEN" \
+			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
+			-d '{"labels":["oidc-setup-required ⚠️"]}' > /dev/null
+
+		echo -e "${BLUE}Added 'oidc-setup-required ⚠️' label to PR #$PR_NUMBER${NC}"
 	else
 		# Fallback when PR is not found
 		echo -e "${RED}No PR found for commit $GITHUB_SHA${NC}"
