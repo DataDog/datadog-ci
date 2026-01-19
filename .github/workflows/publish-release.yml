@@ -3,7 +3,7 @@ name: Publish package on NPM
 on:
   push:
     tags:
-      - v* # Any version tag
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
   id-token: write # For OIDC publishing with provenance and to federate tokens
