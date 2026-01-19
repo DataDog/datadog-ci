@@ -161,8 +161,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -175,8 +175,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -268,8 +268,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure1:20'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure1:40'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure1:20"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure1:40"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -282,8 +282,8 @@ jobs:
           yarn add @datadog/datadog-api-client
           yarn node bin/check-junit-upload.js
         env:
-          EXTRA_TEST_QUERY_FILTER: '@testmeasure2:60'
-          EXTRA_SESSION_QUERY_FILTER: '@sessionmeasure2:80'
+          EXTRA_TEST_QUERY_FILTER: "@testmeasure2:60"
+          EXTRA_SESSION_QUERY_FILTER: "@sessionmeasure2:80"
           DD_API_KEY: ${{ secrets.DD_API_KEY_CI_VISIBILITY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY_CI_VISIBILITY }}
           DD_SERVICE: datadog-ci-e2e-tests-junit
@@ -644,8 +644,8 @@ jobs:
           cpu_count: 2
           diff_aware: false
 
-  additional-checks:
-    name: Additional checks
+  check-licenses:
+    name: Check licenses
     runs-on: ubuntu-latest
 
     steps:
@@ -654,8 +654,7 @@ jobs:
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
+      # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used
+      # by the script `check-licenses` below.
       - run: yarn install --immutable
-      - name: Check licenses
-        run: yarn check-licenses
-      - name: Check NPM packages
-        run: yarn check-npm-packages
+      - run: yarn check-licenses
