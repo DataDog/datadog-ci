@@ -46,24 +46,21 @@
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
+    "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "fast-xml-parser": "^4.4.1",
-    "form-data": "^4.0.4",
     "js-yaml": "4.1.1",
     "semver": "^7.5.3",
     "typanion": "^3.14.0",
-    "upath": "^2.0.1",
-    "uuid": "^9.0.0"
+    "upath": "^2.0.1"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
     "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.7.1",
-    "@types/uuid": "^9.0.2",
     "esbuild": "^0.25.9"
   }
 }

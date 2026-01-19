@@ -3,7 +3,6 @@ import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/typ
 
 import {commands as elfSymbolsCommands} from './elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './flutter-symbols/cli'
-import {commands as junitCommands} from './junit/cli'
 import {commands as measureCommands} from './measure/cli'
 import {commands as peSymbolsCommands} from './pe-symbols/cli'
 import {commands as reactNativeCommands} from './react-native/cli'
@@ -17,7 +16,6 @@ import {commands as versionCommands} from './version/cli'
 export const commands = {
   'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,
-  'junit': junitCommands,
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,
   'react-native': reactNativeCommands,

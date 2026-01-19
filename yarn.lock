@@ -1532,6 +1532,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
+    "@datadog/datadog-ci-plugin-junit": "workspace:*"
     "@datadog/datadog-ci-plugin-lambda": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
@@ -1551,6 +1552,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-dora":
       optional: true
     "@datadog/datadog-ci-plugin-gate":
+      optional: true
+    "@datadog/datadog-ci-plugin-junit":
       optional: true
     "@datadog/datadog-ci-plugin-lambda":
       optional: true
@@ -1654,6 +1657,21 @@ __metadata:
     "@types/uuid": "npm:^9.0.2"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
+    uuid: "npm:^9.0.0"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-junit@workspace:*, @datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-junit@workspace:packages/plugin-junit"
+  dependencies:
+    axios: "npm:^1.12.1"
+    chalk: "npm:3.0.0"
+    fast-xml-parser: "npm:^4.4.1"
+    form-data: "npm:^4.0.4"
+    upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
@@ -1774,23 +1792,20 @@ __metadata:
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
+    "@datadog/datadog-ci-plugin-junit": "workspace:*"
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@types/jest": "npm:29.5.3"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/semver": "npm:^7.7.1"
-    "@types/uuid": "npm:^9.0.2"
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     esbuild: "npm:^0.25.9"
-    fast-xml-parser: "npm:^4.4.1"
-    form-data: "npm:^4.0.4"
     js-yaml: "npm:4.1.1"
     semver: "npm:^7.5.3"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
-    uuid: "npm:^9.0.0"
   bin:
     datadog-ci: dist/cli.js
   languageName: unknown

@@ -5,8 +5,8 @@ import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import upath from 'upath'
 
+import {PluginCommand as JunitUploadCommand} from '../commands/upload'
 import {renderInvalidFile} from '../renderer'
-import {JunitUploadCommand} from '../upload'
 
 jest.mock('@datadog/datadog-ci-base/helpers/id', () => jest.fn())
 
@@ -29,7 +29,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures'],
+          basePaths: ['src/__tests__/fixtures'],
           config: {},
           context: command.context,
           service: 'service',
@@ -43,16 +43,14 @@ describe('upload', () => {
 
       expect(files.length).toBe(2)
       const filePaths = files.map((file) => file.xmlPath)
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/go-report.xml')
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/java-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/go-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/java-report.xml')
 
       const output = command.context.stdout.toString()
-      expect(output).toContain(
-        renderInvalidFile('src/commands/junit/__tests__/fixtures/empty.xml', 'Start tag expected.')
-      )
+      expect(output).toContain(renderInvalidFile('src/__tests__/fixtures/empty.xml', 'Start tag expected.'))
       expect(output).toContain(
         renderInvalidFile(
-          'src/commands/junit/__tests__/fixtures/invalid.xml',
+          'src/__tests__/fixtures/invalid.xml',
           'Neither <testsuites> nor <testsuite> are the root tag.'
         )
       )
@@ -62,7 +60,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/go-report.xml'],
+          basePaths: ['src/__tests__/fixtures/go-report.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -77,7 +75,7 @@ describe('upload', () => {
       expect(files.length).toEqual(1)
 
       expect(files[0]).toMatchObject({
-        xmlPath: 'src/commands/junit/__tests__/fixtures/go-report.xml',
+        xmlPath: 'src/__tests__/fixtures/go-report.xml',
       })
     })
 
@@ -85,7 +83,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/does-not-exist.xml'],
+          basePaths: ['src/__tests__/fixtures/does-not-exist.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -104,10 +102,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: [
-            'src/commands/junit/__tests__/fixtures',
-            'src/commands/junit/__tests__/fixtures/subfolder/js-report.xml',
-          ],
+          basePaths: ['src/__tests__/fixtures', 'src/__tests__/fixtures/subfolder/js-report.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -122,16 +117,16 @@ describe('upload', () => {
       // Check that all expected files are present, regardless of order
       const filePaths = files.map((file) => file.xmlPath)
       expect(filePaths.length).toEqual(3)
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/go-report.xml')
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/java-report.xml')
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/subfolder/js-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/go-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/java-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/subfolder/js-report.xml')
     })
 
     test('should allow folders with extensions', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/junit.xml'],
+          basePaths: ['src/__tests__/fixtures/junit.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -145,15 +140,15 @@ describe('upload', () => {
 
       expect(files.length).toBe(2)
       const filePaths = files.map((file) => file.xmlPath)
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml')
-      expect(filePaths).toContain('src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/junit.xml/valid-report-2.xml')
+      expect(filePaths).toContain('src/__tests__/fixtures/junit.xml/valid-report.xml')
     })
 
     test('should not have repeated files', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures', 'src/commands/junit/__tests__/fixtures/go-report.xml'],
+          basePaths: ['src/__tests__/fixtures', 'src/__tests__/fixtures/go-report.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -172,7 +167,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures'],
+          basePaths: ['src/__tests__/fixtures'],
           config: {},
           context: command.context,
           service: 'service',
@@ -195,7 +190,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures'],
+          basePaths: ['src/__tests__/fixtures'],
           config: {},
           context: command.context,
           logs: true,
@@ -219,7 +214,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/subfolder/invalid-no-tests.xml'],
+          basePaths: ['src/__tests__/fixtures/subfolder/invalid-no-tests.xml'],
           config: {},
           context: command.context,
           logs: true,
@@ -234,7 +229,7 @@ describe('upload', () => {
       const output = command.context.stdout.toString()
       expect(output).toContain(
         renderInvalidFile(
-          'src/commands/junit/__tests__/fixtures/subfolder/invalid-no-tests.xml',
+          'src/__tests__/fixtures/subfolder/invalid-no-tests.xml',
           'The junit report file is empty, there are no <testcase> elements.'
         )
       )
@@ -244,7 +239,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['**/junit/**/*.xml'],
+          basePaths: ['**/*.xml'],
           config: {},
           context: command.context,
           service: 'service',
@@ -258,21 +253,21 @@ describe('upload', () => {
       const fileNames = files.map((file) => file.xmlPath)
 
       expect(fileNames.length).toBe(9)
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/go-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/java-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/subfolder/js-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/test-results.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/go-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/java-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/junit.xml/valid-report-2.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/junit.xml/valid-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/subfolder/js-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/junit-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/test-results.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
     })
 
     test('should fetch nested folders and ignore non xml files', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['**/junit/**'],
+          basePaths: ['**'],
           config: {},
           context: command.context,
           service: 'service',
@@ -286,21 +281,21 @@ describe('upload', () => {
       const fileNames = files.map((file) => file.xmlPath)
 
       expect(fileNames.length).toBe(9)
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/go-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/java-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report-2.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/junit.xml/valid-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/subfolder/js-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/test-results.xml')
-      expect(fileNames).toContain('./src/commands/junit/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/go-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/java-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/junit.xml/valid-report-2.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/junit.xml/valid-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/subfolder/js-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/junit-report.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/test-results.xml')
+      expect(fileNames).toContain('./src/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
     })
 
     test('should discover junit XML files automatically with recursive search', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/autodiscovery'],
+          basePaths: ['src/__tests__/fixtures/autodiscovery'],
           automaticReportsDiscovery: true,
           config: {},
           context: command.context,
@@ -315,19 +310,19 @@ describe('upload', () => {
 
       const fileNames = files.map((file) => file.xmlPath)
       expect(fileNames.length).toBe(3)
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml')
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/test-results.xml')
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
-      expect(fileNames).not.toContain('src/commands/junit/__tests__/fixtures/autodiscovery/regular-file.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/junit-report.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/test-results.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
+      expect(fileNames).not.toContain('src/__tests__/fixtures/autodiscovery/regular-file.xml')
     })
 
     test('should discover junit XML files automatically excluding ignored paths', async () => {
       const command = createCommand(JunitUploadCommand)
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures/autodiscovery'],
+          basePaths: ['src/__tests__/fixtures/autodiscovery'],
           automaticReportsDiscovery: true,
-          ignoredPaths: 'src/commands/junit/__tests__/fixtures/autodiscovery/nested',
+          ignoredPaths: 'src/__tests__/fixtures/autodiscovery/nested',
           config: {},
           context: command.context,
           service: 'service',
@@ -341,8 +336,8 @@ describe('upload', () => {
 
       const fileNames = files.map((file) => file.xmlPath)
       expect(fileNames.length).toBe(2)
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml')
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/test-results.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/junit-report.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/test-results.xml')
     })
 
     test('should combine explicit file paths with auto-discovered files', async () => {
@@ -350,8 +345,8 @@ describe('upload', () => {
       const files = await command['getMatchingJUnitXMLFiles'].call(
         {
           basePaths: [
-            'src/commands/junit/__tests__/fixtures/autodiscovery/nested',
-            'src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml',
+            'src/__tests__/fixtures/autodiscovery/nested',
+            'src/__tests__/fixtures/autodiscovery/junit-report.xml',
           ],
           automaticReportsDiscovery: true,
           config: {},
@@ -367,8 +362,8 @@ describe('upload', () => {
 
       const fileNames = files.map((file) => file.xmlPath)
       expect(fileNames.length).toBe(2)
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/junit-report.xml')
-      expect(fileNames).toContain('src/commands/junit/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/junit-report.xml')
+      expect(fileNames).toContain('src/__tests__/fixtures/autodiscovery/nested/TEST-suite.xml')
     })
   })
   describe('getSpanTags', () => {
@@ -481,7 +476,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       const xPathTags = command['parseXPathTags'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures'],
+          basePaths: ['src/__tests__/fixtures'],
           config: {},
           context: command.context,
           service: 'service',
@@ -498,7 +493,7 @@ describe('upload', () => {
       const command = createCommand(JunitUploadCommand)
       command['parseXPathTags'].call(
         {
-          basePaths: ['src/commands/junit/__tests__/fixtures'],
+          basePaths: ['src/__tests__/fixtures'],
           config: {},
           context: command.context,
           service: 'service',
@@ -515,42 +510,42 @@ describe('execute', () => {
   const runCLI = makeRunCLI(JunitUploadCommand, ['junit', 'upload', '--service', 'test-service', '--dry-run', '--logs'])
 
   test('relative path with double dots', async () => {
-    const {context, code} = await runCLI(['src/commands/junit/__tests__/doesnotexist/../fixtures'])
+    const {context, code} = await runCLI(['src/__tests__/doesnotexist/../fixtures'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/junit/__tests__/fixtures'],
+      basePaths: ['src/__tests__/fixtures'],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('multiple paths', async () => {
-    const {context, code} = await runCLI(['src/commands/junit/first/', 'src/commands/junit/second/'])
+    const {context, code} = await runCLI(['src/first/', 'src/second/'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: ['src/commands/junit/first/', 'src/commands/junit/second/'],
+      basePaths: ['src/first/', 'src/second/'],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('absolute path', async () => {
-    const {context, code} = await runCLI([CWD + '/src/commands/junit/__tests__/fixtures'])
+    const {context, code} = await runCLI([CWD + '/src/__tests__/fixtures'])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
     checkConsoleOutput(output, {
-      basePaths: [`${CWD}/src/commands/junit/__tests__/fixtures`],
+      basePaths: [`${CWD}/src/__tests__/fixtures`],
       concurrency: 20,
       service: 'test-service',
     })
   })
 
   test('single file', async () => {
-    const {context, code} = await runCLI([CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const {context, code} = await runCLI([CWD + '/src/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split('\n')
-    const path = `${CWD}/src/commands/junit/__tests__/fixtures/single_file.xml`
+    const path = `${CWD}/src/__tests__/fixtures/single_file.xml`
     expect(code).toBe(0)
     expect(output[0]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD JUNIT XML')
     expect(output[1]).toContain('Starting upload with concurrency 20.')
@@ -559,7 +554,7 @@ describe('execute', () => {
   })
 
   test('with git metadata without argument (default value is true)', async () => {
-    const {context, code} = await runCLI(['--verbose', CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    const {context, code} = await runCLI(['--verbose', CWD + '/src/__tests__/fixtures/single_file.xml'])
     const output = context.stdout.toString().split('\n')
     expect(id).toHaveBeenCalled()
     expect(code).toBe(0)
@@ -570,7 +565,7 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload', // should tolerate the option as a boolean flag
-      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
@@ -582,7 +577,7 @@ describe('execute', () => {
     const {context, code} = await runCLI([
       '--verbose',
       '--skip-git-metadata-upload=1', // should tolerate the option as a boolean flag
-      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(id).not.toHaveBeenCalled()
@@ -593,7 +588,7 @@ describe('execute', () => {
   test('with git metadata (with argument set to 0)', async () => {
     const {context, code} = await runCLI([
       '--skip-git-metadata-upload=0',
-      CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml',
+      CWD + '/src/__tests__/fixtures/single_file.xml',
     ])
     const output = context.stdout.toString().split('\n')
     expect(code).toBe(0)
@@ -601,7 +596,7 @@ describe('execute', () => {
   })
 
   test('id headers are added when git metadata is uploaded', async () => {
-    await runCLI(['--skip-git-metadata-upload=0', CWD + '/src/commands/junit/__tests__/fixtures/single_file.xml'])
+    await runCLI(['--skip-git-metadata-upload=0', CWD + '/src/__tests__/fixtures/single_file.xml'])
     expect(id).toHaveBeenCalled()
   }, 10000000)
 })

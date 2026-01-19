@@ -63,6 +63,7 @@
     "@datadog/datadog-ci-plugin-deployment": "workspace:*",
     "@datadog/datadog-ci-plugin-dora": "workspace:*",
     "@datadog/datadog-ci-plugin-gate": "workspace:*",
+    "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-lambda": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
@@ -89,6 +90,9 @@
       "optional": true
     },
     "@datadog/datadog-ci-plugin-gate": {
+      "optional": true
+    },
+    "@datadog/datadog-ci-plugin-junit": {
       "optional": true
     },
     "@datadog/datadog-ci-plugin-lambda": {

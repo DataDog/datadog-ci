@@ -13,6 +13,7 @@
     {"path": "../plugin-deployment"},
     {"path": "../plugin-dora"},
     {"path": "../plugin-gate"},
+    {"path": "../plugin-junit"},
     {"path": "../plugin-sarif"},
     {"path": "../plugin-sbom"}
   ]

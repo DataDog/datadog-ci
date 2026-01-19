@@ -10,6 +10,7 @@ import {commands as doraCommands} from './commands/dora/cli'
 import {commands as dsymsCommands} from './commands/dsyms/cli'
 import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
+import {commands as junitCommands} from './commands/junit/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
@@ -29,6 +30,7 @@ export const commands = {
   'dsyms': dsymsCommands,
   'gate': gateCommands,
   'git-metadata': gitMetadataCommands,
+  'junit': junitCommands,
   'lambda': lambdaCommands,
   'plugin': pluginCommands,
   'sarif': sarifCommands,

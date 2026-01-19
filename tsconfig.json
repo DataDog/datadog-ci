@@ -14,6 +14,7 @@
     {"path": "./packages/plugin-deployment"},
     {"path": "./packages/plugin-dora"},
     {"path": "./packages/plugin-gate"},
+    {"path": "./packages/plugin-junit"},
     {"path": "./packages/plugin-lambda"},
     {"path": "./packages/plugin-sarif"},
     {"path": "./packages/plugin-sbom"},
