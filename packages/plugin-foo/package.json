@@ -1,0 +1,40 @@
+{
+  "name": "@datadog/datadog-ci-plugin-foo",
+  "version": "0.0.1",
+  "description": "Datadog CI plugin for `foo` commands",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "plugin"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-foo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-foo"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
+  }
+}

@@ -1650,6 +1650,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@datadog/datadog-ci-plugin-foo@workspace:packages/plugin-foo":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-foo@workspace:packages/plugin-foo"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
 "@datadog/datadog-ci-plugin-gate@workspace:*, @datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate":
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-gate@workspace:packages/plugin-gate"
