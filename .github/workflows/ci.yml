@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ matrix.version }}
       - run: yarn install --immutable
@@ -106,7 +106,7 @@ jobs:
           sparse-checkout: bin/check-junit-upload.js
           sparse-checkout-cone-mode: false
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ matrix.version }}
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -120,6 +120,7 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
@@ -212,7 +213,7 @@ jobs:
           sparse-checkout: bin/check-junit-upload.js
           sparse-checkout-cone-mode: false
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: ${{ matrix.version }}
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -226,6 +227,7 @@ jobs:
             "name": "datadog-ci-e2e-tests",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-${{ matrix.version }}.tgz",
@@ -309,7 +311,7 @@ jobs:
 
     steps:
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 20
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -321,6 +323,7 @@ jobs:
           output=$(npx \
               -p ./artifacts/@datadog-datadog-ci-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-base-20.tgz \
+              -p ./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz \
               -p ./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz \
@@ -353,7 +356,7 @@ jobs:
 
     steps:
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 20
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -366,6 +369,7 @@ jobs:
             "name": "datadog-ci-plugin-auto-install-npm",
             "overrides": {
               "@datadog/datadog-ci-base": "$@datadog/datadog-ci-base",
+              "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
@@ -433,7 +437,7 @@ jobs:
 
     steps:
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 20
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
@@ -446,6 +450,7 @@ jobs:
             "name": "datadog-ci-plugin-auto-install-yarn",
             "resolutions": {
               "@datadog/datadog-ci-base": "file:./artifacts/@datadog-datadog-ci-base-20.tgz",
+              "@datadog/datadog-ci-plugin-coverage": "file:./artifacts/@datadog-datadog-ci-plugin-coverage-20.tgz",
               "@datadog/datadog-ci-plugin-deployment": "file:./artifacts/@datadog-datadog-ci-plugin-deployment-20.tgz",
               "@datadog/datadog-ci-plugin-dora": "file:./artifacts/@datadog-datadog-ci-plugin-dora-20.tgz",
               "@datadog/datadog-ci-plugin-gate": "file:./artifacts/@datadog-datadog-ci-plugin-gate-20.tgz",
@@ -509,7 +514,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
@@ -531,7 +536,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       - run: npm install -g yarn
@@ -553,7 +558,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
@@ -575,7 +580,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
@@ -595,7 +600,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       - run: yarn install --immutable
@@ -646,7 +651,7 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - name: Install node
-        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
           node-version: 22.19.0
       # The install step has been added here such that the `.yarn/install-state.gz` file is generated. This file is used

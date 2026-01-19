@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import {getBaseUrl} from '@datadog/datadog-ci-base/helpers/app'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
-import {CI_JOB_URL, CI_PIPELINE_URL, GIT_REPOSITORY_URL, PR_NUMBER} from '@datadog/datadog-ci-base/helpers/tags'
+import {GIT_REPOSITORY_URL, PR_NUMBER} from '@datadog/datadog-ci-base/helpers/tags'
 import {XMLValidator} from 'fast-xml-parser'
 import upath from 'upath'
 

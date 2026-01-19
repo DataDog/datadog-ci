@@ -1528,6 +1528,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-aas": "workspace:*"
     "@datadog/datadog-ci-plugin-cloud-run": "workspace:*"
     "@datadog/datadog-ci-plugin-container-app": "workspace:*"
+    "@datadog/datadog-ci-plugin-coverage": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
@@ -1543,6 +1544,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-cloud-run":
       optional: true
     "@datadog/datadog-ci-plugin-container-app":
+      optional: true
+    "@datadog/datadog-ci-plugin-coverage":
       optional: true
     "@datadog/datadog-ci-plugin-deployment":
       optional: true
@@ -1603,6 +1606,21 @@ __metadata:
     "@azure/arm-resources": "npm:^6.1.0"
     "@azure/identity": "npm:^4.10.1"
     chalk: "npm:3.0.0"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-coverage@workspace:*, @datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-coverage@workspace:packages/plugin-coverage"
+  dependencies:
+    axios: "npm:^1.12.1"
+    chalk: "npm:3.0.0"
+    fast-xml-parser: "npm:^4.4.1"
+    form-data: "npm:^4.0.4"
+    simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
@@ -1770,6 +1788,7 @@ __metadata:
   resolution: "@datadog/datadog-ci@workspace:packages/datadog-ci"
   dependencies:
     "@datadog/datadog-ci-base": "workspace:*"
+    "@datadog/datadog-ci-plugin-coverage": "workspace:*"
     "@datadog/datadog-ci-plugin-deployment": "workspace:*"
     "@datadog/datadog-ci-plugin-dora": "workspace:*"
     "@datadog/datadog-ci-plugin-gate": "workspace:*"
@@ -1787,7 +1806,6 @@ __metadata:
     form-data: "npm:^4.0.4"
     js-yaml: "npm:4.1.1"
     semver: "npm:^7.5.3"
-    simple-git: "npm:3.16.0"
     typanion: "npm:^3.14.0"
     upath: "npm:^2.0.1"
   bin:

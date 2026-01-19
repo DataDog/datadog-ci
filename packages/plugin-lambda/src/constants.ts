@@ -116,6 +116,7 @@ export const DD_DOTNET_TRACER_HOME = '/opt/datadog'
 
 // Environment variables used in the Lambda environment
 export const API_KEY_SECRET_ARN_ENV_VAR = 'DD_API_KEY_SECRET_ARN'
+export const API_KEY_SSM_ARN_ENV_VAR = 'DD_API_KEY_SSM_ARN'
 export const KMS_API_KEY_ENV_VAR = 'DD_KMS_API_KEY'
 export const MERGE_XRAY_TRACES_ENV_VAR = 'DD_MERGE_XRAY_TRACES'
 export const FLUSH_TO_LOG_ENV_VAR = 'DD_FLUSH_TO_LOG'
@@ -133,6 +134,7 @@ export const DD_LAMBDA_FIPS_MODE_ENV_VAR = 'DD_LAMBDA_FIPS_MODE'
 
 // Environment variables used by Datadog CI
 export const CI_API_KEY_SECRET_ARN_ENV_VAR = 'DATADOG_API_KEY_SECRET_ARN'
+export const CI_API_KEY_SSM_ARN_ENV_VAR = 'DATADOG_API_KEY_SSM_ARN'
 export const CI_KMS_API_KEY_ENV_VAR = 'DATADOG_KMS_API_KEY'
 
 export const AWS_ACCESS_KEY_ID_ENV_VAR = 'AWS_ACCESS_KEY_ID'
@@ -144,6 +146,7 @@ export const AWS_SHARED_CREDENTIALS_FILE_ENV_VAR = 'AWS_SHARED_CREDENTIALS_FILE'
 export const AWS_ACCESS_KEY_ID_REG_EXP = /(?<![A-Z0-9])[A-Z0-9]{20}(?![A-Z0-9])/g
 export const AWS_SECRET_ACCESS_KEY_REG_EXP = /(?<![A-Za-z0-9/+=])[A-Za-z0-9/+=]{40}(?![A-Za-z0-9/+=])/g
 export const AWS_SECRET_ARN_REG_EXP = /arn:aws:secretsmanager:[\w-]+:\d{12}:secret:.+/
+export const AWS_SSM_ARN_REG_EXP = /arn:aws:ssm:[\w-]+:\d{12}:parameter\/.+/
 export const DATADOG_API_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{32}(?![a-f0-9])/g
 export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 
@@ -151,6 +154,7 @@ export const DATADOG_APP_KEY_REG_EXP = /(?<![a-f0-9])[a-f0-9]{40}(?![a-f0-9])/g
 export const SKIP_MASKING_LAMBDA_ENV_VARS = new Set([
   AWS_LAMBDA_EXEC_WRAPPER_VAR,
   API_KEY_SECRET_ARN_ENV_VAR,
+  API_KEY_SSM_ARN_ENV_VAR,
   DOTNET_TRACER_HOME_ENV_VAR,
   ENVIRONMENT_ENV_VAR,
   DD_TAGS_ENV_VAR,
