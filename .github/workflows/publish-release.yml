@@ -27,8 +27,6 @@ jobs:
         env:
           # Used to post comments on the PR
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Temporary fail safe
-        run: exit 1
 
   create-draft-release:
     runs-on: ubuntu-latest
