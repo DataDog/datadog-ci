@@ -35,7 +35,7 @@ NC='\033[0m' # No Color
 if [ ! -d "$PLUGIN_DIR" ]; then
   echo -e "${RED}Plugin directory ${BOLD}$PLUGIN_DIR${NC} does not exist!${NC}"
   echo
-  echo -e "${BLUE}To initialize and ${BOLD}publish an initial version${NC}${BLUE} of the package, please run ${BOLD}bin/init-package.sh $SCOPE${NC}"
+  echo -e "${BLUE}Please run ${BOLD}yarn plugin:create $SCOPE${NC} to initialize the package."
   exit 1
 fi
 
