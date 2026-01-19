@@ -52,8 +52,6 @@
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "fast-xml-parser": "^4.4.1",
-    "form-data": "^4.0.4",
     "js-yaml": "4.1.1",
     "semver": "^7.5.3",
     "typanion": "^3.14.0",

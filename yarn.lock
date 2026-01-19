@@ -1802,8 +1802,6 @@ __metadata:
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     esbuild: "npm:^0.25.9"
-    fast-xml-parser: "npm:^4.4.1"
-    form-data: "npm:^4.0.4"
     js-yaml: "npm:4.1.1"
     semver: "npm:^7.5.3"
     typanion: "npm:^3.14.0"
