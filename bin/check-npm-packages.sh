@@ -74,18 +74,34 @@ for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
 
-# In CI environment, write to GitHub step summary
-if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-	DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
-		<(echo "$remote_packages") <(echo "$local_packages")) || true
-	{
-		echo "### Some local packages were not published to NPM yet ❌"
-		echo '```diff'
-		echo "$DIFF_OUTPUT"
-		echo '```'
-		echo
-		echo "**Please follow the instructions** at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
-	} >> "$GITHUB_STEP_SUMMARY"
+# In CI environment, post a comment on the PR
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	# Find the PR associated with this commit
+	PR_NUMBER=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
+		| jq -r '.[0].number // empty')
+
+	if [ -n "$PR_NUMBER" ]; then
+		DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
+			<(echo "$remote_packages") <(echo "$local_packages")) || true
+
+		COMMENT_BODY="### Some local packages were not published to NPM yet ❌
+
+\`\`\`diff
+$DIFF_OUTPUT
+\`\`\`
+
+**Please follow the instructions** at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
+
+		# Post comment on the PR
+		curl -s -X POST \
+			-H "Authorization: token $GITHUB_TOKEN" \
+			-H "Accept: application/vnd.github.v3+json" \
+			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
+			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
+
+		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER${NC}"
+	fi
 fi
 
 if [ "$MODE" = "check" ]; then
