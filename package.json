@@ -4,6 +4,7 @@
     "build": "yarn tsc:build",
     "check-junit-upload": "node bin/check-junit-upload.js",
     "check-licenses": "node bin/check-licenses.js",
+    "check-npm-packages": "bin/check-npm-packages.sh",
     "clean": "rimraf --glob .eslintcache .jest-cache 'packages/*/{dist,tsconfig.tsbuildinfo}'",
     "compare-binary-size": "FORCE_COLOR=1 node bin/compare-binary-size.js",
     "dev": "yarn tsc:build --watch",

@@ -652,23 +652,5 @@ jobs:
       - run: yarn install --immutable
       - name: Check licenses
         run: yarn check-licenses
-      - name: Check published packages
-        run: |
-          local=$(yarn workspaces list --json --no-private | jq '.name' | sort)
-          remote=$(npm search 'maintainer:datadog keywords:datadog-ci' --json | jq '.[].name' | sort)
-
-          DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" <(echo "$remote") <(echo "$local")) || true
-
-          if [ -z "$DIFF_OUTPUT" ]; then
-            echo "All local packages exist on NPM ✅"
-            exit 0
-          else
-            echo "$DIFF_OUTPUT"
-            echo "### Some local packages were not published to NPM yet ❌" >> $GITHUB_STEP_SUMMARY
-            echo '```diff' >> $GITHUB_STEP_SUMMARY
-            echo "$DIFF_OUTPUT" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo >> $GITHUB_STEP_SUMMARY
-            echo "**Please follow the instructions** at https://datadoghq.atlassian.net/wiki/x/QYDRaQE" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+      - name: Check NPM packages
+        run: yarn check-npm-packages
