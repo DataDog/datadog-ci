@@ -86,6 +86,9 @@ cat > "$PLUGIN_DIR/package.json" <<EOF
 }
 EOF
 
+echo -e "${BOLD}2. Running yarn install${NC}"
+yarn install 2>&1 | sed 's/^/  /'
+
 echo
 echo -e "${GREEN}Package created successfully${NC}"
 
