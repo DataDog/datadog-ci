@@ -285,6 +285,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
       - run: yarn install --immutable
       - run: yarn build
+      # Given every package is version X.X.X (enforced by `yarn lint:packages`), we can skip
+      # already published packages with `--tolerate-republish` (for example when OIDC was not yet enabled)
       - run: yarn publish:all --provenance --tolerate-republish
 
   bump-ci-integrations:
