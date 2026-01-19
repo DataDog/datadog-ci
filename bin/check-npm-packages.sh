@@ -74,30 +74,27 @@ for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
 
-echo "debug: GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
-echo "debug: GITHUB_SHA=$GITHUB_SHA"
-
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	# Find the PR associated with this commit
-	PR_NUMBER=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
-		| jq -r '.[0].number // empty')
+	# Get the PR number and author associated with this commit
+	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
 
-	echo "debug: PR_NUMBER=$PR_NUMBER"
+	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
+	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
-	if [ -n "$PR_NUMBER" ]; then
-		DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
-			<(echo "$remote_packages") <(echo "$local_packages")) || true
+	DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
+		<(echo "$remote_packages") <(echo "$local_packages")) || true
 
-		COMMENT_BODY="### Some local packages were not published to NPM yet ❌
+	COMMENT_BODY="### Some packages were not first-time published to NPM yet ❌
 
 \`\`\`diff
 $DIFF_OUTPUT
 \`\`\`
 
-**Please follow the instructions** at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
+Hi @$PR_AUTHOR, please **ask an admin** to follow the instructions at https://datadoghq.atlassian.net/wiki/x/QYDRaQE"
 
+	if [ -n "$PR_NUMBER" ]; then
 		# Post comment on the PR
 		curl -s -X POST \
 			-H "Authorization: token $GITHUB_TOKEN" \
@@ -105,9 +102,11 @@ $DIFF_OUTPUT
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
 			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
 
-		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER${NC}"
+		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER (author: @$PR_AUTHOR)${NC}"
 	else
-		echo "debug: No PR found for commit $GITHUB_SHA"
+		echo -e "${RED}No PR found for commit $GITHUB_SHA${NC}"
+		echo -e "${BLUE}This would be the comment body:${NC}"
+		echo "$COMMENT_BODY"
 	fi
 fi
 
