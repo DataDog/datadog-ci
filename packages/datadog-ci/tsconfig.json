@@ -9,6 +9,7 @@
   // Only plugins that are dependencies of `@datadog/datadog-ci` are listed here.
   "references": [
     {"path": "../base"},
+    {"path": "../plugin-coverage"},
     {"path": "../plugin-deployment"},
     {"path": "../plugin-dora"},
     {"path": "../plugin-gate"},
