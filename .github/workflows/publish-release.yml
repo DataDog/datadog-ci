@@ -10,27 +10,8 @@ permissions:
   contents: write # Required for the draft release
 
 jobs:
-  pre-release-checks:
-    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-      - name: Install node
-        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
-        with:
-          node-version: 22.19.0
-      - name: Install project dependencies
-        run: yarn install --immutable --mode=skip-build
-      - name: Check NPM packages
-        run: yarn check-npm-packages
-        env:
-          # Used to post comments on the PR
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   create-draft-release:
     runs-on: ubuntu-latest
-    needs: pre-release-checks
     outputs:
       release-id: ${{ steps.draft-release.outputs.result }}
     steps:
@@ -268,11 +249,34 @@ jobs:
               data: await fs.readFile('./datadog-ci_darwin-arm64'),
             })
 
+  pre-approval-checks:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+      - name: Install node
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 22.19.0
+      - run: yarn install --immutable --mode=skip-build
+      - name: Check NPM packages
+        run: yarn check-npm-packages
+        env:
+          # Used to post comments on the PR
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   # Requires an approval
   npm-publish:
     runs-on: ubuntu-latest
     environment: npm
-    needs: [build-binary-ubuntu, build-binary-windows, build-binary-macos]
+    needs: 
+      - pre-approval-checks
+      - build-binary-ubuntu
+      - build-binary-ubuntu-arm
+      - build-binary-windows
+      - build-binary-macos
+      - build-binary-macos-arm
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
       - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
