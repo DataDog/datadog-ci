@@ -109,7 +109,6 @@ echo -e "${RED}The following packages are not published to NPM yet:${NC}"
 for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
-echo
 
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
@@ -221,3 +220,13 @@ if [ "$DRY_RUN" = true ]; then
 else
 	echo -e "${GREEN}Successfully published ${#missing_packages[@]} package(s)${NC}"
 fi
+
+echo
+echo -e "${RED}${BOLD}⚠️  You are not done!${NC} Please setup OIDC on each package at the links below."
+echo
+
+for pkg in "${missing_packages[@]}"; do
+	echo -e "  - Opening ${BLUE}https://www.npmjs.com/package/$pkg/access${NC}"
+	open "https://www.npmjs.com/package/$pkg/access"
+done
+echo
