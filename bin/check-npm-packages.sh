@@ -74,12 +74,17 @@ for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
 
+echo "debug: GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
+echo "debug: GITHUB_SHA=$GITHUB_SHA"
+
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	# Find the PR associated with this commit
 	PR_NUMBER=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
 		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" \
 		| jq -r '.[0].number // empty')
+
+	echo "debug: PR_NUMBER=$PR_NUMBER"
 
 	if [ -n "$PR_NUMBER" ]; then
 		DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
@@ -101,6 +106,8 @@ $DIFF_OUTPUT
 			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
 
 		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER${NC}"
+	else
+		echo "debug: No PR found for commit $GITHUB_SHA"
 	fi
 fi
 
