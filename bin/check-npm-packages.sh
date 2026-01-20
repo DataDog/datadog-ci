@@ -76,8 +76,9 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	echo
 fi
 
-# In CI, check the labels on the PR
-if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+# Check the labels on the PR if any
+# Required labels are checked by `.github/workflows/pr-required-labels.yml`
+if [ -n "$PR_LABELS" ]; then
 	# Fail if `Do Not Merge` is set
 	if echo "$PR_LABELS" | grep -q "Do Not Merge"; then
 		echo -e "${RED}This PR is marked as \"Do Not Merge\" ❌${NC}"
@@ -112,7 +113,6 @@ done
 
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	# PR_RESPONSE was already fetched above
 	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
