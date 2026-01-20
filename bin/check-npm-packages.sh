@@ -110,6 +110,7 @@ echo -e "${RED}The following packages are not published to NPM yet:${NC}"
 for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
+echo
 
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
@@ -149,18 +150,17 @@ Hi @$PR_AUTHOR, please **ask an admin** to follow the instructions at https://da
 		echo -e "${BLUE}This would be the comment body:${NC}"
 		echo "$COMMENT_BODY"
 	fi
+	echo
 fi
 
 # Do not continue if we are in check mode
 if [ "$MODE" = "check" ]; then
-	echo
 	echo -e "${BOLD}Run with --fix to publish these packages${NC}"
 	echo -e "See instructions at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC}"
 	exit 1
 fi
 
 # Fix mode - publish missing packages
-echo
 echo -e "${BOLD}Publishing missing packages to NPM...${NC}"
 echo
 echo -e "${BOLD}Please read the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before proceeding."
@@ -213,15 +213,15 @@ done
 
 echo -e "${BOLD}Cleaning up...${NC}"
 yarn config unset npmAuthToken
-
 echo
+
 if [ "$DRY_RUN" = true ]; then
 	echo -e "${GREEN}[DRY-RUN] Would have published ${#missing_packages[@]} package(s)${NC}"
 else
 	echo -e "${GREEN}Successfully published ${#missing_packages[@]} package(s)${NC}"
 fi
-
 echo
+
 echo -e "${RED}${BOLD}⚠️  You are not done!${NC} Please setup OIDC on each package at the links below."
 echo
 
