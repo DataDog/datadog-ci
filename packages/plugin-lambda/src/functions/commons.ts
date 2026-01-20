@@ -388,6 +388,7 @@ export const supportsInTracerAppsec = (runtime: Runtime, layerVersion: number | 
       return layerVersion >= 114
     case 'dotnet6':
     case 'dotnet8':
+    case 'dotnet10':
     case 'java11':
     case 'java17':
     case 'java21':

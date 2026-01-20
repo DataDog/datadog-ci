@@ -42,11 +42,11 @@
     "@datadog/datadog-ci-base": "workspace:*"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudwatch-logs": "^3.940.0",
-    "@aws-sdk/client-lambda": "^3.942.0",
-    "@aws-sdk/credential-provider-ini": "^3.940.0",
-    "@aws-sdk/credential-providers": "^3.940.0",
-    "@aws-sdk/types": "^3.936.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.970.0",
+    "@aws-sdk/client-lambda": "^3.970.0",
+    "@aws-sdk/credential-provider-ini": "^3.970.0",
+    "@aws-sdk/credential-providers": "^3.970.0",
+    "@aws-sdk/types": "^3.969.0",
     "@smithy/property-provider": "^2.0.12",
     "@smithy/util-retry": "^2.0.4",
     "chalk": "3.0.0",
