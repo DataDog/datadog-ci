@@ -12,6 +12,7 @@ set -euo pipefail
 
 MODE="check"
 DRY_RUN=false
+GITHUB_REPOSITORY=DataDog/datadog-ci
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -63,7 +64,42 @@ while IFS= read -r pkg; do
 	fi
 done <<< "$local_packages"
 
-# Exit early if everything is good
+# Fetch PR information
+PR_RESPONSE=""
+PR_LABELS=""
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
+	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
+	PR_LABELS=$(echo "$PR_RESPONSE" | jq '[.[0].labels[].name]' 2>/dev/null || true)
+
+	echo -e "${BLUE}PR labels:${NC} $PR_LABELS"
+	echo
+fi
+
+# Check the labels on the PR if any
+# Required labels are checked by `.github/workflows/pr-required-labels.yml`
+if [ -n "$PR_LABELS" ]; then
+	# Fail if `Do Not Merge` is set
+	if echo "$PR_LABELS" | grep -q "Do Not Merge"; then
+		echo -e "${RED}This PR is marked as \"Do Not Merge\" ❌${NC}"
+		exit 1
+	fi
+
+	# Fail if the PR has `oidc-setup-required ⚠️` WITHOUT `oidc-setup-done ✅`
+	if echo "$PR_LABELS" | grep -q "oidc-setup-required ⚠️"; then
+		if ! echo "$PR_LABELS" | grep -q "oidc-setup-done ✅"; then
+			echo -e "${RED}This PR requires OIDC setup on some packages. Please ask an admin to follow the instructions at https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC}"
+			exit 1
+		else
+			echo 'Continuing... No need to remove the `oidc-setup-required ⚠️` label.'
+		fi
+	else
+		echo 'Continuing... for the `oidc-setup-required ⚠️` label to possibly be added.'
+	fi
+	echo
+fi
+
+# Everything is good.
 if [ ${#missing_packages[@]} -eq 0 ]; then
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
 	exit 0
@@ -74,13 +110,10 @@ echo -e "${RED}The following packages are not published to NPM yet:${NC}"
 for pkg in "${missing_packages[@]}"; do
 	echo "  - $pkg"
 done
+echo
 
 # In CI environment, post a comment on the PR
-if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	# Get the PR number and author associated with this commit
-	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
-
+if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
@@ -99,29 +132,35 @@ Hi @$PR_AUTHOR, please **ask an admin** to follow the instructions at https://da
 		# Post comment on the PR
 		curl -s -X POST \
 			-H "Authorization: token $GITHUB_TOKEN" \
-			-H "Accept: application/vnd.github.v3+json" \
 			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" \
 			-d "$(jq -n --arg body "$COMMENT_BODY" '{body: $body}')" > /dev/null
 
 		echo -e "${BLUE}Posted comment on PR #$PR_NUMBER (author: @$PR_AUTHOR)${NC}"
+
+		# Add the 'oidc-setup-required ⚠️' label to the PR
+		curl -s -X POST \
+			-H "Authorization: token $GITHUB_TOKEN" \
+			"https://api.github.com/repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" \
+			-d '{"labels":["oidc-setup-required ⚠️"]}' > /dev/null
+
+		echo -e "${BLUE}Added 'oidc-setup-required ⚠️' label to PR #$PR_NUMBER${NC}"
 	else
 		# Fallback when PR is not found
 		echo -e "${RED}No PR found for commit $GITHUB_SHA${NC}"
 		echo -e "${BLUE}This would be the comment body:${NC}"
 		echo "$COMMENT_BODY"
 	fi
+	echo
 fi
 
 # Do not continue if we are in check mode
 if [ "$MODE" = "check" ]; then
-	echo
 	echo -e "${BOLD}Run with --fix to publish these packages${NC}"
 	echo -e "See instructions at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC}"
 	exit 1
 fi
 
 # Fix mode - publish missing packages
-echo
 echo -e "${BOLD}Publishing missing packages to NPM...${NC}"
 echo
 echo -e "${BOLD}Please read the instructions${NC} at ${BLUE}https://datadoghq.atlassian.net/wiki/x/QYDRaQE${NC} before proceeding."
@@ -174,10 +213,20 @@ done
 
 echo -e "${BOLD}Cleaning up...${NC}"
 yarn config unset npmAuthToken
-
 echo
+
 if [ "$DRY_RUN" = true ]; then
 	echo -e "${GREEN}[DRY-RUN] Would have published ${#missing_packages[@]} package(s)${NC}"
 else
 	echo -e "${GREEN}Successfully published ${#missing_packages[@]} package(s)${NC}"
 fi
+echo
+
+echo -e "${RED}${BOLD}⚠️  You are not done!${NC} Please setup OIDC on each package at the links below."
+echo
+
+for pkg in "${missing_packages[@]}"; do
+	echo -e "  - Opening ${BLUE}https://www.npmjs.com/package/$pkg/access${NC}"
+	open "https://www.npmjs.com/package/$pkg/access"
+done
+echo
