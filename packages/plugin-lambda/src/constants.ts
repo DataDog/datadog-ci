@@ -19,6 +19,7 @@ export const LAYER_LOOKUP = {
   [EXTENSION_LAYER_KEY]: DD_LAMBDA_EXTENSION_LAYER_NAME,
   dotnet6: 'dd-trace-dotnet',
   dotnet8: 'dd-trace-dotnet',
+  dotnet10: 'dd-trace-dotnet',
   java11: 'dd-trace-java',
   java17: 'dd-trace-java',
   java21: 'dd-trace-java',
@@ -54,6 +55,7 @@ export enum RuntimeType {
 export const RUNTIME_LOOKUP: Partial<Record<Runtime, RuntimeType>> = {
   dotnet6: RuntimeType.DOTNET,
   dotnet8: RuntimeType.DOTNET,
+  dotnet10: RuntimeType.DOTNET,
   java11: RuntimeType.JAVA,
   java17: RuntimeType.JAVA,
   java21: RuntimeType.JAVA,
@@ -83,6 +85,7 @@ export const ARM_LAYERS = [
   EXTENSION_LAYER_KEY,
   'dotnet6',
   'dotnet8',
+  'dotnet10',
   'python3.8',
   'python3.9',
   'python3.10',
