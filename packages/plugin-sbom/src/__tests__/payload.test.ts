@@ -543,6 +543,31 @@ describe('generation of payload', () => {
     expect(dependencies[1].exclusions).toEqual(['org.apache.zookeeper:zookeeper'])
   })
 
+  test('should correctly add target-framework information with a CycloneDX 1.5 file', async () => {
+    const sbomFile = './src/__tests__/fixtures/sbom-with-target-framework.json'
+    const sbomContent = JSON.parse(fs.readFileSync(sbomFile).toString('utf8'))
+    const config: DatadogCiConfig = {
+      apiKey: undefined,
+      env: undefined,
+      envVarTags: undefined,
+    }
+    const tags = await getSpanTags(config, [], true)
+
+    const payload = generatePayload(sbomContent, tags, 'service', 'env')
+
+    expect(payload?.dependencies.length).toStrictEqual(2)
+    const dependencies = payload!.dependencies
+
+    expect(dependencies[0].name).toEqual('Serilog')
+    expect(dependencies[0].version).toEqual('2.10.0')
+    expect(dependencies[0].target_frameworks).toHaveLength(2)
+    expect(dependencies[0].target_frameworks).toEqual(['net462', 'net8.0'])
+
+    expect(dependencies[1].name).toEqual('@microsoft/fast-web-utilities')
+    expect(dependencies[1].version).toEqual('5.4.1')
+    expect(dependencies[1].target_frameworks).toHaveLength(0)
+  })
+
   test('should fail to read git information', async () => {
     const nonExistingGitRepository = '/you/cannot/find/me'
     const config: DatadogCiConfig = {
