@@ -2,3 +2,4 @@ schema-version: v1
 kind: mergegate
 rules:
   - require: reviewers-approval
+  - require: all-files-are-owned
