@@ -6,19 +6,25 @@ To release a new version of `datadog-ci`:
 2. Run `yarn version:all <major|minor|patch>`.
 3. Commit the change `vX.X.X` and tag it with `git tag vX.X.X`.
    - You may refer to [Semantic Versioning](https://semver.org/#summary) to determine what level to increment.
-4. Push the branch **along with the tag** using `git push --tags origin name-of-the-branch`. Create a PR, and get at least one approval.
-   - **Find and open** the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/publish-release.yml).
-   - Copy the release notes from the summary, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
+4. Push the branch along with the tag using `git push --tags`, and create a PR.
+   - Find and open the workflow run corresponding to your tag [in this list](https://github.com/DataDog/datadog-ci/actions/workflows/publish-release.yml).
+   - Copy the release notes from the draft release, and paste them in the description of your PR. This ensures the feature PRs have a link to your release PR.
    - Add the `release` label to your PR.
    - See this [example PR](https://github.com/DataDog/datadog-ci/pull/1215).
-5. Once you've received at least one approval, merge the PR **with the "Create a merge commit" strategy**.
-   - You may notice that a **GitHub** job is waiting for an approval, and some **_GitLab_** jobs are pending: this is expected (see **step 8**). You can merge the PR when *only those jobs* are left.
-   - The "Create a merge commit" strategy is required for **step 8**, and for the GitHub Release to point to an existing commit once the PR is merged.
-6. The `npm-publish` job is waiting for an approval from a datadog-ci maintainer: ask for approval and wait for it and its downstream jobs to succeed.
-7. Go to the draft GitHub Release, and publish it as **latest**.
+5. Request an approval from a datadog-ci admin.
+   - If a `oidc-setup-required ⚠️` label is added to your PR, ask an admin for assistance.
+6. Wait for your PR to be approved.
+   - Retry the `pre-approval-checks` job if needed.
+7. The `npm-publish` job should now be waiting for an approval from a datadog-ci admin.
+   - Ask for approval and wait for it and its downstream jobs to succeed.
+8. Once all jobs are successful, merge the PR **with the "Create a merge commit" strategy**.
+   - The "Create a merge commit" strategy is required for the GitHub Release to point to an existing commit once the PR is merged.
+9. Go to the draft GitHub Release, and publish it as **latest**.
    - There should be 5 binaries available in the release's assets.
-8. Finally, go to the [_GitLab_ pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual), find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
-   - Make sure all the jobs and downstream jobs succeed.
+10. **Important**: Finally, release the Docker image from GitLab.
+    - Go to the [**GitLab** pipelines](https://gitlab.ddbuild.io/DataDog/datadog-ci/-/pipelines?scope=tags&status=manual)
+    - Find the pipeline for your tag, and start the `build` stage to run the Docker image build jobs.
+    - Make sure all the jobs and downstream jobs succeed.
 
 Thanks for creating a release! 🎉
 
@@ -39,4 +45,4 @@ To overwrite a release candidate:
   - Overwrite the tag to point to your new commit with `git tag --force vX.X.X`.
   - Force push with `git push --force` and `git push --tags --force`.
 - Update your PR description with the new release notes.
-- Continue from step 4 of the Release Process.
+- Continue the release process as usual.

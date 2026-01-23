@@ -6,9 +6,11 @@ set -euo pipefail
 # It can also first-time publish missing packages when run with --fix.
 #
 # Usage:
-#   ./bin/check-npm-packages.sh                  # Check mode (default) - exits 1 if packages are missing
-#   ./bin/check-npm-packages.sh --fix            # Fix mode - publishes missing packages
-#   ./bin/check-npm-packages.sh --fix --dry-run  # Fix mode with dry-run - simulates publishing
+#   bin/check-npm-packages.sh                  # Check mode (default) - exits 1 if packages are missing
+#   bin/check-npm-packages.sh --fix            # Fix mode - publishes missing packages
+#   bin/check-npm-packages.sh --fix --dry-run  # Fix mode with dry-run - simulates publishing
+#
+# To debug the CI check mode locally, use: `GITHUB_TOKEN=$(gh auth token) GITHUB_SHA=<commit-sha> bin/check-npm-packages.sh`
 
 MODE="check"
 DRY_RUN=false
@@ -64,15 +66,27 @@ while IFS= read -r pkg; do
 	fi
 done <<< "$local_packages"
 
-# Fetch PR information
+# Fetch release PR information
 PR_RESPONSE=""
 PR_LABELS=""
+PR_NUMBER=""
+PR_APPROVALS=0
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	PR_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
 		"https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls")
+	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_LABELS=$(echo "$PR_RESPONSE" | jq '[.[0].labels[].name]' 2>/dev/null || true)
 
 	echo -e "${BLUE}PR labels:${NC} $PR_LABELS"
+
+	# Fetch review approvals for the PR
+	if [ -n "$PR_NUMBER" ]; then
+		PR_REVIEWS=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+			"https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews")
+		# Count unique approvals (latest review per user that is APPROVED)
+		PR_APPROVALS=$(echo "$PR_REVIEWS" | jq '[group_by(.user.login) | .[] | max_by(.submitted_at) | select(.state == "APPROVED")] | length')
+		echo -e "${BLUE}PR approvals:${NC} $PR_APPROVALS"
+	fi
 	echo
 fi
 
@@ -99,9 +113,18 @@ if [ -n "$PR_LABELS" ]; then
 	echo
 fi
 
-# Everything is good.
 if [ ${#missing_packages[@]} -eq 0 ]; then
+	# No missing packages ✅
 	echo -e "${GREEN}All local packages exist on NPM ✅${NC}"
+	echo
+
+	# Check that the PR has at least one approval
+	if [ -n "$PR_NUMBER" ] && [ "$PR_APPROVALS" -lt 1 ]; then
+		echo -e "${RED}This PR requires at least one approval before approving the NPM deployment. Please ask an admin to approve the PR. ❌${NC}"
+		echo
+		exit 1
+	fi
+
 	exit 0
 fi
 
@@ -114,7 +137,6 @@ echo
 
 # In CI environment, post a comment on the PR
 if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
-	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_AUTHOR=$(echo "$PR_RESPONSE" | jq -r '.[0].user.login // empty')
 
 	DIFF_OUTPUT=$(diff -u --label "Published packages (Actual)" --label "Local packages (Expected)" \
