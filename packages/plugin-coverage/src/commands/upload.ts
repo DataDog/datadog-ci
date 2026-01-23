@@ -328,9 +328,7 @@ export class PluginCommand extends CoverageUploadCommand {
     }
 
     if (this.flags.length > 32) {
-      throw new Error(
-        `Maximum of 32 flags per report allowed, but ${this.flags.length} flags were provided`
-      )
+      throw new Error(`Maximum of 32 flags per report allowed, but ${this.flags.length} flags were provided`)
     }
 
     return this.flags
