@@ -250,9 +250,7 @@ describe('upload', () => {
     test('should throw error when more than 32 flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
       command['flags'] = Array.from({length: 33}, (_, i) => `flag${i}`)
-      expect(() => command['getFlags']()).toThrow(
-        'Maximum of 32 flags per report allowed, but 33 flags were provided'
-      )
+      expect(() => command['getFlags']()).toThrow('Maximum of 32 flags per report allowed, but 33 flags were provided')
     })
 
     test('should accept exactly 32 flags', () => {
