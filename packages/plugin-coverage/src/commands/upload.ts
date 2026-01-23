@@ -28,8 +28,6 @@ import {
   GIT_PULL_REQUEST_BASE_BRANCH_SHA,
   GIT_REPOSITORY_URL,
   GIT_SHA,
-  parseMetrics,
-  parseTags,
 } from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
 import {getRequestBuilder, timedExecAsync} from '@datadog/datadog-ci-base/helpers/utils'
@@ -67,8 +65,6 @@ export class PluginCommand extends CoverageUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
     env: process.env.DD_ENV,
-    envVarTags: process.env.DD_TAGS,
-    envVarMeasures: process.env.DD_MEASURES,
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
@@ -181,12 +177,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private async generatePayloads(spanTags: SpanTags): Promise<Payload[]> {
-    const customTags = this.getCustomTags()
-    const customMeasures = this.getCustomMeasures()
-
-    if (!!customTags['resolved']) {
-      throw new Error('"resolved" is a reserved tag name, please avoid using it in your custom tags')
-    }
+    const flags = this.getFlags()
 
     const coverageConfig = await this.getRepoFile(COVERAGE_CONFIG_PATHS)
     const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
@@ -204,8 +195,7 @@ export class PluginCommand extends CoverageUploadCommand {
           basePath: this.basePath,
           paths: paths.slice(i * MAX_REPORTS_PER_REQUEST, (i + 1) * MAX_REPORTS_PER_REQUEST),
           spanTags,
-          customTags,
-          customMeasures,
+          flags,
           hostname: os.hostname(),
           commitDiff,
           prDiff,
@@ -332,24 +322,18 @@ export class PluginCommand extends CoverageUploadCommand {
     return spanTags
   }
 
-  private getCustomTags(): Record<string, string> {
-    const envVarTags = this.config.envVarTags ? parseTags(this.config.envVarTags.split(',')) : {}
-    const cliTags = this.tags ? parseTags(this.tags) : {}
-
-    return {
-      ...cliTags,
-      ...envVarTags,
+  private getFlags(): string[] | undefined {
+    if (!this.flags || this.flags.length === 0) {
+      return undefined
     }
-  }
 
-  private getCustomMeasures(): Record<string, number> {
-    const envVarMeasures = this.config.envVarMeasures ? parseMetrics(this.config.envVarMeasures.split(',')) : {}
-    const cliMeasures = this.measures ? parseMetrics(this.measures) : {}
-
-    return {
-      ...cliMeasures,
-      ...envVarMeasures,
+    if (this.flags.length > 32) {
+      throw new Error(
+        `Maximum of 32 flags per report allowed, but ${this.flags.length} flags were provided`
+      )
     }
+
+    return this.flags
   }
 
   private getMatchingCoverageReportFilesByFormat(): {[key: string]: string[]} {
