@@ -9,6 +9,7 @@ import {SourcemapsUploadCommand} from '../../sourcemaps/upload'
 
 import {getArchInfoFromFilename, uploadMultipartHelper} from '../helpers'
 import {
+  renderArgumentMissingError,
   renderInvalidPubspecError,
   renderInvalidSymbolsDir,
   renderMinifiedPathPrefixRequired,
@@ -64,7 +65,8 @@ describe('flutter-symbol upload', () => {
       const errorOutput = context.stderr.toString()
 
       expect(exitCode).not.toBe(0)
-      expect(errorOutput).toBe(renderMissingPubspecError('./pubspec.yaml'))
+      expect(errorOutput).toContain(renderMissingPubspecError('./pubspec.yaml'))
+      expect(errorOutput).toContain('"version" is required')
     })
 
     test('uses API Key from env over config from JSON file', async () => {
@@ -116,6 +118,54 @@ describe('flutter-symbol upload', () => {
 
       expect(exitCode).toBe(1)
       expect(errorOutput).toBe(renderMinifiedPathPrefixRequired())
+    })
+
+    test('fails if version is empty string', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = ''
+      })
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).not.toBe(0)
+      expect(errorOutput).toContain(renderMissingPubspecError('./pubspec.yaml'))
+      expect(errorOutput).toContain(renderArgumentMissingError('version'))
+    })
+
+    test('fails if version is whitespace only', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '   '
+      })
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).not.toBe(0)
+      expect(errorOutput).toContain(renderMissingPubspecError('./pubspec.yaml'))
+      expect(errorOutput).toContain(renderArgumentMissingError('version'))
+    })
+
+    test('uses pubspec version when version is empty string', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = ''
+        cmd['pubspecLocation'] = `${fixtureDir}/pubspecs/validPubspec.yaml`
+      })
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe('')
+    })
+
+    test('uses pubspec version when version is whitespace only', async () => {
+      const {exitCode, context} = await runCommand((cmd) => {
+        cmd['serviceName'] = 'fake.service'
+        cmd['version'] = '   '
+        cmd['pubspecLocation'] = `${fixtureDir}/pubspecs/validPubspec.yaml`
+      })
+      const errorOutput = context.stderr.toString()
+
+      expect(exitCode).toBe(0)
+      expect(errorOutput).toBe('')
     })
   })
 
