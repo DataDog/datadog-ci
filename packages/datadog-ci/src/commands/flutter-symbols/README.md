@@ -38,7 +38,7 @@ This command uploads your Dart symbol files, iOS dSYMs, and Android Proguard map
 After running `flutter build --split-debug-info=./debug-info --obfuscate`, you can upload all files to Datadog by running this command: 
 
 ```bash
-datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service-name com.companyname.application --version 1.0.0 --ios-dsyms --android-mapping
+datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service-name com.companyname.application --ios-dsyms --android-mapping
 ```
 
 | Parameter                    | Condition | Description                                                                                                                                                                                                                                                                                                      |
