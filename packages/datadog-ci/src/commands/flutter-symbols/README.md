@@ -59,7 +59,6 @@ datadog-ci flutter-symbols upload --dart-symbols-location ./debug-info --service
 | `--disable-git`              | Optional  | Prevents the command from invoking git in the current working directory and sending repository-related data to Datadog (such as the hash, remote URL, and paths within the repository of sources referenced in the source map).                                                                                  |
 | `--repository-url`           | Optional  | Overrides the remote repository with a custom URL. For example, `https://github.com/my-company/my-project`.                                                                                                                                                                                                      |
 
-**Note:** A version is required for the upload to succeed. If `--version` is not provided, the version will be extracted from your `pubspec.yaml`. The upload will fail if no version can be determined from either source.
 
 ## Further reading
 
