@@ -5,6 +5,7 @@ export const DATADOG_SITE_US5 = 'us5.datadoghq.com'
 export const DATADOG_SITE_AP1 = 'ap1.datadoghq.com'
 export const DATADOG_SITE_AP2 = 'ap2.datadoghq.com'
 export const DATADOG_SITE_GOV = 'ddog-gov.com'
+export const DATADOG_SITE_TEST123 = 'test123.prod.dog'
 
 export const DATADOG_SITES: string[] = [
   DATADOG_SITE_US1,
@@ -14,6 +15,7 @@ export const DATADOG_SITES: string[] = [
   DATADOG_SITE_AP1,
   DATADOG_SITE_AP2,
   DATADOG_SITE_GOV,
+  DATADOG_SITE_TEST123,
 ]
 
 // Common env vars
