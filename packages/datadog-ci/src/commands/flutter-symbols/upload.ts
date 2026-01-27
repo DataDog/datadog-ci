@@ -540,7 +540,16 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
       }
     }
 
-    if (!this.version && (await this.parsePubspecVersion(this.pubspecLocation))) {
+    // If version is not provided or is empty/whitespace, try to get it from pubspec
+    if (!this.version || this.version.trim().length === 0) {
+      if (await this.parsePubspecVersion(this.pubspecLocation)) {
+        parametersOkay = false
+      }
+    }
+
+    // Final validation: ensure we have a non-empty version after all resolution attempts
+    if (!this.version || this.version.trim().length === 0) {
+      this.context.stderr.write(renderArgumentMissingError('version'))
       parametersOkay = false
     }
 
