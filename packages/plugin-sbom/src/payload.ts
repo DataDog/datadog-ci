@@ -21,6 +21,7 @@ import {
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
+  TARGET_FRAMEWORK_KEY,
 } from './constants'
 import {getLanguageFromComponent} from './language'
 import {
@@ -248,18 +249,25 @@ const extractingDependency = (component: any): Dependency | undefined => {
   let isDirect
   let isDev
   const exclusions: string[] = []
+  const targetFrameworks: string[] = []
   const reachableSymbolProperties: Property[] = []
+
   for (const property of component['properties'] ?? []) {
-    if (property['name'] === PACKAGE_MANAGER_PROPERTY_KEY) {
-      packageManager = property['value']
-    } else if (property['name'] === IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
-      isDirect = property['value'].toLowerCase() === 'true' ? true : undefined
-    } else if (property['name'] === IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
-      isDev = property['value'].toLowerCase() === 'true' ? true : undefined
-    } else if (property['name'] === EXCLUSION_KEY) {
-      exclusions.push(property['value'])
-    } else if (property['name'].startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)) {
-      const missingKeys = validateReachableSymbolLocationValue(property['value'])
+    const propertyName: string = property.name
+    const propertyValue: string = property.value
+
+    if (propertyName === PACKAGE_MANAGER_PROPERTY_KEY) {
+      packageManager = propertyValue
+    } else if (propertyName === IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
+      isDirect = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
+      isDev = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === EXCLUSION_KEY) {
+      exclusions.push(propertyValue)
+    } else if (propertyName === TARGET_FRAMEWORK_KEY) {
+      targetFrameworks.push(propertyValue)
+    } else if (propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)) {
+      const missingKeys = validateReachableSymbolLocationValue(propertyValue)
       if (missingKeys.length > 0) {
         console.error(`Error in reachable symbol locations for ${purl}:`)
         for (const key of missingKeys) {
@@ -268,8 +276,8 @@ const extractingDependency = (component: any): Dependency | undefined => {
         continue
       }
       reachableSymbolProperties.push({
-        name: property['name'],
-        value: property['value'],
+        name: propertyName,
+        value: propertyValue,
       })
     }
   }
@@ -286,6 +294,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     is_dev: isDev,
     package_manager: packageManager,
     reachable_symbol_properties: reachableSymbolProperties,
+    target_frameworks: targetFrameworks,
     exclusions,
   }
 
@@ -354,6 +363,9 @@ const extractGenerationTool = (tool: any): GenerationTool => {
   }
 }
 
+const parseTrueOrUndefined = (value?: string): true | undefined => {
+  return value?.toLowerCase() === 'true' ? true : undefined
+}
 // validateReachableSymbolLocationValue checks if the JSON string value in
 // the reachable symbol location is valid and returns any keys that were missing.
 const validateReachableSymbolLocationValue = (value: string): string[] => {
