@@ -42,8 +42,7 @@ describe('uploadCodeCoverageReport', () => {
       hostname: 'test-host',
       format: 'simplecov-internal',
       spanTags: {},
-      customTags: {'custom.tag': 'value'},
-      customMeasures: {'custom.measure': 123},
+      flags: ['type:unit-tests', 'jvm-21'],
       prDiff: undefined,
       commitDiff: undefined,
       paths: ['/my/path/.resultset.json'],
@@ -105,8 +104,7 @@ describe('uploadCodeCoverageReport', () => {
       hostname: 'test-host',
       format: 'simplecov-internal',
       spanTags: {},
-      customTags: {'custom.tag': 'value'},
-      customMeasures: {'custom.measure': 123},
+      flags: undefined,
       prDiff: undefined,
       commitDiff: undefined,
       paths: ['/my/path/.resultset.json'],
@@ -130,5 +128,91 @@ describe('uploadCodeCoverageReport', () => {
         headers: formMock.getHeaders(),
       })
     )
+  })
+
+  it('includes report.flags in event when flags provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: ['type:unit-tests', 'jvm-21'],
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+
+    expect(eventJson['report.flags']).toEqual(['type:unit-tests', 'jvm-21'])
+  })
+
+  it('does not include report.flags when flags not provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+
+    expect(eventJson).not.toHaveProperty('report.flags')
   })
 })

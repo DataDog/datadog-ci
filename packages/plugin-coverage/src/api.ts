@@ -27,8 +27,7 @@ export const uploadCodeCoverageReport =
       format: payload.format,
       basepath: payload.basePath,
       ...payload.spanTags,
-      ...payload.customTags,
-      ...payload.customMeasures,
+      ...(payload.flags ? {'report.flags': payload.flags} : {}),
     }
 
     if (payload.codeowners) {

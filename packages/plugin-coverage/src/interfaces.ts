@@ -6,8 +6,7 @@ import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 export interface Payload {
   hostname: string
   spanTags: SpanTags
-  customTags: Record<string, string>
-  customMeasures: Record<string, number>
+  flags?: string[]
   paths: string[]
   format: string
   basePath: string | undefined

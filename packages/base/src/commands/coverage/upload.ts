@@ -28,14 +28,7 @@ export class CoverageUploadCommand extends BaseCommand {
         'Upload all XML code coverage report files in /coverage/ folders, ignoring src/ignored-module-a',
         'datadog-ci coverage upload **/coverage/*.xml --ignored-paths src/ignored-module-a',
       ],
-      [
-        'Upload all code coverage report files in current directory and add extra tags globally',
-        'datadog-ci coverage upload --tags key1:value1 --tags key2:value2 .',
-      ],
-      [
-        'Upload all code coverage report files in current directory and add extra measures globally',
-        'datadog-ci coverage upload --measures key1:123 --measures key2:321 .',
-      ],
+      ['Upload coverage with flags', 'datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 .'],
       [
         'Upload all code coverage report files in current directory to the datadoghq.eu site',
         'DD_SITE=datadoghq.eu datadog-ci coverage upload .',
@@ -48,12 +41,9 @@ export class CoverageUploadCommand extends BaseCommand {
   })
 
   protected reportPaths = Option.Rest({required: 1})
-  protected measures = Option.Array('--measures', {
+  protected flags = Option.Array('--flags', {
     description:
-      'Custom measures to add to the coverage event in the format key:value, max 100 measures per coverage event',
-  })
-  protected tags = Option.Array('--tags', {
-    description: 'Custom tags to add to the coverage event in the format key:value, max 100 tags per coverage event',
+      'Flags to mark coverage reports for grouping and filtering (e.g., type:unit-tests, jvm-21). Maximum 32 flags per report.',
   })
   protected format = Option.String('--format', {description: 'The format of the coverage report files'})
   protected uploadGitDiff = Option.Boolean('--upload-git-diff', true, {

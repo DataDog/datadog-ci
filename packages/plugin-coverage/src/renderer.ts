@@ -64,7 +64,12 @@ export const renderDryRunUpload = (payload: Payload): string => `[DRYRUN] ${rend
 
 export const renderUpload = (payload: Payload): string => {
   if (payload.paths && payload.paths.length) {
-    return `Uploading code coverage report file(s) in ${payload.paths}`
+    let message = `Uploading code coverage report file(s) in ${payload.paths}`
+    if (payload.flags && payload.flags.length > 0) {
+      message += ` with flags: ${payload.flags.join(', ')}`
+    }
+
+    return message
   } else {
     return 'No code coverage report paths, doing nothing'
   }
