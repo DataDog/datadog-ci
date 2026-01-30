@@ -228,85 +228,35 @@ describe('upload', () => {
     })
   })
 
-  describe('parseCustomTags', () => {
-    test('should parse tags argument', () => {
-      const context = createMockContext()
+  describe('getFlags', () => {
+    test('should return undefined when no flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
-      const spanTags: SpanTags = command['getCustomTags'].call({
-        config: {},
-        context,
-        tags: ['key1:value1', 'key2:value2'],
-      })
-
-      expect(spanTags).toMatchObject({
-        key1: 'value1',
-        key2: 'value2',
-      })
+      command['flags'] = undefined
+      expect(command['getFlags']()).toBeUndefined()
     })
 
-    test('should parse DD_TAGS environment variable', () => {
-      process.env.DD_TAGS = 'key1:https://google.com,key2:value2,key3:1234321'
-      const context = createMockContext()
+    test('should return undefined when empty flags array provided', () => {
       const command = createCommand(CoverageUploadCommand)
-      const spanTags: SpanTags = command['getCustomTags'].call({
-        config: {
-          envVarTags: process.env.DD_TAGS,
-        },
-        context,
-      })
-      expect(spanTags).toMatchObject({
-        key1: 'https://google.com',
-        key2: 'value2',
-        key3: '1234321',
-      })
+      command['flags'] = []
+      expect(command['getFlags']()).toBeUndefined()
     })
 
-    test('should parse measures argument', () => {
-      const context = createMockContext()
+    test('should return flags array when flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
-      const spanTags: SpanTags = command['getCustomMeasures'].call({
-        config: {},
-        context,
-        measures: ['key1:10', 'key2:20'],
-      })
-
-      expect(spanTags).toMatchObject({
-        key1: 10,
-        key2: 20,
-      })
+      command['flags'] = ['type:unit-tests', 'jvm-21']
+      expect(command['getFlags']()).toEqual(['type:unit-tests', 'jvm-21'])
     })
 
-    test('should parse DD_MEASURES environment variable', () => {
-      process.env.DD_MEASURES = 'key1:321,key2:123,key3:321.1,key4:abc,key5:-12.1'
-      const context = createMockContext()
+    test('should throw error when more than 32 flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
-      const spanTags: SpanTags = command['getCustomMeasures'].call({
-        config: {
-          envVarMeasures: process.env.DD_MEASURES,
-        },
-        context,
-      })
-
-      expect(spanTags).toMatchObject({
-        key1: 321,
-        key2: 123,
-        key3: 321.1,
-        key5: -12.1,
-      })
+      command['flags'] = Array.from({length: 33}, (_, i) => `flag${i}`)
+      expect(() => command['getFlags']()).toThrow('Maximum of 32 flags per report allowed, but 33 flags were provided')
     })
 
-    test('should ignore DD_MEASURES if a non-numeric value is passed', () => {
-      process.env.DD_MEASURES = 'key1:321,key2:abc'
-      const context = createMockContext()
+    test('should accept exactly 32 flags', () => {
       const command = createCommand(CoverageUploadCommand)
-      const spanTags: SpanTags = command['getCustomMeasures'].call({
-        config: {
-          envVarMeasures: process.env.DD_MEASURES,
-        },
-        context,
-      })
-
-      expect(spanTags).toMatchObject({})
+      command['flags'] = Array.from({length: 32}, (_, i) => `flag${i}`)
+      expect(command['getFlags']()).toHaveLength(32)
     })
   })
 })
@@ -351,6 +301,23 @@ describe('execute', () => {
     expect(output[2]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
     expect(output[3]).toContain('Starting upload')
     expect(output[4]).toContain(`Will upload code coverage report file ${path}`)
+  })
+
+  test('should upload with flags in dry-run mode', async () => {
+    const runCLIWithFlags = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--flags',
+      'type:unit-tests',
+      '--flags',
+      'jvm-21',
+    ])
+    const {context, code} = await runCLIWithFlags(['src/__tests__/fixtures'])
+    expect(code).toBe(0)
+    const output = context.stdout.toString()
+    expect(output).toContain('type:unit-tests')
+    expect(output).toContain('jvm-21')
   })
 })
 
