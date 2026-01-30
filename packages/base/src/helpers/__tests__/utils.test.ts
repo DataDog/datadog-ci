@@ -175,6 +175,7 @@ describe('utils', () => {
       ['datad0g.com', 'app.datad0g.com'],
       ['datadoghq.com', 'api.datadoghq.com'],
       ['datadoghq.eu', 'api.datadoghq.eu'],
+      ['prtest07.datadoghq.com', 'api.prtest07.datadoghq.com'],
       ['whitelabel.com', 'api.whitelabel.com'],
     ])('for site = %p, returns api host = %p', (site, expectedApiHost) => {
       expect(ciUtils.getApiHostForSite(site)).toEqual(expectedApiHost)

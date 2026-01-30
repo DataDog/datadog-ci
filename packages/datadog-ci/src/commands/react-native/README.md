@@ -145,7 +145,7 @@ You can use the same environment variables as the `upload` command:
 | Environment Variable           | Description                                                                                                                                                     |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `DD_API_KEY`                   | Your Datadog API key. (REQUIRED)
-| `DD_SITE`                      | Optional Datadog site (datadoghq.com, [us3, us5].datadoghq.com, datadoghq.eu, ddog-gov.com, ap1.datadoghq.com, ap2.datadoghq.com). By default, the requests are sent to Datadog US.
+| `DD_SITE`                      | Optional Datadog site (datadoghq.com, [us3, us5, prtest07].datadoghq.com, datadoghq.eu, ddog-gov.com, ap1.datadoghq.com, ap2.datadoghq.com). By default, the requests are sent to Datadog US.
 | `DATADOG_SOURCEMAP_INTAKE_URL` | Optional variable to override the full URL for the intake endpoint.
 | `DATADOG_RELEASE_VERSION`      | Optional variable to override the version name for sourcemaps upload
 

@@ -33,6 +33,9 @@ describe('getCommonAppBaseUrl', () => {
     expect(getCommonAppBaseURL('us5.datadoghq.com', '')).toBe('https://us5.datadoghq.com/')
     expect(getCommonAppBaseURL('us5.datadoghq.com', 'app')).toBe('https://us5.datadoghq.com/')
     expect(getCommonAppBaseURL('us5.datadoghq.com', 'myorg')).toBe('https://myorg.datadoghq.com/')
+    expect(getCommonAppBaseURL('prtest07.datadoghq.com', '')).toBe('https://prtest07.datadoghq.com/')
+    expect(getCommonAppBaseURL('prtest07.datadoghq.com', 'app')).toBe('https://prtest07.datadoghq.com/')
+    expect(getCommonAppBaseURL('prtest07.datadoghq.com', 'myorg')).toBe('https://myorg.datadoghq.com/')
   })
 })
 
