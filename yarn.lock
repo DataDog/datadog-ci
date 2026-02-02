@@ -1772,7 +1772,7 @@ __metadata:
     get-value: "npm:^4.0.1"
     ora: "npm:5.4.1"
     set-value: "npm:^4.1.0"
-    ssh2: "npm:^1.16.0"
+    ssh2: "npm:^1.17.0"
     sshpk: "npm:1.16.1"
     upath: "npm:^2.0.1"
     ws: "npm:^7.5.10"
@@ -9250,12 +9250,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nan@npm:^2.20.0":
-  version: 2.23.0
-  resolution: "nan@npm:2.23.0"
+"nan@npm:^2.23.0":
+  version: 2.25.0
+  resolution: "nan@npm:2.25.0"
   dependencies:
     node-gyp: "npm:latest"
-  checksum: 10/9822b384189769ebb9d69160d9f5276bb2644467fe6a8e23ae849d607da5b34940f9abf03605f5f747395c17b0dac5e470aea29e72b4988918edb082d78b5858
+  checksum: 10/eb3ac555512ec865be3c6e5d65aa94fe13ef6fc36254854687db950adbce61119839ff2217913c1798033f760cda354e3f50c812bb94fd19f7995b84df1a4b57
   languageName: node
   linkType: hard
 
@@ -10647,20 +10647,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ssh2@npm:^1.16.0":
-  version: 1.16.0
-  resolution: "ssh2@npm:1.16.0"
+"ssh2@npm:^1.17.0":
+  version: 1.17.0
+  resolution: "ssh2@npm:1.17.0"
   dependencies:
     asn1: "npm:^0.2.6"
     bcrypt-pbkdf: "npm:^1.0.2"
     cpu-features: "npm:~0.0.10"
-    nan: "npm:^2.20.0"
+    nan: "npm:^2.23.0"
   dependenciesMeta:
     cpu-features:
       optional: true
     nan:
       optional: true
-  checksum: 10/0951c22d9c5a0e3b89a8e5ae890ebcbce9f1f94dbed37d1490e4e48e26bc8b074fa81f202ee57b708e31b5f33033f4c870b92047f4f02b6bc26c32225b01d84c
+  checksum: 10/5a7e911f234f73c4332f2b436cc6131c164962d2eac71f463ab401b54c4b8627875d9c9be1c55e0bfd1a0eae108cfa33217bc73939287e4a5e81f34f532b1036
   languageName: node
   linkType: hard
 
