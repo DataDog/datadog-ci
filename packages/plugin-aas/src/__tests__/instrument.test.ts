@@ -138,6 +138,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
@@ -190,6 +191,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
@@ -524,6 +526,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app2', {
@@ -532,6 +535,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app2',
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {
@@ -584,6 +588,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-service',
           DD_ENV: 'my-env',
           DD_VERSION: '1.0.0',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
@@ -638,6 +643,7 @@ describe('aas instrument', () => {
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
           CUSTOM_VAR2: 'value2',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
@@ -682,6 +688,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app',
           DD_SITE: 'datadoghq.com',
           CUSTOM_VAR1: 'value1',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {
@@ -700,6 +707,7 @@ describe('aas instrument', () => {
           DD_API_KEY: 'PLACEHOLDER',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'git.commit.sha:test-sha,git.repository_url:test-remote',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
     })
@@ -719,6 +727,7 @@ describe('aas instrument', () => {
           DD_SERVICE: 'my-web-app',
           DD_SITE: 'datadoghq.com',
           DD_TAGS: 'custom:tag,another:value',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
     })
@@ -791,6 +800,7 @@ describe('aas instrument', () => {
           DD_SITE: 'datadoghq.com',
           DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
     })
@@ -831,6 +841,7 @@ describe('aas instrument', () => {
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
           DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
     })
@@ -871,6 +882,7 @@ describe('aas instrument', () => {
           CORECLR_PROFILER_PATH: '/home/site/wwwroot/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so',
           DD_DOTNET_TRACER_HOME: '/home/site/wwwroot/datadog',
           DD_TRACE_LOG_DIRECTORY: '/home/LogFiles/dotnet',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
     })
@@ -919,6 +931,7 @@ describe('aas instrument', () => {
           DD_SITE: 'datadoghq.com',
           DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
 
@@ -947,6 +960,7 @@ describe('aas instrument', () => {
           DD_SITE: 'datadoghq.com',
           DD_SERVICE: 'my-web-app',
           DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
         },
       })
 
