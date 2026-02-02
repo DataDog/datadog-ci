@@ -29,6 +29,7 @@ export const AAS_DD_SETTING_NAMES = [
   'CORECLR_PROFILER',
   'CORECLR_PROFILER_PATH',
   'DD_TAGS',
+  'WEBSITES_ENABLE_APP_SERVICE_STORAGE',
 ] as const
 
 /**
@@ -59,6 +60,7 @@ export const getEnvVars = (config: AasConfigOptions, isContainer: boolean): Reco
   // Get base environment variables
   let envVars = getBaseEnvVars(config)
   envVars = {
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
     DD_AAS_INSTANCE_LOGGING_ENABLED: (config.isInstanceLoggingEnabled ?? false).toString(),
     ...envVars,
   }
