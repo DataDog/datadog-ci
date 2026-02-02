@@ -41,6 +41,7 @@ describe('aas common', () => {
         DD_API_KEY: 'test-api-key',
         DD_SITE: 'datadoghq.com',
         DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
       })
     })
 
