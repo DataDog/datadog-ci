@@ -124,7 +124,7 @@
     "fast-xml-parser": "^4.4.1",
     "form-data": "^4.0.4",
     "glob": "^10.5.0",
-    "inquirer": "^8.2.5",
+    "inquirer": "^8.2.6",
     "jest-diff": "^30.2.0",
     "jszip": "^3.10.1",
     "proxy-agent": "^6.4.0",

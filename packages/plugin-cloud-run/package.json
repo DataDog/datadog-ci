@@ -42,7 +42,7 @@
     "@google-cloud/run": "^3.0.0",
     "chalk": "3.0.0",
     "google-auth-library": "^10.2.1",
-    "inquirer": "^8.2.5",
+    "inquirer": "^8.2.6",
     "inquirer-checkbox-plus-prompt": "^1.4.2",
     "ora": "5.4.1",
     "upath": "^2.0.1"
