@@ -14,7 +14,7 @@ To release a new version of `datadog-ci`:
 5. Request an approval from a datadog-ci admin.
    - If a `oidc-setup-required ⚠️` label is added to your PR, ask an admin for assistance.
 6. Wait for your PR to be approved.
-   - Retry the `pre-approval-checks` job if needed.
+   - Once approved, retry the `pre-approval-checks` job.
 7. The `npm-publish` job should now be waiting for an approval from a datadog-ci admin.
    - Ask for approval and wait for it and its downstream jobs to succeed.
 8. Once all jobs are successful, merge the PR **with the "Create a merge commit" strategy**.
