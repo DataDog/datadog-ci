@@ -480,7 +480,19 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     [2025-09-15 10:14:00Z INFO Worker] Job message:
     {
       "jobId": "95a4619c-e316-542f-8a21-74cd5a8ac9ca",
-      "jobDisplayName": "${jobDisplayName}",
+      "jobDisplayName": ${JSON.stringify(jobDisplayName)},
+      "jobName": "__default"
+    }`
+
+  const sampleLogContentWithPlanId = (jobDisplayName: string, planId: string): string => `
+    [2025-09-15 10:14:00Z INFO Worker] Waiting to receive the job message from the channel.
+    [2025-09-15 10:14:00Z INFO ProcessChannel] Receiving message of length 22985, with hash 'abcdef'
+    [2025-09-15 10:14:00Z INFO Worker] Message received.
+    [2025-09-15 10:14:00Z INFO Worker] Job message:
+    {
+      "planId": "${planId}",
+      "jobId": "95a4619c-e316-542f-8a21-74cd5a8ac9ca",
+      "jobDisplayName": ${JSON.stringify(jobDisplayName)},
       "jobName": "__default"
     }`
 
@@ -675,6 +687,359 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     jobName = getGithubJobNameFromLogs(context)
     expect(jobName).toBe(undefined)
     expect(context.stderr.toString()).toContain('error reading GitHub diagnostic log files: hello error')
+  })
+
+  // Comprehensive tests for job names with special characters
+  describe('job names with quotes', () => {
+    test('should parse job name with single quoted word', () => {
+      const jobName = 'Build "production" artifacts'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with multiple quotes', () => {
+      const jobName = 'Test "foo" and "bar"'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse complex job name with quotes and special chars', () => {
+      const jobName = 'End-to-End Tests (@org/backend, "features/a*", apps/backend)'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('job names with backslashes', () => {
+    test('should parse job name with Windows paths', () => {
+      const jobName = 'Path\\\\to\\\\file'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with regex patterns', () => {
+      const jobName = 'Regex \\\\d+ test'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with literal escape sequences', () => {
+      const jobName = 'Literal \\\\n and \\\\t'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('matrix jobs', () => {
+    test('should parse basic matrix job', () => {
+      const jobName = 'Build (ubuntu-latest, 18.x)'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse matrix job with quotes', () => {
+      const jobName = 'Test (macos, "3.9")'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('reusable workflows', () => {
+    test('should parse job name with slashes', () => {
+      const jobName = 'Terraform CI / Validate'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with multiple levels', () => {
+      const jobName = 'CI / CD / Deploy'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('unicode and emojis', () => {
+    test('should parse job name with emojis', () => {
+      const jobName = '🚀 Deploy to production'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with Chinese characters', () => {
+      const jobName = '测试任务'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with Japanese characters', () => {
+      const jobName = 'テストジョブ'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with Arabic characters', () => {
+      const jobName = 'اختبار العمل'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with Cyrillic characters', () => {
+      const jobName = 'Тестовое задание'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('special characters', () => {
+    test('should parse job name with parentheses and brackets', () => {
+      const jobName = 'Test [feature] (branch)'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+
+    test('should parse job name with symbols', () => {
+      const jobName = 'Build @scope/package #123'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('complex combinations', () => {
+    test('should parse job name with everything combined', () => {
+      const jobName = '🔧 Build "app-v2.0" (@org/repo, ubuntu-latest, node-18.x) ✅'
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent(jobName)
+
+      mockReaddirSync(targetDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const result = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(result).toBe(jobName)
+    })
+  })
+
+  describe('Worker log identification with ACTIONS_ORCHESTRATION_ID', () => {
+    test('should use ACTIONS_ORCHESTRATION_ID to find correct Worker log', () => {
+      const planId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+      const originalEnv = process.env
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${planId}.test-job.__default`}
+
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContentWithPlanId('correct-job-name', planId)
+
+      mockReaddirSync(targetDir, 'Worker_20251014-083000.log')
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(jobName).toBe('correct-job-name')
+      process.env = originalEnv
+    })
+
+    test('should select correct log among multiple Worker logs on non-ephemeral runner', () => {
+      const correctPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+      const wrongPlanId = '12345678-1234-1234-1234-123456789abc'
+      const originalEnv = process.env
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${correctPlanId}.test-job.__default`}
+
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+
+      // Multiple Worker logs from different runs
+      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
+        if (String(pathToRead) === String(targetDir)) {
+          return [
+            mockLogFileDirent('Worker_20251014-083000.log'), // Old job
+            mockLogFileDirent('Worker_20251014-090000.log'), // Current job
+            mockLogFileDirent('Worker_20251014-095000.log'), // Another old job
+          ]
+        }
+        throw getNotFoundFsError()
+      })
+
+      jest.spyOn(fs, 'readFileSync').mockImplementation((filePath: any) => {
+        const filePathStr = String(filePath)
+        if (filePathStr.includes('Worker_20251014-083000.log')) {
+          return sampleLogContentWithPlanId('old-job-name-1', wrongPlanId)
+        }
+        if (filePathStr.includes('Worker_20251014-090000.log')) {
+          return sampleLogContentWithPlanId('correct-job-name', correctPlanId)
+        }
+        if (filePathStr.includes('Worker_20251014-095000.log')) {
+          return sampleLogContentWithPlanId('old-job-name-2', '87654321-4321-4321-4321-cba987654321')
+        }
+
+        return ''
+      })
+
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(jobName).toBe('correct-job-name')
+      // Should read 2 logs searching for planId, then read the matched log again = 3 total
+      expect(fs.readFileSync).toHaveBeenCalledTimes(3)
+      process.env = originalEnv
+    })
+
+    test('should fall back to first match when ACTIONS_ORCHESTRATION_ID not available', () => {
+      const originalEnv = process.env
+      process.env = {...originalEnv}
+      delete process.env.ACTIONS_ORCHESTRATION_ID
+
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+      const logContent = sampleLogContent('first-job-found')
+
+      mockReaddirSync(targetDir, 'Worker_20251014-083000.log')
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(jobName).toBe('first-job-found')
+      process.env = originalEnv
+    })
+
+    test('should fall back to checking all logs if planId not found', () => {
+      const searchPlanId = '9f25551c-ce16-4f8f-a662-8575df3d1354'
+      const originalEnv = process.env
+      process.env = {...originalEnv, ACTIONS_ORCHESTRATION_ID: `${searchPlanId}.test-job.__default`}
+
+      const targetDir = githubWellKnownDiagnosticDirsUnix[0]
+
+      jest.spyOn(fs, 'readdirSync').mockImplementation((pathToRead) => {
+        if (String(pathToRead) === String(targetDir)) {
+          return [mockLogFileDirent('Worker_20251014-083000.log')]
+        }
+        throw getNotFoundFsError()
+      })
+
+      // Log contains different planId, but still has jobDisplayName
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(
+        sampleLogContentWithPlanId('fallback-job-name', 'different-plan-id')
+      )
+
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+
+      expect(jobName).toBe('fallback-job-name')
+      process.env = originalEnv
+    })
   })
 })
 
