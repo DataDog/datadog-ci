@@ -77,6 +77,12 @@ if [ -n "${GITHUB_TOKEN:-}" ] && [ -n "${GITHUB_SHA:-}" ]; then
 	PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.[0].number // empty')
 	PR_LABELS=$(echo "$PR_RESPONSE" | jq '[.[0].labels[].name]' 2>/dev/null || true)
 
+	if [ -z "$PR_NUMBER" ]; then
+		echo -e "${RED}No PR found for commit $GITHUB_SHA ❌${NC}"
+		echo "Please create a release PR first, then retry the \"pre-approval-checks\" job."
+		exit 1
+	fi
+
 	echo -e "${BLUE}PR labels:${NC} $PR_LABELS"
 
 	# Fetch review approvals for the PR
