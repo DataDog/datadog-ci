@@ -1031,9 +1031,9 @@ describe('getGithubJobDisplayNameFromLogs', () => {
       })
 
       // Log contains different planId, but still has jobDisplayName
-      jest.spyOn(fs, 'readFileSync').mockReturnValue(
-        sampleLogContentWithPlanId('fallback-job-name', 'different-plan-id')
-      )
+      jest
+        .spyOn(fs, 'readFileSync')
+        .mockReturnValue(sampleLogContentWithPlanId('fallback-job-name', 'different-plan-id'))
 
       const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
 
