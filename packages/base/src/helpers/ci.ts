@@ -1169,7 +1169,6 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   if (orchestrationId) {
     // Extract planId GUID (everything before first dot)
     const planId = orchestrationId.split('.')[0]
-    context.stdout.write(`Searching for Worker log with planId: ${planId}\n`)
 
     // Find the Worker log containing this planId
     for (const logFile of workerLogFiles) {
@@ -1186,7 +1185,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
 
     if (!targetLogFile) {
       context.stdout.write(
-        `${chalk.yellow.bold('[INFO]')} Could not find Worker log for planId ${planId}, checking all logs\n`
+        `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
       )
     }
   }
