@@ -200,6 +200,11 @@ export class SourcemapsUploadCommand extends BaseCommand {
             // mert: nextjs/turbopack uses url-percent encoding
             const sourcemapUrl = decodeURIComponent(sourceMappingMatch[1].trim())
 
+            // Skip absolute URLs and absolute paths — they can't be resolved to local files
+            if (sourcemapUrl.includes('://') || upath.isAbsolute(sourcemapUrl)) {
+              return undefined
+            }
+
             // Join the sourcemap path relative to the minified file's directory
             const minifiedFileDir = upath.dirname(minifiedFilePath)
             const sourcemapPath = upath.join(minifiedFileDir, sourcemapUrl)
