@@ -241,6 +241,26 @@ describe('execute', () => {
     })
   })
 
+  test('absolute URL in sourceMappingURL falls back to legacy method', async () => {
+    const {context, code} = await runCLI([
+      './src/commands/sourcemaps/__tests__/fixtures/with-absolute-sourcemap-url',
+    ])
+    const output = context.stdout.toString().split('\n')
+    expect(code).toBe(0)
+    checkConsoleOutput(output, {
+      basePath: 'src/commands/sourcemaps/__tests__/fixtures/with-absolute-sourcemap-url',
+      concurrency: 20,
+      jsFilesURLs: ['https://static.com/js/chunk.min.js'],
+      minifiedPathPrefix: 'https://static.com/js',
+      projectPath: '',
+      service: 'test-service',
+      sourcemapsPaths: [
+        'src/commands/sourcemaps/__tests__/fixtures/with-absolute-sourcemap-url/chunk.min.js.map',
+      ],
+      version: '1234',
+    })
+  })
+
   test('using URL-encoded sourceMappingURL comment in JS file', async () => {
     const {context, code} = await runCLI(['./src/commands/sourcemaps/__tests__/fixtures/with-encoded-sourcemap-url'])
     const output = context.stdout.toString().split('\n')
