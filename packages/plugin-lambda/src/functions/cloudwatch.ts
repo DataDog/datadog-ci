@@ -45,9 +45,9 @@ export const enableCloudwatchLogs = async (iamClient: IAMClient, roleName: strin
         PolicyName: DENY_CLOUDWATCH_POLICY_NAME,
       })
     )
-  } catch (err: any) {
+  } catch (err) {
     // If the policy doesn't exist, that's fine — it's already enabled
-    if (err.name === 'NoSuchEntityException') {
+    if (err instanceof Error && err.name === 'NoSuchEntityException') {
       return
     }
     throw err
