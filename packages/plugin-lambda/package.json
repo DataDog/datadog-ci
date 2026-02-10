@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.981.0",
+    "@aws-sdk/client-iam": "^3.981.0",
     "@aws-sdk/client-lambda": "^3.981.0",
     "@aws-sdk/credential-provider-ini": "^3.972.3",
     "@aws-sdk/credential-providers": "^3.981.0",

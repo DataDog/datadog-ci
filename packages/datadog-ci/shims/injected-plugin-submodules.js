@@ -35,6 +35,8 @@ const injectedPluginSubmodules = {
     'upload': require('@datadog/datadog-ci-plugin-junit/commands/upload'),
   },
   'lambda': {
+    'disable-cloudwatch': require('@datadog/datadog-ci-plugin-lambda/commands/disable-cloudwatch'),
+    'enable-cloudwatch': require('@datadog/datadog-ci-plugin-lambda/commands/enable-cloudwatch'),
     'flare': require('@datadog/datadog-ci-plugin-lambda/commands/flare'),
     'instrument': require('@datadog/datadog-ci-plugin-lambda/commands/instrument'),
     'uninstrument': require('@datadog/datadog-ci-plugin-lambda/commands/uninstrument'),
