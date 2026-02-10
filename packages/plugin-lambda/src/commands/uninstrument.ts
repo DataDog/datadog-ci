@@ -130,13 +130,13 @@ export class PluginCommand extends LambdaUninstrumentCommand {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         this.context.stdout.write(
-          instrumentRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+          commonRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(instrumentRenderer.renderRegexSetWithARNError())
+        this.context.stdout.write(commonRenderer.renderRegexSetWithARNError())
 
         return 1
       }
@@ -186,7 +186,7 @@ export class PluginCommand extends LambdaUninstrumentCommand {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(instrumentRenderer.renderCouldntGroupFunctionsError(err))
+        this.context.stdout.write(commonRenderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }

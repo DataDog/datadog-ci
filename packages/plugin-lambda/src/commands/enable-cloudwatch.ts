@@ -1,7 +1,7 @@
 import {IAMClient} from '@aws-sdk/client-iam'
 import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
-import {LambdaEnableCloudwatchCommand} from '@datadog/datadog-ci-base/commands/lambda/enableCloudwatch'
+import {LambdaEnableCloudwatchCommand} from '@datadog/datadog-ci-base/commands/lambda/enable-cloudwatch'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -63,13 +63,13 @@ export class PluginCommand extends LambdaEnableCloudwatchCommand {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         this.context.stdout.write(
-          cloudwatchRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+          commonRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(cloudwatchRenderer.renderRegexSetWithARNError())
+        this.context.stdout.write(commonRenderer.renderRegexSetWithARNError())
 
         return 1
       }
@@ -112,7 +112,7 @@ export class PluginCommand extends LambdaEnableCloudwatchCommand {
         this.region || this.config.region
       )
     } catch (err) {
-      this.context.stdout.write(cloudwatchRenderer.renderCouldntGroupFunctionsError(err))
+      this.context.stdout.write(commonRenderer.renderCouldntGroupFunctionsError(err))
 
       return 1
     }

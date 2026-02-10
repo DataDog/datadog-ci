@@ -12,16 +12,6 @@ export const renderCloudwatchHeader = (action: 'disable' | 'enable', isDryRun: b
 export const renderNoFunctionsSpecifiedError = () =>
   renderError('No functions specified. Use -f, --function, or --functions-regex.')
 
-export const renderFunctionsAndFunctionsRegexOptionsBothSetError = (functionsCommandUsed: boolean) => {
-  const usedCommand = functionsCommandUsed ? '"--functions"' : 'Functions in config file'
-
-  return renderError(`${usedCommand} and "--functions-regex" should not be used at the same time.`)
-}
-
-export const renderRegexSetWithARNError = () => renderError(`"--functions-regex" isn't meant to be used with ARNs.`)
-
-export const renderCouldntGroupFunctionsError = (error: unknown) => renderError(`Couldn't group functions. ${error}`)
-
 export const renderDryRunFunctionAction = (action: 'disable' | 'enable', functionName: string, roleName: string) => {
   const verb = action === 'disable' ? 'Attach' : 'Remove'
 
