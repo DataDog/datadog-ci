@@ -1,16 +1,19 @@
 import {Command, Option} from 'clipanion'
+import * as t from 'typanion'
 
 import {executePluginCommand} from '../../helpers/plugin'
 
 import {BaseCommand} from '../..'
 
-export class LambdaEnableCloudwatchCommand extends BaseCommand {
-  public static paths = [['lambda', 'enable-cloudwatch']]
+export class LambdaCloudwatchCommand extends BaseCommand {
+  public static paths = [['lambda', 'cloudwatch']]
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Re-enable CloudWatch Logs for Lambda functions by removing the deny IAM policy.',
+    description: 'Enable or disable CloudWatch Logs for Lambda functions by managing IAM deny policies.',
   })
+
+  public action = Option.String({validator: t.isEnum(['enable', 'disable'])})
 
   protected configPath = Option.String('--config', {
     description: 'Path to the configuration file',

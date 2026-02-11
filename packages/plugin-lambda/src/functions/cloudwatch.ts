@@ -1,55 +1,75 @@
 import {DeleteRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
 
-export const DENY_CLOUDWATCH_POLICY_NAME = 'DenyCloudWatchLogs'
+export const getDenyPolicyName = (functionName: string) => `DenyCloudWatchLogs-${functionName}`
 
-export const DENY_CLOUDWATCH_POLICY_DOCUMENT = JSON.stringify({
-  Version: '2012-10-17',
-  Statement: [
-    {
-      Effect: 'Deny',
-      Action: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
-      Resource: '*',
-    },
-  ],
-})
+export const getDenyPolicyDocument = (functionName: string) =>
+  JSON.stringify({
+    Version: '2012-10-17',
+    Statement: [
+      {
+        Effect: 'Deny',
+        Action: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
+        Resource: `arn:aws:logs:*:*:log-group:/aws/lambda/${functionName}:*`,
+      },
+    ],
+  })
 
-export const getRoleName = async (lambdaClient: LambdaClient, functionName: string): Promise<string> => {
-  const resp = await lambdaClient.send(new GetFunctionCommand({FunctionName: functionName}))
+export const getFunctionDetails = async (
+  lambdaClient: LambdaClient,
+  functionIdentifier: string
+): Promise<{roleName: string; functionName: string}> => {
+  const resp = await lambdaClient.send(new GetFunctionCommand({FunctionName: functionIdentifier}))
   const roleArn = resp.Configuration?.Role
   if (!roleArn) {
-    throw new Error(`Could not determine execution role for function ${functionName}`)
+    throw new Error(`Could not determine execution role for function ${functionIdentifier}`)
+  }
+
+  const functionName = resp.Configuration?.FunctionName
+  if (!functionName) {
+    throw new Error(`Could not determine function name for ${functionIdentifier}`)
   }
 
   // Role ARN format: arn:aws:iam::ACCOUNT:role/ROLE_NAME or arn:aws:iam::ACCOUNT:role/path/ROLE_NAME
   const roleName = roleArn.split('/').pop()!
 
-  return roleName
+  return {roleName, functionName}
 }
 
-export const disableCloudwatchLogs = async (iamClient: IAMClient, roleName: string): Promise<void> => {
-  await iamClient.send(
-    new PutRolePolicyCommand({
-      RoleName: roleName,
-      PolicyName: DENY_CLOUDWATCH_POLICY_NAME,
-      PolicyDocument: DENY_CLOUDWATCH_POLICY_DOCUMENT,
-    })
-  )
-}
-
-export const enableCloudwatchLogs = async (iamClient: IAMClient, roleName: string): Promise<void> => {
+const tryDeletePolicy = async (iamClient: IAMClient, roleName: string, policyName: string): Promise<void> => {
   try {
     await iamClient.send(
       new DeleteRolePolicyCommand({
         RoleName: roleName,
-        PolicyName: DENY_CLOUDWATCH_POLICY_NAME,
+        PolicyName: policyName,
       })
     )
   } catch (err) {
-    // If the policy doesn't exist, that's fine — it's already enabled
     if (err instanceof Error && err.name === 'NoSuchEntityException') {
       return
     }
     throw err
   }
+}
+
+export const disableCloudwatchLogs = async (
+  iamClient: IAMClient,
+  roleName: string,
+  functionName: string
+): Promise<void> => {
+  await iamClient.send(
+    new PutRolePolicyCommand({
+      RoleName: roleName,
+      PolicyName: getDenyPolicyName(functionName),
+      PolicyDocument: getDenyPolicyDocument(functionName),
+    })
+  )
+}
+
+export const enableCloudwatchLogs = async (
+  iamClient: IAMClient,
+  roleName: string,
+  functionName: string
+): Promise<void> => {
+  await tryDeletePolicy(iamClient, roleName, getDenyPolicyName(functionName))
 }
