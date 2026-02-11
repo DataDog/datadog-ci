@@ -21,13 +21,13 @@ import {
   maskConfig,
 } from '../functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from '../functions/uninstrument'
-import {FunctionConfiguration} from '../interfaces'
+import {FunctionConfiguration, LambdaConfigOptions} from '../interfaces'
 import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
 export class PluginCommand extends LambdaUninstrumentCommand {
-  private config: any = {
+  private config: LambdaConfigOptions = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }

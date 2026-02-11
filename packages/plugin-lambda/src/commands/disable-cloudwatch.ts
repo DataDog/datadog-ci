@@ -15,11 +15,12 @@ import {
   getAWSProfileCredentials,
   getLambdaFunctionConfigsFromRegex,
 } from '../functions/commons'
+import {LambdaConfigOptions} from '../interfaces'
 import * as cloudwatchRenderer from '../renderers/cloudwatch-renderer'
 import * as commonRenderer from '../renderers/common-renderer'
 
 export class PluginCommand extends LambdaDisableCloudwatchCommand {
-  private config: any = {
+  private config: LambdaConfigOptions = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }
