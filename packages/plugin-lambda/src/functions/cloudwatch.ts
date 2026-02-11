@@ -36,22 +36,6 @@ export const getFunctionDetails = async (
   return {roleName, functionName}
 }
 
-const tryDeletePolicy = async (iamClient: IAMClient, roleName: string, policyName: string): Promise<void> => {
-  try {
-    await iamClient.send(
-      new DeleteRolePolicyCommand({
-        RoleName: roleName,
-        PolicyName: policyName,
-      })
-    )
-  } catch (err) {
-    if (err instanceof Error && err.name === 'NoSuchEntityException') {
-      return
-    }
-    throw err
-  }
-}
-
 export const disableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
@@ -71,5 +55,17 @@ export const enableCloudwatchLogs = async (
   roleName: string,
   functionName: string
 ): Promise<void> => {
-  await tryDeletePolicy(iamClient, roleName, getDenyPolicyName(functionName))
+  try {
+    await iamClient.send(
+      new DeleteRolePolicyCommand({
+        RoleName: roleName,
+        PolicyName: getDenyPolicyName(functionName),
+      })
+    )
+  } catch (err) {
+    if (err instanceof Error && err.name === 'NoSuchEntityException') {
+      return
+    }
+    throw err
+  }
 }
