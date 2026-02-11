@@ -10,16 +10,16 @@ export class LambdaCloudwatchCommand extends BaseCommand {
 
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Enable or disable CloudWatch Logs for Lambda functions by managing IAM deny policies.',
+    description: 'Disable or Re-Enable CloudWatch Logs for Lambda functions by managing IAM deny policies.',
   })
 
-  public action = Option.String({validator: t.isEnum(['enable', 'disable'] as const)})
+  public action = Option.String({validator: t.isEnum(['disable', 'enable'] as const)})
 
   protected configPath = Option.String('--config', {
     description: 'Path to the configuration file',
   })
   protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {
-    description: 'Preview changes running command would apply',
+    description: 'Preview changes running the command would apply',
   })
   protected functions = Option.Array('-f,--function', [], {
     description: 'The ARN of the Lambda function, or the name of the Lambda function (--region must be defined)',
