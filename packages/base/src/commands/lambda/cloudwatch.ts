@@ -13,7 +13,7 @@ export class LambdaCloudwatchCommand extends BaseCommand {
     description: 'Enable or disable CloudWatch Logs for Lambda functions by managing IAM deny policies.',
   })
 
-  public action = Option.String({validator: t.isEnum(['enable', 'disable'])})
+  public action = Option.String({validator: t.isEnum(['enable', 'disable'] as const)})
 
   protected configPath = Option.String('--config', {
     description: 'Path to the configuration file',
