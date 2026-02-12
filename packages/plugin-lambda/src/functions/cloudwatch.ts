@@ -1,4 +1,4 @@
-import {DeleteRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
+import {DeleteRolePolicyCommand, GetRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
 
 export const DENY_POLICY_NAME = 'DenyCloudWatchLogs'
@@ -37,16 +37,44 @@ export const getFunctionDetails = async (
   return {roleName, functionName, logGroup}
 }
 
+const LOG_GROUP_RESOURCE_PATTERN = /^arn:aws:logs:\*:\*:log-group:(.+):\*$/
+
+export const getExistingDeniedLogGroups = async (iamClient: IAMClient, roleName: string): Promise<string[]> => {
+  try {
+    const resp = await iamClient.send(
+      new GetRolePolicyCommand({
+        RoleName: roleName,
+        PolicyName: DENY_POLICY_NAME,
+      })
+    )
+    const doc = JSON.parse(decodeURIComponent(resp.PolicyDocument!))
+    const resource = doc.Statement?.[0]?.Resource
+    if (!resource) {
+      return []
+    }
+    const resources: string[] = Array.isArray(resource) ? resource : [resource]
+
+    return resources.map((r) => LOG_GROUP_RESOURCE_PATTERN.exec(r)?.[1]).filter((lg): lg is string => lg !== undefined)
+  } catch (err) {
+    if (err instanceof Error && err.name === 'NoSuchEntityException') {
+      return []
+    }
+    throw err
+  }
+}
+
 export const disableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
   logGroups: string[]
 ): Promise<void> => {
+  const existing = await getExistingDeniedLogGroups(iamClient, roleName)
+  const merged = [...new Set([...existing, ...logGroups])]
   await iamClient.send(
     new PutRolePolicyCommand({
       RoleName: roleName,
       PolicyName: DENY_POLICY_NAME,
-      PolicyDocument: getDenyPolicyDocument(logGroups),
+      PolicyDocument: getDenyPolicyDocument(merged),
     })
   )
 }
@@ -54,19 +82,32 @@ export const disableCloudwatchLogs = async (
 export const enableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
-  _logGroups: string[]
+  logGroups: string[]
 ): Promise<void> => {
-  try {
+  const existing = await getExistingDeniedLogGroups(iamClient, roleName)
+  const remaining = existing.filter((lg) => !logGroups.includes(lg))
+
+  if (remaining.length === 0) {
+    try {
+      await iamClient.send(
+        new DeleteRolePolicyCommand({
+          RoleName: roleName,
+          PolicyName: DENY_POLICY_NAME,
+        })
+      )
+    } catch (err) {
+      if (err instanceof Error && err.name === 'NoSuchEntityException') {
+        return
+      }
+      throw err
+    }
+  } else {
     await iamClient.send(
-      new DeleteRolePolicyCommand({
+      new PutRolePolicyCommand({
         RoleName: roleName,
         PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(remaining),
       })
     )
-  } catch (err) {
-    if (err instanceof Error && err.name === 'NoSuchEntityException') {
-      return
-    }
-    throw err
   }
 }

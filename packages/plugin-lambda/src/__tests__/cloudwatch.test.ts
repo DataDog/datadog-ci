@@ -15,7 +15,7 @@ jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
 import * as fs from 'fs'
 
-import {DeleteRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
+import {DeleteRolePolicyCommand, GetRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient, ListFunctionsCommand} from '@aws-sdk/client-lambda'
 import {fromNodeProviderChain} from '@aws-sdk/credential-providers'
 import {makeRunCLI} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
@@ -63,6 +63,8 @@ describe('lambda cloudwatch', () => {
       process.env = {}
 
       lambdaClientMock.on(ListFunctionsCommand).resolves({Functions: []})
+      const noSuchEntity = Object.assign(new Error('Policy not found'), {name: 'NoSuchEntityException'})
+      iamClientMock.on(GetRolePolicyCommand).rejects(noSuchEntity)
       iamClientMock.on(DeleteRolePolicyCommand).resolves({})
     })
     afterAll(() => {
@@ -190,6 +192,32 @@ describe('lambda cloudwatch', () => {
           '✔ Removed DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
           '\n✔ Successfully enabled CloudWatch Logs for 1 function.\n'
       )
+    })
+
+    test('removes only targeted log groups from existing policy', async () => {
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:func1'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func1',
+            FunctionName: 'func1',
+            Role: 'arn:aws:iam::123456789012:role/shared-role',
+          },
+        })
+      iamClientMock.on(GetRolePolicyCommand).resolves({
+        PolicyDocument: encodeURIComponent(getDenyPolicyDocument(['/aws/lambda/func1', '/aws/lambda/func2'])),
+      })
+      iamClientMock.on(PutRolePolicyCommand).resolves({})
+
+      const {code} = await runCLI(['enable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:func1'])
+
+      expect(code).toBe(0)
+      expect(iamClientMock).not.toHaveReceivedCommand(DeleteRolePolicyCommand)
+      expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
+        RoleName: 'shared-role',
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/func2']),
+      })
     })
 
     test('handles function not found error', async () => {
@@ -332,6 +360,8 @@ describe('lambda cloudwatch', () => {
       process.env = {}
 
       lambdaClientMock.on(ListFunctionsCommand).resolves({Functions: []})
+      const noSuchEntity = Object.assign(new Error('Policy not found'), {name: 'NoSuchEntityException'})
+      iamClientMock.on(GetRolePolicyCommand).rejects(noSuchEntity)
       iamClientMock.on(PutRolePolicyCommand).resolves({})
     })
     afterAll(() => {
@@ -478,6 +508,30 @@ describe('lambda cloudwatch', () => {
           '✔ Attached DenyCloudWatchLogs policy on role shared-role for arn:aws:lambda:us-east-1:123456789012:function:func1, arn:aws:lambda:us-east-1:123456789012:function:func2\n' +
           '\n✔ Successfully disabled CloudWatch Logs for 2 functions.\n'
       )
+    })
+
+    test('merges with existing deny policy on the role', async () => {
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:func2'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func2',
+            FunctionName: 'func2',
+            Role: 'arn:aws:iam::123456789012:role/shared-role',
+          },
+        })
+      iamClientMock.on(GetRolePolicyCommand).resolves({
+        PolicyDocument: encodeURIComponent(getDenyPolicyDocument(['/aws/lambda/func1'])),
+      })
+
+      const {code} = await runCLI(['disable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:func2'])
+
+      expect(code).toBe(0)
+      expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
+        RoleName: 'shared-role',
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/func1', '/aws/lambda/func2']),
+      })
     })
 
     test('uses custom log group from LoggingConfig', async () => {
