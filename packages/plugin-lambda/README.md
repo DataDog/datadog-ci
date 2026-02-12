@@ -56,6 +56,38 @@ datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r 
 
 See the configuration section for additional settings.
 
+### `cloudwatch`
+
+Run `datadog-ci lambda cloudwatch` to enable or disable CloudWatch Logs for Lambda functions by attaching or removing a deny policy on the function's IAM role.
+
+```bash
+# Enable CloudWatch Logs for functions specified by ARNs
+datadog-ci lambda cloudwatch enable -f <lambda-arn> -f <another-lambda-arn>
+
+# Disable CloudWatch Logs for functions specified by names
+datadog-ci lambda cloudwatch disable -f <function-name> -f <another-function-name> -r us-east-1
+
+# Enable CloudWatch Logs for functions matching a regex pattern
+datadog-ci lambda cloudwatch enable --functions-regex <valid-regex-pattern> -r us-east-1
+
+# Dry run of all updates
+datadog-ci lambda cloudwatch enable -f <function-name> -r us-east-1 --dry-run
+```
+
+#### Arguments
+
+<!-- BEGIN_USAGE:cloudwatch -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `<action>` |  | One of "disable" or "enable" |  |
+| `--config` |  | Path to the configuration file |  |
+| `--dry` or `--dry-run` | `-d` | Preview changes running the command would apply | `false` |
+| `--function` | `-f` | The ARN of the Lambda function, or the name of the Lambda function (--region must be defined) |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--functions-regex` or `--functionsRegex` |  | A regex pattern to match with the Lambda function name |  |
+| `--region` | `-r` | Default region to use, when --function is specified by the function name instead of the ARN |  |
+<!-- END_USAGE:cloudwatch -->
+
 ## Configuration
 
 ### AWS Credentials
