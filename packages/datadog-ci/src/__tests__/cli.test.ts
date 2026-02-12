@@ -1,7 +1,7 @@
 import {commands as migratedCommands, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
-import {Builtins, CommandClass} from 'clipanion'
+import {Builtins, Cli, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
 process.env.DD_BETA_COMMANDS_ENABLED = '1'
@@ -11,6 +11,18 @@ import {cli, BETA_COMMANDS} from '../cli'
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
+
+const supportsDryRun = (commandClass: CommandClass): boolean => {
+  try {
+    const testCli = new Cli()
+    testCli.register(commandClass)
+    const defs = testCli.definitions()
+
+    return defs.some((def) => def.options.some((opt) => opt.definition.includes('--dry-run')))
+  } catch {
+    return false
+  }
+}
 
 describe('cli', () => {
   const commands = Array.from(cli['registrations'].keys())
@@ -81,28 +93,30 @@ describe('cli', () => {
 
     // Without the required options, the commands are not executed at all
     const requiredOptions: Record<string, string[]> = {
-      'coverage upload': ['.', '--dry-run'],
-      'dora deployment': ['--started-at', '0', '--dry-run'],
-      'dsyms upload': ['.', '--dry-run'],
-      'elf-symbols upload': ['non-existing-file', '--dry-run'],
-      'pe-symbols upload': ['non-existing-file', '--dry-run'],
-      'gate evaluate': ['--no-wait', '--dry-run'],
-      'junit upload': ['.', '--dry-run'],
-      'sarif upload': ['.', '--dry-run'],
+      'coverage upload': ['.'],
+      'dora deployment': ['--started-at', '0'],
+      'dsyms upload': ['.'],
+      'elf-symbols upload': ['non-existing-file'],
+      'pe-symbols upload': ['non-existing-file'],
+      'gate evaluate': ['--no-wait'],
+      'junit upload': ['.'],
+      'sarif upload': ['.'],
       'sbom upload': ['.'],
-      'sourcemaps upload': ['.', '--dry-run'],
-      trace: ['id', '--dry-run'],
+      'sourcemaps upload': ['.'],
+      trace: ['id'],
     }
 
     // some commands do not support --fips option
     const fipsCases = cases.filter(([commandName]) => !['version', 'plugin'].includes(commandName))
 
-    describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath) => {
+    describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath, commandClass) => {
       const path = commandPath.join(' ')
       const command = [
         ...(pluginCommandPaths.has(path) && !noPluginExceptions.has(commandPath[0]) ? ['__plugin__'] : []),
         ...commandPath,
         ...(requiredOptions[path] ?? []),
+        // Auto-add --dry-run to prevent real API calls in tests
+        ...(supportsDryRun(commandClass) ? ['--dry-run'] : []),
       ]
 
       test('supports the --fips option', async () => {
