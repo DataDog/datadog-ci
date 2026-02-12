@@ -10,10 +10,6 @@ jest.mock('@aws-sdk/credential-providers', () => ({
   fromNodeProviderChain: jest.fn(),
 }))
 jest.mock('../prompt')
-jest.mock('../renderers/cloudwatch-renderer', () => ({
-  ...jest.requireActual('../renderers/cloudwatch-renderer'),
-  processingFunctionsSpinner: jest.fn().mockReturnValue({start: jest.fn(), succeed: jest.fn(), fail: jest.fn()}),
-}))
 jest.mock('@datadog/datadog-ci-base/helpers/prompt')
 jest.mock('@datadog/datadog-ci-base/version', () => ({cliVersion: 'XXXX'}))
 
@@ -53,7 +49,7 @@ describe('lambda cloudwatch', () => {
 
       expect(code).toBe(1)
       expect(context.stdout.toString()).toContain(
-        'Invalid value for action: expected one of "enable" or "disable" (got "hello")'
+        'Invalid value for action: expected one of "disable" or "enable" (got "hello")'
       )
     })
   })

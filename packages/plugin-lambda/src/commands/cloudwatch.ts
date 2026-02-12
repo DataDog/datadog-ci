@@ -1,5 +1,5 @@
 import {IAMClient} from '@aws-sdk/client-iam'
-import {LambdaClient, LambdaClientConfig} from '@aws-sdk/client-lambda'
+import {LambdaClient} from '@aws-sdk/client-lambda'
 import {AwsCredentialIdentity} from '@aws-sdk/types'
 import {LambdaCloudwatchCommand} from '@datadog/datadog-ci-base/commands/lambda/cloudwatch'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -100,7 +100,7 @@ export class PluginCommand extends LambdaCloudwatchCommand {
         const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambdaClient, this.regExPattern!)
         const functionARNs = matchedFunctions.map((fn) => fn.FunctionArn!).filter(Boolean)
 
-        return this.processRegion(region, functionARNs, lambdaClient, iamClient)
+        return this.processRegion(functionARNs, lambdaClient, iamClient)
       } catch (err) {
         stdout.write(helperRenderer.renderError(`Couldn't fetch Lambda functions. ${err}`))
 
@@ -120,31 +120,27 @@ export class PluginCommand extends LambdaCloudwatchCommand {
       return 1
     }
 
-    let hasError = false
-    for (const [region, functionARNs] of Object.entries(functionGroups)) {
-      const lambdaClientConfig: LambdaClientConfig = {
-        region,
-        credentials,
-        retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-      }
-      const lambdaClient = new LambdaClient(lambdaClientConfig)
-      const iamClient = new IAMClient({
-        region,
-        credentials,
-        retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+    const results = await Promise.all(
+      Object.entries(functionGroups).map(([region, functionARNs]) => {
+        const lambdaClient = new LambdaClient({
+          region,
+          credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
+        const iamClient = new IAMClient({
+          region,
+          credentials,
+          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
+        })
+
+        return this.processRegion(functionARNs, lambdaClient, iamClient)
       })
+    )
 
-      const result = await this.processRegion(region, functionARNs, lambdaClient, iamClient)
-      if (result === 1) {
-        hasError = true
-      }
-    }
-
-    return hasError ? 1 : 0
+    return results.some((r) => r === 1) ? 1 : 0
   }
 
   private async processRegion(
-    region: string,
     functionARNs: string[],
     lambdaClient: LambdaClient,
     iamClient: IAMClient
@@ -166,9 +162,6 @@ export class PluginCommand extends LambdaCloudwatchCommand {
       return hasError ? 1 : 0
     }
 
-    const spinner = cloudwatchRenderer.processingFunctionsSpinner(region, functionARNs.length)
-    spinner.start()
-
     for (const fn of functionARNs) {
       try {
         const {roleName, functionName} = await getFunctionDetails(lambdaClient, fn)
@@ -180,14 +173,6 @@ export class PluginCommand extends LambdaCloudwatchCommand {
       }
     }
 
-    if (hasError) {
-      spinner.fail(cloudwatchRenderer.renderFailedProcessingFunctions(region))
-
-      return 1
-    }
-
-    spinner.succeed(cloudwatchRenderer.renderProcessedFunctions(region, functionARNs.length))
-
-    return 0
+    return hasError ? 1 : 0
   }
 }
