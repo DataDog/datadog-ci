@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {ElfSymbolsUploadCommand} from './upload'
 
-export const commands = [ElfSymbolsUploadCommand]
+// prettier-ignore
+export const commands = [
+  ElfSymbolsUploadCommand,
+]

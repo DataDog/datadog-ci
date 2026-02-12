@@ -1,7 +1,6 @@
 /* eslint-disable quote-props */
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
-import {commands as elfSymbolsCommands} from './elf-symbols/cli'
 import {commands as flutterSymbolsCommands} from './flutter-symbols/cli'
 import {commands as measureCommands} from './measure/cli'
 import {commands as peSymbolsCommands} from './pe-symbols/cli'
@@ -14,7 +13,6 @@ import {commands as versionCommands} from './version/cli'
 
 // prettier-ignore
 export const commands = {
-  'elf-symbols': elfSymbolsCommands,
   'flutter-symbols': flutterSymbolsCommands,
   'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,

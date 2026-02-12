@@ -9,7 +9,7 @@ import {diff} from 'jest-diff'
 /**
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
-const noPluginExceptions = new Set(['dsyms', 'git-metadata', 'plugin', 'tag'])
+const noPluginExceptions = new Set(['dsyms', 'elf-symbols', 'git-metadata', 'plugin', 'tag'])
 
 /**
  * Source of truth for scope-less commands: this should be updated manually.
