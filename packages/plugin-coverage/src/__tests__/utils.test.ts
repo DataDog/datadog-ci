@@ -117,6 +117,11 @@ describe('utils', () => {
       const filePath = './src/__tests__/fixtures/clover-invalid.xml'
       expect(validateCoverageReport(filePath, cloverFormat)).toMatch(/.+/)
     })
+
+    test('Returns undefined for a valid Kotlin Kover report (validated as jacoco)', async () => {
+      const filePath = './src/__tests__/fixtures/kover/report.xml'
+      expect(validateCoverageReport(filePath, jacocoFormat)).toBeUndefined()
+    })
   })
 
   describe('detectFormat', () => {
@@ -168,6 +173,11 @@ describe('utils', () => {
     test('Detects go-coverprofile format for a non-standard go coverprofile filename', async () => {
       const filePath = './src/__tests__/fixtures/cover.profile'
       expect(detectFormat(filePath)).toEqual(goCoverprofileFormat)
+    })
+
+    test('Detects jacoco format for a Kotlin Kover report', async () => {
+      const filePath = './src/__tests__/fixtures/kover/report.xml'
+      expect(detectFormat(filePath)).toEqual(jacocoFormat)
     })
 
     test('Returns undefined for an XML file that is not a coverage report', async () => {

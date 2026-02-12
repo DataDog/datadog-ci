@@ -59,7 +59,8 @@ export const detectFormat = (filePath: string, contentSniffing = true): Coverage
     (filename.includes('coverage') ||
       filename.includes('jacoco') ||
       filename.includes('cobertura') ||
-      filename.includes('clover'))
+      filename.includes('clover') ||
+      lowercaseFile.includes('kover'))
   ) {
     return readFirstKb(filePath, (data) => detectXmlCoverageFormat(data, true))
   } else if (extension === '.json' && filename.includes('coverage')) {
