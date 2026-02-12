@@ -24,7 +24,7 @@ import {mockClient} from 'aws-sdk-client-mock'
 import 'aws-sdk-client-mock-jest'
 
 import {PluginCommand as CloudwatchCommand} from '../commands/cloudwatch'
-import {getDenyPolicyDocument, getDenyPolicyName} from '../functions/cloudwatch'
+import {DENY_POLICY_NAME, getDenyPolicyDocument} from '../functions/cloudwatch'
 
 import {mockAwsCredentials} from './fixtures'
 
@@ -121,7 +121,7 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(iamClientMock).toHaveReceivedCommandWith(DeleteRolePolicyCommand, {
         RoleName: 'my-role',
-        PolicyName: getDenyPolicyName('my-func'),
+        PolicyName: DENY_POLICY_NAME,
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
@@ -224,7 +224,7 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n' +
+          '[Error] Failed processing role my-role (arn:aws:lambda:us-east-1:123456789012:function:my-func): Error: Access Denied\n' +
           '\n✖ Failed to enable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
@@ -287,7 +287,7 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(iamClientMock).toHaveReceivedCommandWith(DeleteRolePolicyCommand, {
         RoleName: 'my-role',
-        PolicyName: getDenyPolicyName('my-func'),
+        PolicyName: DENY_POLICY_NAME,
       })
       expect(context.stdout.toString()).toContain('Removed DenyCloudWatchLogs policy on role my-role')
     })
@@ -390,8 +390,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
-        PolicyName: getDenyPolicyName('my-func'),
-        PolicyDocument: getDenyPolicyDocument('my-func'),
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['my-func']),
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
@@ -438,6 +438,48 @@ describe('lambda cloudwatch', () => {
       )
     })
 
+    test('dedupes functions sharing the same role into a single policy', async () => {
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:func1'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func1',
+            FunctionName: 'func1',
+            Role: 'arn:aws:iam::123456789012:role/shared-role',
+          },
+        })
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:func2'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func2',
+            FunctionName: 'func2',
+            Role: 'arn:aws:iam::123456789012:role/shared-role',
+          },
+        })
+
+      const {code, context} = await runCLI([
+        'disable',
+        '-f',
+        'arn:aws:lambda:us-east-1:123456789012:function:func1',
+        '-f',
+        'arn:aws:lambda:us-east-1:123456789012:function:func2',
+      ])
+
+      expect(code).toBe(0)
+      expect(iamClientMock).toHaveReceivedCommandTimes(PutRolePolicyCommand, 1)
+      expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
+        RoleName: 'shared-role',
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['func1', 'func2']),
+      })
+      expect(context.stdout.toString()).toBe(
+        '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
+          '✔ Attached DenyCloudWatchLogs policy on role shared-role for arn:aws:lambda:us-east-1:123456789012:function:func1, arn:aws:lambda:us-east-1:123456789012:function:func2\n' +
+          '\n✔ Successfully disabled CloudWatch Logs for 2 functions.\n'
+      )
+    })
+
     test('handles function not found error', async () => {
       lambdaClientMock
         .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:missing'})
@@ -470,7 +512,7 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n' +
+          '[Error] Failed processing role my-role (arn:aws:lambda:us-east-1:123456789012:function:my-func): Error: Access Denied\n' +
           '\n✖ Failed to disable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
@@ -535,8 +577,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
-        PolicyName: getDenyPolicyName('my-func'),
-        PolicyDocument: getDenyPolicyDocument('my-func'),
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['my-func']),
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
@@ -559,8 +601,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
-        PolicyName: getDenyPolicyName('my-func'),
-        PolicyDocument: getDenyPolicyDocument('my-func'),
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['my-func']),
       })
       expect(context.stdout.toString()).toContain('Attached DenyCloudWatchLogs policy on role my-role')
     })

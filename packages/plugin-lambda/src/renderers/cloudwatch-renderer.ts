@@ -11,20 +11,28 @@ export const renderCloudwatchHeader = (action: 'disable' | 'enable', isDryRun: b
 export const renderNoFunctionsSpecifiedError = () =>
   renderError('No functions specified. Use -f, --function, or --functions-regex.')
 
-export const renderDryRunFunctionAction = (action: 'disable' | 'enable', functionName: string, roleName: string) => {
+export const renderDryRunRoleAction = (action: 'disable' | 'enable', roleName: string, functionARNs: string[]) => {
   const verb = action === 'disable' ? 'Attach' : 'Remove'
+  const fns = functionARNs.map((fn) => chalk.bold(fn)).join(', ')
 
-  return `${dryRunTag} ${verb} DenyCloudWatchLogs policy on role ${chalk.bold(roleName)} for ${chalk.bold(functionName)}\n`
+  return `${dryRunTag} ${verb} DenyCloudWatchLogs policy on role ${chalk.bold(roleName)} for ${fns}\n`
 }
 
-export const renderFunctionSuccess = (action: 'disable' | 'enable', functionName: string, roleName: string) => {
+export const renderRoleSuccess = (action: 'disable' | 'enable', roleName: string, functionARNs: string[]) => {
   const verb = action === 'disable' ? 'Attached' : 'Removed'
+  const fns = functionARNs.map((fn) => chalk.bold(fn)).join(', ')
 
-  return `${chalk.bold(chalk.green('✔'))} ${verb} DenyCloudWatchLogs policy on role ${chalk.bold(roleName)} for ${chalk.bold(functionName)}\n`
+  return `${chalk.bold(chalk.green('✔'))} ${verb} DenyCloudWatchLogs policy on role ${chalk.bold(roleName)} for ${fns}\n`
 }
 
 export const renderFunctionError = (functionName: string, error: unknown) =>
   renderError(`Failed processing ${chalk.bold(functionName)}: ${error}`)
+
+export const renderRoleError = (roleName: string, functionARNs: string[], error: unknown) => {
+  const fns = functionARNs.map((fn) => chalk.bold(fn)).join(', ')
+
+  return renderError(`Failed processing role ${chalk.bold(roleName)} (${fns}): ${error}`)
+}
 
 export const renderSummarySuccess = (action: 'disable' | 'enable', count: number) => {
   const verb = action === 'disable' ? 'disabled' : 'enabled'

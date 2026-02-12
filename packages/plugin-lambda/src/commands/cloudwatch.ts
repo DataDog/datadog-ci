@@ -8,7 +8,7 @@ import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import * as helperRenderer from '@datadog/datadog-ci-base/helpers/renderer'
 import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '@datadog/datadog-ci-base/helpers/utils'
 
-import {AWS_DEFAULT_REGION_ENV_VAR, EXPONENTIAL_BACKOFF_RETRY_STRATEGY} from '../constants'
+import {ADAPTIVE_RETRY_STRATEGY, AWS_DEFAULT_REGION_ENV_VAR} from '../constants'
 import {disableCloudwatchLogs, enableCloudwatchLogs, getFunctionDetails} from '../functions/cloudwatch'
 import {
   collectFunctionsByRegion,
@@ -19,9 +19,12 @@ import {LambdaConfigOptions} from '../interfaces'
 import * as cloudwatchRenderer from '../renderers/cloudwatch-renderer'
 import * as commonRenderer from '../renderers/common-renderer'
 
-type CloudwatchAction = (iamClient: IAMClient, roleName: string, functionName: string) => Promise<void>
+type CloudwatchAction = (iamClient: IAMClient, roleName: string, functionNames: string[]) => Promise<void>
 
 export class PluginCommand extends LambdaCloudwatchCommand {
+  private lambdaClients = new Map<string, LambdaClient>()
+  private iamClients = new Map<string, IAMClient>()
+
   private get cloudwatchAction(): CloudwatchAction {
     return this.action === 'enable' ? enableCloudwatchLogs : disableCloudwatchLogs
   }
@@ -85,16 +88,8 @@ export class PluginCommand extends LambdaCloudwatchCommand {
         return 1
       }
 
-      const lambdaClient = new LambdaClient({
-        region,
-        credentials,
-        retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-      })
-      const iamClient = new IAMClient({
-        region,
-        credentials,
-        retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-      })
+      const lambdaClient = this.getLambdaClient(region, credentials)
+      const iamClient = this.getIAMClient(region, credentials)
 
       try {
         const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambdaClient, this.regExPattern!)
@@ -123,20 +118,13 @@ export class PluginCommand extends LambdaCloudwatchCommand {
     }
 
     const results = await Promise.all(
-      Object.entries(functionGroups).map(([region, functionARNs]) => {
-        const lambdaClient = new LambdaClient({
-          region,
-          credentials,
-          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-        })
-        const iamClient = new IAMClient({
-          region,
-          credentials,
-          retryStrategy: EXPONENTIAL_BACKOFF_RETRY_STRATEGY,
-        })
-
-        return this.processRegion(functionARNs, lambdaClient, iamClient)
-      })
+      Object.entries(functionGroups).map(([region, functionARNs]) =>
+        this.processRegion(
+          functionARNs,
+          this.getLambdaClient(region, credentials),
+          this.getIAMClient(region, credentials)
+        )
+      )
     )
 
     const totals = results.reduce(
@@ -145,6 +133,26 @@ export class PluginCommand extends LambdaCloudwatchCommand {
     )
 
     return this.writeSummary(totals)
+  }
+
+  private getLambdaClient(region: string, credentials?: AwsCredentialIdentity): LambdaClient {
+    let client = this.lambdaClients.get(region)
+    if (!client) {
+      client = new LambdaClient({region, credentials, retryStrategy: ADAPTIVE_RETRY_STRATEGY})
+      this.lambdaClients.set(region, client)
+    }
+
+    return client
+  }
+
+  private getIAMClient(region: string, credentials?: AwsCredentialIdentity): IAMClient {
+    let client = this.iamClients.get(region)
+    if (!client) {
+      client = new IAMClient({region, credentials, retryStrategy: ADAPTIVE_RETRY_STRATEGY})
+      this.iamClients.set(region, client)
+    }
+
+    return client
   }
 
   private writeSummary({successes, failures}: {successes: number; failures: number}): 0 | 1 {
@@ -168,30 +176,38 @@ export class PluginCommand extends LambdaCloudwatchCommand {
     let successes = 0
     let failures = 0
 
+    // Fetch details for all functions and group by role
+    const roleMap = new Map<string, {functionNames: string[]; functionARNs: string[]}>()
+    for (const fn of functionARNs) {
+      try {
+        const {roleName, functionName} = await getFunctionDetails(lambdaClient, fn)
+        const entry = roleMap.get(roleName) ?? {functionNames: [], functionARNs: []}
+        entry.functionNames.push(functionName)
+        entry.functionARNs.push(fn)
+        roleMap.set(roleName, entry)
+      } catch (err) {
+        failures++
+        stdout.write(cloudwatchRenderer.renderFunctionError(fn, err))
+      }
+    }
+
     if (this.dryRun) {
-      for (const fn of functionARNs) {
-        try {
-          const {roleName} = await getFunctionDetails(lambdaClient, fn)
-          stdout.write(cloudwatchRenderer.renderDryRunFunctionAction(this.action, fn, roleName))
-          successes++
-        } catch (err) {
-          failures++
-          stdout.write(cloudwatchRenderer.renderFunctionError(fn, err))
-        }
+      for (const [roleName, {functionARNs: arns}] of roleMap) {
+        stdout.write(cloudwatchRenderer.renderDryRunRoleAction(this.action, roleName, arns))
+        successes += arns.length
       }
 
       return {successes, failures}
     }
 
-    for (const fn of functionARNs) {
+    for (const [roleName, {functionNames, functionARNs: arns}] of roleMap) {
       try {
-        const {roleName, functionName} = await getFunctionDetails(lambdaClient, fn)
-        await this.cloudwatchAction(iamClient, roleName, functionName)
-        stdout.write(cloudwatchRenderer.renderFunctionSuccess(this.action, fn, roleName))
-        successes++
+        await this.cloudwatchAction(iamClient, roleName, functionNames)
+        stdout.write(cloudwatchRenderer.renderRoleSuccess(this.action, roleName, arns))
+        successes += arns.length
       } catch (err) {
-        failures++
-        stdout.write(cloudwatchRenderer.renderFunctionError(fn, err))
+        failures += arns.length
+        stdout.write(cloudwatchRenderer.renderRoleError(roleName, arns, err))
       }
     }
 

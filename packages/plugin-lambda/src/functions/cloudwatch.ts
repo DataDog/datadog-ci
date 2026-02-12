@@ -1,16 +1,16 @@
 import {DeleteRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
 
-export const getDenyPolicyName = (functionName: string) => `DenyCloudWatchLogs-${functionName}`
+export const DENY_POLICY_NAME = 'DenyCloudWatchLogs'
 
-export const getDenyPolicyDocument = (functionName: string) =>
+export const getDenyPolicyDocument = (functionNames: string[]) =>
   JSON.stringify({
     Version: '2012-10-17',
     Statement: [
       {
         Effect: 'Deny',
         Action: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
-        Resource: `arn:aws:logs:*:*:log-group:/aws/lambda/${functionName}:*`,
+        Resource: functionNames.map((fn) => `arn:aws:logs:*:*:log-group:/aws/lambda/${fn}:*`),
       },
     ],
   })
@@ -39,13 +39,13 @@ export const getFunctionDetails = async (
 export const disableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
-  functionName: string
+  functionNames: string[]
 ): Promise<void> => {
   await iamClient.send(
     new PutRolePolicyCommand({
       RoleName: roleName,
-      PolicyName: getDenyPolicyName(functionName),
-      PolicyDocument: getDenyPolicyDocument(functionName),
+      PolicyName: DENY_POLICY_NAME,
+      PolicyDocument: getDenyPolicyDocument(functionNames),
     })
   )
 }
@@ -53,13 +53,13 @@ export const disableCloudwatchLogs = async (
 export const enableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
-  functionName: string
+  _functionNames: string[]
 ): Promise<void> => {
   try {
     await iamClient.send(
       new DeleteRolePolicyCommand({
         RoleName: roleName,
-        PolicyName: getDenyPolicyName(functionName),
+        PolicyName: DENY_POLICY_NAME,
       })
     )
   } catch (err) {
