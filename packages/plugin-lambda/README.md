@@ -81,11 +81,11 @@ datadog-ci lambda cloudwatch disable -f <function-name> -r us-east-1 --dry-run
 | -------- | --------- | ----------- | ------- |
 | `<action>` |  | One of "disable" or "enable" |  |
 | `--config` |  | Path to the configuration file |  |
-| `--dry` or `--dry-run` | `-d` | Preview changes running the command would apply | `false` |
-| `--function` | `-f` | The ARN of the Lambda function, or the name of the Lambda function (--region must be defined) |  |
+| `--dry` or `--dry-run` | `-d` | Preview the changes from running the command | `false` |
+| `--function` | `-f` | The ARN of the Lambda function, or the name of the Lambda function (`--region` must be defined) |  |
 | `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
 | `--functions-regex` or `--functionsRegex` |  | A regex pattern to match with the Lambda function name |  |
-| `--region` | `-r` | Default region to use, when --function is specified by the function name instead of the ARN |  |
+| `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN |  |
 <!-- END_USAGE:cloudwatch -->
 
 ## Configuration
