@@ -1,7 +1,7 @@
 import {commands as migratedCommands, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
-import {Builtins, CommandClass} from 'clipanion'
+import {Builtins, Cli, CommandClass} from 'clipanion'
 
 // Test all commands, including beta ones.
 process.env.DD_BETA_COMMANDS_ENABLED = '1'
@@ -11,6 +11,25 @@ import {cli, BETA_COMMANDS} from '../cli'
 const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
+
+// Prevent real network calls and expensive I/O in fips tests
+jest.mock('axios')
+jest.mock('simple-git')
+jest.mock('@datadog/datadog-ci-base/helpers/metrics')
+
+const NONEXISTENT_FILE = '/nonexistent'
+
+const supportsDryRun = (commandClass: CommandClass): boolean => {
+  try {
+    const testCli = new Cli()
+    testCli.register(commandClass)
+    const defs = testCli.definitions()
+
+    return defs.some((def) => def.options.some((opt) => opt.definition.includes('--dry-run')))
+  } catch {
+    return false
+  }
+}
 
 describe('cli', () => {
   const commands = Array.from(cli['registrations'].keys())
@@ -57,6 +76,25 @@ describe('cli', () => {
     const mockedEnableFips = enableFips as jest.MockedFunction<typeof enableFips>
     mockedEnableFips.mockImplementation(() => true)
 
+    // Strip API keys so commands bail out early instead of doing real work.
+    const savedApiKey = process.env.DATADOG_API_KEY
+    const savedDDApiKey = process.env.DD_API_KEY
+    const originalFetch = global.fetch
+    beforeAll(() => {
+      delete process.env.DATADOG_API_KEY
+      delete process.env.DD_API_KEY
+      global.fetch = jest.fn().mockRejectedValue(new Error('fetch calls are not allowed in tests'))
+    })
+    afterAll(() => {
+      if (savedApiKey !== undefined) {
+        process.env.DATADOG_API_KEY = savedApiKey
+      }
+      if (savedDDApiKey !== undefined) {
+        process.env.DD_API_KEY = savedDDApiKey
+      }
+      global.fetch = originalFetch
+    })
+
     const pluginCommandPaths = new Set<string>()
     Object.entries(migratedCommands).forEach(([_, commandClasses]) => {
       commandClasses.forEach((commandClass) => {
@@ -79,30 +117,33 @@ describe('cli', () => {
       })
     })
 
-    // Without the required options, the commands are not executed at all
+    // Without the required options, the commands are not executed at all.
+    // Use non-existent paths instead of '.' to avoid scanning the whole repo tree.
     const requiredOptions: Record<string, string[]> = {
-      'coverage upload': ['.', '--dry-run'],
-      'dora deployment': ['--started-at', '0', '--dry-run'],
-      'dsyms upload': ['.', '--dry-run'],
-      'elf-symbols upload': ['non-existing-file', '--dry-run'],
-      'pe-symbols upload': ['non-existing-file', '--dry-run'],
-      'gate evaluate': ['--no-wait', '--dry-run'],
-      'junit upload': ['.', '--dry-run'],
-      'sarif upload': ['.', '--dry-run'],
-      'sbom upload': ['.'],
-      'sourcemaps upload': ['.', '--dry-run'],
-      trace: ['id', '--dry-run'],
+      'coverage upload': [NONEXISTENT_FILE],
+      'dora deployment': ['--started-at', '0'],
+      'dsyms upload': [NONEXISTENT_FILE],
+      'elf-symbols upload': [NONEXISTENT_FILE],
+      'pe-symbols upload': [NONEXISTENT_FILE],
+      'gate evaluate': ['--no-wait'],
+      'junit upload': [NONEXISTENT_FILE],
+      'sarif upload': [NONEXISTENT_FILE],
+      'sbom upload': [NONEXISTENT_FILE],
+      'sourcemaps upload': [NONEXISTENT_FILE],
+      trace: ['id'],
     }
 
     // some commands do not support --fips option
     const fipsCases = cases.filter(([commandName]) => !['version', 'plugin'].includes(commandName))
 
-    describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath) => {
+    describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath, commandClass) => {
       const path = commandPath.join(' ')
       const command = [
         ...(pluginCommandPaths.has(path) && !noPluginExceptions.has(commandPath[0]) ? ['__plugin__'] : []),
         ...commandPath,
         ...(requiredOptions[path] ?? []),
+        // Auto-add --dry-run to prevent real API calls in tests
+        ...(supportsDryRun(commandClass) ? ['--dry-run'] : []),
       ]
 
       test('supports the --fips option', async () => {
