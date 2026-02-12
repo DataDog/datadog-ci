@@ -61,17 +61,17 @@ See the configuration section for additional settings.
 Run `datadog-ci lambda cloudwatch` to enable or disable CloudWatch Logs for Lambda functions by attaching or removing a deny policy on the function's IAM role.
 
 ```bash
-# Enable CloudWatch Logs for functions specified by ARNs
-datadog-ci lambda cloudwatch enable -f <lambda-arn> -f <another-lambda-arn>
-
 # Disable CloudWatch Logs for functions specified by names
 datadog-ci lambda cloudwatch disable -f <function-name> -f <another-function-name> -r us-east-1
 
-# Enable CloudWatch Logs for functions matching a regex pattern
-datadog-ci lambda cloudwatch enable --functions-regex <valid-regex-pattern> -r us-east-1
+# Re-enable CloudWatch Logs for functions specified by ARNs
+datadog-ci lambda cloudwatch enable -f <lambda-arn> -f <another-lambda-arn>
+
+# Disable CloudWatch Logs for functions matching a regex pattern
+datadog-ci lambda cloudwatch disable --functions-regex <valid-regex-pattern> -r us-east-1
 
 # Dry run of all updates
-datadog-ci lambda cloudwatch enable -f <function-name> -r us-east-1 --dry-run
+datadog-ci lambda cloudwatch disable -f <function-name> -r us-east-1 --dry-run
 ```
 
 #### Arguments
