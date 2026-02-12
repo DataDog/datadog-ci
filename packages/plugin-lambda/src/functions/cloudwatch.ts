@@ -3,14 +3,14 @@ import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
 
 export const DENY_POLICY_NAME = 'DenyCloudWatchLogs'
 
-export const getDenyPolicyDocument = (functionNames: string[]) =>
+export const getDenyPolicyDocument = (logGroups: string[]) =>
   JSON.stringify({
     Version: '2012-10-17',
     Statement: [
       {
         Effect: 'Deny',
         Action: ['logs:CreateLogGroup', 'logs:CreateLogStream', 'logs:PutLogEvents'],
-        Resource: functionNames.map((fn) => `arn:aws:logs:*:*:log-group:/aws/lambda/${fn}:*`),
+        Resource: logGroups.map((lg) => `arn:aws:logs:*:*:log-group:${lg}:*`),
       },
     ],
   })
@@ -18,7 +18,7 @@ export const getDenyPolicyDocument = (functionNames: string[]) =>
 export const getFunctionDetails = async (
   lambdaClient: LambdaClient,
   functionIdentifier: string
-): Promise<{roleName: string; functionName: string}> => {
+): Promise<{roleName: string; functionName: string; logGroup: string}> => {
   const resp = await lambdaClient.send(new GetFunctionCommand({FunctionName: functionIdentifier}))
   const roleArn = resp.Configuration?.Role
   if (!roleArn) {
@@ -32,20 +32,21 @@ export const getFunctionDetails = async (
 
   // Role ARN format: arn:aws:iam::ACCOUNT:role/ROLE_NAME or arn:aws:iam::ACCOUNT:role/path/ROLE_NAME
   const roleName = roleArn.split('/').pop()!
+  const logGroup = resp.Configuration?.LoggingConfig?.LogGroup ?? `/aws/lambda/${functionName}`
 
-  return {roleName, functionName}
+  return {roleName, functionName, logGroup}
 }
 
 export const disableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
-  functionNames: string[]
+  logGroups: string[]
 ): Promise<void> => {
   await iamClient.send(
     new PutRolePolicyCommand({
       RoleName: roleName,
       PolicyName: DENY_POLICY_NAME,
-      PolicyDocument: getDenyPolicyDocument(functionNames),
+      PolicyDocument: getDenyPolicyDocument(logGroups),
     })
   )
 }
@@ -53,7 +54,7 @@ export const disableCloudwatchLogs = async (
 export const enableCloudwatchLogs = async (
   iamClient: IAMClient,
   roleName: string,
-  _functionNames: string[]
+  _logGroups: string[]
 ): Promise<void> => {
   try {
     await iamClient.send(

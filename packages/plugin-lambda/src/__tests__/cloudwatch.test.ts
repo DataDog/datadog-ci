@@ -391,7 +391,7 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
         PolicyName: DENY_POLICY_NAME,
-        PolicyDocument: getDenyPolicyDocument(['my-func']),
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/my-func']),
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
@@ -471,13 +471,35 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'shared-role',
         PolicyName: DENY_POLICY_NAME,
-        PolicyDocument: getDenyPolicyDocument(['func1', 'func2']),
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/func1', '/aws/lambda/func2']),
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
           '✔ Attached DenyCloudWatchLogs policy on role shared-role for arn:aws:lambda:us-east-1:123456789012:function:func1, arn:aws:lambda:us-east-1:123456789012:function:func2\n' +
           '\n✔ Successfully disabled CloudWatch Logs for 2 functions.\n'
       )
+    })
+
+    test('uses custom log group from LoggingConfig', async () => {
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:my-func'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
+            FunctionName: 'my-func',
+            Role: 'arn:aws:iam::123456789012:role/my-role',
+            LoggingConfig: {LogGroup: '/custom/my-app/logs'},
+          },
+        })
+
+      const {code} = await runCLI(['disable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:my-func'])
+
+      expect(code).toBe(0)
+      expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
+        RoleName: 'my-role',
+        PolicyName: DENY_POLICY_NAME,
+        PolicyDocument: getDenyPolicyDocument(['/custom/my-app/logs']),
+      })
     })
 
     test('handles function not found error', async () => {
@@ -578,7 +600,7 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
         PolicyName: DENY_POLICY_NAME,
-        PolicyDocument: getDenyPolicyDocument(['my-func']),
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/my-func']),
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
@@ -602,7 +624,7 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).toHaveReceivedCommandWith(PutRolePolicyCommand, {
         RoleName: 'my-role',
         PolicyName: DENY_POLICY_NAME,
-        PolicyDocument: getDenyPolicyDocument(['my-func']),
+        PolicyDocument: getDenyPolicyDocument(['/aws/lambda/my-func']),
       })
       expect(context.stdout.toString()).toContain('Attached DenyCloudWatchLogs policy on role my-role')
     })

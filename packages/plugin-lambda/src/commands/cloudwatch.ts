@@ -19,7 +19,7 @@ import {LambdaConfigOptions} from '../interfaces'
 import * as cloudwatchRenderer from '../renderers/cloudwatch-renderer'
 import * as commonRenderer from '../renderers/common-renderer'
 
-type CloudwatchAction = (iamClient: IAMClient, roleName: string, functionNames: string[]) => Promise<void>
+type CloudwatchAction = (iamClient: IAMClient, roleName: string, logGroups: string[]) => Promise<void>
 
 export class PluginCommand extends LambdaCloudwatchCommand {
   private lambdaClients = new Map<string, LambdaClient>()
@@ -177,12 +177,12 @@ export class PluginCommand extends LambdaCloudwatchCommand {
     let failures = 0
 
     // Fetch details for all functions and group by role
-    const roleMap = new Map<string, {functionNames: string[]; functionARNs: string[]}>()
+    const roleMap = new Map<string, {logGroups: string[]; functionARNs: string[]}>()
     for (const fn of functionARNs) {
       try {
-        const {roleName, functionName} = await getFunctionDetails(lambdaClient, fn)
-        const entry = roleMap.get(roleName) ?? {functionNames: [], functionARNs: []}
-        entry.functionNames.push(functionName)
+        const {roleName, logGroup} = await getFunctionDetails(lambdaClient, fn)
+        const entry = roleMap.get(roleName) ?? {logGroups: [], functionARNs: []}
+        entry.logGroups.push(logGroup)
         entry.functionARNs.push(fn)
         roleMap.set(roleName, entry)
       } catch (err) {
@@ -200,9 +200,9 @@ export class PluginCommand extends LambdaCloudwatchCommand {
       return {successes, failures}
     }
 
-    for (const [roleName, {functionNames, functionARNs: arns}] of roleMap) {
+    for (const [roleName, {logGroups, functionARNs: arns}] of roleMap) {
       try {
-        await this.cloudwatchAction(iamClient, roleName, functionNames)
+        await this.cloudwatchAction(iamClient, roleName, logGroups)
         stdout.write(cloudwatchRenderer.renderRoleSuccess(this.action, roleName, arns))
         successes += arns.length
       } catch (err) {
