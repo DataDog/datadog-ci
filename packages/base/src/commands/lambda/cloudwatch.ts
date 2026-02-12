@@ -19,10 +19,10 @@ export class LambdaCloudwatchCommand extends BaseCommand {
     description: 'Path to the configuration file',
   })
   protected dryRun = Option.Boolean('-d,--dry,--dry-run', false, {
-    description: 'Preview changes running the command would apply',
+    description: 'Preview the changes from running the command',
   })
   protected functions = Option.Array('-f,--function', [], {
-    description: 'The ARN of the Lambda function, or the name of the Lambda function (--region must be defined)',
+    description: 'The ARN of the Lambda function, or the name of the Lambda function (`--region` must be defined)',
   })
   protected profile = Option.String('--profile', {
     description:
@@ -32,7 +32,7 @@ export class LambdaCloudwatchCommand extends BaseCommand {
     description: 'A regex pattern to match with the Lambda function name',
   })
   protected region = Option.String('-r,--region', {
-    description: 'Default region to use, when --function is specified by the function name instead of the ARN',
+    description: 'Default region to use, when `--function` is specified by the function name instead of the ARN',
   })
 
   protected fips = Option.Boolean('--fips', false)
