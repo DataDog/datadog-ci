@@ -180,7 +180,10 @@ export class PluginCommand extends LambdaCloudwatchCommand {
     const roleMap = new Map<string, {logGroups: string[]; functionARNs: string[]}>()
     for (const fn of functionARNs) {
       try {
-        const {roleName, logGroup} = await getFunctionDetails(lambdaClient, fn)
+        const {roleName, logGroup, hasExtensionLayer} = await getFunctionDetails(lambdaClient, fn)
+        if (this.action === 'disable' && !hasExtensionLayer) {
+          stdout.write(cloudwatchRenderer.renderNoExtensionWarning(fn))
+        }
         const entry = roleMap.get(roleName) ?? {logGroups: [], functionARNs: []}
         entry.logGroups.push(logGroup)
         entry.functionARNs.push(fn)

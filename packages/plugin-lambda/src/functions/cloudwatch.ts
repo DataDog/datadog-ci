@@ -1,6 +1,8 @@
 import {DeleteRolePolicyCommand, GetRolePolicyCommand, IAMClient, PutRolePolicyCommand} from '@aws-sdk/client-iam'
 import {GetFunctionCommand, LambdaClient} from '@aws-sdk/client-lambda'
 
+import {DD_LAMBDA_EXTENSION_LAYER_NAME} from '../constants'
+
 export const DENY_POLICY_NAME = 'DenyCloudWatchLogs'
 
 export const getDenyPolicyDocument = (logGroups: string[]) =>
@@ -18,7 +20,7 @@ export const getDenyPolicyDocument = (logGroups: string[]) =>
 export const getFunctionDetails = async (
   lambdaClient: LambdaClient,
   functionIdentifier: string
-): Promise<{roleName: string; functionName: string; logGroup: string}> => {
+): Promise<{roleName: string; functionName: string; logGroup: string; hasExtensionLayer: boolean}> => {
   const resp = await lambdaClient.send(new GetFunctionCommand({FunctionName: functionIdentifier}))
   const roleArn = resp.Configuration?.Role
   if (!roleArn) {
@@ -33,8 +35,10 @@ export const getFunctionDetails = async (
   // Role ARN format: arn:aws:iam::ACCOUNT:role/ROLE_NAME or arn:aws:iam::ACCOUNT:role/path/ROLE_NAME
   const roleName = roleArn.split('/').pop()!
   const logGroup = resp.Configuration?.LoggingConfig?.LogGroup ?? `/aws/lambda/${functionName}`
+  const hasExtensionLayer =
+    resp.Configuration?.Layers?.some((l) => l.Arn?.includes(DD_LAMBDA_EXTENSION_LAYER_NAME)) ?? false
 
-  return {roleName, functionName, logGroup}
+  return {roleName, functionName, logGroup, hasExtensionLayer}
 }
 
 const LOG_GROUP_RESOURCE_PATTERN = /^arn:aws:logs:\*:\*:log-group:(.+):\*$/

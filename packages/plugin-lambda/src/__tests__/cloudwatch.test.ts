@@ -28,6 +28,8 @@ import {DENY_POLICY_NAME, getDenyPolicyDocument} from '../functions/cloudwatch'
 
 import {mockAwsCredentials} from './fixtures'
 
+const MOCK_EXTENSION_LAYER = [{Arn: 'arn:aws:lambda:us-east-1:123456789012:layer:Datadog-Extension:1'}]
+
 describe('lambda cloudwatch', () => {
   const runCLI = makeRunCLI(CloudwatchCommand, ['lambda', 'cloudwatch'], {skipResetEnv: true})
   const lambdaClientMock = mockClient(LambdaClient)
@@ -385,6 +387,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
             FunctionName: 'my-func',
             Role: 'arn:aws:iam::123456789012:role/my-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
 
@@ -412,6 +415,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
             FunctionName: 'my-func',
             Role: 'arn:aws:iam::123456789012:role/my-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
 
@@ -438,6 +442,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func1',
             FunctionName: 'func1',
             Role: 'arn:aws:iam::123456789012:role/role1',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
       lambdaClientMock
@@ -447,6 +452,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:eu-west-1:123456789012:function:func2',
             FunctionName: 'func2',
             Role: 'arn:aws:iam::123456789012:role/role2',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
 
@@ -476,6 +482,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func1',
             FunctionName: 'func1',
             Role: 'arn:aws:iam::123456789012:role/shared-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
       lambdaClientMock
@@ -485,6 +492,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:func2',
             FunctionName: 'func2',
             Role: 'arn:aws:iam::123456789012:role/shared-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
 
@@ -556,6 +564,26 @@ describe('lambda cloudwatch', () => {
       })
     })
 
+    test('warns when function does not have the Datadog Extension layer', async () => {
+      lambdaClientMock
+        .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:my-func'})
+        .resolves({
+          Configuration: {
+            FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
+            FunctionName: 'my-func',
+            Role: 'arn:aws:iam::123456789012:role/my-role',
+          },
+        })
+
+      const {code, context} = await runCLI(['disable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:my-func'])
+
+      expect(code).toBe(0)
+      const output = context.stdout.toString()
+      expect(output).toContain('[Warning]')
+      expect(output).toContain('does not have the Datadog Extension layer')
+      expect(output).toContain('arn:aws:lambda:us-east-1:123456789012:function:my-func')
+    })
+
     test('handles function not found error', async () => {
       lambdaClientMock
         .on(GetFunctionCommand, {FunctionName: 'arn:aws:lambda:us-east-1:123456789012:function:missing'})
@@ -579,6 +607,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
             FunctionName: 'my-func',
             Role: 'arn:aws:iam::123456789012:role/my-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
       iamClientMock.on(PutRolePolicyCommand).rejects(new Error('Access Denied'))
@@ -645,6 +674,7 @@ describe('lambda cloudwatch', () => {
             FunctionArn: 'arn:aws:lambda:us-east-1:123456789012:function:my-func',
             FunctionName: 'my-func',
             Role: 'arn:aws:iam::123456789012:role/service-role/my-role',
+            Layers: MOCK_EXTENSION_LAYER,
           },
         })
 

@@ -1,4 +1,4 @@
-import {dryRunTag, renderError} from '@datadog/datadog-ci-base/helpers/renderer'
+import {dryRunTag, renderError, warningTag} from '@datadog/datadog-ci-base/helpers/renderer'
 import chalk from 'chalk'
 
 export const renderCloudwatchHeader = (action: 'disable' | 'enable', isDryRun: boolean) => {
@@ -33,6 +33,9 @@ export const renderRoleError = (roleName: string, functionARNs: string[], error:
 
   return renderError(`Failed processing role ${chalk.bold(roleName)} (${fns}): ${error}`)
 }
+
+export const renderNoExtensionWarning = (functionARN: string) =>
+  `${warningTag} ${chalk.bold(functionARN)} does not have the Datadog Extension layer. Disabling CloudWatch Logs without the extension means no logs will be forwarded to Datadog.\n`
 
 export const renderSummarySuccess = (action: 'disable' | 'enable', count: number) => {
   const verb = action === 'disable' ? 'disabled' : 'enabled'
