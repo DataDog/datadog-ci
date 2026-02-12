@@ -100,7 +100,8 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).not.toHaveReceivedCommand(DeleteRolePolicyCommand)
       expect(context.stdout.toString()).toBe(
         '\n[Dry Run] 🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '[Dry Run] Remove DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '[Dry Run] Remove DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully enabled CloudWatch Logs for 1 function.\n'
       )
     })
 
@@ -124,7 +125,8 @@ describe('lambda cloudwatch', () => {
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '✔ Removed DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '✔ Removed DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully enabled CloudWatch Logs for 1 function.\n'
       )
     })
 
@@ -161,7 +163,8 @@ describe('lambda cloudwatch', () => {
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
           '✔ Removed DenyCloudWatchLogs policy on role role1 for arn:aws:lambda:us-east-1:123456789012:function:func1\n' +
-          '✔ Removed DenyCloudWatchLogs policy on role role2 for arn:aws:lambda:eu-west-1:123456789012:function:func2\n'
+          '✔ Removed DenyCloudWatchLogs policy on role role2 for arn:aws:lambda:eu-west-1:123456789012:function:func2\n' +
+          '\n✔ Successfully enabled CloudWatch Logs for 2 functions.\n'
       )
     })
 
@@ -184,7 +187,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(0)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '✔ Removed DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '✔ Removed DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully enabled CloudWatch Logs for 1 function.\n'
       )
     })
 
@@ -198,7 +202,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:missing: Error: Function not found\n'
+          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:missing: Error: Function not found\n' +
+          '\n✖ Failed to enable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
 
@@ -219,7 +224,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Enabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n'
+          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n' +
+          '\n✖ Failed to enable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
 
@@ -363,7 +369,8 @@ describe('lambda cloudwatch', () => {
       expect(iamClientMock).not.toHaveReceivedCommand(PutRolePolicyCommand)
       expect(context.stdout.toString()).toBe(
         '\n[Dry Run] 🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '[Dry Run] Attach DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '[Dry Run] Attach DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully disabled CloudWatch Logs for 1 function.\n'
       )
     })
 
@@ -388,7 +395,8 @@ describe('lambda cloudwatch', () => {
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '✔ Attached DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '✔ Attached DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully disabled CloudWatch Logs for 1 function.\n'
       )
     })
 
@@ -425,7 +433,8 @@ describe('lambda cloudwatch', () => {
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
           '✔ Attached DenyCloudWatchLogs policy on role role1 for arn:aws:lambda:us-east-1:123456789012:function:func1\n' +
-          '✔ Attached DenyCloudWatchLogs policy on role role2 for arn:aws:lambda:eu-west-1:123456789012:function:func2\n'
+          '✔ Attached DenyCloudWatchLogs policy on role role2 for arn:aws:lambda:eu-west-1:123456789012:function:func2\n' +
+          '\n✔ Successfully disabled CloudWatch Logs for 2 functions.\n'
       )
     })
 
@@ -439,7 +448,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:missing: Error: Function not found\n'
+          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:missing: Error: Function not found\n' +
+          '\n✖ Failed to disable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
 
@@ -460,7 +470,8 @@ describe('lambda cloudwatch', () => {
       expect(code).toBe(1)
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n'
+          '[Error] Failed processing arn:aws:lambda:us-east-1:123456789012:function:my-func: Error: Access Denied\n' +
+          '\n✖ Failed to disable CloudWatch Logs for 1 out of 1 function. See errors above for details.\n'
       )
     })
 
@@ -529,7 +540,8 @@ describe('lambda cloudwatch', () => {
       })
       expect(context.stdout.toString()).toBe(
         '\n🐶 Disabling CloudWatch Logs for Lambda functions\n' +
-          '✔ Attached DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n'
+          '✔ Attached DenyCloudWatchLogs policy on role my-role for arn:aws:lambda:us-east-1:123456789012:function:my-func\n' +
+          '\n✔ Successfully disabled CloudWatch Logs for 1 function.\n'
       )
     })
 

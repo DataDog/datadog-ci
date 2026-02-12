@@ -100,7 +100,9 @@ export class PluginCommand extends LambdaCloudwatchCommand {
         const matchedFunctions = await getLambdaFunctionConfigsFromRegex(lambdaClient, this.regExPattern!)
         const functionARNs = matchedFunctions.map((fn) => fn.FunctionArn!).filter(Boolean)
 
-        return this.processRegion(functionARNs, lambdaClient, iamClient)
+        const result = await this.processRegion(functionARNs, lambdaClient, iamClient)
+
+        return this.writeSummary(result)
       } catch (err) {
         stdout.write(helperRenderer.renderError(`Couldn't fetch Lambda functions. ${err}`))
 
@@ -137,29 +139,48 @@ export class PluginCommand extends LambdaCloudwatchCommand {
       })
     )
 
-    return results.some((r) => r === 1) ? 1 : 0
+    const totals = results.reduce(
+      (acc, r) => ({successes: acc.successes + r.successes, failures: acc.failures + r.failures}),
+      {successes: 0, failures: 0}
+    )
+
+    return this.writeSummary(totals)
+  }
+
+  private writeSummary({successes, failures}: {successes: number; failures: number}): 0 | 1 {
+    const stdout = this.context.stdout
+    if (failures > 0) {
+      stdout.write(cloudwatchRenderer.renderSummaryFailure(this.action, successes, failures))
+
+      return 1
+    }
+    stdout.write(cloudwatchRenderer.renderSummarySuccess(this.action, successes))
+
+    return 0
   }
 
   private async processRegion(
     functionARNs: string[],
     lambdaClient: LambdaClient,
     iamClient: IAMClient
-  ): Promise<0 | 1> {
+  ): Promise<{successes: number; failures: number}> {
     const stdout = this.context.stdout
-    let hasError = false
+    let successes = 0
+    let failures = 0
 
     if (this.dryRun) {
       for (const fn of functionARNs) {
         try {
           const {roleName} = await getFunctionDetails(lambdaClient, fn)
           stdout.write(cloudwatchRenderer.renderDryRunFunctionAction(this.action, fn, roleName))
+          successes++
         } catch (err) {
-          hasError = true
+          failures++
           stdout.write(cloudwatchRenderer.renderFunctionError(fn, err))
         }
       }
 
-      return hasError ? 1 : 0
+      return {successes, failures}
     }
 
     for (const fn of functionARNs) {
@@ -167,12 +188,13 @@ export class PluginCommand extends LambdaCloudwatchCommand {
         const {roleName, functionName} = await getFunctionDetails(lambdaClient, fn)
         await this.cloudwatchAction(iamClient, roleName, functionName)
         stdout.write(cloudwatchRenderer.renderFunctionSuccess(this.action, fn, roleName))
+        successes++
       } catch (err) {
-        hasError = true
+        failures++
         stdout.write(cloudwatchRenderer.renderFunctionError(fn, err))
       }
     }
 
-    return hasError ? 1 : 0
+    return {successes, failures}
   }
 }
