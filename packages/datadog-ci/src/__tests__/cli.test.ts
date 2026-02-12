@@ -12,6 +12,13 @@ const builtins: CommandClass[] = [Builtins.HelpCommand, Builtins.VersionCommand]
 
 jest.mock('@datadog/datadog-ci-base/helpers/fips')
 
+// Prevent real network calls and expensive I/O in fips tests
+jest.mock('axios')
+jest.mock('simple-git')
+jest.mock('@datadog/datadog-ci-base/helpers/metrics')
+
+const NONEXISTENT_FILE = '/nonexistent'
+
 const supportsDryRun = (commandClass: CommandClass): boolean => {
   try {
     const testCli = new Cli()
@@ -69,6 +76,22 @@ describe('cli', () => {
     const mockedEnableFips = enableFips as jest.MockedFunction<typeof enableFips>
     mockedEnableFips.mockImplementation(() => true)
 
+    // Strip API keys so commands bail out early instead of doing real work.
+    const savedApiKey = process.env.DATADOG_API_KEY
+    const savedDDApiKey = process.env.DD_API_KEY
+    beforeAll(() => {
+      delete process.env.DATADOG_API_KEY
+      delete process.env.DD_API_KEY
+    })
+    afterAll(() => {
+      if (savedApiKey !== undefined) {
+        process.env.DATADOG_API_KEY = savedApiKey
+      }
+      if (savedDDApiKey !== undefined) {
+        process.env.DD_API_KEY = savedDDApiKey
+      }
+    })
+
     const pluginCommandPaths = new Set<string>()
     Object.entries(migratedCommands).forEach(([_, commandClasses]) => {
       commandClasses.forEach((commandClass) => {
@@ -91,18 +114,19 @@ describe('cli', () => {
       })
     })
 
-    // Without the required options, the commands are not executed at all
+    // Without the required options, the commands are not executed at all.
+    // Use non-existent paths instead of '.' to avoid scanning the whole repo tree.
     const requiredOptions: Record<string, string[]> = {
-      'coverage upload': ['.'],
+      'coverage upload': [NONEXISTENT_FILE],
       'dora deployment': ['--started-at', '0'],
-      'dsyms upload': ['.'],
-      'elf-symbols upload': ['non-existing-file'],
-      'pe-symbols upload': ['non-existing-file'],
+      'dsyms upload': [NONEXISTENT_FILE],
+      'elf-symbols upload': [NONEXISTENT_FILE],
+      'pe-symbols upload': [NONEXISTENT_FILE],
       'gate evaluate': ['--no-wait'],
-      'junit upload': ['.'],
-      'sarif upload': ['.'],
-      'sbom upload': ['.'],
-      'sourcemaps upload': ['.'],
+      'junit upload': [NONEXISTENT_FILE],
+      'sarif upload': [NONEXISTENT_FILE],
+      'sbom upload': [NONEXISTENT_FILE],
+      'sourcemaps upload': [NONEXISTENT_FILE],
       trace: ['id'],
     }
 
