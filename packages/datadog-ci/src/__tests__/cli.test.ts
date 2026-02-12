@@ -79,9 +79,11 @@ describe('cli', () => {
     // Strip API keys so commands bail out early instead of doing real work.
     const savedApiKey = process.env.DATADOG_API_KEY
     const savedDDApiKey = process.env.DD_API_KEY
+    const originalFetch = global.fetch
     beforeAll(() => {
       delete process.env.DATADOG_API_KEY
       delete process.env.DD_API_KEY
+      global.fetch = jest.fn().mockRejectedValue(new Error('fetch calls are not allowed in tests'))
     })
     afterAll(() => {
       if (savedApiKey !== undefined) {
@@ -90,6 +92,7 @@ describe('cli', () => {
       if (savedDDApiKey !== undefined) {
         process.env.DD_API_KEY = savedDDApiKey
       }
+      global.fetch = originalFetch
     })
 
     const pluginCommandPaths = new Set<string>()
