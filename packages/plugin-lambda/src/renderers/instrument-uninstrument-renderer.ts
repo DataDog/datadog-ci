@@ -61,45 +61,6 @@ export const renderExtensionAndForwarderOptionsBothSetError = () =>
   renderError('"extensionVersion" and "forwarder" should not be used at the same time.')
 
 /**
- * @param functionsCommandUsed a boolean indicating which command was used for the specified functions.
- * @returns a message indicating that option `--functions-regex`
- * is being used along with either `--functions` or the parameter
- * `functions` in a config file.
- *
- * ```txt
- * [Error] "--functions" and "--functions-regex" should not be used at the same time.
- * or
- * [Error] Functions in config file and "--functions-regex" should not be used at the same time.
- * ```
- */
-export const renderFunctionsAndFunctionsRegexOptionsBothSetError = (functionsCommandUsed: boolean) => {
-  const usedCommand = functionsCommandUsed ? '"--functions"' : 'Functions in config file'
-
-  return renderError(`${usedCommand} and "--functions-regex" should not be used at the same time.`)
-}
-
-/**
- * @returns a message indicating that `--functions-regex` argument contains `:` which is mainly used with ARNs.
- *
- * ```txt
- * [Error] "--functions-regex" isn't meant to be used with ARNs.
- * ```
- */
-export const renderRegexSetWithARNError = () => renderError(`"--functions-regex" isn't meant to be used with ARNs.`)
-
-/**
- * @param error an error message or an object of type `unknown`*.
- * @returns a message indicating that an error occurred while grouping functions.
- *
- * * Using unknown since we're not type guarding.
- *
- * ```txt
- * [Error] Couldn't group functions. The provided error goes here!
- * ```
- */
-export const renderCouldntGroupFunctionsError = (error: unknown) => renderError(`Couldn't group functions. ${error}`)
-
-/**
  * @param error an error message or an object of type `unknown`*.
  * @returns a message indicating that an error occurred while updating.
  *

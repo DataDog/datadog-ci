@@ -1789,6 +1789,7 @@ __metadata:
   resolution: "@datadog/datadog-ci-plugin-lambda@workspace:packages/plugin-lambda"
   dependencies:
     "@aws-sdk/client-cloudwatch-logs": "npm:^3.981.0"
+    "@aws-sdk/client-iam": "npm:^3.981.0"
     "@aws-sdk/client-lambda": "npm:^3.981.0"
     "@aws-sdk/credential-provider-ini": "npm:^3.972.3"
     "@aws-sdk/credential-providers": "npm:^3.981.0"

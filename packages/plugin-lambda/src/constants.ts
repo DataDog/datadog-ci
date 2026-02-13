@@ -9,7 +9,7 @@ import {
   SITE_ENV_VAR,
   VERSION_ENV_VAR,
 } from '@datadog/datadog-ci-base/helpers/serverless/constants'
-import {ConfiguredRetryStrategy} from '@smithy/util-retry'
+import {AdaptiveRetryStrategy, ConfiguredRetryStrategy} from '@smithy/util-retry'
 
 export const LAMBDA_FIPS_ENV_VAR = 'DATADOG_LAMBDA_FIPS'
 
@@ -199,3 +199,7 @@ export const EXPONENTIAL_BACKOFF_RETRY_STRATEGY = new ConfiguredRetryStrategy(
   4,
   (attempt: number) => 1000 * 2 ** (attempt - 1)
 )
+
+// Adaptive retry strategy trades off latency for a higher likelihood of succeeding
+// by dynamically adjusting request rates based on throttling responses. We'll allow a max of 3 attempts.
+export const ADAPTIVE_RETRY_STRATEGY = new AdaptiveRetryStrategy(() => Promise.resolve(3))

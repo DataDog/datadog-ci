@@ -126,6 +126,7 @@ describe('cli', () => {
       'elf-symbols upload': [NONEXISTENT_FILE],
       'pe-symbols upload': [NONEXISTENT_FILE],
       'gate evaluate': ['--no-wait'],
+      'lambda cloudwatch': ['disable', '-f', 'arn:aws:lambda:us-east-1:123456789012:function:my-func'],
       'junit upload': [NONEXISTENT_FILE],
       'sarif upload': [NONEXISTENT_FILE],
       'sbom upload': [NONEXISTENT_FILE],
