@@ -343,7 +343,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private getCoverageReportFormat(filePath: string, strict: boolean): string | undefined {
-    const format = toCoverageFormat(this.format) || detectFormat(filePath)
+    const format = toCoverageFormat(this.format) || detectFormat(filePath, strict)
     if (!format) {
       if (strict) {
         this.context.stdout.write(renderInvalidFile(filePath, `format could not be detected`))

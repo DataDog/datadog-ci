@@ -45,7 +45,7 @@ export const toCoverageFormat = (value: string | undefined): CoverageFormat | un
   throw new Error(`Invalid coverage format: ${value}`)
 }
 
-export const detectFormat = (filePath: string): CoverageFormat | undefined => {
+export const detectFormat = (filePath: string, contentSniffing = true): CoverageFormat | undefined => {
   if (!fs.existsSync(filePath)) {
     return undefined
   }
@@ -79,8 +79,12 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
     return readFirstKb(filePath, detectGoCoverprofileFormat)
   }
 
-  // Fallback content sniffing for non-standard filenames (for example, "cover.profile").
-  return readFirstKb(filePath, detectCoverageFormatByContent)
+  if (contentSniffing) {
+    // Fallback content sniffing for non-standard filenames (for example, "cover.profile").
+    return readFirstKb(filePath, detectCoverageFormatByContent)
+  } else {
+    return undefined
+  }
 }
 
 const isGoCoverprofileContent = (data: string): boolean =>
@@ -135,7 +139,8 @@ const detectCoverageFormatByContent = (data: string): CoverageFormat | undefined
     detectGoCoverprofileFormat(data) ||
     detectLcovFormat(data) ||
     detectXmlCoverageFormat(data, false) ||
-    detectSimplecovFormat(data)
+    detectSimplecovFormat(data) ||
+    detectSimplecovInternalFormat(data)
   )
 }
 
