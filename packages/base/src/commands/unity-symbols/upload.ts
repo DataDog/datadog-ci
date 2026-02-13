@@ -1,5 +1,8 @@
 import fs from 'fs'
 
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {createUniqueTmpDirectory} from '@datadog/datadog-ci-base/commands/dsyms/utils'
@@ -25,8 +28,6 @@ import {
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
 
 import * as elf from '../elf-symbols/elf'
 

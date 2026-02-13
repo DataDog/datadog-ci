@@ -1,6 +1,8 @@
 import fs from 'fs'
 import os from 'os'
 
+import upath from 'upath'
+
 import {createCommand} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import {TrackedFilesMatcher} from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
 import {
@@ -10,7 +12,6 @@ import {
   UploadStatus,
 } from '@datadog/datadog-ci-base/helpers/upload'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import upath from 'upath'
 
 import {ElfClass} from '../elf-constants'
 import {uploadMultipartHelper} from '../helpers'

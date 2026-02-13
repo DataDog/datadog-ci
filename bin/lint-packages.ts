@@ -9,7 +9,7 @@ import {diff} from 'jest-diff'
 /**
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
-const noPluginExceptions = new Set(['dsyms', 'git-metadata', 'plugin', 'tag'])
+const noPluginExceptions = new Set(['dsyms', 'elf-symbols', 'git-metadata', 'plugin', 'tag', 'unity-symbols'])
 
 /**
  * Source of truth for scope-less commands: this should be updated manually.
@@ -167,21 +167,27 @@ const formatBasePackageCliFile = () => {
   const newContent = `/* eslint-disable quote-props */
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
+
 ${imports.map((p) => `import {commands as ${p.importName}} from '${p.importPath}'`).join('\n')}
+
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
 
 // prettier-ignore
 export const commands = {
 ${imports.map((p) => `  '${p.scope}': ${p.importName},`).join('\n')}
 } satisfies RecordWithKebabCaseKeys
 
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
+
 /**
  * Some command scopes do not have a plugin package, and their logic is entirely included in \`@datadog/datadog-ci-base\`.
  */
-export const noPluginExceptions: Set<string> = new Set([${Array.from(noPluginExceptions)
-    .map((e) => `'${e}'`)
-    .join(', ')}]) satisfies Set<
-  keyof typeof commands
->
+export const noPluginExceptions: Set<string> = new Set([
+${Array.from(noPluginExceptions)
+  .map((e) => `  '${e}',`)
+  .join('\n')}
+]) satisfies Set<keyof typeof commands>
 `
 
   return makeApplyChanges(file, originalContent, newContent)

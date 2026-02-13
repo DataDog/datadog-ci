@@ -1,7 +1,8 @@
+import chalk from 'chalk'
+
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {UploadStatus} from '@datadog/datadog-ci-base/helpers/upload'
 import {pluralize} from '@datadog/datadog-ci-base/helpers/utils'
-import chalk from 'chalk'
 
 export interface UploadInfo {
   fileType: string
