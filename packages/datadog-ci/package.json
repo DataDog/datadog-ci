@@ -52,15 +52,15 @@
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "js-yaml": "4.1.1",
+    "js-yaml": "3.14.2",
     "semver": "^7.5.3",
     "typanion": "^3.14.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@types/jest": "29.5.3",
+    "@types/jest": "29.5.14",
     "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.7.1",
-    "esbuild": "^0.25.9"
+    "esbuild": "^0.25.12"
   }
 }
