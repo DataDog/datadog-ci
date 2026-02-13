@@ -1910,7 +1910,6 @@ __metadata:
     clipanion: "npm:^3.2.1"
     esbuild: "npm:^0.25.9"
     typanion: "npm:^3.14.0"
-    upath: "npm:^2.0.1"
   bin:
     datadog-ci: dist/cli.js
   languageName: unknown
