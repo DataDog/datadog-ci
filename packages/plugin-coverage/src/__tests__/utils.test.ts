@@ -165,6 +165,11 @@ describe('utils', () => {
       expect(detectFormat(filePath)).toEqual(goCoverprofileFormat)
     })
 
+    test('Detects go-coverprofile format for a non-standard go coverprofile filename', async () => {
+      const filePath = './src/__tests__/fixtures/cover.profile'
+      expect(detectFormat(filePath)).toEqual(goCoverprofileFormat)
+    })
+
     test('Returns undefined for an XML file that is not a coverage report', async () => {
       const filePath = './src/__tests__/fixtures/random-file.xml'
       expect(detectFormat(filePath)).toBeUndefined()
