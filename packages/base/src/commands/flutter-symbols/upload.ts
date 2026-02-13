@@ -1,5 +1,9 @@
 import fs from 'fs'
 
+import {Command, Option} from 'clipanion'
+import yaml from 'js-yaml'
+import semver from 'semver'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {DsymsUploadCommand} from '@datadog/datadog-ci-base/commands/dsyms/upload'
 import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
@@ -21,9 +25,6 @@ import {
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import {Command, Option} from 'clipanion'
-import yaml from 'js-yaml'
-import semver from 'semver'
 
 import {SourcemapsUploadCommand} from '../sourcemaps/upload'
 
