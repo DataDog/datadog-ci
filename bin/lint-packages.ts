@@ -23,6 +23,7 @@ const noPluginExceptions = new Set([
   'tag',
   'trace',
   'unity-symbols',
+  'version',
 ])
 
 /**
@@ -37,6 +38,8 @@ const scopeLessCommandExceptions = new Set([
   'trace',
   // `datadog-ci trace span ...`
   'span',
+  // `datadog-ci version`
+  'version',
 ])
 
 /**
