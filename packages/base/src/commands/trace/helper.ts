@@ -1,5 +1,9 @@
 import crypto from 'crypto'
 
+import {AxiosError} from 'axios'
+import chalk from 'chalk'
+import {Option} from 'clipanion'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCIProvider, getCISpanTags, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
@@ -9,9 +13,6 @@ import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-sp
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseTags} from '@datadog/datadog-ci-base/helpers/tags'
 import {getUserGitSpanTags} from '@datadog/datadog-ci-base/helpers/user-provided-git'
-import {AxiosError} from 'axios'
-import chalk from 'chalk'
-import {Option} from 'clipanion'
 
 import {apiConstructor} from './api'
 import {APIHelper, Payload, SUPPORTED_PROVIDERS} from './interfaces'
