@@ -1105,6 +1105,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@azure/identity@npm:^4.10.2":
+  version: 4.13.0
+  resolution: "@azure/identity@npm:4.13.0"
+  dependencies:
+    "@azure/abort-controller": "npm:^2.0.0"
+    "@azure/core-auth": "npm:^1.9.0"
+    "@azure/core-client": "npm:^1.9.2"
+    "@azure/core-rest-pipeline": "npm:^1.17.0"
+    "@azure/core-tracing": "npm:^1.0.0"
+    "@azure/core-util": "npm:^1.11.0"
+    "@azure/logger": "npm:^1.0.0"
+    "@azure/msal-browser": "npm:^4.2.0"
+    "@azure/msal-node": "npm:^3.5.0"
+    open: "npm:^10.1.0"
+    tslib: "npm:^2.2.0"
+  checksum: 10/8b97154ac85bb33abc0216ac7f45f41ccebaa8516db2173fbe029bbdd6c4dd227a83d7a6da6bb51c28b9189944a26cf6322bc52d79cbe4e75389e74266abc4b0
+  languageName: node
+  linkType: hard
+
 "@azure/logger@npm:^1.0.0":
   version: 1.2.0
   resolution: "@azure/logger@npm:1.2.0"
@@ -1680,7 +1699,7 @@ __metadata:
   dependencies:
     "@azure/arm-appservice": "npm:^16.0.0"
     "@azure/arm-resources": "npm:^6.1.0"
-    "@azure/identity": "npm:^4.10.1"
+    "@azure/identity": "npm:^4.10.2"
     chalk: "npm:3.0.0"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
