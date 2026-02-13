@@ -1814,7 +1814,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sarif@workspace:packages/plugin-sarif"
   dependencies:
-    "@types/jest": "npm:29.5.3"
+    "@types/jest": "npm:29.5.14"
     "@types/uuid": "npm:^9.0.2"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
@@ -1833,7 +1833,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@datadog/datadog-ci-plugin-sbom@workspace:packages/plugin-sbom"
   dependencies:
-    "@types/jest": "npm:29.5.3"
+    "@types/jest": "npm:29.5.14"
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^2.1.1"
     axios: "npm:^1.12.1"
@@ -4396,16 +4396,6 @@ __metadata:
     expect: "npm:^29.0.0"
     pretty-format: "npm:^29.0.0"
   checksum: 10/59ec7a9c4688aae8ee529316c43853468b6034f453d08a2e1064b281af9c81234cec986be796288f1bbb29efe943bc950e70c8fa8faae1e460d50e3cf9760f9b
-  languageName: node
-  linkType: hard
-
-"@types/jest@npm:29.5.3":
-  version: 29.5.3
-  resolution: "@types/jest@npm:29.5.3"
-  dependencies:
-    expect: "npm:^29.0.0"
-    pretty-format: "npm:^29.0.0"
-  checksum: 10/e8b4eda3ba379b21fcd5c2d1d531ec94f636676f1690f06ff3f7b8dc199c2cec711d4c4e122175f05d50040e5dec69f3c13ef88bd825f0b1a1ac1332eb072c12
   languageName: node
   linkType: hard
 
