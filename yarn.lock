@@ -1750,7 +1750,7 @@ __metadata:
   dependencies:
     axios: "npm:^1.12.1"
     chalk: "npm:3.0.0"
-    simple-git: "npm:3.16.0"
+    simple-git: "npm:3.16.1"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
@@ -10636,6 +10636,17 @@ __metadata:
     "@kwsites/promise-deferred": "npm:^1.1.1"
     debug: "npm:^4.3.4"
   checksum: 10/b1c4b187bff2964bab47fd1b683ece275a599e9a466f7e2689ee1fea0360f7d13228e934d66095c911e7e8b57ab5f2526e3deeeb6e4d0c03e4d5f12f7ef03cd9
+  languageName: node
+  linkType: hard
+
+"simple-git@npm:3.16.1":
+  version: 3.16.1
+  resolution: "simple-git@npm:3.16.1"
+  dependencies:
+    "@kwsites/file-exists": "npm:^1.1.1"
+    "@kwsites/promise-deferred": "npm:^1.1.1"
+    debug: "npm:^4.3.4"
+  checksum: 10/0274b31baf161769e97e94b5de8ab0e1b0085328700f8f0a17ebcb449c7bffa3ac1f8d792896a9d968bc7d17bca026a35dc2348ff14982cef0f5d27aef180d00
   languageName: node
   linkType: hard
 
