@@ -126,6 +126,7 @@
     "glob": "^10.5.0",
     "inquirer": "^8.2.6",
     "jest-diff": "^30.2.0",
+    "js-yaml": "4.1.1",
     "jszip": "^3.10.1",
     "proxy-agent": "^6.4.0",
     "semver": "^7.5.3",
@@ -140,6 +141,7 @@
     "@types/debug": "^4.1.12",
     "@types/deep-extend": "0.4.31",
     "@types/inquirer": "8.2.6",
+    "@types/js-yaml": "^4.0.5",
     "@types/semver": "^7.7.1",
     "@types/tiny-async-pool": "^2.0.3",
     "proxy": "^2.1.1"
