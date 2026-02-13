@@ -2,12 +2,13 @@
 import {spawn} from 'child_process'
 import {existsSync, readFileSync, statSync, unlinkSync, writeFileSync} from 'fs'
 
+import {Cli, Command, Option} from 'clipanion'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {parsePlist} from '@datadog/datadog-ci-base/helpers/plist'
-import {Cli, Command, Option} from 'clipanion'
 
 import {ReactNativeUploadCommand} from './upload'
 import {getReactNativeVersion} from './utils'
