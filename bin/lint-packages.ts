@@ -14,11 +14,14 @@ const noPluginExceptions = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'measure',
   'pe-symbols',
   'plugin',
   'react-native',
   'sourcemaps',
+  'span',
   'tag',
+  'trace',
   'unity-symbols',
 ])
 
