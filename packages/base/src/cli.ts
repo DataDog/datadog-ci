@@ -16,6 +16,7 @@ import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as junitCommands} from './commands/junit/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
+import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
@@ -42,6 +43,7 @@ export const commands = {
   'git-metadata': gitMetadataCommands,
   'junit': junitCommands,
   'lambda': lambdaCommands,
+  'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
@@ -62,6 +64,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'pe-symbols',
   'plugin',
   'sourcemaps',
   'tag',
