@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {SourcemapsUploadCommand} from './upload'
 
-export const commands = [SourcemapsUploadCommand]
+// prettier-ignore
+export const commands = [
+  SourcemapsUploadCommand,
+]
