@@ -1,5 +1,8 @@
 import fs from 'fs'
 
+import {Command, Option} from 'clipanion'
+import upath from 'upath'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -22,8 +25,6 @@ import {
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import {Command, Option} from 'clipanion'
-import upath from 'upath'
 
 import {getBreakpadSymMetadata} from './breakpad'
 import {getPERequestBuilder, uploadMultipartHelper} from './helpers'
