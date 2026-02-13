@@ -30,11 +30,12 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames.length).toEqual(11)
+      expect(fileNames.length).toEqual(13)
       expect(fileNames).toContain('src/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/subfolder.xml/nested-Jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/lcov.info')
+      expect(fileNames).toContain('src/__tests__/fixtures/lcov-bazel.info')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.json')
       expect(fileNames).toContain('src/__tests__/fixtures/.resultset.json')
       expect(fileNames).toContain('src/__tests__/fixtures/clover.xml')
@@ -42,6 +43,7 @@ describe('upload', () => {
       expect(fileNames).toContain('src/__tests__/fixtures/subfolder.xml/opencover-coverage.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/subfolder.xml/cobertura.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.out')
+      expect(fileNames).toContain('src/__tests__/fixtures/cover.profile')
     })
 
     test('should filter by format', () => {
@@ -66,15 +68,17 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames.length).toEqual(8)
+      expect(fileNames.length).toEqual(10)
       expect(fileNames).toContain('src/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/lcov.info')
+      expect(fileNames).toContain('src/__tests__/fixtures/lcov-bazel.info')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.json')
       expect(fileNames).toContain('src/__tests__/fixtures/.resultset.json')
       expect(fileNames).toContain('src/__tests__/fixtures/clover.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/clover-php.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.out')
+      expect(fileNames).toContain('src/__tests__/fixtures/cover.profile')
     })
 
     test('should read all coverage report files excluding ignored paths specified partially', () => {
@@ -85,15 +89,17 @@ describe('upload', () => {
       const result = command['getMatchingCoverageReportFilesByFormat']()
       const fileNames = Object.values(result).flatMap((paths) => paths)
 
-      expect(fileNames.length).toEqual(8)
+      expect(fileNames.length).toEqual(10)
       expect(fileNames).toContain('src/__tests__/fixtures/other-Jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/jacoco-report.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/lcov.info')
+      expect(fileNames).toContain('src/__tests__/fixtures/lcov-bazel.info')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.json')
       expect(fileNames).toContain('src/__tests__/fixtures/.resultset.json')
       expect(fileNames).toContain('src/__tests__/fixtures/clover.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/clover-php.xml')
       expect(fileNames).toContain('src/__tests__/fixtures/coverage.out')
+      expect(fileNames).toContain('src/__tests__/fixtures/cover.profile')
     })
 
     test('should allow specifying files directly', () => {
