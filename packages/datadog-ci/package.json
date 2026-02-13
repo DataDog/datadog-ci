@@ -49,7 +49,7 @@
     "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
-    "axios": "^1.12.1",
+    "axios": "^1.13.5",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
     "js-yaml": "4.1.1",
