@@ -12,6 +12,7 @@ import {diff} from 'jest-diff'
 const noPluginExceptions = new Set([
   'dsyms',
   'elf-symbols',
+  'flutter-symbols',
   'git-metadata',
   'plugin',
   'sourcemaps',
