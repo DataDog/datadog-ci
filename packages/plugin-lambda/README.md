@@ -60,6 +60,8 @@ See the configuration section for additional settings.
 
 Run `datadog-ci lambda cloudwatch` to enable or disable CloudWatch Logs for Lambda functions by attaching or removing a deny policy on the function's IAM role.
 
+**Note:** If you have multiple Lambda functions which share the same log group and execution role, disabling CloudWatch logs for one of the functions will affect the other functions using the execution role and log group. If you would only like to disable only a subset, consider using one log group per function.
+
 ```bash
 # Disable CloudWatch Logs for functions specified by names
 datadog-ci lambda cloudwatch disable -f <function-name> -f <another-function-name> -r us-east-1
