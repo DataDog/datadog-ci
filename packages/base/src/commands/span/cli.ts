@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {SpanCommand} from './span'
 
-export const commands = [SpanCommand]
+// prettier-ignore
+export const commands = [
+  SpanCommand,
+]
