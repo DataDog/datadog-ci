@@ -7,12 +7,13 @@ export const DART_SYMBOL_FILE_NAME = 'flutter_symbol_file'
 
 export interface MappingMetadata {
   arch?: string
+  build_id?: string
   cli_version: string
   git_commit_sha?: string
   git_repository_url?: string
   platform?: string
-  service: string
+  service?: string
   type: string
-  variant: string
-  version: string
+  variant?: string
+  version?: string
 }

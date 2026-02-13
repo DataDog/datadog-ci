@@ -475,6 +475,59 @@ describe('flutter-symbol upload', () => {
       expect(uploadMultipartHelper).not.toHaveBeenCalled()
       expect(exitCode).toBe(0)
     })
+
+    test('allows Android mapping upload with build_id without service name or version', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/fake-mapping.txt`
+        cmd['buildId'] = 'test-build-id-123'
+      })
+
+      expect(exitCode).toBe(0)
+      expect(uploadMultipartHelper).toHaveBeenCalled()
+    })
+
+    test('creates correct metadata payload with build_id', () => {
+      const command = createCommand(FlutterSymbolsUploadCommand)
+      mockGitRepoParameters(command)
+      command['buildId'] = 'test-build-id-456'
+
+      const metadata = command['getAndroidMetadata']()
+
+      expect(metadata).toEqual({
+        build_id: 'test-build-id-456',
+        cli_version: cliVersion,
+        git_commit_sha: 'fake-git-hash',
+        git_repository_url: 'fake-git-remote',
+        type: 'jvm_mapping_file',
+      })
+    })
+
+    test('uploads correct multipart payload with build_id', async () => {
+      ;(uploadMultipartHelper as jest.Mock).mockResolvedValueOnce('')
+
+      const {exitCode} = await runCommand((cmd) => {
+        cmd['androidMappingLocation'] = `${fixtureDir}/android/fake-mapping.txt`
+        cmd['buildId'] = 'test-build-id-789'
+      })
+
+      const expectedMetadata = {
+        build_id: 'test-build-id-789',
+        cli_version: cliVersion,
+        type: 'jvm_mapping_file',
+      }
+
+      expect(uploadMultipartHelper).toHaveBeenCalled()
+      const payload = (uploadMultipartHelper as jest.Mock).mock.calls[0][1] as MultipartPayload
+      expect(JSON.parse((payload.content.get('event') as MultipartStringValue).value)).toStrictEqual(expectedMetadata)
+      const mappingFileItem = payload.content.get('jvm_mapping_file') as MultipartFileValue
+      expect(mappingFileItem).toBeTruthy()
+      expect(mappingFileItem.options.filename).toBe('jvm_mapping')
+      expect(mappingFileItem.path).toBe(`${fixtureDir}/android/fake-mapping.txt`)
+      expect(exitCode).toBe(0)
+    })
+
   })
 
   describe('web symbols upload', () => {

@@ -79,6 +79,7 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
 
   private androidMapping = Option.Boolean('--android-mapping', false)
   private androidMappingLocation = Option.String('--android-mapping-location')
+  private buildId = Option.String('--build-id')
   private webSourceMaps = Option.Boolean('--web-sourcemaps', false)
   private webSourceMapsLocation = Option.String('--web-sourcemaps-location')
   private minifiedPathPrefix = Option.String('--minified-path-prefix')
@@ -252,15 +253,18 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
 
   private getMappingMetadata(type: string, platform?: string, arch?: string): MappingMetadata {
     return {
-      arch,
+      ...(arch && {arch}),
+      ...(this.buildId && {build_id: this.buildId}),
       cli_version: this.cliVersion,
-      git_commit_sha: this.gitData?.hash,
-      git_repository_url: this.gitData?.remote,
-      platform,
-      service: this.serviceName!,
+      ...(this.gitData?.hash && {git_commit_sha: this.gitData.hash}),
+      ...(this.gitData?.remote && {git_repository_url: this.gitData.remote}),
+      ...(platform && {platform}),
+      ...(!this.buildId && {
+        service: this.serviceName!,
+        variant: this.flavor,
+        version: this.getSanitizedVersion(),
+      }),
       type,
-      variant: this.flavor,
-      version: this.getSanitizedVersion(),
     }
   }
 
@@ -496,7 +500,10 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
   private async verifyParameters(): Promise<boolean> {
     let parametersOkay = true
 
-    if (!this.serviceName) {
+    // If build_id is provided for Android mapping, service name is not required
+    const buildIdProvidedForAndroid = this.buildId && (this.androidMapping || this.androidMappingLocation)
+
+    if (!this.serviceName && !buildIdProvidedForAndroid) {
       this.context.stderr.write(renderArgumentMissingError('service-name'))
       parametersOkay = false
     }
@@ -541,16 +548,19 @@ export class FlutterSymbolsUploadCommand extends BaseCommand {
     }
 
     // If version is not provided or is empty/whitespace, try to get it from pubspec
-    if (!this.version || this.version.trim().length === 0) {
-      if (await this.parsePubspecVersion(this.pubspecLocation)) {
+    // Skip version requirement if build_id is provided for Android mapping
+    if (!buildIdProvidedForAndroid) {
+      if (!this.version || this.version.trim().length === 0) {
+        if (await this.parsePubspecVersion(this.pubspecLocation)) {
+          parametersOkay = false
+        }
+      }
+
+      // Final validation: ensure we have a non-empty version after all resolution attempts
+      if (!this.version || this.version.trim().length === 0) {
+        this.context.stderr.write(renderArgumentMissingError('version'))
         parametersOkay = false
       }
-    }
-
-    // Final validation: ensure we have a non-empty version after all resolution attempts
-    if (!this.version || this.version.trim().length === 0) {
-      this.context.stderr.write(renderArgumentMissingError('version'))
-      parametersOkay = false
     }
 
     return parametersOkay
