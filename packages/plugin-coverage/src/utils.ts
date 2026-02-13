@@ -61,35 +61,11 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
       filename.includes('cobertura') ||
       filename.includes('clover'))
   ) {
-    return readFirstKb(filePath, (data) => {
-      if (data.includes('<CoverageSession')) {
-        return opencoverFormat
-      } else if (
-        (data.includes('<!DOCTYPE coverage') && data.includes('cobertura.sourceforge.net/xml/coverage')) ||
-        (data.includes('<coverage') && data.includes('line-rate='))
-      ) {
-        return coberturaFormat
-      } else if (
-        (data.includes('<!DOCTYPE report') && data.includes('-//JACOCO//DTD Report')) ||
-        data.includes('<report')
-      ) {
-        return jacocoFormat
-      } else if (data.includes('<coverage') && data.includes('<project')) {
-        return cloverFormat
-      }
-    })
+    return readFirstKb(filePath, (data) => detectXmlCoverageFormat(data, true))
   } else if (extension === '.json' && filename.includes('coverage')) {
-    return readFirstKb(filePath, (data) => {
-      if (data.includes('simplecov_version')) {
-        return simplecovFormat
-      }
-    })
+    return readFirstKb(filePath, detectSimplecovFormat)
   } else if (filename === '.resultset.json') {
-    return readFirstKb(filePath, (data) => {
-      if (data.includes('coverage') && data.includes('lines')) {
-        return simplecovInternalFormat
-      }
-    })
+    return readFirstKb(filePath, detectSimplecovInternalFormat)
   } else if (
     extension === '.lcov' ||
     extension === '.lcov.info' ||
@@ -98,19 +74,69 @@ export const detectFormat = (filePath: string): CoverageFormat | undefined => {
     filename === 'lcov-report.info' ||
     filename === 'lcov.dat'
   ) {
-    return readFirstKb(filePath, (data) => {
-      return data.startsWith('TN:') || data.startsWith('SF:') ? lcovFormat : undefined
-    })
+    return readFirstKb(filePath, detectLcovFormat)
   } else if (extension === '.out' || filename.includes('coverage')) {
-    return readFirstKb(filePath, (data) => {
-      const hasCorrectMode =
-        data.startsWith('mode: set') || data.startsWith('mode: count') || data.startsWith('mode: atomic')
+    return readFirstKb(filePath, detectGoCoverprofileFormat)
+  }
 
-      return hasCorrectMode ? goCoverprofileFormat : undefined
-    })
+  // Fallback content sniffing for non-standard filenames (for example, "cover.profile").
+  return readFirstKb(filePath, detectCoverageFormatByContent)
+}
+
+const isGoCoverprofileContent = (data: string): boolean =>
+  data.startsWith('mode: set') || data.startsWith('mode: count') || data.startsWith('mode: atomic')
+
+const isLcovContent = (data: string): boolean => data.startsWith('TN:') || data.startsWith('SF:')
+
+const detectGoCoverprofileFormat = (data: string): CoverageFormat | undefined => {
+  return isGoCoverprofileContent(data) ? goCoverprofileFormat : undefined
+}
+
+const detectLcovFormat = (data: string): CoverageFormat | undefined => {
+  return isLcovContent(data) ? lcovFormat : undefined
+}
+
+const detectSimplecovFormat = (data: string): CoverageFormat | undefined => {
+  return data.includes('simplecov_version') ? simplecovFormat : undefined
+}
+
+const detectSimplecovInternalFormat = (data: string): CoverageFormat | undefined => {
+  return data.includes('coverage') && data.includes('lines') ? simplecovInternalFormat : undefined
+}
+
+const detectXmlCoverageFormat = (data: string, allowLooseJacocoMatch: boolean): CoverageFormat | undefined => {
+  if (data.includes('<CoverageSession')) {
+    return opencoverFormat
+  }
+
+  if (
+    (data.includes('<!DOCTYPE coverage') && data.includes('cobertura.sourceforge.net/xml/coverage')) ||
+    (data.includes('<coverage') && data.includes('line-rate='))
+  ) {
+    return coberturaFormat
+  }
+
+  if (
+    (data.includes('<!DOCTYPE report') && data.includes('-//JACOCO//DTD Report')) ||
+    (allowLooseJacocoMatch && data.includes('<report'))
+  ) {
+    return jacocoFormat
+  }
+
+  if (data.includes('<coverage') && data.includes('<project')) {
+    return cloverFormat
   }
 
   return undefined
+}
+
+const detectCoverageFormatByContent = (data: string): CoverageFormat | undefined => {
+  return (
+    detectGoCoverprofileFormat(data) ||
+    detectLcovFormat(data) ||
+    detectXmlCoverageFormat(data, false) ||
+    detectSimplecovFormat(data)
+  )
 }
 
 const readFirstKb = (
@@ -121,8 +147,8 @@ const readFirstKb = (
   try {
     fd = fs.openSync(filePath, 'r')
     const buffer = Buffer.alloc(1024)
-    fs.readSync(fd, buffer, 0, 1024, 0)
-    const data = buffer.toString('utf8')
+    const bytesRead = fs.readSync(fd, buffer, 0, 1024, 0)
+    const data = buffer.toString('utf8', 0, bytesRead)
 
     return action(data)
   } catch (error) {
