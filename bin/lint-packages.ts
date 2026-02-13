@@ -16,6 +16,7 @@ const noPluginExceptions = new Set([
   'git-metadata',
   'pe-symbols',
   'plugin',
+  'react-native',
   'sourcemaps',
   'tag',
   'unity-symbols',
