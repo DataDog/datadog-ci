@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {FlutterSymbolsUploadCommand} from './upload'
 
-export const commands = [FlutterSymbolsUploadCommand]
+// prettier-ignore
+export const commands = [
+  FlutterSymbolsUploadCommand,
+]
