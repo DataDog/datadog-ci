@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {MeasureCommand} from './measure'
 
-export const commands = [MeasureCommand]
+// prettier-ignore
+export const commands = [
+  MeasureCommand,
+]

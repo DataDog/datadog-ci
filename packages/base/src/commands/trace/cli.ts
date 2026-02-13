@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {TraceCommand} from './trace'
 
-export const commands = [TraceCommand]
+// prettier-ignore
+export const commands = [
+  TraceCommand,
+]

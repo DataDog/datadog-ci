@@ -16,15 +16,18 @@ import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as junitCommands} from './commands/junit/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
+import {commands as measureCommands} from './commands/measure/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as reactNativeCommands} from './commands/react-native/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
 import {commands as sourcemapsCommands} from './commands/sourcemaps/cli'
+import {commands as spanCommands} from './commands/span/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
+import {commands as traceCommands} from './commands/trace/cli'
 import {commands as unitySymbolsCommands} from './commands/unity-symbols/cli'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
@@ -44,15 +47,18 @@ export const commands = {
   'git-metadata': gitMetadataCommands,
   'junit': junitCommands,
   'lambda': lambdaCommands,
+  'measure': measureCommands,
   'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
   'react-native': reactNativeCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
   'sourcemaps': sourcemapsCommands,
+  'span': spanCommands,
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
+  'trace': traceCommands,
   'unity-symbols': unitySymbolsCommands,
 } satisfies RecordWithKebabCaseKeys
 
@@ -66,10 +72,13 @@ export const noPluginExceptions: Set<string> = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'measure',
   'pe-symbols',
   'plugin',
   'react-native',
   'sourcemaps',
+  'span',
   'tag',
+  'trace',
   'unity-symbols',
 ]) satisfies Set<keyof typeof commands>
