@@ -43,12 +43,12 @@
     "axios": "^1.12.1",
     "chalk": "3.0.0",
     "form-data": "^4.0.4",
-    "simple-git": "3.16.0",
+    "simple-git": "3.16.1",
     "upath": "^2.0.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/jest": "29.5.3",
+    "@types/jest": "29.5.14",
     "@types/uuid": "^9.0.2"
   }
 }
