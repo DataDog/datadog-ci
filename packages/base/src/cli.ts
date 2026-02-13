@@ -29,6 +29,7 @@ import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
 import {commands as traceCommands} from './commands/trace/cli'
 import {commands as unitySymbolsCommands} from './commands/unity-symbols/cli'
+import {commands as versionCommands} from './commands/version/cli'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
 
@@ -60,6 +61,7 @@ export const commands = {
   'tag': tagCommands,
   'trace': traceCommands,
   'unity-symbols': unitySymbolsCommands,
+  'version': versionCommands,
 } satisfies RecordWithKebabCaseKeys
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
@@ -81,4 +83,5 @@ export const noPluginExceptions: Set<string> = new Set([
   'tag',
   'trace',
   'unity-symbols',
+  'version',
 ]) satisfies Set<keyof typeof commands>
