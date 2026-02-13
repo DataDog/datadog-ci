@@ -40,7 +40,7 @@
   "dependencies": {
     "@azure/arm-appcontainers": "^3.0.0",
     "@azure/arm-resources": "^6.1.0",
-    "@azure/identity": "^4.10.1",
+    "@azure/identity": "^4.10.2",
     "chalk": "3.0.0"
   }
 }
