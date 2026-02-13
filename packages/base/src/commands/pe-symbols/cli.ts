@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {PeSymbolsUploadCommand} from './upload'
 
-export const commands = [PeSymbolsUploadCommand]
+// prettier-ignore
+export const commands = [
+  PeSymbolsUploadCommand,
+]
