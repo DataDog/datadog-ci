@@ -18,6 +18,7 @@ import {commands as junitCommands} from './commands/junit/cli'
 import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as peSymbolsCommands} from './commands/pe-symbols/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
+import {commands as reactNativeCommands} from './commands/react-native/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
 import {commands as sourcemapsCommands} from './commands/sourcemaps/cli'
@@ -45,6 +46,7 @@ export const commands = {
   'lambda': lambdaCommands,
   'pe-symbols': peSymbolsCommands,
   'plugin': pluginCommands,
+  'react-native': reactNativeCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
   'sourcemaps': sourcemapsCommands,
@@ -66,6 +68,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'git-metadata',
   'pe-symbols',
   'plugin',
+  'react-native',
   'sourcemaps',
   'tag',
   'unity-symbols',
