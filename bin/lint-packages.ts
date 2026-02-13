@@ -23,6 +23,7 @@ const noPluginExceptions = new Set([
   'tag',
   'trace',
   'unity-symbols',
+  'version',
 ])
 
 /**
@@ -37,6 +38,8 @@ const scopeLessCommandExceptions = new Set([
   'trace',
   // `datadog-ci trace span ...`
   'span',
+  // `datadog-ci version`
+  'version',
 ])
 
 /**
@@ -271,7 +274,7 @@ const pluginPackages = fs
     } catch {
       console.log(chalk.bold.red(`Invalid state for ${folder}.`))
       console.log(
-        `Did you recently run ${chalk.bold(`yarn plugin:create ${scope}`)}? Please either run ${chalk.bold(`bin/migrate.sh ${scope}`)} and finish the migration, or complete the structure of the plugin before merging your PR.`
+        `Did you recently run ${chalk.bold(`yarn plugin:create ${scope}`)}? Please complete the structure of the plugin before merging your PR.`
       )
       process.exit(1)
     }

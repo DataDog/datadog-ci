@@ -1,4 +1,4 @@
-import {commands as migratedCommands, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
+import {commands as commandDeclarations, noPluginExceptions} from '@datadog/datadog-ci-base/cli'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {PluginSubModule} from '@datadog/datadog-ci-base/helpers/plugin'
 import {Builtins, Cli, CommandClass} from 'clipanion'
@@ -96,7 +96,7 @@ describe('cli', () => {
     })
 
     const pluginCommandPaths = new Set<string>()
-    Object.entries(migratedCommands).forEach(([_, commandClasses]) => {
+    Object.entries(commandDeclarations).forEach(([_, commandClasses]) => {
       commandClasses.forEach((commandClass) => {
         // We assume the first path is always the real import, and other paths are only aliases.
         const [scope, command] = commandClass.paths?.[0] ?? []
