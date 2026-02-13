@@ -18,6 +18,7 @@ import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
+import {commands as sourcemapsCommands} from './commands/sourcemaps/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
@@ -42,6 +43,7 @@ export const commands = {
   'plugin': pluginCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
+  'sourcemaps': sourcemapsCommands,
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
@@ -58,6 +60,7 @@ export const noPluginExceptions: Set<string> = new Set([
   'elf-symbols',
   'git-metadata',
   'plugin',
+  'sourcemaps',
   'tag',
   'unity-symbols',
 ]) satisfies Set<keyof typeof commands>
