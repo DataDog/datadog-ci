@@ -1,3 +1,6 @@
+import chalk from 'chalk'
+import {Cli} from 'clipanion'
+
 import {CommandContext} from '@datadog/datadog-ci-base'
 import {
   createCommand,
@@ -6,8 +9,6 @@ import {
 } from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as APIKeyHelpers from '@datadog/datadog-ci-base/helpers/apikey'
 import {MultipartStringValue} from '@datadog/datadog-ci-base/helpers/upload'
-import chalk from 'chalk'
-import {Cli} from 'clipanion'
 
 import {RNSourcemap} from '../interfaces'
 import {ReactNativeUploadCommand} from '../upload'

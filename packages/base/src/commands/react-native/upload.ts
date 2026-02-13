@@ -1,3 +1,6 @@
+import chalk from 'chalk'
+import {Command, Option} from 'clipanion'
+
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
@@ -18,8 +21,6 @@ import {getRequestBuilder, resolveConfigFromFileAndEnvironment} from '@datadog/d
 import * as validation from '@datadog/datadog-ci-base/helpers/validation'
 import {checkAPIKeyOverride} from '@datadog/datadog-ci-base/helpers/validation'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
-import chalk from 'chalk'
-import {Command, Option} from 'clipanion'
 
 import {RNPlatform, RNSourcemap, RN_SUPPORTED_PLATFORMS} from './interfaces'
 import {

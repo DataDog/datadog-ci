@@ -1,8 +1,9 @@
 import {readFileSync, writeFileSync} from 'fs'
 
+import {Cli} from 'clipanion'
+
 import {createMockContext, getEnvVarPlaceholders} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 import * as formatGitSourcemapsData from '@datadog/datadog-ci-base/helpers/git/format-git-sourcemaps-data'
-import {Cli} from 'clipanion'
 
 import * as utils from '../utils'
 import {ReactNativeXcodeCommand} from '../xcode'
