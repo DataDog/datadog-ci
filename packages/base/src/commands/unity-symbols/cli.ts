@@ -1,3 +1,7 @@
+/* eslint-disable import-x/order */
 import {UnitySymbolsUploadCommand} from './upload'
 
-export const commands = [UnitySymbolsUploadCommand]
+// prettier-ignore
+export const commands = [
+  UnitySymbolsUploadCommand,
+]

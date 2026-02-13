@@ -21,6 +21,7 @@ import {commands as sbomCommands} from './commands/sbom/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
+import {commands as unitySymbolsCommands} from './commands/unity-symbols/cli'
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
 
@@ -44,6 +45,7 @@ export const commands = {
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
+  'unity-symbols': unitySymbolsCommands,
 } satisfies RecordWithKebabCaseKeys
 
 // DO NOT EDIT MANUALLY. Update the source of truth in `bin/lint-packages.ts` instead.
@@ -57,4 +59,5 @@ export const noPluginExceptions: Set<string> = new Set([
   'git-metadata',
   'plugin',
   'tag',
+  'unity-symbols',
 ]) satisfies Set<keyof typeof commands>

@@ -8,7 +8,6 @@ import {commands as reactNativeCommands} from './react-native/cli'
 import {commands as sourcemapsCommands} from './sourcemaps/cli'
 import {commands as spanCommands} from './span/cli'
 import {commands as traceCommands} from './trace/cli'
-import {commands as unitySymbolsCommands} from './unity-symbols/cli'
 import {commands as versionCommands} from './version/cli'
 
 // prettier-ignore
@@ -20,6 +19,5 @@ export const commands = {
   'sourcemaps': sourcemapsCommands,
   'span': spanCommands,
   'trace': traceCommands,
-  'unity-symbols': unitySymbolsCommands,
   'version': versionCommands,
 } satisfies RecordWithKebabCaseKeys
