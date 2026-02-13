@@ -17,6 +17,12 @@ type OptionDefinition = {
   hidden?: boolean
 }
 
+type PositionalDefinition = {
+  name: string
+  description: string
+  required: boolean
+}
+
 const error = (message: string): 1 => {
   console.log(chalk.red(message))
 
@@ -29,40 +35,70 @@ const success = (message: string): 0 => {
   return 0
 }
 
+type SourceInfo = {
+  booleanDefaults: Map<string, string>
+  positionals: PositionalDefinition[]
+}
+
 /**
- * Extract Boolean option defaults from source file
- * Parses the source code to find Option.Boolean(flags, defaultValue, ...) patterns
+ * Extract boolean option defaults and positional args from source code
  */
-const extractBooleanDefaults = (filePath: string): Map<string, string> => {
+const extractSourceInfo = (sourceCode: string): SourceInfo => {
   const booleanDefaults = new Map<string, string>()
+  const positionals: PositionalDefinition[] = []
 
-  try {
-    const sourceCode = fs.readFileSync(filePath, 'utf8')
+  // Match: Option.Boolean('flags', true/false, ...)
+  // Handles both single and double quotes
+  const booleanDefaultRegex = /Option\.Boolean\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(true|false)/g
 
-    // Match: Option.Boolean('flags', true/false, ...)
-    // Handles both single and double quotes
-    const booleanDefaultRegex = /Option\.Boolean\s*\(\s*['"`]([^'"`]+)['"`]\s*,\s*(true|false)/g
+  let match
+  // eslint-disable-next-line no-null/no-null
+  while ((match = booleanDefaultRegex.exec(sourceCode)) !== null) {
+    const flagsString = match[1]
+    const defaultVal = match[2]
 
-    let match
-    // eslint-disable-next-line no-null/no-null
-    while ((match = booleanDefaultRegex.exec(sourceCode)) !== null) {
-      const flagsString = match[1]
-      const defaultVal = match[2]
+    // Split flags by comma and trim each
+    const flags = flagsString.split(',').map((f) => f.trim())
 
-      // Split flags by comma and trim each
-      const flags = flagsString.split(',').map((f) => f.trim())
-
-      // Store mapping for each flag
-      flags.forEach((flag) => {
-        booleanDefaults.set(flag, defaultVal)
-      })
-    }
-  } catch (err) {
-    // If we can't read the file, just return empty map
-    console.warn(`Warning: Could not read ${filePath} for Boolean defaults extraction`)
+    // Store mapping for each flag
+    flags.forEach((flag) => {
+      booleanDefaults.set(flag, defaultVal)
+    })
   }
 
-  return booleanDefaults
+  // Match positional args: public/protected/private name = Option.String({...}) or Option.String()
+  // Positional args have no flag string as first argument — either bare () or ({...})
+  const positionalRegex = /(public|protected|private)\s+(\w+)\s*=\s*Option\.String\((\{[^}]*\})?\)/g
+
+  // eslint-disable-next-line no-null/no-null
+  while ((match = positionalRegex.exec(sourceCode)) !== null) {
+    const name = match[2]
+    const opts = match[3] || ''
+
+    const required = !opts.includes('required: false')
+
+    // Extract enum values from validator: t.isEnum([...])
+    let description = ''
+    const enumMatch = opts.match(/isEnum\(\[([^\]]+)\]/)
+    if (enumMatch) {
+      const values = enumMatch[1]
+        .split(',')
+        .map((v) =>
+          v
+            .trim()
+            .replace(/['"]/g, '')
+            .replace(/\s+as\s+const/, '')
+        )
+        .filter((v) => v.length > 0)
+      if (values.length > 0) {
+        description = `One of ${values.map((v) => `"${v}"`).join(' or ')}`
+      }
+    }
+
+    positionals.push({name, description, required})
+  }
+
+  return {booleanDefaults, positionals}
 }
 
 /**
@@ -163,7 +199,7 @@ const extractOptionsFromCommand = (
 /**
  * Generate markdown table from options
  */
-const generateTable = (options: OptionDefinition[]): string => {
+const generateTable = (options: OptionDefinition[], positionals: PositionalDefinition[] = []): string => {
   // Filter out universal options that shouldn't be in individual READMEs and hidden options
   const excludedFlags = ['--fips', '--fips-ignore-error']
   const filteredOptions = options.filter(
@@ -173,6 +209,12 @@ const generateTable = (options: OptionDefinition[]): string => {
   const rows: string[] = []
   rows.push('| Argument | Shorthand | Description | Default |')
   rows.push('| -------- | --------- | ----------- | ------- |')
+
+  // Positional args first
+  for (const pos of positionals) {
+    const argument = pos.required ? `\`<${pos.name}>\`` : `\`[${pos.name}]\``
+    rows.push(`| ${argument} |  | ${pos.description} |  |`)
+  }
 
   for (const option of filteredOptions) {
     const argument = option.flags.length > 0 ? `\`${option.flags.join('` or `')}\`` : ''
@@ -209,16 +251,38 @@ const findCommandFiles = (scope: string): {commandName: string; filePath: string
 /**
  * Extract options from a command file by dynamically importing its command class
  */
+type CommandFileResult = {
+  options: OptionDefinition[]
+  positionals: PositionalDefinition[]
+  booleanDefaults: Map<string, string>
+}
+
 const extractOptionsFromFile = async (
   filePath: string,
-  booleanDefaults?: Map<string, string>
-): Promise<OptionDefinition[]> => {
+  extraBooleanDefaults?: Map<string, string>
+): Promise<CommandFileResult> => {
   // Convert file path to import path
   // e.g., packages/base/src/commands/lambda/instrument.ts -> @datadog/datadog-ci-base/commands/lambda/instrument
   const importPath = filePath.replace('packages/base/src/', '@datadog/datadog-ci-base/').replace('.ts', '')
 
-  // Extract Boolean defaults from source file if not provided
-  const defaults = booleanDefaults || extractBooleanDefaults(filePath)
+  // Read file once and extract all source-level info
+  let sourceInfo: SourceInfo = {booleanDefaults: new Map(), positionals: []}
+  try {
+    const sourceCode = fs.readFileSync(filePath, 'utf8')
+    sourceInfo = extractSourceInfo(sourceCode)
+  } catch {
+    console.warn(`Warning: Could not read ${filePath}`)
+  }
+
+  const mergedDefaults = extraBooleanDefaults
+    ? new Map([...extraBooleanDefaults, ...sourceInfo.booleanDefaults])
+    : sourceInfo.booleanDefaults
+
+  const emptyResult: CommandFileResult = {
+    options: [],
+    positionals: sourceInfo.positionals,
+    booleanDefaults: sourceInfo.booleanDefaults,
+  }
 
   try {
     const module = await import(importPath)
@@ -229,21 +293,23 @@ const extractOptionsFromFile = async (
     )
 
     if (!commandClass) {
-      return []
+      return emptyResult
     }
 
-    return extractOptionsFromCommand(commandClass, defaults)
+    return {...emptyResult, options: extractOptionsFromCommand(commandClass, mergedDefaults)}
   } catch (err) {
     console.error(`Error importing ${importPath}:`, err)
 
-    return []
+    return emptyResult
   }
 }
 
 /**
  * Update README with generated usage tables
  */
-const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionDefinition[]>): 0 | 1 => {
+type CommandData = {options: OptionDefinition[]; positionals: PositionalDefinition[]}
+
+const updateReadme = (readmePath: string, commandOptionsMap: Map<string, CommandData>): 0 | 1 => {
   if (!fs.existsSync(readmePath)) {
     return success(`${chalk.bold(readmePath)} does not exist, skipping...`)
   }
@@ -251,7 +317,7 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
   const originalContent = fs.readFileSync(readmePath, 'utf8')
   let newContent = originalContent
 
-  for (const [commandName, options] of commandOptionsMap.entries()) {
+  for (const [commandName, {options, positionals}] of commandOptionsMap.entries()) {
     const beginMarker = `<!-- BEGIN_USAGE:${commandName} -->`
     const endMarker = `<!-- END_USAGE:${commandName} -->`
 
@@ -263,7 +329,7 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
       continue
     }
 
-    const table = generateTable(options)
+    const table = generateTable(options, positionals)
     newContent = newContent.slice(0, beginIndex + beginMarker.length) + '\n' + table + '\n' + newContent.slice(endIndex)
   }
 
@@ -315,23 +381,21 @@ const updateReadme = (readmePath: string, commandOptionsMap: Map<string, OptionD
 
     // Extract options from common.ts if it exists (shared options from parent class)
     const commonPath = path.join('packages/base/src/commands', scope, 'common.ts')
-    const commonBooleanDefaults = fs.existsSync(commonPath) ? extractBooleanDefaults(commonPath) : new Map()
-    const commonOptions = fs.existsSync(commonPath) ? await extractOptionsFromFile(commonPath) : []
+    const commonResult = fs.existsSync(commonPath)
+      ? await extractOptionsFromFile(commonPath)
+      : {options: [], positionals: [], booleanDefaults: new Map<string, string>()}
 
-    const commandOptionsMap = new Map<string, OptionDefinition[]>()
+    const commandOptionsMap = new Map<string, CommandData>()
 
     for (const {commandName, filePath} of commandFiles) {
-      // Merge Boolean defaults from common.ts and command-specific file
-      const commandBooleanDefaults = extractBooleanDefaults(filePath)
-      const mergedBooleanDefaults = new Map([...commonBooleanDefaults, ...commandBooleanDefaults])
-
-      // Extract command-specific options with merged Boolean defaults
-      const commandSpecificOptions = await extractOptionsFromFile(filePath, mergedBooleanDefaults)
+      // Extract command-specific options, passing common boolean defaults for merging
+      const commandResult = await extractOptionsFromFile(filePath, commonResult.booleanDefaults)
 
       // Merge common options with command-specific options
-      const allOptions = [...commonOptions, ...commandSpecificOptions]
-      if (allOptions.length > 0) {
-        commandOptionsMap.set(commandName, allOptions)
+      const allOptions = [...commonResult.options, ...commandResult.options]
+      const allPositionals = [...commonResult.positionals, ...commandResult.positionals]
+      if (allOptions.length > 0 || allPositionals.length > 0) {
+        commandOptionsMap.set(commandName, {options: allOptions, positionals: allPositionals})
       }
     }
 
