@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-lambda",
-  "version": "5.7.0",
+  "version": "5.8.0",
   "description": "Datadog CI plugin for `lambda` commands",
   "license": "Apache-2.0",
   "keywords": [
