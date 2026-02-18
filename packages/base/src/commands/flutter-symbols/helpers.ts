@@ -1,8 +1,9 @@
+import upath from 'upath'
+
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
 import {RequestBuilder} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {MultipartPayload, upload, UploadOptions} from '@datadog/datadog-ci-base/helpers/upload'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
-import upath from 'upath'
 
 export const getFlutterRequestBuilder = (apiKey: string, cliVersion: string, site: string) =>
   getRequestBuilder({

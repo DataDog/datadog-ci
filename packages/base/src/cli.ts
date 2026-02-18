@@ -11,6 +11,7 @@ import {commands as deploymentCommands} from './commands/deployment/cli'
 import {commands as doraCommands} from './commands/dora/cli'
 import {commands as dsymsCommands} from './commands/dsyms/cli'
 import {commands as elfSymbolsCommands} from './commands/elf-symbols/cli'
+import {commands as flutterSymbolsCommands} from './commands/flutter-symbols/cli'
 import {commands as gateCommands} from './commands/gate/cli'
 import {commands as gitMetadataCommands} from './commands/git-metadata/cli'
 import {commands as junitCommands} from './commands/junit/cli'
@@ -18,6 +19,7 @@ import {commands as lambdaCommands} from './commands/lambda/cli'
 import {commands as pluginCommands} from './commands/plugin/cli'
 import {commands as sarifCommands} from './commands/sarif/cli'
 import {commands as sbomCommands} from './commands/sbom/cli'
+import {commands as sourcemapsCommands} from './commands/sourcemaps/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
@@ -35,6 +37,7 @@ export const commands = {
   'dora': doraCommands,
   'dsyms': dsymsCommands,
   'elf-symbols': elfSymbolsCommands,
+  'flutter-symbols': flutterSymbolsCommands,
   'gate': gateCommands,
   'git-metadata': gitMetadataCommands,
   'junit': junitCommands,
@@ -42,6 +45,7 @@ export const commands = {
   'plugin': pluginCommands,
   'sarif': sarifCommands,
   'sbom': sbomCommands,
+  'sourcemaps': sourcemapsCommands,
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
@@ -56,8 +60,10 @@ export const commands = {
 export const noPluginExceptions: Set<string> = new Set([
   'dsyms',
   'elf-symbols',
+  'flutter-symbols',
   'git-metadata',
   'plugin',
+  'sourcemaps',
   'tag',
   'unity-symbols',
 ]) satisfies Set<keyof typeof commands>
