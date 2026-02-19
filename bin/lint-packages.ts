@@ -10,6 +10,7 @@ import {diff} from 'jest-diff'
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
 const noPluginExceptions = new Set([
+  'ci-env',
   'dsyms',
   'elf-symbols',
   'flutter-symbols',
@@ -30,6 +31,8 @@ const noPluginExceptions = new Set([
  * Source of truth for scope-less commands: this should be updated manually.
  */
 const scopeLessCommandExceptions = new Set([
+  // `datadog-ci read-ci-env`
+  'ci-env',
   // `datadog-ci tag ...`
   'tag',
   // `datadog-ci measure ...`
