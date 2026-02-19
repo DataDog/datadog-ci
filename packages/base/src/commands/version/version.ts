@@ -1,8 +1,10 @@
-import {BaseCommand} from '@datadog/datadog-ci-base'
-import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Command} from 'clipanion'
 
-class VersionCommand extends BaseCommand {
+import {BaseCommand} from '@datadog/datadog-ci-base'
+
+import {cliVersion} from '../../version'
+
+export class VersionCommand extends BaseCommand {
   public static paths = [['version']]
 
   public static usage = Command.Usage({
@@ -18,5 +20,3 @@ class VersionCommand extends BaseCommand {
     return 0
   }
 }
-
-export const commands = [VersionCommand]

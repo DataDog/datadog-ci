@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 
 import {CommandContext} from '@datadog/datadog-ci-base'
-import {commands as migratedCommands} from '@datadog/datadog-ci-base/cli'
+import {commands as commandDeclarations} from '@datadog/datadog-ci-base/cli'
 import {cliVersion} from '@datadog/datadog-ci-base/version'
 import {Builtins, Cli} from 'clipanion'
 
 import {dependencies} from '@datadog/datadog-ci/package.json'
-
-import {commands as commandsToMigrate} from './commands/cli'
 
 export const BETA_COMMANDS = new Set(['deployment', 'elf-symbols'])
 
@@ -31,7 +29,7 @@ const cli = new Cli<CommandContext>({
 cli.register(Builtins.HelpCommand)
 cli.register(Builtins.VersionCommand)
 
-Object.entries({...migratedCommands, ...commandsToMigrate}).forEach(([scope, commands]) => {
+Object.entries(commandDeclarations).forEach(([scope, commands]) => {
   if (!betaCommandsEnabled && BETA_COMMANDS.has(scope)) {
     return
   }
