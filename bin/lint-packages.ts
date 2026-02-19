@@ -14,18 +14,30 @@ const noPluginExceptions = new Set([
   'elf-symbols',
   'flutter-symbols',
   'git-metadata',
+  'measure',
   'pe-symbols',
   'plugin',
   'react-native',
   'sourcemaps',
+  'span',
   'tag',
+  'trace',
   'unity-symbols',
 ])
 
 /**
  * Source of truth for scope-less commands: this should be updated manually.
  */
-const scopeLessCommandExceptions = new Set(['tag'])
+const scopeLessCommandExceptions = new Set([
+  // `datadog-ci tag ...`
+  'tag',
+  // `datadog-ci measure ...`
+  'measure',
+  // `datadog-ci trace ...`
+  'trace',
+  // `datadog-ci trace span ...`
+  'span',
+])
 
 /**
  * Scopes with an associated GitHub Action that doesn't pin the version of `@datadog/datadog-ci`.
@@ -98,7 +110,7 @@ const findCommands = (folder: string, scope: string): string[] => {
         }
 
         const content = fs.readFileSync(path.join(folder, file), 'utf8')
-        if (!content.match(/export class \w+ extends BaseCommand/)) {
+        if (!content.match(/export class \w+ extends (BaseCommand|CustomSpanCommand)/)) {
           return acc
         }
 

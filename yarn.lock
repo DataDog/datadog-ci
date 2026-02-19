@@ -1905,7 +1905,6 @@ __metadata:
     "@datadog/datadog-ci-plugin-sarif": "workspace:*"
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@types/jest": "npm:29.5.3"
-    axios: "npm:^1.13.5"
     chalk: "npm:3.0.0"
     clipanion: "npm:^3.2.1"
     esbuild: "npm:^0.25.9"
