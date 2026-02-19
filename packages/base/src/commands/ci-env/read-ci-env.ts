@@ -1,8 +1,11 @@
 import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 
 import {getCISpanTags} from '../../helpers/ci'
+import {toBoolean} from '../../helpers/env'
+import {enableFips} from '../../helpers/fips'
 import {
   CI_ENV_VARS,
   CI_JOB_ID,
@@ -164,7 +167,16 @@ export class ReadCiEnvCommand extends BaseCommand {
     description: 'Output format: bash (default), json, or tags',
   })
 
+  private fips = Option.Boolean('--fips', false)
+  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
+  private config = {
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
+  }
+
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     // Merge CI-detected tags with user-provided tags (user-provided takes precedence)
     const ciTags = getCISpanTags()
     const userCITags = getUserCISpanTags()
