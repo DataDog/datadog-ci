@@ -1159,18 +1159,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/xml-builder@npm:^3.972.2":
-  version: 3.972.3
-  resolution: "@aws-sdk/xml-builder@npm:3.972.3"
-  dependencies:
-    "@smithy/types": "npm:^4.12.0"
-    fast-xml-parser: "npm:5.3.4"
-    tslib: "npm:^2.6.2"
-  checksum: 10/666d3905714ca3b9d5fbaf4bd85dd97041c1a41f29114ba4076890982fba11fd21f77dafb610c5b64ebe4f2a93eba489100ddf3a29ac07b9b019397eedd56bd1
-  languageName: node
-  linkType: hard
-
-"@aws-sdk/xml-builder@npm:^3.972.5":
+"@aws-sdk/xml-builder@npm:^3.972.2, @aws-sdk/xml-builder@npm:^3.972.5":
   version: 3.972.5
   resolution: "@aws-sdk/xml-builder@npm:3.972.5"
   dependencies:
@@ -7277,17 +7266,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:5.3.4":
-  version: 5.3.4
-  resolution: "fast-xml-parser@npm:5.3.4"
-  dependencies:
-    strnum: "npm:^2.1.0"
-  bin:
-    fxparser: src/cli/cli.js
-  checksum: 10/0d7e6872fed7c3065641400d43cdf24c03177f05c343bfb31df53b79f0900b085c103f647852d0b00693125aa3f0e9d8b8cfc4273b168d4da0308f857dafe830
-  languageName: node
-  linkType: hard
-
 "fast-xml-parser@npm:5.3.6, fast-xml-parser@npm:^5.3.6":
   version: 5.3.6
   resolution: "fast-xml-parser@npm:5.3.6"
@@ -11377,13 +11355,6 @@ __metadata:
   version: 2.0.1
   resolution: "strip-json-comments@npm:2.0.1"
   checksum: 10/1074ccb63270d32ca28edfb0a281c96b94dc679077828135141f27d52a5a398ef5e78bcf22809d23cadc2b81dfbe345eb5fd8699b385c8b1128907dec4a7d1e1
-  languageName: node
-  linkType: hard
-
-"strnum@npm:^2.1.0":
-  version: 2.1.1
-  resolution: "strnum@npm:2.1.1"
-  checksum: 10/d5fe6e4333cddc17569331048e403e876ffcf629989815f0359b0caf05dae9441b7eef3d7dd07427313ac8b3f05a8f60abc1f61efc15f97245dbc24028362bc9
   languageName: node
   linkType: hard
 
