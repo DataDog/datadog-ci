@@ -10,6 +10,7 @@ import {diff} from 'jest-diff'
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
 const noPluginExceptions = new Set([
+  'ci-env',
   'dsyms',
   'elf-symbols',
   'flutter-symbols',

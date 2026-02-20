@@ -135,7 +135,7 @@ describe('cli', () => {
     }
 
     // some commands do not support --fips option
-    const fipsCases = cases.filter(([commandName]) => !['version', 'plugin'].includes(commandName))
+    const fipsCases = cases.filter(([commandName]) => !['version', 'plugin', 'ci-env'].includes(commandName))
 
     describe.each(fipsCases)('%s %s', (_commandName, _subcommandName, commandPath, commandClass) => {
       const path = commandPath.join(' ')
