@@ -27,7 +27,7 @@ export const validateSarif = (sarifReportPath: string): string | undefined => {
     return err.message
   }
 
-  const ajv = new Ajv({allErrors: true})
+  const ajv = new Ajv({allErrors: true, validateFormats: false})
   addFormats(ajv)
   const sarifJsonSchemaValidate = ajv.compile(sarifJsonSchema)
   try {
