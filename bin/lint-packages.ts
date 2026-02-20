@@ -31,8 +31,6 @@ const noPluginExceptions = new Set([
  * Source of truth for scope-less commands: this should be updated manually.
  */
 const scopeLessCommandExceptions = new Set([
-  // `datadog-ci read-ci-env`
-  'ci-env',
   // `datadog-ci tag ...`
   'tag',
   // `datadog-ci measure ...`

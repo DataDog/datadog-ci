@@ -1,7 +1,7 @@
 /* eslint-disable import-x/order */
-import {ReadCiEnvCommand} from './read-ci-env'
+import {CiEnvReadCommand} from './read'
 
 // prettier-ignore
 export const commands = [
-  ReadCiEnvCommand,
+  CiEnvReadCommand,
 ]

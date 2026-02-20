@@ -1,11 +1,9 @@
 import {Command, Option} from 'clipanion'
+import * as t from 'typanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
-import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 
 import {getCISpanTags} from '../../helpers/ci'
-import {toBoolean} from '../../helpers/env'
-import {enableFips} from '../../helpers/fips'
 import {
   CI_ENV_VARS,
   CI_JOB_ID,
@@ -143,15 +141,15 @@ const formatOutput = (tags: Record<string, string>, format: 'bash' | 'json' | 't
     .join('\n')
 }
 
-export class ReadCiEnvCommand extends BaseCommand {
+export class CiEnvReadCommand extends BaseCommand {
   public static paths = [['ci-env', 'read']]
 
   public static usage = Command.Usage({
     category: 'CI Visibility',
-    description: 'Extract and normalize CI environment variables into DD_CI_* and DD_GIT_* format.',
+    description: 'Extract and normalize CI environment variables into `DD_CI_*` and `DD_GIT_*` format.',
     details: `
       This command reads CI-specific environment variables from various CI providers
-      and outputs them as normalized DD_CI_* and DD_GIT_* environment variables.
+      and outputs them as normalized \`DD_CI_*\` and \`DD_GIT_*\` environment variables.
       Supports bash (default), json, and tags output formats.
     `,
     examples: [
@@ -165,18 +163,10 @@ export class ReadCiEnvCommand extends BaseCommand {
 
   private format = Option.String('--format', 'bash', {
     description: 'Output format: bash (default), json, or tags',
+    validator: t.isEnum(['bash', 'json', 'tags'] as const),
   })
 
-  private fips = Option.Boolean('--fips', false)
-  private fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
-  private config = {
-    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
-    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
-  }
-
   public async execute() {
-    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
-
     // Merge CI-detected tags with user-provided tags (user-provided takes precedence)
     const ciTags = getCISpanTags()
     const userCITags = getUserCISpanTags()
@@ -197,14 +187,7 @@ export class ReadCiEnvCommand extends BaseCommand {
       return 1
     }
 
-    const format = this.format.toLowerCase() as 'bash' | 'json' | 'tags'
-    if (!['bash', 'json', 'tags'].includes(format)) {
-      this.context.stderr.write(`Error: Invalid format '${this.format}'. Use: bash, json, or tags\n`)
-
-      return 1
-    }
-
-    const output = formatOutput(tags, format)
+    const output = formatOutput(tags, this.format)
     this.context.stdout.write(output + '\n')
 
     return 0

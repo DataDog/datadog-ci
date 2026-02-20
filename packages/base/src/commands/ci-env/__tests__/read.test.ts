@@ -2,16 +2,16 @@ import {Cli} from 'clipanion'
 
 import {createMockContext} from '@datadog/datadog-ci-base/helpers/__tests__/testing-tools'
 
-import {ReadCiEnvCommand} from '../read-ci-env'
+import {CiEnvReadCommand} from '../read'
 
 const makeCLI = () => {
   const cli = new Cli()
-  cli.register(ReadCiEnvCommand)
+  cli.register(CiEnvReadCommand)
 
   return cli
 }
 
-describe('read-ci-env', () => {
+describe('ci-env read', () => {
   const runCLI = async (env: Record<string, string>, format?: string) => {
     const cli = makeCLI()
     const context = createMockContext()
@@ -195,7 +195,8 @@ describe('read-ci-env', () => {
         'invalid'
       )
       expect(code).toBe(1)
-      expect(context.stderr.toString()).toContain('Invalid format')
+      const allOutput = context.stdout.toString() + context.stderr.toString()
+      expect(allOutput).toContain('format')
     })
   })
 
