@@ -1905,7 +1905,7 @@ __metadata:
     datadog-metrics: "npm:0.9.3"
     debug: "npm:^4.4.1"
     deep-extend: "npm:0.6.0"
-    fast-xml-parser: "npm:^5.3.6"
+    fast-xml-parser: "npm:^5.3.7"
     form-data: "npm:^4.0.4"
     glob: "npm:^10.5.0"
     inquirer: "npm:^8.2.6"
@@ -2013,7 +2013,7 @@ __metadata:
   dependencies:
     axios: "npm:^1.13.5"
     chalk: "npm:3.0.0"
-    fast-xml-parser: "npm:^5.3.6"
+    fast-xml-parser: "npm:^5.3.7"
     form-data: "npm:^4.0.4"
     simple-git: "npm:3.16.0"
     upath: "npm:^2.0.1"
@@ -2065,7 +2065,7 @@ __metadata:
   dependencies:
     axios: "npm:^1.13.5"
     chalk: "npm:3.0.0"
-    fast-xml-parser: "npm:^5.3.6"
+    fast-xml-parser: "npm:^5.3.7"
     form-data: "npm:^4.0.4"
     upath: "npm:^2.0.1"
     uuid: "npm:^9.0.0"
@@ -7266,7 +7266,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:5.3.6, fast-xml-parser@npm:^5.3.6":
+"fast-xml-parser@npm:5.3.6":
   version: 5.3.6
   resolution: "fast-xml-parser@npm:5.3.6"
   dependencies:
@@ -7274,6 +7274,17 @@ __metadata:
   bin:
     fxparser: src/cli/cli.js
   checksum: 10/03527ab0bdf49d960fdc8f6088cd0715c052e06b68b39459da87b1a1fbb3439a855b2d83cbf3c400e983b8e668b396296b072a4dd5c63403cf1e618c9326b6df
+  languageName: node
+  linkType: hard
+
+"fast-xml-parser@npm:^5.3.7":
+  version: 5.3.7
+  resolution: "fast-xml-parser@npm:5.3.7"
+  dependencies:
+    strnum: "npm:^2.1.2"
+  bin:
+    fxparser: src/cli/cli.js
+  checksum: 10/c3dfba84b8c8920a1a6f2596c387c8fbb3b76fcad9a26769a793f1e26d7718c50363478f3be2a71e952b2bf765be51d8f8e3434b37cc7af029c6a09662ea6ba4
   languageName: node
   linkType: hard
 
