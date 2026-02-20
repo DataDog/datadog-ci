@@ -47,6 +47,16 @@ describe('validation of sbom file', () => {
     expect(validateFileAgainstToolRequirements('./src/__tests__/fixtures/sbom.1.4.invalid.json', false)).toBeTruthy()
   })
 
+  test('should ignore invalid date-time', () => {
+    // timestamp is not a valid date-time, but we ignore it.
+    expect(
+      validateSbomFileAgainstSchema('./src/__tests__/fixtures/sbom.1.5.ok-invalid-time.json', validator, false)
+    ).toBeTruthy()
+    expect(
+      validateFileAgainstToolRequirements('./src/__tests__/fixtures/sbom.1.5.ok-invalid-time.json', false)
+    ).toBeTruthy()
+  })
+
   test('should validate SBOM file from trivy 4.9', () => {
     // type and name of the "component" have been removed from the valid file.
     expect(validateSbomFileAgainstSchema('./src/__tests__/fixtures/trivy-4.9.json', validator, true)).toBeTruthy()

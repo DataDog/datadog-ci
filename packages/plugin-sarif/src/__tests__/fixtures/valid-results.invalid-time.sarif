@@ -27,7 +27,7 @@
           "location": {
             "uri": "file:///foo/bar/myfile.test.ts"
           },
-          "lastModifiedTimeUtc": "2023-08-29T22:21:53+00:00"
+          "lastModifiedTimeUtc": "2023-08-29T22:21:53"
         }
       ],
       "results": [
