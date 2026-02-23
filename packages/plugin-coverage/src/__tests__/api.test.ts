@@ -49,7 +49,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
       coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
-      fileFixes: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -112,7 +112,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
       coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
-      fileFixes: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -164,7 +164,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
-      fileFixes: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -208,7 +208,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
-      fileFixes: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -220,7 +220,7 @@ describe('uploadCodeCoverageReport', () => {
     expect(eventJson).not.toHaveProperty('report.flags')
   })
 
-  it('sends file_fixes as gzipped attachment when fileFixes provided', async () => {
+  it('sends file_fixes as gzipped attachment when fileFixesCompressed provided', async () => {
     const requestMock = jest.fn().mockResolvedValue({status: 200})
 
     const fsMock = jest.mocked(fs)
@@ -229,9 +229,6 @@ describe('uploadCodeCoverageReport', () => {
     const mockStream = new PassThrough()
     fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
     zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
-
-    const gzipSyncMock = jest.fn().mockImplementation((buf: Buffer) => buf)
-    zlibMock.gzipSync = gzipSyncMock
 
     const appendMock = jest.fn()
     const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
@@ -244,10 +241,7 @@ describe('uploadCodeCoverageReport', () => {
     // @ts-ignore override constructor
     FormData.mockImplementation(() => formMock)
 
-    const fileFixes = {
-      'main.go': {lines: 10, bitmap: Buffer.from([0b00010001, 0b00000010]).toString('base64')},
-      'lib.go': {lines: 5, bitmap: Buffer.from([0b00000110]).toString('base64')},
-    }
+    const fileFixesCompressed = Buffer.from('fake-gzipped-data')
 
     const payload = {
       hostname: 'test-host',
@@ -260,7 +254,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
-      fileFixes,
+      fileFixesCompressed,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -274,10 +268,11 @@ describe('uploadCodeCoverageReport', () => {
     // file_fixes should be sent as a gzipped attachment
     const fileFixesCall = appendMock.mock.calls.find((call) => call[0] === 'file_fixes')
     expect(fileFixesCall).toBeDefined()
+    expect(fileFixesCall[1]).toEqual(fileFixesCompressed)
     expect(fileFixesCall[2]).toEqual({filename: 'file_fixes.json.gz'})
   })
 
-  it('does not send file_fixes attachment when fileFixes not provided', async () => {
+  it('does not send file_fixes attachment when fileFixesCompressed not provided', async () => {
     const requestMock = jest.fn().mockResolvedValue({status: 200})
 
     const fsMock = jest.mocked(fs)
@@ -309,7 +304,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
-      fileFixes: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)

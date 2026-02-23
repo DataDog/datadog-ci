@@ -16,7 +16,7 @@ export interface Payload {
   prDiff: DiffData | undefined
   coverageConfig: RepoFile | undefined
   codeowners: RepoFile | undefined
-  fileFixes: FileFixes | undefined
+  fileFixesCompressed: Buffer | undefined
 }
 
 export interface RepoFile {

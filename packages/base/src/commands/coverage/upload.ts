@@ -56,6 +56,10 @@ export class CoverageUploadCommand extends BaseCommand {
   protected disableFileFixes = Option.Boolean('--disable-file-fixes', false, {
     description: 'Disable the generation and upload of file fixes for code coverage',
   })
+  protected fileFixesSearchPath = Option.String('--file-fixes-search-path', {
+    description:
+      'Override the root directory used to scan source files for file fixes. By default, the repository root is used.',
+  })
   protected gitRepositoryURL = Option.String('--git-repository-url', {
     description: 'The repository URL to retrieve git metadata from',
   })

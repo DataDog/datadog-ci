@@ -1,4 +1,5 @@
 import os from 'os'
+import {gzipSync} from 'zlib'
 
 import {CoverageUploadCommand} from '@datadog/datadog-ci-base/commands/coverage/upload'
 import {
@@ -185,6 +186,11 @@ export class PluginCommand extends CoverageUploadCommand {
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
     const fileFixes = await this.getFileFixes()
+    // Pre-compress file fixes once to avoid repeated serialization across payload chunks
+    let fileFixesCompressed: Buffer | undefined
+    if (fileFixes && Object.keys(fileFixes).length > 0) {
+      fileFixesCompressed = gzipSync(Buffer.from(JSON.stringify(fileFixes), 'utf8'))
+    }
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
     let payloads: Payload[] = []
@@ -203,7 +209,7 @@ export class PluginCommand extends CoverageUploadCommand {
           prDiff,
           coverageConfig,
           codeowners,
-          fileFixes,
+          fileFixesCompressed,
         }))
       })
     }
@@ -212,12 +218,12 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private async getFileFixes(): Promise<FileFixes | undefined> {
-    if (this.disableFileFixes || !this.git) {
+    if (this.disableFileFixes) {
       return undefined
     }
 
     try {
-      return await generateFileFixes(this.git)
+      return await generateFileFixes(this.git, this.fileFixesSearchPath)
     } catch (e) {
       this.logger.warn(`Could not generate file fixes: ${e}`)
 

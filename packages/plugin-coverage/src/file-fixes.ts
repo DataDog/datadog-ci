@@ -4,7 +4,10 @@
 
 import fsPromises from 'fs/promises'
 
+import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
+import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
 import * as simpleGit from 'simple-git'
+import upath from 'upath'
 
 import {FileFixes} from './interfaces'
 
@@ -27,11 +30,20 @@ interface LanguagePatterns {
   patterns: RegExp[]
 }
 
+interface FileFixResult {
+  path: string
+  totalLines: number
+  bitmap: Buffer
+}
+
 const EMPTY_LINE = /^\s*$/
 const COMMENT_LINE = /^\s*\/\/.*$/
 const BRACKET_LINE = /^\s*[{}]\s*(\/\/.*)?$/
 const PARENTHESIS_LINE = /^\s*[()]\s*(\/\/.*)?$/
-const LCOV_EXCL = /LCOV_EXCL/
+
+const LCOV_EXCL_LINE = /LCOV_EXCL_LINE/
+const LCOV_EXCL_START = /LCOV_EXCL_START/
+const LCOV_EXCL_STOP = /LCOV_EXCL_STOP/
 
 const BLOCK_COMMENT_OPEN = /^\s*\/\*/
 const BLOCK_COMMENT_CLOSE = /\*\//
@@ -41,7 +53,7 @@ const PHP_END_BRACKET = /^\s*\);\s*(\/\/.*)?$/
 // Matches Go empty composite literal type declarations like [][]
 const LIST_REGEX = /^\s*\[\]\[\]\s*(\/\/.*)?$/
 
-const BASE_PATTERNS = [EMPTY_LINE, COMMENT_LINE, BRACKET_LINE, PARENTHESIS_LINE, LCOV_EXCL]
+const BASE_PATTERNS = [EMPTY_LINE, COMMENT_LINE, BRACKET_LINE, PARENTHESIS_LINE]
 
 const LANGUAGE_PATTERNS: LanguagePatterns[] = [
   {
@@ -94,10 +106,7 @@ const isSupportedFile = (filePath: string): boolean => {
   return ALL_SUPPORTED_EXTENSIONS.includes(ext)
 }
 
-const processFileContent = (
-  filePath: string,
-  content: string
-): {path: string; totalLines: number; bitmap: Buffer} | undefined => {
+const processFileContent = (filePath: string, content: string): FileFixResult | undefined => {
   const patterns = getPatternsForFile(filePath)
   if (!patterns) {
     return undefined
@@ -108,25 +117,47 @@ const processFileContent = (
   const bitmap = Buffer.alloc(bitmapSize)
   let hasMatch = false
   let insideBlockComment = false
+  let insideLcovExcl = false
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     let matched = false
 
-    // Block comment state tracking
+    // LCOV_EXCL range tracking (highest priority)
+    if (insideLcovExcl) {
+      matched = true
+      if (LCOV_EXCL_STOP.test(line)) {
+        insideLcovExcl = false
+      }
+    } else if (LCOV_EXCL_START.test(line)) {
+      matched = true
+      insideLcovExcl = true
+    } else if (LCOV_EXCL_LINE.test(line)) {
+      matched = true
+    }
+
+    // Block comment state tracking (always track state, even when LCOV matched)
     if (insideBlockComment) {
       matched = true
       if (BLOCK_COMMENT_CLOSE.test(line)) {
         insideBlockComment = false
       }
-    } else if (BLOCK_COMMENT_OPEN.test(line)) {
-      matched = true
-      // Check if the block comment also closes on this line
-      const afterOpen = line.indexOf('/*') + 2
-      if (!line.slice(afterOpen).includes('*/')) {
-        insideBlockComment = true
-      }
     } else {
+      const commentIdx = line.indexOf('/*')
+      if (commentIdx !== -1) {
+        // Mark as non-executable only if /* is at the start of the line
+        if (BLOCK_COMMENT_OPEN.test(line)) {
+          matched = true
+        }
+        // Enter block comment state if comment doesn't close on this line
+        if (!line.slice(commentIdx + 2).includes('*/')) {
+          insideBlockComment = true
+        }
+      }
+    }
+
+    // Regular pattern matching (only if not already matched)
+    if (!matched) {
       for (const pattern of patterns) {
         if (pattern.test(line)) {
           matched = true
@@ -148,39 +179,37 @@ const processFileContent = (
   return {path: filePath, totalLines: lines.length, bitmap}
 }
 
-const processFileAsync = async (
-  filePath: string
-): Promise<{path: string; totalLines: number; bitmap: Buffer} | undefined> => {
+const processFileAsync = async (filePath: string, repoRoot: string): Promise<FileFixResult | undefined> => {
+  const absolutePath = upath.resolve(repoRoot, filePath)
+
   try {
-    const stat = await fsPromises.stat(filePath)
-    if (stat.size > MAX_FILE_SIZE) {
+    const stat = await fsPromises.lstat(absolutePath)
+    if (!stat.isFile() || stat.size > MAX_FILE_SIZE) {
       return undefined
     }
+
+    const content = await fsPromises.readFile(absolutePath, 'utf8')
+
+    return processFileContent(filePath, content)
   } catch {
     return undefined
   }
-
-  const content = await fsPromises.readFile(filePath, 'utf8')
-
-  return processFileContent(filePath, content)
 }
 
-export const generateFileFixes = async (git: simpleGit.SimpleGit): Promise<FileFixes> => {
-  const output = await git.raw(['ls-files'])
-  const allFiles = output
-    .split('\n')
-    .map((f) => f.trim())
-    .filter((f) => f.length > 0)
+const listFilesFromFilesystem = (rootPath: string): string[] => {
+  const absolutePaths = findFiles(
+    [rootPath],
+    true, // searchRecursively
+    [], // ignoredPaths (DEFAULT_IGNORED_FOLDERS is applied internally)
+    (filePath) => isSupportedFile(filePath),
+    () => undefined, // no validation
+    () => undefined // no error rendering
+  )
 
-  const supportedFiles = allFiles.filter(isSupportedFile)
+  return absolutePaths.map((absPath) => upath.relative(rootPath, absPath))
+}
 
-  if (supportedFiles.length > MAX_FILES) {
-    throw new Error(`repository has ${supportedFiles.length} supported files, exceeding the ${MAX_FILES} file limit`)
-  }
-
-  // Process files concurrently with bounded parallelism
-  const results = await processFilesConcurrently(supportedFiles)
-
+const collectResults = (results: FileFixResult[]): FileFixes => {
   const fileFixes: FileFixes = {}
   let estimatedSize = 2 // {}
 
@@ -198,24 +227,44 @@ export const generateFileFixes = async (git: simpleGit.SimpleGit): Promise<FileF
   return fileFixes
 }
 
-const processFilesConcurrently = async (
-  filePaths: string[]
-): Promise<{path: string; totalLines: number; bitmap: Buffer}[]> => {
-  const results: {path: string; totalLines: number; bitmap: Buffer}[] = []
-  let index = 0
+export const generateFileFixes = async (
+  git: simpleGit.SimpleGit | undefined,
+  searchPath?: string
+): Promise<FileFixes> => {
+  let repoRoot: string
+  let supportedFiles: string[]
 
-  const worker = async () => {
-    while (index < filePaths.length) {
-      const i = index++
-      const result = await processFileAsync(filePaths[i])
-      if (result) {
-        results.push(result)
-      }
-    }
+  if (searchPath) {
+    // Explicit search path overrides everything
+    repoRoot = upath.resolve(searchPath)
+  } else if (git) {
+    repoRoot = (await git.revparse(['--show-toplevel'])).trim()
+  } else {
+    repoRoot = process.cwd()
   }
 
-  const workers = Array.from({length: CONCURRENCY}, () => worker())
-  await Promise.all(workers)
+  if (git && !searchPath) {
+    // Use git ls-files for tracked files (respects .gitignore)
+    const output = await git.raw(['ls-files'])
+    const allFiles = output
+      .split('\n')
+      .map((f) => f.trim())
+      .filter((f) => f.length > 0)
+    supportedFiles = allFiles.filter(isSupportedFile)
+  } else {
+    // Filesystem walk fallback (when git is not available or search path is overridden)
+    supportedFiles = listFilesFromFilesystem(repoRoot)
+  }
 
-  return results
+  if (supportedFiles.length > MAX_FILES) {
+    throw new Error(`repository has ${supportedFiles.length} supported files, exceeding the ${MAX_FILES} file limit`)
+  }
+
+  // Process files concurrently with bounded parallelism
+  const allResults = await doWithMaxConcurrency(CONCURRENCY, supportedFiles, (filePath) =>
+    processFileAsync(filePath, repoRoot)
+  )
+  const results = allResults.filter((r): r is FileFixResult => r !== undefined)
+
+  return collectResults(results)
 }

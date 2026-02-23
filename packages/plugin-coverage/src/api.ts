@@ -54,8 +54,8 @@ export const uploadCodeCoverageReport =
       })
     }
 
-    if (payload.fileFixes && Object.keys(payload.fileFixes).length > 0) {
-      form.append('file_fixes', gzipSync(Buffer.from(JSON.stringify(payload.fileFixes), 'utf8')), {
+    if (payload.fileFixesCompressed) {
+      form.append('file_fixes', payload.fileFixesCompressed, {
         filename: 'file_fixes.json.gz',
       })
     }
