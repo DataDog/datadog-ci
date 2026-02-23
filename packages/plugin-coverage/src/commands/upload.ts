@@ -36,7 +36,8 @@ import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
-import {APIHelper, Payload, RepoFile} from '../interfaces'
+import {generateFileFixes} from '../file-fixes'
+import {APIHelper, FileFixes, Payload, RepoFile} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -55,7 +56,7 @@ const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
+const MAX_REPORTS_PER_REQUEST = 7 // backend supports 10 attachments, to keep the logic simple we subtract 3: for PR diff, commit diff, and file fixes
 
 const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
 
@@ -183,6 +184,7 @@ export class PluginCommand extends CoverageUploadCommand {
     const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
+    const fileFixes = await this.getFileFixes()
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
     let payloads: Payload[] = []
@@ -201,11 +203,26 @@ export class PluginCommand extends CoverageUploadCommand {
           prDiff,
           coverageConfig,
           codeowners,
+          fileFixes,
         }))
       })
     }
 
     return payloads
+  }
+
+  private async getFileFixes(): Promise<FileFixes | undefined> {
+    if (this.disableFileFixes || !this.git) {
+      return undefined
+    }
+
+    try {
+      return await generateFileFixes(this.git)
+    } catch (e) {
+      this.logger.warn(`Could not generate file fixes: ${e}`)
+
+      return undefined
+    }
   }
 
   private async getRepoFile(possiblePaths: string[]): Promise<RepoFile | undefined> {
