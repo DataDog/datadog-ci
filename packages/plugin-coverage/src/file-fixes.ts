@@ -6,6 +6,7 @@ import fsPromises from 'fs/promises'
 
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {findFiles} from '@datadog/datadog-ci-base/helpers/file-finder'
+import {gitTrackedFiles} from '@datadog/datadog-ci-base/helpers/git/get-git-data'
 import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
@@ -81,12 +82,7 @@ const setBit = (bitmap: Buffer, index: number): void => {
 /* eslint-enable no-bitwise */
 
 const getExtension = (filePath: string): string => {
-  const lastDot = filePath.lastIndexOf('.')
-  if (lastDot === -1) {
-    return ''
-  }
-
-  return filePath.slice(lastDot).toLowerCase()
+  return upath.extname(filePath).toLowerCase()
 }
 
 const getPatternsForFile = (filePath: string): RegExp[] | undefined => {
@@ -103,7 +99,7 @@ const processFileContent = (filePath: string, content: string): FileFixResult | 
     return undefined
   }
 
-  const lines = content.split('\n')
+  const lines = content.split(/\r\n|\r|\n/)
   // Remove trailing empty element produced by split when file ends with newline
   if (lines.length > 0 && lines[lines.length - 1] === '') {
     lines.pop()
@@ -119,28 +115,14 @@ const processFileContent = (filePath: string, content: string): FileFixResult | 
 
     // Block comment state tracking
     if (insideBlockComment) {
+      matched = true
       if (BLOCK_COMMENT_CLOSE.test(line)) {
         insideBlockComment = false
-        // Only mark as non-executable if there's no code after */
-        const closeIdx = line.indexOf('*/')
-        const afterClose = line.slice(closeIdx + 2).trim()
-        if (afterClose.length === 0 || afterClose.startsWith('//')) {
-          matched = true
-        }
-      } else {
-        matched = true
       }
-    } else {
-      const commentIdx = line.indexOf('/*')
-      if (commentIdx !== -1) {
-        // Mark as non-executable only if /* is at the start of the line
-        if (BLOCK_COMMENT_OPEN.test(line)) {
-          matched = true
-        }
-        // Enter block comment state if comment doesn't close on this line
-        if (!line.slice(commentIdx + 2).includes('*/')) {
-          insideBlockComment = true
-        }
+    } else if (BLOCK_COMMENT_OPEN.test(line)) {
+      matched = true
+      if (!BLOCK_COMMENT_CLOSE.test(line)) {
+        insideBlockComment = true
       }
     }
 
@@ -204,7 +186,7 @@ const listFilesFromFilesystem = (rootPath: string): string[] => {
 
 const collectResults = (results: FileFixResult[]): FileFixes => {
   const fileFixes: FileFixes = {}
-  let estimatedSize = 2 // {}
+  let estimatedSize = JSON.stringify(fileFixes).length
 
   for (const result of results) {
     const base64 = result.bitmap.toString('base64')
@@ -237,11 +219,7 @@ export const generateFileFixes = async (
 
   if (git && !searchPath) {
     // Use git ls-files for tracked files (respects .gitignore)
-    const output = await git.raw(['ls-files'])
-    const allFiles = output
-      .split('\n')
-      .map((f) => f.trim())
-      .filter((f) => f.length > 0)
+    const allFiles = await gitTrackedFiles(git)
     supportedFiles = allFiles.filter(isSupportedFile)
   } else {
     // Filesystem walk fallback (when git is not available or search path is overridden)

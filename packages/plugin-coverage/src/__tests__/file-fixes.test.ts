@@ -308,39 +308,34 @@ describe('generateFileFixes', () => {
       expect(hasLine(result, 'main.go', 2)).toBe(false) // code()
     })
 
-    it('does not mark block comment close line when code follows */', async () => {
+    it('marks block comment close line as non-executable', async () => {
       mockGit.raw.mockResolvedValue('main.go\n')
       mockLstat(100)
-      mockReadFile('/*\n comment\n*/ doWork()\nmore_code()\n')
+      mockReadFile('/*\n comment\n*/\nmore_code()\n')
 
       const result = await generateFileFixes(mockGit)
 
       expect(hasLine(result, 'main.go', 1)).toBe(true) // /*
       expect(hasLine(result, 'main.go', 2)).toBe(true) // comment
-      expect(hasLine(result, 'main.go', 3)).toBe(false) // */ doWork() — has executable code
+      expect(hasLine(result, 'main.go', 3)).toBe(true) // */
       expect(hasLine(result, 'main.go', 4)).toBe(false) // more_code()
     })
 
-    it('marks block comment close with only trailing line comment', async () => {
+    it('does not detect /* inside string literals', async () => {
       mockGit.raw.mockResolvedValue('main.go\n')
       mockLstat(100)
-      mockReadFile('/*\n comment\n*/ // end of comment\ncode()\n')
+      mockReadFile(
+        [
+          'fmt.Println("/*")', // 1: /* inside string
+          '"/*"',              // 2: bare string containing /*
+          "'/*'",              // 3: single-quoted /* (e.g. char literal)
+          'code()',            // 4: code — proves no block comment was opened
+        ].join('\n')
+      )
 
       const result = await generateFileFixes(mockGit)
 
-      expect(hasLine(result, 'main.go', 3)).toBe(true) // */ // end of comment — no code
-    })
-
-    it('does not mark line with code before block comment open', async () => {
-      mockGit.raw.mockResolvedValue('main.go\n')
-      mockLstat(100)
-      mockReadFile('x := 1 /*\n comment\n*/\n')
-
-      const result = await generateFileFixes(mockGit)
-
-      expect(hasLine(result, 'main.go', 1)).toBe(false) // x := 1 /* — has code before /*
-      expect(hasLine(result, 'main.go', 2)).toBe(true) // comment
-      expect(hasLine(result, 'main.go', 3)).toBe(true) // */
+      expect(result).not.toHaveProperty('main.go')
     })
 
     it('marks line comments as non-executable', async () => {
@@ -366,6 +361,127 @@ describe('generateFileFixes', () => {
       expect(hasLine(result, 'main.go', 2)).toBe(true) // empty line
       expect(hasLine(result, 'main.go', 3)).toBe(true) // whitespace only
       expect(hasLine(result, 'main.go', 4)).toBe(false) // more_code()
+    })
+  })
+
+  describe('block comment edge cases', () => {
+    it('handles multiple, nested, and doc-style block comments', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile(
+        [
+          '/* first */', // 1: single-line
+          'code()', // 2: code
+          '/* second', // 3: open
+          '/* nested', // 4: nested /* ignored
+          'still inside */', // 5: close at first */
+          '/** doc', // 6: doc-style open
+          ' * @param x', // 7: inside
+          ' */', // 8: close
+          'more()', // 9: code
+        ].join('\n')
+      )
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['main.go'])).toEqual([1, 3, 4, 5, 6, 7, 8])
+    })
+
+    it('marks all remaining lines when block comment is never closed', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile('code()\n/* unclosed\nstill inside\nlast line')
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['main.go'])).toEqual([2, 3, 4])
+    })
+
+    it('detects block comment open with leading whitespace', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile('code()\n\t/* tab-indented\ncomment */\n   /* space-indented */\nmore()\n')
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['main.go'])).toEqual([2, 3, 4])
+    })
+
+    it('marks other patterns inside block comments via block comment state', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      // }, //, empty line, func decl — all inside block comment
+      mockReadFile('code()\n/*\n}\n// line\n\nfunc main() {\n*/\nmore()\n')
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['main.go'])).toEqual([2, 3, 4, 5, 6, 7])
+    })
+
+    it('works across all supported language extensions', async () => {
+      for (const ext of ['.go', '.kt', '.c', '.cpp', '.swift', '.php', '.h', '.m']) {
+        const fileName = `file${ext}`
+        mockGit.raw.mockResolvedValue(`${fileName}\n`)
+        mockLstat(100)
+        mockReadFile('code()\n/*\n comment\n*/\nmore()\n')
+
+        const result = await generateFileFixes(mockGit)
+
+        expect(getMatchedLines(result[fileName])).toEqual([2, 3, 4])
+      }
+    })
+  })
+
+  describe('realistic code patterns', () => {
+    it('Go file with doc comment, func, line comments, and brackets', async () => {
+      mockGit.raw.mockResolvedValue('mixed.go\n')
+      mockLstat(100)
+      mockReadFile(
+        [
+          '// Package server', // 1: line comment
+          'package server', // 2: code
+          '', // 3: empty
+          '/*', // 4: block open
+          'Overview of the Server type.', // 5: inside block
+          '*/', // 6: block close
+          'func NewServer(port int) *Server {', // 7: func decl
+          '\ts := &Server{port: port}', // 8: code
+          '\t// initialize defaults', // 9: line comment
+          '\ts.init()', // 10: code
+          '', // 11: empty
+          '\treturn s', // 12: code
+          '}', // 13: bracket
+        ].join('\n')
+      )
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['mixed.go'])).toEqual([1, 3, 4, 5, 6, 7, 9, 11, 13])
+    })
+
+    it('PHP function with PHPDoc and ); ending', async () => {
+      mockGit.raw.mockResolvedValue('routes.php\n')
+      mockLstat(100)
+      mockReadFile(
+        [
+          '/**', // 1: block open
+          ' * Register routes.', // 2: inside block
+          ' */', // 3: block close
+          'function registerRoutes($router) {', // 4: code
+          '    $router->get("/users", function () {', // 5: code
+          '        return User::all();', // 6: code
+          '    });', // 7: not matched
+          '}', // 8: bracket
+          '', // 9: empty
+          '$app->register(', // 10: code
+          '    new ServiceProvider()', // 11: code
+          ');', // 12: );
+        ].join('\n')
+      )
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(getMatchedLines(result['routes.php'])).toEqual([1, 2, 3, 8, 9, 12])
     })
   })
 
