@@ -71,7 +71,7 @@ describe('upload', () => {
     test('should read all sarif reports and reject invalid ones', async () => {
       const context = createMockContext()
       const command = createCommand(SarifUploadCommand)
-      const [firstFile, secondFile] = await command['getMatchingSarifReports'].call(
+      const validReports = await command['getMatchingSarifReports'].call(
         {
           basePaths: ['./src/__tests__/fixtures'],
           config: {},
@@ -80,10 +80,15 @@ describe('upload', () => {
         {}
       )
 
-      expect(firstFile).toMatchObject({
+      expect(validReports.length).toBe(3)
+      expect(validReports[0]).toMatchObject({
         reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
-      expect(secondFile).toMatchObject({
+      expect(validReports[1]).toMatchObject({
+        // timestamp is not a valid date-time, but we ignore it.
+        reportPath: './src/__tests__/fixtures/valid-results.invalid-time.sarif',
+      })
+      expect(validReports[2]).toMatchObject({
         reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
 
@@ -99,16 +104,14 @@ describe('upload', () => {
       }
 
       const output = context.stdout.toString()
-      expect(output).toContain(
-        renderInvalidFile('./src/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input'])
-      )
-      expect(output).toContain(
-        renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [getInvalidJsonUnexpectedTokenErrorMessage()])
-      )
-      expect(output).toContain(
-        renderInvalidFile('./src/__tests__/fixtures/invalid-result.sarif', [
-          "/runs/0/results/0: must have required property 'message'",
-        ])
+      expect(output).toStrictEqual(
+        [
+          renderInvalidFile('./src/__tests__/fixtures/invalid.sarif', [getInvalidJsonUnexpectedTokenErrorMessage()]),
+          renderInvalidFile('./src/__tests__/fixtures/invalid-result.sarif', [
+            "/runs/0/results/0: must have required property 'message'",
+          ]),
+          renderInvalidFile('./src/__tests__/fixtures/empty.sarif', ['Unexpected end of JSON input']),
+        ].join('')
       )
     })
 
@@ -149,7 +152,7 @@ describe('upload', () => {
     test('should allow folder and single unit paths', async () => {
       const context = createMockContext()
       const command = createCommand(SarifUploadCommand)
-      const [firstFile, secondFile, thirdFile] = await command['getMatchingSarifReports'].call(
+      const files = await command['getMatchingSarifReports'].call(
         {
           basePaths: ['./src/__tests__/fixtures', './src/__tests__/fixtures/subfolder/valid-results.sarif'],
           config: {},
@@ -157,13 +160,17 @@ describe('upload', () => {
         },
         {}
       )
-      expect(firstFile).toMatchObject({
+      expect(files.length).toBe(4)
+      expect(files[0]).toMatchObject({
         reportPath: './src/__tests__/fixtures/valid-results.sarif',
       })
-      expect(secondFile).toMatchObject({
+      expect(files[1]).toMatchObject({
+        reportPath: './src/__tests__/fixtures/valid-results.invalid-time.sarif',
+      })
+      expect(files[2]).toMatchObject({
         reportPath: './src/__tests__/fixtures/valid-no-results.sarif',
       })
-      expect(thirdFile).toMatchObject({
+      expect(files[3]).toMatchObject({
         reportPath: './src/__tests__/fixtures/subfolder/valid-results.sarif',
       })
     })
@@ -180,7 +187,7 @@ describe('upload', () => {
         {}
       )
 
-      expect(files.length).toEqual(2)
+      expect(files.length).toEqual(3)
     })
   })
 })
