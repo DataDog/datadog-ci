@@ -236,6 +236,13 @@ describe('upload', () => {
     })
   })
 
+  describe('disableFileFixes', () => {
+    test('should default to false', () => {
+      const command = createCommand(CoverageUploadCommand)
+      expect(command['disableFileFixes']).toBe(false)
+    })
+  })
+
   describe('getFlags', () => {
     test('should return undefined when no flags provided', () => {
       const command = createCommand(CoverageUploadCommand)
@@ -309,6 +316,17 @@ describe('execute', () => {
     expect(output[2]).toContain('DRY-RUN MODE ENABLED. WILL NOT UPLOAD COVERAGE REPORT')
     expect(output[3]).toContain('Starting upload')
     expect(output[4]).toContain(`Will upload code coverage report file ${path}`)
+  })
+
+  test('should accept --disable-file-fixes flag', async () => {
+    const runCLIWithFlag = makeRunCLI(CoverageUploadCommand, [
+      'coverage',
+      'upload',
+      '--dry-run',
+      '--disable-file-fixes',
+    ])
+    const {code} = await runCLIWithFlag(['src/__tests__/fixtures'])
+    expect(code).toBe(0)
   })
 
   test('should upload with flags in dry-run mode', async () => {
