@@ -121,7 +121,7 @@
     "datadog-metrics": "0.9.3",
     "debug": "^4.4.1",
     "deep-extend": "0.6.0",
-    "fast-xml-parser": "^5.3.4",
+    "fast-xml-parser": "^5.3.7",
     "form-data": "^4.0.4",
     "glob": "^13.0.5",
     "inquirer": "^8.2.6",
