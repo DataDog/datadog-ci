@@ -11,8 +11,8 @@ import upath from 'upath'
 
 import {FileFixes} from './interfaces'
 
-const MAX_FILE_SIZE = 1024 * 1024 // 1MB
-const MAX_FILES = 100_000
+const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+const MAX_FILES = 200_000
 const MAX_OUTPUT_SIZE = 20 * 1024 * 1024 // 20MB estimated serialized size
 const CONCURRENCY = 8
 
@@ -215,8 +215,7 @@ const collectResults = (results: FileFixResult[]): FileFixes => {
 
   for (const result of results) {
     const base64 = result.bitmap.toString('base64')
-    // Rough estimate: "path": {"lines": N, "bitmap": "base64..."},
-    const entrySize = result.path.length + 30 + base64.length
+    const entrySize = result.path.length + base64.length
     if (estimatedSize + entrySize > MAX_OUTPUT_SIZE) {
       break
     }
