@@ -327,9 +327,9 @@ describe('generateFileFixes', () => {
       mockReadFile(
         [
           'fmt.Println("/*")', // 1: /* inside string
-          '"/*"',              // 2: bare string containing /*
-          "'/*'",              // 3: single-quoted /* (e.g. char literal)
-          'code()',            // 4: code — proves no block comment was opened
+          '"/*"', // 2: bare string containing /*
+          "'/*'", // 3: single-quoted /* (e.g. char literal)
+          'code()', // 4: code — proves no block comment was opened
         ].join('\n')
       )
 
