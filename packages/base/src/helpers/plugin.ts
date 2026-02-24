@@ -252,7 +252,7 @@ const handlePluginAutoInstall = async (scope: string) => {
     }
 
     const pluginName = scopeToPackageName(scope)
-    console.log(chalk.red(`Could not find ${chalk.bold(pluginName)}. Installing...`))
+    console.log(chalk.yellowBright(`Could not find ${chalk.bold(pluginName)}. Installing...`))
     await temporarilyInstallPluginWithNpx(pluginName)
   }
 }
