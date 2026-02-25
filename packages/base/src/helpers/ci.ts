@@ -116,6 +116,9 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
     const runnerRoot = upath.resolve(runnerTemp, '..', '..')
     dirs.push(upath.join(runnerRoot, 'cached', '_diag'))
     dirs.push(upath.join(runnerRoot, '_diag'))
+    // actions-runner variants
+    dirs.push(upath.join(runnerRoot, 'actions-runner', 'cached', '_diag'))
+    dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
   }
 
   return uniq(dirs.filter(Boolean))
@@ -1184,7 +1187,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     }
 
     if (!targetLogFile) {
-      context.stdout.write(
+      context.stderr.write(
         `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
       )
     }

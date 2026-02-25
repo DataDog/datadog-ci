@@ -621,19 +621,27 @@ describe('getGithubJobDisplayNameFromLogs', () => {
     expect(context.stderr.toString()).toContain('could not find GitHub diagnostic log files')
   })
 
-  test('should derive and try the diag dir from RUNNER_TEMP', () => {
-    const runnerTemp = '/home/actions/actions-runner/_work/_temp'
-    process.env.RUNNER_TEMP = runnerTemp
-    const runnerRoot = upath.resolve(runnerTemp, '..', '..')
-    const derivedDiagDir = upath.join(runnerRoot, '_diag')
-    const logContent = sampleLogContent(sampleJobDisplayName)
+  describe.each([
+    ['diag dir', '_diag'],
+    ['cached diag dir', 'cached', '_diag'],
+    ['actions-runner cached diag dir', 'actions-runner', 'cached', '_diag'],
+    ['actions-runner diag dir', 'actions-runner', '_diag'],
+  ])('should derive and try the %s from RUNNER_TEMP', (_description, ...routeParts) => {
+    beforeEach(() => {
+      const runnerTemp = '/home/actions/actions-runner/_work/_temp'
+      process.env.RUNNER_TEMP = runnerTemp
+      const runnerRoot = upath.resolve(runnerTemp, '..', '..')
+      const derivedDiagDir = upath.join(runnerRoot, ...routeParts)
+      const logContent = sampleLogContent(sampleJobDisplayName)
 
-    mockReaddirSync(derivedDiagDir, sampleLogFileName)
-    jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+      mockReaddirSync(derivedDiagDir, sampleLogFileName)
+      jest.spyOn(fs, 'readFileSync').mockReturnValue(logContent)
+    })
 
-    const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
-
-    expect(jobName).toBe(sampleJobDisplayName)
+    test('and read the GitHub job display name from logs', () => {
+      const jobName = getGithubJobNameFromLogs(createMockContext() as BaseContext)
+      expect(jobName).toBe(sampleJobDisplayName)
+    })
   })
 
   test('log files found but none contain the display name', () => {
