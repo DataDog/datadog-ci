@@ -29,6 +29,8 @@ datadog-ci coverage upload --flags type:unit-tests --flags jvm-21 unit-tests/cov
 - `--upload-git-diff` (default: `true`): if the command is run in a PR context, it will try to upload the PR git diff along with the coverage data.
 - `--skip-git-metadata-upload` (default: `false`): skip the upload of git metadata.
 - `--git-repository-url` is a string specifying the repository URL to retrieve git metadata from. If this is missing, the URL is retrieved from the local git repository.
+- `--disable-file-fixes` (default: `false`): disable the generation and upload of file fixes for code coverage.
+- `--file-fixes-search-path` is a string specifying the root directory used to scan source files for file fixes. By default, the repository root is used. This is useful for monorepos or when coverage reports only cover a subset of the codebase.
 
 #### Environment variables
 
