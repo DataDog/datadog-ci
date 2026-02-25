@@ -6,9 +6,9 @@
   "keywords": [
     "datadog",
     "datadog-ci",
+    "iac",
     "plugin",
-    "terraform",
-    "iac"
+    "terraform"
   ],
   "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-terraform",
   "repository": {
@@ -42,7 +42,7 @@
   "dependencies": {
     "axios": "^1.12.1",
     "chalk": "3.0.0",
-    "form-data": "^4.0.1",
+    "form-data": "^4.0.4",
     "simple-git": "3.16.0"
   },
   "devDependencies": {

@@ -253,7 +253,8 @@ jobs:
               "@datadog/datadog-ci-plugin-container-app": "./artifacts/@datadog-datadog-ci-plugin-container-app-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-lambda": "./artifacts/@datadog-datadog-ci-plugin-lambda-${{ matrix.version }}.tgz",
               "@datadog/datadog-ci-plugin-stepfunctions": "./artifacts/@datadog-datadog-ci-plugin-stepfunctions-${{ matrix.version }}.tgz",
-              "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz"
+              "@datadog/datadog-ci-plugin-synthetics": "./artifacts/@datadog-datadog-ci-plugin-synthetics-${{ matrix.version }}.tgz",
+              "@datadog/datadog-ci-plugin-terraform": "./artifacts/@datadog-datadog-ci-plugin-terraform-${{ matrix.version }}.tgz"
             }
           }' > package.json
 
