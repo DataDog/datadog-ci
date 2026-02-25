@@ -81,11 +81,12 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
-| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
-| `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the Web App (or slot) |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Web App (or slot) |  |
+| `--name` | `-n` | Name of the Web App to instrument |  |
+| `--slot` |  | Name of the Web App slot to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" or "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}/slots/{slotName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Web App (or slot). Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 | `--service` |  | The value for the service tag. For example, `my-service` |  |
 | `--env` or `--environment` |  | The value for the env tag. For example, `prod` |  |
@@ -108,11 +109,12 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
-| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
-| `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the Web App (or slot) |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Web App (or slot) |  |
+| `--name` | `-n` | Name of the Web App to instrument |  |
+| `--slot` |  | Name of the Web App slot to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" or "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}/slots/{slotName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Web App (or slot). Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 <!-- END_USAGE:uninstrument -->
 

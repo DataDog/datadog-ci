@@ -6,6 +6,8 @@ interface Resource {
   subscriptionId: string
   resourceGroup: string
   name: string
+  subtype?: string
+  subname?: string
 }
 
 export const parseResourceId = (resourceId: string): Resource | undefined => {
@@ -13,9 +15,9 @@ export const parseResourceId = (resourceId: string): Resource | undefined => {
     /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.\w+\/\w+\/([^/]+)$/i
   )
   if (match) {
-    const [, subscriptionId, resourceGroup, name] = match
+    const [, subscriptionId, resourceGroup, name, subtype, subname] = match
 
-    return {subscriptionId, resourceGroup, name}
+    return {subscriptionId, resourceGroup, name, subtype, subname}
   }
 }
 

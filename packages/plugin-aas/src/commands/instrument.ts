@@ -1,9 +1,12 @@
-import {StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
+import {SiteContainer, StringDictionary, WebSiteManagementClient} from '@azure/arm-appservice'
 import {ResourceManagementClient} from '@azure/arm-resources'
 import {DefaultAzureCredential} from '@azure/identity'
 import {
   AasConfigOptions,
   getExtensionId,
+  renderWebApp,
+  resourceIdSegment,
+  WebApp,
   WINDOWS_RUNTIME_EXTENSIONS,
   WindowsRuntime,
 } from '@datadog/datadog-ci-base/commands/aas/common'
@@ -76,8 +79,8 @@ export class PluginCommand extends AasInstrumentCommand {
 
     this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
     const results = await Promise.all(
-      Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToNames]) =>
-        this.processSubscription(subscriptionId, resourceGroupToNames, config)
+      Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToWebApps]) =>
+        this.processSubscription(subscriptionId, resourceGroupToWebApps, config)
       )
     )
     const success = results.every((result) => result)
@@ -92,13 +95,13 @@ export class PluginCommand extends AasInstrumentCommand {
 
   public async processSubscription(
     subscriptionId: string,
-    resourceGroupToNames: Record<string, string[]>,
+    resourceGroupToNames: Record<string, WebApp[]>,
     config: AasConfigOptions
   ): Promise<boolean> {
     const aasClient = new WebSiteManagementClient(this.cred, subscriptionId, {apiVersion: '2024-11-01'})
     const results = await Promise.all(
-      Object.entries(resourceGroupToNames).flatMap(([resourceGroup, aasNames]) =>
-        aasNames.map((aasName) => this.processAas(aasClient, config, resourceGroup, aasName))
+      Object.entries(resourceGroupToNames).flatMap(([resourceGroup, webApps]) =>
+        webApps.map((webApp) => this.processWebApp(aasClient, config, resourceGroup, webApp))
       )
     )
 
@@ -109,16 +112,18 @@ export class PluginCommand extends AasInstrumentCommand {
    * Process an Azure App Service for instrumentation.
    * @returns A promise that resolves to a boolean indicating success or failure.
    */
-  public async processAas(
+  public async processWebApp(
     aasClient: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    aasName: string
+    webApp: WebApp
   ): Promise<boolean> {
     // make config a copy with the default service added
-    config = {...config, service: config.service ?? aasName}
+    config = {...config, service: config.service ?? webApp.name}
     try {
-      const site = await aasClient.webApps.get(resourceGroup, aasName)
+      const site = await (webApp.slot
+        ? aasClient.webApps.getSlot(resourceGroup, webApp.name, webApp.slot)
+        : aasClient.webApps.get(resourceGroup, webApp.name))
 
       // Determine instrumentation method based on platform
       if (isWindows(site)) {
@@ -127,14 +132,14 @@ export class PluginCommand extends AasInstrumentCommand {
         if (!runtime) {
           this.context.stdout.write(
             renderSoftWarning(
-              `Unable to detect runtime for Windows App Service ${chalk.bold(aasName)}. Skipping instrumentation. Try manually specifying your runtime with \`--windows-runtime\``
+              `Unable to detect runtime for Windows Web App ${renderWebApp(webApp)}. Skipping instrumentation. Try manually specifying your runtime with \`--windows-runtime\``
             )
           )
 
           return false
         }
-        await this.instrumentExtension(aasClient, config, resourceGroup, aasName, runtime)
-        await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+        await this.instrumentExtension(aasClient, config, resourceGroup, webApp, runtime)
+        await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
 
         return true
       }
@@ -144,28 +149,32 @@ export class PluginCommand extends AasInstrumentCommand {
       if (config.isMusl && !isContainer) {
         this.context.stdout.write(
           renderSoftWarning(
-            `The --musl flag is set, but the App Service ${chalk.bold(aasName)} is not a containerized app. \
+            `The --musl flag is set, but the Web App ${renderWebApp(webApp)} is not a containerized app. \
 This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.`
           )
         )
       }
       config.isDotnet ||= isDotnet(site)
       config.isMusl &&= config.isDotnet && isContainer
-      await this.instrumentSidecar(aasClient, config, resourceGroup, aasName, isContainer)
-      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, aasName, site.tags ?? {})
+      await this.instrumentSidecar(aasClient, config, resourceGroup, webApp, isContainer)
+      await this.addTags(config, aasClient.subscriptionId!, resourceGroup, webApp, site.tags ?? {})
     } catch (error) {
-      this.context.stdout.write(renderError(`Failed to instrument ${aasName}: ${formatError(error)}`))
+      this.context.stdout.write(renderError(`Failed to instrument ${renderWebApp(webApp)}: ${formatError(error)}`))
 
       return false
     }
 
     if (!config.shouldNotRestart) {
-      this.context.stdout.write(`${this.dryRunPrefix}Restarting Azure App Service ${chalk.bold(aasName)}\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Restarting Web App ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
         try {
-          await aasClient.webApps.restart(resourceGroup, aasName)
+          await (webApp.slot
+            ? aasClient.webApps.restartSlot(resourceGroup, webApp.name, webApp.slot)
+            : aasClient.webApps.restart(resourceGroup, webApp.name))
         } catch (error) {
-          this.context.stdout.write(renderError(`Failed to restart Azure App Service ${chalk.bold(aasName)}: ${error}`))
+          this.context.stdout.write(
+            renderError(`Failed to restart Azure App Service ${renderWebApp(webApp)}: ${error}`)
+          )
 
           return false
         }
@@ -179,7 +188,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     config: AasConfigOptions,
     subscriptionId: string,
     resourceGroup: string,
-    aasName: string,
+    webApp: WebApp,
     tags: Record<string, string>
   ): Promise<void> {
     const updatedTags: Record<string, string> = {
@@ -194,16 +203,16 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       updatedTags.version = config.version
     }
     if (!sortedEqual(tags, updatedTags)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${chalk.bold(aasName)}\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Updating tags for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
         try {
           await this.resourceClient.tagsOperations.beginCreateOrUpdateAtScopeAndWait(
-            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}`,
+            `/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${resourceIdSegment(webApp)}`,
             {properties: {tags: updatedTags}}
           )
         } catch (error) {
           this.context.stdout.write(
-            renderError(`Failed to update tags for ${chalk.bold(aasName)}: ${formatError(error)}`)
+            renderError(`Failed to update tags for ${renderWebApp(webApp)}: ${formatError(error)}`)
           )
         }
       }
@@ -214,13 +223,17 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    aasName: string,
+    webApp: WebApp,
     runtime: WindowsRuntime
   ) {
     const extensionId = WINDOWS_RUNTIME_EXTENSIONS[runtime]
 
     // Check if the extension is already installed
-    const existingExtensions = await collectAsyncIterator(client.webApps.listSiteExtensions(resourceGroup, aasName))
+    const existingExtensions = await collectAsyncIterator(
+      webApp.slot
+        ? client.webApps.listSiteExtensionsSlot(resourceGroup, webApp.name, webApp.slot)
+        : client.webApps.listSiteExtensions(resourceGroup, webApp.name)
+    )
     const extensionInstalled = existingExtensions.some(
       (ext) => ext.name && getExtensionId(ext.name).toLowerCase() === extensionId.toLowerCase()
     )
@@ -228,36 +241,40 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
 
     if (extensionInstalled) {
       this.context.stdout.write(
-        `${this.dryRunPrefix}Site extension ${chalk.bold(extensionId)} already installed on ${chalk.bold(aasName)}.\n`
+        `${this.dryRunPrefix}Site extension ${chalk.bold(extensionId)} already installed on ${renderWebApp(webApp)}.\n`
       )
-      await this.updateEnvVars(client, resourceGroup, aasName, envVars)
+      await this.updateEnvVars(client, resourceGroup, webApp, envVars)
 
       return
     }
 
-    const envVarsPromise = this.updateEnvVars(client, resourceGroup, aasName, envVars)
+    const envVarsPromise = this.updateEnvVars(client, resourceGroup, webApp, envVars)
 
-    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${chalk.bold(aasName)}\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
-      await client.webApps.stop(resourceGroup, aasName)
+      await (webApp.slot
+        ? client.webApps.stopSlot(resourceGroup, webApp.name, webApp.slot)
+        : client.webApps.stop(resourceGroup, webApp.name))
     }
 
     this.context.stdout.write(
-      `${this.dryRunPrefix}Installing extension ${chalk.bold(extensionId)} on ${chalk.bold(aasName)}\n`
+      `${this.dryRunPrefix}Installing extension ${chalk.bold(extensionId)} on ${renderWebApp(webApp)}\n`
     )
     if (!this.dryRun) {
       // We make this call with the regular resources client because `client.webApps.beginInstallSiteExtensionAndWait` doesn't work
       await this.resourceClient.resources.beginCreateOrUpdateByIdAndWait(
-        `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${aasName}/siteextensions/${extensionId}`,
+        `/subscriptions/${client.subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.Web/sites/${resourceIdSegment(webApp)}/siteextensions/${extensionId}`,
         '2024-11-01',
         {}
       )
     }
     await envVarsPromise
 
-    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${chalk.bold(aasName)}\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
-      await client.webApps.start(resourceGroup, aasName)
+      await (webApp.slot
+        ? client.webApps.startSlot(resourceGroup, webApp.name, webApp.slot)
+        : client.webApps.start(resourceGroup, webApp.name))
     }
   }
 
@@ -265,10 +282,14 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     client: WebSiteManagementClient,
     config: AasConfigOptions,
     resourceGroup: string,
-    aasName: string,
+    webApp: WebApp,
     isContainer: boolean
   ) {
-    const siteContainers = await collectAsyncIterator(client.webApps.listSiteContainers(resourceGroup, aasName))
+    const siteContainers = await collectAsyncIterator(
+      webApp.slot
+        ? client.webApps.listSiteContainersSlot(resourceGroup, webApp.name, webApp.slot)
+        : client.webApps.listSiteContainers(resourceGroup, webApp.name)
+    )
     const sidecarContainer = siteContainers.find((c) => c.name === SIDECAR_CONTAINER_NAME)
     const envVars = getEnvVars(config, isContainer)
     // We need to ensure that the sidecar container is configured correctly, which means checking the image, target port,
@@ -284,17 +305,26 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
       this.context.stdout.write(
         `${this.dryRunPrefix}${sidecarContainer === undefined ? 'Creating' : 'Updating'} sidecar container ${chalk.bold(
           SIDECAR_CONTAINER_NAME
-        )} on ${chalk.bold(aasName)}\n`
+        )} on ${renderWebApp(webApp)}\n`
       )
       if (!this.dryRun) {
-        await client.webApps.createOrUpdateSiteContainer(resourceGroup, aasName, SIDECAR_CONTAINER_NAME, {
+        const sidecar: SiteContainer = {
           image: SIDECAR_IMAGE,
           targetPort: String(SIDECAR_PORT),
           isMain: false,
           // We're allowing access to all env vars since it is simpler
           // and doesn't cause problems, but not all env vars are needed for the sidecar.
           environmentVariables: Object.keys(envVars).map((name) => ({name, value: name})),
-        })
+        }
+        await (webApp.slot
+          ? client.webApps.createOrUpdateSiteContainerSlot(
+              resourceGroup,
+              webApp.name,
+              webApp.slot,
+              SIDECAR_CONTAINER_NAME,
+              sidecar
+            )
+          : client.webApps.createOrUpdateSiteContainer(resourceGroup, webApp.name, SIDECAR_CONTAINER_NAME, sidecar))
       }
     } else {
       this.context.stdout.write(
@@ -303,25 +333,29 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
         )} already exists with correct configuration.\n`
       )
     }
-    await this.updateEnvVars(client, resourceGroup, aasName, envVars)
+    await this.updateEnvVars(client, resourceGroup, webApp, envVars)
   }
 
   private async updateEnvVars(
     client: WebSiteManagementClient,
     resourceGroup: string,
-    aasName: string,
+    webApp: WebApp,
     envVars: Record<string, string>
   ) {
-    const existingEnvVars = await client.webApps.listApplicationSettings(resourceGroup, aasName)
+    const existingEnvVars = await (webApp.slot
+      ? client.webApps.listApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot)
+      : client.webApps.listApplicationSettings(resourceGroup, webApp.name))
     const updatedEnvVars: StringDictionary = {properties: {...existingEnvVars.properties, ...envVars}}
     if (!sortedEqual(existingEnvVars.properties, updatedEnvVars.properties)) {
-      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${chalk.bold(aasName)}\n`)
+      this.context.stdout.write(`${this.dryRunPrefix}Updating Application Settings for ${renderWebApp(webApp)}\n`)
       if (!this.dryRun) {
-        await client.webApps.updateApplicationSettings(resourceGroup, aasName, updatedEnvVars)
+        await (webApp.slot
+          ? client.webApps.updateApplicationSettingsSlot(resourceGroup, webApp.name, webApp.slot, updatedEnvVars)
+          : client.webApps.updateApplicationSettings(resourceGroup, webApp.name, updatedEnvVars))
       }
     } else {
       this.context.stdout.write(
-        `${this.dryRunPrefix}No Application Settings changes needed for ${chalk.bold(aasName)}.\n`
+        `${this.dryRunPrefix}No Application Settings changes needed for ${renderWebApp(webApp)}.\n`
       )
     }
   }
