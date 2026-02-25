@@ -485,6 +485,80 @@ describe('generateFileFixes', () => {
     })
   })
 
+  describe('false positives', () => {
+    it('COMMENT_LINE: does not treat // inside Kotlin multiline string as a comment', async () => {
+      mockGit.raw.mockResolvedValue('App.kt\n')
+      mockLstat(100)
+      mockReadFile(['val txt = """', '// not a comment', '"""', 'println(txt)'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(result).not.toHaveProperty(['App.kt'])
+    })
+
+    it('BRACKET_LINE: does not treat } inside Kotlin multiline string as structural brace', async () => {
+      mockGit.raw.mockResolvedValue('App.kt\n')
+      mockLstat(100)
+      mockReadFile(['val txt = """', '}', '"""', 'println(txt)'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(result).not.toHaveProperty(['App.kt'])
+    })
+
+    it('PARENTHESIS_LINE: does not treat ) inside Kotlin multiline string as structural parenthesis', async () => {
+      mockGit.raw.mockResolvedValue('App.kt\n')
+      mockLstat(100)
+      mockReadFile(['val txt = """', ')', '"""', 'println(txt)'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(result).not.toHaveProperty(['App.kt'])
+    })
+
+    it('BLOCK_COMMENT_OPEN/CLOSE: does not treat /* */ inside Go raw string as a block comment', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile(['package main', 'var txt = `', '/*', 'still string', '*/', '`', 'var n = 1'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(result).not.toHaveProperty(['main.go'])
+    })
+
+    it('BLOCK_COMMENT_CLOSE: does not mark a line that closes a block comment and has code', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile(['package main', '/*', 'comment', '*/ var x = 1', 'var y = 2'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(hasLine(result, 'main.go', 4)).toBe(false)
+    })
+
+    it('GO_FUNC_LINE: does not treat anonymous function literal with spacing as declaration line', async () => {
+      mockGit.raw.mockResolvedValue('main.go\n')
+      mockLstat(100)
+      mockReadFile(
+        ['package main', 'func main() {', '    func () {', '        println("x")', '    }()', '}'].join('\n')
+      )
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(hasLine(result, 'main.go', 3)).toBe(false)
+    })
+
+    it('PHP_END_BRACKET: does not treat ); inside heredoc body as executable-structure line', async () => {
+      mockGit.raw.mockResolvedValue('index.php\n')
+      mockLstat(100)
+      mockReadFile(['<?php', '$sql = <<<SQL', ');', 'SQL;', 'echo $sql;'].join('\n'))
+
+      const result = await generateFileFixes(mockGit)
+
+      expect(result).not.toHaveProperty(['index.php'])
+    })
+  })
+
   describe('no matches', () => {
     it('does not include files with no matching lines', async () => {
       mockGit.raw.mockResolvedValue('main.go\n')
