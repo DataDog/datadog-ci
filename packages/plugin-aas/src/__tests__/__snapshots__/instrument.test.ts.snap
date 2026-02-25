@@ -5,7 +5,7 @@ exports[`aas instrument execute Adds a sidecar and updates the application setti
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
-Restarting Azure App Service my-web-app
+Restarting Web App my-web-app
 🐶 Instrumentation completed successfully!
 "
 `;
@@ -15,7 +15,7 @@ exports[`aas instrument execute Adds core tags to the Azure App Service 1`] = `
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
-Restarting Azure App Service my-web-app
+Restarting Web App my-web-app
 🐶 Instrumentation completed successfully!
 "
 `;
@@ -46,13 +46,13 @@ exports[`aas instrument execute Errors if no Azure App Service is specified 1`] 
 `;
 
 exports[`aas instrument execute Errors if the resource ID is invalid 1`] = `
-"[Error] Invalid AAS resource ID: not-a-valid-resource-id
+"[Error] Invalid Web App (or Slot) resource ID: not-a-valid-resource-id
 "
 `;
 
 exports[`aas instrument execute Errors include all resource IDs that are invalid 1`] = `
-"[Error] Invalid AAS resource ID: not-a-valid-resource-id
-[Error] Invalid AAS resource ID: another-invalid-id
+"[Error] Invalid Web App (or Slot) resource ID: not-a-valid-resource-id
+[Error] Invalid Web App (or Slot) resource ID: another-invalid-id
 "
 `;
 
@@ -90,11 +90,31 @@ Creating sidecar container datadog-sidecar on my-web-app
 
 exports[`aas instrument execute Ignores --musl flag and warns on non-containerized dotnet apps 1`] = `
 "🐶 Beginning instrumentation of Azure App Service(s)
-[!] The --musl flag is set, but the App Service my-web-app is not a containerized app. This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
+[!] The --musl flag is set, but the Web App my-web-app is not a containerized app. This flag is only applicable for containerized .NET apps (on musl-based distributions like Alpine Linux), and will be ignored.
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
-Restarting Azure App Service my-web-app
+Restarting Web App my-web-app
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Instruments a sidecar on a slot 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app (slot: staging)
+Updating Application Settings for my-web-app (slot: staging)
+Updating tags for my-web-app (slot: staging)
+Restarting Web App my-web-app (slot: staging)
+🐶 Instrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Instruments a slot via resource ID 1`] = `
+"🐶 Beginning instrumentation of Azure App Service(s)
+Creating sidecar container datadog-sidecar on my-web-app (slot: staging)
+Updating Application Settings for my-web-app (slot: staging)
+Updating tags for my-web-app (slot: staging)
+Restarting Web App my-web-app (slot: staging)
 🐶 Instrumentation completed successfully!
 "
 `;
@@ -107,8 +127,8 @@ Updating Application Settings for my-web-app
 Updating Application Settings for my-web-app2
 Updating tags for my-web-app
 Updating tags for my-web-app2
-Restarting Azure App Service my-web-app
-Restarting Azure App Service my-web-app2
+Restarting Web App my-web-app
+Restarting Web App my-web-app2
 🐶 Instrumentation completed successfully!
 "
 `;
@@ -118,7 +138,7 @@ exports[`aas instrument execute Performs no actions in dry run mode 1`] = `
 [Dry Run] Creating sidecar container datadog-sidecar on my-web-app
 [Dry Run] Updating Application Settings for my-web-app
 [Dry Run] Updating tags for my-web-app
-[Dry Run] Restarting Azure App Service my-web-app
+[Dry Run] Restarting Web App my-web-app
 [Dry Run] 🐶 Instrumentation completed successfully!
 "
 `;
@@ -128,7 +148,7 @@ exports[`aas instrument execute Sets additional environment variables from confi
 Creating sidecar container datadog-sidecar on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
-Restarting Azure App Service my-web-app
+Restarting Web App my-web-app
 🐶 Instrumentation completed successfully!
 "
 `;
@@ -154,7 +174,7 @@ exports[`aas instrument execute Validates windows runtime parameter 1`] = `
 
 exports[`aas instrument execute Warns and exits if App Service is Windows but runtime cannot be detected 1`] = `
 "🐶 Beginning instrumentation of Azure App Service(s)
-[!] Unable to detect runtime for Windows App Service my-web-app. Skipping instrumentation. Try manually specifying your runtime with \`--windows-runtime\`
+[!] Unable to detect runtime for Windows Web App my-web-app. Skipping instrumentation. Try manually specifying your runtime with \`--windows-runtime\`
 🐶 Instrumentation completed with errors, see above for details.
 "
 `;

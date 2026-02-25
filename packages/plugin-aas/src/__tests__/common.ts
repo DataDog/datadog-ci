@@ -112,3 +112,7 @@ export const DEFAULT_ARGS = [
   'my-web-app',
 ]
 export const DEFAULT_INSTRUMENT_ARGS = [...DEFAULT_ARGS, '--no-source-code-integration']
+
+export const WEB_APP_SLOT_ID = WEB_APP_ID + '/slots/staging'
+export const SLOT_ARGS = [...DEFAULT_ARGS, '--slot', 'staging']
+export const SLOT_INSTRUMENT_ARGS = [...SLOT_ARGS, '--no-source-code-integration']

@@ -175,18 +175,19 @@ export abstract class AasCommand extends BaseCommand {
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
     // all or none of the site args should be specified (except slot)
-    const allSpecified = specifiedSiteArgs.every((arg) => !arg)
-    if (!(specifiedSiteArgs.every((arg) => arg) || allSpecified)) {
+    const noneSpecified = specifiedSiteArgs.every((arg) => !arg)
+    const allSpecified = specifiedSiteArgs.every((arg) => arg)
+    if (!(allSpecified || noneSpecified)) {
       errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
     } else if (!allSpecified && !!config.slotName) {
       errors.push('--slot can only specified if --subscription-id, --resource-group, and --name are specified')
-    } else if (allSpecified) {
+    } else if (!noneSpecified) {
       webApps[config.subscriptionId!] = {[config.resourceGroup!]: [{name: config.aasName!, slot: config.slotName}]}
     }
     if (this.resourceIds?.length) {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
-        if (!parsed || (!!parsed.subType && parsed.subType !== 'slot')) {
+        if (!parsed || (!!parsed.subType && parsed.subType !== 'slots')) {
           errors.push(`Invalid Web App (or Slot) resource ID: ${resourceId}`)
           continue
         }
