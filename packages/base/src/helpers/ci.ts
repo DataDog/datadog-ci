@@ -1187,7 +1187,7 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
     }
 
     if (!targetLogFile) {
-      context.stdout.write(
+      context.stderr.write(
         `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
       )
     }
