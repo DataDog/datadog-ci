@@ -69,7 +69,7 @@ The repository identifier (`repo_id`) is resolved in this order:
 
 ## Development
 
-When developing software, you can try with the following command:
+To test locally, run:
 
 ```bash
 yarn launch terraform upload plan /path/to/terraform-plan.json
