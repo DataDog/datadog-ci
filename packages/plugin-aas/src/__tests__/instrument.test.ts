@@ -486,6 +486,23 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toMatchSnapshot()
     })
 
+    test('Errors if --slot is specified without -s/-g/-n', async () => {
+      const {code, context} = await runCLI(['--slot', 'staging', '--no-source-code-integration'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain(
+        '--slot can only specified if --subscription-id, --resource-group, and --name are specified'
+      )
+    })
+
+    test('Errors if resource ID has invalid sub-resource type', async () => {
+      const {code, context} = await runCLI([
+        '-r',
+        '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app/invalid/foo',
+      ])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain('Invalid Web App (or Slot) resource ID')
+    })
+
     test('Instruments multiple App Services in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
