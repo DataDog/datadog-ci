@@ -42,8 +42,7 @@ const PARENTHESIS_LINE = /^\s*[()]\s*(\/\/.*)?$/
 
 const BLOCK_COMMENT_OPEN = /^\s*\/\*/
 
-const GO_FUNC_LINE =
-  /^\s*func\s+(?:\([^)]*\)\s*)?[A-Za-z_][A-Za-z0-9_]*(?:\s*\[[^\]]+\])?\s*\(.*\)\s*.*\{\s*(\/\/.*)?$/
+const GO_FUNC_LINE = /^\s*func\s+(?:\([^)]*\)\s*)?[A-Za-z_][A-Za-z0-9_]*(?:\s*\[[^\]]+\])?\s*\(.*\)\s*.*\{\s*(\/\/.*)?$/
 const PHP_END_BRACKET = /^\s*\);\s*(\/\/.*)?$/
 const PHP_HEREDOC_START = /<<<\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/
 
@@ -124,6 +123,7 @@ const escapeRegExp = (value: string): string => {
 
 const isPhpHeredocTerminator = (line: string, label: string): boolean => {
   const escapedLabel = escapeRegExp(label)
+
   return new RegExp(`^\\s*${escapedLabel};?\\s*$`).test(line)
 }
 
@@ -134,12 +134,14 @@ const isLineInMultilineLiteral = (extension: string, line: string, state: Multil
       if (isPhpHeredocTerminator(line, heredocLabel)) {
         state.phpHeredocLabel = undefined
       }
+
       return true
     }
 
     const heredocMatch = line.match(PHP_HEREDOC_START)
     if (heredocMatch) {
       state.phpHeredocLabel = heredocMatch[2]
+
       return true
     }
 
@@ -152,6 +154,7 @@ const isLineInMultilineLiteral = (extension: string, line: string, state: Multil
     if (backtickCount % 2 === 1) {
       state.insideGoRawString = !state.insideGoRawString
     }
+
     return isLiteralLine
   }
 
@@ -161,6 +164,7 @@ const isLineInMultilineLiteral = (extension: string, line: string, state: Multil
     if (tripleQuoteCount % 2 === 1) {
       state.insideTripleQuotedString = !state.insideTripleQuotedString
     }
+
     return isLiteralLine
   }
 
@@ -169,6 +173,7 @@ const isLineInMultilineLiteral = (extension: string, line: string, state: Multil
 
 const isOnlyWhitespaceOrLineComment = (value: string): boolean => {
   const trimmed = value.trim()
+
   return trimmed === '' || trimmed.startsWith('//')
 }
 
