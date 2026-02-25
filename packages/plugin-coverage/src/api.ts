@@ -54,6 +54,12 @@ export const uploadCodeCoverageReport =
       })
     }
 
+    if (payload.fileFixesCompressed) {
+      form.append('file_fixes', payload.fileFixesCompressed, {
+        filename: 'file_fixes.json.gz',
+      })
+    }
+
     await doWithMaxConcurrency(20, payload.paths, async (path) => {
       const gzip = fs.createReadStream(path).pipe(createGzip())
       form.append('code_coverage_report_file', gzip, {filename: `${getReportFilename(path)}.gz`})

@@ -49,6 +49,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
       coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -111,6 +112,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: '/my/base/path',
       codeowners: {path: 'CODEOWNERS', sha: 'abc123'},
       coverageConfig: {path: 'coverage.yml', sha: 'bef456'},
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -162,6 +164,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -205,6 +208,7 @@ describe('uploadCodeCoverageReport', () => {
       basePath: undefined,
       codeowners: undefined,
       coverageConfig: undefined,
+      fileFixesCompressed: undefined,
     }
 
     const uploader = uploadCodeCoverageReport(requestMock)
@@ -214,5 +218,105 @@ describe('uploadCodeCoverageReport', () => {
     const eventJson = JSON.parse(eventCall[1])
 
     expect(eventJson).not.toHaveProperty('report.flags')
+  })
+
+  it('sends file_fixes as gzipped attachment when fileFixesCompressed provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const fileFixesCompressed = Buffer.from('fake-gzipped-data')
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    // file_fixes should NOT be in event.json
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+    expect(eventJson).not.toHaveProperty('file_fixes')
+
+    // file_fixes should be sent as a gzipped attachment
+    const fileFixesCall = appendMock.mock.calls.find((call) => call[0] === 'file_fixes')
+    expect(fileFixesCall).toBeDefined()
+    expect(fileFixesCall[1]).toEqual(fileFixesCompressed)
+    expect(fileFixesCall[2]).toEqual({filename: 'file_fixes.json.gz'})
+  })
+
+  it('does not send file_fixes attachment when fileFixesCompressed not provided', async () => {
+    const requestMock = jest.fn().mockResolvedValue({status: 200})
+
+    const fsMock = jest.mocked(fs)
+    const zlibMock = jest.mocked(zlib)
+
+    const mockStream = new PassThrough()
+    fsMock.createReadStream.mockReturnValueOnce(mockStream as unknown as fs.ReadStream)
+    zlibMock.createGzip.mockReturnValueOnce(mockStream as unknown as zlib.Gzip)
+
+    const appendMock = jest.fn()
+    const getHeadersMock = jest.fn().mockReturnValue({'Content-Type': 'multipart/form-data'})
+    const formMock = {
+      append: appendMock,
+      getHeaders: getHeadersMock,
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore override constructor
+    FormData.mockImplementation(() => formMock)
+
+    const payload = {
+      hostname: 'test-host',
+      format: 'jacoco',
+      spanTags: {},
+      flags: undefined,
+      prDiff: undefined,
+      commitDiff: undefined,
+      paths: ['/path/to/report.xml'],
+      basePath: undefined,
+      codeowners: undefined,
+      coverageConfig: undefined,
+      fileFixesCompressed: undefined,
+    }
+
+    const uploader = uploadCodeCoverageReport(requestMock)
+    await uploader(payload)
+
+    // No file_fixes attachment should be sent
+    const fileFixesCall = appendMock.mock.calls.find((call) => call[0] === 'file_fixes')
+    expect(fileFixesCall).toBeUndefined()
+
+    // And it should not be in event.json either
+    const eventCall = appendMock.mock.calls.find((call) => call[0] === 'event')
+    const eventJson = JSON.parse(eventCall[1])
+    expect(eventJson).not.toHaveProperty('file_fixes')
   })
 })
