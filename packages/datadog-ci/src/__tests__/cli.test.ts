@@ -131,6 +131,7 @@ describe('cli', () => {
       'sarif upload': [NONEXISTENT_FILE],
       'sbom upload': [NONEXISTENT_FILE],
       'sourcemaps upload': [NONEXISTENT_FILE],
+      'terraform upload': ['plan', NONEXISTENT_FILE],
       trace: ['id'],
     }
 
@@ -146,6 +147,10 @@ describe('cli', () => {
         // Auto-add --dry-run to prevent real API calls in tests
         ...(supportsDryRun(commandClass) ? ['--dry-run'] : []),
       ]
+
+      beforeEach(() => {
+        mockedEnableFips.mockClear()
+      })
 
       test('supports the --fips option', async () => {
         // When running the command with the --fips option

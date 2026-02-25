@@ -44,6 +44,12 @@ export class TerraformUploadCommand extends BaseCommand {
     description: 'Enable verbose logging',
   })
 
+  // FIPS mode
+  protected fips = Option.Boolean('--fips', false, {description: 'Enable FIPS mode for the command'})
+  protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false, {
+    description: 'Ignore FIPS errors and continue execution',
+  })
+
   // Dry run mode
   protected dryRun = Option.Boolean('--dry-run', false, {
     description: 'Run the command in dry run mode, without uploading any data to Datadog',

@@ -4,7 +4,10 @@ import {newSimpleGit} from '@datadog/datadog-ci-base/commands/git-metadata/git'
 import {uploadToGitDB} from '@datadog/datadog-ci-base/commands/git-metadata/gitdb'
 import {isGitRepo} from '@datadog/datadog-ci-base/commands/git-metadata/library'
 import {TerraformUploadCommand} from '@datadog/datadog-ci-base/commands/terraform/upload'
+import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
+import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
+import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {getGitMetadata} from '@datadog/datadog-ci-base/helpers/git/format-git-span-data'
 import id from '@datadog/datadog-ci-base/helpers/id'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
@@ -31,6 +34,8 @@ import {validateArtifactType, validateFilePath, validateJsonStructure, computeFi
 export class PluginCommand extends TerraformUploadCommand {
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
+    fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
+    fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
 
   private logger: Logger = new Logger((s: string) => this.context.stdout.write(s), LogLevel.INFO)
@@ -38,6 +43,8 @@ export class PluginCommand extends TerraformUploadCommand {
   private git: simpleGit.SimpleGit | undefined = undefined
 
   public async execute() {
+    enableFips(this.fips || this.config.fips, this.fipsIgnoreError || this.config.fipsIgnoreError)
+
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
 
