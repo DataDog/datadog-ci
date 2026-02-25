@@ -186,12 +186,12 @@ export abstract class AasCommand extends BaseCommand {
     if (this.resourceIds?.length) {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
-        if (!parsed || (!!parsed.subtype && parsed.subtype !== 'slot')) {
+        if (!parsed || (!!parsed.subType && parsed.subType !== 'slot')) {
           errors.push(`Invalid Web App (or Slot) resource ID: ${resourceId}`)
           continue
         }
 
-        const {subscriptionId, resourceGroup, name, subname: slot} = parsed
+        const {subscriptionId, resourceGroup, name, subResourceName: slot} = parsed
         if (!webApps[subscriptionId]) {
           webApps[subscriptionId] = {}
         }

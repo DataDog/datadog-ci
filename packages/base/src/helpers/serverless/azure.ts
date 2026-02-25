@@ -6,18 +6,18 @@ interface Resource {
   subscriptionId: string
   resourceGroup: string
   name: string
-  subtype?: string
-  subname?: string
+  subType?: string
+  subResourceName?: string
 }
 
 export const parseResourceId = (resourceId: string): Resource | undefined => {
   const match = resourceId.match(
-    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.\w+\/\w+\/([^/]+)$/i
+    /^\/subscriptions\/([^/]+)\/resourceGroups\/([^/]+)\/providers\/Microsoft\.\w+\/\w+\/([^/]+)(?:\/(\w+)\/([^/]+))?$/i
   )
   if (match) {
-    const [, subscriptionId, resourceGroup, name, subtype, subname] = match
+    const [, subscriptionId, resourceGroup, name, subType, subResourceName] = match
 
-    return {subscriptionId, resourceGroup, name, subtype, subname}
+    return {subscriptionId, resourceGroup, name, subType, subResourceName}
   }
 }
 
