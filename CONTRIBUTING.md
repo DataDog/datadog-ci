@@ -31,7 +31,7 @@ When developing the tool, it is possible to run commands using `yarn launch`. It
 # Install dependencies (run once)
 yarn install
 
-yarn launch synthetics run-tests --config dev/global.config.json
+yarn launch <scope> <command> ...
 ```
 
 ### Framework and libraries used
@@ -47,43 +47,77 @@ Follow the [Structure](#structure) below for any commands you add. Then, don't f
 
 #### Structure
 
-Commands are stored in the [packages/datadog-ci/src/commands](packages/datadog-ci/src/commands) folder.
+The repository is a monorepo:
 
-The skeleton of a command is composed of a README, an `index.ts` and a folder for the tests.
+- **`packages/base`** (`@datadog/datadog-ci-base`): Holds command definitions (descriptions, paths, arguments), but **not their implementation**.
+  - As an **exception**, some commands that are core to datadog-ci with multiple scopes depending on each other are implemented in the base package.
+- **`packages/plugin-<scope>`**: Holds command implementations for a specific scope.
+  - A plugin can either be **built-in** if it's lightweight, or **separately installable** if it pulls many dependencies.
+- **`packages/datadog-ci`**: Thin CLI entrypoint that imports commands from the base package, and **lists built-in plugins** as `dependencies`.
+
+The skeleton of **any command** is defined in the base package:
 
 ```bash
-src/
-└── commands/
-    └── fakeCommand/
-         ├── __tests__/
-         │   └── index.test.ts
-         ├── README.md
-         └── index.ts
+packages/base/src/commands/
+└── <scope>/
+    ├── cli.ts          # Exports a `commands` array (auto-generated)
+    └── <command>.ts    # Definition of your command (should extend `BaseCommand`)
 ```
 
-The `index.ts` file must export classes extending the `Command` class of `clipanion`. The commands of all `packages/datadog-ci/src/commands/*/index.ts` files will then be imported and made available in the `datadog-ci` tool.
+Your new command can be put:
+- In an existing scope
+- In a new scope
+  - By default, all new scopes should be plugins.
+    - Then you should **choose** whether you want your plugin to be built-in or separately installable.
+  - Exceptionally, it's possible to put your command in the base package. But you must have a good reason for doing so.
 
-A sample `index.ts` file for a new command would be:
+To add a new command to a scope, create `packages/base/src/commands/<scope>/<command>.ts`:
 
 ```typescript
-import {Command} from 'clipanion'
+import {BaseCommand} from '@datadog/datadog-ci-base'
+import {Command, Option} from 'clipanion'
 
-export class HelloWorldCommand extends Command {
-  public async execute() {
-    this.context.stdout.write('Hello world!')
+export class FooBarCommand extends BaseCommand {
+  public static paths = [['foo', 'bar']]
+
+  public static usage = Command.Usage({
+    description: 'Description of the command.',
+  })
+
+  public myOption = Option.String('--my-option', {
+    description: 'Description of the option.',
+  })
+
+  public async execute(): Promise<number | void> {
+    return executePluginCommand(this)
   }
 }
-
-module.exports = [HelloWorldCommand]
 ```
 
-Lastly, unit tests must be created in the `__tests__/` folder. The tests can then be launched with the `yarn test` command: it finds all files with a filename ending in `.test.ts` in the repo and executes them.
+Then, create a new plugin with `yarn plugin:create <scope>`.
+
+Inside the plugin, create `packages/plugin-<scope>/src/commands/<command>.ts`:
+
+```typescript
+import {FooBarCommand} from '@datadog/datadog-ci-base/commands/foo/bar'
+
+export class PluginCommand extends FooBarCommand {
+
+  // Implement your command's logic here
+  public async execute() {
+    console.log('Hello world!')
+    return 0
+  }
+}
+```
+
+Unit tests in a given folder go in a `__tests__/` subfolder. Run them with `yarn test`; Jest picks up all `*.test.ts` files in the repo.
 
 #### Beta command
 
 If your command is related to a beta product or feature, or you want to test out the command first, you can mark your command as beta.
 
-To do so, add your command's name to the [`BETA_COMMANDS` array](https://github.com/DataDog/datadog-ci/blob/35c54e1d1e991d21461084ef2e346ca1c6bb7ea6/src/cli.ts#L8).
+To do so, add your command's scope to the [`BETA_COMMANDS` set](packages/datadog-ci/src/cli.ts) in `packages/datadog-ci/src/cli.ts`.
 
 Users have to prefix their command line with `DD_BETA_COMMANDS_ENABLED=1` to use the command. Make sure to document this in your command's README for visibility. This should be removed once the command goes out of beta.
 

@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci",
-  "version": "5.6.0",
+  "version": "5.8.0",
   "description": "Use Datadog from your CI.",
   "license": "Apache-2.0",
   "keywords": [
@@ -49,18 +49,12 @@
     "@datadog/datadog-ci-plugin-junit": "workspace:*",
     "@datadog/datadog-ci-plugin-sarif": "workspace:*",
     "@datadog/datadog-ci-plugin-sbom": "workspace:*",
-    "axios": "^1.12.1",
     "chalk": "3.0.0",
     "clipanion": "^3.2.1",
-    "js-yaml": "4.1.1",
-    "semver": "^7.5.3",
-    "typanion": "^3.14.0",
-    "upath": "^2.0.1"
+    "typanion": "^3.14.0"
   },
   "devDependencies": {
     "@types/jest": "29.5.3",
-    "@types/js-yaml": "^4.0.5",
-    "@types/semver": "^7.7.1",
     "esbuild": "^0.25.9"
   }
 }

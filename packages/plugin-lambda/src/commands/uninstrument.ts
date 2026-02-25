@@ -21,13 +21,13 @@ import {
   maskConfig,
 } from '../functions/commons'
 import {getUninstrumentedFunctionConfigs, getUninstrumentedFunctionConfigsFromRegEx} from '../functions/uninstrument'
-import {FunctionConfiguration} from '../interfaces'
+import {FunctionConfiguration, LambdaConfigOptions} from '../interfaces'
 import {requestAWSCredentials, requestFunctionSelection} from '../prompt'
 import * as commonRenderer from '../renderers/common-renderer'
 import * as instrumentRenderer from '../renderers/instrument-uninstrument-renderer'
 
 export class PluginCommand extends LambdaUninstrumentCommand {
-  private config: any = {
+  private config: LambdaConfigOptions = {
     functions: [],
     region: process.env[AWS_DEFAULT_REGION_ENV_VAR],
   }
@@ -130,13 +130,13 @@ export class PluginCommand extends LambdaUninstrumentCommand {
     if (hasSpecifiedRegExPattern) {
       if (hasSpecifiedFunctions) {
         this.context.stdout.write(
-          instrumentRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
+          commonRenderer.renderFunctionsAndFunctionsRegexOptionsBothSetError(this.functions.length !== 0)
         )
 
         return 1
       }
       if (this.regExPattern!.match(':')) {
-        this.context.stdout.write(instrumentRenderer.renderRegexSetWithARNError())
+        this.context.stdout.write(commonRenderer.renderRegexSetWithARNError())
 
         return 1
       }
@@ -186,7 +186,7 @@ export class PluginCommand extends LambdaUninstrumentCommand {
           this.region || this.config.region
         )
       } catch (err) {
-        this.context.stdout.write(instrumentRenderer.renderCouldntGroupFunctionsError(err))
+        this.context.stdout.write(commonRenderer.renderCouldntGroupFunctionsError(err))
 
         return 1
       }

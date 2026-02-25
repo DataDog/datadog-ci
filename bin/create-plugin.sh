@@ -27,7 +27,7 @@ PLUGIN_DIR="packages/plugin-$SCOPE"
 
 if [ -d "$PLUGIN_DIR" ]; then
 	echo "Plugin directory $PLUGIN_DIR already exists!"
-	echo "This script should only be run once per scope, before migrate.sh"
+	echo "This script should only be run once per scope."
 	exit 1
 fi
 
@@ -91,6 +91,3 @@ yarn install 2>&1 | sed 's/^/  /'
 
 echo
 echo -e "${GREEN}Package created successfully${NC}"
-
-echo
-echo -e "${BLUE}If needed, you can now run: ${BOLD}bin/migrate.sh $SCOPE${NC}"

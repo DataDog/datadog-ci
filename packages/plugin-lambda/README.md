@@ -56,6 +56,40 @@ datadog-ci lambda uninstrument -f <function-name> -f <another-function-name> -r 
 
 See the configuration section for additional settings.
 
+### `cloudwatch`
+
+Run `datadog-ci lambda cloudwatch` to enable or disable CloudWatch Logs for Lambda functions by attaching or removing a deny policy on the function's IAM role.
+
+**Note:** If you have multiple Lambda functions which share the same log group and execution role, disabling CloudWatch logs for one of the functions will affect the other functions using the execution role and log group. If you would only like to disable only a subset, consider using one log group per function.
+
+```bash
+# Disable CloudWatch Logs for functions specified by names
+datadog-ci lambda cloudwatch disable -f <function-name> -f <another-function-name> -r us-east-1
+
+# Re-enable CloudWatch Logs for functions specified by ARNs
+datadog-ci lambda cloudwatch enable -f <lambda-arn> -f <another-lambda-arn>
+
+# Disable CloudWatch Logs for functions matching a regex pattern
+datadog-ci lambda cloudwatch disable --functions-regex <valid-regex-pattern> -r us-east-1
+
+# Dry run of all updates
+datadog-ci lambda cloudwatch disable -f <function-name> -r us-east-1 --dry-run
+```
+
+#### Arguments
+
+<!-- BEGIN_USAGE:cloudwatch -->
+| Argument | Shorthand | Description | Default |
+| -------- | --------- | ----------- | ------- |
+| `<action>` |  | One of "disable" or "enable" |  |
+| `--config` |  | Path to the configuration file |  |
+| `--dry` or `--dry-run` | `-d` | Preview the changes from running the command | `false` |
+| `--function` | `-f` | The ARN of the Lambda function, or the name of the Lambda function (`--region` must be defined) |  |
+| `--profile` |  | Specify the AWS named profile credentials to use. Learn more about AWS named profiles here: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html#using-profiles |  |
+| `--functions-regex` or `--functionsRegex` |  | A regex pattern to match with the Lambda function name |  |
+| `--region` | `-r` | Default region to use, when `--function` is specified by the function name instead of the ARN |  |
+<!-- END_USAGE:cloudwatch -->
+
 ## Configuration
 
 ### AWS Credentials
@@ -96,7 +130,7 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | `--forwarder` |  | The ARN of the datadog forwarder (https://docs.datadoghq.com/logs/guide/forwarder/) to attach this function's LogGroup to |  |
 | `--function` | `-f` | The ARN of the Lambda function to be instrumented, or the name of the Lambda function (--region must be defined) |  |
 | `--interactive` | `-i` | Allows the user to interactively choose how their function gets instrumented. There is no need to provide any other flags if you choose to use interactive mode since you will be prompted for the information instead | `false` |
-| `--layer-version` or `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. Setting this to 'latest' will use one of the following versions based on your runtime: dotnet - 23, java - 25, node - 133, python - 122, ruby - 27. Setting to 'none' will disable adding the language layer. | `latest` |
+| `--layer-version` or `--layerVersion` | `-v` | Version of the Datadog Lambda Library layer to apply. Setting this to 'latest' will use one of the following versions based on your runtime: dotnet - 23, java - 25, node - 134, python - 122, ruby - 27. Setting to 'none' will disable adding the language layer. | `latest` |
 | `--logging` |  | Whether to collect logs using the Lambda Extension. | `true` |
 | `--log-level` or `--logLevel` |  | Set to debug to see additional output from the Datadog Lambda Library and/or Lambda Extension for troubleshooting purposes |  |
 | `--merge-xray-traces` or `--mergeXrayTraces` |  | Whether to join dd-trace traces to AWS X-Ray traces. Useful for tracing API Gateway spans. | `false` |

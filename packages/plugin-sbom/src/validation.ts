@@ -97,7 +97,7 @@ export const validateSbomFileAgainstSchema = (path: string, ajv: Ajv, debug: boo
 }
 
 /**
- * Validate an SBOM file again what we need.
+ * Validate an SBOM file again with what we need.
  * @param path - the path of the file to validate
  * @param debug - if we need to show debug information
  */

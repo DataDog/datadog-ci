@@ -9,12 +9,39 @@ import {diff} from 'jest-diff'
 /**
  * Source of truth for command scopes without plugins: this should be updated manually.
  */
-const noPluginExceptions = new Set(['dsyms', 'git-metadata', 'plugin', 'tag'])
+const noPluginExceptions = new Set([
+  'ci-env',
+  'dsyms',
+  'elf-symbols',
+  'flutter-symbols',
+  'git-metadata',
+  'measure',
+  'pe-symbols',
+  'plugin',
+  'react-native',
+  'sourcemaps',
+  'span',
+  'tag',
+  'trace',
+  'unity-symbols',
+  'version',
+])
 
 /**
  * Source of truth for scope-less commands: this should be updated manually.
  */
-const scopeLessCommandExceptions = new Set(['tag'])
+const scopeLessCommandExceptions = new Set([
+  // `datadog-ci tag ...`
+  'tag',
+  // `datadog-ci measure ...`
+  'measure',
+  // `datadog-ci trace ...`
+  'trace',
+  // `datadog-ci trace span ...`
+  'span',
+  // `datadog-ci version`
+  'version',
+])
 
 /**
  * Scopes with an associated GitHub Action that doesn't pin the version of `@datadog/datadog-ci`.
@@ -87,7 +114,7 @@ const findCommands = (folder: string, scope: string): string[] => {
         }
 
         const content = fs.readFileSync(path.join(folder, file), 'utf8')
-        if (!content.match(/export class \w+ extends BaseCommand/)) {
+        if (!content.match(/export class \w+ extends (BaseCommand|CustomSpanCommand)/)) {
           return acc
         }
 
@@ -167,21 +194,27 @@ const formatBasePackageCliFile = () => {
   const newContent = `/* eslint-disable quote-props */
 import type {RecordWithKebabCaseKeys} from '@datadog/datadog-ci-base/helpers/types'
 
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
+
 ${imports.map((p) => `import {commands as ${p.importName}} from '${p.importPath}'`).join('\n')}
+
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
 
 // prettier-ignore
 export const commands = {
 ${imports.map((p) => `  '${p.scope}': ${p.importName},`).join('\n')}
 } satisfies RecordWithKebabCaseKeys
 
+// DO NOT EDIT MANUALLY. Update the source of truth in \`bin/lint-packages.ts\` instead.
+
 /**
  * Some command scopes do not have a plugin package, and their logic is entirely included in \`@datadog/datadog-ci-base\`.
  */
-export const noPluginExceptions: Set<string> = new Set([${Array.from(noPluginExceptions)
-    .map((e) => `'${e}'`)
-    .join(', ')}]) satisfies Set<
-  keyof typeof commands
->
+export const noPluginExceptions: Set<string> = new Set([
+${Array.from(noPluginExceptions)
+  .map((e) => `  '${e}',`)
+  .join('\n')}
+]) satisfies Set<keyof typeof commands>
 `
 
   return makeApplyChanges(file, originalContent, newContent)
@@ -242,7 +275,7 @@ const pluginPackages = fs
     } catch {
       console.log(chalk.bold.red(`Invalid state for ${folder}.`))
       console.log(
-        `Did you recently run ${chalk.bold(`yarn plugin:create ${scope}`)}? Please either run ${chalk.bold(`bin/migrate.sh ${scope}`)} and finish the migration, or complete the structure of the plugin before merging your PR.`
+        `Did you recently run ${chalk.bold(`yarn plugin:create ${scope}`)}? Please complete the structure of the plugin before merging your PR.`
       )
       process.exit(1)
     }

@@ -78,7 +78,24 @@ export const githubWellKnownDiagnosticDirsWin = [
   'C:/actions-runner/_diag', // for self-hosted
 ]
 
-const githubJobDisplayNameRegex = /"jobDisplayName":\s*"([^"]+)"/
+const githubJobDisplayNameRegex = /"jobDisplayName":\s*"((?:[^"\\]|\\.)*)"/
+
+/**
+ * Properly unescape a JSON string value by leveraging JSON.parse
+ * Handles all JSON escape sequences: \", \\, \n, \r, \t, \f, \b, \uXXXX
+ *
+ * @param str - The JSON-escaped string (without surrounding quotes)
+ * @returns The unescaped string
+ */
+const unescapeJsonString = (str: string): string => {
+  try {
+    return JSON.parse('"' + str + '"')
+  } catch (e) {
+    // If JSON.parse fails, return as-is
+    // This handles edge cases where the string might be malformed
+    return str
+  }
+}
 
 const uniq = <T>(items: T[]): T[] => Array.from(new Set(items))
 
@@ -99,6 +116,9 @@ const getGithubDiagnosticDirsFromEnv = (): string[] => {
     const runnerRoot = upath.resolve(runnerTemp, '..', '..')
     dirs.push(upath.join(runnerRoot, 'cached', '_diag'))
     dirs.push(upath.join(runnerRoot, '_diag'))
+    // actions-runner variants
+    dirs.push(upath.join(runnerRoot, 'actions-runner', 'cached', '_diag'))
+    dirs.push(upath.join(runnerRoot, 'actions-runner', '_diag'))
   }
 
   return uniq(dirs.filter(Boolean))
@@ -1144,17 +1164,50 @@ export const getGithubJobNameFromLogs = (context: BaseContext): string | undefin
   }
 
   // 2. Get the job display name via regex
-  for (const logFile of workerLogFiles) {
+  // For non-ephemeral runners, multiple Worker logs may exist from different jobs
+  // Use ACTIONS_ORCHESTRATION_ID to identify the correct log if available
+  const orchestrationId = process.env.ACTIONS_ORCHESTRATION_ID
+  let targetLogFile: string | undefined
+
+  if (orchestrationId) {
+    // Extract planId GUID (everything before first dot)
+    const planId = orchestrationId.split('.')[0]
+
+    // Find the Worker log containing this planId
+    for (const logFile of workerLogFiles) {
+      const filePath = upath.join(foundDiagDir, logFile)
+      const content = fs.readFileSync(filePath, 'utf-8')
+
+      // Check if this log matches the current job's planId
+      if (content.includes(`"planId": "${planId}"`)) {
+        targetLogFile = logFile
+        context.stdout.write(`Found Worker log for planId ${planId}: ${logFile}\n`)
+        break
+      }
+    }
+
+    if (!targetLogFile) {
+      context.stderr.write(
+        `${chalk.yellow.bold('[WARNING]')} Could not find Worker log for planId ${planId}, checking all logs\n`
+      )
+    }
+  }
+
+  // If we found a specific log file, check only that one; otherwise check all
+  const logsToCheck = targetLogFile ? [targetLogFile] : workerLogFiles
+
+  for (const logFile of logsToCheck) {
     const filePath = upath.join(foundDiagDir, logFile)
     const content = fs.readFileSync(filePath, 'utf-8')
 
     const match = content.match(githubJobDisplayNameRegex)
 
     if (match && match[1]) {
-      // match[1] is the captured group with the display name
-      context.stdout.write(`Successfully extracted job name: ${match[1]}\n`)
+      // match[1] is the captured group with the JSON-escaped display name
+      const unescapedName = unescapeJsonString(match[1])
+      context.stdout.write(`Successfully extracted job name: ${unescapedName}\n`)
 
-      return match[1]
+      return unescapedName
     }
   }
 

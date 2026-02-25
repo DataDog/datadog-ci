@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-lambda",
-  "version": "5.6.0",
+  "version": "5.8.0",
   "description": "Datadog CI plugin for `lambda` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -43,8 +43,9 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.981.0",
+    "@aws-sdk/client-iam": "^3.981.0",
     "@aws-sdk/client-lambda": "^3.981.0",
-    "@aws-sdk/credential-provider-ini": "^3.972.3",
+    "@aws-sdk/credential-provider-ini": "^3.972.9",
     "@aws-sdk/credential-providers": "^3.981.0",
     "@aws-sdk/types": "^3.973.1",
     "@smithy/property-provider": "^2.0.12",

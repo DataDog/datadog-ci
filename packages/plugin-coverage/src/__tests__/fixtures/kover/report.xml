@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<report name="kover-report">
+    <sessioninfo id="session-1" start="1730108644010" dump="1730108649465"/>
+    <package name="com/example/app">
+        <class name="com/example/app/UserService" sourcefilename="UserService.kt">
+            <method name="getUser" desc="(I)Lcom/example/app/User;" line="8">
+                <counter type="INSTRUCTION" missed="0" covered="10"/>
+                <counter type="BRANCH" missed="0" covered="2"/>
+                <counter type="LINE" missed="0" covered="3"/>
+                <counter type="COMPLEXITY" missed="0" covered="2"/>
+                <counter type="METHOD" missed="0" covered="1"/>
+            </method>
+            <method name="deleteUser" desc="(I)V" line="15">
+                <counter type="INSTRUCTION" missed="5" covered="0"/>
+                <counter type="LINE" missed="2" covered="0"/>
+                <counter type="COMPLEXITY" missed="1" covered="0"/>
+                <counter type="METHOD" missed="1" covered="0"/>
+            </method>
+            <counter type="INSTRUCTION" missed="5" covered="10"/>
+            <counter type="BRANCH" missed="0" covered="2"/>
+            <counter type="LINE" missed="2" covered="3"/>
+            <counter type="COMPLEXITY" missed="1" covered="2"/>
+            <counter type="METHOD" missed="1" covered="1"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </class>
+        <sourcefile name="UserService.kt">
+            <line nr="8" mi="0" ci="4" mb="0" cb="0"/>
+            <line nr="9" mi="0" ci="3" mb="0" cb="2"/>
+            <line nr="10" mi="0" ci="3" mb="0" cb="0"/>
+            <line nr="15" mi="3" ci="0" mb="0" cb="0"/>
+            <line nr="16" mi="2" ci="0" mb="0" cb="0"/>
+            <counter type="INSTRUCTION" missed="5" covered="10"/>
+            <counter type="BRANCH" missed="0" covered="2"/>
+            <counter type="LINE" missed="2" covered="3"/>
+            <counter type="COMPLEXITY" missed="1" covered="2"/>
+            <counter type="METHOD" missed="1" covered="1"/>
+            <counter type="CLASS" missed="0" covered="1"/>
+        </sourcefile>
+        <counter type="INSTRUCTION" missed="5" covered="10"/>
+        <counter type="BRANCH" missed="0" covered="2"/>
+        <counter type="LINE" missed="2" covered="3"/>
+        <counter type="COMPLEXITY" missed="1" covered="2"/>
+        <counter type="METHOD" missed="1" covered="1"/>
+        <counter type="CLASS" missed="0" covered="1"/>
+    </package>
+    <counter type="INSTRUCTION" missed="5" covered="10"/>
+    <counter type="BRANCH" missed="0" covered="2"/>
+    <counter type="LINE" missed="2" covered="3"/>
+    <counter type="COMPLEXITY" missed="1" covered="2"/>
+    <counter type="METHOD" missed="1" covered="1"/>
+    <counter type="CLASS" missed="0" covered="1"/>
+</report>

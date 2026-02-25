@@ -1,4 +1,5 @@
 import os from 'os'
+import {gzipSync} from 'zlib'
 
 import {CoverageUploadCommand} from '@datadog/datadog-ci-base/commands/coverage/upload'
 import {
@@ -36,7 +37,8 @@ import * as simpleGit from 'simple-git'
 import upath from 'upath'
 
 import {apiConstructor, apiUrl, intakeUrl} from '../api'
-import {APIHelper, Payload, RepoFile} from '../interfaces'
+import {generateFileFixes} from '../file-fixes'
+import {APIHelper, FileFixes, Payload, RepoFile} from '../interfaces'
 import {
   renderCommandInfo,
   renderDryRunUpload,
@@ -55,7 +57,7 @@ const TRACE_ID_HTTP_HEADER = 'x-datadog-trace-id'
 const PARENT_ID_HTTP_HEADER = 'x-datadog-parent-id'
 const errorCodesStopUpload = [400, 403]
 
-const MAX_REPORTS_PER_REQUEST = 8 // backend supports 10 attachments, to keep the logic simple we subtract 2: for PR diff and commit diff
+const MAX_REPORTS_PER_REQUEST = 7 // backend supports 10 attachments, to keep the logic simple we subtract 3: for PR diff, commit diff, and file fixes
 
 const COVERAGE_CONFIG_PATHS = ['code-coverage.datadog.yml', 'code-coverage.datadog.yaml']
 
@@ -183,6 +185,12 @@ export class PluginCommand extends CoverageUploadCommand {
     const codeowners = await this.getRepoFile(CODEOWNERS_PATHS)
     const commitDiff = await this.getCommitDiff(spanTags)
     const prDiff = await this.getPrDiff(spanTags)
+    const fileFixes = await this.getFileFixes()
+    // Pre-compress file fixes once to avoid repeated serialization across payload chunks
+    let fileFixesCompressed: Buffer | undefined
+    if (fileFixes && Object.keys(fileFixes).length > 0) {
+      fileFixesCompressed = gzipSync(Buffer.from(JSON.stringify(fileFixes), 'utf8'))
+    }
     const reports = this.getMatchingCoverageReportFilesByFormat()
 
     let payloads: Payload[] = []
@@ -201,11 +209,31 @@ export class PluginCommand extends CoverageUploadCommand {
           prDiff,
           coverageConfig,
           codeowners,
+          fileFixesCompressed,
         }))
       })
     }
 
     return payloads
+  }
+
+  private async getFileFixes(): Promise<FileFixes | undefined> {
+    if (this.disableFileFixes) {
+      return undefined
+    }
+
+    try {
+      const start = Date.now()
+      const result = await generateFileFixes(this.git, this.fileFixesSearchPath)
+      const elapsed = ((Date.now() - start) / 1000).toFixed(2)
+      this.logger.debug(`File fixes generated in ${elapsed}s (${result ? Object.keys(result).length : 0} entries)`)
+
+      return result
+    } catch (e) {
+      this.logger.warn(`Could not generate file fixes: ${e}`)
+
+      return undefined
+    }
   }
 
   private async getRepoFile(possiblePaths: string[]): Promise<RepoFile | undefined> {
@@ -343,7 +371,7 @@ export class PluginCommand extends CoverageUploadCommand {
   }
 
   private getCoverageReportFormat(filePath: string, strict: boolean): string | undefined {
-    const format = toCoverageFormat(this.format) || detectFormat(filePath)
+    const format = toCoverageFormat(this.format) || detectFormat(filePath, strict)
     if (!format) {
       if (strict) {
         this.context.stdout.write(renderInvalidFile(filePath, `format could not be detected`))

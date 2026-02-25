@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-cloud-run",
-  "version": "5.6.0",
+  "version": "5.8.0",
   "description": "Datadog CI plugin for `cloud-run` commands",
   "license": "Apache-2.0",
   "keywords": [

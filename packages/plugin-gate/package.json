@@ -1,6 +1,6 @@
 {
   "name": "@datadog/datadog-ci-plugin-gate",
-  "version": "5.6.0",
+  "version": "5.8.0",
   "description": "Datadog CI plugin for `gate` commands",
   "license": "Apache-2.0",
   "keywords": [
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@types/uuid": "^9.0.2",
-    "axios": "^1.12.1",
+    "axios": "^1.13.5",
     "chalk": "3.0.0",
     "uuid": "^9.0.0"
   }
