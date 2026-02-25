@@ -41,10 +41,13 @@ const BRACKET_LINE = /^\s*[{}]\s*(\/\/.*)?$/
 const PARENTHESIS_LINE = /^\s*[()]\s*(\/\/.*)?$/
 
 const BLOCK_COMMENT_OPEN = /^\s*\/\*/
-const BLOCK_COMMENT_CLOSE = /\*\//
 
-const GO_FUNC_LINE = /^\s*func\s+.*\{\s*(\/\/.*)?$/
+const GO_FUNC_LINE =
+  /^\s*func\s+(?:\([^)]*\)\s*)?[A-Za-z_][A-Za-z0-9_]*(?:\s*\[[^\]]+\])?\s*\(.*\)\s*.*\{\s*(\/\/.*)?$/
 const PHP_END_BRACKET = /^\s*\);\s*(\/\/.*)?$/
+const PHP_HEREDOC_START = /<<<\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\1/
+
+const TRIPLE_QUOTED_STRING_EXTENSIONS = new Set(['.kt', '.kts', '.swift'])
 
 const BASE_PATTERNS = [EMPTY_LINE, COMMENT_LINE, BRACKET_LINE, PARENTHESIS_LINE]
 
@@ -93,7 +96,84 @@ const isSupportedFile = (filePath: string): boolean => {
   return EXTENSION_TO_PATTERNS.has(getExtension(filePath))
 }
 
+interface MultilineLiteralState {
+  insideGoRawString: boolean
+  insideTripleQuotedString: boolean
+  phpHeredocLabel?: string
+}
+
+const countOccurrences = (line: string, token: string): number => {
+  let count = 0
+  let startIndex = 0
+
+  while (true) {
+    const foundIndex = line.indexOf(token, startIndex)
+    if (foundIndex === -1) {
+      break
+    }
+    count++
+    startIndex = foundIndex + token.length
+  }
+
+  return count
+}
+
+const escapeRegExp = (value: string): string => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+const isPhpHeredocTerminator = (line: string, label: string): boolean => {
+  const escapedLabel = escapeRegExp(label)
+  return new RegExp(`^\\s*${escapedLabel};?\\s*$`).test(line)
+}
+
+const isLineInMultilineLiteral = (extension: string, line: string, state: MultilineLiteralState): boolean => {
+  if (extension === '.php') {
+    if (state.phpHeredocLabel) {
+      const heredocLabel = state.phpHeredocLabel
+      if (isPhpHeredocTerminator(line, heredocLabel)) {
+        state.phpHeredocLabel = undefined
+      }
+      return true
+    }
+
+    const heredocMatch = line.match(PHP_HEREDOC_START)
+    if (heredocMatch) {
+      state.phpHeredocLabel = heredocMatch[2]
+      return true
+    }
+
+    return false
+  }
+
+  if (extension === '.go') {
+    const backtickCount = countOccurrences(line, '`')
+    const isLiteralLine = state.insideGoRawString || backtickCount > 0
+    if (backtickCount % 2 === 1) {
+      state.insideGoRawString = !state.insideGoRawString
+    }
+    return isLiteralLine
+  }
+
+  if (TRIPLE_QUOTED_STRING_EXTENSIONS.has(extension)) {
+    const tripleQuoteCount = countOccurrences(line, '"""')
+    const isLiteralLine = state.insideTripleQuotedString || tripleQuoteCount > 0
+    if (tripleQuoteCount % 2 === 1) {
+      state.insideTripleQuotedString = !state.insideTripleQuotedString
+    }
+    return isLiteralLine
+  }
+
+  return false
+}
+
+const isOnlyWhitespaceOrLineComment = (value: string): boolean => {
+  const trimmed = value.trim()
+  return trimmed === '' || trimmed.startsWith('//')
+}
+
 const processFileContent = (filePath: string, content: string): FileFixResult | undefined => {
+  const extension = getExtension(filePath)
   const patterns = getPatternsForFile(filePath)
   if (!patterns) {
     return undefined
@@ -108,30 +188,46 @@ const processFileContent = (filePath: string, content: string): FileFixResult | 
   const bitmap = Buffer.alloc(bitmapSize)
   let hasMatch = false
   let insideBlockComment = false
+  const multilineLiteralState: MultilineLiteralState = {
+    insideGoRawString: false,
+    insideTripleQuotedString: false,
+  }
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
     let matched = false
 
-    // Block comment state tracking
+    // Block comment state tracking (takes precedence to avoid string-state updates inside comments)
     if (insideBlockComment) {
-      matched = true
-      if (BLOCK_COMMENT_CLOSE.test(line)) {
+      const blockCommentCloseIndex = line.indexOf('*/')
+      if (blockCommentCloseIndex === -1) {
+        matched = true
+      } else {
+        const remainingLine = line.slice(blockCommentCloseIndex + 2)
+        matched = isOnlyWhitespaceOrLineComment(remainingLine)
         insideBlockComment = false
       }
-    } else if (BLOCK_COMMENT_OPEN.test(line)) {
-      matched = true
-      if (!BLOCK_COMMENT_CLOSE.test(line)) {
-        insideBlockComment = true
-      }
-    }
+    } else {
+      const lineInMultilineLiteral = isLineInMultilineLiteral(extension, line, multilineLiteralState)
 
-    // Regular pattern matching (only if not already matched)
-    if (!matched) {
-      for (const pattern of patterns) {
-        if (pattern.test(line)) {
+      if (!lineInMultilineLiteral && BLOCK_COMMENT_OPEN.test(line)) {
+        const blockCommentCloseIndex = line.indexOf('*/')
+        if (blockCommentCloseIndex === -1) {
           matched = true
-          break
+          insideBlockComment = true
+        } else {
+          const remainingLine = line.slice(blockCommentCloseIndex + 2)
+          matched = isOnlyWhitespaceOrLineComment(remainingLine)
+        }
+      }
+
+      // Regular pattern matching (only if not already matched and not in multiline literal)
+      if (!matched && !lineInMultilineLiteral) {
+        for (const pattern of patterns) {
+          if (pattern.test(line)) {
+            matched = true
+            break
+          }
         }
       }
     }
