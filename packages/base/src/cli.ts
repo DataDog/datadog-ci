@@ -18,6 +18,7 @@ import {commands as sbomCommands} from './commands/sbom/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
+import {commands as terraformCommands} from './commands/terraform/cli'
 
 // prettier-ignore
 export const commands = {
@@ -38,6 +39,7 @@ export const commands = {
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
+  'terraform': terraformCommands,
 } satisfies RecordWithKebabCaseKeys
 
 /**
