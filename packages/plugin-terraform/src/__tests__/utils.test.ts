@@ -1,5 +1,4 @@
-import fs from 'fs'
-import path from 'path'
+import upath from 'upath'
 
 import {validateArtifactType, validateFilePath, validateJsonStructure, computeFileHash, resolveRepoId} from '../utils'
 
@@ -23,17 +22,17 @@ describe('utils', () => {
 
   describe('validateFilePath', () => {
     test('returns true for existing file', () => {
-      const filePath = path.join(__dirname, 'fixtures', 'valid-plan.json')
+      const filePath = upath.join(__dirname, 'fixtures', 'valid-plan.json')
       expect(validateFilePath(filePath)).toBe(true)
     })
 
     test('returns false for non-existent file', () => {
-      const filePath = path.join(__dirname, 'fixtures', 'does-not-exist.json')
+      const filePath = upath.join(__dirname, 'fixtures', 'does-not-exist.json')
       expect(validateFilePath(filePath)).toBe(false)
     })
 
     test('returns false for directory', () => {
-      const dirPath = path.join(__dirname, 'fixtures')
+      const dirPath = upath.join(__dirname, 'fixtures')
       expect(validateFilePath(dirPath)).toBe(false)
     })
 

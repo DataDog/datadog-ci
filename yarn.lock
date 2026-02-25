@@ -2192,6 +2192,7 @@ __metadata:
     chalk: "npm:3.0.0"
     form-data: "npm:^4.0.4"
     simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown
