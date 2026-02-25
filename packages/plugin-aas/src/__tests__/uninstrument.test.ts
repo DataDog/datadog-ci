@@ -445,7 +445,7 @@ describe('aas instrument', () => {
       expect(updateTags).not.toHaveBeenCalled()
     })
 
-    test('Exits properly if the AAS does not exist', async () => {
+    test('Exits properly if the Web App does not exist', async () => {
       webAppsOperations.get
         .mockClear()
         .mockRejectedValue({code: 'ResourceNotFound', details: {message: 'Could not find my-web-app'}})
@@ -479,7 +479,7 @@ describe('aas instrument', () => {
       expect(updateTags).not.toHaveBeenCalled()
     })
 
-    test('Errors if no Azure App Service is specified', async () => {
+    test('Errors if no Web App is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toMatchSnapshot()
@@ -504,7 +504,7 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toMatchSnapshot()
     })
 
-    test('Instruments multiple App Services in a single subscription', async () => {
+    test('Uninstruments multiple Web Apps in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
         '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',

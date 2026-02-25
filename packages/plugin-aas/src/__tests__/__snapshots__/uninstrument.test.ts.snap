@@ -10,7 +10,7 @@ exports[`aas instrument execute Dry run uninstrumenting doesnt change settings 1
 "
 `;
 
-exports[`aas instrument execute Errors if no Azure App Service is specified 1`] = `
+exports[`aas instrument execute Errors if no Web App is specified 1`] = `
 "[Error] No App Services specified to instrument
 "
 `;
@@ -26,7 +26,7 @@ exports[`aas instrument execute Errors include all resource IDs that are invalid
 "
 `;
 
-exports[`aas instrument execute Exits properly if the AAS does not exist 1`] = `
+exports[`aas instrument execute Exits properly if the Web App does not exist 1`] = `
 "🐶 Beginning uninstrumentation of Web App(s)
 [Error] Failed to uninstrument [object Object]: ResourceNotFound: Could not find my-web-app
 🐶 Uninstrumentation completed with errors, see above for details.
@@ -57,20 +57,6 @@ Extension Datadog.AzureAppServices.DotNet not found or already removed.
 Checking Application Settings on my-web-app
 Updating Application Settings for my-web-app
 Updating tags for my-web-app
-🐶 Uninstrumentation completed successfully!
-"
-`;
-
-exports[`aas instrument execute Instruments multiple App Services in a single subscription 1`] = `
-"🐶 Beginning uninstrumentation of Web App(s)
-Removing sidecar container datadog-sidecar from my-web-app (if it exists)
-Removing sidecar container datadog-sidecar from my-web-app2 (if it exists)
-Checking Application Settings on my-web-app
-Checking Application Settings on my-web-app2
-No Application Settings changes needed for my-web-app.
-No Application Settings changes needed for my-web-app2.
-Updating tags for my-web-app
-Updating tags for my-web-app2
 🐶 Uninstrumentation completed successfully!
 "
 `;
@@ -151,6 +137,20 @@ Removing sidecar container datadog-sidecar from my-web-app (slot: staging) (if i
 Checking Application Settings on my-web-app (slot: staging)
 Updating Application Settings for my-web-app (slot: staging)
 Updating tags for my-web-app (slot: staging)
+🐶 Uninstrumentation completed successfully!
+"
+`;
+
+exports[`aas instrument execute Uninstruments multiple Web Apps in a single subscription 1`] = `
+"🐶 Beginning uninstrumentation of Web App(s)
+Removing sidecar container datadog-sidecar from my-web-app (if it exists)
+Removing sidecar container datadog-sidecar from my-web-app2 (if it exists)
+Checking Application Settings on my-web-app
+Checking Application Settings on my-web-app2
+No Application Settings changes needed for my-web-app.
+No Application Settings changes needed for my-web-app2.
+Updating tags for my-web-app
+Updating tags for my-web-app2
 🐶 Uninstrumentation completed successfully!
 "
 `;

@@ -251,7 +251,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
-    test('Warns and exits if App Service is Windows but runtime cannot be detected', async () => {
+    test('Warns and exits if Web App is Windows but runtime cannot be detected', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(code).toEqual(1)
@@ -461,7 +461,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
-    test('Errors if no Azure App Service is specified', async () => {
+    test('Errors if no Web App is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toMatchSnapshot()
@@ -503,7 +503,7 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toContain('Invalid Web App (or Slot) resource ID')
     })
 
-    test('Instruments multiple App Services in a single subscription', async () => {
+    test('Instruments multiple Web Apps in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
         WEB_APP_ID,
@@ -583,7 +583,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
     })
 
-    test('Adds core tags to the Azure App Service', async () => {
+    test('Adds core tags to the Web App', async () => {
       const {code, context} = await runCLI([
         ...DEFAULT_INSTRUMENT_ARGS,
         '--service',
