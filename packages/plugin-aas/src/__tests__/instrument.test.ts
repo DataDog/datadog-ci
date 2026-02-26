@@ -260,7 +260,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
@@ -454,8 +454,8 @@ describe('aas instrument', () => {
           targetPort: '8126',
         }
       )
-      // the last operations never get called due to the above failure
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      // listApplicationSettings is now called in execute's Promise.all before instrumentSidecar
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
@@ -924,7 +924,7 @@ describe('aas instrument', () => {
     })
 
     test('creates sidecar if not present and updates app settings', async () => {
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -954,7 +954,8 @@ describe('aas instrument', () => {
         {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true},
         'rg',
         {name: 'app'},
-        false
+        false,
+        {}
       )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
@@ -995,7 +996,8 @@ describe('aas instrument', () => {
         {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true, isMusl: true},
         'rg',
         {name: 'app'},
-        false
+        false,
+        {}
       )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
@@ -1047,7 +1049,7 @@ describe('aas instrument', () => {
       webAppsOperations.createOrUpdateSiteContainer.mockResolvedValue({})
       webAppsOperations.updateApplicationSettings.mockResolvedValue({})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalled()
@@ -1068,17 +1070,22 @@ describe('aas instrument', () => {
           ],
         })
       )
-      webAppsOperations.listApplicationSettings.mockResolvedValue({
-        properties: {
-          DD_API_KEY: process.env.DD_API_KEY,
-          DD_SITE: 'datadoghq.com',
-          DD_SERVICE: 'my-web-app',
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
-        },
-      })
+      const existingEnvVars = {
+        DD_API_KEY: process.env.DD_API_KEY!,
+        DD_SITE: 'datadoghq.com',
+        DD_SERVICE: 'my-web-app',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
+      }
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false)
+      await command.instrumentSidecar(
+        client,
+        DEFAULT_CONFIG_WITH_DEFAULT_SERVICE,
+        'rg',
+        {name: 'app'},
+        false,
+        existingEnvVars
+      )
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
@@ -1087,9 +1094,8 @@ describe('aas instrument', () => {
     test('does not call Azure APIs in dry run mode', async () => {
       command.dryRun = true
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
-      webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
@@ -1097,17 +1103,22 @@ describe('aas instrument', () => {
 
     test('does not update app settings if no changes needed', async () => {
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
-      webAppsOperations.listApplicationSettings.mockResolvedValue({
-        properties: {
-          DD_API_KEY: process.env.DD_API_KEY,
-          DD_SITE: 'datadoghq.com',
-          DD_SERVICE: 'my-web-app',
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
-        },
-      })
+      const existingEnvVars = {
+        DD_API_KEY: process.env.DD_API_KEY!,
+        DD_SITE: 'datadoghq.com',
+        DD_SERVICE: 'my-web-app',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
+      }
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false)
+      await command.instrumentSidecar(
+        client,
+        DEFAULT_CONFIG_WITH_DEFAULT_SERVICE,
+        'rg',
+        {name: 'app'},
+        false,
+        existingEnvVars
+      )
 
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })

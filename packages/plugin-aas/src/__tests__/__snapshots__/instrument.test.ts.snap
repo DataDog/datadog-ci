@@ -31,9 +31,9 @@ Updating tags for my-web-app
 
 exports[`aas instrument execute Dry run mode for Windows extension installation 1`] = `
 "[Dry Run] 🐶 Beginning instrumentation of Azure App Service(s)
+[Dry Run] Updating Application Settings for my-web-app
 [Dry Run] Stopping Azure App Service my-web-app
 [Dry Run] Installing extension Datadog.AzureAppServices.DotNet on my-web-app
-[Dry Run] Updating Application Settings for my-web-app
 [Dry Run] Starting Azure App Service my-web-app
 [Dry Run] Updating tags for my-web-app
 [Dry Run] 🐶 Instrumentation completed successfully!
@@ -72,8 +72,8 @@ Please ensure that you have the Azure CLI installed (https://aka.ms/azure-cli) a
 
 exports[`aas instrument execute Handles error during Windows extension installation 1`] = `
 "🐶 Beginning instrumentation of Azure App Service(s)
-Stopping Azure App Service my-web-app
 Updating Application Settings for my-web-app
+Stopping Azure App Service my-web-app
 Installing extension Datadog.AzureAppServices.DotNet on my-web-app
 [Error] Failed to instrument my-web-app: Error: extension installation failed
 🐶 Instrumentation completed with errors, see above for details.
