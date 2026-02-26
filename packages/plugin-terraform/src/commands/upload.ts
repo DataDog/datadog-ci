@@ -29,7 +29,7 @@ import {
   renderSuccessfulGitDBSync,
   renderFailedGitDBSync,
 } from '../renderer'
-import {validateArtifactType, validateFilePath, validateJsonStructure, computeFileHash, resolveRepoId} from '../utils'
+import {validateFilePath, validateJsonStructure, computeFileHash, resolveRepoId} from '../utils'
 
 export class PluginCommand extends TerraformUploadCommand {
   private config = {
@@ -47,13 +47,6 @@ export class PluginCommand extends TerraformUploadCommand {
 
     this.logger.setLogLevel(this.verbose ? LogLevel.DEBUG : LogLevel.INFO)
     this.logger.setShouldIncludeTime(this.verbose)
-
-    // Validate artifact type
-    if (!validateArtifactType(this.artifactType)) {
-      this.context.stderr.write(`Invalid artifact type: ${this.artifactType}. Must be 'plan' or 'state'.\n`)
-
-      return 1
-    }
 
     // Validate API key
     if (!this.config.apiKey) {

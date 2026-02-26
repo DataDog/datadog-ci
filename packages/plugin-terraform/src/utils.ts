@@ -4,9 +4,6 @@ import fs from 'fs'
 import {SpanTags} from '@datadog/datadog-ci-base/helpers/interfaces'
 import {GIT_REPOSITORY_URL} from '@datadog/datadog-ci-base/helpers/tags'
 
-export const validateArtifactType = (type: string): boolean => {
-  return type === 'plan' || type === 'state'
-}
 
 export const validateFilePath = (filePath: string): boolean => {
   try {
