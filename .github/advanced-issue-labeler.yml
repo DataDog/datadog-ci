@@ -36,6 +36,9 @@ policy:
             keys:
               - git-metadata
               - gate
+          - name: code-intelligence
+            keys:
+              - terraform
           - name: synthetics
             keys:
               - synthetics
