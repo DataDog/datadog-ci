@@ -1,25 +1,8 @@
 import upath from 'upath'
 
-import {validateArtifactType, validateFilePath, validateJsonStructure, computeFileHash, resolveRepoId} from '../utils'
+import {validateFilePath, validateJsonStructure, computeFileHash, resolveRepoId} from '../utils'
 
 describe('utils', () => {
-  describe('validateArtifactType', () => {
-    test('returns true for "plan"', () => {
-      expect(validateArtifactType('plan')).toBe(true)
-    })
-
-    test('returns true for "state"', () => {
-      expect(validateArtifactType('state')).toBe(true)
-    })
-
-    test('returns false for invalid type', () => {
-      expect(validateArtifactType('invalid')).toBe(false)
-      expect(validateArtifactType('Plan')).toBe(false)
-      expect(validateArtifactType('STATE')).toBe(false)
-      expect(validateArtifactType('')).toBe(false)
-    })
-  })
-
   describe('validateFilePath', () => {
     test('returns true for existing file', () => {
       const filePath = upath.join(__dirname, 'fixtures', 'valid-plan.json')
