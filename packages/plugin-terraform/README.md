@@ -48,7 +48,7 @@ datadog-ci terraform upload plan ./plans/*.json
 datadog-ci terraform upload state ./terraform.tfstate
 
 # Upload with manual repo-id override
-datadog-ci terraform upload plan ./terraform-plan.json --repo-id "github.com/datadog/my-repo"
+datadog-ci terraform upload plan ./terraform-plan.json --repo-id "github.com/my-org/my-repo"
 
 # Dry run mode
 datadog-ci terraform upload plan ./terraform-plan.json --dry-run
