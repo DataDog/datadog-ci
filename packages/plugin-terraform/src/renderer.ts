@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 
-import {dryRunTag, failCrossTag, successCheckmarkTag} from '../../base/src/helpers/renderer'
+import {dryRunTag, failCrossTag, successCheckmarkTag} from '@datadog/datadog-ci-base/helpers/renderer'
 import {TerraformArtifactPayload} from './interfaces'
 
 export const renderCommandInfo = (artifactType: string, filePath: string, dryRun: boolean): string => {
