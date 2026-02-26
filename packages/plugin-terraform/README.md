@@ -5,13 +5,13 @@ This command lets you upload Terraform runtime artifacts (plan and state JSON fi
 ## Usage
 
 ```bash
-datadog-ci terraform upload [plan|state] <path/to/terraform-file.json>
+datadog-ci terraform upload [plan|state] <path/to/terraform-file.json> [additional-files...]
 ```
 
 ### Arguments
 
 - `plan` or `state`: The type of Terraform artifact being uploaded
-- `<path>`: Path to the Terraform JSON file
+- `<path>`: Path to one or more Terraform JSON files (space-separated)
 
 ### Optional arguments
 
@@ -35,8 +35,14 @@ Optional environment variables:
 ### Examples
 
 ```bash
-# Upload a Terraform plan file
+# Upload a single Terraform plan file
 datadog-ci terraform upload plan ./terraform-plan.json
+
+# Upload multiple Terraform plan files
+datadog-ci terraform upload plan ./plan1.json ./plan2.json ./plan3.json
+
+# Upload multiple plan files using glob expansion
+datadog-ci terraform upload plan ./plans/*.json
 
 # Upload a Terraform state file
 datadog-ci terraform upload state ./terraform.tfstate
@@ -47,10 +53,8 @@ datadog-ci terraform upload plan ./terraform-plan.json --repo-id "github.com/dat
 # Dry run mode
 datadog-ci terraform upload plan ./terraform-plan.json --dry-run
 
-# Upload multiple files (using a loop)
-for file in ./plans/*.json; do
-  datadog-ci terraform upload plan "$file"
-done
+# Upload multiple files with verbose logging
+datadog-ci terraform upload plan ./plan1.json ./plan2.json --verbose
 ```
 
 ### Git context resolution
@@ -77,7 +81,8 @@ yarn launch terraform upload plan /path/to/terraform-plan.json
 
 ## Notes
 
-- The command accepts one file per invocation. To upload multiple files, invoke the command multiple times.
+- The command accepts one or more files per invocation. All files must be of the same artifact type (plan or state).
 - Files are automatically gzipped before upload.
-- The command computes a SHA256 hash of the file content.
+- The command computes a SHA256 hash of each file's content.
 - No client-side validation or filtering of file content is performed (as per RFC requirements).
+- Git metadata is synced only once per invocation, even when uploading multiple files.

@@ -31,7 +31,7 @@ describe('upload', () => {
       const write = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write}, stderr: {write}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
 
       const exitCode = await command.execute()
 
@@ -44,7 +44,7 @@ describe('upload', () => {
       const write = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stderr: {write}})
       command['artifactType'] = 'invalid'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
 
       const exitCode = await command.execute()
 
@@ -58,7 +58,7 @@ describe('upload', () => {
       const write = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stderr: {write}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/does-not-exist.json'
+      command['filePaths'] = ['src/__tests__/fixtures/does-not-exist.json']
 
       const exitCode = await command.execute()
 
@@ -71,7 +71,7 @@ describe('upload', () => {
       const write = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stderr: {write}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/invalid.json'
+      command['filePaths'] = ['src/__tests__/fixtures/invalid.json']
 
       const exitCode = await command.execute()
 
@@ -85,7 +85,7 @@ describe('upload', () => {
       const stderr = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}, stderr: {write: stderr}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['dryRun'] = true // Use dry-run to avoid actual upload
 
       const exitCode = await command.execute()
@@ -100,7 +100,7 @@ describe('upload', () => {
       const stderr = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}, stderr: {write: stderr}})
       command['artifactType'] = 'state'
-      command['filePath'] = 'src/__tests__/fixtures/valid-state.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-state.json']
       command['dryRun'] = true
 
       const exitCode = await command.execute()
@@ -109,12 +109,46 @@ describe('upload', () => {
       expect(stdout.mock.calls.some((call) => call[0].includes('Would upload'))).toBe(true)
     })
 
+    test('should upload multiple valid plan files', async () => {
+      process.env = {DD_API_KEY: 'test-key', DD_GIT_REPOSITORY_URL: 'https://github.com/test/repo'}
+      const stdout = jest.fn()
+      const stderr = jest.fn()
+      const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}, stderr: {write: stderr}})
+      command['artifactType'] = 'plan'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json', 'src/__tests__/fixtures/valid-plan.json']
+      command['dryRun'] = true
+
+      const exitCode = await command.execute()
+
+      expect(exitCode).toBe(0)
+      // Should see "Would upload" twice
+      const uploadCalls = stdout.mock.calls.filter((call) => call[0].includes('Would upload'))
+      expect(uploadCalls.length).toBe(2)
+    })
+
+    test('should return error if any file upload fails', async () => {
+      process.env = {DD_API_KEY: 'test-key', DD_GIT_REPOSITORY_URL: 'https://github.com/test/repo'}
+      const stdout = jest.fn()
+      const stderr = jest.fn()
+      const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}, stderr: {write: stderr}})
+      command['artifactType'] = 'plan'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json', 'src/__tests__/fixtures/does-not-exist.json']
+      command['dryRun'] = true
+
+      const exitCode = await command.execute()
+
+      expect(exitCode).toBe(1)
+      // Should see one successful upload and one error
+      expect(stdout.mock.calls.some((call) => call[0].includes('Would upload'))).toBe(true)
+      expect(stderr.mock.calls.some((call) => call[0].includes('File not found or not readable'))).toBe(true)
+    })
+
     test('should use repo-id flag when provided', async () => {
       process.env = {DD_API_KEY: 'test-key'}
       const stdout = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['repoId'] = 'github.com/custom/repo'
       command['dryRun'] = true
 
@@ -128,7 +162,7 @@ describe('upload', () => {
       const stdout = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['skipGitMetadataUpload'] = true
       command['dryRun'] = true
 
@@ -144,7 +178,7 @@ describe('upload', () => {
       const stdout = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['verbose'] = true
       command['dryRun'] = true
 
@@ -160,7 +194,7 @@ describe('upload', () => {
       const stdout = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['dryRun'] = true
 
       const exitCode = await command.execute()
@@ -180,7 +214,7 @@ describe('upload', () => {
       const stdout = jest.fn()
       const command = createCommand(TerraformUploadCommand, {stdout: {write: stdout}})
       command['artifactType'] = 'plan'
-      command['filePath'] = 'src/__tests__/fixtures/valid-plan.json'
+      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
       command['dryRun'] = true
 
       const exitCode = await command.execute()

@@ -70,13 +70,21 @@ export class PluginCommand extends TerraformUploadCommand {
       this.git = await newSimpleGit()
     }
 
-    // Sync git metadata if needed
+    // Sync git metadata if needed (only once for all files)
     if (!this.skipGitMetadataUpload && isGitRepository) {
       await this.syncGitMetadata()
     }
 
-    // Upload terraform artifact
-    return this.uploadTerraformArtifact()
+    // Upload terraform artifacts
+    let hasFailures = false
+    for (const filePath of this.filePaths) {
+      const exitCode = await this.uploadTerraformArtifact(filePath)
+      if (exitCode !== 0) {
+        hasFailures = true
+      }
+    }
+
+    return hasFailures ? 1 : 0
   }
 
   private async syncGitMetadata() {
@@ -110,20 +118,20 @@ export class PluginCommand extends TerraformUploadCommand {
     await uploadToGitDB(this.logger, opts.requestBuilder, this.git, this.dryRun)
   }
 
-  private async uploadTerraformArtifact(): Promise<number> {
-    this.logger.info(renderCommandInfo(this.artifactType, this.filePath, this.dryRun))
+  private async uploadTerraformArtifact(filePath: string): Promise<number> {
+    this.logger.info(renderCommandInfo(this.artifactType, filePath, this.dryRun))
 
     // Validate file exists and is readable
-    if (!validateFilePath(this.filePath)) {
-      this.context.stderr.write(renderInvalidFile(this.filePath, 'File not found or not readable'))
+    if (!validateFilePath(filePath)) {
+      this.context.stderr.write(renderInvalidFile(filePath, 'File not found or not readable'))
 
       return 1
     }
 
     // Read and validate JSON structure
-    const fileContent = fs.readFileSync(this.filePath, 'utf8')
+    const fileContent = fs.readFileSync(filePath, 'utf8')
     if (!validateJsonStructure(fileContent)) {
-      this.context.stderr.write(renderInvalidFile(this.filePath, 'Invalid JSON structure'))
+      this.context.stderr.write(renderInvalidFile(filePath, 'Invalid JSON structure'))
 
       return 1
     }
@@ -138,7 +146,7 @@ export class PluginCommand extends TerraformUploadCommand {
     // Build payload
     const payload: TerraformArtifactPayload = {
       artifactType: this.artifactType as 'plan' | 'state',
-      filePath: this.filePath,
+      filePath,
       fileContent,
       artifactSha256,
       artifactSizeBytes,
@@ -153,16 +161,16 @@ export class PluginCommand extends TerraformUploadCommand {
       } else {
         await retryRequest(() => api.uploadTerraformArtifact(payload), {
           onRetry: (e, attempt) => {
-            this.logger.warn(`Retry attempt ${attempt} for ${this.filePath}: ${e.message}`)
+            this.logger.warn(`Retry attempt ${attempt} for ${filePath}: ${e.message}`)
           },
           retries: 5,
         })
-        this.logger.info(renderSuccessfulUpload(this.filePath))
+        this.logger.info(renderSuccessfulUpload(filePath))
       }
 
       return 0
     } catch (error) {
-      this.context.stderr.write(renderFailedUpload(this.filePath, error))
+      this.context.stderr.write(renderFailedUpload(filePath, error))
 
       return 1
     }
