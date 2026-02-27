@@ -138,7 +138,7 @@ export class PluginCommand extends TerraformUploadCommand {
 
     // Build payload
     const payload: TerraformArtifactPayload = {
-      artifactType: this.artifactType as 'plan' | 'state',
+      artifactType: this.artifactType,
       filePath,
       fileContent,
       artifactSha256,
