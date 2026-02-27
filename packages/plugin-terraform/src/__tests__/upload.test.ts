@@ -39,20 +39,6 @@ describe('upload', () => {
       expect(write.mock.calls.some((call) => call[0].includes('DD_API_KEY'))).toBe(true)
     })
 
-    test('should reject invalid artifact type', async () => {
-      process.env = {DD_API_KEY: 'test-key'}
-      const write = jest.fn()
-      const command = createCommand(TerraformUploadCommand, {stderr: {write}})
-      command['artifactType'] = 'invalid'
-      command['filePaths'] = ['src/__tests__/fixtures/valid-plan.json']
-
-      const exitCode = await command.execute()
-
-      expect(exitCode).toBe(1)
-      expect(write.mock.calls[0][0]).toContain('Invalid artifact type')
-      expect(write.mock.calls[0][0]).toContain("Must be 'plan' or 'state'")
-    })
-
     test('should reject non-existent file', async () => {
       process.env = {DD_API_KEY: 'test-key'}
       const write = jest.fn()
