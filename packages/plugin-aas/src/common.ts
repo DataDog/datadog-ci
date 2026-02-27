@@ -33,8 +33,9 @@ export const AAS_DD_SETTING_NAMES = [
 ] as const
 
 /**
- * Detects the runtime of a Windows-based Azure App Service
- * @param site The Azure App Service site
+ * Detects the runtime of a Windows-based Web App
+ * @param site The web app or slot
+ * @param envVars The environment variables on the web app or slot
  * @returns The detected runtime or undefined if unable to detect
  */
 export const getWindowsRuntime = (site: Site, envVars: Record<string, string>): WindowsRuntime | undefined => {

@@ -70,7 +70,7 @@ export class PluginCommand extends AasUninstrumentCommand {
   }
 
   /**
-   * Process an Azure App Service for uninstrumentation.
+   * Process an Web App or slot for uninstrumentation.
    * @returns A promise that resolves to a boolean indicating success or failure.
    */
   public async processWebApp(

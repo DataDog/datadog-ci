@@ -77,7 +77,7 @@ export class PluginCommand extends AasInstrumentCommand {
       )
     }
 
-    this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Azure App Service(s)\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}🐶 Beginning instrumentation of Web App(s)\n`)
     const results = await Promise.all(
       Object.entries(appServicesToInstrument).map(([subscriptionId, resourceGroupToWebApps]) =>
         this.processSubscription(subscriptionId, resourceGroupToWebApps, config)
@@ -109,7 +109,7 @@ export class PluginCommand extends AasInstrumentCommand {
   }
 
   /**
-   * Process an Azure App Service for instrumentation.
+   * Process an Web App or slot for instrumentation.
    * @returns A promise that resolves to a boolean indicating success or failure.
    */
   public async processWebApp(
@@ -181,9 +181,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
             ? aasClient.webApps.restartSlot(resourceGroup, webApp.name, webApp.slot)
             : aasClient.webApps.restart(resourceGroup, webApp.name))
         } catch (error) {
-          this.context.stdout.write(
-            renderError(`Failed to restart Web App ${renderWebApp(webApp)}: ${error}`)
-          )
+          this.context.stdout.write(renderError(`Failed to restart Web App ${renderWebApp(webApp)}: ${error}`))
 
           return false
         }
@@ -260,7 +258,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
 
     const envVarsPromise = this.updateEnvVars(client, resourceGroup, webApp, existingEnvVars, envVars)
 
-    this.context.stdout.write(`${this.dryRunPrefix}Stopping Azure App Service ${renderWebApp(webApp)}\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}Stopping Web App ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
       await (webApp.slot
         ? client.webApps.stopSlot(resourceGroup, webApp.name, webApp.slot)
@@ -280,7 +278,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
     }
     await envVarsPromise
 
-    this.context.stdout.write(`${this.dryRunPrefix}Starting Azure App Service ${renderWebApp(webApp)}\n`)
+    this.context.stdout.write(`${this.dryRunPrefix}Starting Web App ${renderWebApp(webApp)}\n`)
     if (!this.dryRun) {
       await (webApp.slot
         ? client.webApps.startSlot(resourceGroup, webApp.name, webApp.slot)
