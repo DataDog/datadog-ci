@@ -182,7 +182,7 @@ This flag is only applicable for containerized .NET apps (on musl-based distribu
             : aasClient.webApps.restart(resourceGroup, webApp.name))
         } catch (error) {
           this.context.stdout.write(
-            renderError(`Failed to restart Azure App Service ${renderWebApp(webApp)}: ${error}`)
+            renderError(`Failed to restart Web App ${renderWebApp(webApp)}: ${error}`)
           )
 
           return false
