@@ -26,7 +26,7 @@ export class TerraformUploadCommand extends BaseCommand {
   })
 
   // Artifact type: 'plan' or 'state'
-  protected artifactType = Option.String({required: true, validator: t.isEnum(['plan', 'state'])})
+  protected artifactType = Option.String({required: true, validator: t.isEnum(['plan', 'state'] as const)})
 
   // File paths to upload (one or more)
   protected filePaths = Option.Rest({required: 1})
