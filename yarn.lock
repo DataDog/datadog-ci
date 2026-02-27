@@ -1934,6 +1934,7 @@ __metadata:
     "@datadog/datadog-ci-plugin-sbom": "workspace:*"
     "@datadog/datadog-ci-plugin-stepfunctions": "workspace:*"
     "@datadog/datadog-ci-plugin-synthetics": "workspace:*"
+    "@datadog/datadog-ci-plugin-terraform": "workspace:*"
   peerDependenciesMeta:
     "@datadog/datadog-ci-plugin-aas":
       optional: true
@@ -1960,6 +1961,8 @@ __metadata:
     "@datadog/datadog-ci-plugin-stepfunctions":
       optional: true
     "@datadog/datadog-ci-plugin-synthetics":
+      optional: true
+    "@datadog/datadog-ci-plugin-terraform":
       optional: true
   languageName: unknown
   linkType: soft
@@ -2175,6 +2178,21 @@ __metadata:
     ws: "npm:^7.5.10"
     xml2js: "npm:0.5.0"
     yamux-js: "npm:0.1.2"
+  peerDependencies:
+    "@datadog/datadog-ci-base": "workspace:*"
+  languageName: unknown
+  linkType: soft
+
+"@datadog/datadog-ci-plugin-terraform@workspace:packages/plugin-terraform":
+  version: 0.0.0-use.local
+  resolution: "@datadog/datadog-ci-plugin-terraform@workspace:packages/plugin-terraform"
+  dependencies:
+    "@types/jest": "npm:29.5.3"
+    axios: "npm:^1.13.5"
+    chalk: "npm:3.0.0"
+    form-data: "npm:^4.0.4"
+    simple-git: "npm:3.16.0"
+    upath: "npm:^2.0.1"
   peerDependencies:
     "@datadog/datadog-ci-base": "workspace:*"
   languageName: unknown

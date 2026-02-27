@@ -56,6 +56,9 @@ const injectedPluginSubmodules = {
     'run-tests': require('@datadog/datadog-ci-plugin-synthetics/commands/run-tests'),
     'upload-application': require('@datadog/datadog-ci-plugin-synthetics/commands/upload-application'),
   },
+  'terraform': {
+    'upload': require('@datadog/datadog-ci-plugin-terraform/commands/upload'),
+  },
 }
 
 export {injectedPluginSubmodules as '__INJECTED_PLUGIN_SUBMODULES__'}

@@ -37,6 +37,9 @@ changelog:
     - title: Profiling
       labels:
         - profiling
+    - title: Code Intelligence
+      labels:
+        - code-intelligence
     - title: Chores
       labels:
         - chores

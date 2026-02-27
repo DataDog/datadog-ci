@@ -28,6 +28,7 @@ import {commands as spanCommands} from './commands/span/cli'
 import {commands as stepfunctionsCommands} from './commands/stepfunctions/cli'
 import {commands as syntheticsCommands} from './commands/synthetics/cli'
 import {commands as tagCommands} from './commands/tag/cli'
+import {commands as terraformCommands} from './commands/terraform/cli'
 import {commands as traceCommands} from './commands/trace/cli'
 import {commands as unitySymbolsCommands} from './commands/unity-symbols/cli'
 import {commands as versionCommands} from './commands/version/cli'
@@ -61,6 +62,7 @@ export const commands = {
   'stepfunctions': stepfunctionsCommands,
   'synthetics': syntheticsCommands,
   'tag': tagCommands,
+  'terraform': terraformCommands,
   'trace': traceCommands,
   'unity-symbols': unitySymbolsCommands,
   'version': versionCommands,

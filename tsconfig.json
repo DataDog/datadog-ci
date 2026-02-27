@@ -19,7 +19,8 @@
     {"path": "./packages/plugin-sarif"},
     {"path": "./packages/plugin-sbom"},
     {"path": "./packages/plugin-stepfunctions"},
-    {"path": "./packages/plugin-synthetics"}
+    {"path": "./packages/plugin-synthetics"},
+    {"path": "./packages/plugin-terraform"}
   ],
   "exclude": ["*"]
 }

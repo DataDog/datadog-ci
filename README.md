@@ -195,6 +195,12 @@ The following `<scope>` and `<command>` values are available.
 
 - Add custom tags to a CI Visibility pipeline trace or job span in Datadog.
 
+#### `terraform`
+
+<sub>**README:** [📚](/packages/plugin-terraform) | **Plugin:** `@datadog/datadog-ci-plugin-terraform`</sub>
+
+- `upload`: Upload Terraform plan or state files to Datadog for enhanced cloud-to-code mapping and policy evaluation.
+
 #### `trace`
 
 <sub>**README:** [📚](/packages/datadog-ci/src/commands/trace) | **Documentation:** [🔗](https://docs.datadoghq.com/continuous_integration/pipelines/custom_commands/)</sub>

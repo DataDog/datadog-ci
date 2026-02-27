@@ -53,6 +53,10 @@ packages/base/src/commands/synthetics   @DataDog/datadog-ci-admins @DataDog/synt
 ## Profiling (label: profiling)
 packages/datadog-ci/src/commands/elf-symbols  @DataDog/datadog-ci-admins @DataDog/profiling-full-host
 
+## Code Intelligence (label: code-intelligence)
+packages/plugin-terraform                     @DataDog/datadog-ci-admins @DataDog/iac-platform
+packages/base/src/commands/terraform          @DataDog/datadog-ci-admins @DataDog/iac-platform
+
 # Shared utilities
 
 ## Git

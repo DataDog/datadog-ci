@@ -1,0 +1,52 @@
+{
+  "name": "@datadog/datadog-ci-plugin-terraform",
+  "version": "5.8.0",
+  "description": "Datadog CI plugin for `terraform` commands",
+  "license": "Apache-2.0",
+  "keywords": [
+    "datadog",
+    "datadog-ci",
+    "iac",
+    "plugin",
+    "terraform"
+  ],
+  "homepage": "https://github.com/DataDog/datadog-ci/tree/master/packages/plugin-terraform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DataDog/datadog-ci.git",
+    "directory": "packages/plugin-terraform"
+  },
+  "exports": {
+    "./package.json": "./package.json",
+    "./commands/*": {
+      "development": "./src/commands/*.ts",
+      "default": "./dist/commands/*.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "yarn package:clean; yarn package:build",
+    "lint": "yarn package:lint",
+    "prepack": "yarn package:clean-dist"
+  },
+  "peerDependencies": {
+    "@datadog/datadog-ci-base": "workspace:*"
+  },
+  "dependencies": {
+    "axios": "^1.13.5",
+    "chalk": "3.0.0",
+    "form-data": "^4.0.4",
+    "simple-git": "3.16.0"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.3",
+    "upath": "^2.0.1"
+  }
+}
