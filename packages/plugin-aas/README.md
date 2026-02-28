@@ -1,4 +1,4 @@
-You can use the CLI to instrument your Azure App Services with Datadog. The CLI enables instrumentation by modifying existing App Services' configuration and hence does *not* require redeployment. It is the quickest way to get started with Datadog serverless monitoring.
+You can use the CLI to instrument your Web Apps with Datadog. The CLI enables instrumentation by modifying existing App Services' configuration and hence does *not* require redeployment. It is the quickest way to get started with Datadog serverless monitoring.
 
 You can also add the command to your CI/CD pipelines to enable instrumentation for *all* your serverless applications. Run the command *after* your normal serverless application deployment, so that changes made by the Datadog CLI command do not get overridden.
 
@@ -32,13 +32,16 @@ export DD_SITE=<your-datadog-site>
 # Instrument an app service/web app by subscription ID, resource group, and app service name
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name>
 
+# Instrument a specific slot of a web app
+datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --slot <slot-name>
+
 # Dry run of instrumentation
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dry-run
 
-# Instrument specific web app resource IDs
+# Instrument specific web app resource IDs (including slots)
 datadog-ci aas instrument \
   -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name> \
-  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>/slots/<slot-name>
 
 # Enable specific features via app settings/env vars 
 datadog-ci aas instrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
@@ -58,13 +61,16 @@ Run `datadog-ci aas uninstrument` to remove Datadog instrumentation to an App Se
 # Uninstrument an app service/web app by subscription ID, resource group, and app service name
 datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name>
 
+# Uninstrument a specific slot of a web app
+datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --slot <slot-name>
+
 # Dry run of uninstrumentation
 datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> --dry-run
 
-# Uninstrument specific web app resource IDs
+# Uninstrument specific web app resource IDs (including slots)
 datadog-ci aas uninstrument \
   -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name> \
-  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>
+  -r /subscriptions/<subscription-id>/resourceGroups/<resource-group-name>/providers/Microsoft.Web/sites/<web-app-name>/slots/<slot-name>
 
 # Remove previously set additional app settings/env vars 
 datadog-ci aas uninstrument -s <subscription-id> -g <resource-group-name> -n <app-service-name> -e DD_PROFILING_ENABLED=true -e DD_LOGS_INJECTION=true
@@ -81,11 +87,12 @@ You can pass the following arguments to `instrument` to specify its behavior. Th
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
-| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
-| `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the Web App (or slot) |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Web App (or slot) |  |
+| `--name` | `-n` | Name of the Web App to instrument |  |
+| `--slot` |  | Name of the Web App slot to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" or "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}/slots/{slotName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Web App (or slot). Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 | `--service` |  | The value for the service tag. For example, `my-service` |  |
 | `--env` or `--environment` |  | The value for the env tag. For example, `prod` |  |
@@ -108,11 +115,12 @@ You can pass the following arguments to `uninstrument` to specify its behavior. 
 | Argument | Shorthand | Description | Default |
 | -------- | --------- | ----------- | ------- |
 | `--dry-run` | `-d` | Run the command in dry-run mode, without making any changes | `false` |
-| `--subscription-id` | `-s` | Azure Subscription ID containing the App Service |  |
-| `--resource-group` | `-g` | Name of the Azure Resource Group containing the App Service |  |
-| `--name` | `-n` | Name of the Azure App Service to instrument |  |
-| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" |  |
-| `--env-vars` | `-e` | Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
+| `--subscription-id` | `-s` | Azure Subscription ID containing the Web App (or slot) |  |
+| `--resource-group` | `-g` | Name of the Azure Resource Group containing the Web App (or slot) |  |
+| `--name` | `-n` | Name of the Web App to instrument |  |
+| `--slot` |  | Name of the Web App slot to instrument |  |
+| `--resource-id` | `-r` | Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" or "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}/slots/{slotName}" |  |
+| `--env-vars` | `-e` | Additional environment variables to set for the Web App (or slot). Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`. |  |
 | `--config` |  | Path to the configuration file |  |
 <!-- END_USAGE:uninstrument -->
 

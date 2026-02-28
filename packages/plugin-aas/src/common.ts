@@ -33,24 +33,23 @@ export const AAS_DD_SETTING_NAMES = [
 ] as const
 
 /**
- * Detects the runtime of a Windows-based Azure App Service
- * @param site The Azure App Service site
+ * Detects the runtime of a Windows-based Web App
+ * @param site The web app or slot
+ * @param envVars The environment variables on the web app or slot
  * @returns The detected runtime or undefined if unable to detect
  */
-export const getWindowsRuntime = (site: Site): WindowsRuntime | undefined => {
-  if (!!site.siteConfig?.netFrameworkVersion) {
-    return 'dotnet'
+export const getWindowsRuntime = (site: Site, envVars: Record<string, string>): WindowsRuntime | undefined => {
+  // Needed because node isn't always configured the traditional way
+  // https://learn.microsoft.com/en-us/azure/app-service/configure-language-nodejs?pivots=platform-windows
+  if (!!site.siteConfig?.nodeVersion || 'WEBSITE_NODE_DEFAULT_VERSION' in envVars) {
+    return 'node'
   }
   if (!!site.siteConfig?.javaVersion) {
     return 'java'
   }
-  // Needed because node isn't always configured the traditional way
-  // https://learn.microsoft.com/en-us/azure/app-service/configure-language-nodejs?pivots=platform-windows
-  if (
-    !!site.siteConfig?.nodeVersion ||
-    site.siteConfig?.appSettings?.some(({name}) => name?.toLowerCase() === 'website_node_default_version')
-  ) {
-    return 'node'
+  // netFrameworkVersion is sometimes erroneously set, so we check the other two runtimes before this one
+  if (!!site.siteConfig?.netFrameworkVersion) {
+    return 'dotnet'
   }
 
   return undefined

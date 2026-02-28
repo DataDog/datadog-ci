@@ -20,6 +20,12 @@ const webAppsOperations = {
   listApplicationSettings: jest.fn(),
   updateApplicationSettings: jest.fn(),
   listSiteExtensions: jest.fn(),
+  getSlot: jest.fn(),
+  getConfigurationSlot: jest.fn(),
+  deleteSiteContainerSlot: jest.fn(),
+  listApplicationSettingsSlot: jest.fn(),
+  updateApplicationSettingsSlot: jest.fn(),
+  listSiteExtensionsSlot: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -44,6 +50,8 @@ import {
   DEFAULT_ARGS,
   NULL_SUBSCRIPTION_ID,
   WEB_APP_ID,
+  WEB_APP_SLOT_ID,
+  SLOT_ARGS,
 } from './common'
 
 jest.mock('@azure/arm-appservice', () => ({
@@ -75,6 +83,15 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue(undefined)
       webAppsOperations.listSiteExtensions.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.getSlot.mockReset().mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: CONTAINER_WEB_APP.name},
+      })
+      webAppsOperations.getConfigurationSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP.siteConfig)
+      webAppsOperations.deleteSiteContainerSlot.mockReset().mockResolvedValue(undefined)
+      webAppsOperations.listApplicationSettingsSlot.mockReset().mockResolvedValue({properties: {}})
+      webAppsOperations.updateApplicationSettingsSlot.mockReset().mockResolvedValue(undefined)
+      webAppsOperations.listSiteExtensionsSlot.mockReset().mockReturnValue(asyncIterable())
       updateTags.mockClear().mockResolvedValue({})
       deleteAzureResource.mockClear().mockResolvedValue({})
     })
@@ -428,7 +445,7 @@ describe('aas instrument', () => {
       expect(updateTags).not.toHaveBeenCalled()
     })
 
-    test('Exits properly if the AAS does not exist', async () => {
+    test('Exits properly if the Web App does not exist', async () => {
       webAppsOperations.get
         .mockClear()
         .mockRejectedValue({code: 'ResourceNotFound', details: {message: 'Could not find my-web-app'}})
@@ -462,7 +479,7 @@ describe('aas instrument', () => {
       expect(updateTags).not.toHaveBeenCalled()
     })
 
-    test('Errors if no Azure App Service is specified', async () => {
+    test('Errors if no Web App is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toMatchSnapshot()
@@ -487,7 +504,7 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toMatchSnapshot()
     })
 
-    test('Instruments multiple App Services in a single subscription', async () => {
+    test('Uninstruments multiple Web Apps in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
         '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app',
@@ -517,6 +534,100 @@ describe('aas instrument', () => {
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID, {properties: {tags: {}}})
       expect(updateTags).toHaveBeenCalledWith(WEB_APP_ID + '2', {properties: {tags: {}}})
+    })
+
+    test('Uninstrument sidecar from a slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue({
+        ...CONTAINER_WEB_APP,
+        tags: {service: 'my-service', env: 'staging', version: '1.0', ava: 'true'},
+      })
+      webAppsOperations.listApplicationSettingsSlot.mockReset().mockResolvedValue({
+        properties: {
+          DD_API_KEY: process.env.DD_API_KEY,
+          DD_SITE: 'datadoghq.com',
+          DD_SERVICE: 'my-web-app',
+          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(SLOT_ARGS)
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.getSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.deleteSiteContainerSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        'datadog-sidecar'
+      )
+      expect(webAppsOperations.listApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(webAppsOperations.updateApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        {
+          properties: {hello: 'world'},
+        }
+      )
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, {properties: {tags: {ava: 'true'}}})
+    })
+
+    test('Removes Windows extension from a slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue({
+        ...WINDOWS_DOTNET_WEB_APP,
+        tags: {service: WINDOWS_DOTNET_WEB_APP.name},
+      })
+      webAppsOperations.getConfigurationSlot.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP.siteConfig)
+      webAppsOperations.listSiteExtensionsSlot
+        .mockClear()
+        .mockReturnValue(asyncIterable({name: 'my-web-app/Datadog.AzureAppServices.DotNet'}))
+      webAppsOperations.listApplicationSettingsSlot.mockClear().mockResolvedValue({
+        properties: {
+          DD_API_KEY: 'test-key',
+          DD_SITE: 'datadoghq.com',
+          hello: 'world',
+        },
+      })
+      const {code, context} = await runCLI(SLOT_ARGS)
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.getSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.getConfiguration).not.toHaveBeenCalled()
+      expect(webAppsOperations.getConfigurationSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(deleteAzureResource).toHaveBeenCalledTimes(1)
+      expect(deleteAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_SLOT_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        '2024-11-01'
+      )
+      expect(webAppsOperations.listApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(webAppsOperations.updateApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        {
+          properties: {hello: 'world'},
+        }
+      )
+      expect(updateTags).toHaveBeenCalledWith(
+        WEB_APP_SLOT_ID,
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            tags: {},
+          }),
+        })
+      )
     })
   })
 })
