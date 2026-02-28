@@ -325,3 +325,34 @@ jobs:
                 datadog_ci_version: tagName,
               },
             })
+
+  smoke-test-actions:
+    name: Smoke-test GitHub Actions
+    runs-on: ubuntu-latest
+    needs: npm-publish
+    strategy:
+      fail-fast: false
+      matrix:
+        action-repo:
+          - install-datadog-ci-action
+          - coverage-upload-action
+    steps:
+      - uses: DataDog/dd-octo-sts-action@acaa02eee7e3bb0839e4272dacb37b8f3b58ba80 # v1.0.3
+        id: octo-sts
+        with:
+          scope: DataDog/${{ matrix.action-repo }}
+          policy: datadog-ci.publish-release.create-workflow-dispatch
+      - name: Dispatch smoke test
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        with:
+          github-token: ${{ steps.octo-sts.outputs.token }}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: '${{ matrix.action-repo }}',
+              workflow_id: 'smoke-test.yml',
+              ref: 'main',
+              inputs: {
+                version: '${{ github.ref_name }}',
+              },
+            })
