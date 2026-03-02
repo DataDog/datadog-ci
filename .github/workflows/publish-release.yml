@@ -75,7 +75,7 @@ jobs:
       - name: Compute binary checksum
         run: shasum -a 256 ./datadog-ci_linux-x64 | awk '{print $1 "  datadog-ci_linux-x64"}' > checksum-linux-x64.txt
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: checksum-linux-x64
           path: checksum-linux-x64.txt
@@ -125,7 +125,7 @@ jobs:
       - name: Compute binary checksum
         run: shasum -a 256 ./datadog-ci_linux-arm64 | awk '{print $1 "  datadog-ci_linux-arm64"}' > checksum-linux-arm64.txt
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: checksum-linux-arm64
           path: checksum-linux-arm64.txt
@@ -172,7 +172,7 @@ jobs:
         shell: bash
         run: shasum -a 256 ./datadog-ci_win-x64.exe | awk '{print $1 "  datadog-ci_win-x64"}' > checksum-win-x64.txt
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: checksum-win-x64
           path: checksum-win-x64.txt
@@ -220,7 +220,7 @@ jobs:
       - name: Compute binary checksum
         run: shasum -a 256 ./datadog-ci_darwin-x64 | awk '{print $1 "  datadog-ci_darwin-x64"}' > checksum-darwin-x64.txt
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: checksum-darwin-x64
           path: checksum-darwin-x64.txt
@@ -266,7 +266,7 @@ jobs:
       - name: Compute binary checksum
         run: shasum -a 256 ./datadog-ci_darwin-arm64 | awk '{print $1 "  datadog-ci_darwin-arm64"}' > checksum-darwin-arm64.txt
       - name: Upload checksum artifact
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: checksum-darwin-arm64
           path: checksum-darwin-arm64.txt
