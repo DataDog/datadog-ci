@@ -29,7 +29,9 @@ policy:
               - unity-symbols
           - name: serverless
             keys:
+              - aas
               - cloud-run
+              - container-app
               - lambda
               - stepfunctions
           - name: source-code-integration
