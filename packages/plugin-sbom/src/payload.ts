@@ -16,9 +16,14 @@ import {
 
 import {
   EXCLUSION_KEY,
-  FILE_PACKAGE_PROPERTY_KEY,
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
+  LEGACY_EXCLUSION_KEY,
+  LEGACY_FILE_PACKAGE_PROPERTY_KEY,
+  LEGACY_IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
+  LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
+  LEGACY_PACKAGE_MANAGER_PROPERTY_KEY,
+  LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
   PACKAGE_MANAGER_PROPERTY_KEY,
   REACHABLE_SYMBOL_LOCATION_KEY_PREFIX,
   TARGET_FRAMEWORK_KEY,
@@ -245,10 +250,17 @@ const extractingDependency = (component: any): Dependency | undefined => {
     }
   }
 
+  // values coming from legacy property names
+  let legacyPackageManager = ''
+  let legacyIsDirect
+  let legacyIsDev
+
+  // values coming from new canonical properties
   let packageManager = ''
   let isDirect
   let isDev
-  const exclusions: string[] = []
+
+  const exclusions: Set<string> = new Set<string>()
   const targetFrameworks: string[] = []
   const reachableSymbolProperties: Property[] = []
 
@@ -256,17 +268,28 @@ const extractingDependency = (component: any): Dependency | undefined => {
     const propertyName: string = property.name
     const propertyValue: string = property.value
 
-    if (propertyName === PACKAGE_MANAGER_PROPERTY_KEY) {
+    if (propertyName === LEGACY_PACKAGE_MANAGER_PROPERTY_KEY) {
+      legacyPackageManager = propertyValue
+    } else if (propertyName === LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
+      legacyIsDirect = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === LEGACY_IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
+      legacyIsDev = parseTrueOrUndefined(propertyValue)
+    } else if (propertyName === LEGACY_EXCLUSION_KEY || propertyName === EXCLUSION_KEY) {
+      // here we merge everything using a set
+      exclusions.add(propertyValue)
+    } else if (propertyName === PACKAGE_MANAGER_PROPERTY_KEY) {
       packageManager = propertyValue
     } else if (propertyName === IS_DEPENDENCY_DIRECT_PROPERTY_KEY) {
       isDirect = parseTrueOrUndefined(propertyValue)
     } else if (propertyName === IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY) {
       isDev = parseTrueOrUndefined(propertyValue)
-    } else if (propertyName === EXCLUSION_KEY) {
-      exclusions.push(propertyValue)
     } else if (propertyName === TARGET_FRAMEWORK_KEY) {
       targetFrameworks.push(propertyValue)
-    } else if (propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)) {
+    } else if (
+      propertyName.startsWith(LEGACY_REACHABLE_SYMBOL_LOCATION_KEY_PREFIX) ||
+      propertyName.startsWith(REACHABLE_SYMBOL_LOCATION_KEY_PREFIX)
+    ) {
+      // here we keep everything, deduplication will be managed downstream
       const missingKeys = validateReachableSymbolLocationValue(propertyValue)
       if (missingKeys.length > 0) {
         console.error(`Error in reachable symbol locations for ${purl}:`)
@@ -282,6 +305,10 @@ const extractingDependency = (component: any): Dependency | undefined => {
     }
   }
 
+  packageManager = packageManager !== '' ? packageManager : legacyPackageManager
+  isDev = isDev !== undefined ? isDev : legacyIsDev
+  isDirect = isDirect !== undefined ? isDirect : legacyIsDirect
+
   const dependency: Dependency = {
     name: component['name'],
     group: component['group'] || undefined,
@@ -295,7 +322,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
     package_manager: packageManager,
     reachable_symbol_properties: reachableSymbolProperties,
     target_frameworks: targetFrameworks,
-    exclusions,
+    exclusions: Array.from(exclusions),
   }
 
   return dependency
@@ -304,7 +331,7 @@ const extractingDependency = (component: any): Dependency | undefined => {
 const extractingFile = (component: any): File => {
   let purl
   for (const property of component['properties'] ?? []) {
-    if (property['name'] === FILE_PACKAGE_PROPERTY_KEY) {
+    if (property['name'] === LEGACY_FILE_PACKAGE_PROPERTY_KEY) {
       purl = property['value']
     }
   }
