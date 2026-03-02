@@ -445,18 +445,16 @@ describe('aas common', () => {
           nodeVersion: '18',
         },
       }
-      expect(getWindowsRuntime(site)).toBe('node')
+      expect(getWindowsRuntime(site, {})).toBe('node')
     })
 
-    test('returns "node" if WEBSITE_NODE_DEFAULT_VERSION is set', () => {
+    test('returns "node" if WEBSITE_NODE_DEFAULT_VERSION is in envVars', () => {
       const site: Site = {
         kind: 'app,windows',
         location: 'East US',
-        siteConfig: {
-          appSettings: [{name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'}],
-        },
+        siteConfig: {},
       }
-      expect(getWindowsRuntime(site)).toBe('node')
+      expect(getWindowsRuntime(site, {WEBSITE_NODE_DEFAULT_VERSION: '18'})).toBe('node')
     })
 
     test('returns "dotnet" if netFrameworkVersion is set', () => {
@@ -467,7 +465,7 @@ describe('aas common', () => {
           netFrameworkVersion: 'v6.0',
         },
       }
-      expect(getWindowsRuntime(site)).toBe('dotnet')
+      expect(getWindowsRuntime(site, {})).toBe('dotnet')
     })
 
     test('returns "dotnet" if netFrameworkVersion is set (case check)', () => {
@@ -478,7 +476,7 @@ describe('aas common', () => {
           netFrameworkVersion: 'v7.0',
         },
       }
-      expect(getWindowsRuntime(site)).toBe('dotnet')
+      expect(getWindowsRuntime(site, {})).toBe('dotnet')
     })
 
     test('returns "java" if javaVersion is set', () => {
@@ -489,7 +487,7 @@ describe('aas common', () => {
           javaVersion: '11',
         },
       }
-      expect(getWindowsRuntime(site)).toBe('java')
+      expect(getWindowsRuntime(site, {})).toBe('java')
     })
 
     test('returns "java" if javaVersion is set (another version)', () => {
@@ -500,7 +498,7 @@ describe('aas common', () => {
           javaVersion: '17',
         },
       }
-      expect(getWindowsRuntime(site)).toBe('java')
+      expect(getWindowsRuntime(site, {})).toBe('java')
     })
 
     test('returns undefined if no runtime version is set', () => {
@@ -509,7 +507,7 @@ describe('aas common', () => {
         location: 'East US',
         siteConfig: {},
       }
-      expect(getWindowsRuntime(site)).toBeUndefined()
+      expect(getWindowsRuntime(site, {})).toBeUndefined()
     })
 
     test('returns undefined if siteConfig is not set', () => {
@@ -517,7 +515,7 @@ describe('aas common', () => {
         kind: 'app,windows',
         location: 'East US',
       }
-      expect(getWindowsRuntime(site)).toBeUndefined()
+      expect(getWindowsRuntime(site, {})).toBeUndefined()
     })
 
     describe('empty/falsy values', () => {
@@ -529,7 +527,7 @@ describe('aas common', () => {
             netFrameworkVersion: '',
           },
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
+        expect(getWindowsRuntime(site, {})).toBeUndefined()
       })
 
       test('returns undefined for empty string javaVersion', () => {
@@ -540,7 +538,7 @@ describe('aas common', () => {
             javaVersion: '',
           },
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
+        expect(getWindowsRuntime(site, {})).toBeUndefined()
       })
 
       test('returns undefined for empty string nodeVersion', () => {
@@ -551,93 +549,42 @@ describe('aas common', () => {
             nodeVersion: '',
           },
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
-      })
-
-      test('returns node even for empty app setting value', () => {
-        const site: Site = {
-          kind: 'app,windows',
-          location: 'East US',
-          siteConfig: {
-            appSettings: [{name: 'WEBSITE_NODE_DEFAULT_VERSION', value: ''}],
-          },
-        }
-        // The implementation only checks the name, not the value
-        expect(getWindowsRuntime(site)).toBe('node')
+        expect(getWindowsRuntime(site, {})).toBeUndefined()
       })
     })
 
-    describe('app settings array variations', () => {
-      test('returns undefined for empty appSettings array', () => {
+    describe('envVars-based node detection', () => {
+      test('returns "node" when WEBSITE_NODE_DEFAULT_VERSION is in envVars with empty value', () => {
         const site: Site = {
           kind: 'app,windows',
           location: 'East US',
-          siteConfig: {
-            appSettings: [],
-          },
+          siteConfig: {},
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
+        // The implementation only checks key presence, not the value
+        expect(getWindowsRuntime(site, {WEBSITE_NODE_DEFAULT_VERSION: ''})).toBe('node')
       })
 
-      test('returns undefined for undefined appSettings', () => {
+      test('returns "node" over "dotnet" when netFrameworkVersion is set but WEBSITE_NODE_DEFAULT_VERSION is in envVars', () => {
         const site: Site = {
           kind: 'app,windows',
           location: 'East US',
           siteConfig: {
+            netFrameworkVersion: 'v6.0',
+          },
+        }
+        expect(getWindowsRuntime(site, {WEBSITE_NODE_DEFAULT_VERSION: '~18'})).toBe('node')
+      })
+
+      test('returns "node" when netFrameworkVersion is set, no appSettings in siteConfig, and node identified only by envVar', () => {
+        const site: Site = {
+          kind: 'app,windows',
+          location: 'East US',
+          siteConfig: {
+            netFrameworkVersion: 'v6.0',
             appSettings: undefined,
           },
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
-      })
-
-      test('returns undefined for appSettings with no name', () => {
-        const site: Site = {
-          kind: 'app,windows',
-          location: 'East US',
-          siteConfig: {
-            appSettings: [{} as any],
-          },
-        }
-        expect(getWindowsRuntime(site)).toBeUndefined()
-      })
-
-      test('returns undefined for appSettings with undefined name', () => {
-        const site: Site = {
-          kind: 'app,windows',
-          location: 'East US',
-          siteConfig: {
-            appSettings: [{name: undefined, value: '18'}],
-          },
-        }
-        expect(getWindowsRuntime(site)).toBeUndefined()
-      })
-
-      test('returns node when WEBSITE_NODE_DEFAULT_VERSION is in second position', () => {
-        const site: Site = {
-          kind: 'app,windows',
-          location: 'East US',
-          siteConfig: {
-            appSettings: [
-              {name: 'OTHER_SETTING', value: 'foo'},
-              {name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'},
-            ],
-          },
-        }
-        expect(getWindowsRuntime(site)).toBe('node')
-      })
-
-      test('returns node when WEBSITE_NODE_DEFAULT_VERSION is in first position', () => {
-        const site: Site = {
-          kind: 'app,windows',
-          location: 'East US',
-          siteConfig: {
-            appSettings: [
-              {name: 'WEBSITE_NODE_DEFAULT_VERSION', value: '18'},
-              {name: 'OTHER_SETTING', value: 'foo'},
-            ],
-          },
-        }
-        expect(getWindowsRuntime(site)).toBe('node')
+        expect(getWindowsRuntime(site, {WEBSITE_NODE_DEFAULT_VERSION: '~18'})).toBe('node')
       })
     })
 
@@ -652,7 +599,7 @@ describe('aas common', () => {
             nodeVersion: undefined,
           },
         }
-        expect(getWindowsRuntime(site)).toBeUndefined()
+        expect(getWindowsRuntime(site, {})).toBeUndefined()
       })
     })
   })

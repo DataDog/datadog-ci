@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import {Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
@@ -10,10 +11,26 @@ import {DEFAULT_CONFIG_PATHS, resolveConfigFromFile} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
 
+export interface WebApp {
+  name: string
+  slot?: string
+}
+
+export const renderWebApp = ({name, slot}: WebApp): string => {
+  return slot ? `${chalk.bold(name)} (slot: ${chalk.bold(slot)})` : `${chalk.bold(name)}`
+}
+
+/**
+ * Returns the final segment of the resource ID after `.../sites/` for a web app
+ */
+export const resourceIdSegment = ({name, slot}: WebApp): string => {
+  return slot ? `${name}/slots/${slot}` : name
+}
+
 /**
  * Maps Subscription ID to Resource Group to App Service names.
  */
-export type AasBySubscriptionAndGroup = Record<string, Record<string, string[]>>
+export type WebAppBySubscriptionAndGroup = Record<string, Record<string, WebApp[]>>
 
 export const WINDOWS_RUNTIME_EXTENSIONS = {
   node: 'Datadog.AzureAppServices.Node.Apm',
@@ -45,6 +62,7 @@ export type AasConfigOptions = Partial<{
   subscriptionId: string
   resourceGroup: string
   aasName: string
+  slotName: string
   resourceIds: string[]
 
   // Configuration options
@@ -71,21 +89,24 @@ export abstract class AasCommand extends BaseCommand {
     description: 'Run the command in dry-run mode, without making any changes',
   })
   private subscriptionId = Option.String('-s,--subscription-id', {
-    description: 'Azure Subscription ID containing the App Service',
+    description: 'Azure Subscription ID containing the Web App (or slot)',
   })
   private resourceGroup = Option.String('-g,--resource-group', {
-    description: 'Name of the Azure Resource Group containing the App Service',
+    description: 'Name of the Azure Resource Group containing the Web App (or slot)',
   })
   private aasName = Option.String('-n,--name', {
-    description: 'Name of the Azure App Service to instrument',
+    description: 'Name of the Web App to instrument',
+  })
+  private slotName = Option.String('--slot', {
+    description: 'Name of the Web App slot to instrument',
   })
   private resourceIds = Option.Array('-r,--resource-id', {
     description:
-      'Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}"',
+      'Full Azure resource IDs to instrument, for example, "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}" or "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroup}/providers/Microsoft.Web/sites/{aasName}/slots/{slotName}"',
   })
   private envVars = Option.Array('-e,--env-vars', {
     description:
-      'Additional environment variables to set for the App Service. Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
+      'Additional environment variables to set for the Web App (or slot). Can specify multiple in the form `--env-vars VAR1=VALUE1 --env-vars VAR2=VALUE2`.',
   })
 
   private configPath = Option.String('--config', {
@@ -111,7 +132,7 @@ export abstract class AasCommand extends BaseCommand {
     enableFips(this.fips || this.fipsConfig.fips, this.fipsIgnoreError || this.fipsConfig.fipsIgnoreError)
   }
 
-  public async ensureConfig(): Promise<[AasBySubscriptionAndGroup, AasConfigOptions, string[]]> {
+  public async ensureConfig(): Promise<[WebAppBySubscriptionAndGroup, AasConfigOptions, string[]]> {
     const config = (
       await resolveConfigFromFile<{aas: AasConfigOptions}>(
         {
@@ -119,6 +140,7 @@ export abstract class AasCommand extends BaseCommand {
             subscriptionId: this.subscriptionId,
             resourceGroup: this.resourceGroup,
             aasName: this.aasName,
+            slotName: this.slotName,
             envVars: this.envVars,
             ...this.additionalConfig,
           },
@@ -129,7 +151,7 @@ export abstract class AasCommand extends BaseCommand {
         }
       )
     ).aas
-    const appServices: AasBySubscriptionAndGroup = {}
+    const webApps: WebAppBySubscriptionAndGroup = {}
     const errors: string[] = []
     if (process.env.DD_API_KEY === undefined) {
       errors.push('DD_API_KEY environment variable is required')
@@ -152,33 +174,38 @@ export abstract class AasCommand extends BaseCommand {
       errors.push(`--windows-runtime must be one of: ${Object.keys(WINDOWS_RUNTIME_EXTENSIONS).join(', ')}`)
     }
     const specifiedSiteArgs = [config.subscriptionId, config.resourceGroup, config.aasName]
-    // all or none of the site args should be specified
-    if (!(specifiedSiteArgs.every((arg) => arg) || specifiedSiteArgs.every((arg) => !arg))) {
+    // all or none of the site args should be specified (except slot)
+    const noneSpecified = specifiedSiteArgs.every((arg) => !arg)
+    const allSpecified = specifiedSiteArgs.every((arg) => arg)
+    if (!(allSpecified || noneSpecified)) {
       errors.push('--subscription-id, --resource-group, and --name must be specified together or not at all')
-    } else if (specifiedSiteArgs.every((arg) => arg)) {
-      appServices[config.subscriptionId!] = {[config.resourceGroup!]: [config.aasName!]}
+    } else if (!allSpecified && !!config.slotName) {
+      errors.push('--slot can only specified if --subscription-id, --resource-group, and --name are specified')
+    } else if (!noneSpecified) {
+      webApps[config.subscriptionId!] = {[config.resourceGroup!]: [{name: config.aasName!, slot: config.slotName}]}
     }
     if (this.resourceIds?.length) {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
-        if (parsed) {
-          const {subscriptionId, resourceGroup, name} = parsed
-          if (!appServices[subscriptionId]) {
-            appServices[subscriptionId] = {}
-          }
-          if (!appServices[subscriptionId][resourceGroup]) {
-            appServices[subscriptionId][resourceGroup] = []
-          }
-          appServices[subscriptionId][resourceGroup].push(name)
-        } else {
-          errors.push(`Invalid AAS resource ID: ${resourceId}`)
+        if (!parsed || (!!parsed.subType && parsed.subType !== 'slots')) {
+          errors.push(`Invalid Web App (or Slot) resource ID: ${resourceId}`)
+          continue
         }
+
+        const {subscriptionId, resourceGroup, name, subResourceName: slot} = parsed
+        if (!webApps[subscriptionId]) {
+          webApps[subscriptionId] = {}
+        }
+        if (!webApps[subscriptionId][resourceGroup]) {
+          webApps[subscriptionId][resourceGroup] = []
+        }
+        webApps[subscriptionId][resourceGroup].push({name, slot})
       }
     }
     if (!this.resourceIds?.length && specifiedSiteArgs.every((arg) => !arg)) {
       errors.push('No App Services specified to instrument')
     }
 
-    return [appServices, config, errors]
+    return [webApps, config, errors]
   }
 }

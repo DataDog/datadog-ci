@@ -142,18 +142,18 @@ export abstract class ContainerAppCommand extends BaseCommand {
     if (this.resourceIds?.length) {
       for (const resourceId of this.resourceIds) {
         const parsed = parseResourceId(resourceId)
-        if (parsed) {
-          const {subscriptionId, resourceGroup, name} = parsed
-          if (!containerApps[subscriptionId]) {
-            containerApps[subscriptionId] = {}
-          }
-          if (!containerApps[subscriptionId][resourceGroup]) {
-            containerApps[subscriptionId][resourceGroup] = []
-          }
-          containerApps[subscriptionId][resourceGroup].push(name)
-        } else {
+        if (!parsed || parsed.subType) {
           errors.push(`Invalid Container App resource ID: ${resourceId}`)
+          continue
         }
+        const {subscriptionId, resourceGroup, name} = parsed
+        if (!containerApps[subscriptionId]) {
+          containerApps[subscriptionId] = {}
+        }
+        if (!containerApps[subscriptionId][resourceGroup]) {
+          containerApps[subscriptionId][resourceGroup] = []
+        }
+        containerApps[subscriptionId][resourceGroup].push(name)
       }
     }
     if (!this.resourceIds?.length && specifiedAppArgs.every((arg) => !arg)) {

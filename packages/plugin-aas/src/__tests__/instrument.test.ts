@@ -36,6 +36,15 @@ const webAppsOperations = {
   stop: jest.fn(),
   start: jest.fn(),
   restart: jest.fn(),
+  getSlot: jest.fn(),
+  listSiteContainersSlot: jest.fn(),
+  createOrUpdateSiteContainerSlot: jest.fn(),
+  listApplicationSettingsSlot: jest.fn(),
+  updateApplicationSettingsSlot: jest.fn(),
+  listSiteExtensionsSlot: jest.fn(),
+  stopSlot: jest.fn(),
+  startSlot: jest.fn(),
+  restartSlot: jest.fn(),
 }
 
 const updateTags = jest.fn().mockResolvedValue({})
@@ -62,7 +71,9 @@ import {
   DEFAULT_INSTRUMENT_ARGS,
   DEFAULT_CONFIG,
   WEB_APP_ID,
+  WEB_APP_SLOT_ID,
   NULL_SUBSCRIPTION_ID,
+  SLOT_INSTRUMENT_ARGS,
 } from './common'
 
 jest.mock('@azure/arm-appservice', () => ({
@@ -100,6 +111,15 @@ describe('aas instrument', () => {
       webAppsOperations.stop.mockReset().mockResolvedValue({})
       webAppsOperations.start.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
+      webAppsOperations.getSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.listSiteContainersSlot.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.createOrUpdateSiteContainerSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.listApplicationSettingsSlot.mockReset().mockResolvedValue({properties: {}})
+      webAppsOperations.updateApplicationSettingsSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.listSiteExtensionsSlot.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.stopSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.startSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.restartSlot.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
       createAzureResource.mockClear().mockResolvedValue({})
       validateApiKey.mockClear().mockResolvedValue(true)
@@ -231,7 +251,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
-    test('Warns and exits if App Service is Windows but runtime cannot be detected', async () => {
+    test('Warns and exits if Web App is Windows but runtime cannot be detected', async () => {
       webAppsOperations.get.mockClear().mockResolvedValue({...CONTAINER_WEB_APP, kind: 'app,windows'})
       const {code, context} = await runCLI(DEFAULT_INSTRUMENT_ARGS)
       expect(code).toEqual(1)
@@ -240,7 +260,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.get).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.listSiteContainers).not.toHaveBeenCalled()
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
@@ -434,14 +454,14 @@ describe('aas instrument', () => {
           targetPort: '8126',
         }
       )
-      // the last operations never get called due to the above failure
-      expect(webAppsOperations.listApplicationSettings).not.toHaveBeenCalled()
+      // listApplicationSettings is now called in execute's Promise.all before instrumentSidecar
+      expect(webAppsOperations.listApplicationSettings).toHaveBeenCalledWith('my-resource-group', 'my-web-app')
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
       expect(webAppsOperations.restart).not.toHaveBeenCalled()
     })
 
-    test('Errors if no Azure App Service is specified', async () => {
+    test('Errors if no Web App is specified', async () => {
       const {code, context} = await runCLI([])
       expect(code).toEqual(1)
       expect(context.stdout.toString()).toMatchSnapshot()
@@ -466,7 +486,24 @@ describe('aas instrument', () => {
       expect(context.stdout.toString()).toMatchSnapshot()
     })
 
-    test('Instruments multiple App Services in a single subscription', async () => {
+    test('Errors if --slot is specified without -s/-g/-n', async () => {
+      const {code, context} = await runCLI(['--slot', 'staging', '--no-source-code-integration'])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain(
+        '--slot can only specified if --subscription-id, --resource-group, and --name are specified'
+      )
+    })
+
+    test('Errors if resource ID has invalid sub-resource type', async () => {
+      const {code, context} = await runCLI([
+        '-r',
+        '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-web-app/invalid/foo',
+      ])
+      expect(code).toEqual(1)
+      expect(context.stdout.toString()).toContain('Invalid Web App (or Slot) resource ID')
+    })
+
+    test('Instruments multiple Web Apps in a single subscription', async () => {
       const {code, context} = await runCLI([
         '-r',
         WEB_APP_ID,
@@ -546,7 +583,7 @@ describe('aas instrument', () => {
       expect(webAppsOperations.restart).toHaveBeenCalledWith('my-resource-group', 'my-web-app2')
     })
 
-    test('Adds core tags to the Azure App Service', async () => {
+    test('Adds core tags to the Web App', async () => {
       const {code, context} = await runCLI([
         ...DEFAULT_INSTRUMENT_ARGS,
         '--service',
@@ -755,6 +792,106 @@ describe('aas instrument', () => {
       expect(code).toEqual(0)
       expect(context.stdout.toString()).toMatchSnapshot()
     })
+
+    test('Instruments a sidecar on a slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue(CONTAINER_WEB_APP)
+      const {code, context} = await runCLI(SLOT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+      expect(getToken).toHaveBeenCalled()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.getSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.listSiteContainersSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(webAppsOperations.createOrUpdateSiteContainerSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        'datadog-sidecar',
+        {
+          environmentVariables: expect.arrayContaining([
+            {name: 'DD_AAS_INSTANCE_LOGGING_ENABLED', value: 'DD_AAS_INSTANCE_LOGGING_ENABLED'},
+            {name: 'DD_API_KEY', value: 'DD_API_KEY'},
+            {name: 'DD_SITE', value: 'DD_SITE'},
+            {name: 'DD_SERVICE', value: 'DD_SERVICE'},
+          ]),
+          image: 'index.docker.io/datadog/serverless-init:latest',
+          isMain: false,
+          targetPort: '8126',
+        }
+      )
+      expect(webAppsOperations.listApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(webAppsOperations.updateApplicationSettingsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging',
+        {
+          properties: {
+            DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+            DD_SERVICE: 'my-web-app',
+            DD_API_KEY: 'PLACEHOLDER',
+            DD_SITE: 'datadoghq.com',
+            WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
+          },
+        }
+      )
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, {
+        properties: {tags: {service: 'my-web-app', dd_sls_ci: 'vXXXX'}},
+      })
+      expect(webAppsOperations.restartSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+    })
+
+    test('Installs Windows extension on a slot', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue(WINDOWS_DOTNET_WEB_APP)
+      const {code} = await runCLI(SLOT_INSTRUMENT_ARGS)
+      expect(code).toEqual(0)
+
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.getSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.listSiteExtensionsSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(webAppsOperations.stopSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(createAzureResource).toHaveBeenCalledWith(
+        `${WEB_APP_SLOT_ID}/siteextensions/Datadog.AzureAppServices.DotNet`,
+        '2024-11-01',
+        expect.any(Object)
+      )
+      expect(webAppsOperations.startSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.updateApplicationSettingsSlot).toHaveBeenCalledTimes(1)
+      expect(updateTags).toHaveBeenCalledWith(
+        WEB_APP_SLOT_ID,
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            tags: expect.objectContaining({service: 'my-web-app'}),
+          }),
+        })
+      )
+    })
+
+    test('Instruments a slot via resource ID', async () => {
+      webAppsOperations.getSlot.mockClear().mockResolvedValue(CONTAINER_WEB_APP)
+      const {code, context} = await runCLI(['-r', WEB_APP_SLOT_ID, '--no-source-code-integration'])
+      expect(code).toEqual(0)
+      expect(context.stdout.toString()).toMatchSnapshot()
+      expect(webAppsOperations.get).not.toHaveBeenCalled()
+      expect(webAppsOperations.getSlot).toHaveBeenCalledWith('my-resource-group', 'my-web-app', 'staging')
+      expect(webAppsOperations.listSiteContainersSlot).toHaveBeenCalledWith(
+        'my-resource-group',
+        'my-web-app',
+        'staging'
+      )
+      expect(updateTags).toHaveBeenCalledWith(WEB_APP_SLOT_ID, expect.any(Object))
+    })
   })
 
   describe('instrumentSidecar', () => {
@@ -777,11 +914,17 @@ describe('aas instrument', () => {
       webAppsOperations.listApplicationSettings.mockReset().mockResolvedValue({properties: {}})
       webAppsOperations.updateApplicationSettings.mockReset().mockResolvedValue({})
       webAppsOperations.restart.mockReset().mockResolvedValue({})
+      webAppsOperations.getSlot.mockReset().mockResolvedValue(CONTAINER_WEB_APP)
+      webAppsOperations.listSiteContainersSlot.mockReset().mockReturnValue(asyncIterable())
+      webAppsOperations.createOrUpdateSiteContainerSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.listApplicationSettingsSlot.mockReset().mockResolvedValue({properties: {}})
+      webAppsOperations.updateApplicationSettingsSlot.mockReset().mockResolvedValue({})
+      webAppsOperations.restartSlot.mockReset().mockResolvedValue({})
       updateTags.mockClear().mockResolvedValue({})
     })
 
     test('creates sidecar if not present and updates app settings', async () => {
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
         image: 'index.docker.io/datadog/serverless-init:latest',
@@ -810,8 +953,9 @@ describe('aas instrument', () => {
         client,
         {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true},
         'rg',
-        'app',
-        false
+        {name: 'app'},
+        false,
+        {}
       )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
@@ -851,8 +995,9 @@ describe('aas instrument', () => {
         client,
         {...DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, isDotnet: true, isMusl: true},
         'rg',
-        'app',
-        false
+        {name: 'app'},
+        false,
+        {}
       )
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalledWith('rg', 'app', 'datadog-sidecar', {
@@ -904,7 +1049,7 @@ describe('aas instrument', () => {
       webAppsOperations.createOrUpdateSiteContainer.mockResolvedValue({})
       webAppsOperations.updateApplicationSettings.mockResolvedValue({})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).toHaveBeenCalled()
@@ -925,17 +1070,22 @@ describe('aas instrument', () => {
           ],
         })
       )
-      webAppsOperations.listApplicationSettings.mockResolvedValue({
-        properties: {
-          DD_API_KEY: process.env.DD_API_KEY,
-          DD_SITE: 'datadoghq.com',
-          DD_SERVICE: 'my-web-app',
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
-        },
-      })
+      const existingEnvVars = {
+        DD_API_KEY: process.env.DD_API_KEY!,
+        DD_SITE: 'datadoghq.com',
+        DD_SERVICE: 'my-web-app',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
+      }
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
+      await command.instrumentSidecar(
+        client,
+        DEFAULT_CONFIG_WITH_DEFAULT_SERVICE,
+        'rg',
+        {name: 'app'},
+        false,
+        existingEnvVars
+      )
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
       expect(updateTags).not.toHaveBeenCalled()
@@ -944,9 +1094,8 @@ describe('aas instrument', () => {
     test('does not call Azure APIs in dry run mode', async () => {
       command.dryRun = true
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
-      webAppsOperations.listApplicationSettings.mockResolvedValue({properties: {}})
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
+      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', {name: 'app'}, false, {})
 
       expect(webAppsOperations.createOrUpdateSiteContainer).not.toHaveBeenCalled()
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
@@ -954,17 +1103,22 @@ describe('aas instrument', () => {
 
     test('does not update app settings if no changes needed', async () => {
       webAppsOperations.listSiteContainers.mockReturnValue(asyncIterable())
-      webAppsOperations.listApplicationSettings.mockResolvedValue({
-        properties: {
-          DD_API_KEY: process.env.DD_API_KEY,
-          DD_SITE: 'datadoghq.com',
-          DD_SERVICE: 'my-web-app',
-          DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
-          WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
-        },
-      })
+      const existingEnvVars = {
+        DD_API_KEY: process.env.DD_API_KEY!,
+        DD_SITE: 'datadoghq.com',
+        DD_SERVICE: 'my-web-app',
+        DD_AAS_INSTANCE_LOGGING_ENABLED: 'false',
+        WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'true',
+      }
 
-      await command.instrumentSidecar(client, DEFAULT_CONFIG_WITH_DEFAULT_SERVICE, 'rg', 'app', false)
+      await command.instrumentSidecar(
+        client,
+        DEFAULT_CONFIG_WITH_DEFAULT_SERVICE,
+        'rg',
+        {name: 'app'},
+        false,
+        existingEnvVars
+      )
 
       expect(webAppsOperations.updateApplicationSettings).not.toHaveBeenCalled()
     })

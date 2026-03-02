@@ -63,8 +63,8 @@ The following `<scope>` and `<command>` values are available.
 
 <sub>**README:** [📚](/packages/plugin-aas) | **Documentation:** [🔗](https://docs.datadoghq.com/serverless/azure_app_services/) | **Plugin:** `@datadog/datadog-ci-plugin-aas`</sub>
 
-- `instrument`: Apply Datadog instrumentation to the given Azure App Services.
-- `uninstrument`: Revert Datadog instrumentation from the given Azure App Services.
+- `instrument`: Apply Datadog instrumentation to the given Azure Web Apps (or slots).
+- `uninstrument`: Revert Datadog instrumentation from the given Azure Web Apps (or slots).
 
 #### `cloud-run`
 

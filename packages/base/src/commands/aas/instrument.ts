@@ -8,7 +8,7 @@ export class AasInstrumentCommand extends AasCommand {
   public static paths = [['aas', 'instrument']]
   public static usage = Command.Usage({
     category: 'Serverless',
-    description: 'Apply Datadog instrumentation to an Azure App Service.',
+    description: 'Apply Datadog instrumentation to an Azure Web App or slot.',
   })
 
   private service = Option.String('--service', {
