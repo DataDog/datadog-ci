@@ -1,12 +1,8 @@
 import fs from 'fs'
 
-export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SITE || process.env.DD_SITE) {
-    return `https://cicodescan-intake.${process.env.DATADOG_SITE || process.env.DD_SITE}`
-  }
+import {getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 
-  return 'https://cicodescan-intake.datadoghq.com'
-}
+export const getBaseIntakeUrl = () => getIntakeUrl('cicodescan-intake')
 
 export const TAG_DATADOG_TYPE_TYPE_STATIC = 'DATADOG_RULE_TYPE:STATIC_ANALYSIS'
 export const TAG_DATADOG_TYPE_TYPE_SECRET = 'DATADOG_RULE_TYPE:SECRET'

@@ -2,6 +2,7 @@ import {createGzip} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
 
@@ -9,9 +10,8 @@ import {TerraformArtifactPayload} from './interfaces'
 
 const maxBodyLength = Infinity
 
-export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-export const intakeUrl = `https://ci-intake.${datadogSite}`
-export const apiUrl = `https://api.${datadogSite}`
+export const intakeUrl = getIntakeUrl('ci-intake')
+export const apiUrl = getApiUrl()
 
 export const uploadTerraformArtifact =
   (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: TerraformArtifactPayload) => {

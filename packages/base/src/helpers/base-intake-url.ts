@@ -1,9 +1,4 @@
-export const getBaseSourcemapIntakeUrl = (datadogSite?: string) => {
-  if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
-    return process.env.DATADOG_SOURCEMAP_INTAKE_URL
-  } else if (datadogSite) {
-    return 'https://sourcemap-intake.' + datadogSite
-  }
+import {getIntakeUrl} from './api'
 
-  return 'https://sourcemap-intake.datadoghq.com'
-}
+export const getBaseSourcemapIntakeUrl = (datadogSite?: string) =>
+  getIntakeUrl('sourcemap-intake', {overrideEnvVar: 'DATADOG_SOURCEMAP_INTAKE_URL', site: datadogSite})

@@ -6,6 +6,7 @@ import {Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getCIProvider, getCISpanTags, getGithubJobNameFromLogs} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -100,9 +101,7 @@ export abstract class CustomSpanCommand extends BaseCommand {
   }
 
   private getBaseIntakeUrl() {
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-
-    return `https://api.${site}`
+    return getApiUrl()
   }
 
   private async reportCustomSpan(payload: Payload) {

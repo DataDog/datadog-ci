@@ -1,5 +1,6 @@
 import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -7,7 +8,7 @@ import {gitRepositoryURL, gitLocalCommitShas, gitCurrentBranch} from '@datadog/d
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {CI_PROVIDER_NAME, CI_ENV_VARS, GIT_REPOSITORY_URL, GIT_SHA} from '@datadog/datadog-ci-base/helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 import simpleGit from 'simple-git'
@@ -111,8 +112,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
       return
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-    const baseAPIURL = `https://${getApiHostForSite(site)}`
+    const baseAPIURL = getApiUrl()
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey})
     const doRequest = () =>
       request({

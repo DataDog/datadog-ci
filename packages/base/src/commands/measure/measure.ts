@@ -5,12 +5,13 @@ import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {envDDGithubJobName, getGithubJobNameFromLogs, getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
-import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {
@@ -141,8 +142,7 @@ export class MeasureCommand extends BaseCommand {
       throw new Error('API key is missing')
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-    const baseAPIURL = `https://${getApiHostForSite(site)}`
+    const baseAPIURL = getApiUrl()
 
     if (this.dryRun) {
       this.context.stdout.write(

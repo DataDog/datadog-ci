@@ -3,6 +3,7 @@ import {tmpdir} from 'os'
 
 import upath from 'upath'
 
+import {getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {buildPath, execute} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const isZipFile = async (filepath: string) => {
@@ -48,15 +49,8 @@ export const executeLipo = async (
   newObjectPath: string
 ): Promise<{stderr: string; stdout: string}> => execute(`lipo '${objectPath}' -thin ${arch} -output '${newObjectPath}'`)
 
-export const getBaseIntakeUrl = (datadogSite?: string) => {
-  if (process.env.DATADOG_DSYM_INTAKE_URL) {
-    return process.env.DATADOG_DSYM_INTAKE_URL
-  } else if (datadogSite) {
-    return 'https://sourcemap-intake.' + datadogSite
-  }
-
-  return 'https://sourcemap-intake.datadoghq.com'
-}
+export const getBaseIntakeUrl = (datadogSite?: string) =>
+  getIntakeUrl('sourcemap-intake', {overrideEnvVar: 'DATADOG_DSYM_INTAKE_URL', site: datadogSite})
 
 export const pluralize = (nb: number, singular: string, plural: string) => {
   if (nb >= 2) {
