@@ -929,7 +929,7 @@ describe('waitForResults', () => {
         },
         mockReporter
       )
-    ).rejects.toThrow(new BatchTimeoutRunawayError())
+    ).rejects.toThrow(new BatchTimeoutRunawayError('bid'))
 
     // Residual results are never 'received': we force-end them.
     expect(mockReporter.resultReceived).toHaveBeenCalledTimes(1)

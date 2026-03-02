@@ -208,7 +208,7 @@ const waitForBatchToFinish = async (
     oldIncompleteResultIds = incompleteResultIds
 
     if (safeDeadlineReached) {
-      throw new BatchTimeoutRunawayError()
+      throw new BatchTimeoutRunawayError(batchId)
     }
 
     if (!shouldContinuePolling) {
