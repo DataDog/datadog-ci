@@ -51,7 +51,10 @@ export class CriticalError extends CiError {
 }
 
 export class BatchTimeoutRunawayError extends CriticalError {
-  constructor() {
-    super('BATCH_TIMEOUT_RUNAWAY', "The batch didn't timeout after the expected timeout period.")
+  constructor(public batchId?: string) {
+    super(
+      'BATCH_TIMEOUT_RUNAWAY',
+      `The batch didn't timeout after the expected timeout period.${batchId ? ` Batch ID: ${batchId}` : ''}`
+    )
   }
 }
