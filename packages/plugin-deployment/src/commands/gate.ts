@@ -1,11 +1,12 @@
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
-import {getApiUrl} from '@datadog/datadog-ci-base/helpers/api'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
 import {Logger, LogLevel} from '@datadog/datadog-ci-base/helpers/logger'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
+import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
 import {isAxiosError} from 'axios'
 import chalk from 'chalk'
 
@@ -115,7 +116,7 @@ export class PluginCommand extends DeploymentGateCommand {
   }
 
   private getApiHelper(apiKey: string, appKey: string): APIHelper {
-    return apiConstructor(getApiUrl(), apiKey, appKey)
+    return apiConstructor(`https://${getApiHostForSite(getDatadogSite())}`, apiKey, appKey)
   }
 
   private buildEvaluationRequest(): GateEvaluationRequest {

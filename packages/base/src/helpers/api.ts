@@ -1,7 +1,5 @@
 import {DATADOG_SITE_US1} from '../constants'
 
-import {getApiHostForSite} from './utils'
-
 /**
  * Single source of truth for Datadog site resolution. If `site` is passed, returns it.
  * Otherwise reads from `DATADOG_SITE` / `DD_SITE` env vars with US1 fallback.
@@ -30,9 +28,9 @@ export const getIntakeUrl = (
 }
 
 /**
- * Build the full API URL for a given site, handling the datad0g.com special case.
+ * Build the full API URL (`https://api.{site}`) for a given site.
  */
-export const getApiUrl = (site?: string): string => `https://${getApiHostForSite(getDatadogSite(site))}`
+export const getApiUrl = (site?: string): string => `https://api.${getDatadogSite(site)}`
 
 /**
  * @deprecated Use {@link getIntakeUrl} instead.

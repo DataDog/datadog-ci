@@ -3,12 +3,13 @@ import chalk from 'chalk'
 import {Command, Option} from 'clipanion'
 
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '../../constants'
-import {getApiUrl} from '../../helpers/api'
+import {getDatadogSite} from '../../helpers/api'
 import {getCIEnv, getGithubJobNameFromLogs, envDDGithubJobName} from '../../helpers/ci'
 import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
+import {getApiHostForSite} from '../../helpers/utils'
 import {getRequestBuilder} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
@@ -153,7 +154,7 @@ export class TagCommand extends BaseCommand {
       throw new Error('API key is missing')
     }
 
-    const baseAPIURL = getApiUrl()
+    const baseAPIURL = `https://${getApiHostForSite(getDatadogSite())}`
 
     if (this.dryRun) {
       this.context.stdout.write(
