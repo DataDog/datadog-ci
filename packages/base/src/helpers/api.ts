@@ -35,7 +35,7 @@ export const getIntakeUrl = (
 export const getApiUrl = (site?: string): string => `https://${getApiHostForSite(getDatadogSite(site))}`
 
 /**
- * @deprecated Use `getIntakeUrl` instead.
+ * @deprecated Use {@link getIntakeUrl} instead.
  *
  * Get the base intake URL for a service. If the `DD_SITE` or `DATADOG_SITE` environment
  * variables are not defined, use the default site (US1).

@@ -1,8 +1,6 @@
 import {getDatadogSite, getIntakeUrl} from '../../helpers/api'
 import {getApiHostForSite} from '../../helpers/utils'
 
-export {getDatadogSite}
-
 export const datadogSite = getDatadogSite()
 
 export const apiHost = getApiHostForSite(datadogSite)
