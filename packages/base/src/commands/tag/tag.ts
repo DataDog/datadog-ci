@@ -9,8 +9,7 @@ import {toBoolean} from '../../helpers/env'
 import {enableFips} from '../../helpers/fips'
 import {retryRequest} from '../../helpers/retry'
 import {parseTags, parseTagsFile} from '../../helpers/tags'
-import {getApiHostForSite} from '../../helpers/utils'
-import {getRequestBuilder} from '../../helpers/utils'
+import {getApiHostForSite, getRequestBuilder} from '../../helpers/utils'
 
 import {BaseCommand} from '../..'
 
