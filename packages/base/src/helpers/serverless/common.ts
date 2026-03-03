@@ -5,6 +5,8 @@ import {diff} from 'jest-diff'
 
 import {DATADOG_SITE_US1} from '../../constants'
 
+import {getDatadogSite} from '../api'
+
 import {
   HEALTH_PORT_ENV_VAR,
   LOGS_INJECTION_ENV_VAR,
@@ -66,7 +68,7 @@ export interface ServerlessConfigOptions {
 export const getBaseEnvVars = (config: ServerlessConfigOptions): Record<string, string> => {
   const envVars: Record<string, string> = {
     DD_API_KEY: process.env.DD_API_KEY!,
-    DD_SITE: process.env.DD_SITE ?? DATADOG_SITE_US1,
+    DD_SITE: getDatadogSite(),
     DD_SERVICE: config.service!,
     ...parseEnvVars(config.envVars),
   }

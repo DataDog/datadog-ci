@@ -8,6 +8,7 @@ import {
   DEFAULT_SIDECAR_MEMORY,
 } from '@datadog/datadog-ci-base/commands/container-app/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
@@ -42,7 +43,7 @@ export class PluginCommand extends ContainerAppInstrumentCommand {
     try {
       const isApiKeyValid = await newApiKeyValidator({
         apiKey: process.env.DD_API_KEY,
-        datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+        datadogSite: getDatadogSite(),
       }).validateApiKey()
       if (!isApiKeyValid) {
         throw Error()

@@ -12,6 +12,7 @@ import {
 } from '@datadog/datadog-ci-base/commands/aas/common'
 import {AasInstrumentCommand} from '@datadog/datadog-ci-base/commands/aas/instrument'
 import {DATADOG_SITE_US1} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {renderError, renderSoftWarning} from '@datadog/datadog-ci-base/helpers/renderer'
 import {ensureAzureAuth, formatError} from '@datadog/datadog-ci-base/helpers/serverless/azure'
@@ -46,7 +47,7 @@ export class PluginCommand extends AasInstrumentCommand {
     try {
       const isApiKeyValid = await newApiKeyValidator({
         apiKey: process.env.DD_API_KEY,
-        datadogSite: process.env.DD_SITE ?? DATADOG_SITE_US1,
+        datadogSite: getDatadogSite(),
       }).validateApiKey()
       if (!isApiKeyValid) {
         throw Error()
