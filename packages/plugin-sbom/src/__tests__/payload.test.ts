@@ -74,7 +74,6 @@ describe('generation of payload', () => {
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.repository.url).toContain('DataDog/datadog-ci')
     expect(payload?.dependencies.length).toBe(147)
-    expect(payload?.files.length).toBe(2)
     expect(payload?.relations.length).toBe(154)
     expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('trivy')
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.44.1')
@@ -90,9 +89,6 @@ describe('generation of payload', () => {
 
     const dependenciesWithPackageManager = payload?.dependencies.filter((d) => d.package_manager.length > 0)
     expect(dependenciesWithPackageManager?.length).toBe(1)
-
-    const filesWithPURL = payload?.files.filter((d) => d.purl)
-    expect(filesWithPURL?.length).toBe(2)
   })
 
   test('should succeed when called on a valid SBOM file for CycloneDX 1.5 with tools declared in components', async () => {
@@ -112,7 +108,6 @@ describe('generation of payload', () => {
     expect(payload?.commit.sha).toStrictEqual(expect.any(String))
     expect(payload?.repository.url).toContain('github.com')
     expect(payload?.dependencies.length).toBe(147)
-    expect(payload?.files.length).toBe(2)
     expect(payload?.relations.length).toBe(154)
     expect(payload?.tags[SBOM_TOOL_GENERATOR_NAME]).toBe('grype')
     expect(payload?.tags[SBOM_TOOL_GENERATOR_VERSION]).toBe('0.87.0')

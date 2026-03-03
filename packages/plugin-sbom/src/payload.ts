@@ -19,7 +19,6 @@ import {
   IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   LEGACY_EXCLUSION_KEY,
-  LEGACY_FILE_PACKAGE_PROPERTY_KEY,
   LEGACY_IS_DEPENDENCY_DEV_ENVIRONMENT_PROPERTY_KEY,
   LEGACY_IS_DEPENDENCY_DIRECT_PROPERTY_KEY,
   LEGACY_PACKAGE_MANAGER_PROPERTY_KEY,
@@ -148,8 +147,6 @@ export const generatePayload = (
           if (dependency !== undefined) {
             dependencies.push(dependency)
           }
-        } else if (component['type'] === 'file') {
-          files.push(extractingFile(component))
         }
       }
     }
@@ -326,20 +323,6 @@ const extractingDependency = (component: any): Dependency | undefined => {
   }
 
   return dependency
-}
-
-const extractingFile = (component: any): File => {
-  let purl
-  for (const property of component['properties'] ?? []) {
-    if (property['name'] === LEGACY_FILE_PACKAGE_PROPERTY_KEY) {
-      purl = property['value']
-    }
-  }
-
-  return {
-    name: component['name'],
-    purl,
-  }
 }
 
 const extractingRelations = (dependency: any): Relations => {
