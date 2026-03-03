@@ -285,6 +285,7 @@ export default defineConfig(
       'guard-for-in': 'error',
       'id-denylist': 'error',
       'id-match': 'error',
+      'import-x/no-duplicates': 'error',
       'import-x/no-unresolved': ['error', {ignore: ['node:sea']}],
       'import-x/no-extraneous-dependencies': 'error',
       'import-x/order': [
