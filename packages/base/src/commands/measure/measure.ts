@@ -11,8 +11,7 @@ import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {retryRequest} from '@datadog/datadog-ci-base/helpers/retry'
 import {parseMeasuresFile} from '@datadog/datadog-ci-base/helpers/tags'
-import {getApiHostForSite} from '@datadog/datadog-ci-base/helpers/utils'
-import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
+import {getApiHostForSite, getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 
 export const parseMeasures = (measures: string[]) =>
   measures.reduce((acc, keyValue) => {
