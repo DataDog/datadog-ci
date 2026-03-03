@@ -6,6 +6,7 @@ import upath from 'upath'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite, getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -81,7 +82,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
 
   private config = {
     apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-    datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com',
+    datadogSite: getDatadogSite(),
     fips: toBoolean(process.env[FIPS_ENV_VAR]) ?? false,
     fipsIgnoreError: toBoolean(process.env[FIPS_IGNORE_ERROR_ENV_VAR]) ?? false,
   }
@@ -127,7 +128,7 @@ export class SourcemapsUploadCommand extends BaseCommand {
       )
     )
     const metricsLogger = getMetricsLogger({
-      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      datadogSite: getDatadogSiteFromEnv(),
       defaultTags: [`version:${this.releaseVersion}`, `service:${this.service}`, `cli_version:${this.cliVersion}`],
       prefix: 'datadog.ci.sourcemaps.',
     })

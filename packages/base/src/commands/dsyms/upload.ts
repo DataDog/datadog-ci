@@ -6,6 +6,7 @@ import upath from 'upath'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
@@ -126,7 +127,7 @@ export class DsymsUploadCommand extends BaseCommand {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-        datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+        datadogSite: getDatadogSiteFromEnv(),
       },
       {
         configPath: this.configPath,

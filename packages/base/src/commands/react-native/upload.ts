@@ -3,6 +3,7 @@ import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {ApiKeyValidator, newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {getBaseSourcemapIntakeUrl} from '@datadog/datadog-ci-base/helpers/base-intake-url'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
@@ -148,7 +149,7 @@ export class ReactNativeUploadCommand extends BaseCommand {
       this.config,
       {
         apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
-        datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+        datadogSite: getDatadogSiteFromEnv(),
       },
       {
         configPath: this.configPath,
