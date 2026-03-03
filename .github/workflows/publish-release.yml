@@ -170,7 +170,7 @@ jobs:
         run: yarn dist-standalone:test
       - name: Compute binary checksum
         shell: bash
-        run: shasum -a 256 ./datadog-ci_win-x64.exe | awk '{print $1 "  datadog-ci_win-x64"}' > checksum-win-x64.txt
+        run: sha256sum ./datadog-ci_win-x64.exe | awk '{print $1 "  datadog-ci_win-x64"}' > checksum-win-x64.txt
       - name: Upload checksum artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
