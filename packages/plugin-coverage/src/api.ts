@@ -3,6 +3,7 @@ import {createGzip, gzipSync} from 'zlib'
 
 import type {AxiosPromise, AxiosRequestConfig, AxiosResponse} from 'axios'
 
+import {getApiUrl, getIntakeUrl} from '@datadog/datadog-ci-base/helpers/api'
 import {doWithMaxConcurrency} from '@datadog/datadog-ci-base/helpers/concurrency'
 import {getRequestBuilder} from '@datadog/datadog-ci-base/helpers/utils'
 import FormData from 'form-data'
@@ -13,9 +14,8 @@ import {Payload} from './interfaces'
 // We don't want any hard limit enforced by the CLI, the backend will enforce a max size by returning 413 errors.
 const maxBodyLength = Infinity
 
-export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-export const intakeUrl = `https://ci-intake.${datadogSite}`
-export const apiUrl = `https://api.${datadogSite}`
+export const intakeUrl = getIntakeUrl('ci-intake')
+export const apiUrl = getApiUrl()
 
 export const uploadCodeCoverageReport =
   (request: (args: AxiosRequestConfig) => AxiosPromise<AxiosResponse>) => async (payload: Payload) => {

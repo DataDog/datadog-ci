@@ -5,6 +5,7 @@ import {Command, Option} from 'clipanion'
 
 import {BaseCommand} from '@datadog/datadog-ci-base'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {envDDGithubJobName, getGithubJobNameFromLogs, getCIEnv} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -141,8 +142,7 @@ export class MeasureCommand extends BaseCommand {
       throw new Error('API key is missing')
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-    const baseAPIURL = `https://${getApiHostForSite(site)}`
+    const baseAPIURL = `https://${getApiHostForSite(getDatadogSite())}`
 
     if (this.dryRun) {
       this.context.stdout.write(

@@ -1,5 +1,6 @@
 import {DeploymentGateCommand} from '@datadog/datadog-ci-base/commands/deployment/gate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {ICONS} from '@datadog/datadog-ci-base/helpers/formatting'
@@ -115,10 +116,7 @@ export class PluginCommand extends DeploymentGateCommand {
   }
 
   private getApiHelper(apiKey: string, appKey: string): APIHelper {
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-    const baseAPIURL = `https://${getApiHostForSite(site)}`
-
-    return apiConstructor(baseAPIURL, apiKey, appKey)
+    return apiConstructor(`https://${getApiHostForSite(getDatadogSite())}`, apiKey, appKey)
   }
 
   private buildEvaluationRequest(): GateEvaluationRequest {

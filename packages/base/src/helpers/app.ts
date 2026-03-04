@@ -1,10 +1,11 @@
+import {getDatadogSite} from './api'
 import {SpanTags} from './interfaces'
 import {CI_JOB_URL, CI_PIPELINE_URL} from './tags'
 
 export const DEFAULT_DATADOG_SUBDOMAIN = 'app'
 
 export const getBaseUrl = () => {
-  const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+  const site = getDatadogSite()
   const subdomain = process.env.DD_SUBDOMAIN || ''
 
   return getCommonAppBaseURL(site, subdomain)

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {SyntheticsDeployTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/deploy-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {LogLevel, Logger} from '@datadog/datadog-ci-base/helpers/logger'
@@ -92,7 +93,7 @@ export class PluginCommand extends SyntheticsDeployTestsCommand {
       apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
       appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
       configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
-      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      datadogSite: getDatadogSiteFromEnv(),
       // BASE COMMAND END
       files: process.env.DATADOG_SYNTHETICS_FILES?.split(';'),
       publicIds: process.env.DATADOG_SYNTHETICS_PUBLIC_IDS?.split(';'),

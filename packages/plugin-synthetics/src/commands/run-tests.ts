@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/member-ordering */
 import {SyntheticsRunTestsCommand} from '@datadog/datadog-ci-base/commands/synthetics/run-tests'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSiteFromEnv} from '@datadog/datadog-ci-base/helpers/api'
 import {toBoolean, toNumber, toStringMap} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
 import {
@@ -169,7 +170,7 @@ export class PluginCommand extends SyntheticsRunTestsCommand {
       apiKey: process.env.DATADOG_API_KEY || process.env.DD_API_KEY,
       appKey: process.env.DATADOG_APP_KEY || process.env.DD_APP_KEY,
       configPath: process.env.DATADOG_SYNTHETICS_CONFIG_PATH, // Only used for debugging
-      datadogSite: process.env.DATADOG_SITE || process.env.DD_SITE,
+      datadogSite: getDatadogSiteFromEnv(),
       // BASE COMMAND END
       batchTimeout: toNumber(process.env.DATADOG_SYNTHETICS_BATCH_TIMEOUT),
       buildCommand: process.env.DATADOG_SYNTHETICS_BUILD_COMMAND,

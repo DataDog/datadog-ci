@@ -2,6 +2,7 @@ import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {newApiKeyValidator} from '@datadog/datadog-ci-base/helpers/apikey'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -53,7 +54,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
     )
 
     // Verify DD API Key
-    const site = process.env.DD_SITE ?? DATADOG_SITE_US1
+    const site = getDatadogSite()
     try {
       const isApiKeyValid = await newApiKeyValidator({
         apiKey: process.env.DD_API_KEY,

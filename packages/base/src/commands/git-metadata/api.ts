@@ -1,11 +1,7 @@
-export const datadogSite = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
+import {getDatadogSite, getIntakeUrl} from '../../helpers/api'
+
+export const datadogSite = getDatadogSite()
 
 export const apiHost = 'api.' + datadogSite
 
-export const getBaseIntakeUrl = () => {
-  if (process.env.DATADOG_SOURCEMAP_INTAKE_URL) {
-    return process.env.DATADOG_SOURCEMAP_INTAKE_URL
-  }
-
-  return 'https://sourcemap-intake.' + datadogSite
-}
+export const getBaseIntakeUrl = () => getIntakeUrl('sourcemap-intake', {overrideEnvVar: 'DATADOG_SOURCEMAP_INTAKE_URL'})

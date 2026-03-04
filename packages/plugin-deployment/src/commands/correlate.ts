@@ -1,5 +1,6 @@
 import {DeploymentCorrelateCommand} from '@datadog/datadog-ci-base/commands/deployment/correlate'
 import {FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
+import {getDatadogSite} from '@datadog/datadog-ci-base/helpers/api'
 import {getCISpanTags} from '@datadog/datadog-ci-base/helpers/ci'
 import {toBoolean} from '@datadog/datadog-ci-base/helpers/env'
 import {enableFips} from '@datadog/datadog-ci-base/helpers/fips'
@@ -111,8 +112,7 @@ export class PluginCommand extends DeploymentCorrelateCommand {
       return
     }
 
-    const site = process.env.DATADOG_SITE || process.env.DD_SITE || 'datadoghq.com'
-    const baseAPIURL = `https://${getApiHostForSite(site)}`
+    const baseAPIURL = `https://${getApiHostForSite(getDatadogSite())}`
     const request = getRequestBuilder({baseUrl: baseAPIURL, apiKey})
     const doRequest = () =>
       request({
