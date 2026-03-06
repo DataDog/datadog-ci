@@ -1909,6 +1909,7 @@ __metadata:
     form-data: "npm:^4.0.4"
     glob: "npm:^13.0.5"
     inquirer: "npm:^8.2.6"
+    is-docker: "npm:^4.0.0"
     jest-diff: "npm:^30.2.0"
     js-yaml: "npm:4.1.1"
     jszip: "npm:^3.10.1"
@@ -8349,6 +8350,15 @@ __metadata:
   bin:
     is-docker: cli.js
   checksum: 10/b698118f04feb7eaf3338922bd79cba064ea54a1c3db6ec8c0c8d8ee7613e7e5854d802d3ef646812a8a3ace81182a085dfa0a71cc68b06f3fa794b9783b3c90
+  languageName: node
+  linkType: hard
+
+"is-docker@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "is-docker@npm:4.0.0"
+  bin:
+    is-docker: cli.js
+  checksum: 10/189767bab08af5c1f7c296f892c6b7bfc8943996ceb2993e6dcae6d2c1dedaed89117fcd8019afca933f1a744b8ac1c4d93868c209bab9efd60f12009b69fae6
   languageName: node
   linkType: hard
 
