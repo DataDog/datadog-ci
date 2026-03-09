@@ -3,6 +3,7 @@ import {URL} from 'url'
 import * as simpleGit from 'simple-git'
 import {GitConfigScope} from 'simple-git'
 
+import {isCI} from '../../helpers/ci'
 import {gitRemote} from '../../helpers/git/get-git-data'
 
 import {CommitInfo} from './interfaces'
@@ -18,10 +19,9 @@ export const newSimpleGit = async (): Promise<simpleGit.SimpleGit> => {
 
   const git = simpleGit.simpleGit(options)
 
-  const isCI = 'CI' in process.env
   const isDocker = (await import('is-docker')).default
 
-  if (isCI || isDocker()) {
+  if (isCI() || isDocker()) {
     try {
       // In some CI envs repo may be checked out as a different user than the one running the command.
       // To be able to run git commands, we need to add the current directory as a safe directory.
