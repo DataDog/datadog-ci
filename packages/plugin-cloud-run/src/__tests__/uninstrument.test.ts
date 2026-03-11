@@ -12,6 +12,7 @@ import {
 
 import {PluginCommand as UninstrumentCommand} from '../commands/uninstrument'
 import * as cloudRunPromptModule from '../prompt'
+import {TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '../ssi'
 import * as utils from '../utils'
 
 jest.mock('../utils', () => ({
@@ -352,6 +353,125 @@ describe('UninstrumentCommand', () => {
       const result = (command as any).updateAppContainer(appContainer)
 
       expect(result.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
+    })
+  })
+
+  describe('SSI uninstrumentation', () => {
+    let command: UninstrumentCommand
+
+    beforeEach(() => {
+      command = new UninstrumentCommand()
+      ;(command as any).sidecarName = 'datadog-sidecar'
+      ;(command as any).sharedVolumeName = 'shared-volume'
+      ;(command as any).envVars = []
+      ;(command as any).context = {
+        stdout: {write: jest.fn()},
+        stderr: {write: jest.fn()},
+      }
+    })
+
+    test('removes SSI artifacts (tracer-init, dd-tracer volume, SSI env vars, dependsOn)', () => {
+      const service: IService = {
+        labels: {service: 'test-service'},
+        template: {
+          containers: [
+            {
+              name: 'main',
+              env: [
+                {name: 'NODE_ENV', value: 'production'},
+                {name: DD_TRACE_ENABLED_ENV_VAR, value: 'true'},
+                {name: SERVICE_ENV_VAR, value: 'test-service'},
+                {name: 'PYTHONPATH', value: '/dd-tracer'},
+              ],
+              volumeMounts: [
+                {name: 'shared-volume', mountPath: '/shared-volume'},
+                {name: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'},
+              ],
+              dependsOn: ['datadog-sidecar', TRACER_INIT_CONTAINER_NAME],
+            },
+            {
+              name: 'datadog-sidecar',
+              env: [{name: API_KEY_ENV_VAR, value: 'test-key'}],
+              volumeMounts: [{name: 'shared-volume', mountPath: '/shared-volume'}],
+              dependsOn: [TRACER_INIT_CONTAINER_NAME],
+            },
+            {
+              name: TRACER_INIT_CONTAINER_NAME,
+              image: 'gcr.io/datadoghq/dd-lib-python-init:latest',
+              env: [],
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'}],
+            },
+          ],
+          volumes: [
+            {name: 'shared-volume', emptyDir: {}},
+            {name: TRACER_VOLUME_NAME, emptyDir: {medium: 1}},
+          ],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      // Should remove sidecar and tracer-init containers
+      expect(result.template?.containers).toHaveLength(1)
+      expect(result.template?.containers?.map((c: IContainer) => c.name)).toEqual(['main'])
+
+      // Should remove both volumes
+      expect(result.template?.volumes).toHaveLength(0)
+
+      // Should remove SSI env vars, DD_ env vars, volume mounts, and dependsOn from main
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(main?.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
+      expect(main?.volumeMounts).toHaveLength(0)
+      expect(main?.dependsOn).toBeUndefined()
+    })
+
+    test('removes NODE_OPTIONS SSI env var', () => {
+      const service: IService = {
+        labels: {},
+        template: {
+          containers: [
+            {
+              name: 'main',
+              env: [
+                {name: 'NODE_ENV', value: 'production'},
+                {name: 'NODE_OPTIONS', value: '--require /dd-tracer/node_modules/dd-trace/init.js'},
+              ],
+              volumeMounts: [{name: TRACER_VOLUME_NAME, mountPath: '/dd-tracer'}],
+              dependsOn: ['datadog-sidecar', TRACER_INIT_CONTAINER_NAME],
+            },
+          ],
+          volumes: [{name: TRACER_VOLUME_NAME, emptyDir: {}}],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(main?.env).toEqual([{name: 'NODE_ENV', value: 'production'}])
+      expect(main?.dependsOn).toBeUndefined()
+    })
+
+    test('removes JAVA_TOOL_OPTIONS SSI env var', () => {
+      const service: IService = {
+        labels: {},
+        template: {
+          containers: [
+            {
+              name: 'main',
+              env: [
+                {name: 'JAVA_TOOL_OPTIONS', value: '-javaagent:/dd-tracer/dd-java-agent.jar'},
+              ],
+              volumeMounts: [],
+            },
+          ],
+          volumes: [],
+        },
+      }
+
+      const result = command.createUninstrumentedServiceConfig(service)
+
+      const main = result.template?.containers?.find((c: IContainer) => c.name === 'main')
+      expect(main?.env).toEqual([])
     })
   })
 })

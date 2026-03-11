@@ -1,4 +1,4 @@
-import type {IContainer, IEnvVar, IService, IServiceTemplate} from '../types'
+import type {IContainer, IEnvVar, IService, IServiceTemplate, IVolume, IVolumeMount} from '../types'
 
 import {CloudRunInstrumentCommand} from '@datadog/datadog-ci-base/commands/cloud-run/instrument'
 import {DATADOG_SITE_US1, FIPS_ENV_VAR, FIPS_IGNORE_ERROR_ENV_VAR} from '@datadog/datadog-ci-base/constants'
@@ -35,6 +35,13 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestSite, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
+import {
+  SSI_LANGUAGE_CONFIGS,
+  TRACER_INIT_CONTAINER_NAME,
+  TRACER_VOLUME_NAME,
+  TRACER_VOLUME_PATH,
+  TRACER_INIT_HEALTH_PORT,
+} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 // equivalent to google.cloud.run.v2.EmptyDirVolumeSource.Medium.MEMORY
@@ -115,6 +122,25 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       this.context.stderr.write(renderError('Extra tags do not comply with the <key>:<value> array.\n'))
 
       return 1
+    }
+
+    if (this.ssi) {
+      if (!this.language) {
+        this.context.stderr.write(
+          renderError('--ssi requires --language to be set to a supported language (python, nodejs, java).\n')
+        )
+
+        return 1
+      }
+      if (!(this.language in SSI_LANGUAGE_CONFIGS)) {
+        this.context.stderr.write(
+          renderError(
+            `Unsupported SSI language: "${this.language}". Supported languages: ${Object.keys(SSI_LANGUAGE_CONFIGS).join(', ')}.\n`
+          )
+        )
+
+        return 1
+      }
     }
 
     if (!this.project || !this.services || !this.services.length || !this.region) {
@@ -222,7 +248,7 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       extraTags: this.extraTags,
       envVars: this.envVars,
     })
-    const template: IServiceTemplate = createInstrumentedTemplate(
+    let template: IServiceTemplate = createInstrumentedTemplate(
       service.template || {},
       this.buildBaseSidecarContainer(service.template?.containers?.find((c) => c.name === this.sidecarName)),
       {
@@ -233,6 +259,11 @@ export class PluginCommand extends CloudRunInstrumentCommand {
       },
       envVarsByName
     )
+
+    if (this.ssi && this.language) {
+      template = this.applySSI(template, this.language)
+    }
+
     // Let GCR generate the next revision name
     template.revision = undefined
     // Set unified service tag labels
@@ -306,6 +337,86 @@ export class PluginCommand extends CloudRunInstrumentCommand {
           cpu: this.sidecarCpus,
         },
       },
+    }
+  }
+
+  public applySSI(template: IServiceTemplate, language: string): IServiceTemplate {
+    const config = SSI_LANGUAGE_CONFIGS[language]
+    const containers: IContainer[] = template.containers || []
+    const volumes: IVolume[] = template.volumes || []
+
+    // Add dd-tracer tmpfs volume if not present
+    const hasTracerVolume = volumes.some((v) => v.name === TRACER_VOLUME_NAME)
+    const updatedVolumes = hasTracerVolume
+      ? volumes
+      : [...volumes, {name: TRACER_VOLUME_NAME, emptyDir: {medium: EMPTY_DIR_VOLUME_SOURCE_MEMORY}} as IVolume]
+
+    const tracerVolumeMount: IVolumeMount = {name: TRACER_VOLUME_NAME, mountPath: TRACER_VOLUME_PATH}
+
+    // Add tracer-init container if not present
+    const hasTracerInit = containers.some((c) => c.name === TRACER_INIT_CONTAINER_NAME)
+    const tracerInitContainer: IContainer = {
+      name: TRACER_INIT_CONTAINER_NAME,
+      image: config.initImage,
+      command: ['/bin/sh', '-c'],
+      args: ['cp -r /datadog-init/package/* /dd-tracer/ && while true; do echo -e "HTTP/1.1 200 OK\\r\\n\\r\\nok" | nc -l -p 18999 || true; done'],
+      startupProbe: {
+        tcpSocket: {
+          port: TRACER_INIT_HEALTH_PORT,
+        },
+        initialDelaySeconds: 0,
+        periodSeconds: 3,
+        failureThreshold: 5,
+        timeoutSeconds: 1,
+      },
+      resources: {
+        limits: {
+          memory: '256Mi',
+        },
+      },
+      volumeMounts: [tracerVolumeMount],
+    }
+
+    // Update containers: add SSI env var and volume mount to app containers, set dependsOn
+    const updatedContainers = containers.map((container) => {
+      if (container.name === TRACER_INIT_CONTAINER_NAME) {
+        return tracerInitContainer
+      }
+      if (container.name === this.sidecarName) {
+        // Agent sidecar depends on tracer-init
+        return {
+          ...container,
+          dependsOn: [TRACER_INIT_CONTAINER_NAME],
+        }
+      }
+
+      // App container: add language env var, tracer volume mount, and dependsOn
+      const existingEnv = container.env || []
+      const hasSSIEnvVar = existingEnv.some((e) => e.name === config.envVar)
+      const updatedEnv = hasSSIEnvVar
+        ? existingEnv.map((e) => (e.name === config.envVar ? {name: config.envVar, value: config.envValue} : e))
+        : [...existingEnv, {name: config.envVar, value: config.envValue}]
+
+      const existingMounts = container.volumeMounts || []
+      const hasTracerMount = existingMounts.some((m) => m.name === TRACER_VOLUME_NAME)
+      const updatedMounts = hasTracerMount ? existingMounts : [...existingMounts, tracerVolumeMount]
+
+      return {
+        ...container,
+        env: updatedEnv,
+        volumeMounts: updatedMounts,
+        dependsOn: [this.sidecarName, TRACER_INIT_CONTAINER_NAME],
+      }
+    })
+
+    if (!hasTracerInit) {
+      updatedContainers.push(tracerInitContainer)
+    }
+
+    return {
+      ...template,
+      containers: updatedContainers,
+      volumes: updatedVolumes,
     }
   }
 }

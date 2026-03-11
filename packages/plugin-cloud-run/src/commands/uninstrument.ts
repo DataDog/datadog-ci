@@ -12,6 +12,7 @@ import chalk from 'chalk'
 
 import {requestGCPProject, requestGCPRegion, requestServiceName, requestConfirmation} from '../prompt'
 import {dryRunPrefix, renderAuthenticationInstructions, withSpinner} from '../renderer'
+import {SSI_ENV_VAR_NAMES, TRACER_INIT_CONTAINER_NAME, TRACER_VOLUME_NAME} from '../ssi'
 import {checkAuthentication, fetchServiceConfigs} from '../utils'
 
 export class PluginCommand extends CloudRunUninstrumentCommand {
@@ -143,8 +144,12 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     const containers: IContainer[] = template.containers || []
     const volumes: IVolume[] = template.volumes || []
 
-    let updatedContainers = containers.filter((c) => c.name !== this.sidecarName)
-    const updatedVolumes = volumes.filter((v) => v.name !== this.sharedVolumeName)
+    let updatedContainers = containers.filter(
+      (c) => c.name !== this.sidecarName && c.name !== TRACER_INIT_CONTAINER_NAME
+    )
+    const updatedVolumes = volumes.filter(
+      (v) => v.name !== this.sharedVolumeName && v.name !== TRACER_VOLUME_NAME
+    )
 
     if (updatedContainers.length === containers.length) {
       this.context.stdout.write(
@@ -181,21 +186,25 @@ export class PluginCommand extends CloudRunUninstrumentCommand {
     }
   }
 
-  // Remove volume mount and add required env vars
+  // Remove volume mounts, DD_ env vars, SSI env vars, and dependsOn
   private updateAppContainer(appContainer: IContainer) {
     const existingVolumeMounts = appContainer.volumeMounts || []
-    const updatedVolumeMounts = existingVolumeMounts.filter((v) => v.name !== this.sharedVolumeName)
+    const updatedVolumeMounts = existingVolumeMounts.filter(
+      (v) => v.name !== this.sharedVolumeName && v.name !== TRACER_VOLUME_NAME
+    )
 
     const customEnvVars = parseEnvVars(this.envVars)
 
     const existingEnvVars = appContainer.env || []
-    // Remove env vars beginning with DD_ and custom env vars
+    // Remove env vars beginning with DD_, custom env vars, and SSI env vars
     const updatedEnvVars = existingEnvVars.filter(
-      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars)
+      (v) => v.name && !v.name.startsWith('DD_') && !(v.name in customEnvVars) && !SSI_ENV_VAR_NAMES.includes(v.name)
     )
 
+    const {dependsOn, ...rest} = appContainer
+
     return {
-      ...appContainer,
+      ...rest,
       volumeMounts: updatedVolumeMounts,
       env: updatedEnvVars,
     }
