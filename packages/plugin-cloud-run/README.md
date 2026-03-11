@@ -83,6 +83,7 @@ You can pass the following arguments to `instrument` to specify its behavior.
 | `--sidecar-cpus` |  | The number of CPUs to allocate to the sidecar container. | `1` |
 | `--sidecar-memory` |  | The amount of memory to allocate to the sidecar container. | `512Mi` |
 | `--language` |  | Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php". |  |
+| `--ssi` |  | Enable Single Step Instrumentation (SSI). Requires --language to be set to a supported language (python, nodejs, java). | `false` |
 <!-- END_USAGE:instrument -->
 
 #### `uninstrument`
