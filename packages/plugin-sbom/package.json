@@ -43,7 +43,7 @@
     "axios": "^1.13.5",
     "chalk": "3.0.0",
     "packageurl-js": "^2.0.1",
-    "simple-git": "3.16.0",
+    "simple-git": "3.33.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
