@@ -100,6 +100,10 @@ export class CloudRunInstrumentCommand extends BaseCommand {
   protected language = Option.String('--language', {
     description: `Set the language used in your container or function for advanced log parsing. Sets the DD_SOURCE env var. Possible values: "nodejs", "python", "go", "java", "csharp", "ruby", or "php".`,
   })
+  protected ssi = Option.Boolean('--ssi', false, {
+    description:
+      'Enable Single Step Instrumentation (SSI). Requires --language to be set to a supported language (python, nodejs, java).',
+  })
   protected fips = Option.Boolean('--fips', false)
   protected fipsIgnoreError = Option.Boolean('--fips-ignore-error', false)
 
